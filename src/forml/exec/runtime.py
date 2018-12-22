@@ -1,0 +1,3 @@
+class Generic:
+    """Abstract runtime.
+    """

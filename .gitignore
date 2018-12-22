@@ -1,0 +1,12 @@
+build/
+dist/
+htmlcov/
+coverage.xml
+junit.xml
+.eggs
+*.egg-info/
+*.pyc
+.idea
+.cache
+.coverage
+.pytest_cache/
