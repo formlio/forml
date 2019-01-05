@@ -34,12 +34,18 @@ class Input:
         self.node = node
         self.port = port
 
+    def __hash__(self):
+        return hash(self.node) ^ hash(self.port)
+
+    def __eq__(self, other: typing.Any):
+        return isinstance(other, self.__class__) and self.node == other.node and self.port == other.port
+
 
 class Output:
     """Event publisher representing a node output port (apply or state).
     """
     def __init__(self):
-        self._links: typing.List[Input] = list()
+        self._links: typing.Set[Input] = set()
 
 
 class Data(Output):
@@ -52,7 +58,7 @@ class Data(Output):
         Args:
             node: target node to link to.
         """
-        self._links.append(Input(node, Input.TRAIN))
+        self._links.add(Input(node, Input.TRAIN))
 
     def label(self, node: 'node.Plain') -> None:
         """Link this output port to given node's label input port.
@@ -60,7 +66,7 @@ class Data(Output):
         Args:
             node: target node to link to.
         """
-        self._links.append(Input(node, Input.LABEL))
+        self._links.add(Input(node, Input.LABEL))
 
     def apply(self, node: 'node.Plain', index: int) -> None:
         """Link this output port to given node's apply input port at given index.
@@ -69,7 +75,7 @@ class Data(Output):
             node: target node to link to.
             index: target node apply port index to link to.
         """
-        self._links.append(Input(node, Input.Apply(index)))
+        self._links.add(Input(node, Input.Apply(index)))
 
     def hyper(self, node: 'node.Plain') -> None:
         """Link this output port to given node's hyper params input port.
@@ -77,7 +83,7 @@ class Data(Output):
         Args:
             node: target node to link to.
         """
-        self._links.append(Input(node, Input.HYPER))
+        self._links.add(Input(node, Input.HYPER))
 
 
 class State(Output):
@@ -90,4 +96,4 @@ class State(Output):
         Args:
             node: Target node to link to.
         """
-        self._links.append(Input(node, Input.STATE))
+        self._links.add(Input(node, Input.STATE))
