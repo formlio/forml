@@ -5,10 +5,10 @@ import collections
 import typing
 
 from forml.flow import task
-from forml.flow.graph.topology import port
+from forml.flow.graph.layout import link
 
 
-class Node:
+class Plain:
     """Single task graph node.
     """
     def __init__(self, actor: typing.Type[task.Actor], szin: int, szout: int):
@@ -16,8 +16,8 @@ class Node:
         self.actor = actor
         self.szin: int = szin
         # output ports:
-        self.apply: typing.Tuple[port.Data] = tuple(port.Data() for _ in range(szout))
-        self.state: port.State = port.State()
+        self.apply: typing.Tuple[link.Data] = tuple(link.Data() for _ in range(szout))
+        self.state: link.State = link.State()
 
     @property
     def szout(self) -> int:
@@ -35,8 +35,8 @@ class Stage:
         """Shape tuple of input and output apply ports.
         """
 
-    def __init__(self, nodes: typing.Iterable[Node]):
-        self.nodes: typing.Sequence[Node] = tuple(nodes)
+    def __init__(self, nodes: typing.Iterable[Plain]):
+        self.nodes: typing.Sequence[Plain] = tuple(nodes)
 
     @property
     def shape(self) -> Shape:
