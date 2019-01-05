@@ -1,10 +1,10 @@
 """
-Node port types.
+Plain port types.
 """
 
 import typing
 
-from forml.flow.graph import topology
+from forml.flow.graph.layout import node
 
 
 class Input:
@@ -30,7 +30,7 @@ class Input:
     STATE = Type('state')  # state input port
     HYPER = Type('hyper')  # params input port
 
-    def __init__(self, node: 'topology.Node', port: Type):
+    def __init__(self, node: 'node.Plain', port: Type):
         self.node = node
         self.port = port
 
@@ -46,7 +46,7 @@ class Data(Output):
     """Data output port represents the result of the apply mode. It can be linked to any input port type apart
     from state port.
     """
-    def train(self, node: 'topology.Node') -> None:
+    def train(self, node: 'node.Plain') -> None:
         """Link this output port to given node's train input port.
 
         Args:
@@ -54,7 +54,7 @@ class Data(Output):
         """
         self._links.append(Input(node, Input.TRAIN))
 
-    def label(self, node: 'topology.Node') -> None:
+    def label(self, node: 'node.Plain') -> None:
         """Link this output port to given node's label input port.
 
         Args:
@@ -62,7 +62,7 @@ class Data(Output):
         """
         self._links.append(Input(node, Input.LABEL))
 
-    def apply(self, node: 'topology.Node', index: int) -> None:
+    def apply(self, node: 'node.Plain', index: int) -> None:
         """Link this output port to given node's apply input port at given index.
 
         Args:
@@ -71,7 +71,7 @@ class Data(Output):
         """
         self._links.append(Input(node, Input.Apply(index)))
 
-    def hyper(self, node: 'topology.Node') -> None:
+    def hyper(self, node: 'node.Plain') -> None:
         """Link this output port to given node's hyper params input port.
 
         Args:
@@ -84,7 +84,7 @@ class State(Output):
     """State output port can be linked only to state input ports.
     """
 
-    def set(self, node: 'topology.Node') -> None:
+    def set(self, node: 'node.Plain') -> None:
         """Register new subscriber to this port.
 
         Args:
