@@ -95,9 +95,21 @@ class Tail(Abstract):
         return Tail(*right)
 
 
+SENTINEL = Tail()
+
+
 class Head(Abstract):
     """Group of nodes representing input stage that can become a subscriber to some other Tail stage(s).
     """
+    class Set(set):
+        """Set of heads.
+        """
+        def __init__(self, *heads: 'Head'):
+            super().__init__(heads)
+
+        def link(self, target: typing.Callable[['Head'], Tail]) -> None:
+            for head in self:
+                target(head)
 
     @property
     def shape(self) -> typing.Sequence[int]:
@@ -109,6 +121,8 @@ class Head(Abstract):
 
 
 class Flow:
-    def __init__(self, tail: Tail, *head: Head):
-        self.head: typing.Set[Head] = set(head)
-        self.tail: Tail = tail
+    """Stage flow representing passing of dataset through apply chain.
+    """
+    def __init__(self, heads: Head.Set, tail: typing.Optional[Tail] = None):
+        self.head: Head.Set = heads
+        self.tail: typing.Optional[Tail] = tail

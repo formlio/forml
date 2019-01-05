@@ -8,9 +8,10 @@ from forml.flow.graph.layout import node, stage
 class Operator(metaclass=abc.ABCMeta):
     """Task graph entity.
     """
-    def __init__(self, apply: stage.Flow, train: typing.Optional[stage.Flow] = None):
+    def __init__(self, apply: stage.Flow, train: stage.Flow, label: stage.Flow):
         self.apply: stage.Flow = apply
-        self.train: stage.Flow = train or apply
+        self.train: stage.Flow = train
+        self.label: stage.Flow = label
 
     @abc.abstractmethod
     def compose(self, right: 'Operator') -> 'Operator':
@@ -30,9 +31,17 @@ class Transformer(Operator):
         train_apply_head = stage.Head(train_apply)
         train_train_tail.state(train_apply_head)
 
-        super().__init__(stage.Flow(stage.Tail(apply), stage.Head(apply)),
-                         stage.Flow(train_apply_tail, train_train_head, train_apply_head))
+        super().__init__(stage.Flow(stage.Head.Set(stage.Head(apply)), stage.Tail(apply)),
+                         stage.Flow(stage.Head.Set(train_train_head, train_apply_head), train_apply_tail),
+                         stage.Flow(stage.Head.Set(train_train_head)))
 
+    def compose(self, left: 'Operator') -> 'Operator':
+        self.apply.head.link(left.apply.tail.apply)
+        self.train.head.link(left.train.tail.train)
+        self.label.head.link(left.label.tail.label)
+        return Operator(stage.Flow(left.apply.head, self.apply.tail),
+                        stage.Flow(left.train.head, self.train.tail),
+                        left.label)
 
 
 class Source(Operator):
