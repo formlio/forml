@@ -3,14 +3,10 @@ Graph node entities.
 
 Output ports:
 * apply
-* state
 
 Input ports:
-* hyper
-* state
 * apply (multi-port)
 * train
-* label
 
 Each port can have at most one publisher.
 Apply and train input port subscriptions are exclusive.
@@ -26,24 +22,32 @@ from forml.flow import task
 class Primitive:
     """Primitive task graph node.
     """
-    class Port:
+    class Train:
+        """Train subscriber port.
+        """
+        class Publisher(collections.namedtuple('Publisher', 'features, label')):
+            """Train publisher tuple of features and label nodes.
+            """
         def __init__(self):
             self.name: str = None
 
         def __set_name__(self, subscriber: typing.Type['Primitive'], name: str):
             self.name = name
 
-        def __set__(self, subscriber: 'Primitive', publisher: 'Primitive'):
-            assert not any(subscriber.apply) or self is not Primitive.train, 'Train-apply subscription collision'
-            assert publisher is not subscriber, 'Self subscription'
+        def __set__(self, subscriber: 'Primitive', publishers: typing.Tuple['Primitive', 'Primitive']):
+            assert all(publishers), 'Invalid publisher'
+            assert not any(subscriber.apply), 'Train-apply subscription collision'
+            assert subscriber not in publishers, 'Self subscription'
             assert self.name not in subscriber.__dict__, \
                 f'Port {self.name} already subscribed to {subscriber.__dict__[self.name]}'
-            subscriber.__dict__[self.name] = publisher
+            subscriber.__dict__[self.name] = self.Publisher(*publishers)
 
-        def __get__(self, subscriber: 'Primitive', owner: typing.Type['Primitive']) -> 'Primitive':
+        def __get__(self, subscriber: 'Primitive', owner: typing.Type['Primitive']) -> Publisher:
             return subscriber.__dict__.get(self.name)
 
-    class ApplyPort:
+    class Apply:
+        """Apply subscriber port.
+        """
         def __init__(self, subscriber: 'Primitive', size: int):
             assert size > 0, 'Invalid apply port size'
             self._subscriber = subscriber
@@ -59,15 +63,13 @@ class Primitive:
             return self._ports[index]
 
         def __setitem__(self, index: int, publisher: 'Primitive'):
+            assert publisher, 'Invalid publisher'
             assert not self._subscriber.train, 'Train-apply subscription collision'
-            assert publisher is not self._subscriber, 'Self subscription'
+            assert self._subscriber is not publisher, 'Self subscription'
             assert not self._ports[index], f'Port apply[{index}] already subscribed to {self._ports[index]}'
             self._ports[index] = publisher
 
-    hyper: Port = Port()
-    state: Port = Port()
-    train: Port = Port()
-    label: Port = Port()
+    train: Train = Train()
 
     def __init__(self, actor: typing.Type[task.Actor], szin: int, szout: int):
         assert szin > 0, 'Invalid node input size'
@@ -75,7 +77,7 @@ class Primitive:
         self.uid: str = ...
         self.actor = actor
         self.szout: int = szout
-        self._apply: Primitive.ApplyPort = self.ApplyPort(self, szin)
+        self._apply: Primitive.Apply = self.Apply(self, szin)
 
     @property
     def szin(self) -> int:
@@ -86,15 +88,15 @@ class Primitive:
         return len(self._apply)
 
     @property
-    def is_stateful(self) -> bool:
-        """Node is stateful if it has a state subscription.
+    def trained(self) -> bool:
+        """Is this node subscribed for training.
 
-        Returns: True if stateful.
+        Returns: True if trained.
         """
-        return bool(self.state)
+        return bool(self.train)
 
     @property
-    def apply(self) -> ApplyPort:
+    def apply(self) -> Apply:
         """Getter for the apply multi-port subscriber.
 
         Returns: The apply multi-port.
@@ -107,18 +109,15 @@ class Primitive:
 
         Returns: Copied node.
         """
-        assert not self.train, 'Copying trained node'
-        copied = self.__class__(self.actor, self.szin, self.szout)
-        copied.hyper = self.hyper
-        copied.state = self.state
-        return copied
+        assert not self.trained, 'Trained node is exclusive'
+        return self.__class__(self.actor, self.szin, self.szout)
 
 
-class Condensed(collections.namedtuple('Condensed', 'head, tail')):
+class Condensed(collections.namedtuple('Condensed', 'head, tail, sinks')):
     """Node representing condensed acyclic flow - a sub-graph with single head and tail node each with single apply
-    input/output port.
+    input/output port and number of optional embedded trained nodes (sinks).
     """
-    def __new__(cls, tail: Primitive):
+    def __new__(cls, tail: Primitive, *sinks: Primitive):
         def headof(subscriber: Primitive, path: typing.FrozenSet[Primitive] = frozenset()) -> Primitive:
             """Recursive traversing all apply subscription paths up to the head checking there is just one.
 
@@ -139,9 +138,19 @@ class Condensed(collections.namedtuple('Condensed', 'head, tail')):
             return heads.pop()
 
         assert tail.szout == 1, 'Tail node not condensable'
+        assert all(s.trained for s in sinks), 'Non-trained sinks'
         head: Primitive = headof(tail)
+        assert all(headof(s) is head for s in sinks), 'Foreign sinks'
         assert head.szin == 1, 'Head node not condensable'
-        return super().__new__(cls, head, tail)
+        return super().__new__(cls, head, tail, frozenset(sinks))
+
+    @property
+    def mutable(self) -> bool:
+        """Check this condensed node contains trained (mutating) nodes.
+
+        Returns: True if mutable.
+        """
+        return bool(self.sinks)
 
     def copy(self) -> 'Condensed':
         """Make a copy of the condensed topology.
@@ -164,8 +173,9 @@ class Condensed(collections.namedtuple('Condensed', 'head, tail')):
                 mapping[subscriber] = copied
             return mapping[subscriber]
 
+        assert not self.mutable, 'Mutable node is exclusive'
         mapping = dict()
-        return super().__new__(self.__class__, copyof(self.head), copyof(self.tail))
+        return super().__new__(self.__class__, copyof(self.head), copyof(self.tail), *(copyof(s) for s in self.sinks))
 
 
 class Factory:
