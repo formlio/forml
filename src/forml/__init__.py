@@ -1,8 +1,12 @@
+import typing
+
 from forml import flow
 
 
 class Project:
     """Top level ForMLAI project descriptor.
+
+    TODO: is explicit descriptor needed? this should be just discoverable based on the project layout!
     """
     def __init__(self):
-        self._pipeline: flow.Pipeline = ...
+        self._pipelines: typing.Sequence[flow.Pipeline] = ...
