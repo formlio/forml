@@ -13,10 +13,17 @@ Apply and train input port subscriptions are exclusive.
 Trained node cannot be copied.
 """
 import abc
+import collections
 import typing
 
 from forml.flow import task
 from forml.flow.graph import port
+
+
+class Info(collections.namedtuple('Info', 'actor, instance')):
+
+    def __str__(self):
+        return f'{self.actor}-{self.instance}'
 
 
 class Atomic(metaclass=abc.ABCMeta):
@@ -85,8 +92,11 @@ class Atomic(metaclass=abc.ABCMeta):
 class Worker(Atomic):
     def __init__(self, actor: typing.Type[task.Actor], szin: int, szout: int):
         super().__init__(szin, szout)
-        self.uid: str = ...
+        self.id: str = ...
         self.actor = actor
+
+    def __str__(self):
+        return self.id
 
     @property
     def trained(self) -> bool:
@@ -148,9 +158,9 @@ class Future(Atomic):
         return Future()
 
 
-class Condensed:
+class Compound:
     """Node representing condensed acyclic flow - a sub-graph with single head and tail node each with at most one
-    apply input/output port and number of optional embedded trained nodes (sinks).
+    apply input/output port.
     """
     def __init__(self, head: Atomic):
         def tailof(publisher: Atomic, path: typing.FrozenSet[Atomic] = frozenset()) -> Atomic:
@@ -177,7 +187,7 @@ class Condensed:
         self._head: Atomic = head
         self._tail: Atomic = tail
 
-    def expand(self, right: 'Condensed') -> None:
+    def expand(self, right: 'Compound') -> None:
         """Subscribe the head apply port to given publisher tail apply port.
 
         Args:
@@ -204,7 +214,7 @@ class Condensed:
         """
         return self._tail[0].publisher
 
-    def copy(self) -> 'Condensed':
+    def copy(self) -> 'Compound':
         """Make a copy of the condensed topology which must not contain any trained nodes.
 
         Returns: Copy of the condensed sub-graph.

@@ -1,7 +1,7 @@
 import collections
 import typing
 
-from forml.flow.graph import node
+from forml.flow.graph import node as grnode
 
 
 class Type:
@@ -10,6 +10,8 @@ class Type:
 
 
 class SingletonMeta(type):
+    """Metaclass for singleton types.
+    """
     _INSTANCE = None
 
     def __call__(cls, *args, **kwargs):
@@ -37,9 +39,9 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
     """Descriptor representing subscription node input port of given type.
     """
     # registry of ports subscribed on given node
-    _PORTS: typing.Dict['node.Atomic', typing.Set[Type]] = collections.defaultdict(set)
+    _PORTS: typing.Dict['grnode.Atomic', typing.Set[Type]] = collections.defaultdict(set)
 
-    def __new__(cls, subscriber: 'node.Atomic', port: Type):
+    def __new__(cls, subscriber: 'grnode.Atomic', port: Type):
         assert port not in cls._PORTS[subscriber], 'Already subscribed'
         assert isinstance(port, (Train, Label)) ^ any(
             isinstance(s, Apply) for s in cls._PORTS[subscriber]), 'Apply/Train collision'
@@ -53,13 +55,13 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         return isinstance(other, self.__class__) and self.node is other.node and self.port is other.port
 
     @classmethod
-    def ports(cls, subscriber: 'node.Atomic') -> typing.Iterable[Type]:
-        """Get subscribed ports of given node.
+    def ports(cls, subscriber: 'grnode.Atomic') -> typing.Iterable[Type]:
+        """Get subscribed ports of given grnode.
 
         Args:
             subscriber: Node whose subscribed ports should be retrieved.
 
-        Returns: Subscribed ports of given node.
+        Returns: Subscribed ports of given grnode.
         """
         return frozenset(cls._PORTS[subscriber])
 
@@ -67,8 +69,8 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 class Applicable:
     """Base for publisher/subscriber proxies.
     """
-    def __init__(self, node_: node.Atomic, index: int):
-        self._node: 'node.Atomic' = node_
+    def __init__(self, node: grnode.Atomic, index: int):
+        self._node: 'grnode.Atomic' = node
         self._index: int = index
 
 
@@ -83,7 +85,7 @@ class Publishable(Applicable):
         """
         return self._node.szout
 
-    def publish(self, subscriber: 'node.Atomic', port: Type) -> None:
+    def publish(self, subscriber: 'grnode.Atomic', port: Type) -> None:
         """Publish new subscription.
 
         Args:
