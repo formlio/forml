@@ -12,8 +12,8 @@ class Abstract(metaclass=abc.ABCMeta):
     """Group of nodes representing same stage of the flow with non-commutative abstract connection operations that
     the child classes implement depending on specific order of operations.
     """
-    def __init__(self, *nodes: node.Plain):
-        self._nodes: typing.Sequence[node.Plain] = nodes
+    def __init__(self, apply, train):
+        self._nodes: typing.Sequence[node.Primitive] = nodes
 
     def __len__(self):
         return len(self._nodes)
