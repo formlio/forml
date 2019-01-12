@@ -1,6 +1,5 @@
 import collections
 import typing
-from typing import Any
 
 from forml.flow.graph import node
 
@@ -38,9 +37,9 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
     """Descriptor representing subscription node input port of given type.
     """
     # registry of ports subscribed on given node
-    _PORTS: typing.Dict['node.Primitive', typing.Set[Type]] = collections.defaultdict(set)
+    _PORTS: typing.Dict['node.Atomic', typing.Set[Type]] = collections.defaultdict(set)
 
-    def __new__(cls, subscriber: 'node.Primitive', port: Type):
+    def __new__(cls, subscriber: 'node.Atomic', port: Type):
         assert port not in cls._PORTS[subscriber], 'Already subscribed'
         assert isinstance(port, (Train, Label)) ^ any(
             isinstance(s, Apply) for s in cls._PORTS[subscriber]), 'Apply/Train collision'
@@ -54,7 +53,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         return isinstance(other, self.__class__) and self.node is other.node and self.port is other.port
 
     @classmethod
-    def ports(cls, subscriber: 'node.Primitive') -> typing.Iterable[Type]:
+    def ports(cls, subscriber: 'node.Atomic') -> typing.Iterable[Type]:
         """Get subscribed ports of given node.
 
         Args:
@@ -68,8 +67,8 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 class Applicable:
     """Base for publisher/subscriber proxies.
     """
-    def __init__(self, nod: node.Atomic, index: int):
-        self._node: 'node.Primitive' = nod
+    def __init__(self, node_: node.Atomic, index: int):
+        self._node: 'node.Atomic' = node_
         self._index: int = index
 
 
@@ -78,9 +77,13 @@ class Publishable(Applicable):
     """
     @property
     def szout(self) -> int:
+        """Size of publisher node output.
+
+        Returns: Output size.
+        """
         return self._node.szout
 
-    def publish(self, subscriber: 'node.Primitive', port: Type) -> None:
+    def publish(self, subscriber: 'node.Atomic', port: Type) -> None:
         """Publish new subscription.
 
         Args:
@@ -103,6 +106,10 @@ class Subscriptable(Applicable):
     """
     @property
     def szin(self) -> int:
+        """Size of publisher node input.
+
+        Returns: Input size.
+        """
         return self._node.szin
 
     def subscribe(self, publisher: Publishable) -> None:

@@ -1,15 +1,43 @@
+import abc
 import typing
 
 from forml import flow
-from forml.flow import task, Plan
+from forml.flow import task
 from forml.flow.graph import node
 
 
-class Transformer(flow.Operator):
+class Operator(metaclass=abc.ABCMeta):
+    """Task graph entity.
+    """
+    def __init__(self):
+        self.left: Operator = Stub()
+
+    def __rshift__(self, right: 'Operator') -> 'Operator':
+        """Semantical construct for operator composition.
+        """
+        right.left = self
+        return right
+
+    @abc.abstractmethod
+    def plan(self) -> flow.Plan:
+        """Create and return new plan for this operator composition.
+
+        Returns: Operator composition plan.
+        """
+
+
+class Stub(Operator):
+    def plan(self) -> flow.Plan:
+        return flow.Plan(node.Condensed(node.Future()),
+                    node.Condensed(node.Future()),
+                    node.Condensed(node.Future()))
+
+
+class Transformer(Operator):
     def __init__(self, actor: typing.Type[task.Actor]):
         self.instance = node.Factory(actor, ...)
 
-    def plan(self) -> Plan:
+    def plan(self) -> flow.Plan:
         instance = self.instance.new()
         apply: node.Worker = instance.node()
         train_train: node.Worker = instance.node()
@@ -22,7 +50,7 @@ class Transformer(flow.Operator):
         return left
 
 
-class Source(flow.Operator):
+class Source(Operator):
     def __init__(self, actor: typing.Type[task.Actor]):
         node.Atomic(actor, szin=0, szout=1)
         # label extraction?
