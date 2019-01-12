@@ -23,59 +23,43 @@ from forml.flow.graph import port
 class Primitive:
     """Primitive task graph node.
     """
-
-    train: port.Train = port.Train()
-
     def __init__(self, actor: typing.Type[task.Actor], szin: int, szout: int):
         assert szin >= 0, 'Invalid node input size'
         assert szout >= 0, 'Invalid node output size'
         assert szin or szout, 'Invalid node size'
         self.uid: str = ...
         self.actor = actor
-        self.szout: int = szout
-        self._apply: port.Apply = port.Apply(self, szin)
+        self.szin: int = szin
+        self._ports: typing.Tuple[typing.Set[port.Subscription]] = tuple(set() for _ in range(szout))
 
-    def __getitem__(self, index) -> port.Subscription:
-        """Semantical construct for creating Publisher port instance.
+    def __getitem__(self, index) -> port.Subscriptable:
+        """Semantical construct for creating Subscriptable port instance.
 
         Args:
-            index: Output apply port index.
+            index: Apply port index.
 
-        Returns: Publisher instance
+        Returns: Subscriptable instance
         """
-        return port.Subscription(self, index)
+        return port.Subscriptable(self, port.Apply(index))
 
     @property
-    def szin(self) -> int:
+    def szout(self) -> int:
         """Width of the input apply port.
 
         Returns: Input apply port width.
         """
-        return len(self._apply)
+        return len(self._subscriptions)
 
-    @property
-    def trained(self) -> bool:
-        """Is this node subscribed for training.
-
-        Returns: True if trained.
-        """
-        return bool(self.train)
-
-    @property
-    def apply(self) -> port.Apply:
-        """Getter for the apply multi-port subscriber.
-
-        Returns: The apply multi-port.
-        """
-        return self._apply
+    def subscribe(self, index: int, subscription: port.Subscription):
+        assert 0 >= index < self.szout, 'Invalid output index'
+        self._ports[index].add(subscription)
+        return subscription.node
 
     def copy(self) -> 'Primitive':
-        """Create new node with same shape and actor as self and hyper-parameter and state subscriptions. Only apply
-        nodes can be copied.
+        """Create new node with same shape and actor as self and hyper-parameter and state subscriptions.
 
         Returns: Copied node.
         """
-        assert not self.trained, 'Trained node is exclusive'
         return self.__class__(self.actor, self.szin, self.szout)
 
 
@@ -102,6 +86,8 @@ class Condensed(collections.namedtuple('Condensed', 'head, tail, sinks')):
             heads = set(headof(p, path) for p in publishers)
             assert len(heads) == 1, 'Open flow not condensable'
             return heads.pop()
+
+        # assert not self._publisher.train, 'Train-apply publisher collision'     !!!
 
         assert tail.szout in {0, 1}, 'Tail node not condensable'
         assert all(s.trained for s in sinks), 'Non-trained sinks'
