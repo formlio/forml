@@ -26,10 +26,9 @@ class Transformer(flow.Operator):
         train_apply: node.Primitive = instance.node()
 
         left = self.left.plan()
-        node.Condensed(train_apply, train_train)
         return flow.Plan(left.apply >> node.Condensed(apply),
-                         node.Condensed(left.train.tail[0] >> train_apply[0],
-                                        (left.train.tail[0], left.label.tail[0]) >> train_train),
+                         node.Condensed(train_apply[0].apply(left.train.tail[0]),
+                                        train_train.train(left.train.tail[0], left.label)),
                          left.label)
 
 
