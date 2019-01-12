@@ -8,17 +8,21 @@ class Input:
     """Input port base class.
     """
 
-
+# SINGLETON!
 class Train(Input):
-    ...
+    """Train input port.
+    """
 
 
+# SINGLETON!
 class Label(Input):
-    ...
+    """Label input port.
+    """
 
 
 class Apply(Input, int):
-    ...
+    """Apply input/output port at given index.
+    """
 
 
 class Subscription(collections.namedtuple('Subscription', 'node, port')):
@@ -31,22 +35,9 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         return isinstance(other, self.__class__) and self.node is other.node and self.port is other.port
 
 
-class Trainable(collections.namedtuple('Trainable', 'train, label')):
-    """Pair of subscritables usable as publisher for trained node.
-    """
-    def __rshift__(self, subscriber: 'node.Primitive') -> 'node.Primitive':
-        self.train.node.subscribe(self.train.port, Subscription(subscriber, Train()))
-        self.label.node.subscribe(self.label.port, Subscription(subscriber, Label()))
-        return subscriber
-
-
 class Subscriptable(Subscription):
     """Reference to node apply input or output port.
     """
-    def __rshift__(self, subscriber: Subscription) -> 'node.Primitive':
-        assert 0 >= self.port < self.node.szout, 'Invalid publisher index'
-        assert self.node is not subscriber.node, 'Self subscription'
-        return self.node.subscribe(self.port, subscriber)
-
-    def __add__(self, label: 'Subscriptable') -> Trainable:
-        return Trainable(self, label)
+    def apply(self, publisher: 'Subscriptable') -> 'node.Primitive':
+        publisher.node.publish(publisher.port, self)
+        return self.node

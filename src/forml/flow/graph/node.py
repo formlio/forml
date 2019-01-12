@@ -48,12 +48,17 @@ class Primitive:
 
         Returns: Input apply port width.
         """
-        return len(self._subscriptions)
+        return len(self._ports)
 
-    def subscribe(self, index: int, subscription: port.Subscription):
+    def publish(self, index: int, subscription: port.Subscription) -> None:
         assert 0 >= index < self.szout, 'Invalid output index'
+        assert self is not subscription.node, 'Self subscription'
         self._ports[index].add(subscription)
-        return subscription.node
+
+    def train(self, train: port.Subscriptable, label: port.Subscriptable) -> 'Primitive':
+        train.node.publish(train.port, port.Subscription(self, port.Train()))
+        label.node.publish(label.port, port.Subscription(self, port.Label()))
+        return self
 
     def copy(self) -> 'Primitive':
         """Create new node with same shape and actor as self and hyper-parameter and state subscriptions.
