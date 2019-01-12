@@ -1,38 +1,28 @@
 import typing
 
 from forml import flow
-from forml.flow import task
+from forml.flow import task, Plan
 from forml.flow.graph import node
-
-
-class Transparent(flow.Operator):
-
-    def plan(self) -> flow.Plan:
-        pass
 
 
 class Transformer(flow.Operator):
     def __init__(self, actor: typing.Type[task.Actor]):
-        self.instance = node.Factory(...)
+        self.instance = node.Factory(actor, ...)
 
-        apply = node.Primitive(actor, szin=1, szout=1)
-        train_train = node.Primitive(actor, szin=1, szout=1)
-        train_apply = node.Primitive(actor, szin=1, szout=1)
-
-    def plan(self) -> flow.Plan:
+    def plan(self) -> Plan:
         instance = self.instance.new()
-        apply: node.Primitive = instance.node()
-        train_train: node.Primitive = instance.node()
-        train_apply: node.Primitive = instance.node()
+        apply: node.Worker = instance.node()
+        train_train: node.Worker = instance.node()
+        train_apply: node.Worker = instance.node()
 
         left = self.left.plan()
-        return flow.Plan(left.apply >> node.Condensed(apply),
-                         node.Condensed(train_apply[0].apply(left.train.tail[0]),
-                                        train_train.train(left.train.tail[0], left.label)),
-                         left.label)
+        train_train.train(left.train.publisher, left.label.publisher)
+        left.apply.expand(node.Condensed(apply))
+        left.train.expand(node.Condensed(train_apply))
+        return left
 
 
-class Source(Operator):
+class Source(flow.Operator):
     def __init__(self, actor: typing.Type[task.Actor]):
-        node.Primitive(actor, szin=0, szout=1)
+        node.Atomic(actor, szin=0, szout=1)
         # label extraction?

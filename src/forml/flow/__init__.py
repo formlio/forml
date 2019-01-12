@@ -15,7 +15,7 @@ class Operator(metaclass=abc.ABCMeta):
     """Task graph entity.
     """
     def __init__(self):
-        self.left: Operator = ...
+        self.left: Operator = Stub()
 
     def __rshift__(self, right) -> 'Operator':
         """Semantical construct for operator composition.
@@ -28,6 +28,12 @@ class Operator(metaclass=abc.ABCMeta):
         Returns: Operator composition plan.
         """
 
+
+class Stub(Operator):
+    def plan(self) -> Plan:
+        return Plan(node.Condensed(node.Future()),
+                    node.Condensed(node.Future()),
+                    node.Condensed(node.Future()))
 
 
 class Pipeline(Operator):

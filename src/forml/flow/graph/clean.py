@@ -5,3 +5,4 @@
 # * either train or all apply inputs
 # * if train input then also state input and output
 # * apply outputs match declared szout
+# * train/apply subscriptions are exclusive

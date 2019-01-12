@@ -12,35 +12,32 @@ Each port can have at most one publisher.
 Apply and train input port subscriptions are exclusive.
 Trained node cannot be copied.
 """
-
-import collections
+import abc
 import typing
 
 from forml.flow import task
 from forml.flow.graph import port
 
 
-class Primitive:
+class Atomic(metaclass=abc.ABCMeta):
     """Primitive task graph node.
     """
-    def __init__(self, actor: typing.Type[task.Actor], szin: int, szout: int):
+    def __init__(self, szin: int, szout: int):
         assert szin >= 0, 'Invalid node input size'
         assert szout >= 0, 'Invalid node output size'
         assert szin or szout, 'Invalid node size'
-        self.uid: str = ...
-        self.actor = actor
         self.szin: int = szin
-        self._ports: typing.Tuple[typing.Set[port.Subscription]] = tuple(set() for _ in range(szout))
+        self._output: typing.Tuple[typing.Set[port.Subscription]] = tuple(set() for _ in range(szout))
 
-    def __getitem__(self, index) -> port.Subscriptable:
-        """Semantical construct for creating Subscriptable port instance.
+    def __getitem__(self, index) -> port.PubSub:
+        """Semantical construct for creating PubSub port instance.
 
         Args:
-            index: Apply port index.
+            index: Input/output apply port index.
 
-        Returns: Subscriptable instance
+        Returns: Applicable instance
         """
-        return port.Subscriptable(self, port.Apply(index))
+        return port.PubSub(self, index)
 
     @property
     def szout(self) -> int:
@@ -48,96 +45,189 @@ class Primitive:
 
         Returns: Input apply port width.
         """
-        return len(self._ports)
+        return len(self._output)
+
+    @property
+    def input(self) -> typing.Iterable[port.Type]:
+        """Get subscribed input ports.
+
+        Returns: Ports.
+        """
+        return port.Subscription.ports(self)
+
+    @property
+    def output(self) -> typing.Sequence[typing.Iterable[port.Subscription]]:
+        """Get list of output subscriptions per each port.
+
+        Returns: Output subscriptions.
+        """
+        return tuple(frozenset(p) for p in self._output)
 
     def publish(self, index: int, subscription: port.Subscription) -> None:
+        """Publish an output port based on the given subscription.  
+        
+        Args:
+            index: Output port index to publish from.
+            subscription: Subscriber node and port to publish to.
+        """
         assert 0 >= index < self.szout, 'Invalid output index'
         assert self is not subscription.node, 'Self subscription'
-        self._ports[index].add(subscription)
+        self._output[index].add(subscription)
 
-    def train(self, train: port.Subscriptable, label: port.Subscriptable) -> 'Primitive':
-        train.node.publish(train.port, port.Subscription(self, port.Train()))
-        label.node.publish(label.port, port.Subscription(self, port.Label()))
-        return self
-
-    def copy(self) -> 'Primitive':
-        """Create new node with same shape and actor as self and hyper-parameter and state subscriptions.
+    @abc.abstractmethod
+    def copy(self) -> 'Atomic':
+        """Create new node with same shape and actor as self but without any subscriptions.
 
         Returns: Copied node.
         """
-        return self.__class__(self.actor, self.szin, self.szout)
 
 
-class Condensed(collections.namedtuple('Condensed', 'head, tail, sinks')):
-    """Node representing condensed acyclic flow - a sub-graph with single head and tail node each with at most one
-    apply input/output port and number of optional embedded trained nodes (sinks).
-    """
-    def __new__(cls, tail: Primitive, *sinks: Primitive):
-        def headof(subscriber: Primitive, path: typing.FrozenSet[Primitive] = frozenset()) -> Primitive:
-            """Recursive traversing all apply subscription paths up to the head checking there is just one.
-
-            Args:
-                subscriber: Start node for the traversal.
-                path: Chain of nodes between current and tail.
-
-            Returns: Head of the flow.
-            """
-            if not any(subscriber.apply):
-                return subscriber
-            assert all(subscriber.apply), 'Incomplete flow not condensable'
-            publishers = set(p.node for p in subscriber.apply)
-            path = frozenset(path | {subscriber})
-            assert publishers.isdisjoint(path), 'Cyclic flow not condensable'
-            heads = set(headof(p, path) for p in publishers)
-            assert len(heads) == 1, 'Open flow not condensable'
-            return heads.pop()
-
-        # assert not self._publisher.train, 'Train-apply publisher collision'     !!!
-
-        assert tail.szout in {0, 1}, 'Tail node not condensable'
-        assert all(s.trained for s in sinks), 'Non-trained sinks'
-        head: Primitive = headof(tail)
-        assert head.szin in {0, 1}, 'Head node not condensable'
-        assert all(headof(s) is head for t in sinks for s in t.train.features), 'Foreign sinks'
-        return super().__new__(cls, head, tail, frozenset(sinks))
-
-    def __rshift__(self, right: 'Condensed') -> 'Condensed':
-        self.tail[0] >> right.head[0]
-        return Condensed(right.tail, self.sinks | right.sinks)
+class Worker(Atomic):
+    def __init__(self, actor: typing.Type[task.Actor], szin: int, szout: int):
+        super().__init__(szin, szout)
+        self.uid: str = ...
+        self.actor = actor
 
     @property
     def trained(self) -> bool:
-        """Check this condensed node contains trained (mutating) nodes.
+        """Check if this node is subscribed for training data.
 
         Returns: True if trained.
         """
-        return bool(self.sinks)
+        return any(isinstance(p, (port.Train, port.Label)) for p in self.input)
+
+    def train(self, train: port.Publishable, label: port.Publishable) -> None:
+        """Subscribe this node train and label port to given publishers.
+
+        Args:
+            train: Train port publisher.
+            label: Label port publisher.
+
+        Returns: Self node.
+        """
+        train.publish(self, port.Train())
+        label.publish(self, port.Label())
+
+    def copy(self) -> 'Worker':
+        """Create new node with same shape and actor as self but without any subscriptions.
+
+        Returns: Copied node.
+        """
+        assert not self.trained, 'Trained node copy attempted'
+        return Worker(self.actor, self.szin, self.szout)
+
+
+class Future(Atomic):
+    """Fake transparent single-in, single-out apply port node that can be used as a lazy publisher that disappears
+    from the chain once it gets subscribed to another apply node.
+    """
+    class PubSub(port.PubSub):
+        """Overridden implementation that does the lazy publishing upon subscription.
+        """
+        def subscribe(self, publisher: port.Publishable) -> None:
+            """Subscribe all accumulated subscriptions to the announced publisher.
+
+            Args:
+                publisher: Actual left side publisher to be used for all the interim subscriptions.
+            """
+            assert publisher.szout == 1, 'Multi-output publisher future subscription attempt'
+            for subscription in self._node.output[0]:
+                publisher.republish(subscription)
+
+    def __init__(self):
+        super().__init__(1, 1)
+
+    def __getitem__(self, index) -> port.PubSub:
+        return self.PubSub(self, index)
+
+    def copy(self) -> 'Future':
+        """There is nothing to copy on a Future node so just create a new one.
+
+        Returns: new Future node.
+        """
+        return Future()
+
+
+class Condensed:
+    """Node representing condensed acyclic flow - a sub-graph with single head and tail node each with at most one
+    apply input/output port and number of optional embedded trained nodes (sinks).
+    """
+    def __init__(self, head: Atomic):
+        def tailof(publisher: Atomic, path: typing.FrozenSet[Atomic] = frozenset()) -> Atomic:
+            """Recursive traversing all apply subscription paths up to the tail checking there is just one.
+
+            Args:
+                publisher: Start node for the traversal.
+                path: Chain of nodes between current and head.
+
+            Returns: Head of the flow.
+            """
+            subscribers = set(s.node for p in publisher.output for s in p if isinstance(s.port, port.Apply))
+            if not any(subscribers):
+                return publisher
+            path = frozenset(path | {publisher})
+            assert subscribers.isdisjoint(path), 'Cyclic flow not condensable'
+            tails = set(tailof(n, path) for n in subscribers)
+            assert len(tails) == 1, 'Open flow not condensable'
+            return tails.pop()
+
+        assert head.szin in {0, 1}, 'Head node not condensable'
+        tail: Atomic = tailof(head)
+        assert tail.szout in {0, 1}, 'Tail node not condensable'
+        self._head: Atomic = head
+        self._tail: Atomic = tail
+
+    def expand(self, right: 'Condensed') -> None:
+        """Subscribe the head apply port to given publisher tail apply port.
+
+        Args:
+            right: Condensed node to expand with.
+
+        Returns: New condensed node with the combined flow.
+        """
+        right._head[0].subscribe(self._tail[0])
+        self._tail = right._tail
+
+    @property
+    def subscriber(self) -> port.Subscriptable:
+        """Subscriptable head node representation.
+
+        Returns: Subscriptable head apply port reference.
+        """
+        return self._head[0].subscriber
+
+    @property
+    def publisher(self) -> port.Publishable:
+        """Publishable tail node representation.
+
+        Returns: Publishable tail apply port reference.
+        """
+        return self._tail[0].publisher
 
     def copy(self) -> 'Condensed':
-        """Make a copy of the condensed topology.
+        """Make a copy of the condensed topology which must not contain any trained nodes.
 
         Returns: Copy of the condensed sub-graph.
         """
-        def copyof(subscriber: Primitive) -> Primitive:
+        def copyof(publisher: Atomic) -> Atomic:
             """Recursive copy resolver.
 
             Args:
-                subscriber: Node to be copied.
+                publisher: Node to be copied.
 
-            Returns: Copy of the subscriber node with all of it's subscriptions resolved.
+            Returns: Copy of the publisher node with all of it's subscriptions resolved.
             """
-            if subscriber not in mapping:
-                copied = subscriber.copy()
-                if subscriber is not self.head:
-                    for index, original in enumerate(subscriber.apply):
-                        publisher = mapping.get(original.node) or copyof(original.node)
-                        copied.apply[index] = publisher[original.index]
-                mapping[subscriber] = copied
-            return mapping[subscriber]
+            if publisher not in mapping:
+                copied = publisher.copy()
+                if publisher is not self._tail:
+                    for index, subscription in (i, s for i, p in enumerate(publisher.output) for s in p):
+                        subscriber = mapping.get(subscription.node) or copyof(subscription.node)
+                        subscriber[subscription.index].subscribe(copied[index])
+                mapping[publisher] = copied
+            return mapping[publisher]
 
-        assert not self.trained, 'Trained node is exclusive'
         mapping = dict()
-        return super().__new__(self.__class__, copyof(self.head), copyof(self.tail), *(copyof(s) for s in self.sinks))
+        return super().__new__(self.__class__, copyof(self._head), copyof(self._tail))
 
 
 class Factory:
