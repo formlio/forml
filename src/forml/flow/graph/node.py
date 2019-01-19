@@ -159,7 +159,7 @@ class Future(Atomic):
 
 
 class Compound:
-    """Node representing condensed acyclic flow - a sub-graph with single head and tail node each with at most one
+    """Node representing compound acyclic flow - a sub-graph with single head and tail node each with at most one
     apply input/output port.
     """
     def __init__(self, head: Atomic):
@@ -187,13 +187,11 @@ class Compound:
         self._head: Atomic = head
         self._tail: Atomic = tail
 
-    def expand(self, right: 'Compound') -> None:
-        """Subscribe the head apply port to given publisher tail apply port.
+    def extend(self, right: 'Compound') -> None:
+        """Extend this compound by appending right head to our tail.
 
         Args:
-            right: Condensed node to expand with.
-
-        Returns: New condensed node with the combined flow.
+            right: Compound node to extend with.
         """
         right._head[0].subscribe(self._tail[0])
         self._tail = right._tail
@@ -215,9 +213,9 @@ class Compound:
         return self._tail[0].publisher
 
     def copy(self) -> 'Compound':
-        """Make a copy of the condensed topology which must not contain any trained nodes.
+        """Make a copy of the compound topology which must not contain any trained nodes.
 
-        Returns: Copy of the condensed sub-graph.
+        Returns: Copy of the compound sub-graph.
         """
         def copyof(publisher: Atomic) -> Atomic:
             """Recursive copy resolver.
