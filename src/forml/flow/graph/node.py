@@ -17,7 +17,6 @@ import collections
 import typing
 
 from forml.flow.graph import port
-from forml.flow.graph.port import Subscription
 
 
 class Info(collections.namedtuple('Info', 'spec, instance')):

@@ -42,7 +42,7 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
         Args:
             apply: Optional path to be used as apply track.
             train: Optional path to be used as train track.
-            label: Optional path to be uased label track.
+            label: Optional path to be used as label track.
 
         Returns: New Track instance.
         """
