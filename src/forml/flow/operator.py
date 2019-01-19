@@ -3,7 +3,7 @@ import typing
 
 from forml import flow
 from forml.flow import task, segment
-from forml.flow.graph import node, lens
+from forml.flow.graph import node, view
 
 
 class Simple(flow.Operator, metaclass=abc.ABCMeta):
@@ -50,7 +50,7 @@ class Mapper(Simple):
         train_train: node.Worker = worker.node()
         train_apply: node.Worker = worker.node()
         train_train.train(left.train.publisher, left.label.publisher)
-        return left.extend(lens.Path(apply), lens.Path(train_apply))
+        return left.extend(view.Path(apply), view.Path(train_apply))
 
 
 class Consumer(Simple):
@@ -68,7 +68,7 @@ class Consumer(Simple):
         apply: node.Worker = worker.node()
         train: node.Worker = worker.node()
         train.train(left.train.publisher, left.label.publisher)
-        return left.extend(lens.Path(apply))
+        return left.extend(view.Path(apply))
 
 
 class Labeler(Simple):
@@ -86,7 +86,7 @@ class Labeler(Simple):
         Returns: Composed segment track.
         """
         label: node.Worker = worker.node()
-        return left.use(label=left.train.extend(lens.Path(label)))
+        return left.use(label=left.train.extend(view.Path(label)))
 
 
 class Source(flow.Operator):
@@ -105,9 +105,9 @@ class Source(flow.Operator):
         Returns: Source segment track.
         """
         assert isinstance(builder, segment.Origin), 'Source not origin'
-        apply: lens.Path = lens.Path(node.Factory(self._apply, 0, 1).node())
-        train: lens.Path = lens.Path(node.Factory(self._train, 0, 1).node())
-        label: typing.Optional[lens.Path] = None
+        apply: view.Path = view.Path(node.Factory(self._apply, 0, 1).node())
+        train: view.Path = view.Path(node.Factory(self._train, 0, 1).node())
+        label: typing.Optional[view.Path] = None
         if self._label:
             train_tail = node.Future()
             label_tail = node.Future()
