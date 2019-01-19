@@ -21,6 +21,22 @@ class Transformer(flow.Operator):
         return left
 
 
+class Consumer(flow.Operator):
+    def __init__(self, spec: task.Spec):
+        super().__init__()
+        self.spec = spec
+
+    def compose(self, builder: segment.Builder) -> segment.Track:
+        worker = node.Factory(self.spec, 1, 1)
+        apply: node.Worker = worker.node()
+        train: node.Worker = worker.node()
+
+        left = builder.track()
+        train.train(left.train.publisher, left.label.publisher)
+        left.apply.extend(node.Compound(apply))
+        return left
+
+
 class Source(flow.Operator):
     def __init__(self, spec: task.Spec):
         ...

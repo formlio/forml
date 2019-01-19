@@ -1,3 +1,6 @@
+"""
+Graph node port functionality.
+"""
 import collections
 import typing
 
@@ -43,8 +46,8 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 
     def __new__(cls, subscriber: 'grnode.Atomic', port: Type):
         assert port not in cls._PORTS[subscriber], 'Already subscribed'
-        assert isinstance(port, (Train, Label)) ^ any(
-            isinstance(s, Apply) for s in cls._PORTS[subscriber]), 'Apply/Train collision'
+        assert not cls._PORTS[subscriber] or (isinstance(port, (Train, Label)) ^ any(
+            isinstance(s, Apply) for s in cls._PORTS[subscriber])), 'Apply/Train collision'
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
 
@@ -69,7 +72,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 class Applicable:
     """Base for publisher/subscriber proxies.
     """
-    def __init__(self, node: grnode.Atomic, index: int):
+    def __init__(self, node: 'grnode.Atomic', index: int):
         self._node: 'grnode.Atomic' = node
         self._index: int = index
 
