@@ -1,61 +1,11 @@
 """
-
-rfc = Trans() >> RFC()
-NO SOURCE or SINK
-ensembled = Transformer(a=1, b=10) >> Ensembler(estimators=(rfc, XGB()), folds=2)
-
-
-pipe = Pipeline('blabla', etl='asd').
-
-
-@pipe.decor
-def xxx():
-    ...
-
-
-Pipeline(
-    name=...,
-    etl=...
-    flow=...,
-    crossval=...,
-    label=...,
-    schedule=...
-    report=...,
-)
-
-
-src/
-   ..../
-       myprj/
-        __init__.py
-           pipe1/
-              __init__.py
-           pipe2/
-              __init__.py
-
-
-myprj.PIPELINES = ('pipe1', 'pipe2')
-
-
-myprj.pipe1:
-PIPELINE = Transformer(...) >> Ensembler(...)
-
-class Pipeline:
-
-
-
-class MySolution(Pipeline):
-    ETL = ...
-
-
-    def plan(self):
-
+ForML flow composition logic.
 """
 
 import abc
 import collections
 
-from forml.flow import operator, task, segment
+from forml.flow import task, segment
 from forml.flow.graph import node
 
 
@@ -80,12 +30,6 @@ class Operator(metaclass=abc.ABCMeta):
         """
 
 
-class Source:
-    def __init__(self):
-        self._apply = ...
-        self._train = ...
-
-
 class Composer:
     def __init__(self):
         self._id: str = ...
@@ -98,21 +42,43 @@ class Composer:
     @property
     def train(self) -> node.Compound:
         """Training graph.
+
+        Returns: Graph represented as compound node.
         """
-        return
+        graph = self._source.copy()
+        self._flow.train.subscriber.subscribe(graph)
+        return graph
 
     @property
-    def apply(self):
-        return
+    def apply(self) -> node.Compound:
+        """Apply graph.
+
+        Returns: Graph represented as compound node.
+        """
+        graph = self._source.copy()
+        self._flow.apply.subscriber.subscribe(graph)
+        return graph
 
     @property
     def tune(self):
-        return
+        """Tuning graph.
+
+        Returns: Graph represented as compound node.
+        """
+        return None
 
     @property
-    def score(self):
-        return
+    def score(self) -> node.Compound:
+        """Scoring graph.
+
+        Returns: Graph represented as compound node.
+        """
+        return None
 
     @property
-    def report(self):
-        return
+    def report(self) -> node.Compound:
+        """Reporting graph.
+
+        Returns: Graph represented as compound node.
+        """
+        return None

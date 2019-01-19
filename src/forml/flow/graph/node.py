@@ -20,12 +20,14 @@ from forml.flow.graph import port
 
 
 class Info(collections.namedtuple('Info', 'spec, instance')):
+    """Worker node info type used for external reference.
+    """
     def __str__(self):
         return f'{self.spec}#{self.instance}'
 
 
 class Atomic(metaclass=abc.ABCMeta):
-    """Primitive task graph node.
+    """Abstract primitive task graph node.
     """
     def __init__(self, szin: int, szout: int):
         assert szin >= 0, 'Invalid node input size'
@@ -75,7 +77,7 @@ class Atomic(metaclass=abc.ABCMeta):
             index: Output port index to publish from.
             subscription: Subscriber node and port to publish to.
         """
-        assert 0 >= index < self.szout, 'Invalid output index'
+        assert 0 <= index < self.szout, 'Invalid output index'
         assert self is not subscription.node, 'Self subscription'
         self._output[index].add(subscription)
 
@@ -88,6 +90,8 @@ class Atomic(metaclass=abc.ABCMeta):
 
 
 class Worker(Atomic):
+    """Main primitive node type.
+    """
     def __init__(self, info: Info, szin: int, szout: int):
         super().__init__(szin, szout)
         self.info: Info = info
@@ -138,6 +142,7 @@ class Future(Atomic):
                 publisher: Actual left side publisher to be used for all the interim subscriptions.
             """
             assert publisher.szout == 1, 'Multi-output publisher future subscription attempt'
+            assert self._node.output[0], 'No future subscriptions'
             for subscription in self._node.output[0]:
                 publisher.republish(subscription)
 
@@ -225,9 +230,9 @@ class Compound:
             if publisher not in mapping:
                 copied = publisher.copy()
                 if publisher is not self._tail:
-                    for index, subscription in (i, s for i, p in enumerate(publisher.output) for s in p):
+                    for index, subscription in ((i, s) for i, p in enumerate(publisher.output) for s in p):
                         subscriber = mapping.get(subscription.node) or copyof(subscription.node)
-                        subscriber[subscription.index].subscribe(copied[index])
+                        copied[index].publish(subscriber, subscription.port)
                 mapping[publisher] = copied
             return mapping[publisher]
 
@@ -236,6 +241,8 @@ class Compound:
 
 
 class Factory(collections.namedtuple('Factory', 'info, szin, szout')):
+    """Worker node factory for creating nodes representing same instance.
+    """
     _INSTANCES: typing.Dict[typing.Any, int] = collections.defaultdict(int)
 
     def __new__(cls, spec: typing.Any, szin: int, szout: int):
@@ -243,4 +250,8 @@ class Factory(collections.namedtuple('Factory', 'info, szin, szout')):
         return super().__new__(cls, Info(spec, cls._INSTANCES[spec]), szin, szout)
 
     def node(self) -> Worker:
+        """Create new node instance.
+
+        Returns: Node instance.
+        """
         return Worker(self.info, self.szin, self.szout)

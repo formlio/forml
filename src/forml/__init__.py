@@ -4,7 +4,7 @@ from forml import flow
 
 
 class Project:
-    """Top level ForMLAI project descriptor.
+    """Top level ForML project descriptor.
 
     TODO: is explicit descriptor needed? this should be just discoverable based on the project layout!
     """

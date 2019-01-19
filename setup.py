@@ -1,10 +1,10 @@
 """
-Setuptools script for ForMLAI package.
+Setuptools script for ForML package.
 """
 import os.path
 import setuptools
 
-setuptools.setup(name='formlai',
+setuptools.setup(name='forml',
                  version='1.0.dev0',
                  description='Continuous Integration Formalization and Runtime for AI',
                  url='https://github.com/formlio/forml',
@@ -16,5 +16,5 @@ setuptools.setup(name='formlai',
                  package_dir={'': 'src'},
                  setup_requires=['pytest-pylint', 'pytest-runner'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['joblib', 'numpy', 'pandas'],
+                 install_requires=['joblib', 'pandas'],
                  zip_safe=False)
