@@ -69,6 +69,9 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         """
         return frozenset(cls._PORTS[subscriber])
 
+    def __del__(self):
+        self._PORTS.get(self.node, {}).discard(self.port)
+
 
 class Applicable:
     """Base for publisher/subscriber proxies.

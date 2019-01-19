@@ -1,25 +1,26 @@
 import abc
+import typing
 
 from forml import flow
-from forml.flow import task, segment, graph
-from forml.flow.graph import node
+from forml.flow import task, segment
+from forml.flow.graph import node, lens
 
 
-class Singular(flow.Operator, metaclass=abc.ABCMeta):
-    """Singular is a generic single actor operator.
+class Simple(flow.Operator, metaclass=abc.ABCMeta):
+    """Simple is a generic single actor operator.
     """
     def __init__(self, spec: task.Spec):
         self._spec: task.Spec = spec
 
-    def compose(self, builder: segment.Builder) -> segment.Track:
+    def compose(self, left: segment.Builder) -> segment.Track:
         """Abstract composition implementation.
 
         Args:
-            builder: Left side track builder.
+            left: Left side track builder.
 
         Returns: Composed track.
         """
-        return self.apply(builder.track(), node.Factory(self._spec, 1, 1))
+        return self.apply(left.track(), node.Factory(self._spec, 1, 1))
 
     @abc.abstractmethod
     def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
@@ -33,7 +34,7 @@ class Singular(flow.Operator, metaclass=abc.ABCMeta):
         """
 
 
-class Mapper(Singular):
+class Mapper(Simple):
     """Basic transformation operator with one input and one output port for each mode.
     """
     def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
@@ -49,10 +50,10 @@ class Mapper(Singular):
         train_train: node.Worker = worker.node()
         train_apply: node.Worker = worker.node()
         train_train.train(left.train.publisher, left.label.publisher)
-        return left.extend(graph.Path(apply), graph.Path(train_apply))
+        return left.extend(lens.Path(apply), lens.Path(train_apply))
 
 
-class Consumer(Singular):
+class Consumer(Simple):
     """Basic operator with one input and one output port in apply mode and no output in train mode.
     """
     def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
@@ -67,14 +68,16 @@ class Consumer(Singular):
         apply: node.Worker = worker.node()
         train: node.Worker = worker.node()
         train.train(left.train.publisher, left.label.publisher)
-        return left.extend(graph.Path(apply))
+        return left.extend(lens.Path(apply))
 
 
-class Labeller(Singular):
+class Labeler(Simple):
     """Basic label extraction operator.
+
+    Actual train path is left intact.
     """
     def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
-        """Labeller composition implementation.
+        """Labeler composition implementation.
 
         Args:
             left: Track of the left side flows.
@@ -83,4 +86,35 @@ class Labeller(Singular):
         Returns: Composed segment track.
         """
         label: node.Worker = worker.node()
-        return left.use(label=left.train.extend(graph.Path(label)))
+        return left.use(label=left.train.extend(lens.Path(label)))
+
+
+class Source(flow.Operator):
+    """Basic source operator with optional label extraction.
+
+    Label extractor is expected to be an actor with single input and two output ports - train and actual label.
+    """
+    def __init__(self, apply: task.Spec, train: task.Spec, label: typing.Optional[task.Spec] = None):
+        self._apply: task.Spec = apply
+        self._train: task.Spec = train
+        self._label: task.Spec = label
+
+    def compose(self, builder: segment.Builder) -> segment.Track:
+        """Compose the source segment track.
+
+        Returns: Source segment track.
+        """
+        assert isinstance(builder, segment.Origin), 'Source not origin'
+        apply: lens.Path = lens.Path(node.Factory(self._apply, 0, 1).node())
+        train: lens.Path = lens.Path(node.Factory(self._train, 0, 1).node())
+        label: typing.Optional[lens.Path] = None
+        if self._label:
+            train_tail = node.Future()
+            label_tail = node.Future()
+            extract = node.Factory(self._label, 1, 2).node()
+            extract[0].subscribe(train[0])
+            train_tail[0].subscribe(extract[0])
+            label_tail[0].subscribe(extract[1])
+            train = train.extend(tail=train_tail)
+            label = train.extend(tail=label_tail)
+        return segment.Track(apply, train, label)

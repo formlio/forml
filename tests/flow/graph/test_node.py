@@ -82,21 +82,19 @@ class TestFuture(Atomic):
         """
         return grnode.Future()
 
-    def test_republish(self, node: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
-        """Test republishing after subscribing future node to a real worker.
+    def test_future(self, node: grnode.Future, simple: grnode.Worker, multi: grnode.Worker):
+        """Test future publishing.
         """
-        node[0].publish(multi, port.Train())
         node[0].subscribe(simple[0])
+        node[0].publish(multi, port.Train())
         assert any(multi is s.node and s.port == port.Train() for s in simple.output[0])
 
-    def test_invalid(self, node: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
+    def test_invalid(self, node: grnode.Future, multi: grnode.Worker):
         """Testing invalid future subscriptions.
         """
-        with pytest.raises(AssertionError):  # no subscriptions
-            node[0].subscribe(simple)
         node[0].publish(multi, port.Train())
-        with pytest.raises(AssertionError):  # multi-output publisher
-            node[0].subscribe(multi)
+        with pytest.raises(AssertionError):  # trained node publishing
+            node[0].subscribe(multi[0])
 
 
 class TestFactory:

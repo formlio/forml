@@ -5,8 +5,8 @@ ForML flow composition logic.
 import abc
 import collections
 
-from forml.flow import task, segment, graph
-from forml.flow.graph import node
+from forml.flow import task, segment
+from forml.flow.graph import node, lens
 
 
 class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
@@ -24,14 +24,10 @@ class Operator(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def compose(self, left: segment.Builder) -> segment.Track:
-        """Expand the left segment.
+        """Expand the left segment producing new composed segment track.
 
-        Returns: Operator composition plan.
+        Returns: Composed segment track.
         """
-
-class Source:
-    ...
-
 
 class Composer:
     def __init__(self):
@@ -43,8 +39,8 @@ class Composer:
         self._report = ...  # arbitrary metrics -> kv list
 
     @property
-    def train(self) -> graph.Path:
-        """Training graph.
+    def train(self) -> lens.Path:
+        """Training lens.
 
         Returns: Graph represented as compound node.
         """
@@ -53,8 +49,8 @@ class Composer:
         return graph
 
     @property
-    def apply(self) -> graph.Path:
-        """Apply graph.
+    def apply(self) -> lens.Path:
+        """Apply lens.
 
         Returns: Graph represented as compound node.
         """
@@ -64,23 +60,23 @@ class Composer:
 
     @property
     def tune(self):
-        """Tuning graph.
+        """Tuning lens.
 
         Returns: Graph represented as compound node.
         """
         return None
 
     @property
-    def score(self) -> graph.Path:
-        """Scoring graph.
+    def score(self) -> lens.Path:
+        """Scoring lens.
 
         Returns: Graph represented as compound node.
         """
         return None
 
     @property
-    def report(self) -> graph.Path:
-        """Reporting graph.
+    def report(self) -> lens.Path:
+        """Reporting lens.
 
         Returns: Graph represented as compound node.
         """

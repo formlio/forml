@@ -7,16 +7,22 @@ import collections
 import typing
 
 from forml import flow
-from forml.flow import graph
-from forml.flow.graph import node
+from forml.flow.graph import node, lens
 
 
 class Track(collections.namedtuple('Track', 'apply, train, label')):
     """Structure for holding related flow parts of different modes.
     """
-    def extend(self, apply: typing.Optional[graph.Path] = None,
-               train: typing.Optional[graph.Path] = None,
-               label: typing.Optional[graph.Path] = None) -> 'Track':
+    def __new__(cls, apply: typing.Optional[lens.Path] = None,
+                train: typing.Optional[lens.Path] = None,
+                label: typing.Optional[lens.Path] = None):
+        return super().__new__(cls, apply or lens.Path(node.Future()),
+                               train or lens.Path(node.Future()),
+                               label or lens.Path(node.Future()))
+
+    def extend(self, apply: typing.Optional[lens.Path] = None,
+               train: typing.Optional[lens.Path] = None,
+               label: typing.Optional[lens.Path] = None) -> 'Track':
         """Helper for creating new Track with all paths extended either with provided or automatic values.
 
         Args:
@@ -28,9 +34,9 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
         """
         return Track(self.apply.extend(apply), self.train.extend(train), self.label.extend(label))
 
-    def use(self, apply: typing.Optional[graph.Path] = None,
-            train: typing.Optional[graph.Path] = None,
-            label: typing.Optional[graph.Path] = None) -> 'Track':
+    def use(self, apply: typing.Optional[lens.Path] = None,
+            train: typing.Optional[lens.Path] = None,
+            label: typing.Optional[lens.Path] = None) -> 'Track':
         """Helper for creating new Track with paths replaced with provided values or left original.
 
         Args:
@@ -70,7 +76,7 @@ class Origin(Builder):
 
         Returns: Segment track.
         """
-        return Track(graph.Path(node.Future()), graph.Path(node.Future()), graph.Path(node.Future()))
+        return Track()
 
 
 class Recursive(Related, Builder):

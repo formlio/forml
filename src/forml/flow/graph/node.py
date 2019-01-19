@@ -17,6 +17,7 @@ import collections
 import typing
 
 from forml.flow.graph import port
+from forml.flow.graph.port import Subscription
 
 
 class Info(collections.namedtuple('Info', 'spec, instance')):
@@ -141,35 +142,68 @@ class Worker(Atomic):
 
 
 class Future(Atomic):
-    """Fake transparent single-in, single-out apply port node that can be used as a lazy publisher that disappears
-    from the chain once it gets subscribed to another apply node.
+    """Fake transparent apply port node that can be used as a lazy publisher/subscriber that disappears
+    from the chain once it gets connected to another apply node(s).
     """
     class PubSub(port.PubSub):
-        """Overridden implementation that does the lazy publishing upon subscription.
+        """Overridden implementation that does the proxied publishing/subscription.
         """
+        def __init__(self, node: 'Future', index: int,
+                     register: typing.Callable[[port.Publishable], None],
+                     sync: typing.Callable[[], None]):
+            super().__init__(node, index)
+            self._register: typing.Callable[[port.Publishable], None] = register
+            self._sync: typing.Callable[[], None] = sync
+
         def subscribe(self, publisher: port.Publishable) -> None:
-            """Subscribe all accumulated subscriptions to the announced publisher.
+            """Register publisher for future subscriptions.
 
             Args:
                 publisher: Actual left side publisher to be used for all the interim subscriptions.
             """
-            assert publisher.szout == 1, 'Multi-output publisher future subscription attempt'
-            assert self._node.output[0], 'No future subscriptions'
-            for subscription in self._node.output[0]:
-                publisher.republish(subscription)
+            self._register(publisher)
+            self._sync()
 
-    def __init__(self):
-        super().__init__(1, 1)
+    def __init__(self, szin: int = 1, szout: int = 1):
+        super().__init__(szin, szout)
+        self._proxy: typing.Dict[port.Publishable, int] = dict()
 
     def __getitem__(self, index) -> port.PubSub:
-        return self.PubSub(self, index)
+        def register(publisher: port.Publishable) -> None:
+            """Callback for publisher proxy registration.
+
+            Args:
+                publisher: Left side publisher
+            """
+            assert publisher not in self._proxy, 'Publisher collision'
+            self._proxy[publisher] = index
+
+        return self.PubSub(self, index, register, self._sync)
+
+    def _sync(self) -> None:
+        """Callback for interconnecting proxied registrations.
+        """
+        for publisher, subscription in ((p, s) for p, i in self._proxy.items() for s in self._output[i]):
+            publisher.republish(subscription)
+
+    def publish(self, index: int, subscription: port.Subscription) -> None:
+        """Publish an output port based on the given subscription.
+
+        Args:
+            index: Output port index to publish from.
+            subscription: Subscriber node and port to publish to.
+
+        Upstream publish followed by proxy synchronization.
+        """
+        super().publish(index, subscription)
+        self._sync()
 
     def copy(self) -> 'Future':
         """There is nothing to copy on a Future node so just create a new one.
 
         Returns: new Future node.
         """
-        return Future()
+        return Future(self.szin, self.szout)
 
 
 class Factory(collections.namedtuple('Factory', 'info, szin, szout')):
