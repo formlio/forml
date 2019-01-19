@@ -53,6 +53,8 @@ class MySolution(Pipeline):
 """
 
 import abc
+import collections
+import typing
 
 from forml.flow import operator, task, segment
 from forml.flow.graph import node
@@ -61,6 +63,7 @@ from forml.flow.graph import node
 class Operator(metaclass=abc.ABCMeta):
     """Task graph entity.
     """
+    _INSTANCES: typing.Dict['Operator', typing.Dict[segment.Builder, int]] = collections.defaultdict(dict)
 
     def __rshift__(self, right: 'Operator') -> segment.Link:
         """Semantical composition construct.
@@ -73,6 +76,9 @@ class Operator(metaclass=abc.ABCMeta):
 
         Returns: Operator composition plan.
         """
+
+    def instid(self, builder: segment.Builder) -> int:
+        return self._INSTANCES[self].setdefault(builder, len(self._INSTANCES[self]))
 
 
 class Source:
