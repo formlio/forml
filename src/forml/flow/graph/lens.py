@@ -48,7 +48,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[node.Atomic] = None) -> 'Path':
-        """Create new path by appending right head to our tail.
+        """Create new path by appending right head to our tail or traversing the graph to its actual tail.
 
         Args:
             right: Branch to extend with.
@@ -145,7 +145,6 @@ class Closure(Path):
         def republish(self, subscription: port.Subscription) -> None:
             """Republish the subscription checking it's only for a train port.
 
-
             Args:
                 subscription: Existing subscription descriptor.
             """
@@ -153,11 +152,7 @@ class Closure(Path):
             super().republish(subscription)
 
     def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[node.Atomic] = None) -> Path:
-        """Closure path is not connectable.
-
-        Args:
-            right: Branch to extend with.
-            tail: Optional tail as a path output vertex.
+        """Closure path is not extendable.
         """
         raise AssertionError('Connecting closure path')
 
