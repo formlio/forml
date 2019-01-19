@@ -10,13 +10,15 @@ from forml.flow.graph import node, port
 
 
 class Visitor(metaclass=abc.ABCMeta):
+    """View visitor interface.
+    """
     @abc.abstractmethod
-    def visit(self, head: node.Atomic, tail: node.Atomic) -> None:
+    def visit_path(self, head: node.Atomic, tail: node.Atomic) -> None:
         """Path visit.
 
         Args:
-            head:
-            tail:
+            head: Path head node.
+            tail: Path tail node.
         """
 
 
@@ -58,7 +60,12 @@ class Path(tuple, metaclass=abc.ABCMeta):
         return super().__new__(cls, (head, tail))
 
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit(self._head, self._tail)
+        """Visitor acceptor.
+
+        Args:
+            visitor: Visitor instance.
+        """
+        visitor.visit_path(self._head, self._tail)
 
     @abc.abstractmethod
     def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[node.Atomic] = None) -> 'Path':
@@ -155,8 +162,8 @@ class Closure(Path):
     class Publishable(port.Publishable):
         """Customized Publishable verifying it's publishing only to Train ports.
         """
-        def __init__(self, node: node.Atomic, index: int, publisher: port.Publishable):
-            super().__init__(node, index)
+        def __init__(self, publisher: port.Publishable):
+            super().__init__(None, None)
             self._publisher: port.Publishable = publisher
 
         def republish(self, subscription: port.Subscription) -> None:
@@ -179,4 +186,4 @@ class Closure(Path):
 
         Returns: Publishable tail apply port reference.
         """
-        return self.Publishable(self._tail, 0, self._tail[0].publisher)
+        return self.Publishable(self._tail[0].publisher)

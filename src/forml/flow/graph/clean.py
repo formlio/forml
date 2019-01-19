@@ -1,12 +1,32 @@
 """
 Graph topology validation.
-"""
 
 # train and apply graph don't intersect
 # acyclic
+# train path is a closure
+# apply path is a channel
 # nodes ports subscriptions:
-# * either train or all apply inputs
-# * apply outputs match declared szout
-# * train/apply subscriptions are exclusive
-# * nooutput on trained node
+# * train/apply subscriptions are exclusive (enforced synchronously)
 # * no future nodes
+# * at most single trained node per each instance (TODO enforce synchronously)
+# * either train or all apply inputs (no partially subscribed outputs or no output on trained node)
+"""
+from forml.flow.graph import view, node
+
+
+class NodeValidator(view.Visitor):
+    """Visitor ensuring all nodes are in valid state which means:
+
+        * are Worker instances (not Future)
+        * have consistent subscriptions:
+            * only both train and label or all input ports
+            * only both train and label or all output ports
+    """
+    def visit_path(self, head: node.Atomic, tail: node.Atomic) -> None:
+        """Path visit.
+
+        Args:
+            head: Path head node.
+            tail: Path tail node.
+        """
+        ...
