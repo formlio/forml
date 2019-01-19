@@ -4,14 +4,31 @@ Flow segments represent partial pipeline blocks during pipeline assembly.
 
 import abc
 import collections
+import typing
 
 from forml import flow
+from forml.flow import graph
 from forml.flow.graph import node
 
 
 class Track(collections.namedtuple('Track', 'apply, train, label')):
     """Structure for holding related flow parts of different modes.
     """
+    def extend(self, apply: typing.Optional[graph.Path] = None,
+               train: typing.Optional[graph.Path] = None,
+               label: typing.Optional[graph.Path] = None) -> 'Track':
+        """Helper for creating new extended Track.
+
+        Args:
+            apply: Optional branch to be connected to apply track.
+            train: Optional branch to be connected to train track.
+            label: Optional branch to be connected to label track.
+
+        Returns: New Track instance.
+        """
+        return Track(self.apply.extend(apply) if apply else self.apply.extend(),
+                     self.train.extend(train) if train else self.train.extend(),
+                     self.label.extend(label) if label else self.label.extend())
 
 
 class Builder(metaclass=abc.ABCMeta):
@@ -41,7 +58,7 @@ class Origin(Builder):
 
         Returns: Segment track.
         """
-        return Track(node.Compound(node.Future()), node.Compound(node.Future()), node.Compound(node.Future()))
+        return Track(graph.Path(node.Future()), graph.Path(node.Future()), graph.Path(node.Future()))
 
 
 class Recursive(Related, Builder):

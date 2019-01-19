@@ -5,7 +5,7 @@ ForML flow composition logic.
 import abc
 import collections
 
-from forml.flow import task, segment
+from forml.flow import task, segment, graph
 from forml.flow.graph import node
 
 
@@ -29,6 +29,9 @@ class Operator(metaclass=abc.ABCMeta):
         Returns: Operator composition plan.
         """
 
+class Source:
+    ...
+
 
 class Composer:
     def __init__(self):
@@ -40,7 +43,7 @@ class Composer:
         self._report = ...  # arbitrary metrics -> kv list
 
     @property
-    def train(self) -> node.Compound:
+    def train(self) -> graph.Path:
         """Training graph.
 
         Returns: Graph represented as compound node.
@@ -50,7 +53,7 @@ class Composer:
         return graph
 
     @property
-    def apply(self) -> node.Compound:
+    def apply(self) -> graph.Path:
         """Apply graph.
 
         Returns: Graph represented as compound node.
@@ -68,7 +71,7 @@ class Composer:
         return None
 
     @property
-    def score(self) -> node.Compound:
+    def score(self) -> graph.Path:
         """Scoring graph.
 
         Returns: Graph represented as compound node.
@@ -76,7 +79,7 @@ class Composer:
         return None
 
     @property
-    def report(self) -> node.Compound:
+    def report(self) -> graph.Path:
         """Reporting graph.
 
         Returns: Graph represented as compound node.
