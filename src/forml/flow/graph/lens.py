@@ -162,4 +162,5 @@ class Closure(Path):
 
         Returns: Publishable tail apply port reference.
         """
+        # TODO: not working for future nodes!
         return self.Publishable(self._tail, 0)
