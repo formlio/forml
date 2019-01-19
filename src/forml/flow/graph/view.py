@@ -9,6 +9,17 @@ import typing
 from forml.flow.graph import node, port
 
 
+class Visitor(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def visit(self, head: node.Atomic, tail: node.Atomic) -> None:
+        """Path visit.
+
+        Args:
+            head:
+            tail:
+        """
+
+
 class Path(tuple, metaclass=abc.ABCMeta):
     """Representing acyclic apply path(s) between two nodes - a sub-graph with single head and tail node each with
     at most one apply input/output port.
@@ -45,6 +56,9 @@ class Path(tuple, metaclass=abc.ABCMeta):
         assert tail.szout in {0, 1}, 'Simple tail required'
         cls = Closure if any(isinstance(s.port, port.Train) for p in tail.output for s in p) else Channel
         return super().__new__(cls, (head, tail))
+
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit(self._head, self._tail)
 
     @abc.abstractmethod
     def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[node.Atomic] = None) -> 'Path':
@@ -141,6 +155,9 @@ class Closure(Path):
     class Publishable(port.Publishable):
         """Customized Publishable verifying it's publishing only to Train ports.
         """
+        def __init__(self, node: node.Atomic, index: int, publisher: port.Publishable):
+            super().__init__(node, index)
+            self._publisher: port.Publishable = publisher
 
         def republish(self, subscription: port.Subscription) -> None:
             """Republish the subscription checking it's only for a train port.
@@ -149,7 +166,7 @@ class Closure(Path):
                 subscription: Existing subscription descriptor.
             """
             assert isinstance(subscription.port, port.Train), 'Closure path publishing'
-            super().republish(subscription)
+            self._publisher.republish(subscription)
 
     def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[node.Atomic] = None) -> Path:
         """Closure path is not extendable.
@@ -162,5 +179,4 @@ class Closure(Path):
 
         Returns: Publishable tail apply port reference.
         """
-        # TODO: not working for future nodes!
-        return self.Publishable(self._tail, 0)
+        return self.Publishable(self._tail, 0, self._tail[0].publisher)
