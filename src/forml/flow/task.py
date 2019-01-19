@@ -15,6 +15,7 @@ class NaImputer:
 
 import abc
 import collections
+import inspect
 import types
 import typing
 
@@ -94,3 +95,47 @@ class Actor(metaclass=abc.ABCMeta):
 class Spec(collections.namedtuple('Spec', 'actor, params')):
     """Wrapper of actor class and init params.
     """
+
+
+def actor(cls: typing.Optional[typing.Type] = None, **mapping):
+    """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
+    optionally with mapping of Actor methods to decorated user class implementation.
+
+    Args:
+        cls: Decorated class.
+        apply: Name of user class method implementing the actor apply.
+        train: Name of user class method implementing the actor train.
+        get_params: Name of user class method implementing the actor get_params.
+        set_params: Name of user class method implementing the actor set_params.
+        get_state: Name of user class method implementing the actor get_state.
+        set_state: Name of user class method implementing the actor set_statte.
+
+    Returns: Actor class.
+    """
+    assert cls ^ mapping, 'Unexpected positional argument provided together with mapping'
+    assert all(isinstance(a, str) for a in mapping.values()), 'Invalid mapping'
+
+    for method in (Actor.apply, Actor.train, Actor.get_params, Actor.set_params, Actor.get_state, Actor.set_state):
+        mapping.setdefault(method.__name__, method.__name__)
+
+    def decorator(cls):
+        """Decorating function.
+        """
+        assert cls and inspect.isclass(cls), f'Invalid actor class {cls}'
+        if isinstance(cls, Actor):
+            return cls
+
+        # TODO: verify class has required target methods
+        class Decorated(Actor):
+            """Wrapper around user class implementing the Actor interface.
+            """
+            def __init__(self, *args, **kwargs):
+                self._actor = cls(*args, **kwargs)
+
+            def __getattr__(self, item):
+                return getattr(self._actor, mapping.get(item, item))
+        return Decorated
+
+    if cls:  # used as paramless decorator
+        decorator = decorator(cls)
+    return decorator

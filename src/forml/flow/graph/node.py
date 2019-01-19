@@ -208,9 +208,9 @@ class Future(Atomic):
 class Factory(collections.namedtuple('Factory', 'info, szin, szout')):
     """Worker node factory for creating nodes representing same instance.
     """
-    _INSTANCES: typing.Dict[typing.Any, int] = collections.defaultdict(int)
+    _INSTANCES: typing.Dict[typing.Hashable, int] = collections.defaultdict(int)
 
-    def __new__(cls, spec: typing.Any, szin: int, szout: int):
+    def __new__(cls, spec: typing.Hashable, szin: int, szout: int):
         cls._INSTANCES[spec] += 1
         return super().__new__(cls, Info(spec, cls._INSTANCES[spec]), szin, szout)
 

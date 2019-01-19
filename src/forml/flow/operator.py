@@ -1,4 +1,5 @@
 import abc
+import inspect
 import typing
 
 from forml import flow
@@ -11,6 +12,39 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
     """
     def __init__(self, spec: task.Spec):
         self._spec: task.Spec = spec
+
+    @classmethod
+    def decorate(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs):
+        """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
+        call.
+
+        Args:
+            actor: Decorated actor class.
+            **kwargs: Optional operator kwargs.
+
+        Returns: Curried operator.
+        """
+        assert actor ^ kwargs, 'Unexpected positional argument provided together with keywords'
+
+        def decorator(actor):
+            """Decorating function.
+            """
+            assert actor and isinstance(actor, task.Actor), f'Invalid actor type {actor}'
+
+            def operator(**params):
+                """Curried operator.
+
+                Args:
+                    **params: Operator params.
+
+                Returns: Operator instance.
+                """
+                return cls(task.Spec(actor, params), **kwargs)
+            return operator
+
+        if actor:  # used as paramless decorator
+            decorator = decorator(actor)
+        return decorator
 
     def compose(self, left: segment.Builder) -> segment.Track:
         """Abstract composition implementation.
