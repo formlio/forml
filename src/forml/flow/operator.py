@@ -83,4 +83,4 @@ class Labeller(Singular):
         Returns: Composed segment track.
         """
         label: node.Worker = worker.node()
-        return left.extend(label=left.train.copy().extend(graph.Path(label)))
+        return left.use(label=left.train.extend(graph.Path(label)))
