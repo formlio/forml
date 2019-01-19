@@ -10,20 +10,6 @@ import pytest
 from forml.flow.graph import node as grnode, port
 
 
-@pytest.fixture(scope='function')
-def simple():
-    """Simple node fixture with 1 input and 1 output apply port.
-    """
-    return grnode.Worker(grnode.Info('simple', 1), 1, 1)
-
-
-@pytest.fixture(scope='function')
-def multi():
-    """Multi port node fixture (2 input and 2 output apply port).
-    """
-    return grnode.Worker(grnode.Info('multi', 1), 2, 2)
-
-
 class Atomic(metaclass=abc.ABCMeta):
     """Base class for node tests.
     """
@@ -126,37 +112,3 @@ class TestFactory:
         assert factory.node().info.instance == 1
         factory = grnode.Factory('factory', 1, 1)
         assert factory.node().info.instance == 2
-
-
-class TestCompound:
-    """Compound node tests.
-    """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def node():
-        """Node fixture.
-        """
-        node1 = grnode.Worker(grnode.Info('node1', 1), 1, 2)
-        node2 = grnode.Worker(grnode.Info('node2', 1), 2, 1)
-        node2[0].subscribe(node1[0])
-        node2[1].subscribe(node1[1])
-        return grnode.Compound(node1)
-
-    def test_invalid(self, node: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
-        """Testing invalid Compound nodes.
-        """
-        with pytest.raises(AssertionError):  # multi-node not condensable
-            grnode.Compound(multi)
-        simple[0].subscribe(multi[0])
-        multi[0].subscribe(simple[0])
-        with pytest.raises(AssertionError):  # cyclic flow
-            grnode.Compound(multi)
-
-    def test_copy(self, node: grnode.Compound):
-        """Testing copying compound nodes.
-        """
-        assert isinstance(node.copy(), grnode.Compound)
-        node3 = grnode.Worker(grnode.Info('node3', 1), 1, 1)
-        node3.train(node._head[0], node._head[1])
-        with pytest.raises(AssertionError):
-            node.copy()
