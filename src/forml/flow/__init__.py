@@ -54,31 +54,30 @@ class MySolution(Pipeline):
 
 import abc
 import collections
-import typing
 
 from forml.flow import operator, task, segment
 from forml.flow.graph import node
 
 
+class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
+    """Structure for holding related flow parts of different modes.
+    """
+
+
 class Operator(metaclass=abc.ABCMeta):
     """Task graph entity.
     """
-    _INSTANCES: typing.Dict['Operator', typing.Dict[segment.Builder, int]] = collections.defaultdict(dict)
-
     def __rshift__(self, right: 'Operator') -> segment.Link:
         """Semantical composition construct.
         """
         return segment.Link(right, segment.Recursive(self, segment.Origin()))
 
     @abc.abstractmethod
-    def compose(self, left: segment.Builder) -> segment.Segment:
+    def compose(self, left: segment.Builder) -> segment.Track:
         """Expand the left segment.
 
         Returns: Operator composition plan.
         """
-
-    def instid(self, builder: segment.Builder) -> int:
-        return self._INSTANCES[self].setdefault(builder, len(self._INSTANCES[self]))
 
 
 class Source:
@@ -90,7 +89,7 @@ class Source:
 class Composer:
     def __init__(self):
         self._id: str = ...
-        self._flow: segment.Segment = ...
+        self._flow: Pipeline = ...
         self._source: Source = ...
         # self._label: node.Worker = ... #(splitter 1:2) ???
         self._score = ...  # cv+metric -> single number
@@ -112,6 +111,8 @@ class Composer:
 
     @property
     def score(self):
+        return
 
     @property
     def report(self):
+        return
