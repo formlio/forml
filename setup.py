@@ -16,5 +16,5 @@ setuptools.setup(name='formlai',
                  package_dir={'': 'src'},
                  setup_requires=['pytest-pylint', 'pytest-runner'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['numpy', 'pandas'],
+                 install_requires=['joblib', 'numpy', 'pandas'],
                  zip_safe=False)

@@ -1,21 +1,20 @@
-import typing
-
 from forml import flow
 from forml.flow import task, segment
 from forml.flow.graph import node
 
 
 class Transformer(flow.Operator):
-    def __init__(self, actor: typing.Type[task.Actor]):
+    def __init__(self, spec: task.Spec):
         super().__init__()
-        self.actor = actor
+        self.spec = spec
 
-    def compose(self, builder: segment.Builder) -> segment.Segment:
-        apply: node.Worker = builder.node(self.actor, 1, 1)
-        train_train: node.Worker = builder.node(self.actor, 1, 1)
-        train_apply: node.Worker = builder.node(self.actor, 1, 1)
+    def compose(self, builder: segment.Builder) -> segment.Track:
+        worker = node.Factory(self.spec, 1, 1)
+        apply: node.Worker = worker.node()
+        train_train: node.Worker = worker.node()
+        train_apply: node.Worker = worker.node()
 
-        left = builder.segment()
+        left = builder.track()
         train_train.train(left.train.publisher, left.label.publisher)
         left.apply.extend(node.Compound(apply))
         left.train.extend(node.Compound(train_apply))
@@ -23,5 +22,5 @@ class Transformer(flow.Operator):
 
 
 class Source(flow.Operator):
-    def __init__(self, actor: typing.Type[task.Actor]):
-        node.Worker(actor, szin=0, szout=1)
+    def __init__(self, spec: task.Spec):
+        ...

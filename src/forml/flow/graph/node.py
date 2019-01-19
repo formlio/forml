@@ -16,14 +16,12 @@ import abc
 import collections
 import typing
 
-from forml.flow import task
 from forml.flow.graph import port
 
 
-class Info(collections.namedtuple('Info', 'actor, instance')):
-
+class Info(collections.namedtuple('Info', 'spec, instance')):
     def __str__(self):
-        return f'{self.actor}-{self.instance}'
+        return f'{self.spec}#{self.instance}'
 
 
 class Atomic(metaclass=abc.ABCMeta):
@@ -90,13 +88,12 @@ class Atomic(metaclass=abc.ABCMeta):
 
 
 class Worker(Atomic):
-    def __init__(self, actor: typing.Type[task.Actor], szin: int, szout: int):
+    def __init__(self, info: Info, szin: int, szout: int):
         super().__init__(szin, szout)
-        self.id: str = ...
-        self.actor = actor
+        self.info: Info = info
 
     def __str__(self):
-        return self.id
+        return self.info
 
     @property
     def trained(self) -> bool:
@@ -124,7 +121,7 @@ class Worker(Atomic):
         Returns: Copied node.
         """
         assert not self.trained, 'Trained node copy attempted'
-        return Worker(self.actor, self.szin, self.szout)
+        return Worker(self.info, self.szin, self.szout)
 
 
 class Future(Atomic):
@@ -238,5 +235,12 @@ class Compound:
         return super().__new__(self.__class__, copyof(self._head), copyof(self._tail))
 
 
-class Factory:
-    pass
+class Factory(collections.namedtuple('Factory', 'info, szin, szout')):
+    _INSTANCES: typing.Dict[typing.Any, int] = collections.defaultdict(int)
+
+    def __new__(cls, spec: typing.Any, szin: int, szout: int):
+        cls._INSTANCES[spec] += 1
+        return super().__new__(cls, Info(spec, cls._INSTANCES[spec]), szin, szout)
+
+    def node(self) -> Worker:
+        return Worker(self.info, self.szin, self.szout)
