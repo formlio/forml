@@ -29,7 +29,15 @@ class Path:
     """
     def test_type(self, simple: node.Worker, path: graph.Path, btype: typing.Type[graph.Path]):
         assert isinstance(path, btype)
-        assert path.head is simple
+        assert path._head is simple
+
+    def test_copy(self, path: graph.Path):
+        """Testing copying path nodes.
+        """
+        assert isinstance(path.copy(), graph.Path)
+        node3 = node.Worker(node.Info('node3', 1), 1, 1)
+        node3.train(path._head[0], path._head[0])  # not on path should be ignored
+        path.copy()
 
 
 class TestChannel(Path):
@@ -54,15 +62,6 @@ class TestChannel(Path):
         """
         return graph.Channel
 
-    def test_copy(self, path: graph.Path):
-        """Testing copying path nodes.
-        """
-        assert isinstance(path.copy(), graph.Path)
-        node3 = node.Worker(node.Info('node3', 1), 1, 1)
-        node3.train(path.head[0], path.head[0])
-        with pytest.raises(AssertionError):  # trained node copy
-            path.copy()
-
 
 class TestClosure(Path):
     """Closure path unit tests.
@@ -74,10 +73,11 @@ class TestClosure(Path):
         """
         node1 = node.Worker(node.Info('node1', 1), 1, 2)
         node2 = node.Worker(node.Info('node2', 1), 2, 1)
+        node3 = node.Worker(node.Info('node3', 1), 1, 1)
         node1[0].subscribe(simple[0])
         node2[0].subscribe(node1[0])
         node2[1].subscribe(node1[1])
-        node2[0].publish(simple, port.Train())
+        node2[0].publish(node3, port.Train())
         return graph.Path(simple)
 
     @staticmethod
@@ -87,14 +87,9 @@ class TestClosure(Path):
         """
         return graph.Closure
 
-    def test_copy(self, path: graph.Path):
-        """Testing copying path nodes.
-        """
-        with pytest.raises(AssertionError):
-            path.copy()
-
     def test_publish(self, path: graph.Closure, multi: node.Worker):
         """Testing closure path publishing.
         """
         with pytest.raises(AssertionError):  # closure path publishing
             multi[0].subscribe(path.publisher)
+        path.publisher.publish(multi, port.Train())

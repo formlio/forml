@@ -17,18 +17,30 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
     def extend(self, apply: typing.Optional[graph.Path] = None,
                train: typing.Optional[graph.Path] = None,
                label: typing.Optional[graph.Path] = None) -> 'Track':
-        """Helper for creating new extended Track.
+        """Helper for creating new Track with all paths extended either with provided or automatic values.
 
         Args:
-            apply: Optional branch to be connected to apply track.
-            train: Optional branch to be connected to train track.
-            label: Optional branch to be connected to label track.
+            apply: Optional path to be connected to apply track.
+            train: Optional path to be connected to train track.
+            label: Optional path to be connected to label track.
 
         Returns: New Track instance.
         """
-        return Track(self.apply.extend(apply) if apply else self.apply.extend(),
-                     self.train.extend(train) if train else self.train.extend(),
-                     self.label.extend(label) if label else self.label.extend())
+        return Track(self.apply.extend(apply), self.train.extend(train), self.label.extend(label))
+
+    def use(self, apply: typing.Optional[graph.Path] = None,
+            train: typing.Optional[graph.Path] = None,
+            label: typing.Optional[graph.Path] = None) -> 'Track':
+        """Helper for creating new Track with paths replaced with provided values or left original.
+
+        Args:
+            apply: Optional path to be used as apply track.
+            train: Optional path to be used as train track.
+            label: Optional path to be uased label track.
+
+        Returns: New Track instance.
+        """
+        return Track(apply or self.apply, train or self.train, label or self.label)
 
 
 class Builder(metaclass=abc.ABCMeta):

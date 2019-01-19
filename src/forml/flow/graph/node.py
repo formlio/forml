@@ -99,6 +99,18 @@ class Worker(Atomic):
     def __str__(self):
         return str(self.info)
 
+    def publish(self, index: int, subscription: port.Subscription) -> None:
+        """Publish an output port based on the given subscription.
+
+        Args:
+            index: Output port index to publish from.
+            subscription: Subscriber node and port to publish to.
+
+        Trained node must not be publishing.
+        """
+        assert not self.trained, 'Trained node publishing'
+        super().publish(index, subscription)
+
     @property
     def trained(self) -> bool:
         """Check if this node is subscribed for training data.

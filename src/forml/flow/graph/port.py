@@ -48,6 +48,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         assert port not in cls._PORTS[subscriber], 'Already subscribed'
         assert not cls._PORTS[subscriber] or (isinstance(port, (Train, Label)) ^ any(
             isinstance(s, Apply) for s in cls._PORTS[subscriber])), 'Apply/Train collision'
+        assert not isinstance(port, (Train, Label)) or not any(subscriber.output), 'Publishing node trained'
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
 
@@ -95,7 +96,12 @@ class Publishable(Applicable):
             subscriber: node to publish to
             port: port to publish to
         """
-        self.republish(Subscription(subscriber, port))
+        subscription = Subscription(subscriber, port)
+        try:
+            self.republish(subscription)
+        except Exception as err:
+            Subscription._PORTS[subscriber].discard(port)
+            raise err
 
     def republish(self, subscription: Subscription) -> None:
         """Publish existing subscription.

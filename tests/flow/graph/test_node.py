@@ -24,19 +24,6 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         assert isinstance(node.copy(), grnode.Atomic)
 
-    def test_publish(self, node: grnode.Atomic, simple: grnode.Worker):
-        """Test node publishing.
-        """
-        node[0].publish(simple, port.Apply(0))
-        assert any(simple is s.node and s.port == 0 for s in node.output[0])
-        assert port.Apply(0) in simple.input
-        with pytest.raises(AssertionError):  # already subscribed
-            node[0].publish(simple, port.Apply(0))
-        with pytest.raises(AssertionError):  # self subscription
-            node[0].publish(node, port.Apply(0))
-        with pytest.raises(AssertionError):  # apply-train collision
-            node[0].publish(simple, port.Train())
-
     def test_subscribe(self, node: grnode.Atomic, simple: grnode.Worker):
         """Test node subscribing.
         """
@@ -45,6 +32,21 @@ class Atomic(metaclass=abc.ABCMeta):
         assert port.Apply(0) in simple.input
         with pytest.raises(AssertionError):  # self subscription
             simple[0].subscribe(node[0])
+
+    def test_publish(self, node: grnode.Atomic, simple: grnode.Worker):
+        """Test node publishing.
+        """
+        node[0].publish(simple, port.Train())
+        assert any(simple is s.node and s.port is port.Train() for s in node.output[0])
+        assert port.Train() in simple.input
+        with pytest.raises(AssertionError):  # already subscribed
+            node[0].publish(simple, port.Train())
+        with pytest.raises(AssertionError):  # self subscription
+            node[0].publish(node, port.Apply(0))
+        with pytest.raises(AssertionError):  # apply-train collision
+            node[0].publish(simple, port.Apply(0))
+        with pytest.raises(AssertionError):  # trained node publishing
+            node[0].subscribe(simple[0])
 
 
 class TestWorker(Atomic):
@@ -66,6 +68,8 @@ class TestWorker(Atomic):
         assert node.trained
         with pytest.raises(AssertionError):  # train-apply collision
             node[0].subscribe(simple[0])
+        with pytest.raises(AssertionError):  # publishing node trained
+            multi.train(node[0], node[0])
 
 
 class TestFuture(Atomic):

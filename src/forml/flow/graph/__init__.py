@@ -2,23 +2,26 @@
 Flow graph entities.
 """
 
-# TODO: use custom error type instead of assertions
-
 import abc
-import collections
+import operator
 import typing
 
 from forml.flow.graph import node, port
 
 
-class Path(collections.namedtuple('Path', 'head, tail'), metaclass=abc.ABCMeta):
-    """Node representing compound acyclic flow - a sub-graph with single head and tail node each with at most one
-    apply input/output port. This is a base and factory class for creating specific path instances.
+class Path(tuple, metaclass=abc.ABCMeta):
+    """Representing acyclic apply path(s) between two nodes - a sub-graph with single head and tail node each with
+    at most one apply input/output port.
+
+    This is a base and factory class for creating specific path instances.
     """
+
+    _head: node.Atomic = property(operator.itemgetter(0))
+    _tail: node.Atomic = property(operator.itemgetter(1))
 
     def __new__(cls, head: node.Atomic, tail: typing.Optional[node.Atomic] = None):
         def tailof(publisher: node.Atomic, path: typing.FrozenSet[node.Atomic] = frozenset()) -> node.Atomic:
-            """Recursive traversing all apply subscription paths up to the tail checking there is just one.
+            """Recursive traversing all apply subscription paths down to the tail checking there is just one.
 
             Args:
                 publisher: Start node for the traversal.
@@ -33,15 +36,15 @@ class Path(collections.namedtuple('Path', 'head, tail'), metaclass=abc.ABCMeta):
                 return publisher
             path = frozenset(path | {publisher})
             assert subscribers.isdisjoint(path), 'Cyclic flow'
-            tails = {tailof(n, path=path) for n in subscribers}
-            assert tail and tail in tails or not tail and len(tails) == 1
-            return tail or tails.pop()
+            endings = {tailof(n, path=path) for n in subscribers}
+            assert tail and tail in endings or not tail and len(endings) == 1, 'Unknown or invalid tail'
+            return tail or endings.pop()
 
-        assert head.szin in {0, 1}, 'Head node not condensable'
+        assert head.szin in {0, 1}, 'Simple head required'
         tail = tailof(head)
-        assert tail.szout in {0, 1}, 'Tail node not condensable'
+        assert tail.szout in {0, 1}, 'Simple tail required'
         cls = Closure if any(isinstance(s.port, port.Train) for p in tail.output for s in p) else Channel
-        return super().__new__(cls, head, tail)
+        return super().__new__(cls, (head, tail))
 
     @abc.abstractmethod
     def extend(self, right: typing.Optional['Path'] = None) -> 'Path':
@@ -59,7 +62,7 @@ class Path(collections.namedtuple('Path', 'head, tail'), metaclass=abc.ABCMeta):
 
         Returns: Subscriptable head apply port reference.
         """
-        return self.head[0].subscriber
+        return self._head[0].subscriber
 
     @property
     @abc.abstractmethod
@@ -70,41 +73,36 @@ class Path(collections.namedtuple('Path', 'head, tail'), metaclass=abc.ABCMeta):
         """
 
     def copy(self) -> 'Path':
-        """Make a copy of the apply path topology.
+        """Make a copy of the apply path topology. Any nodes not on path are ignored.
 
         Returns: Copy of the apply path.
         """
 
-        def pathof(publisher: node.Atomic,
-                   path: typing.FrozenSet[node.Atomic] = frozenset()) -> typing.FrozenSet[node.Atomic]:
-            path = frozenset(path | {publisher})
-            if publisher is self.tail:
-                return path
-            subscribers = {s.node for p in publisher.output for s in p if isinstance(s.port, port.Apply)}
-            if not any(subscribers):
-                return frozenset()
-            assert subscribers.isdisjoint(path), 'Cyclic flow'
-            return frozenset.union(*(pathof(n, path=path) for n in subscribers))
-
-        def copyof(publisher: node.Atomic) -> node.Atomic:
-            """Recursive copy resolver.
+        def mkcopy(publisher: node.Atomic, path: typing.FrozenSet[node.Atomic] = frozenset()) -> None:
+            """Recursive path copy.
 
             Args:
                 publisher: Node to be copied.
+                path: Chain of nodes between current and head.
 
             Returns: Copy of the publisher node with all of it's subscriptions resolved.
             """
-            if publisher not in mapping:
-                copied = publisher.copy()
-                if publisher is not self.tail:
-                    for index, subscription in ((i, s) for i, p in enumerate(publisher.output) for s in p):
-                        subscriber = mapping.get(subscription.node) or copyof(subscription.node)
-                        copied[index].publish(subscriber, subscription.port)
-                mapping[publisher] = copied
-            return mapping[publisher]
+            path = frozenset(path | {publisher})
+            if publisher is self._tail:
+                for orig in path:
+                    pub = copies.get(orig) or copies.setdefault(orig, orig.copy())
+                    for index, subscription in ((i, s) for i, p in enumerate(orig.output) for s in p if s.node in path):
+                        sub = copies.get(subscription.node) or copies.setdefault(
+                            subscription.node, subscription.node.copy())
+                        pub[index].publish(sub, subscription.port)
+            else:
+                for subscriber in {s.node for p in publisher.output for s in p if isinstance(s.port, port.Apply)}:
+                    assert subscriber not in path, 'Cyclic flow'
+                    mkcopy(subscriber, path=path)
 
-        mapping = dict()
-        return Path(copyof(self.head), copyof(self.tail))
+        copies = dict()
+        mkcopy(self._head)
+        return Path(copies.get(self._head), copies.get(self._tail))
 
 
 class Channel(Path):
@@ -121,9 +119,9 @@ class Channel(Path):
         """
         tail = None
         if right:
-            right.head[0].subscribe(self.tail[0])
-            tail = right.tail
-        return Path(self.head, tail)
+            right._head[0].subscribe(self._tail[0])
+            tail = right._tail
+        return Path(self._head, tail)
 
     @property
     def publisher(self) -> port.Publishable:
@@ -131,7 +129,7 @@ class Channel(Path):
 
         Returns: Publishable tail apply port reference.
         """
-        return self.tail[0].publisher
+        return self._tail[0].publisher
 
 
 class Closure(Path):
@@ -166,4 +164,4 @@ class Closure(Path):
 
         Returns: Publishable tail apply port reference.
         """
-        return self.Publishable(self.tail, 0)
+        return self.Publishable(self._tail, 0)
