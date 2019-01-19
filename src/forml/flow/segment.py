@@ -7,22 +7,22 @@ import collections
 import typing
 
 from forml import flow
-from forml.flow.graph import node, lens
+from forml.flow.graph import node, view
 
 
 class Track(collections.namedtuple('Track', 'apply, train, label')):
     """Structure for holding related flow parts of different modes.
     """
-    def __new__(cls, apply: typing.Optional[lens.Path] = None,
-                train: typing.Optional[lens.Path] = None,
-                label: typing.Optional[lens.Path] = None):
-        return super().__new__(cls, apply or lens.Path(node.Future()),
-                               train or lens.Path(node.Future()),
-                               label or lens.Path(node.Future()))
+    def __new__(cls, apply: typing.Optional[view.Path] = None,
+                train: typing.Optional[view.Path] = None,
+                label: typing.Optional[view.Path] = None):
+        return super().__new__(cls, apply or view.Path(node.Future()),
+                               train or view.Path(node.Future()),
+                               label or view.Path(node.Future()))
 
-    def extend(self, apply: typing.Optional[lens.Path] = None,
-               train: typing.Optional[lens.Path] = None,
-               label: typing.Optional[lens.Path] = None) -> 'Track':
+    def extend(self, apply: typing.Optional[view.Path] = None,
+               train: typing.Optional[view.Path] = None,
+               label: typing.Optional[view.Path] = None) -> 'Track':
         """Helper for creating new Track with all paths extended either with provided or automatic values.
 
         Args:
@@ -34,9 +34,9 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
         """
         return Track(self.apply.extend(apply), self.train.extend(train), self.label.extend(label))
 
-    def use(self, apply: typing.Optional[lens.Path] = None,
-            train: typing.Optional[lens.Path] = None,
-            label: typing.Optional[lens.Path] = None) -> 'Track':
+    def use(self, apply: typing.Optional[view.Path] = None,
+            train: typing.Optional[view.Path] = None,
+            label: typing.Optional[view.Path] = None) -> 'Track':
         """Helper for creating new Track with paths replaced with provided values or left original.
 
         Args:

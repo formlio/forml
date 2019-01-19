@@ -6,7 +6,7 @@ import abc
 import collections
 
 from forml.flow import task, segment
-from forml.flow.graph import node, lens
+from forml.flow.graph import node, view
 
 
 class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
@@ -39,7 +39,7 @@ class Composer:
         self._report = ...  # arbitrary metrics -> kv list
 
     @property
-    def train(self) -> lens.Path:
+    def train(self) -> view.Path:
         """Training lens.
 
         Returns: Graph represented as compound node.
@@ -49,7 +49,7 @@ class Composer:
         return graph
 
     @property
-    def apply(self) -> lens.Path:
+    def apply(self) -> view.Path:
         """Apply lens.
 
         Returns: Graph represented as compound node.
@@ -67,7 +67,7 @@ class Composer:
         return None
 
     @property
-    def score(self) -> lens.Path:
+    def score(self) -> view.Path:
         """Scoring lens.
 
         Returns: Graph represented as compound node.
@@ -75,7 +75,7 @@ class Composer:
         return None
 
     @property
-    def report(self) -> lens.Path:
+    def report(self) -> view.Path:
         """Reporting lens.
 
         Returns: Graph represented as compound node.

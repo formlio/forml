@@ -1,5 +1,5 @@
 """
-Graph lens - useful views and manipulation of graph topology parts.
+Graph view - useful lenses and manipulation of graph topology parts.
 """
 
 import abc
