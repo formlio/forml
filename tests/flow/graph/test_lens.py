@@ -6,8 +6,7 @@ import typing
 
 import pytest
 
-from forml.flow import graph
-from forml.flow.graph import node, port
+from forml.flow.graph import node, port, lens
 
 
 class TestPath:
@@ -17,24 +16,24 @@ class TestPath:
         """Testing invalid Compound nodes.
         """
         with pytest.raises(AssertionError):  # multi-node not condensable
-            graph.Path(multi)
+            lens.Path(multi)
         simple[0].subscribe(multi[0])
         multi[0].subscribe(simple[0])
         with pytest.raises(AssertionError):  # cyclic flow
-            graph.Path(multi)
+            lens.Path(multi)
 
 
 class Path:
     """Path tests.
     """
-    def test_type(self, simple: node.Worker, path: graph.Path, btype: typing.Type[graph.Path]):
+    def test_type(self, simple: node.Worker, path: lens.Path, btype: typing.Type[lens.Path]):
         assert isinstance(path, btype)
         assert path._head is simple
 
-    def test_copy(self, path: graph.Path):
+    def test_copy(self, path: lens.Path):
         """Testing copying path nodes.
         """
-        assert isinstance(path.copy(), graph.Path)
+        assert isinstance(path.copy(), lens.Path)
         node3 = node.Worker(node.Info('node3', 1), 1, 1)
         node3.train(path._head[0], path._head[0])  # not on path should be ignored
         path.copy()
@@ -53,14 +52,14 @@ class TestChannel(Path):
         node1[0].subscribe(simple[0])
         node2[0].subscribe(node1[0])
         node2[1].subscribe(node1[1])
-        return graph.Path(simple)
+        return lens.Path(simple)
 
     @staticmethod
     @pytest.fixture(scope='session')
     def btype():
         """Channel path type fixture.
         """
-        return graph.Channel
+        return lens.Channel
 
 
 class TestClosure(Path):
@@ -78,16 +77,16 @@ class TestClosure(Path):
         node2[0].subscribe(node1[0])
         node2[1].subscribe(node1[1])
         node2[0].publish(node3, port.Train())
-        return graph.Path(simple)
+        return lens.Path(simple)
 
     @staticmethod
     @pytest.fixture(scope='session')
     def btype():
         """Closure path type fixture.
         """
-        return graph.Closure
+        return lens.Closure
 
-    def test_publish(self, path: graph.Closure, multi: node.Worker):
+    def test_publish(self, path: lens.Closure, multi: node.Worker):
         """Testing closure path publishing.
         """
         with pytest.raises(AssertionError):  # closure path publishing

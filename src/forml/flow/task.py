@@ -53,7 +53,7 @@ class Actor(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def apply(self, features: typing.Sequence[pandas.DataFrame]) -> typing.Sequence[pandas.DataFrame]:
+    def apply(self, *features: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:
         """Pass features through the apply function (typically transform or predict).
 
         Args:
