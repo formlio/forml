@@ -16,29 +16,13 @@ class NaImputer:
 import abc
 import collections
 import inspect
+import io
+import pickle
 import types
 import typing
 
+import joblib
 import pandas
-
-
-class Params(collections.Mapping):
-    """Hyper-parameters wrapper.
-    """
-    def __init__(self, **kwargs) -> None:
-        self._items = types.MappingProxyType(kwargs)
-
-    def __getitem__(self, key: str) -> typing.Any:
-        return self._items[key]
-
-    def __len__(self) -> int:
-        return len(self._items)
-
-    def __iter__(self) -> typing.Iterator[str]:
-        return iter(self._items)
-
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
 
 
 class Actor(metaclass=abc.ABCMeta):
@@ -64,37 +48,54 @@ class Actor(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def get_params(self) -> Params:
+    def get_params(self) -> typing.Dict[str, typing.Any]:
         """Get hyper-parameters of this actor.
         """
 
     @abc.abstractmethod
-    def set_params(self, params: Params) -> None:
+    def set_params(self, params: typing.Dict[str, typing.Any]) -> None:
         """Set hyper-parameters of this actor.
 
         Args:
             params: Dictionary of hyper parameters.
         """
 
-    @abc.abstractmethod
     def get_state(self) -> bytes:
         """Return the internal state of the actor.
 
         Returns: state as bytes.
         """
+        with io.BytesIO() as bio:
+            joblib.dump(self.__dict__, bio, protocol=pickle.HIGHEST_PROTOCOL)
+            return bio.getvalue()
 
-    @abc.abstractmethod
     def set_state(self, state: bytes) -> None:
         """Set new internal state of the actor.
 
         Args:
             state: bytes to be used as internal state.
         """
+        with io.BytesIO(state) as bio:
+            self.__dict__.update(joblib.load(bio))
+
+    def __getstate__(self):
+        return self.get_state()
+
+    def __setstate__(self, state: bytes):
+        self.set_state(state)
 
 
 class Spec(collections.namedtuple('Spec', 'actor, params')):
     """Wrapper of actor class and init params.
     """
+    def __new__(cls, actor: Actor, params: typing.Dict[str, typing.Any]):
+        return super().__new__(cls, actor, types.MappingProxyType(params))
+
+    def __getnewargs__(self):
+        return self.actor, dict(self.params)
+
+    def __hash__(self):
+        return hash(self.actor) ^ hash(tuple(sorted(self.items())))
 
 
 def actor(cls: typing.Optional[typing.Type] = None, **mapping):
@@ -112,10 +113,10 @@ def actor(cls: typing.Optional[typing.Type] = None, **mapping):
 
     Returns: Actor class.
     """
-    assert cls ^ mapping, 'Unexpected positional argument provided together with mapping'
+    assert bool(cls) ^ bool(mapping), 'Unexpected positional argument provided together with mapping'
     assert all(isinstance(a, str) for a in mapping.values()), 'Invalid mapping'
 
-    for method in (Actor.apply, Actor.train, Actor.get_params, Actor.set_params, Actor.get_state, Actor.set_state):
+    for method in (Actor.apply, Actor.train, Actor.get_params, Actor.set_params):
         mapping.setdefault(method.__name__, method.__name__)
 
     def decorator(cls):
@@ -129,11 +130,16 @@ def actor(cls: typing.Optional[typing.Type] = None, **mapping):
         class Decorated(Actor):
             """Wrapper around user class implementing the Actor interface.
             """
+            def __new__(cls):
+                cls.__abstractmethods__ = frozenset()
+                return super().__new__(cls)
+
             def __init__(self, *args, **kwargs):
                 self._actor = cls(*args, **kwargs)
 
             def __getattr__(self, item):
                 return getattr(self._actor, mapping.get(item, item))
+
         return Decorated
 
     if cls:  # used as paramless decorator

@@ -24,7 +24,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
         Returns: Curried operator.
         """
-        assert actor ^ kwargs, 'Unexpected positional argument provided together with keywords'
+        assert bool(actor) ^ bool(kwargs), 'Unexpected positional argument provided together with keywords'
 
         def decorator(actor):
             """Decorating function.
