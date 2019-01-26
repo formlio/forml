@@ -55,10 +55,10 @@ class NaNImputer(task.Actor[pandas.DataFrame]):
 
 
 # Turning sklearn RFC into a pipeline operator
-RFC = simple.Consumer.operator(task.Wrapped.actor(sklearn.RandomForestClassifier))
+RFC = simple.Consumer.operator(task.Wrapped.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
 
 
-pipeline = (LabelExtractor(column='foo') >> NaNImputer(const='bar') >> RFC(max_depth=3)).pipeline
+pipeline = (LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)).pipeline
 
 # Collect the train pipeline graph
 train_dag = visual.Dot('Train Pipeline')
