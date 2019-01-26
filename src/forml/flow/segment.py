@@ -51,26 +51,38 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
         return Track(apply or self.apply, train or self.train, label or self.label)
 
 
-class Builder(metaclass=abc.ABCMeta):
-    """Builder of pipeline segment track.
+class Composable(metaclass=abc.ABCMeta):
+    """Common base for operators and expressions.
     """
     @abc.abstractmethod
     def track(self) -> Track:
-        """Build and return a sgment track.
+        """Compose and return a segment track.
 
         Returns: Segment track.
         """
 
+    def __rshift__(self, right: 'flow.Operator') -> 'Expression':
+        """Semantical composition construct.
+        """
+        return Expression(right, self)
 
-class Related:
-    """Generic base class for related types.
+
+class Expression(Composable):
+    """Operator chaining descriptor.
     """
-    def __init__(self, operator: 'flow.Operator', builder: Builder):
-        self._operator: 'flow.Operator' = operator
-        self._builder: Builder = builder
+    def __init__(self, operator: 'flow.Operator', left: Composable):
+        self._operator: flow.Operator = operator
+        self._left: Composable = left
+
+    def track(self) -> Track:
+        """Compose the segment track.
+
+        Returns: Segment track.
+        """
+        return self._operator.compose(self._left)
 
 
-class Origin(Builder):
+class Origin(Composable):
     """Initial builder without a predecessor.
     """
     def track(self) -> Track:
@@ -79,38 +91,3 @@ class Origin(Builder):
         Returns: Segment track.
         """
         return Track()
-
-
-class Recursive(Related, Builder):
-    """Builder further in the linked chain.
-    """
-    def __init__(self, operator: 'flow.Operator', builder: Builder):
-        Builder.__init__(self)
-        Related.__init__(self, operator, builder)
-
-    def track(self) -> Track:
-        """Track of future nodes.
-
-        Returns: Segment track.
-        """
-        return self._operator.compose(self._builder)
-
-
-class Link(Related):
-    """Operator chaining descriptor.
-    """
-    def __rshift__(self, right: 'flow.Operator') -> 'Link':
-        """Semantical composition construct.
-        """
-        return Link(right, Recursive(self._operator, self._builder))
-
-    @property
-    def pipeline(self) -> 'flow.Pipeline':
-        """Compose the while chain returning a Pipeline instance.
-
-        Returns: Pipeline instance.
-        """
-        track = self._operator.compose(self._builder)
-        # pylint: disable=protected-access
-        assert not isinstance(track.label._tail, node.Future) or not any(track.label._tail.output), 'Label not consumed'
-        return flow.Pipeline(track.apply, track.train)

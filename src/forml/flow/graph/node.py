@@ -2,11 +2,12 @@
 Graph node entities.
 
 Output ports:
-* apply
+* apply (multi-port)
 
 Input ports:
 * apply (multi-port)
 * train
+* label
 
 Each port can have at most one publisher.
 Apply and train input port subscriptions are exclusive.

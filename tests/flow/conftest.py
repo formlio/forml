@@ -5,7 +5,8 @@ Flow unit tests fixtures.
 
 import pytest
 
-from forml.flow import task
+from forml import flow
+from forml.flow import task, segment
 
 
 class Actor:
@@ -41,3 +42,18 @@ def actor():
     """Actor fixture.
     """
     return task.Wrapped.actor(Actor, apply='predict')
+
+
+@pytest.fixture(scope='session')
+def operator():
+    """Operator fixture.
+    """
+    class Operator(flow.Operator):
+        """Operator mock.
+        """
+        def compose(self, left: segment.Composable) -> segment.Track:
+            """Dummy composition.
+            """
+            return left.track()
+
+    return Operator()

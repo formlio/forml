@@ -17,7 +17,7 @@ class Source(flow.Operator):
         self._train: task.Spec = train
         self._label: task.Spec = label
 
-    def compose(self, left: segment.Builder) -> segment.Track:
+    def compose(self, left: segment.Composable) -> segment.Track:
         """Compose the source segment track.
 
         Returns: Source segment track.

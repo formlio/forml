@@ -7,30 +7,35 @@ import collections
 
 from forml.flow import task, segment
 from forml.flow.graph import node, view
+from forml.flow.segment import Track
 
 
 class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
     """Structure for holding related flow parts of different modes.
     """
-    def __new__(cls, apply: view.Channel, train: view.Closure):
-        apply = apply.extend()
-        train = train.extend()
-        assert isinstance(apply, view.Channel), 'Apply path not a channel'
+    def __new__(cls, composable: segment.Composable):
+        track = composable.track()
         # pylint: disable=protected-access
+        assert not isinstance(track.label._tail, node.Future) or not any(track.label._tail.output), 'Label not consumed'
+        apply = track.apply.extend()
+        train = track.train.extend()
+        assert isinstance(apply, view.Channel), 'Apply path not a channel'
         assert isinstance(train._tail, node.Future) or isinstance(train, view.Closure), 'Train path not a closure'
         return super().__new__(cls, apply, train)
 
 
-class Operator(metaclass=abc.ABCMeta):
+class Operator(segment.Composable, metaclass=abc.ABCMeta):
     """Task graph entity.
     """
-    def __rshift__(self, right: 'Operator') -> segment.Link:
-        """Semantical composition construct.
+    def track(self) -> Track:
+        """Create dummy composition of this operator on a future origin nodes.
+
+        Returns: Segment track.
         """
-        return segment.Link(right, segment.Recursive(self, segment.Origin()))
+        return self.compose(segment.Origin())
 
     @abc.abstractmethod
-    def compose(self, left: segment.Builder) -> segment.Track:
+    def compose(self, left: segment.Composable) -> segment.Track:
         """Expand the left segment producing new composed segment track.
 
         Returns: Composed segment track.
