@@ -23,7 +23,7 @@ class Visitor(metaclass=abc.ABCMeta):
 
 
 class PreOrder(Visitor, metaclass=abc.ABCMeta):
-    """Visitor iterating over all nodes between head and tail (or sink branches starting from head).
+    """Visitor iterating over all nodes between head and tail including all sink branches.
     """
     def visit_path(self, head: grnode.Atomic, tail: grnode.Atomic) -> None:
         """Path visit.
@@ -39,11 +39,10 @@ class PreOrder(Visitor, metaclass=abc.ABCMeta):
                 publisher: Node to be processed.
                 path: Chain of nodes between current and head.
             """
-            self.process(publisher)
+            self.visit_node(publisher)
             seen.add(publisher)
-            if publisher is tail:
-                return
-            subscribers = {s.node for p in publisher.output for s in p if s.node not in seen}
+            subscribers = {s.node for p in publisher.output for s in p if s.node not in seen and (
+                publisher is not tail or not isinstance(s.port, port.Apply))}
             if not any(subscribers):
                 return
             path = frozenset(path | {publisher})
@@ -55,7 +54,7 @@ class PreOrder(Visitor, metaclass=abc.ABCMeta):
         scan(head)
 
     @abc.abstractmethod
-    def process(self, node: grnode.Atomic) -> None:
+    def visit_node(self, node: grnode.Atomic) -> None:
         """Node processor.
 
         Args:
@@ -98,7 +97,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         tail = tailof(head)
         assert tail.szout in {0, 1}, 'Simple tail required'
         # pylint: disable=self-cls-assignment
-        cls = Closure if any(isinstance(s.port, port.Train) for p in tail.output for s in p) else Channel
+        cls = Closure if any(isinstance(s.port, (port.Train, port.Label)) for p in tail.output for s in p) else Channel
         return super().__new__(cls, (head, tail))
 
     def accept(self, visitor: Visitor) -> None:
@@ -178,10 +177,11 @@ class Channel(Path):
     """
 
     def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
-        """Create new path by appending right head to our tail or retracing this path up to its physical tail.
+        """Create new path by appending right head to our tail or retracing this path up to its physical or specified
+        tail.
 
         Args:
-            right: Optional path to extend with (retracing to physical tail if not provided).
+            right: Optional path to extend with (retracing to physical or specified tail if not provided).
             tail: Optional tail as a path output vertex.
 
         Returns: New extended path.
@@ -206,6 +206,8 @@ class Channel(Path):
 
 class Closure(Path):
     """Closure is a path with all of its output being published to train port(s) thus not passing anything through.
+    Note based on the definition of tail node (having a apply output) this refers to the last apply node before final
+    train port subscriber(s).
     """
 
     class Publishable(port.Publishable):
@@ -221,12 +223,14 @@ class Closure(Path):
             Args:
                 subscription: Existing subscription descriptor.
             """
-            assert isinstance(subscription.port, port.Train), 'Closure path publishing'
+            assert isinstance(subscription.port, (port.Train, port.Label)), 'Closure path publishing'
             self._publisher.republish(subscription)
 
     def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
         """Closure path is not extendable.
         """
+        if not right and not tail or tail is self._tail:
+            return self
         raise AssertionError('Connecting closure path')
 
     @property

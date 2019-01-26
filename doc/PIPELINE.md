@@ -16,6 +16,11 @@ like this:
 flow = LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)
 ```
 
+Given the particular implementation of the example operators this will render a pipeline with the _train_ and _apply_
+graphs visualized as follows:
+
+![Pipeline DAGs](pipeline.png)
+
 The meaning of operators and how are they defined using actors is described in more details in the following sections.
 
 Actor

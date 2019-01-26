@@ -1,7 +1,6 @@
 """
 Runtime that just renders the pipeline DAG visualization.
 """
-import typing
 
 from dask.dot import graphviz
 
@@ -11,10 +10,10 @@ from forml.flow.graph import view, node as grnode, port
 class Dot(view.PreOrder):
     """Path visitor for building the graphviz Dot structure.
     """
-    def __init__(self, name: typing.Optional[str] = None):
-        self._dot: graphviz.Digraph = graphviz.Digraph(name or 'Pipeline')
+    def __init__(self, *args, **kwargs):
+        self._dot: graphviz.Digraph = graphviz.Digraph(*args, **kwargs)
 
-    def process(self, node: grnode.Atomic) -> None:
+    def visit_node(self, node: grnode.Atomic) -> None:
         """Process new node.
 
         Args:

@@ -60,14 +60,9 @@ RFC = simple.Consumer.operator(task.Wrapped.actor(sklearn.RandomForestClassifier
 
 pipeline = (LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)).pipeline
 
-# Collect the train pipeline graph
-train_dag = visual.Dot('Train Pipeline')
-pipeline.train.accept(train_dag)
-print(train_dag.source)
-train_dag.render('/tmp/train.gv')
-
-# Collect the apply pipeline graph
-apply_dag = visual.Dot('Apply Pipeline')
-pipeline.apply.accept(apply_dag)
-print(apply_dag.source)
-apply_dag.render('/tmp/apply.gv')
+# Collect both the train and apply graph dags
+dag = visual.Dot('Pipeline', format='png')
+pipeline.train.accept(dag)
+pipeline.apply.accept(dag)
+print(dag.source)
+dag.render('/tmp/pipeline.gv')

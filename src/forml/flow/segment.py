@@ -111,5 +111,6 @@ class Link(Related):
         Returns: Pipeline instance.
         """
         track = self._operator.compose(self._builder)
-        assert not isinstance(track.label, node.Future) or not any(track.label.output), 'Label not extracted'
+        # pylint: disable=protected-access
+        assert not isinstance(track.label._tail, node.Future) or not any(track.label._tail.output), 'Label not consumed'
         return flow.Pipeline(track.apply, track.train)
