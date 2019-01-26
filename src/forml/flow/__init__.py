@@ -12,6 +12,13 @@ from forml.flow.graph import node, view
 class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
     """Structure for holding related flow parts of different modes.
     """
+    def __new__(cls, apply: view.Channel, train: view.Closure):
+        apply = apply.extend()
+        train = train.extend()
+        assert isinstance(apply, view.Channel), 'Apply path not a channel'
+        # pylint: disable=protected-access
+        assert isinstance(train._tail, node.Future) or isinstance(train, view.Closure), 'Train path not a closure'
+        return super().__new__(cls, apply, train)
 
 
 class Operator(metaclass=abc.ABCMeta):
