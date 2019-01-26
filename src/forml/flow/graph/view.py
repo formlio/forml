@@ -6,19 +6,60 @@ import abc
 import operator
 import typing
 
-from forml.flow.graph import node, port
+from forml.flow.graph import node as grnode, port
 
 
 class Visitor(metaclass=abc.ABCMeta):
     """View visitor interface.
     """
     @abc.abstractmethod
-    def visit_path(self, head: node.Atomic, tail: node.Atomic) -> None:
+    def visit_path(self, head: grnode.Atomic, tail: grnode.Atomic) -> None:
         """Path visit.
 
         Args:
             head: Path head node.
             tail: Path tail node.
+        """
+
+
+class PreOrder(Visitor, metaclass=abc.ABCMeta):
+    """Visitor iterating over all nodes between head and tail (or sink branches starting from head).
+    """
+    def visit_path(self, head: grnode.Atomic, tail: grnode.Atomic) -> None:
+        """Path visit.
+
+        Args:
+            head: Path head node.
+            tail: Path tail node.
+        """
+        def scan(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> None:
+            """Recursive path scan.
+
+            Args:
+                publisher: Node to be processed.
+                path: Chain of nodes between current and head.
+            """
+            self.process(publisher)
+            seen.add(publisher)
+            if publisher is tail:
+                return
+            subscribers = {s.node for p in publisher.output for s in p if s.node not in seen}
+            if not any(subscribers):
+                return
+            path = frozenset(path | {publisher})
+            assert subscribers.isdisjoint(path), 'Cyclic flow'
+            for node in subscribers:
+                scan(node, path=path)
+
+        seen = set()
+        scan(head)
+
+    @abc.abstractmethod
+    def process(self, node: grnode.Atomic) -> None:
+        """Node processor.
+
+        Args:
+            node: Node being processed.
         """
 
 
@@ -29,11 +70,11 @@ class Path(tuple, metaclass=abc.ABCMeta):
     This is a base and factory class for creating specific path instances.
     """
 
-    _head: node.Atomic = property(operator.itemgetter(0))
-    _tail: node.Atomic = property(operator.itemgetter(1))
+    _head: grnode.Atomic = property(operator.itemgetter(0))
+    _tail: grnode.Atomic = property(operator.itemgetter(1))
 
-    def __new__(cls, head: node.Atomic, tail: typing.Optional[node.Atomic] = None):
-        def tailof(publisher: node.Atomic, path: typing.FrozenSet[node.Atomic] = frozenset()) -> node.Atomic:
+    def __new__(cls, head: grnode.Atomic, tail: typing.Optional[grnode.Atomic] = None):
+        def tailof(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> grnode.Atomic:
             """Recursive traversing all apply subscription paths down to the tail checking there is just one.
 
             Args:
@@ -69,7 +110,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         visitor.visit_path(self._head, self._tail)
 
     # @abc.abstractmethod
-    def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[node.Atomic] = None) -> 'Path':
+    def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[grnode.Atomic] = None) -> 'Path':
         """Create new path by appending right head to our tail or traversing the graph to its actual tail.
 
         Args:
@@ -103,7 +144,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Returns: Copy of the apply path.
         """
 
-        def mkcopy(publisher: node.Atomic, path: typing.FrozenSet[node.Atomic] = frozenset()) -> None:
+        def mkcopy(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> None:
             """Recursive path copy.
 
             Args:
@@ -111,6 +152,8 @@ class Path(tuple, metaclass=abc.ABCMeta):
                 path: Chain of nodes between current and head.
 
             Returns: Copy of the publisher node with all of it's subscriptions resolved.
+
+            Only the main branch is copied ignoring all sink branches.
             """
             path = frozenset(path | {publisher})
             if publisher is self._tail:
@@ -134,7 +177,7 @@ class Channel(Path):
     """Path with regular output passing data through.
     """
 
-    def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[node.Atomic] = None) -> Path:
+    def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
         """Create new path by appending right head to our tail or retracing this path up to its physical tail.
 
         Args:
@@ -179,7 +222,7 @@ class Closure(Path):
             assert isinstance(subscription.port, port.Train), 'Closure path publishing'
             self._publisher.republish(subscription)
 
-    def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[node.Atomic] = None) -> Path:
+    def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
         """Closure path is not extendable.
         """
         raise AssertionError('Connecting closure path')

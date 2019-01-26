@@ -29,6 +29,7 @@ class Operator(metaclass=abc.ABCMeta):
         Returns: Composed segment track.
         """
 
+
 class Composer:
     """High-level flow composer.
     """

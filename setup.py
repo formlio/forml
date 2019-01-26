@@ -16,5 +16,5 @@ setuptools.setup(name='forml',
                  package_dir={'': 'src'},
                  setup_requires=['pytest-pylint', 'pytest-runner'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['joblib', 'pandas'],
+                 install_requires=['joblib', 'pandas', 'graphviz'],
                  zip_safe=False)

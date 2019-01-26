@@ -82,12 +82,18 @@ class Actor(metaclass=abc.ABCMeta):
         with io.BytesIO(state) as bio:
             self.__dict__.update(joblib.load(bio))
 
+    def __str__(self):
+        return self.__class__.__name__
+
 
 class Spec(collections.namedtuple('Spec', 'actor, params')):
     """Wrapper of actor class and init params.
     """
-    def __new__(cls, actor: Actor, params: typing.Dict[str, typing.Any]):
+    def __new__(cls, actor: typing.Type[Actor], params: typing.Dict[str, typing.Any]):
         return super().__new__(cls, actor, types.MappingProxyType(params))
+
+    def __str__(self):
+        return self.actor.__name__ if isinstance(self.actor, Actor) else str(self.actor)
 
     def __getnewargs__(self):
         return self.actor, dict(self.params)
@@ -122,6 +128,9 @@ class Wrapped:
     def __init__(self, actor: typing.Type, mapping: typing.Mapping[str, str]):
         self._actor: typing.Any = actor
         self._mapping: typing.Mapping[str, str] = mapping
+
+    def __str__(self):
+        return str(self._actor.__name__)
 
     def __call__(self, *args, **kwargs):
         return self.Actor(self._actor(*args, **kwargs), self._mapping)  # pylint: disable=abstract-class-instantiated

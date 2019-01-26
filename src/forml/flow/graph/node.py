@@ -36,6 +36,9 @@ class Atomic(metaclass=abc.ABCMeta):
         self.szin: int = szin
         self._output: typing.Tuple[typing.Set[port.Subscription]] = tuple(set() for _ in range(szout))
 
+    def __str__(self):
+        return self.__class__.__name__
+
     def __getitem__(self, index) -> port.PubSub:
         """Semantical construct for creating PubSub port instance.
 

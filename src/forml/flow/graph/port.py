@@ -10,6 +10,8 @@ from forml.flow.graph import node as grnode  # pylint: disable=unused-import
 class Type:
     """Input port base class.
     """
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class SingletonMeta(type):
@@ -36,6 +38,8 @@ class Label(Type, metaclass=SingletonMeta):
 class Apply(Type, int):
     """Apply input/output port at given index.
     """
+    def __str__(self):
+        return f'{self.__class__.__name__}[{int(self)}]'
 
 
 class Subscription(collections.namedtuple('Subscription', 'node, port')):
