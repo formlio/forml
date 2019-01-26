@@ -90,7 +90,7 @@ class LabelExtractor(task.Actor[pandas.DataFrame]):
 Note this actor doesn't implement the `train` method making it a simple _stateless_ actor.
 
 Another option of defining actors is reusing third-party classes that are providing desired functionality. These classes
-cannot be changed to extend ForML base Actor class but can be wrapped using a ``forml.flow.task.Actor.Wrapped.actor`
+cannot be changed to extend ForML base Actor class but can be wrapped using a `forml.flow.task.Actor.Wrapped.actor`
 decorator like this:
 
 ```python
@@ -119,7 +119,7 @@ Operators can implement whatever complex functionality using any number of actor
 subgraph defined by an operator can internally split into multiple branches but can only be connected (both on input and
 output side) to other operators using single port of single node.
 
-For simple operators (typically single-actor oprtators) like transformers or estimators are available convenient
+For simple operators (typically single-actor operators) like _transformers_ or _estimators_ are available convenient
 decorators under the `forml.flow.operator.simple` that make it really easy to create specific instances.
 
 Following is an example of creating simple transformer operator by decorating an user defined actor with the
