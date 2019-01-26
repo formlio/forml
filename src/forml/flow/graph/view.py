@@ -191,6 +191,8 @@ class Channel(Path):
             right._head[0].subscribe(self._tail[0])
             if not tail:
                 tail = right._tail
+        elif not tail:
+            tail = Path(self._tail)._tail
         return Path(self._head, tail)
 
     @property

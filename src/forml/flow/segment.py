@@ -23,7 +23,7 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
     def extend(self, apply: typing.Optional[view.Path] = None,
                train: typing.Optional[view.Path] = None,
                label: typing.Optional[view.Path] = None) -> 'Track':
-        """Helper for creating new Track with all paths extended either with provided or automatic values.
+        """Helper for creating new Track with specified paths extended by provided values.
 
         Args:
             apply: Optional path to be connected to apply track.
@@ -32,12 +32,14 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
 
         Returns: New Track instance.
         """
-        return Track(self.apply.extend(apply), self.train.extend(train), self.label.extend(label))
+        return Track(self.apply.extend(apply) if apply else self.apply,
+                     self.train.extend(train) if train else self.train,
+                     self.label.extend(label) if label else self.label)
 
     def use(self, apply: typing.Optional[view.Path] = None,
             train: typing.Optional[view.Path] = None,
             label: typing.Optional[view.Path] = None) -> 'Track':
-        """Helper for creating new Track with paths replaced with provided values or left original.
+        """Helper for creating new Track with specified paths replaced by provided values.
 
         Args:
             apply: Optional path to be used as apply track.
