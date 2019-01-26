@@ -44,7 +44,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
             decorator = decorator(actor)
         return decorator
 
-    def compose(self, left: segment.Builder) -> segment.Track:
+    def compose(self, left: segment.Composable) -> segment.Track:
         """Abstract composition implementation.
 
         Args:

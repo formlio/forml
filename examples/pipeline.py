@@ -4,7 +4,7 @@ import pandas
 import numpy
 from sklearn import ensemble as sklearn
 
-
+from forml import flow
 from forml.exec.runtime import visual
 from forml.flow import task
 from forml.flow.operator import simple
@@ -58,7 +58,7 @@ class NaNImputer(task.Actor[pandas.DataFrame]):
 RFC = simple.Consumer.operator(task.Wrapped.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
 
 
-pipeline = (LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)).pipeline
+pipeline = flow.Pipeline(LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3))
 
 # Collect both the train and apply graph dags
 dag = visual.Dot('Pipeline', format='png')

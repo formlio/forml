@@ -9,66 +9,39 @@ from forml import flow
 from forml.flow import segment
 
 
-@pytest.fixture(scope='session')
-def operator():
-    """Operator fixture.
+class Composable:
+    """Composable tests base class.
     """
-    class Operator(flow.Operator):
-        """Operator mock.
+    def test_track(self, composable: segment.Composable):
+        """Testing composable track.
         """
-        def compose(self, left: segment.Builder) -> segment.Track:
-            """Dummy composition.
-            """
-            return left.track()
-
-    return Operator()
+        assert isinstance(composable, segment.Composable)
+        assert isinstance(composable.track(), segment.Track)
 
 
-class Builder:
-    """Builder tests base class.
-    """
-    def test_track(self, builder: segment.Builder):
-        """Testing builder track.
-        """
-        assert isinstance(builder, segment.Builder)
-        assert isinstance(builder.track(), segment.Track)
-
-
-class TestOrigin(Builder):
-    """Origin builder unit tests.
+class TestOrigin(Composable):
+    """Origin composable unit tests.
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def builder():
-        """Origin builder fixture.
+    def composable():
+        """Origin composable fixture.
         """
         return segment.Origin()
 
 
-class TestRecursive(Builder):
-    """Recursive builder unit tests.
+class TestExpression(Composable):
+    """Recursive composable unit tests.
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def builder(operator: flow.Operator):
-        """Recursive builder fixture.
+    def composable(operator: flow.Operator):
+        """Expression composable fixture.
         """
-        return segment.Recursive(operator, segment.Origin())
+        return segment.Expression(operator, segment.Origin())
 
-
-class TestLink:
-    """Segment linking unit tests.
-    """
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def link(operator: flow.Operator):
-        """Link fixture.
-        """
-        return segment.Link(operator, segment.Recursive(operator, segment.Origin()))
-
-    def test_link(self, link: segment.Link, operator: flow.Operator):
+    def test_expression(self, composable: segment.Composable, operator: flow.Operator):
         """Testing linking action.
         """
-        linked = link >> operator
-        assert isinstance(linked, segment.Link)
-        assert isinstance(linked.pipeline, flow.Pipeline)
+        expression = composable >> operator
+        assert isinstance(expression, segment.Expression)
