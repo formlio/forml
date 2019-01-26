@@ -1,7 +1,7 @@
 """
 Graph unit tests.
 """
-# pylint: disable=no-self-use
+# pylint: disable=no-self-use, protected-access
 import typing
 
 import pytest

@@ -16,7 +16,6 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
     def __new__(cls, apply: typing.Optional[view.Path] = None,
                 train: typing.Optional[view.Path] = None,
                 label: typing.Optional[view.Path] = None):
-        # pylint: disable=abstract-class-instantiated
         return super().__new__(cls, apply or view.Path(node.Future()),
                                train or view.Path(node.Future()),
                                label or view.Path(node.Future()))

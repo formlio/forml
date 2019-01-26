@@ -68,7 +68,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         """
         visitor.visit_path(self._head, self._tail)
 
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[node.Atomic] = None) -> 'Path':
         """Create new path by appending right head to our tail or traversing the graph to its actual tail.
 
@@ -78,6 +78,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
 
         Returns: New connected path.
         """
+        raise NotImplementedError()
 
     @property
     def subscriber(self) -> port.Subscriptable:
@@ -88,12 +89,13 @@ class Path(tuple, metaclass=abc.ABCMeta):
         return self._head[0].subscriber
 
     @property
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def publisher(self) -> port.Publishable:
         """Publishable tail node representation.
 
         Returns: Publishable tail apply port reference.
         """
+        raise NotImplementedError()
 
     def copy(self) -> 'Path':
         """Make a copy of the apply path topology. Any nodes not on path are ignored.
@@ -146,7 +148,7 @@ class Channel(Path):
             right._head[0].subscribe(self._tail[0])
             if not tail:
                 tail = right._tail
-        return Path(self._head, tail)  # pylint: disable=abstract-class-instantiated
+        return Path(self._head, tail)
 
     @property
     def publisher(self) -> port.Publishable:

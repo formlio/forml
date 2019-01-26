@@ -54,6 +54,7 @@ confidence=
 
 disable=
   attribute-defined-outside-init,
+  cyclic-import,
   too-many-branches,
   too-many-locals,
   too-many-arguments,
