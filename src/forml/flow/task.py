@@ -1,16 +1,5 @@
 """
-
-@Transformer  # wrap as actor capturing init args returning a Transformer operator
-class NaImputer:
-    def __init__(self, x, y):
-        ...
-
-    def fit(self, x, y):
-        ...
-
-    def transform(self, x):
-        ...
-
+Flow actor abstraction.
 """
 
 import abc
@@ -22,13 +11,22 @@ import types
 import typing
 
 import joblib
-import pandas
+
+DataT = typing.TypeVar('DataT')
 
 
-class Actor(metaclass=abc.ABCMeta):
+class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
     """Abstract interface of an actor.
     """
-    def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
+    @classmethod
+    def is_stateful(cls) -> bool:
+        """Check whether this actor is stateful (determined based on existence user-overridden train method).
+
+        Returns: True if stateful.
+        """
+        return cls.train.__code__ is not Actor.train.__code__
+
+    def train(self, features: DataT, label: DataT) -> None:
         """Train the actor using the provided features and label.
 
         Args:
@@ -38,11 +36,12 @@ class Actor(metaclass=abc.ABCMeta):
         raise NotImplementedError('Stateless actor')
 
     @abc.abstractmethod
-    def apply(self, *features: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:
+    def apply(self,
+              features: typing.Union[DataT, typing.Sequence[DataT]]) -> typing.Union[DataT, typing.Sequence[DataT]]:
         """Pass features through the apply function (typically transform or predict).
 
         Args:
-            features: Table of feature vectors.
+            features: Table(s) of feature vectors.
 
         Returns: Transformed features (ie predictions).
         """
@@ -65,8 +64,8 @@ class Actor(metaclass=abc.ABCMeta):
 
         Returns: state as bytes.
         """
-        # if self.train.__code__ is Actor.train.__code__:  # Train not overridden - stateless actor
-        #     return bytes()
+        if not self.is_stateful():
+            return bytes()
         with io.BytesIO() as bio:
             joblib.dump(self.__dict__, bio, protocol=pickle.HIGHEST_PROTOCOL)
             return bio.getvalue()
@@ -79,6 +78,7 @@ class Actor(metaclass=abc.ABCMeta):
         """
         if not state:
             return
+        assert self.is_stateful(), 'State provided but actor stateless'
         with io.BytesIO(state) as bio:
             self.__dict__.update(joblib.load(bio))
 
@@ -93,7 +93,7 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
         return super().__new__(cls, actor, types.MappingProxyType(params))
 
     def __str__(self):
-        return self.actor.__name__ if isinstance(self.actor, Actor) else str(self.actor)
+        return self.actor.__name__ if inspect.isclass(self.actor) else str(self.actor)
 
     def __getnewargs__(self):
         return self.actor, dict(self.params)
@@ -114,6 +114,7 @@ class Wrapped:
             return super().__new__(cls)
 
         def __init__(self, actor: typing.Any, mapping: typing.Mapping[str, str]):
+            super().__init__()
             self._actor: typing.Any = actor
             self._mapping: typing.Mapping[str, str] = mapping
 
@@ -126,13 +127,21 @@ class Wrapped:
             return getattr(self._actor, self._mapping.get(item, item))
 
     def __init__(self, actor: typing.Type, mapping: typing.Mapping[str, str]):
-        self._actor: typing.Any = actor
+        assert not issubclass(actor, Actor), 'Wrapping a true actor'
+        self._actor: typing.Type = actor
         self._mapping: typing.Mapping[str, str] = mapping
+
+    def is_stateful(self) -> bool:
+        """Emulation of native actor is_stateful class method.
+
+        Returns: True if the wrapped actor is stateful (has a train method).
+        """
+        return hasattr(self._actor, self._mapping[Actor.train.__name__])
 
     def __str__(self):
         return str(self._actor.__name__)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Actor:
         return self.Actor(self._actor(*args, **kwargs), self._mapping)  # pylint: disable=abstract-class-instantiated
 
     def __hash__(self):
@@ -167,8 +176,8 @@ class Wrapped:
             assert cls and inspect.isclass(cls), f'Invalid actor class {cls}'
             if isinstance(cls, Actor):
                 return cls
-
-            # TODO: verify class has required target methods
+            for target in {t for s, t in mapping.items() if s != Actor.train.__name__}:
+                assert callable(getattr(cls, target, None)), f'Wrapped actor missing required {target} implementation'
             return Wrapped(cls, mapping)
 
         if cls:
