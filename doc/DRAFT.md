@@ -1,12 +1,11 @@
-ForMLAI (interim code name - Continuous Integration, Formalization and Runtime for AI) is a framework for researching,
-implementing and operating machine learning projects. It is a comprehension, management and execution tool taking care
-of the following three main areas of any such project:
+ForML is a framework for researching, implementing and operating machine learning projects. It is a comprehension,
+management and execution tool taking care of the following three main areas of any such project:
 
 * _Formalized description_ of project component structure using an uniformed syntax   
 * Identification and management of all stages of typical _ML project lifecycle_
 * Project _runtime layer_ for all processing aspects
 
-ForMLAI attempts to abstract the core concept from particular technologies to allow engagement of arbitrary existing
+ForML attempts to abstract the core concept from particular technologies to allow engagement of arbitrary existing
 tools and environments both on the formalization level (custom DSL) as well as the execution level (support for
 independent runtime implementations). 
 
@@ -18,7 +17,7 @@ To prove the concept within limited time the project restricts itself within fol
 Formalization
 =============
 
-First of the main areas covered by ForMLAI is an interface for implementing ML solutions using an unified highlevel
+First of the main areas covered by ForML is an interface for implementing ML solutions using an unified highlevel
 syntax. This would ideally be a custom DSL but given the simplification constraint we stick with a Python based API.
  
 
@@ -26,13 +25,13 @@ Project Component Structure
 ---------------------------
 
 A project is defined as a set of specific components wrapped as python package with a typical `setuptools` layout.
-ForMLAI offers the _Convention over Configuration_ approach for organizing the internal package structure which means it
+ForML offers the _Convention over Configuration_ approach for organizing the internal package structure which means it
 automatically discovers and imports the expected project components if the author follows this convention (there is
 still an option to ignore the convention but the author is then responsible for configuring all the otherwise automatic
 steps).
 
 The convention is based simply on defining python _modules_ (or _packages_) with expected names within the project
-namespace root. ForMLAI doesn't care whether the component is defined as a module (a file with `.py` suffix) or package
+namespace root. ForML doesn't care whether the component is defined as a module (a file with `.py` suffix) or package
 (a subdirectory with `__init__.py` file in it) since both have same import syntax.
 
 This naming convention for the different project components are described in the following subsections. The general
@@ -100,7 +99,7 @@ Label Extraction (`label.py`)
 This is actually one of the components in question discussed in the previous paragraph - should it be treated in the
 framework as a separate topic or should it just be left to the user to build it into the main pipeline if necessary?
 Label extraction looks to be more settled procedure (in terms of it's position in the pipeline) to have its own
-component in the ForMLAI project structure.
+component in the ForML project structure.
 
 
 Cross Validation (`crossval.py`)

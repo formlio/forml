@@ -1,6 +1,7 @@
 """
 Flow unit tests fixtures.
 """
+# pylint: disable=no-self-use
 
 import pytest
 
@@ -24,6 +25,15 @@ class Actor:
         """Apply to-be handler.
         """
         return self._labels
+
+    def get_params(self):
+        """Get hyper-parameters of this actor.
+        """
+        return {}
+
+    def set_params(self, _):
+        """Set hyper-parameters of this actor.
+        """
 
 
 @pytest.fixture(scope='session')

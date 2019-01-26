@@ -79,9 +79,10 @@ class Mapper(Simple):
         Returns: Composed segment track.
         """
         apply: node.Worker = worker.node()
-        train_train: node.Worker = worker.node()
         train_apply: node.Worker = worker.node()
-        train_train.train(left.train.publisher, left.label.publisher)
+        if self._spec.actor.is_stateful():
+            train_train: node.Worker = worker.node()
+            train_train.train(left.train.publisher, left.label.publisher)
         return left.extend(view.Path(apply), view.Path(train_apply))
 
 
@@ -97,6 +98,7 @@ class Consumer(Simple):
 
         Returns: Composed segment track.
         """
+        assert self._spec.actor.is_stateful(), 'Stateless actor invalid for a consumer'
         apply: node.Worker = worker.node()
         train: node.Worker = worker.node()
         train.train(left.train.publisher, left.label.publisher)
