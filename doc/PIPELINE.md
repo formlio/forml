@@ -51,8 +51,8 @@ The actor API is defined using an abstract class of `forml.flow.task.Actor`. For
 simply extend this class filling in the abstract methods with the desired functionality. The meaning of these methods
 is:
 
-* `apply(features: typing.Union[DataT, typing.Sequence[DataT]]) -> typing.Union[DataT, typing.Sequence[DataT]]`
-- mandatory M:N input-output `Apply` ports 
+* `apply(features: typing.Union[DataT, typing.Sequence[DataT]]) -> typing.Union[DataT, typing.Sequence[DataT]]` - 
+mandatory M:N input-output `Apply` ports 
 * `train(features: TableT, label: VectorT) -> None` - optional method engaging the _Train_ (`features`) and _Label_
 (`label`) ports on stateful actors
 * `get_params() -> typing.Dict[str, typing.Any]` and `set_params(params: typing.Dict[str, typing.Any]) -> None` -
