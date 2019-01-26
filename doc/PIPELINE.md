@@ -1,10 +1,10 @@
 Pipeline is the backbone of the ML solution responsible for holding all its pieces in the right place together. On the
-low level it is a _Task Dependency Graph_ where edges represents data flows and vertices are data transformations.
+low level it is a _Task Dependency Graph_ where edges represent data flows and vertices are the data transformations.
 
 ForML is providing a convenient API for defining complex Pipelines using simple notation based on two main pipeline
 entities:
-* Operators that can be seen as pipeline plugins implementing specific ML technique.
-* Actors as the low level primitives forming the graph vertices.
+* _Operators_ that can be seen as pipeline plugins implementing specific ML techniques.
+* _Actors_ as the low level primitives forming the graph vertices.
 
 Each ForML pipeline has dual _train_ vs _apply_ mode for implementing the specific scenarios of supervised learning.
 
