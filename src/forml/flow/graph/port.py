@@ -4,7 +4,7 @@ Graph node port functionality.
 import collections
 import typing
 
-from forml.flow.graph import node as grnode
+from forml.flow.graph import node as grnode  # pylint: disable=unused-import
 
 
 class Type:

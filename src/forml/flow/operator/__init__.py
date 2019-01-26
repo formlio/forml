@@ -17,12 +17,12 @@ class Source(flow.Operator):
         self._train: task.Spec = train
         self._label: task.Spec = label
 
-    def compose(self, builder: segment.Builder) -> segment.Track:
+    def compose(self, left: segment.Builder) -> segment.Track:
         """Compose the source segment track.
 
         Returns: Source segment track.
         """
-        assert isinstance(builder, segment.Origin), 'Source not origin'
+        assert isinstance(left, segment.Origin), 'Source not origin'
         apply: view.Path = view.Path(node.Factory(self._apply, 0, 1).node())
         train: view.Path = view.Path(node.Factory(self._train, 0, 1).node())
         label: typing.Optional[view.Path] = None
