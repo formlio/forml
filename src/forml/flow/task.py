@@ -96,7 +96,7 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
         return hash(self.actor) ^ hash(tuple(sorted(self.params.items())))
 
 
-class Wrapper:
+class Wrapped:
     """Decorator wrapper.
     """
     class Actor(Actor):
@@ -129,39 +129,39 @@ class Wrapper:
     def __hash__(self):
         return hash(self._actor) ^ hash(tuple(sorted(self._mapping.items())))
 
-    def __eq__(self, other):
+    def __eq__(self, other: typing.Any):
         # pylint: disable=protected-access
         return isinstance(other, self.__class__) and self._actor == other._actor and self._mapping == other._mapping
 
+    @staticmethod
+    def actor(cls: typing.Optional[typing.Type] = None, **mapping):  # pylint: disable=bad-staticmethod-argument
+        """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
+        optionally with mapping of Actor methods to decorated user class implementation.
 
-def actor(cls: typing.Optional[typing.Type] = None, **mapping):
-    """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
-    optionally with mapping of Actor methods to decorated user class implementation.
+        Args:
+            cls: Decorated class.
+            apply: Name of user class method implementing the actor apply.
+            train: Name of user class method implementing the actor train.
+            get_params: Name of user class method implementing the actor get_params.
+            set_params: Name of user class method implementing the actor set_params.
 
-    Args:
-        cls: Decorated class.
-        apply: Name of user class method implementing the actor apply.
-        train: Name of user class method implementing the actor train.
-        get_params: Name of user class method implementing the actor get_params.
-        set_params: Name of user class method implementing the actor set_params.
-
-    Returns: Actor class.
-    """
-    assert all(isinstance(a, str) for a in mapping.values()), 'Invalid mapping'
-
-    for method in (Actor.apply, Actor.train, Actor.get_params, Actor.set_params):
-        mapping.setdefault(method.__name__, method.__name__)
-
-    def decorator(cls):
-        """Decorating function.
+        Returns: Actor class.
         """
-        assert cls and inspect.isclass(cls), f'Invalid actor class {cls}'
-        if isinstance(cls, Actor):
-            return cls
+        assert all(isinstance(a, str) for a in mapping.values()), 'Invalid mapping'
 
-        # TODO: verify class has required target methods
-        return Wrapper(cls, mapping)
+        for method in (Actor.apply, Actor.train, Actor.get_params, Actor.set_params):
+            mapping.setdefault(method.__name__, method.__name__)
 
-    if cls:
-        decorator = decorator(cls)
-    return decorator
+        def decorator(cls):
+            """Decorating function.
+            """
+            assert cls and inspect.isclass(cls), f'Invalid actor class {cls}'
+            if isinstance(cls, Actor):
+                return cls
+
+            # TODO: verify class has required target methods
+            return Wrapped(cls, mapping)
+
+        if cls:
+            decorator = decorator(cls)
+        return decorator

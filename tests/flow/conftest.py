@@ -30,4 +30,4 @@ class Actor:
 def actor():
     """Actor fixture.
     """
-    return task.actor(Actor, apply='predict')
+    return task.Wrapped.actor(Actor, apply='predict')
