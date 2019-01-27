@@ -71,8 +71,8 @@ class Atomic(metaclass=abc.ABCMeta):
         return tuple(frozenset(p) for p in self._output)
 
     def publish(self, index: int, subscription: port.Subscription) -> None:
-        """Publish an output port based on the given subscription.  
-        
+        """Publish an output port based on the given subscription.
+
         Args:
             index: Output port index to publish from.
             subscription: Subscriber node and port to publish to.

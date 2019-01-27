@@ -27,6 +27,8 @@ class Path:
     """Path tests.
     """
     def test_type(self, simple: node.Worker, path: view.Path, btype: typing.Type[view.Path]):
+        """Testing attributes.
+        """
         assert isinstance(path, btype)
         assert path._head is simple
 

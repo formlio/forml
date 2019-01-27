@@ -1,5 +1,7 @@
+"""
+Set of generic operator skeletons that can be simply used as wrappers about relevant actors.
+"""
 import abc
-import inspect
 import typing
 
 from forml import flow
@@ -14,7 +16,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
         self._spec: task.Spec = spec
 
     @classmethod
-    def decorate(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs):
+    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs):
         """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
         call.
 
@@ -24,14 +26,10 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
         Returns: Curried operator.
         """
-        assert bool(actor) ^ bool(kwargs), 'Unexpected positional argument provided together with keywords'
-
         def decorator(actor):
             """Decorating function.
             """
-            assert actor and isinstance(actor, task.Actor), f'Invalid actor type {actor}'
-
-            def operator(**params):
+            def wrapper(**params):
                 """Curried operator.
 
                 Args:
@@ -40,9 +38,9 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
                 Returns: Operator instance.
                 """
                 return cls(task.Spec(actor, params), **kwargs)
-            return operator
+            return wrapper
 
-        if actor:  # used as paramless decorator
+        if actor:
             decorator = decorator(actor)
         return decorator
 
@@ -121,34 +119,3 @@ class Labeler(Simple):
         """
         label: node.Worker = worker.node()
         return left.use(label=left.train.extend(view.Path(label)))
-
-
-class Source(flow.Operator):
-    """Basic source operator with optional label extraction.
-
-    Label extractor is expected to be an actor with single input and two output ports - train and actual label.
-    """
-    def __init__(self, apply: task.Spec, train: task.Spec, label: typing.Optional[task.Spec] = None):
-        self._apply: task.Spec = apply
-        self._train: task.Spec = train
-        self._label: task.Spec = label
-
-    def compose(self, builder: segment.Builder) -> segment.Track:
-        """Compose the source segment track.
-
-        Returns: Source segment track.
-        """
-        assert isinstance(builder, segment.Origin), 'Source not origin'
-        apply: view.Path = view.Path(node.Factory(self._apply, 0, 1).node())
-        train: view.Path = view.Path(node.Factory(self._train, 0, 1).node())
-        label: typing.Optional[view.Path] = None
-        if self._label:
-            train_tail = node.Future()
-            label_tail = node.Future()
-            extract = node.Factory(self._label, 1, 2).node()
-            extract[0].subscribe(train[0])
-            train_tail[0].subscribe(extract[0])
-            label_tail[0].subscribe(extract[1])
-            train = train.extend(tail=train_tail)
-            label = train.extend(tail=label_tail)
-        return segment.Track(apply, train, label)

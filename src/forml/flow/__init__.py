@@ -30,10 +30,12 @@ class Operator(metaclass=abc.ABCMeta):
         """
 
 class Composer:
+    """High-level flow composer.
+    """
     def __init__(self):
         self._id: str = ...
         self._flow: Pipeline = ...
-        self._source: Source = ...
+        self._source: 'Source' = ...
         # self._label: node.Worker = ... #(splitter 1:2) ???
         self._score = ...  # cv+metric -> single number
         self._report = ...  # arbitrary metrics -> kv list
