@@ -1,5 +1,5 @@
 """
-Graph unit tests fextures.
+Graph unit tests fixtures.
 """
 
 import pytest

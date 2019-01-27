@@ -3,39 +3,50 @@ Flow task unit tests.
 """
 # pylint: disable=no-self-use
 import pickle
+import typing
 
 import pytest
 
 from forml.flow import task
 
 
-@pytest.fixture(scope='function')
-def actor():
-    @task.actor(train='fit', apply='predict')
-    class Actor:
-        def __init__(self):
-            self._features = None
-            self._labels = None
-
-        def fit(self, features, labels):
-            """
-            """
-            self._features = features
-            self._labels = labels
-
-        def predict(self, features):
-            """
-            """
-            return self._labels
-
-    return Actor()
-
-
 class TestActor:
-    def test_train(self, actor):
-        actor.fit('123', 'abc')
-        assert actor.predict('xyz') == 'abc'
+    """Actor unit tests.
+    """
+    @pytest.fixture(scope='function')
+    def instance(self, actor):
+        """Hyper-parameter tuning.
+        """
+        return actor()
 
-    def test_serde(self, actor):
-        actor.fit('123', 'abc')
-        assert pickle.loads(pickle.dumps(actor)).predict('xyz') == 'abc'
+    def test_train(self, instance: task.Actor):
+        """Test actor training.
+        """
+        instance.train('123', 'abc')
+        assert instance.predict('xyz') == 'abc'
+
+    def test_serializable(self, instance: task.Actor):
+        """Test actor serializability.
+        """
+        instance.train('123', 'abc')
+        assert pickle.loads(pickle.dumps(instance)).predict('xyz') == 'abc'
+
+
+class TestSpec:
+    """Task spec unit tests.
+    """
+    @pytest.fixture(scope='session')
+    def spec(self, actor: typing.Type[task.Actor]):
+        """Task spec fixture.
+        """
+        return task.Spec(actor, {'a': 1, 'b': 2})
+
+    def test_hashable(self, spec: task.Spec):
+        """Test spec hashability.
+        """
+        assert spec in {spec}
+
+    def test_serializable(self, spec: task.Spec, actor: typing.Type[task.Actor]):
+        """Test spec serializability.
+        """
+        assert pickle.loads(pickle.dumps(spec)).actor == actor

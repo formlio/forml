@@ -56,6 +56,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         assert head.szin in {0, 1}, 'Simple head required'
         tail = tailof(head)
         assert tail.szout in {0, 1}, 'Simple tail required'
+        # pylint: disable=self-cls-assignment
         cls = Closure if any(isinstance(s.port, port.Train) for p in tail.output for s in p) else Channel
         return super().__new__(cls, (head, tail))
 
@@ -140,11 +141,12 @@ class Channel(Path):
 
         Returns: New extended path.
         """
+        # pylint: disable=protected-access
         if right:
             right._head[0].subscribe(self._tail[0])
             if not tail:
                 tail = right._tail
-        return Path(self._head, tail)
+        return Path(self._head, tail)  # pylint: disable=abstract-class-instantiated
 
     @property
     def publisher(self) -> port.Publishable:
@@ -181,7 +183,7 @@ class Closure(Path):
         raise AssertionError('Connecting closure path')
 
     @property
-    def publisher(self) -> Publishable:
+    def publisher(self) -> port.Publishable:
         """Publishable tail node representation. Closure can only be published to Train ports.
 
         Returns: Publishable tail apply port reference.

@@ -1,7 +1,12 @@
+"""
+Runtime persistence.
+"""
 import datetime
 
 
 class Package:
+    """Wrapper for persisting runtime state representation.
+    """
     def __init__(self):
         self.project = ...
         self.trained: datetime.datetime = ...

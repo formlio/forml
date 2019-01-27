@@ -103,7 +103,7 @@ class Publishable(Applicable):
         try:
             self.republish(subscription)
         except Exception as err:
-            Subscription._PORTS[subscriber].discard(port)
+            Subscription._PORTS[subscriber].discard(port)  # pylint: disable=protected-access
             raise err
 
     def republish(self, subscription: Subscription) -> None:

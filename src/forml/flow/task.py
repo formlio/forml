@@ -28,7 +28,6 @@ import pandas
 class Actor(metaclass=abc.ABCMeta):
     """Abstract interface of an actor.
     """
-    @abc.abstractmethod
     def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
         """Train the actor using the provided features and label.
 
@@ -36,6 +35,7 @@ class Actor(metaclass=abc.ABCMeta):
             features: Table of feature vectors.
             label: Table of labels.
         """
+        raise NotImplementedError('Stateless actor')
 
     @abc.abstractmethod
     def apply(self, *features: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:
@@ -65,6 +65,8 @@ class Actor(metaclass=abc.ABCMeta):
 
         Returns: state as bytes.
         """
+        # if self.train.__code__ is Actor.train.__code__:  # Train not overridden - stateless actor
+        #     return bytes()
         with io.BytesIO() as bio:
             joblib.dump(self.__dict__, bio, protocol=pickle.HIGHEST_PROTOCOL)
             return bio.getvalue()
@@ -75,14 +77,10 @@ class Actor(metaclass=abc.ABCMeta):
         Args:
             state: bytes to be used as internal state.
         """
+        if not state:
+            return
         with io.BytesIO(state) as bio:
             self.__dict__.update(joblib.load(bio))
-
-    def __getstate__(self):
-        return self.get_state()
-
-    def __setstate__(self, state: bytes):
-        self.set_state(state)
 
 
 class Spec(collections.namedtuple('Spec', 'actor, params')):
@@ -95,7 +93,45 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
         return self.actor, dict(self.params)
 
     def __hash__(self):
-        return hash(self.actor) ^ hash(tuple(sorted(self.items())))
+        return hash(self.actor) ^ hash(tuple(sorted(self.params.items())))
+
+
+class Wrapper:
+    """Decorator wrapper.
+    """
+    class Actor(Actor):
+        """Wrapper around user class implementing the Actor interface.
+        """
+        # pylint: disable=abstract-method
+        def __new__(cls, actor: typing.Any, mapping: typing.Mapping[str, str]):  # pylint: disable=unused-argument
+            cls.__abstractmethods__ = frozenset()
+            return super().__new__(cls)
+
+        def __init__(self, actor: typing.Any, mapping: typing.Mapping[str, str]):
+            self._actor: typing.Any = actor
+            self._mapping: typing.Mapping[str, str] = mapping
+
+        def __getnewargs__(self):
+            return self._actor, self._mapping
+
+        def __getattribute__(self, item):
+            if item.startswith('_') or item not in self._mapping and not hasattr(self._actor, item):
+                return super().__getattribute__(item)
+            return getattr(self._actor, self._mapping.get(item, item))
+
+    def __init__(self, actor: typing.Type, mapping: typing.Mapping[str, str]):
+        self._actor: typing.Any = actor
+        self._mapping: typing.Mapping[str, str] = mapping
+
+    def __call__(self, *args, **kwargs):
+        return self.Actor(self._actor(*args, **kwargs), self._mapping)  # pylint: disable=abstract-class-instantiated
+
+    def __hash__(self):
+        return hash(self._actor) ^ hash(tuple(sorted(self._mapping.items())))
+
+    def __eq__(self, other):
+        # pylint: disable=protected-access
+        return isinstance(other, self.__class__) and self._actor == other._actor and self._mapping == other._mapping
 
 
 def actor(cls: typing.Optional[typing.Type] = None, **mapping):
@@ -108,12 +144,9 @@ def actor(cls: typing.Optional[typing.Type] = None, **mapping):
         train: Name of user class method implementing the actor train.
         get_params: Name of user class method implementing the actor get_params.
         set_params: Name of user class method implementing the actor set_params.
-        get_state: Name of user class method implementing the actor get_state.
-        set_state: Name of user class method implementing the actor set_statte.
 
     Returns: Actor class.
     """
-    assert bool(cls) ^ bool(mapping), 'Unexpected positional argument provided together with mapping'
     assert all(isinstance(a, str) for a in mapping.values()), 'Invalid mapping'
 
     for method in (Actor.apply, Actor.train, Actor.get_params, Actor.set_params):
@@ -127,21 +160,8 @@ def actor(cls: typing.Optional[typing.Type] = None, **mapping):
             return cls
 
         # TODO: verify class has required target methods
-        class Decorated(Actor):
-            """Wrapper around user class implementing the Actor interface.
-            """
-            def __new__(cls):
-                cls.__abstractmethods__ = frozenset()
-                return super().__new__(cls)
+        return Wrapper(cls, mapping)
 
-            def __init__(self, *args, **kwargs):
-                self._actor = cls(*args, **kwargs)
-
-            def __getattr__(self, item):
-                return getattr(self._actor, mapping.get(item, item))
-
-        return Decorated
-
-    if cls:  # used as paramless decorator
+    if cls:
         decorator = decorator(cls)
     return decorator

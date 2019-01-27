@@ -29,4 +29,3 @@ class NodeValidator(view.Visitor):
             head: Path head node.
             tail: Path tail node.
         """
-        ...

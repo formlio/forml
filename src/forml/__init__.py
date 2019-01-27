@@ -1,3 +1,6 @@
+"""
+ForML top level.
+"""
 import typing
 
 from forml import flow

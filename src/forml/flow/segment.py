@@ -16,6 +16,7 @@ class Track(collections.namedtuple('Track', 'apply, train, label')):
     def __new__(cls, apply: typing.Optional[view.Path] = None,
                 train: typing.Optional[view.Path] = None,
                 label: typing.Optional[view.Path] = None):
+        # pylint: disable=abstract-class-instantiated
         return super().__new__(cls, apply or view.Path(node.Future()),
                                train or view.Path(node.Future()),
                                label or view.Path(node.Future()))
@@ -80,18 +81,23 @@ class Origin(Builder):
 
 
 class Recursive(Related, Builder):
+    """Builder further in the linked chain.
+    """
     def __init__(self, operator: 'flow.Operator', builder: Builder):
         Builder.__init__(self)
         Related.__init__(self, operator, builder)
 
     def track(self) -> Track:
+        """Track of future nodes.
+
+        Returns: Segment track.
+        """
         return self._operator.compose(self._builder)
 
 
 class Link(Related):
-    def __init__(self, operator, builder):
-        super().__init__(operator, builder)
-
+    """Operator chaining descriptor.
+    """
     def __rshift__(self, right: 'flow.Operator') -> 'Link':
         """Semantical composition construct.
         """
@@ -99,6 +105,10 @@ class Link(Related):
 
     @property
     def pipeline(self) -> 'flow.Pipeline':
+        """Compose the while chain returning a Pipeline instance.
+
+        Returns: Pipeline instance.
+        """
         track = self._operator.compose(self._builder)
         assert not isinstance(track.label, node.Future) or not any(track.label.output), 'Label not extracted'
         return flow.Pipeline(track.apply, track.train)
