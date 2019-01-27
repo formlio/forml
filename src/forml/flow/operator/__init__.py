@@ -23,13 +23,13 @@ class Source(flow.Operator):
         Returns: Source segment track.
         """
         assert isinstance(left, segment.Origin), 'Source not origin'
-        apply: view.Path = view.Path(node.Factory(self._apply, 0, 1).node())
-        train: view.Path = view.Path(node.Factory(self._train, 0, 1).node())
+        apply: view.Path = view.Path(node.Worker.Instance(self._apply, 0, 1).node())
+        train: view.Path = view.Path(node.Worker.Instance(self._train, 0, 1).node())
         label: typing.Optional[view.Path] = None
         if self._label:
             train_tail = node.Future()
             label_tail = node.Future()
-            extract = node.Factory(self._label, 1, 2).node()
+            extract = node.Worker.Instance(self._label, 1, 2).node()
             extract[0].subscribe(train[0])
             train_tail[0].subscribe(extract[0])
             label_tail[0].subscribe(extract[1])

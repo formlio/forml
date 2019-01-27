@@ -37,7 +37,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
                 Returns: Operator instance.
                 """
-                return cls(task.Spec(actor, params), **kwargs)
+                return cls(task.Spec(actor, **params), **kwargs)
             return wrapper
 
         if actor:
@@ -52,10 +52,10 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
         Returns: Composed track.
         """
-        return self.apply(left.track(), node.Factory(self._spec, 1, 1))
+        return self.apply(left.track(), node.Worker.Instance(self._spec, 1, 1))
 
     @abc.abstractmethod
-    def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
+    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
         """Apply functionality to be implemented by child.
 
         Args:
@@ -69,7 +69,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 class Mapper(Simple):
     """Basic transformation operator with one input and one output port for each mode.
     """
-    def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
+    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
         """Mapper composition implementation.
 
         Args:
@@ -89,7 +89,7 @@ class Mapper(Simple):
 class Consumer(Simple):
     """Basic operator with one input and one output port in apply mode and no output in train mode.
     """
-    def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
+    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
         """Consumer composition implementation.
 
         Args:
@@ -110,7 +110,7 @@ class Labeler(Simple):
 
     Actual train path is left intact.
     """
-    def apply(self, left: segment.Track, worker: node.Factory) -> segment.Track:
+    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
         """Labeler composition implementation.
 
         Args:

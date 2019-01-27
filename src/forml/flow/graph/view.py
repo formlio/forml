@@ -120,13 +120,10 @@ class Path(tuple, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    @property
-    def subscriber(self) -> port.Subscriptable:
-        """Subscriptable head node representation.
-
-        Returns: Subscriptable head apply port reference.
+    def subscribe(self, publisher: port.Publishable) -> None:
+        """Subscribe head node to given publisher.
         """
-        return self._head[0].subscriber
+        self._head[0].subscribe(publisher)
 
     @property
     # @abc.abstractmethod

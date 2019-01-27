@@ -116,7 +116,7 @@ class Publishable(Applicable):
         Args:
             subscription: Existing subscription descriptor.
         """
-        self._node.publish(self._index, subscription)
+        self._node._publish(self._index, subscription)  # pylint: disable=protected-access
 
 
 class Subscriptable(Applicable):

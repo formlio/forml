@@ -20,13 +20,6 @@ import typing
 from forml.flow.graph import port
 
 
-class Info(collections.namedtuple('Info', 'spec, instance')):
-    """Worker node info type used for external reference.
-    """
-    def __str__(self):
-        return f'{self.spec}#{self.instance}'
-
-
 class Atomic(metaclass=abc.ABCMeta):
     """Abstract primitive task graph node.
     """
@@ -74,7 +67,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         return tuple(frozenset(p) for p in self._output)
 
-    def publish(self, index: int, subscription: port.Subscription) -> None:
+    def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
 
         Args:
@@ -83,6 +76,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         assert 0 <= index < self.szout, 'Invalid output index'
         assert self is not subscription.node, 'Self subscription'
+        assert not isinstance(subscription.node, Future), 'Future publishing'
         self._output[index].add(subscription)
 
     @abc.abstractmethod
@@ -96,14 +90,36 @@ class Atomic(metaclass=abc.ABCMeta):
 class Worker(Atomic):
     """Main primitive node type.
     """
+    class Info(collections.namedtuple('Info', 'spec, instance')):
+        """Worker node info type used for external reference.
+        """
+        def __str__(self):
+            return f'{self.spec}#{self.instance}'
+
+    class Instance(collections.namedtuple('Instance', 'info, szin, szout')):
+        """Worker node factory for creating nodes representing same instance.
+        """
+        _INSTANCES: typing.Dict[typing.Hashable, int] = collections.defaultdict(int)
+
+        def __new__(cls, spec: typing.Hashable, szin: int, szout: int):
+            cls._INSTANCES[spec] += 1
+            return super().__new__(cls, Worker.Info(spec, cls._INSTANCES[spec]), szin, szout)
+
+        def node(self) -> 'Worker':
+            """Create new node instance.
+
+            Returns: Node instance.
+            """
+            return Worker(self.info, self.szin, self.szout)
+
     def __init__(self, info: Info, szin: int, szout: int):
         super().__init__(szin, szout)
-        self.info: Info = info
+        self.info: Worker.Info = info
 
     def __str__(self):
         return str(self.info)
 
-    def publish(self, index: int, subscription: port.Subscription) -> None:
+    def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
 
         Args:
@@ -113,7 +129,7 @@ class Worker(Atomic):
         Trained node must not be publishing.
         """
         assert not self.trained, 'Trained node publishing'
-        super().publish(index, subscription)
+        super()._publish(index, subscription)
 
     @property
     def trained(self) -> bool:
@@ -189,7 +205,7 @@ class Future(Atomic):
         for publisher, subscription in ((p, s) for p, i in self._proxy.items() for s in self._output[i]):
             publisher.republish(subscription)
 
-    def publish(self, index: int, subscription: port.Subscription) -> None:
+    def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
 
         Args:
@@ -198,7 +214,7 @@ class Future(Atomic):
 
         Upstream publish followed by proxy synchronization.
         """
-        super().publish(index, subscription)
+        super()._publish(index, subscription)
         self._sync()
 
     def copy(self) -> 'Future':
@@ -207,20 +223,3 @@ class Future(Atomic):
         Returns: new Future node.
         """
         return Future(self.szin, self.szout)
-
-
-class Factory(collections.namedtuple('Factory', 'info, szin, szout')):
-    """Worker node factory for creating nodes representing same instance.
-    """
-    _INSTANCES: typing.Dict[typing.Hashable, int] = collections.defaultdict(int)
-
-    def __new__(cls, spec: typing.Hashable, szin: int, szout: int):
-        cls._INSTANCES[spec] += 1
-        return super().__new__(cls, Info(spec, cls._INSTANCES[spec]), szin, szout)
-
-    def node(self) -> Worker:
-        """Create new node instance.
-
-        Returns: Node instance.
-        """
-        return Worker(self.info, self.szin, self.szout)

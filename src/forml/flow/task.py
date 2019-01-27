@@ -89,14 +89,14 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
 class Spec(collections.namedtuple('Spec', 'actor, params')):
     """Wrapper of actor class and init params.
     """
-    def __new__(cls, actor: typing.Type[Actor], params: typing.Dict[str, typing.Any]):
+    def __new__(cls, actor: typing.Type[Actor], **params: typing.Any):
         return super().__new__(cls, actor, types.MappingProxyType(params))
 
     def __str__(self):
         return self.actor.__name__ if inspect.isclass(self.actor) else str(self.actor)
 
-    def __getnewargs__(self):
-        return self.actor, dict(self.params)
+    def __getnewargs_ex__(self):
+        return (self.actor, ), dict(self.params)
 
     def __hash__(self):
         return hash(self.actor) ^ hash(tuple(sorted(self.params.items())))
@@ -152,7 +152,7 @@ class Wrapped:
         return isinstance(other, self.__class__) and self._actor == other._actor and self._mapping == other._mapping
 
     @staticmethod
-    def actor(cls: typing.Optional[typing.Type] = None, **mapping):  # pylint: disable=bad-staticmethod-argument
+    def actor(cls: typing.Optional[typing.Type] = None, **mapping: str):  # pylint: disable=bad-staticmethod-argument
         """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
         optionally with mapping of Actor methods to decorated user class implementation.
 

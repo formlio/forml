@@ -57,7 +57,14 @@ class TestWorker(Atomic):
     def node():
         """Node fixture.
         """
-        return grnode.Worker(grnode.Info('worker', 1), 1, 1)
+        return grnode.Worker(grnode.Worker.Info('worker', 1), 1, 1)
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def instance():
+        """Instance fixture.
+        """
+        return grnode.Worker.Instance('instance', 1, 1)
 
     def test_train(self, node: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
         """Test train subscription
@@ -70,6 +77,14 @@ class TestWorker(Atomic):
             node[0].subscribe(simple[0])
         with pytest.raises(AssertionError):  # publishing node trained
             multi.train(node[0], node[0])
+
+    def test_instance(self, instance: grnode.Worker.Instance):
+        """Testing node creation.
+        """
+        assert instance.node().info.instance == 1
+        assert instance.node().info.instance == 1
+        instance = grnode.Worker.Instance('instance', 1, 1)
+        assert instance.node().info.instance == 2
 
 
 class TestFuture(Atomic):
@@ -95,22 +110,3 @@ class TestFuture(Atomic):
         node[0].publish(multi, port.Train())
         with pytest.raises(AssertionError):  # trained node publishing
             node[0].subscribe(multi[0])
-
-
-class TestFactory:
-    """Node factory tests.
-    """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def factory():
-        """Factory fixture.
-        """
-        return grnode.Factory('factory', 1, 1)
-
-    def test_instance(self, factory: grnode.Factory):
-        """Testing node creation.
-        """
-        assert factory.node().info.instance == 1
-        assert factory.node().info.instance == 1
-        factory = grnode.Factory('factory', 1, 1)
-        assert factory.node().info.instance == 2
