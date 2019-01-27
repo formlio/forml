@@ -24,7 +24,7 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
         return super().__new__(cls, apply, train)
 
 
-class Operator(segment.Composable, metaclass=abc.ABCMeta):
+class Operator(segment.Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Task graph entity.
     """
     def track(self) -> Track:
@@ -33,13 +33,6 @@ class Operator(segment.Composable, metaclass=abc.ABCMeta):
         Returns: Segment track.
         """
         return self.compose(segment.Origin())
-
-    @abc.abstractmethod
-    def compose(self, left: segment.Composable) -> segment.Track:
-        """Expand the left segment producing new composed segment track.
-
-        Returns: Composed segment track.
-        """
 
 
 class Composer:

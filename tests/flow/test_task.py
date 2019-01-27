@@ -39,7 +39,7 @@ class TestSpec:
     def spec(self, actor: typing.Type[task.Actor]):
         """Task spec fixture.
         """
-        return task.Spec(actor, {'a': 1, 'b': 2})
+        return task.Spec(actor, a=1, b=2)
 
     def test_hashable(self, spec: task.Spec):
         """Test spec hashability.

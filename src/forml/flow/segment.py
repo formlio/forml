@@ -6,7 +6,6 @@ import abc
 import collections
 import typing
 
-from forml import flow
 from forml.flow.graph import node, view
 
 
@@ -61,17 +60,24 @@ class Composable(metaclass=abc.ABCMeta):
         Returns: Segment track.
         """
 
-    def __rshift__(self, right: 'flow.Operator') -> 'Expression':
+    def __rshift__(self, right: 'Composable') -> 'Expression':
         """Semantical composition construct.
         """
         return Expression(right, self)
+
+    @abc.abstractmethod
+    def compose(self, left: 'Composable') -> Track:
+        """Expand the left segment producing new composed segment track.
+
+        Returns: Composed segment track.
+        """
 
 
 class Expression(Composable):
     """Operator chaining descriptor.
     """
-    def __init__(self, operator: 'flow.Operator', left: Composable):
-        self._operator: flow.Operator = operator
+    def __init__(self, right: Composable, left: Composable):
+        self._right: Composable = right
         self._left: Composable = left
 
     def track(self) -> Track:
@@ -79,7 +85,17 @@ class Expression(Composable):
 
         Returns: Segment track.
         """
-        return self._operator.compose(self._left)
+        return self._right.compose(self._left)
+
+    def compose(self, left: 'Composable') -> Track:
+        """Expression composition is just extension of its tracks.
+
+        Args:
+            left: Left side composable.
+
+        Returns: Segment track.
+        """
+        return left.track().extend(*self.track())
 
 
 class Origin(Composable):
@@ -91,3 +107,13 @@ class Origin(Composable):
         Returns: Segment track.
         """
         return Track()
+
+    def compose(self, left: 'Composable') -> Track:
+        """Origin composition is just the left side track.
+
+        Args:
+            left: Left side composable.
+
+        Returns: Segment track.
+        """
+        return left.track()
