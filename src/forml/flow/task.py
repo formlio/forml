@@ -105,10 +105,9 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
 class Wrapped:
     """Decorator wrapper.
     """
-    class Actor(Actor):
+    class Actor(Actor):  # pylint: disable=abstract-method
         """Wrapper around user class implementing the Actor interface.
         """
-        # pylint: disable=abstract-method
         def __new__(cls, actor: typing.Any, mapping: typing.Mapping[str, str]):  # pylint: disable=unused-argument
             cls.__abstractmethods__ = frozenset()
             return super().__new__(cls)
