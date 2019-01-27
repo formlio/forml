@@ -7,7 +7,6 @@ import collections
 
 from forml.flow import task, segment
 from forml.flow.graph import node, view
-from forml.flow.segment import Track
 
 
 class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
@@ -27,7 +26,7 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
 class Operator(segment.Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Task graph entity.
     """
-    def track(self) -> Track:
+    def track(self) -> segment.Track:
         """Create dummy composition of this operator on a future origin nodes.
 
         Returns: Segment track.
