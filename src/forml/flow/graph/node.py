@@ -56,7 +56,7 @@ class Atomic(metaclass=abc.ABCMeta):
             return self.szout == other.szout and all(s == o for s, o in zip(self.output, other.output))
         return id(self) == id(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """We need a Future node to appear identical to a Worker node of same shape and subscriptions (so that the
         Future can represent a placeholder for that Worker). From that reason we need to hash both of these instances
         into same hashcode and the only attributes can distinguish them in that case is the shape.
@@ -64,6 +64,26 @@ class Atomic(metaclass=abc.ABCMeta):
         Returns: Node hashcode.
         """
         return hash(self.szin) ^ hash(self.szout)
+
+    def publishing(self, subscriber: 'Atomic') -> bool:
+        """Checking given node is on our subscription list.
+
+        Args:
+            subscriber: Node to check for being our subscriber,
+
+        Returns: True if node is our subscriber.
+        """
+        return subscriber in {s.node for p in self._output for s in p}
+
+    def subscribed(self, publisher: 'Atomic') -> bool:
+        """Checking we are on given node's subscription list.
+
+        Args:
+            publisher: Node to check for being it's subscriber,
+
+        Returns: True if we are given node's subscriber.
+        """
+        return publisher.publishing(self)
 
     @property
     def szout(self) -> int:
@@ -219,6 +239,16 @@ class Future(Atomic):
             self._proxy[publisher] = index
 
         return self.PubSub(self, index, register, self._sync)
+
+    def subscribed(self, publisher: 'Atomic') -> bool:
+        """Overridden subscription checker. Future node checks the subscriptions in its proxy registrations.
+
+        Args:
+            publisher: Node to check for being it's subscriber,
+
+        Returns: True if we are given node's subscriber.
+        """
+        return any(p._node.subscribed(publisher) for p in self._proxy)  # pylint: disable=protected-access
 
     def _sync(self) -> None:
         """Callback for interconnecting proxied registrations.

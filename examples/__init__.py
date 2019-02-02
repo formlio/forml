@@ -40,8 +40,8 @@ class LabelExtractor(task.Actor[pandas.DataFrame]):
     def __init__(self, column: str = 'label'):
         self._column: str = column
 
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:
-        return features[0][[self._column]]
+    def apply(self, features: pandas.DataFrame) -> typing.Tuple[pandas.DataFrame, pandas.DataFrame]:
+        return features[[self._column]], features.drop(self._column, axis='columns')
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         return {'column': self._column}

@@ -2,6 +2,7 @@ from examples import *
 from forml import flow
 from forml.flow.operator import ensemble
 
+
 labelx = LabelExtractor(column='foo')
 imputer = SimpleImputer(strategy='mean')
 one_hot_enc = OneHotEncoder()

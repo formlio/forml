@@ -12,6 +12,9 @@ from forml.flow.graph import node, view
 class Simple(flow.Operator, metaclass=abc.ABCMeta):
     """Simple is a generic single actor operator.
     """
+    _SZIN = 1
+    _SZOUT = 1
+
     def __init__(self, spec: task.Spec):
         self._spec: task.Spec = spec
 
@@ -52,7 +55,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
         Returns: Composed track.
         """
-        return self.apply(left.track(), node.Worker.Instance(self._spec, 1, 1))
+        return self.apply(left.track(), node.Worker.Instance(self._spec, self._SZIN, self._SZOUT))
 
     @abc.abstractmethod
     def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
@@ -108,8 +111,10 @@ class Consumer(Simple):
 class Labeler(Simple):
     """Basic label extraction operator.
 
-    Actual train path is left intact.
+    Provider actor is expected to have shape of (1, 2) where first output port is a train and second is label.
     """
+    _SZOUT = 2
+
     def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
         """Labeler composition implementation.
 
@@ -119,5 +124,10 @@ class Labeler(Simple):
 
         Returns: Composed segment track.
         """
-        label: node.Worker = worker.node()
-        return left.use(label=left.train.extend(view.Path(label)))
+        extractor: node.Worker = worker.node()
+        train: node.Future = node.Future()
+        label: node.Future = node.Future()
+        train[0].subscribe(extractor[0])
+        label[0].subscribe(extractor[1])
+        extractor[0].subscribe(left.train.publisher)
+        return left.use(train=left.train.extend(tail=train), label=left.train.extend(tail=label))
