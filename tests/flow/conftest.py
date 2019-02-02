@@ -7,6 +7,7 @@ import pytest
 
 from forml import flow
 from forml.flow import task, segment
+from forml.flow.graph import node, view
 
 
 class Actor:
@@ -54,6 +55,12 @@ def operator():
         def compose(self, left: segment.Composable) -> segment.Track:
             """Dummy composition.
             """
-            return left.track()
+            track = left.track()
+            worker = node.Worker.Instance('worker', 1, 1)
+            train = worker.node()
+            apply = worker.node()
+            extractor = node.Worker('extractor', 1, 1)
+            train.train(track.train.publisher, extractor[0])
+            return track.use(label=track.train.extend(view.Path(extractor))).extend(view.Path(apply))
 
     return Operator()
