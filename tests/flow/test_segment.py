@@ -7,16 +7,17 @@ import pytest
 
 from forml import flow
 from forml.flow import segment
+from forml.flow.graph import node
 
 
 class Composable:
     """Composable tests base class.
     """
-    def test_track(self, composable: segment.Composable):
+    def test_track(self, context: node.Worker.Context, composable: segment.Composable):
         """Testing composable track.
         """
         assert isinstance(composable, segment.Composable)
-        assert isinstance(composable.track(), segment.Track)
+        assert isinstance(composable.track(context), segment.Track)
 
 
 class TestOrigin(Composable):
