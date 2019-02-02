@@ -59,13 +59,6 @@ class TestWorker(Atomic):
         """
         return grnode.Worker(grnode.Worker.Info('worker', 1), 1, 1)
 
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def instance():
-        """Instance fixture.
-        """
-        return grnode.Worker.Instance('instance', 1, 1)
-
     def test_train(self, node: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
         """Test train subscription
         """
@@ -78,12 +71,13 @@ class TestWorker(Atomic):
         with pytest.raises(AssertionError):  # publishing node trained
             multi.train(node[0], node[0])
 
-    def test_instance(self, instance: grnode.Worker.Instance):
+    def test_context(self, context: grnode.Worker.Context):
         """Testing node creation.
         """
+        instance = context.instance('instance', 1, 1)
         assert instance.node().info.instance == 1
         assert instance.node().info.instance == 1
-        instance = grnode.Worker.Instance('instance', 1, 1)
+        instance = context.instance('instance', 1, 1)
         assert instance.node().info.instance == 2
 
 

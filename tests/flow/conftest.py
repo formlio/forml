@@ -45,6 +45,13 @@ def actor():
     return task.Wrapped.actor(Actor, apply='predict')
 
 
+@pytest.fixture(scope='function')
+def context():
+    """Context fixture.
+    """
+    return node.Worker.Context()
+
+
 @pytest.fixture(scope='session')
 def operator():
     """Operator fixture.
@@ -52,11 +59,11 @@ def operator():
     class Operator(flow.Operator):
         """Operator mock.
         """
-        def compose(self, left: segment.Composable) -> segment.Track:
+        def compose(self, context: node.Worker.Context, left: segment.Composable) -> segment.Track:
             """Dummy composition.
             """
-            track = left.track()
-            worker = node.Worker.Instance('worker', 1, 1)
+            track = left.track(context)
+            worker = context.instance('worker', 1, 1)
             train = worker.node()
             apply = worker.node()
             extractor = node.Worker('extractor', 1, 1)

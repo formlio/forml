@@ -47,23 +47,24 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
             decorator = decorator(actor)
         return decorator
 
-    def compose(self, left: segment.Composable) -> segment.Track:
+    def compose(self, context: node.Worker.Context, left: segment.Composable) -> segment.Track:
         """Abstract composition implementation.
 
         Args:
+            context: Worker context instance.
             left: Left side track builder.
 
         Returns: Composed track.
         """
-        return self.apply(left.track(), node.Worker.Instance(self._spec, self._SZIN, self._SZOUT))
+        return self.apply(context.instance(self._spec, self._SZIN, self._SZOUT), left.track(context))
 
     @abc.abstractmethod
-    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
+    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
         """Apply functionality to be implemented by child.
 
         Args:
-            left: Track of the left side flows.
             worker: Node factory to be used.
+            left: Track of the left side flows.
 
         Returns: Composed segment track.
         """
@@ -72,12 +73,12 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 class Mapper(Simple):
     """Basic transformation operator with one input and one output port for each mode.
     """
-    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
+    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
         """Mapper composition implementation.
 
         Args:
-            left: Track of the left side flows.
             worker: Node factory to be used.
+            left: Track of the left side flows.
 
         Returns: Composed segment track.
         """
@@ -92,12 +93,12 @@ class Mapper(Simple):
 class Consumer(Simple):
     """Basic operator with one input and one output port in apply mode and no output in train mode.
     """
-    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
+    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
         """Consumer composition implementation.
 
         Args:
-            left: Track of the left side flows.
             worker: Node factory to be used.
+            left: Track of the left side flows.
 
         Returns: Composed segment track.
         """
@@ -115,12 +116,12 @@ class Labeler(Simple):
     """
     _SZOUT = 2
 
-    def apply(self, left: segment.Track, worker: node.Worker.Instance) -> segment.Track:
+    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
         """Labeler composition implementation.
 
         Args:
-            left: Track of the left side flows.
             worker: Node factory to be used.
+            left: Track of the left side flows.
 
         Returns: Composed segment track.
         """

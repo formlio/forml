@@ -137,21 +137,34 @@ class Worker(Atomic):
         def __str__(self):
             return f'{self.spec}#{self.instance}'
 
-    class Instance(collections.namedtuple('Instance', 'info, szin, szout')):
-        """Worker node factory for creating nodes representing same instance.
+    class Context:
+        """Worker context for instance namespacing.
         """
-        _INSTANCES: typing.Dict[typing.Hashable, int] = collections.defaultdict(int)
-
-        def __new__(cls, spec: typing.Hashable, szin: int, szout: int):
-            cls._INSTANCES[spec] += 1
-            return super().__new__(cls, Worker.Info(spec, cls._INSTANCES[spec]), szin, szout)
-
-        def node(self) -> 'Worker':
-            """Create new node instance.
-
-            Returns: Node instance.
+        class Instance(collections.namedtuple('Instance', 'info, szin, szout')):
+            """Worker node factory for creating nodes representing same instance.
             """
-            return Worker(self.info, self.szin, self.szout)
+            def node(self) -> 'Worker':
+                """Create new node instance.
+
+                Returns: Worker node object.
+                """
+                return Worker(self.info, self.szin, self.szout)
+
+        def __init__(self):
+            self._instances: typing.Dict[typing.Hashable, int] = collections.defaultdict(int)
+
+        def instance(self, spec: typing.Hashable, szin: int, szout: int):
+            """Create new node factory representing a node instance of given actor.
+
+            Args:
+                spec: Actor spec.
+                szin: Actor input port size.
+                szout: Actor output port size.
+
+            Returns: Instance object.
+            """
+            self._instances[spec] += 1
+            return self.Instance(Worker.Info(spec, self._instances[spec]), szin, szout)
 
     def __init__(self, info: Info, szin: int, szout: int):
         super().__init__(szin, szout)

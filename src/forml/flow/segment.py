@@ -54,8 +54,11 @@ class Composable(metaclass=abc.ABCMeta):
     """Common base for operators and expressions.
     """
     @abc.abstractmethod
-    def track(self) -> Track:
+    def track(self, context: node.Worker.Context) -> Track:
         """Compose and return a segment track.
+
+        Args:
+            context: Worker context instance.
 
         Returns: Segment track.
         """
@@ -66,8 +69,12 @@ class Composable(metaclass=abc.ABCMeta):
         return Expression(right, self)
 
     @abc.abstractmethod
-    def compose(self, left: 'Composable') -> Track:
+    def compose(self, context: node.Worker.Context, left: 'Composable') -> Track:
         """Expand the left segment producing new composed segment track.
+
+        Args:
+            left: Left side composable.
+            context: Worker context instance.
 
         Returns: Composed segment track.
         """
@@ -80,40 +87,48 @@ class Expression(Composable):
         self._right: Composable = right
         self._left: Composable = left
 
-    def track(self) -> Track:
+    def track(self, context: node.Worker.Context) -> Track:
         """Compose the segment track.
+
+        Args:
+            context: Worker context instance.
 
         Returns: Segment track.
         """
-        return self._right.compose(self._left)
+        return self._right.compose(context, self._left)
 
-    def compose(self, left: 'Composable') -> Track:
+    def compose(self, context: node.Worker.Context, left: 'Composable') -> Track:
         """Expression composition is just extension of its tracks.
 
         Args:
             left: Left side composable.
+            context: Worker context instance.
 
         Returns: Segment track.
         """
-        return left.track().extend(*self.track())
+        return left.track(context).extend(*self.track(context))
 
 
 class Origin(Composable):
     """Initial builder without a predecessor.
     """
-    def track(self) -> Track:
+    def track(self, context: node.Worker.Context) -> Track:
         """Track of future nodes.
+
+        Args:
+            context: Worker context instance.
 
         Returns: Segment track.
         """
         return Track()
 
-    def compose(self, left: 'Composable') -> Track:
+    def compose(self, context: node.Worker.Context, left: 'Composable') -> Track:
         """Origin composition is just the left side track.
 
         Args:
             left: Left side composable.
+            context: Worker context instance.
 
         Returns: Segment track.
         """
-        return left.track()
+        return left.track(context)
