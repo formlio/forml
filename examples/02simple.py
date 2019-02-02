@@ -1,13 +1,10 @@
-import typing
-
 import numpy
 import pandas
-from sklearn import ensemble as sklensemble, linear_model as skllinear
 
+from examples import *
 from forml import flow
-from forml.exec.runtime import visual
 from forml.flow import task
-from forml.flow.operator import simple, ensemble
+from forml.flow.operator import simple
 
 
 @simple.Labeler.operator
@@ -54,23 +51,10 @@ class NaNImputer(task.Actor[pandas.DataFrame]):
         pass
 
 
-# Turning sklearn RFC into a pipeline operator
-RFC = simple.Consumer.operator(task.Wrapped.actor(sklensemble.RandomForestClassifier, train='fit', apply='predict_proba'))
-GBC = simple.Consumer.operator(task.Wrapped.actor(sklensemble.GradientBoostingClassifier, train='fit', apply='predict_proba'))
-LR = simple.Consumer.operator(task.Wrapped.actor(skllinear.LogisticRegression, train='fit', apply='predict_proba'))
+labelx = LabelExtractor(column='foo')
+imputer = SimpleImputer(strategy='mean')
+lr = LR(max_depth=3)
 
+pipeline = flow.Pipeline(labelx >> imputer >> lr)
 
-# stack = (LabelExtractor() >> (ensemble.Stack(bases=(GBC(), RFC())) >> LR())).track()
-
-
-#
-# pipeline = (LabelExtractor(column='foo') >> (ensemble.Stack(bases=(GBC(), RFC()), folds=2) >> LR(max_depth=3))).track()
-# pipeline = (LabelExtractor(column='foo') >> (NaNImputer() >> ensemble.Stack(bases=(GBC(), RFC()))) >> LR(max_depth=3)).track()
-pipeline = flow.Pipeline(LabelExtractor(column='foo') >> (NaNImputer() >> ensemble.Stack(bases=(GBC(), RFC()))) >> LR(max_depth=3))
-
-# # Collect both the train and apply graph dags
-dag = visual.Dot('Pipeline', format='png')
-pipeline.train.accept(dag)
-pipeline.apply.accept(dag)
-print(dag.source)
-dag.render('/tmp/pipeline.gv')
+render(pipeline)

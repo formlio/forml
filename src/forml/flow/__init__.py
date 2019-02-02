@@ -23,7 +23,7 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
         assert not isinstance(train._tail, node.Future), 'Incomplete train path'
         label = track.label.extend()
         assert isinstance(label, view.Closure), 'Label path not a closure'
-        assert not isinstance(label._tail, node.Future) or not any(label._tail.output), 'Label not consumed'
+        assert not isinstance(label._tail, node.Future) or not any(label._tail.output), 'Incomplete label path'
         return super().__new__(cls, apply, train)
 
 
