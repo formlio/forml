@@ -19,7 +19,7 @@ class Type(metaclass=abc.ABCMeta):
         """Port type fixture
         """
 
-    def test_type(self, ptype):
+    def test_type(self, ptype: port.Type):
         """Testing type of port type.
         """
         assert isinstance(ptype, port.Type)
@@ -30,7 +30,7 @@ class TestTrain(Type):
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def ptype():
+    def ptype() -> port.Type:
         """Port type fixture
         """
         return port.Train()
@@ -41,7 +41,7 @@ class TestLabel(Type):
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def ptype():
+    def ptype() -> port.Type:
         """Port type fixture
         """
         return port.Label()
@@ -52,7 +52,7 @@ class TestApply(Type):
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def ptype():
+    def ptype() -> port.Type:
         """Port type fixture
         """
         return port.Apply(1)

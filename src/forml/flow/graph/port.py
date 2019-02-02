@@ -13,6 +13,12 @@ class Type:
     def __str__(self):
         return self.__class__.__name__
 
+    def __hash__(self):
+        return hash(self.__class__)
+
+    def __eq__(self, other):
+        return other.__class__ is self.__class__
+
 
 class SingletonMeta(type):
     """Metaclass for singleton types.
@@ -41,6 +47,12 @@ class Apply(Type, int):
     def __str__(self):
         return f'{self.__class__.__name__}[{int(self)}]'
 
+    def __hash__(self):
+        return int.__hash__(self)
+
+    def __eq__(self, other):
+        return int.__eq__(self, other)
+
 
 class Subscription(collections.namedtuple('Subscription', 'node, port')):
     """Descriptor representing subscription node input port of given type.
@@ -53,6 +65,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         assert not cls._PORTS[subscriber] or (isinstance(port, (Train, Label)) ^ any(
             isinstance(s, Apply) for s in cls._PORTS[subscriber])), 'Apply/Train collision'
         assert not isinstance(port, (Train, Label)) or not any(subscriber.output), 'Publishing node trained'
+        assert not isinstance(subscriber, grnode.Future), 'Future node subscribing'
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
 
@@ -60,7 +73,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         return hash(self.node) ^ hash(self.port)
 
     def __eq__(self, other: typing.Any):
-        return isinstance(other, self.__class__) and self.node is other.node and self.port is other.port
+        return isinstance(other, self.__class__) and self.node == other.node and self.port == other.port
 
     @classmethod
     def ports(cls, subscriber: 'grnode.Atomic') -> typing.Iterable[Type]:

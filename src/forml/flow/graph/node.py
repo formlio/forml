@@ -43,6 +43,28 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         return port.PubSub(self, index)
 
+    def __eq__(self, other: typing.Any) -> bool:
+        """If one of the nodes is a Future the equality is based on the equality of their subscriptions. Otherwise the
+        equality is based on object identity.
+
+        Args:
+            other: Object to compare with.
+
+        Returns: True if equal.
+        """
+        if isinstance(other, Atomic) and any(isinstance(n, Future) for n in (self, other)):
+            return self.szout == other.szout and all(s == o for s, o in zip(self.output, other.output))
+        return id(self) == id(other)
+
+    def __hash__(self):
+        """We need a Future node to appear identical to a Worker node of same shape and subscriptions (so that the
+        Future can represent a placeholder for that Worker). From that reason we need to hash both of these instances
+        into same hashcode and the only attributes can distinguish them in that case is the shape.
+
+        Returns: Node hashcode.
+        """
+        return hash(self.szin) ^ hash(self.szout)
+
     @property
     def szout(self) -> int:
         """Width of the input apply port.
@@ -65,7 +87,7 @@ class Atomic(metaclass=abc.ABCMeta):
 
         Returns: Output subscriptions.
         """
-        return tuple(frozenset(p) for p in self._output)
+        return tuple(frozenset(s) for s in self._output)
 
     def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
@@ -76,7 +98,6 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         assert 0 <= index < self.szout, 'Invalid output index'
         assert self is not subscription.node, 'Self subscription'
-        assert not isinstance(subscription.node, Future), 'Future publishing'
         self._output[index].add(subscription)
 
     @abc.abstractmethod

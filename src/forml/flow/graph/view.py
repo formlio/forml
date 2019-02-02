@@ -42,7 +42,7 @@ class PreOrder(Visitor, metaclass=abc.ABCMeta):
             self.visit_node(publisher)
             seen.add(publisher)
             subscribers = {s.node for p in publisher.output for s in p if s.node not in seen and (
-                publisher is not tail or not isinstance(s.port, port.Apply))}
+                publisher != tail or not isinstance(s.port, port.Apply))}
             if not any(subscribers):
                 return
             path = frozenset(path | {publisher})
@@ -73,32 +73,41 @@ class Path(tuple, metaclass=abc.ABCMeta):
     _tail: grnode.Atomic = property(operator.itemgetter(1))
 
     def __new__(cls, head: grnode.Atomic, tail: typing.Optional[grnode.Atomic] = None):
-        def tailof(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> grnode.Atomic:
-            """Recursive traversing all apply subscription paths down to the tail checking there is just one.
-
-            Args:
-                publisher: Start node for the traversal.
-                path: Chain of nodes between current and head.
-
-            Returns: Tail of the flow.
-            """
-            if tail and publisher is tail:
-                return publisher
-            subscribers = {s.node for p in publisher.output for s in p if isinstance(s.port, port.Apply)}
-            if not any(subscribers):
-                return publisher
-            path = frozenset(path | {publisher})
-            assert subscribers.isdisjoint(path), 'Cyclic flow'
-            endings = {tailof(n, path=path) for n in subscribers}
-            assert tail and tail in endings or not tail and len(endings) == 1, 'Unknown or invalid tail'
-            return tail or endings.pop()
-
         assert head.szin in {0, 1}, 'Simple head required'
-        tail = tailof(head)
+        tail = Path.tail(head, tail)
         assert tail.szout in {0, 1}, 'Simple tail required'
         # pylint: disable=self-cls-assignment
         cls = Closure if any(isinstance(s.port, (port.Train, port.Label)) for p in tail.output for s in p) else Channel
         return super().__new__(cls, (head, tail))
+
+    @staticmethod
+    def tail(head: grnode.Atomic, expected: typing.Optional[grnode.Atomic] = None,
+             path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> grnode.Atomic:
+        """Recursive traversing all apply subscription paths down to the tail checking there is just one.
+
+        Args:
+            head: Start node for the traversal.
+            expected: Optional indication of the expected tail. If expected is a Future, it's matching Worker is
+                      returned instead.
+            path: Chain of nodes between current and head.
+
+        Returns: Tail of the flow.
+        """
+        if expected and head == expected:
+            return head
+        subscribers = {s.node for p in head.output for s in p if isinstance(s.port, port.Apply)}
+        if not any(subscribers):
+            return head
+        path = frozenset(path | {head})
+        assert subscribers.isdisjoint(path), 'Cyclic flow'
+        endings = set()
+        for node in subscribers:
+            tail = Path.tail(node, expected, path=path)
+            if expected and tail == expected:
+                return tail
+            endings.add(tail)
+        assert len(path) > 1 or not expected and len(endings) == 1, 'Ambiguous tail'
+        return endings.pop()
 
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
@@ -152,7 +161,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
             Only the main branch is copied ignoring all sink branches.
             """
             path = frozenset(path | {publisher})
-            if publisher is self._tail:
+            if publisher == self._tail:
                 for orig in path:
                     pub = copies.get(orig) or copies.setdefault(orig, orig.copy())
                     for index, subscription in ((i, s) for i, p in enumerate(orig.output) for s in p if s.node in path):
@@ -189,7 +198,7 @@ class Channel(Path):
             if not tail:
                 tail = right._tail
         elif not tail:
-            tail = Path(self._tail)._tail
+            tail = Path.tail(self._tail)
         return Path(self._head, tail)
 
     @property
@@ -226,8 +235,8 @@ class Closure(Path):
     def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
         """Closure path is not extendable.
         """
-        if not right and not tail or tail is self._tail:
-            return self
+        if not right and (not tail or tail == self._tail):
+            return Path(self._head, self._tail)
         raise AssertionError('Connecting closure path')
 
     @property
