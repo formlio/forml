@@ -60,9 +60,15 @@ GBC = simple.Consumer.operator(task.Wrapped.actor(sklensemble.GradientBoostingCl
 LR = simple.Consumer.operator(task.Wrapped.actor(skllinear.LogisticRegression, train='fit', apply='predict_proba'))
 
 
+# stack = (LabelExtractor() >> (ensemble.Stack(bases=(GBC(), RFC())) >> LR())).track()
+
+
+#
+# pipeline = (LabelExtractor(column='foo') >> (ensemble.Stack(bases=(GBC(), RFC()), folds=2) >> LR(max_depth=3))).track()
+# pipeline = (LabelExtractor(column='foo') >> (NaNImputer() >> ensemble.Stack(bases=(GBC(), RFC()))) >> LR(max_depth=3)).track()
 pipeline = flow.Pipeline(LabelExtractor(column='foo') >> (NaNImputer() >> ensemble.Stack(bases=(GBC(), RFC()))) >> LR(max_depth=3))
 
-# Collect both the train and apply graph dags
+# # Collect both the train and apply graph dags
 dag = visual.Dot('Pipeline', format='png')
 pipeline.train.accept(dag)
 pipeline.apply.accept(dag)
