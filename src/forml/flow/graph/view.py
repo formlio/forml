@@ -96,6 +96,8 @@ class Path(tuple, metaclass=abc.ABCMeta):
         if expected and head == expected:
             return head
         subscribers = {s.node for p in head.output for s in p if isinstance(s.port, port.Apply)}
+        if expected and expected.subscribed(head):  # in case of expected Future it wouldn't be directly reachable
+            subscribers.add(expected)
         if not any(subscribers):
             return head
         path = frozenset(path | {head})

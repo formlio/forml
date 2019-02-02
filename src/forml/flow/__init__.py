@@ -14,16 +14,12 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
     """
     def __new__(cls, composable: segment.Composable):
         track = composable.track()
-        # pylint: disable=protected-access
         apply = track.apply.extend()
         assert isinstance(apply, view.Channel), 'Apply path not a channel'
-        assert not isinstance(apply._tail, node.Future), 'Incomplete apply path'
         train = track.train.extend()
         assert isinstance(train, view.Closure), 'Train path not a closure'
-        assert not isinstance(train._tail, node.Future), 'Incomplete train path'
         label = track.label.extend()
         assert isinstance(label, view.Closure), 'Label path not a closure'
-        assert not isinstance(label._tail, node.Future) or not any(label._tail.output), 'Incomplete label path'
         return super().__new__(cls, apply, train)
 
 
