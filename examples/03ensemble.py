@@ -1,13 +1,9 @@
-import typing
-
-import pandas
 import numpy
-from sklearn import ensemble as sklearn
 
+from examples import *
 from forml import flow
-from forml.exec.runtime import visual
 from forml.flow import task
-from forml.flow.operator import simple
+from forml.flow.operator import simple, ensemble
 
 
 @simple.Labeler.operator
@@ -54,15 +50,13 @@ class NaNImputer(task.Actor[pandas.DataFrame]):
         pass
 
 
-# Turning sklearn RFC into a pipeline operator
-RFC = simple.Consumer.operator(task.Wrapped.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
+labelx = LabelExtractor(column='foo')
+imputer = SimpleImputer(strategy='mean')
+rfc = RFC(max_depth=3)
+gbc = GBC(max_depth=3)
+lr = LR(max_depth=3)
+stack = ensemble.Stack(bases=(gbc, rfc), folds=2)
 
+pipeline = flow.Pipeline(labelx >> (imputer >> stack >> lr))
 
-pipeline = flow.Pipeline(LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3))
-
-# Collect both the train and apply graph dags
-dag = visual.Dot('Pipeline', format='png')
-pipeline.train.accept(dag)
-pipeline.apply.accept(dag)
-print(dag.source)
-dag.render('/tmp/pipeline.gv')
+render(pipeline)

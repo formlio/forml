@@ -167,7 +167,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
                     for index, subscription in ((i, s) for i, p in enumerate(orig.output) for s in p if s.node in path):
                         sub = copies.get(subscription.node) or copies.setdefault(
                             subscription.node, subscription.node.copy())
-                        pub[index].publish(sub, subscription.port)
+                        sub[subscription.port].subscribe(pub[index])
             else:
                 for subscriber in {s.node for p in publisher.output for s in p if isinstance(s.port, port.Apply)}:
                     assert subscriber not in path, 'Cyclic flow'
