@@ -54,7 +54,7 @@ class Composable(metaclass=abc.ABCMeta):
     """Common base for operators and expressions.
     """
     @abc.abstractmethod
-    def track(self, context: node.Worker.Context) -> Track:
+    def track(self) -> Track:
         """Compose and return a segment track.
 
         Args:
@@ -69,7 +69,7 @@ class Composable(metaclass=abc.ABCMeta):
         return Expression(right, self)
 
     @abc.abstractmethod
-    def compose(self, context: node.Worker.Context, left: 'Composable') -> Track:
+    def compose(self, left: 'Composable') -> Track:
         """Expand the left segment producing new composed segment track.
 
         Args:
@@ -87,7 +87,7 @@ class Expression(Composable):
         self._right: Composable = right
         self._left: Composable = left
 
-    def track(self, context: node.Worker.Context) -> Track:
+    def track(self) -> Track:
         """Compose the segment track.
 
         Args:
@@ -95,9 +95,9 @@ class Expression(Composable):
 
         Returns: Segment track.
         """
-        return self._right.compose(context, self._left)
+        return self._right.compose(self._left)
 
-    def compose(self, context: node.Worker.Context, left: 'Composable') -> Track:
+    def compose(self, left: 'Composable') -> Track:
         """Expression composition is just extension of its tracks.
 
         Args:
@@ -106,13 +106,13 @@ class Expression(Composable):
 
         Returns: Segment track.
         """
-        return left.track(context).extend(*self.track(context))
+        return left.track().extend(*self.track())
 
 
 class Origin(Composable):
     """Initial builder without a predecessor.
     """
-    def track(self, context: node.Worker.Context) -> Track:
+    def track(self) -> Track:
         """Track of future nodes.
 
         Args:
@@ -122,7 +122,7 @@ class Origin(Composable):
         """
         return Track()
 
-    def compose(self, context: node.Worker.Context, left: 'Composable') -> Track:
+    def compose(self, left: 'Composable') -> Track:
         """Origin composition is just the left side track.
 
         Args:
@@ -131,4 +131,4 @@ class Origin(Composable):
 
         Returns: Segment track.
         """
-        return left.track(context)
+        return left.track()

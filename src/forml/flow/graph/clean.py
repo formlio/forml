@@ -8,7 +8,7 @@ Graph topology validation.
 # nodes ports subscriptions:
 # * train/apply subscriptions are exclusive (enforced synchronously)
 # * no future nodes
-# * at most single trained node per each instance (TODO enforce synchronously)
+# * at most single trained node per each instance (enforced synchronously)
 # * either both train and label or all apply inputs and outputs are active
 """
 from forml.flow.graph import view, node

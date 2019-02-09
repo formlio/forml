@@ -17,19 +17,19 @@ class Source(flow.Operator):
         self._train: task.Spec = train
         self._label: task.Spec = label
 
-    def compose(self, context: node.Worker.Context, left: segment.Composable) -> segment.Track:
+    def compose(self, left: segment.Composable) -> segment.Track:
         """Compose the source segment track.
 
         Returns: Source segment track.
         """
         assert isinstance(left, segment.Origin), 'Source not origin'
-        apply: view.Path = view.Path(context.instance(self._apply, 0, 1).node())
-        train: view.Path = view.Path(context.instance(self._train, 0, 1).node())
+        apply: view.Path = view.Path(node.Worker(self._apply, 0, 1))
+        train: view.Path = view.Path(node.Worker(self._train, 0, 1))
         label: typing.Optional[view.Path] = None
         if self._label:
             train_tail = node.Future()
             label_tail = node.Future()
-            extract = context.instance(self._label, 1, 2).node()
+            extract = node.Worker(self._label, 1, 2)
             extract[0].subscribe(train[0])
             train_tail[0].subscribe(extract[0])
             label_tail[0].subscribe(extract[1])
