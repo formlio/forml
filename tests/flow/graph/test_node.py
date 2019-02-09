@@ -22,7 +22,7 @@ class Atomic(metaclass=abc.ABCMeta):
     def test_copy(self, node: grnode.Atomic):
         """Test for node copy method.
         """
-        assert isinstance(node.copy(), grnode.Atomic)
+        assert isinstance(node.fork(), grnode.Atomic)
 
     def test_subscribe(self, node: grnode.Atomic, simple: grnode.Worker):
         """Test node subscribing.
@@ -57,7 +57,7 @@ class TestWorker(Atomic):
     def node():
         """Node fixture.
         """
-        return grnode.Worker(grnode.Worker.Info('worker', 1), 1, 1)
+        return grnode.Worker('worker', 1, 1)
 
     def test_train(self, node: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
         """Test train subscription
@@ -71,14 +71,15 @@ class TestWorker(Atomic):
         with pytest.raises(AssertionError):  # publishing node trained
             multi.train(node[0], node[0])
 
-    def test_context(self, context: grnode.Worker.Context):
+    def test_fork(self, node: grnode.Worker, multi: grnode.Worker):
         """Testing node creation.
         """
-        instance = context.instance('instance', 1, 1)
-        assert instance.node().info.instance == 1
-        assert instance.node().info.instance == 1
-        instance = context.instance('instance', 1, 1)
-        assert instance.node().info.instance == 2
+        fork = node.fork()
+        assert {node, fork} == node._forks == fork._forks  # pylint: disable=protected-access
+        node.train(multi[0], multi[1])
+        with pytest.raises(AssertionError):  # Fork train non-exclusive
+            fork.train(multi[0], multi[1])
+
 
 
 class TestFuture(Atomic):

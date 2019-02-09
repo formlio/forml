@@ -21,7 +21,7 @@ class Stack(flow.Operator):
         self._appender: task.Spec = task.Spec('appender', szin=self._folds)
         self._averager: task.Spec = task.Spec('averager', szin=self._folds)
 
-    def compose(self, context: node.Worker.Context, left: segment.Composable) -> segment.Track:
+    def compose(self, left: segment.Composable) -> segment.Track:
         """Ensemble composition.
 
         Args:
@@ -33,34 +33,32 @@ class Stack(flow.Operator):
         apply: node.Future = node.Future(1, 1)
         train: node.Future = node.Future(1, 1)
         label: node.Future = node.Future(1, 1)
-        splitter: node.Worker.Context.Instance = context.instance(self._splitter, 1, 2 * self._folds)
-        train_splitter: node.Worker = splitter.node()
-        train_splitter.train(train[0], label[0])
-        features_splitter: node.Worker = splitter.node()
-        label_splitter: node.Worker = splitter.node()
+        splitter_trainer: node.Worker = node.Worker(self._splitter, 1, 2 * self._folds)
+        splitter_trainer.train(train[0], label[0])
+        features_splitter: node.Worker = splitter_trainer.fork()
+        label_splitter: node.Worker = splitter_trainer.fork()
         features_splitter[0].subscribe(train[0])
         label_splitter[0].subscribe(label[0])
-        merger: node.Worker.Context.Instance = context.instance(self._merger, len(self._bases), 1)
-        train_merger: node.Worker = merger.node()
-        apply_merger: node.Worker = merger.node()
-        appender: node.Worker.Context.Instance = context.Instance(self._appender, self._folds, 1)
-        averager: node.Worker.Context.Instance = context.Instance(self._averager, self._folds, 1)
+        train_merger: node.Worker = node.Worker(self._merger, len(self._bases), 1)
+        apply_merger: node.Worker = train_merger.fork()
+        appender_forks: node.Worker = node.Worker.forks(self._appender, self._folds, 1)
+        averager_forks: node.Worker = node.Worker.forks(self._averager, self._folds, 1)
         train_appender: typing.Dict[segment.Composable, node.Worker] = dict()
         apply_averager: typing.Dict[segment.Composable, node.Worker] = dict()
-        for index, base in enumerate(self._bases):
-            train_appender[base] = appender.node()
-            apply_averager[base] = averager.node()
+        for index, (base, appender, averager) in enumerate(zip(self._bases, appender_forks, averager_forks)):
+            train_appender[base] = appender
+            apply_averager[base] = averager
             train_merger[index].subscribe(train_appender[base][0])
             apply_merger[index].subscribe(apply_averager[base][0])
         for fold in range(self._folds):
-            pretrack: segment.Track = left.track(context)
+            pretrack: segment.Track = left.track()
             pretrack.train.subscribe(features_splitter[fold])
             pretrack.label.subscribe(label_splitter[fold])
             pretrack.apply.subscribe(apply[0])
             preapply = pretrack.apply.copy()
             preapply.subscribe(features_splitter[fold + self._folds])
             for base in self._bases:
-                basetrack = base.track(context)
+                basetrack = base.track()
                 basetrack.train.subscribe(pretrack.train.publisher)
                 basetrack.label.subscribe(pretrack.label.publisher)
                 basetrack.apply.subscribe(pretrack.apply.publisher)

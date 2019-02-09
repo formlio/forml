@@ -96,7 +96,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         if expected and head == expected:
             return head
         subscribers = {s.node for p in head.output for s in p if isinstance(s.port, port.Apply)}
-        if expected and expected.subscribed(head):  # in case of expected Future it wouldn't be directly reachable
+        if expected and expected.subscribed(head):  # expected Future it wouldn't be directly reachable
             subscribers.add(expected)
         if not any(subscribers):
             return head
@@ -165,10 +165,10 @@ class Path(tuple, metaclass=abc.ABCMeta):
             path = frozenset(path | {publisher})
             if publisher == self._tail:
                 for orig in path:
-                    pub = copies.get(orig) or copies.setdefault(orig, orig.copy())
+                    pub = copies.get(orig) or copies.setdefault(orig, orig.fork())
                     for index, subscription in ((i, s) for i, p in enumerate(orig.output) for s in p if s.node in path):
                         sub = copies.get(subscription.node) or copies.setdefault(
-                            subscription.node, subscription.node.copy())
+                            subscription.node, subscription.node.fork())
                         sub[subscription.port].subscribe(pub[index])
             else:
                 for subscriber in {s.node for p in publisher.output for s in p if isinstance(s.port, port.Apply)}:

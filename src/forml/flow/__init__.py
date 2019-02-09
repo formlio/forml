@@ -14,7 +14,7 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
     """Structure for holding related flow parts of different modes.
     """
     def __new__(cls, composable: segment.Composable):
-        track = composable.track(node.Worker.Context())
+        track = composable.track()
         apply = track.apply.extend()
         assert isinstance(apply, view.Channel), 'Apply path not a channel'
         train = track.train.extend()
@@ -27,7 +27,7 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
 class Operator(segment.Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Task graph entity.
     """
-    def track(self, context: node.Worker.Context) -> segment.Track:
+    def track(self) -> segment.Track:
         """Create dummy composition of this operator on a future origin nodes.
 
         Args:
@@ -35,7 +35,7 @@ class Operator(segment.Composable, metaclass=abc.ABCMeta):  # pylint: disable=ab
 
         Returns: Segment track.
         """
-        return self.compose(context, segment.Origin())
+        return self.compose(segment.Origin())
 
 
 class Composer:
@@ -62,7 +62,7 @@ class Composer:
 
         Returns: Graph represented as compound node.
         """
-        source = self._source.copy()
+        source = self._source.fork()
         self._pipeline.train.subscribe(source)
         return source
 
@@ -72,7 +72,7 @@ class Composer:
 
         Returns: Graph represented as compound node.
         """
-        source = self._source.copy()
+        source = self._source.fork()
         self._pipeline.apply.subscribe(source)
         return source
 

@@ -14,7 +14,6 @@ Apply and train input port subscriptions are exclusive.
 Trained node cannot be copied.
 """
 import abc
-import collections
 import typing
 
 from forml.flow.graph import port
@@ -121,57 +120,25 @@ class Atomic(metaclass=abc.ABCMeta):
         self._output[index].add(subscription)
 
     @abc.abstractmethod
-    def copy(self) -> 'Atomic':
+    def fork(self) -> 'Atomic':
         """Create new node with same shape and actor as self but without any subscriptions.
 
-        Returns: Copied node.
+        Returns: Forked node.
         """
 
 
 class Worker(Atomic):
     """Main primitive node type.
     """
-    class Info(collections.namedtuple('Info', 'spec, instance')):
-        """Worker node info type used for external reference.
-        """
-        def __str__(self):
-            return f'{self.spec}#{self.instance}'
-
-    class Context:
-        """Worker context for instance namespacing.
-        """
-        class Instance(collections.namedtuple('Instance', 'info, szin, szout')):
-            """Worker node factory for creating nodes representing same instance.
-            """
-            def node(self) -> 'Worker':
-                """Create new node instance.
-
-                Returns: Worker node object.
-                """
-                return Worker(self.info, self.szin, self.szout)
-
-        def __init__(self):
-            self._instances: typing.Dict[typing.Hashable, int] = collections.defaultdict(int)
-
-        def instance(self, spec: typing.Hashable, szin: int, szout: int):
-            """Create new node factory representing a node instance of given actor.
-
-            Args:
-                spec: Actor spec.
-                szin: Actor input port size.
-                szout: Actor output port size.
-
-            Returns: Instance object.
-            """
-            self._instances[spec] += 1
-            return self.Instance(Worker.Info(spec, self._instances[spec]), szin, szout)
-
-    def __init__(self, info: Info, szin: int, szout: int):
+    def __init__(self, spec: typing.Hashable, szin: int, szout: int,
+                 forks: typing.Optional[typing.Set['Worker']] = None):
         super().__init__(szin, szout)
-        self.info: Worker.Info = info
+        self.spec: typing.Hashable = spec
+        self._forks: typing.Set[Worker] = forks or set()
+        self._forks.add(self)
 
     def __str__(self):
-        return str(self.info)
+        return f'{self.spec}#{id(self._forks)}'
 
     def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
@@ -202,16 +169,32 @@ class Worker(Atomic):
 
         Returns: Self node.
         """
+        assert not any(f.trained for f in self._forks), 'Fork train collision'
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
-    def copy(self) -> 'Worker':
+    def fork(self) -> 'Worker':
         """Create new node with same shape and actor as self but without any subscriptions.
 
-        Returns: Copied node.
+        Returns: Forked node.
         """
-        assert not self.trained, 'Trained node copy attempted'
-        return Worker(self.info, self.szin, self.szout)
+        return Worker(self.spec, self.szin, self.szout, self._forks)
+
+    @classmethod
+    def forks(cls, spec: typing.Hashable, szin: int, szout: int) -> typing.Generator['Worker', None, None]:
+        """Generator producing forks of the same node.
+
+        Args:
+            spec: Worker spec.
+            szin: Worker input apply port size.
+            szout: Worker output apply port size.
+
+        Returns: Generator producing worker forks.
+        """
+        node = cls(spec, szin, szout)
+        yield node
+        while True:
+            yield node.fork()
 
 
 class Future(Atomic):
@@ -281,7 +264,7 @@ class Future(Atomic):
         super()._publish(index, subscription)
         self._sync()
 
-    def copy(self) -> 'Future':
+    def fork(self) -> 'Future':
         """There is nothing to copy on a Future node so just create a new one.
 
         Returns: new Future node.

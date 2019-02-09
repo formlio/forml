@@ -47,7 +47,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
             decorator = decorator(actor)
         return decorator
 
-    def compose(self, context: node.Worker.Context, left: segment.Composable) -> segment.Track:
+    def compose(self, left: segment.Composable) -> segment.Track:
         """Abstract composition implementation.
 
         Args:
@@ -56,14 +56,14 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
         Returns: Composed track.
         """
-        return self.apply(context.instance(self._spec, self._SZIN, self._SZOUT), left.track(context))
+        return self.apply(node.Worker(self._spec, self._SZIN, self._SZOUT), left.track())
 
     @abc.abstractmethod
-    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
         """Apply functionality to be implemented by child.
 
         Args:
-            worker: Node factory to be used.
+            applier: Node factory to be used.
             left: Track of the left side flows.
 
         Returns: Composed segment track.
@@ -73,40 +73,38 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 class Mapper(Simple):
     """Basic transformation operator with one input and one output port for each mode.
     """
-    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
         """Mapper composition implementation.
 
         Args:
-            worker: Node factory to be used.
+            applier: Node factory to be used.
             left: Track of the left side flows.
 
         Returns: Composed segment track.
         """
-        apply: node.Worker = worker.node()
-        train_apply: node.Worker = worker.node()
+        train_applier: node.Worker = applier.fork()
         if self._spec.actor.is_stateful():
-            train_train: node.Worker = worker.node()
-            train_train.train(left.train.publisher, left.label.publisher)
-        return left.extend(view.Path(apply), view.Path(train_apply))
+            train_trainer: node.Worker = applier.fork()
+            train_trainer.train(left.train.publisher, left.label.publisher)
+        return left.extend(view.Path(applier), view.Path(train_applier))
 
 
 class Consumer(Simple):
     """Basic operator with one input and one output port in apply mode and no output in train mode.
     """
-    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
         """Consumer composition implementation.
 
         Args:
-            worker: Node factory to be used.
+            applier: Node factory to be used.
             left: Track of the left side flows.
 
         Returns: Composed segment track.
         """
         assert self._spec.actor.is_stateful(), 'Stateless actor invalid for a consumer'
-        apply: node.Worker = worker.node()
-        train: node.Worker = worker.node()
-        train.train(left.train.publisher, left.label.publisher)
-        return left.extend(view.Path(apply))
+        trainer: node.Worker = applier.fork()
+        trainer.train(left.train.publisher, left.label.publisher)
+        return left.extend(view.Path(applier))
 
 
 class Labeler(Simple):
@@ -116,19 +114,18 @@ class Labeler(Simple):
     """
     _SZOUT = 2
 
-    def apply(self, worker: node.Worker.Context.Instance, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
         """Labeler composition implementation.
 
         Args:
-            worker: Node factory to be used.
+            applier: Node factory to be used.
             left: Track of the left side flows.
 
         Returns: Composed segment track.
         """
-        extractor: node.Worker = worker.node()
         train: node.Future = node.Future()
         label: node.Future = node.Future()
-        train[0].subscribe(extractor[0])
-        label[0].subscribe(extractor[1])
-        extractor[0].subscribe(left.train.publisher)
+        train[0].subscribe(applier[0])
+        label[0].subscribe(applier[1])
+        applier[0].subscribe(left.train.publisher)
         return left.use(train=left.train.extend(tail=train), label=left.train.extend(tail=label))
