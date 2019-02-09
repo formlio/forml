@@ -130,6 +130,8 @@ class Atomic(metaclass=abc.ABCMeta):
 class Worker(Atomic):
     """Main primitive node type.
     """
+    GroupID = typing.TypeVar('GroupID')
+
     def __init__(self, spec: typing.Hashable, szin: int, szout: int,
                  forks: typing.Optional[typing.Set['Worker']] = None):
         super().__init__(szin, szout)
@@ -138,7 +140,7 @@ class Worker(Atomic):
         self._forks.add(self)
 
     def __str__(self):
-        return f'{self.spec}#{id(self._forks)}'
+        return f'{self.spec}#{self.gid}'
 
     def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
@@ -159,6 +161,14 @@ class Worker(Atomic):
         Returns: True if trained.
         """
         return any(isinstance(p, (port.Train, port.Label)) for p in self.input)
+
+    @property
+    def gid(self) -> 'Worker.GroupID':
+        """Return the group ID shared by all forks of this worker.
+
+        Returns: Group ID.
+        """
+        return id(self._forks)
 
     def train(self, train: port.Publishable, label: port.Publishable) -> None:
         """Subscribe this node train and label port to given publishers.

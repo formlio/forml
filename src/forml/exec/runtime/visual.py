@@ -1,6 +1,7 @@
 """
 Runtime that just renders the pipeline DAG visualization.
 """
+import collections
 
 from dask.dot import graphviz
 
@@ -12,14 +13,16 @@ class Dot(view.PreOrder):
     """
     def __init__(self, *args, **kwargs):
         self._dot: graphviz.Digraph = graphviz.Digraph(*args, **kwargs)
+        self._titles = collections.defaultdict(dict)
 
-    def visit_node(self, node: grnode.Atomic) -> None:
+    def visit_node(self, node: grnode.Worker) -> None:
         """Process new node.
 
         Args:
             node: Node to be processed.
         """
-        self._dot.node(str(id(node)), str(node))
+        self._dot.node(str(id(node)),
+                       f'{node.spec}#{self._titles[node.spec].setdefault(node.gid, len(self._titles[node.spec]) + 1)}')
         for index, subscription in ((i, s) for i, p in enumerate(node.output) for s in p):
             self._dot.edge(str(id(node)), str(id(subscription.node)), label=f'{port.Apply(index)}->{subscription.port}')
 

@@ -50,6 +50,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Get hyper-parameters of this actor.
         """
+        # TODO: is get_params necessary? should be rather static to provide list of params for validation?
 
     @abc.abstractmethod
     def set_params(self, params: typing.Dict[str, typing.Any]) -> None:
@@ -58,6 +59,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         Args:
             params: Dictionary of hyper parameters.
         """
+        # TODO: is set_params necessary?
 
     def get_state(self) -> bytes:
         """Return the internal state of the actor.
