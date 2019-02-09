@@ -5,7 +5,7 @@ from sklearn import ensemble, linear_model, impute, preprocessing, feature_extra
 
 from forml import flow
 from forml.exec.runtime import visual
-from forml.flow import task
+from forml.flow import task, operator
 from forml.flow.operator import simple
 
 SimpleImputer = simple.Mapper.operator(task.Wrapped.actor(
@@ -33,7 +33,6 @@ Bayes = simple.Consumer.operator(task.Wrapped.actor(
     naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
 
 
-@simple.Labeler.operator
 class LabelExtractor(task.Actor[pandas.DataFrame]):
     """Custom label-extraction logic.
     """
@@ -50,9 +49,12 @@ class LabelExtractor(task.Actor[pandas.DataFrame]):
         self._column = params.get('column', self._column)
 
 
-def render(pipeline: flow.Pipeline):
+source = operator.Source(task.Spec('ApplyETL'), task.Spec('TrainETL'), task.Spec(LabelExtractor, column='foo'))
+
+
+def render(composer: flow.Composer):
     dag = visual.Dot('Pipeline', format='png')
-    pipeline.train.accept(dag)
-    pipeline.apply.accept(dag)
+    composer.train.accept(dag)
+    composer.apply.accept(dag)
     print(dag.source)
     dag.render('/tmp/pipeline.gv')

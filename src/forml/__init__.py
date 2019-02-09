@@ -1,15 +1,17 @@
 """
 ForML top level.
 """
-import typing
 
 from forml import flow
+from forml.flow import segment
 
 
 class Project:
     """Top level ForML project descriptor.
 
-    TODO: is explicit descriptor needed? this should be just discoverable based on the project layout!
     """
     def __init__(self):
-        self._pipelines: typing.Sequence[flow.Pipeline] = ...
+        self.pipeline: segment.Composable = ...
+        self.source: segment.Composable = ...
+        self.scoring = ...  # cv+metric -> single number
+        self.reporting = ...  # arbitrary metrics -> kv list

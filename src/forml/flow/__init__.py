@@ -13,8 +13,7 @@ from forml.flow.graph import node, view
 class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
     """Structure for holding related flow parts of different modes.
     """
-    def __new__(cls, composable: segment.Composable):
-        track = composable.track()
+    def __new__(cls, track: segment.Track):
         apply = track.apply.extend()
         assert isinstance(apply, view.Channel), 'Apply path not a channel'
         train = track.train.extend()
@@ -50,31 +49,32 @@ class Composer:
         def __get__(self, composer: 'Composer', cls: typing.Type['Composer']):
             return composer.__dict__.setdefault(self._path.__name__, self._path(composer))
 
-    def __init__(self, pipeline: segment.Composable):
-        self._pipeline: Pipeline = Pipeline(pipeline)
-        self._source: 'Source' = ...
+    def __init__(self, source: segment.Composable, pipeline: segment.Composable):
+        self._pipeline: segment.Composable = pipeline
+        self._source: segment.Composable = source
         self._score = ...  # cv+metric -> single number
         self._report = ...  # arbitrary metrics -> kv list
 
     @Cached
+    def pipeline(self) -> Pipeline:
+        # TODO: assert no trained in source track
+        return Pipeline(self._source.track().extend(*self._pipeline.track()))
+
+    @property
     def train(self) -> view.Path:
         """Training lens.
 
         Returns: Graph represented as compound node.
         """
-        source = self._source.fork()
-        self._pipeline.train.subscribe(source)
-        return source
+        return self.pipeline.train
 
-    @Cached
+    @property
     def apply(self) -> view.Path:
         """Apply lens.
 
         Returns: Graph represented as compound node.
         """
-        source = self._source.fork()
-        self._pipeline.apply.subscribe(source)
-        return source
+        return self.pipeline.apply
 
     @Cached
     def tune(self) -> view.Path:

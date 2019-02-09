@@ -8,6 +8,7 @@ Graph topology validation.
 # nodes ports subscriptions:
 # * train/apply subscriptions are exclusive (enforced synchronously)
 # * no future nodes
+# * apply channel has no sinks
 # * at most single trained node per each instance (enforced synchronously)
 # * either both train and label or all apply inputs and outputs are active
 """

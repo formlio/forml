@@ -33,10 +33,9 @@ class NaNImputer(task.Actor[pandas.DataFrame]):
         pass
 
 
-labelx = LabelExtractor(column='foo')
 imputer = NaNImputer()
 lr = LR(max_depth=3)
 
-pipeline = flow.Pipeline(labelx >> imputer >> lr)
+composer = flow.Composer(source, imputer >> lr)
 
-render(pipeline)
+render(composer)

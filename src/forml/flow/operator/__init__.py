@@ -30,7 +30,7 @@ class Source(flow.Operator):
             train_tail = node.Future()
             label_tail = node.Future()
             extract = node.Worker(self._label, 1, 2)
-            extract[0].subscribe(train[0])
+            extract[0].subscribe(train.publisher)
             train_tail[0].subscribe(extract[0])
             label_tail[0].subscribe(extract[1])
             train = train.extend(tail=train_tail)

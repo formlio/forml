@@ -3,7 +3,6 @@ from forml import flow
 from forml.flow.operator import ensemble
 
 
-labelx = LabelExtractor(column='foo')
 imputer = SimpleImputer(strategy='mean')
 one_hot_enc = OneHotEncoder()
 hasher = FeatureHasher(n_features=128)
@@ -15,6 +14,6 @@ lr = LR(max_depth=3)
 
 stack = ensemble.Stack(bases=(gbc, rfc, bayes), folds=4)
 
-pipeline = flow.Pipeline(labelx >> (imputer >> one_hot_enc >> stack >> lr))
+composer = flow.Composer(source, imputer >> one_hot_enc >> stack >> lr)
 
-render(pipeline)
+render(composer)
