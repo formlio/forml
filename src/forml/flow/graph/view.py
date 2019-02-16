@@ -255,7 +255,7 @@ class Closure(Path):
         """
         if not right and (not tail or tail == self._tail):
             return Path(self._head, self._tail)
-        raise AssertionError('Connecting closure path')
+        raise AssertionError('Extending closure path')
 
     @property
     def publisher(self) -> port.Publishable:
