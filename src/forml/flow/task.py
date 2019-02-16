@@ -53,13 +53,12 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         # TODO: is get_params necessary? should be rather static to provide list of params for validation?
 
     @abc.abstractmethod
-    def set_params(self, params: typing.Dict[str, typing.Any]) -> None:
+    def set_params(self, **params: typing.Dict[str, typing.Any]) -> None:
         """Set hyper-parameters of this actor.
 
         Args:
             params: Dictionary of hyper parameters.
         """
-        # TODO: is set_params necessary?
 
     def get_state(self) -> bytes:
         """Return the internal state of the actor.
@@ -97,11 +96,11 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
     def __str__(self):
         return self.actor.__name__ if inspect.isclass(self.actor) else str(self.actor)
 
-    def __getnewargs_ex__(self):
-        return (self.actor, ), dict(self.params)
-
     def __hash__(self):
         return hash(self.actor) ^ hash(tuple(sorted(self.params.items())))
+
+    def __getnewargs_ex__(self):
+        return (self.actor, ), dict(self.params)
 
 
 class Wrapped:

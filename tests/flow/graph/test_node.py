@@ -75,11 +75,10 @@ class TestWorker(Atomic):
         """Testing node creation.
         """
         fork = node.fork()
-        assert {node, fork} == node._forks == fork._forks  # pylint: disable=protected-access
+        assert {node, fork} == node._group == fork._group  # pylint: disable=protected-access
         node.train(multi[0], multi[1])
         with pytest.raises(AssertionError):  # Fork train non-exclusive
             fork.train(multi[0], multi[1])
-
 
 
 class TestFuture(Atomic):

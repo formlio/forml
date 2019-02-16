@@ -16,6 +16,7 @@ Trained node cannot be copied.
 import abc
 import typing
 
+from forml.flow import task
 from forml.flow.graph import port
 
 
@@ -130,17 +131,41 @@ class Atomic(metaclass=abc.ABCMeta):
 class Worker(Atomic):
     """Main primitive node type.
     """
-    GroupID = typing.TypeVar('GroupID')
+    class Group(set):
+        """Container for holding all forked workers.
+        """
+        ID = int
 
-    def __init__(self, spec: typing.Hashable, szin: int, szout: int,
-                 forks: typing.Optional[typing.Set['Worker']] = None):
+        def __init__(self, spec: task.Spec):
+            super().__init__()
+            self.spec: task.Spec = spec
+
+        @property
+        def id(self) -> ID:
+            """Group ID.
+
+            Returns: Group id.
+            """
+            return id(self)
+
+        def __str__(self):
+            return f'{self.spec}#{self.id}'
+
+    def __init__(self, meta: typing.Union[task.Spec, Group], szin: int, szout: int):
         super().__init__(szin, szout)
-        self.spec: typing.Hashable = spec
-        self._forks: typing.Set[Worker] = forks or set()
-        self._forks.add(self)
+        self._group: Worker.Group = meta if isinstance(meta, Worker.Group) else self.Group(meta)
+        self._group.add(self)
 
     def __str__(self):
-        return f'{self.spec}#{self.gid}'
+        return str(self._group)
+
+    @property
+    def spec(self) -> task.Spec:
+        """Task spec in this worker.
+
+        Returns: Task spec.
+        """
+        return self._group.spec
 
     def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
@@ -163,12 +188,12 @@ class Worker(Atomic):
         return any(isinstance(p, (port.Train, port.Label)) for p in self.input)
 
     @property
-    def gid(self) -> 'Worker.GroupID':
+    def gid(self) -> 'Worker.Group.ID':
         """Return the group ID shared by all forks of this worker.
 
         Returns: Group ID.
         """
-        return id(self._forks)
+        return self._group.id
 
     def train(self, train: port.Publishable, label: port.Publishable) -> None:
         """Subscribe this node train and label port to given publishers.
@@ -179,7 +204,7 @@ class Worker(Atomic):
 
         Returns: Self node.
         """
-        assert not any(f.trained for f in self._forks), 'Fork train collision'
+        assert not any(f.trained for f in self._group), 'Fork train collision'
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
@@ -188,10 +213,10 @@ class Worker(Atomic):
 
         Returns: Forked node.
         """
-        return Worker(self.spec, self.szin, self.szout, self._forks)
+        return Worker(self._group, self.szin, self.szout)
 
     @classmethod
-    def forks(cls, spec: typing.Hashable, szin: int, szout: int) -> typing.Generator['Worker', None, None]:
+    def forks(cls, spec: task.Spec, szin: int, szout: int) -> typing.Generator['Worker', None, None]:
         """Generator producing forks of the same node.
 
         Args:

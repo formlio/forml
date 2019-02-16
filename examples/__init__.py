@@ -49,7 +49,7 @@ class LabelExtractor(task.Actor[pandas.DataFrame]):
         self._column = params.get('column', self._column)
 
 
-source = operator.Source(task.Spec('ApplyETL'), task.Spec('TrainETL'), task.Spec(LabelExtractor, column='foo'))
+source = operator.Loader(task.Spec('ApplyETL'), task.Spec('TrainETL'), task.Spec(LabelExtractor, column='foo'))
 
 
 def render(composer: flow.Composer):
