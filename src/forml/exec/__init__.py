@@ -1,13 +1,18 @@
 import abc
 import datetime
+import logging
 import typing
 
 import forml
+from forml import etl
 from forml.exec import meta
 from forml.flow.graph import view, node
 
 
-class Runtime(typing.Generic[meta.StateT, meta.OrdinalT], metaclass=abc.ABCMeta):
+LOGGER = logging.getLogger(__name__)
+
+
+class Runtime(typing.Generic[meta.StateT, etl.SelectT, etl.OrdinalT], metaclass=abc.ABCMeta):
     class Instance(metaclass=abc.ABCMeta):
         @abc.abstractmethod
         def load(self) -> meta.Package:
@@ -18,15 +23,16 @@ class Runtime(typing.Generic[meta.StateT, meta.OrdinalT], metaclass=abc.ABCMeta)
         def save(cls, package: meta.Package) -> 'Runtime.Instance':
             ...
 
-    def __init__(self, instance: Instance):
+    def __init__(self, engine: etl.Engine[etl.SelectT, etl.OrdinalT], instance: Instance):
+        self._engine: etl.Engine[etl.OrdinalT] = engine
         package = instance.load()
         self.project: forml.Project = package.project
-        self.training: typing.Optional[meta.Training[meta.StateT, meta.OrdinalT]] = package.training
+        self.training: typing.Optional[meta.Training[meta.StateT, etl.OrdinalT]] = package.training
         self.tuning: typing.Optional[meta.Tuning] = package.tuning
 
-    def train(self, lower: typing.Optional[meta.OrdinalT] = None, upper: typing.Optional[meta.OrdinalT] = None) -> None:
-        source = self.project.source(lower or self.training.ordinal, upper)
-        path: view.Path = source.track().expand(self.project.pipeline.track()).train
+    def train(self, lower: typing.Optional[etl.OrdinalT] = None, upper: typing.Optional[etl.OrdinalT] = None) -> None:
+        path = self._engine.load(self.project.source, lower or self.training.ordinal, upper)\
+            .extend(*self.project.pipeline.track()).train
         nodes: typing.Sequence[node.Worker] = ...
         states = meta.Registry(nodes, self.training.states)
         timestamp = datetime.datetime.utcnow()

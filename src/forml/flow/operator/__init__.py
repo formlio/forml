@@ -7,14 +7,15 @@ from forml.flow import task, segment
 from forml.flow.graph import node, view
 
 
-class Source(flow.Operator):
+class Loader(flow.Operator):
     """Basic source operator with optional label extraction.
 
     Label extractor is expected to be an actor with single input and two output ports - train and actual label.
     """
-    def __init__(self, apply: task.Spec, train: task.Spec, label: typing.Optional[task.Spec] = None):
+    def __init__(self, apply: task.Spec, train: typing.Optional[task.Spec] = None,
+                 label: typing.Optional[task.Spec] = None):
         self._apply: task.Spec = apply
-        self._train: task.Spec = train
+        self._train: task.Spec = train or apply
         self._label: task.Spec = label
 
     def compose(self, left: segment.Composable) -> segment.Track:

@@ -69,6 +69,9 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
 
+    def __str__(self):
+        return f'{self.node}@{self.port}'
+
     def __hash__(self):
         return hash(self.node) ^ hash(self.port)
 

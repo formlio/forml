@@ -3,6 +3,7 @@ Graph view - useful lenses and manipulation of graph topology parts.
 """
 
 import abc
+import itertools
 import operator
 import typing
 
@@ -41,13 +42,9 @@ class PreOrder(Visitor, metaclass=abc.ABCMeta):
             """
             self.visit_node(publisher)
             seen.add(publisher)
-            subscribers = {s.node for p in publisher.output for s in p if s.node not in seen and (
-                publisher != tail or not isinstance(s.port, port.Apply))}
-            if not any(subscribers):
-                return
             path = frozenset(path | {publisher})
-            assert subscribers.isdisjoint(path), 'Cyclic flow'
-            for node in subscribers:
+            for node in gensub(publisher, lambda s: s.node not in seen and (
+                    publisher != tail or not isinstance(s.port, port.Apply)), path, tail):
                 scan(node, path=path)
 
         seen = set()
@@ -60,6 +57,30 @@ class PreOrder(Visitor, metaclass=abc.ABCMeta):
         Args:
             node: Node being processed.
         """
+
+
+def gensub(publisher: grnode.Atomic, mask: typing.Optional[typing.Callable[[port.Subscription], bool]] = None,
+           path: typing.Optional[typing.FrozenSet[grnode.Atomic]] = None,
+           *futures: grnode.Atomic) -> typing.Set[grnode.Atomic]:
+    """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
+    subscribed directly).
+
+    Args:
+        publisher: Node for which subscribers should be listed.
+        mask: Optional condition for filtering the subscriptions.
+        path: Set of upstream nodes for acyclicity validation.
+        *futures: Future nodes that might be subscribed to this publisher.
+
+    Returns: Set of subscription nodes.
+    """
+    done = set()
+    for node in itertools.chain((s.node for p in publisher.output for s in p if not mask or mask(s)),
+                                (n for n in futures if n and n.subscribed(publisher))):
+        if node in done:
+            continue
+        assert node not in path, f'Cyclic flow near {node}'
+        done.add(node)
+        yield node
 
 
 class Path(tuple, metaclass=abc.ABCMeta):
@@ -95,19 +116,15 @@ class Path(tuple, metaclass=abc.ABCMeta):
         """
         if expected and head == expected:
             return head
-        subscribers = {s.node for p in head.output for s in p if isinstance(s.port, port.Apply)}
-        if expected and expected.subscribed(head):  # expected Future it wouldn't be directly reachable
-            subscribers.add(expected)
-        if not any(subscribers):
-            return head
         path = frozenset(path | {head})
-        assert subscribers.isdisjoint(path), 'Cyclic flow'
         endings = set()
-        for node in subscribers:
+        for node in gensub(head, lambda s: isinstance(s.port, port.Apply), path, expected):
             tail = Path.tail(node, expected, path=path)
             if expected and tail == expected:
                 return tail
             endings.add(tail)
+        if not any(endings):
+            return head
         assert len(path) > 1 or not expected and len(endings) == 1, 'Ambiguous tail'
         return endings.pop()
 
@@ -171,13 +188,12 @@ class Path(tuple, metaclass=abc.ABCMeta):
                             subscription.node, subscription.node.fork())
                         sub[subscription.port].subscribe(pub[index])
             else:
-                for subscriber in {s.node for p in publisher.output for s in p if isinstance(s.port, port.Apply)}:
-                    assert subscriber not in path, 'Cyclic flow'
-                    mkcopy(subscriber, path=path)
+                for node in gensub(publisher, lambda s: isinstance(s.port, port.Apply), path, self._tail):
+                    mkcopy(node, path=path)
 
         copies = dict()
         mkcopy(self._head)
-        return Path(copies.get(self._head), copies.get(self._tail))
+        return Path(copies[self._head], copies[self._tail])
 
 
 class Channel(Path):

@@ -2,7 +2,7 @@
 ForML top level.
 """
 
-from forml import flow
+from forml import flow, etl
 from forml.flow import segment
 
 
@@ -12,6 +12,6 @@ class Project:
     """
     def __init__(self):
         self.pipeline: segment.Composable = ...
-        self.source: segment.Composable = ...
+        self.source: etl.Source = ...
         self.scoring = ...  # cv+metric -> single number
         self.reporting = ...  # arbitrary metrics -> kv list
