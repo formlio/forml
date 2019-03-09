@@ -43,8 +43,8 @@ class PreOrder(Visitor, metaclass=abc.ABCMeta):
             self.visit_node(publisher)
             seen.add(publisher)
             path = frozenset(path | {publisher})
-            for node in gensub(publisher, lambda s: s.node not in seen and (
-                    publisher != tail or not isinstance(s.port, port.Apply)), path, tail):
+            for node in gensub(publisher, tail, mask=lambda s: s.node not in seen and (
+                    publisher != tail or not isinstance(s.port, port.Apply)), path=path):
                 scan(node, path=path)
 
         seen = set()
@@ -59,17 +59,17 @@ class PreOrder(Visitor, metaclass=abc.ABCMeta):
         """
 
 
-def gensub(publisher: grnode.Atomic, mask: typing.Optional[typing.Callable[[port.Subscription], bool]] = None,
-           path: typing.Optional[typing.FrozenSet[grnode.Atomic]] = None,
-           *futures: grnode.Atomic) -> typing.Set[grnode.Atomic]:
+def gensub(publisher: grnode.Atomic, *futures: grnode.Atomic,
+           mask: typing.Optional[typing.Callable[[port.Subscription], bool]] = None,
+           path: typing.Optional[typing.FrozenSet[grnode.Atomic]] = None) -> typing.Set[grnode.Atomic]:
     """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
     subscribed directly).
 
     Args:
         publisher: Node for which subscribers should be listed.
+        *futures: Future nodes that might be subscribed to this publisher.
         mask: Optional condition for filtering the subscriptions.
         path: Set of upstream nodes for acyclicity validation.
-        *futures: Future nodes that might be subscribed to this publisher.
 
     Returns: Set of subscription nodes.
     """
@@ -118,7 +118,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
             return head
         path = frozenset(path | {head})
         endings = set()
-        for node in gensub(head, lambda s: isinstance(s.port, port.Apply), path, expected):
+        for node in gensub(head, expected, mask=lambda s: isinstance(s.port, port.Apply), path=path):
             tail = Path.tail(node, expected, path=path)
             if expected and tail == expected:
                 return tail
@@ -188,7 +188,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
                             subscription.node, subscription.node.fork())
                         sub[subscription.port].subscribe(pub[index])
             else:
-                for node in gensub(publisher, lambda s: isinstance(s.port, port.Apply), path, self._tail):
+                for node in gensub(publisher, self._tail, mask=lambda s: isinstance(s.port, port.Apply), path=path):
                     mkcopy(node, path=path)
 
         copies = dict()

@@ -5,6 +5,7 @@ Flow segments represent partial pipeline blocks during pipeline assembly.
 import abc
 import collections
 import typing
+import weakref
 
 from forml.flow.graph import node, view
 
@@ -54,7 +55,7 @@ class Composable(metaclass=abc.ABCMeta):
     """Common base for operators and expressions.
     """
     @abc.abstractmethod
-    def track(self) -> Track:
+    def expand(self) -> Track:
         """Compose and return a segment track.
 
         Args:
@@ -67,6 +68,9 @@ class Composable(metaclass=abc.ABCMeta):
         """Semantical composition construct.
         """
         return Expression(right, self)
+
+    def __str__(self):
+        return self.__class__.__name__
 
     @abc.abstractmethod
     def compose(self, left: 'Composable') -> Track:
@@ -83,11 +87,22 @@ class Composable(metaclass=abc.ABCMeta):
 class Expression(Composable):
     """Operator chaining descriptor.
     """
+    _TERMS = weakref.WeakSet()
+
     def __init__(self, right: Composable, left: Composable):
+        for term in (left, right):
+            if not isinstance(term, Composable):
+                raise ValueError(f'{type(term)} not composable')
+            if term in self._TERMS:
+                raise ArithmeticError(f'Non-linear composition of {term}')
+            self._TERMS.add(term)
         self._right: Composable = right
         self._left: Composable = left
 
-    def track(self) -> Track:
+    def __str__(self):
+        return f'{self._left} >> {self._right}'
+
+    def expand(self) -> Track:
         """Compose the segment track.
 
         Args:
@@ -106,13 +121,13 @@ class Expression(Composable):
 
         Returns: Segment track.
         """
-        return left.track().extend(*self.track())
+        return left.expand().extend(*self.expand())
 
 
 class Origin(Composable):
     """Initial builder without a predecessor.
     """
-    def track(self) -> Track:
+    def expand(self) -> Track:
         """Track of future nodes.
 
         Args:
@@ -131,4 +146,4 @@ class Origin(Composable):
 
         Returns: Segment track.
         """
-        return left.track()
+        return left.expand()

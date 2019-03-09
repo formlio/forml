@@ -55,7 +55,7 @@ def operator():
         def compose(self, left: segment.Composable) -> segment.Track:
             """Dummy composition.
             """
-            track = left.track()
+            track = left.expand()
             trainer = node.Worker('worker', 1, 1)
             applier = trainer.fork()
             extractor = node.Worker('extractor', 1, 1)

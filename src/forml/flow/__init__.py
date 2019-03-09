@@ -26,7 +26,7 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
 class Operator(segment.Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Task graph entity.
     """
-    def track(self) -> segment.Track:
+    def expand(self) -> segment.Track:
         """Create dummy composition of this operator on a future origin nodes.
 
         Args:
@@ -58,7 +58,7 @@ class Composer:
     @Cached
     def pipeline(self) -> Pipeline:
         # TODO: assert no trained in source track
-        return Pipeline(self._source.track().extend(*self._pipeline.track()))
+        return Pipeline(self._source.expand().extend(*self._pipeline.expand()))
 
     @property
     def train(self) -> view.Path:
