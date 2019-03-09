@@ -134,14 +134,14 @@ class Worker(Atomic):
     class Group(set):
         """Container for holding all forked workers.
         """
-        ID = int
+        ID = int  # pylint: disable=invalid-name
 
         def __init__(self, spec: task.Spec):
             super().__init__()
             self.spec: task.Spec = spec
 
         @property
-        def id(self) -> ID:
+        def id(self) -> 'Worker.Group.ID':  # pylint: disable=invalid-name
             """Group ID.
 
             Returns: Group id.

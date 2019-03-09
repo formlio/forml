@@ -51,14 +51,14 @@ class Stack(flow.Operator):
             train_merger[index].subscribe(train_appender[base][0])
             apply_merger[index].subscribe(apply_averager[base][0])
         for fold in range(self._folds):
-            pretrack: segment.Track = left.track()
+            pretrack: segment.Track = left.expand()
             pretrack.train.subscribe(features_splitter[fold])
             pretrack.label.subscribe(label_splitter[fold])
             pretrack.apply.subscribe(apply[0])
             preapply = pretrack.apply.copy()
             preapply.subscribe(features_splitter[fold + self._folds])
             for base in self._bases:
-                basetrack = base.track()
+                basetrack = base.expand()
                 basetrack.train.subscribe(pretrack.train.publisher)
                 basetrack.label.subscribe(pretrack.label.publisher)
                 basetrack.apply.subscribe(pretrack.apply.publisher)

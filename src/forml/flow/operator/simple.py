@@ -56,7 +56,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
         Returns: Composed track.
         """
-        return self.apply(node.Worker(self._spec, self._SZIN, self._SZOUT), left.track())
+        return self.apply(node.Worker(self._spec, self._SZIN, self._SZOUT), left.expand())
 
     @abc.abstractmethod
     def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
