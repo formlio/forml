@@ -37,6 +37,6 @@ class TestContext:
             assert provided is component.INSTANCE
 
         from forml.project import component as compreload
-        compreload.setup(object())
-        assert provided is component.INSTANCE
+        with pytest.raises(RuntimeError):
+            compreload.setup(object())
 
