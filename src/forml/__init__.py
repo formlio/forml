@@ -3,13 +3,11 @@ ForML top level.
 """
 import configparser
 import logging
-from logging import handlers as loghandlers, config as logconfig
 import os.path
 import typing
+from logging import handlers as loghandlers, config as logconfig
 
 from forml import conf
-from forml import flow, etl
-from forml.flow import segment
 
 
 class Error(Exception):
@@ -29,17 +27,7 @@ def _logsetup(configs: typing.Iterable[str]):
                 logging.warning('Unable to read logging config from %s: %s', cfg_path, err)
 
 
-_logsetup({os.path.join(d, conf.LOG_CFGFILE) for d in (conf.USR_DIR, conf.SYS_DIR)})
+_logsetup((os.path.join(d, conf.LOG_CFGFILE) for d in (conf.USR_DIR, conf.SYS_DIR)))
 logging.debug('Using configs from %s', conf.USED_CONFIGS)
 logging.captureWarnings(capture=True)
 
-
-class Project(typing.Generic[etl.SelectT]):
-    """Top level ForML project descriptor.
-
-    """
-    def __init__(self):
-        self.pipeline: segment.Composable = ...
-        self.source: etl.Source[etl.SelectT] = ...
-        self.scoring = ...  # cv+metric -> single number
-        self.reporting = ...  # arbitrary metrics -> kv list

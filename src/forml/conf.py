@@ -22,6 +22,8 @@ CLI_ARGS, _ = CLI_PARSER.parse_known_args()
 APP_CFGFILE = CLI_ARGS.config or 'config.ini'
 CONFIG = configparser.ConfigParser(DEFAULT_OPTIONS)
 CONFIG.optionxform = str   # we need case sensitivity
-USED_CONFIGS = CONFIG.read({os.path.join(d, APP_CFGFILE) for d in (SYS_DIR, USR_DIR)})
+USED_CONFIGS = CONFIG.read((os.path.join(d, APP_CFGFILE) for d in (SYS_DIR, USR_DIR)))
 
 LOG_CFGFILE = CONFIG.get(SECTION_DEFAULT, OPTION_LOG_CFGFILE)
+
+#REGISTRY

@@ -1,32 +1,35 @@
+"""
+ETL layer.
+"""
 import abc
 import collections
 import typing
 
+from forml.etl import expression
 from forml.flow import segment, task, operator
 
 
-SelectT = typing.TypeVar('SelectT')
 OrdinalT = typing.TypeVar('OrdinalT')
 
 
-class Extract(typing.Generic[SelectT], collections.namedtuple('Extract', 'apply, train')):
+class Extract(collections.namedtuple('Extract', 'apply, train')):
     """Combo of select statements for the different modes.
     """
-    def __new__(cls, apply: SelectT, train: typing.Optional[SelectT] = None):
+    def __new__(cls, apply: expression.Select, train: typing.Optional[expression.Select] = None):
         return super().__new__(cls, apply, train or apply)
 
 
-class Source(typing.Generic[SelectT], collections.namedtuple('Source', 'extract, transform')):
+class Source(collections.namedtuple('Source', 'extract, transform')):
     """Engine independent data provider description.
     """
-    def __new__(cls, extract: Extract[SelectT], transform: typing.Optional[segment.Expression] = None):
+    def __new__(cls, extract: Extract, transform: typing.Optional[segment.Expression] = None):
         return super().__new__(cls, extract, transform)
 
-    def __rshift__(self, transform: 'segment.Composable') -> 'Source':
+    def __rshift__(self, transform: segment.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
 
-class Engine(typing.Generic[SelectT, OrdinalT], metaclass=abc.ABCMeta):
+class Engine(typing.Generic[OrdinalT], metaclass=abc.ABCMeta):
     """ETL engine is the implementation of a specific datasource access layer.
     """
     def load(self, source: Source, lower: typing.Optional[OrdinalT] = None,
@@ -45,10 +48,11 @@ class Engine(typing.Generic[SelectT, OrdinalT], metaclass=abc.ABCMeta):
         etl: operator.Loader = operator.Loader(apply, train)
         if source.transform:
             etl >>= source.transform
-        return etl.track()
+        return etl.expand()
 
     @abc.abstractmethod
-    def setup(self, select: SelectT, lower: typing.Optional[OrdinalT], upper: typing.Optional[OrdinalT]) -> task.Spec:
+    def setup(self, select: expression.Select,
+              lower: typing.Optional[OrdinalT], upper: typing.Optional[OrdinalT]) -> task.Spec:
         """Actual engine provider to be implemented by subclass.
 
         Args:
