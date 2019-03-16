@@ -13,9 +13,10 @@ from forml.flow import task
 class TestActor:
     """Actor unit tests.
     """
+    @staticmethod
     @pytest.fixture(scope='function')
-    def instance(self, actor):
-        """Hyper-parameter tuning.
+    def instance(actor):
+        """Instance fixture.
         """
         return actor()
 
@@ -35,8 +36,9 @@ class TestActor:
 class TestSpec:
     """Task spec unit tests.
     """
+    @staticmethod
     @pytest.fixture(scope='session')
-    def spec(self, actor: typing.Type[task.Actor]):
+    def spec(actor: typing.Type[task.Actor]):
         """Task spec fixture.
         """
         return task.Spec(actor, a=1, b=2)
