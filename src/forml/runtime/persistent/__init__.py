@@ -1,101 +1,109 @@
 import abc
 import collections
-import functools
+import logging
 import typing
+import uuid
 
-from forml import project as prjmod
+from forml import project as prjmod, runtime
+from forml.runtime import resource
 
-
-KeyT = typing.TypeVar('KeyT')
+LOGGER = logging.getLogger(__name__)
 
 
 class Generation:
-    class Meta(collections.namedtuple('Meta', 'training, tuning, checksums')):
-        """
-        """
+    """Snapshot of project states in its particular training iteration.
+    """
+    def __init__(self, record: resource.Record, reader: typing.Callable[[uuid.UUID], bytes]):
+        self.record: resource.Record = record
+        self._reader: typing.Callable[[uuid.UUID], bytes] = reader
 
-    def __init__(self, loader: typing.Callable[[KeyT], bytes], reader: typing.Callable[[], Meta]):
-        self._loader: typing.Callable[[KeyT], bytes] = loader
-        self._reader: typing.Callable[[], Generation.Meta] = reader
+    def get(self, sid: uuid.UUID) -> bytes:
+        """Get the state for given sid.
 
-    def get(self, state: KeyT) -> bytes:
-        """
         Args:
-            state:
+            sid: State id
 
-        Returns:
+        Returns: State value as bytes.
         """
-        return self._loader(state)
-
-    @property
-    def meta(self) -> Meta:
-        return self._reader()
+        return self._reader(sid)
 
 
 class Lineage:
+    """Sequence of generations based on same project artifact.
     """
-    """
-
-    class Artifact(collections.namedtuple('Artifact', 'path')):
-
-        @property
-        def descriptor(self) -> prjmod.Descriptor:
-            """
-            forml.pyz (contains project code and all the deps)
-
-            Returns: Project descriptor.
-            """
-
-    def __init__(self, puller: typing.Callable[[], Artifact],
+    def __init__(self, artifact: prjmod.Artifact,
                  getter: typing.Callable[[typing.Optional[int]], Generation],
-                 dumper: typing.Callable[[bytes], KeyT],
-                 writer: typing.Callable[[Generation.Meta], int]):
-        self._puller: typing.Callable[[], Lineage.Artifact] = puller
+                 writer: typing.Callable[[bytes], uuid.UUID],
+                 closer: typing.Callable[[resource.Record], int]):
+        self.artifact: prjmod.Artifact = artifact
         self._getter: typing.Callable[[typing.Optional[int]], Generation] = getter
-        self._dumper: typing.Callable[[bytes], KeyT] = dumper
-        self._writer: typing.Callable[[Generation.Meta], int] = writer
+        self._writer: typing.Callable[[bytes], uuid.UUID] = writer
+        self._closer: typing.Callable[[resource.Record], int] = closer
 
     def get(self, generation: typing.Optional[int] = None) -> Generation:
         return self._getter(generation)
 
-    def put(self, meta: Generation.Meta) -> Generation:
-        return self._getter(self._writer(meta))
+    def put(self, meta: resource.Record) -> Generation:
+        return self._getter(self._closer(meta))
 
-    def add(self, state: bytes) -> KeyT:
-        return self._dumper(state)
-
-    @property
-    def artifact(self) -> Artifact:
-        return self._puller()
+    def add(self, state: bytes) -> uuid.UUID:
+        return self._writer(state)
 
 
-class Empty(Exception):
-    """
-    """
-
-
-class Registry(typing.Generic[KeyT], metaclass=abc.ABCMeta):
+class Registry(metaclass=abc.ABCMeta):
     """must be serializable.
     """
+    STEP = 1
+
+    class Empty(runtime.Error):
+        """
+        """
+
     def get(self, project: str, lineage: typing.Optional[int] = None) -> Lineage:
         def getter(generation: typing.Optional[int]) -> Generation:
-            if generation is None:
-                listing = self._generations(project, lineage)
-                if not listing:
-                    raise Empty('No generations for linage %s of the project %s', lineage, project)
-                generation = listing[-1]
-            return Generation(self._load, functools.partial(self._read, project, lineage, generation))
+            def reader(sid: uuid.UUID) -> bytes:
+                if sid not in record.states:
+                    raise KeyError('Unknown key: %s', sid)
+                return self._read(sid)
 
-        if lineage is None:
-            listing = self._lineages(project)
-            if not listing:
-                raise Empty('No lineages for project %s', project)
-            lineage = listing[-1]
-        return Lineage(functools.partial(self._pull, project, lineage), getter, self._dump,
-                       functools.partial(self._write, project, lineage))
+            if not generation:
+                generation = self._last(self._generations(project, lineage))
+            record = self._open(project, lineage, generation)
+            return Generation(record, reader)
 
-    def put(self, project: str, artifact: Lineage.Artifact) -> Lineage:
-        return self.get(project, self._push(project, artifact))
+        def writer(state: bytes) -> uuid.UUID:
+            sid = uuid.uuid4()
+            self._write(sid, state)
+            return sid
+        
+        def closer(record: resource.Record) -> int:
+            generation = self._next(self._generations(project, lineage))
+            self._close(project, lineage, generation, record)
+            return generation
+
+        if not lineage:
+            lineage = self._last(self._lineages(project))
+
+        return Lineage(self._pull(project, lineage), getter, writer, closer)
+
+    def put(self, project: str, artifact: prjmod.Artifact) -> Lineage:
+        lineage = self._next(self._lineages(project))
+        self._push(project, lineage, artifact)
+        return self.get(project, lineage)
+
+    @classmethod
+    def _last(cls, listing: typing.Iterable[int]) -> int:
+        try:
+            return max(listing)
+        except ValueError:
+            raise cls.Empty('Empty listing')
+
+    @classmethod
+    def _next(cls, listing: typing.Iterable[int]) -> int:
+        try:
+            return cls._last(listing) + cls.STEP
+        except cls.Empty:
+            return cls.STEP
 
     @abc.abstractmethod
     def _lineages(self, project: str) -> typing.Sequence[int]:
@@ -115,11 +123,11 @@ class Registry(typing.Generic[KeyT], metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _pull(self, project: str, lineage: int) -> Lineage.Artifact:
+    def _pull(self, project: str, lineage: int) -> prjmod.Artifact:
         ...
 
     @abc.abstractmethod
-    def _push(self, project: str, artifact: Lineage.Artifact) -> int:
+    def _push(self, project: str, lineage: int, artifact: prjmod.Artifact) -> None:
         """
 
         Args:
@@ -130,11 +138,11 @@ class Registry(typing.Generic[KeyT], metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _load(self, state: KeyT) -> bytes:
+    def _read(self, sid: uuid.UUID) -> bytes:
         ...
 
     @abc.abstractmethod
-    def _dump(self, state: bytes) -> KeyT:
+    def _write(self, sid: uuid.UUID, state: bytes) -> None:
         """
 
         Find first not sealed generation with given component missing or create new empty one.
@@ -149,7 +157,7 @@ class Registry(typing.Generic[KeyT], metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _write(self, project: str, lineage: int, meta: Generation.Meta) -> int:
+    def _close(self, project: str, lineage: int, generation: int, meta: resource.Record) -> None:
         """
         Args:
             project:
@@ -160,7 +168,8 @@ class Registry(typing.Generic[KeyT], metaclass=abc.ABCMeta):
         Returns: New generation id.
         """
 
-    def _read(self, project: str, lineage: int, generation: int) -> Generation.Meta:
+    def _open(self, project: str, lineage: int, generation: int) -> resource.Record:
+
 
 
 class Manager:
