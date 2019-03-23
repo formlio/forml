@@ -2,10 +2,29 @@
 Runtime that just renders the pipeline DAG visualization.
 """
 import collections
+import typing
 
 from dask.dot import graphviz
 
+from forml.flow import task
 from forml.flow.graph import view, node as grnode, port
+from forml import exec
+from forml.exec import meta
+
+
+class Runtime(exec.Runtime[None, str, int]):
+    class Registry(exec.Runtime.Registry):
+        @classmethod
+        def load(cls, name: typing.Optional[str] = None) -> meta.Parcel:
+            return meta.Parcel()
+
+        @classmethod
+        def save(cls, parcel: meta.Parcel) -> None:
+            """Do nothing.
+            """
+
+    def _run(self, path: view.Path, states: meta.Binding[None]) -> meta.Binding[None]:
+        pass
 
 
 class Dot(view.PreOrder):
@@ -13,7 +32,7 @@ class Dot(view.PreOrder):
     """
     def __init__(self, *args, **kwargs):
         self._dot: graphviz.Digraph = graphviz.Digraph(*args, **kwargs)
-        self._titles = collections.defaultdict(dict)
+        self._titles: typing.Dict[task.Spec, typing.Dict[grnode.Worker.Group.ID, int]] = collections.defaultdict(dict)
 
     def visit_node(self, node: grnode.Worker) -> None:
         """Process new node.

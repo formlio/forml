@@ -44,7 +44,7 @@ class TestBuilder:
     def test_build(self, builder: project.Descriptor.Builder, source: etl.Source, pipeline: segment.Composable):
         """Testing build.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(project.Error):
             builder.build()
         handlers = dict(builder)
         handlers['source'](source)
@@ -60,14 +60,16 @@ class TestDescriptor:
     def test_invalid(self):
         """Testing with invalid types.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(project.Error):
             project.Descriptor('foo', 'bar')
 
     def test_load(self):
         """Testing the descriptor loader.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(project.Error):
             project.Descriptor.load(foo='bar')
+        with pytest.raises(project.Error):
+            project.Descriptor.load('foo')
         descriptor = project.Descriptor.load('project')  # project package in this test directory
         from project import source, pipeline
         assert descriptor.source is source.INSTANCE

@@ -19,7 +19,7 @@ def setup(instance: typing.Any) -> None:
     Args:
         instance: Component instance to be registered.
     """
-    raise RuntimeError('Setup must be accessed from within a Context')
+    LOGGER.warning('Setup accessed outside of a Context')
 
 
 class Context:

@@ -4,16 +4,13 @@ Project component tests.
 # pylint: disable=no-self-use
 import typing
 
-import pytest
-
 from forml.project import component as compload
 
 
 def test_setup():
     """Test the direct setup access.
     """
-    with pytest.raises(RuntimeError):
-        compload.setup(object())
+    compload.setup(object())
 
 
 class TestContext:
@@ -37,6 +34,6 @@ class TestContext:
             assert provided is component.INSTANCE
 
         from forml.project import component as compreload
-        with pytest.raises(RuntimeError):
-            compreload.setup(object())
+        compreload.setup(object())
+        assert provided is component.INSTANCE
 
