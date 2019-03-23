@@ -5,12 +5,18 @@ import importlib
 import sys
 import typing
 
+import forml
 from forml import etl
 from forml.flow import segment
 
 import setuptools
 
 from forml.project import component as importer
+
+
+class Error(forml.Error):
+    """Project exception.
+    """
 
 
 def setup(**kwargs) -> setuptools.dist.Distribution:
@@ -25,7 +31,7 @@ def setup(**kwargs) -> setuptools.dist.Distribution:
     return setuptools.setup(**kwargs)
 
 
-class Descriptor(collections.namedtuple('Descriptor', 'pipeline, source')):
+class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
     """Top level ForML project descriptor holding the implementations of individual project components.
     """
     class Builder(collections.abc.Set):
@@ -63,15 +69,15 @@ class Descriptor(collections.namedtuple('Descriptor', 'pipeline, source')):
             Returns: Descriptor instance.
             """
             if not all(self._handlers.values()):
-                raise ValueError(f'Incomplete builder (missing {", ".join(c for c, h in self if not h)})')
+                raise Error(f'Incomplete builder (missing {", ".join(c for c, h in self if not h)})')
             return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
 
-    def __new__(cls, pipeline: segment.Composable, source: etl.Source):
+    def __new__(cls, source: etl.Source, pipeline: segment.Composable):
         if not isinstance(pipeline, segment.Composable):
-            raise ValueError('Invalid pipeline')
+            raise Error('Invalid pipeline')
         if not isinstance(source, etl.Source):
-            raise ValueError('Invalid source')
-        return super().__new__(cls, pipeline, source)
+            raise Error('Invalid source')
+        return super().__new__(cls, source, pipeline)
 
     @classmethod
     def load(cls, package: typing.Optional[str] = None, **modkw) -> 'Descriptor':
@@ -87,7 +93,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'pipeline, source')):
         """
         builder = cls.Builder()
         if not modkw.keys() <= builder:
-            raise ValueError('Unexpected keyword argument')
+            raise Error('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, handler in builder:
             module = package + (modkw.get(component) or component)
@@ -96,5 +102,21 @@ class Descriptor(collections.namedtuple('Descriptor', 'pipeline, source')):
                     if sys.modules[module].__package__:
                         del sys.modules[sys.modules[module].__package__]
                     del sys.modules[module]
-                importlib.import_module(module)
+                try:
+                    importlib.import_module(module)
+                except ImportError:
+                    raise Error(f'Unknown project module: {module}')
         return builder.build()
+
+
+class Artifact(collections.namedtuple('Artifact', 'path')):
+
+    @property
+    def descriptor(self) -> Descriptor:
+        """
+        forml.pyz (contains project code and all the deps)
+
+        Returns: Project descriptor.
+        """
+        sys.path.insert(0, self.path)
+        return Descriptor.load(...)

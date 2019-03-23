@@ -1,10 +1,10 @@
 import typing
 
-from forml import exec
-from forml.exec import meta
+from forml import runtime
+from forml.runtime import meta
 
 
-class Registry(exec.Registry):
+class Registry(runtime.Registry):
     PATH = ...
 
     @classmethod

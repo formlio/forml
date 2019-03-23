@@ -10,45 +10,28 @@ import typing
 from forml.flow.graph import node as grnode, port
 
 
-class Visitor(metaclass=abc.ABCMeta):
+class Visitor(grnode.Visitor):
     """View visitor interface.
     """
     @abc.abstractmethod
-    def visit_path(self, head: grnode.Atomic, tail: grnode.Atomic) -> None:
+    def visit_path(self, path: 'Path') -> None:
         """Path visit.
 
         Args:
-            head: Path head node.
-            tail: Path tail node.
+            path: Path visit.
         """
 
 
 class PreOrder(Visitor, metaclass=abc.ABCMeta):
     """Visitor iterating over all nodes between head and tail including all sink branches.
     """
-    def visit_path(self, head: grnode.Atomic, tail: grnode.Atomic) -> None:
+    @abc.abstractmethod
+    def visit_path(self, path: 'Path') -> None:
         """Path visit.
 
         Args:
-            head: Path head node.
-            tail: Path tail node.
+            path: Path visit.
         """
-        def scan(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> None:
-            """Recursive path scan.
-
-            Args:
-                publisher: Node to be processed.
-                path: Chain of nodes between current and head.
-            """
-            self.visit_node(publisher)
-            seen.add(publisher)
-            path = frozenset(path | {publisher})
-            for node in gensub(publisher, tail, mask=lambda s: s.node not in seen and (
-                    publisher != tail or not isinstance(s.port, port.Apply)), path=path):
-                scan(node, path=path)
-
-        seen = set()
-        scan(head)
 
     @abc.abstractmethod
     def visit_node(self, node: grnode.Atomic) -> None:
@@ -134,7 +117,23 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Args:
             visitor: Visitor instance.
         """
-        visitor.visit_path(self._head, self._tail)
+        def scan(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> None:
+            """Recursive path scan.
+
+            Args:
+                publisher: Node to be processed.
+                path: Chain of nodes between current and head.
+            """
+            visitor.visit_node(publisher)
+            seen.add(publisher)
+            path = frozenset(path | {publisher})
+            for node in gensub(publisher, self._tail, mask=lambda s: s.node not in seen and (
+                    publisher != self.tail or not isinstance(s.port, port.Apply)), path=path):
+                scan(node, path=path)
+
+        seen = set()
+        scan(self._head)
+        visitor.visit_path(self)
 
     # @abc.abstractmethod
     def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[grnode.Atomic] = None) -> 'Path':

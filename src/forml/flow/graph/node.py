@@ -20,6 +20,18 @@ from forml.flow import task
 from forml.flow.graph import port
 
 
+class Visitor(metaclass=abc.ABCMeta):
+    """View visitor interface.
+    """
+    @abc.abstractmethod
+    def visit_node(self, node: 'Atomic') -> None:
+        """Node visit.
+
+        Args:
+            node: Visited node.
+        """
+
+
 class Atomic(metaclass=abc.ABCMeta):
     """Abstract primitive task graph node.
     """
@@ -64,6 +76,14 @@ class Atomic(metaclass=abc.ABCMeta):
         Returns: Node hashcode.
         """
         return hash(self.szin) ^ hash(self.szout)
+
+    def accept(self, visitor: Visitor) -> None:
+        """Visitor entrypoint.
+
+        Args:
+            visitor: Accepted visitor.
+        """
+        visitor.visit_node(self)
 
     def publishing(self, subscriber: 'Atomic') -> bool:
         """Checking given node is on our subscription list.
@@ -134,19 +154,10 @@ class Worker(Atomic):
     class Group(set):
         """Container for holding all forked workers.
         """
-        ID = int  # pylint: disable=invalid-name
-
         def __init__(self, spec: task.Spec):
             super().__init__()
             self.spec: task.Spec = spec
-
-        @property
-        def id(self) -> 'Worker.Group.ID':  # pylint: disable=invalid-name
-            """Group ID.
-
-            Returns: Group id.
-            """
-            return id(self)
+            self.id: int = id(self)  # to make it constant after serde
 
         def __str__(self):
             return f'{self.spec}#{self.id}'
