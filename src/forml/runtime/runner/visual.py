@@ -8,26 +8,26 @@ from dask.dot import graphviz
 
 from forml.flow import task
 from forml.flow.graph import view, node as grnode, port
-from forml import exec
-from forml.exec import meta
+from forml import runtime
+from forml.runtime import resource
 
 
-class Runtime(exec.Runtime[None, str, int]):
-    class Registry(exec.Runtime.Registry):
+class Runner(runtime.Runner[None, str, int]):
+    class Registry(runtime.Runner.Registry):
         @classmethod
-        def load(cls, name: typing.Optional[str] = None) -> meta.Parcel:
-            return meta.Parcel()
+        def load(cls, name: typing.Optional[str] = None) -> resource.Parcel:
+            return resource.Parcel()
 
         @classmethod
-        def save(cls, parcel: meta.Parcel) -> None:
+        def save(cls, parcel: resource.Parcel) -> None:
             """Do nothing.
             """
 
-    def _run(self, path: view.Path, states: meta.Binding[None]) -> meta.Binding[None]:
+    def _run(self, path: view.Path, states: resource.Binding[None]) -> resource.Binding[None]:
         pass
 
 
-class Dot(view.PreOrder):
+class Dot(view.Visitor):
     """Path visitor for building the graphviz Dot structure.
     """
     def __init__(self, *args, **kwargs):
@@ -44,6 +44,14 @@ class Dot(view.PreOrder):
                        f'{node.spec}#{self._titles[node.spec].setdefault(node.gid, len(self._titles[node.spec]) + 1)}')
         for index, subscription in ((i, s) for i, p in enumerate(node.output) for s in p):
             self._dot.edge(str(id(node)), str(id(subscription.node)), label=f'{port.Apply(index)}->{subscription.port}')
+
+    def visit_path(self, path: view.Path) -> None:
+        """Path visit is a noop.
+
+        Args:
+            path: Visited path.
+        """
+        pass
 
     @property
     def source(self):
