@@ -1,3 +1,6 @@
+"""
+Assembly instructions.
+"""
 import abc
 import logging
 import typing
@@ -18,7 +21,11 @@ class Loader(assembly.Instruction):
         self._sid: uuid.UUID = sid
 
     def execute(self) -> bytes:
-        return self._registry._read(self._sid)
+        """Instruction functionality.
+
+        Returns: Loaded state.
+        """
+        return self._registry.load(self._sid)
 
 
 class Dumper(assembly.Instruction):
@@ -26,10 +33,16 @@ class Dumper(assembly.Instruction):
     """
     def __init__(self, registry: persistent.Registry):
         self._registry: persistent.Registry = registry
-        self._sid: uuid.UUID = sid
 
-    def execute(self, state: bytes) -> None:
-        self._registry._write(self._sid, statez)
+    def execute(self, state: bytes) -> uuid.UUID:
+        """Instruction functionality.
+
+        Args:
+            state: State to be persisted.
+
+        Returns: State id.
+        """
+        return self._registry.dump(state)
 
 
 class Getter(assembly.Instruction):
@@ -39,17 +52,31 @@ class Getter(assembly.Instruction):
         self._index: int = index
 
     def execute(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:
+        """Instruction functionality.
+
+        Args:
+            sequence: Sequence of output arguments.
+
+        Returns: Single output item.
+        """
         return sequence[self._index]
 
 
 class Committer(assembly.Instruction):
     """Commit a new lineage generation.
     """
-    def __init__(self, index: int):
-        self._registry: persistent.Registry = registry
+    def __init__(self, lineage: persistent.Lineage):
+        self._record: ...
+        self._lineage: persistent.Lineage = lineage
 
     def execute(self, *states: uuid.UUID) -> None:
-        self._registry.commit...
+        """Instruction functionality.
+
+        Args:
+            *states: Sequence of state IDs.
+        """
+        record = ...
+        self._lineage.put(record)
 
 
 class Functor(assembly.Instruction):
@@ -107,6 +134,9 @@ class Functor(assembly.Instruction):
     def __reduce__(self):
         return Functor, (self._spec, self._objective)
 
+    def __str__(self):
+        return str(self._spec)
+
     def shiftby(self, reducer: typing.Callable[[task.Actor, typing.Any], task.Actor]) -> 'Functor':
         """Create new functor with its objective prepended by an extra reducer.
 
@@ -151,6 +181,8 @@ class Functional(Functor, metaclass=abc.ABCMeta):
 
 
 class Mapper(Functional):
+    """Mapper (transformer) functor.
+    """
     @staticmethod
     def _objective(actor: task.Actor, *args) -> typing.Any:
         """Mapper objective is the apply method.
@@ -165,6 +197,8 @@ class Mapper(Functional):
 
 
 class Consumer(Functional):
+    """Consumer (ie trainer) functor.
+    """
     @staticmethod
     def _objective(actor: task.Actor, *args) -> bytes:
         """Consumer objective is the train method.
