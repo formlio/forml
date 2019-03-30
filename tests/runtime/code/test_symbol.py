@@ -2,6 +2,7 @@
 ForML runtime symbol unit tests.
 """
 # pylint: disable=no-self-use
+import pickle
 import typing
 
 import pytest
@@ -50,6 +51,15 @@ class Functor:
         assert not shifting
         functor(state, 'foobar', *input)
         assert shifting == 'foobar'
+
+    def test_serializable(self, functor: symbol.Functor, state: bytes, input: typing.Sequence):
+        """Test functor serializability.
+        """
+        functor = functor.shiftby(symbol.Functor.Shifting.state)
+        output = functor(state, *input)
+        clone = pickle.loads(pickle.dumps(functor))
+        assert isinstance(clone, symbol.Functor)
+        assert functor(state, *input) == output
 
 
 class TestMapper(Functor):
