@@ -15,34 +15,48 @@ class TestActor:
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def instance(actor):
+    def instance(spec: task.Spec) -> task.Actor:
         """Instance fixture.
         """
-        return actor()
+        return spec()
 
-    def test_train(self, instance: task.Actor):
+    def test_train(self, instance: task.Actor, trainset, testset, prediction):
         """Test actor training.
         """
-        instance.train('123', 'abc')
-        assert instance.predict('xyz') == 'abc'
+        assert instance.is_stateful()
+        instance.train(*trainset)
+        assert instance.apply(testset) == prediction
 
-    def test_serializable(self, instance: task.Actor):
+    def test_params(self, instance: task.Actor, hyperparams):
+        """Params setter/getter tests.
+        """
+        orig = instance.get_params()
+        assert orig == hyperparams
+        assert 'x' not in orig
+        instance.set_params(x=100)
+        assert instance.get_params()['x'] == 100
+
+    def test_state(self, instance: task.Actor, trainset, state, testset, prediction):
+        instance.train(*trainset)
+        assert instance.predict(testset) == prediction
+        assert instance.get_state() == state
+        instance.train('foo', 'bar')  # retraining to change the state
+        assert instance.predict(testset) != prediction
+        assert 'x' not in instance.get_params()
+        instance.set_params(x=100)
+        instance.set_state(state)
+        assert instance.get_params()['x'] == 100  # state shouldn't override parameter setting
+
+    def test_serializable(self, instance: task.Actor, trainset, testset, prediction):
         """Test actor serializability.
         """
-        instance.train('123', 'abc')
-        assert pickle.loads(pickle.dumps(instance)).predict('xyz') == 'abc'
+        instance.train(*trainset)
+        assert pickle.loads(pickle.dumps(instance)).predict(testset) == prediction
 
 
 class TestSpec:
     """Task spec unit tests.
     """
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def spec(actor: typing.Type[task.Actor]):
-        """Task spec fixture.
-        """
-        return task.Spec(actor, a=1, b=2)
-
     def test_hashable(self, spec: task.Spec):
         """Test spec hashability.
         """
@@ -52,3 +66,8 @@ class TestSpec:
         """Test spec serializability.
         """
         assert pickle.loads(pickle.dumps(spec)).actor == actor
+
+    def test_instantiate(self, spec: task.Spec):
+        """Testing specto actor instantiation.
+        """
+        assert spec(b=3).get_params() == {**spec.params, 'b': 3}

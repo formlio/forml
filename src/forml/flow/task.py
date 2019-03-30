@@ -36,8 +36,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         raise NotImplementedError('Stateless actor')
 
     @abc.abstractmethod
-    def apply(self,
-              features: typing.Union[DataT, typing.Sequence[DataT]]) -> typing.Union[DataT, typing.Sequence[DataT]]:
+    def apply(self, *features: DataT) -> typing.Union[DataT, typing.Sequence[DataT]]:
         """Pass features through the apply function (typically transform or predict).
 
         Args:
@@ -46,14 +45,17 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         Returns: Transformed features (ie predictions).
         """
 
-    @abc.abstractmethod
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Get hyper-parameters of this actor.
+
+        Default implementation is poor-mans init inspection and is expected to be overridden if not suitable.
         """
-        # TODO: is get_params necessary? should be rather static to provide list of params for validation?
+        return {p.name: p.default for p in inspect.signature(self.__class__).parameters.values() if
+                p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD and p.default is not inspect.Parameter.empty}
 
     @abc.abstractmethod
-    def set_params(self, **params: typing.Dict[str, typing.Any]) -> None:
+    def set_params(self, params: typing.Optional[typing.Mapping[str, typing.Any]] = None,
+                   **kwparams: typing.Any) -> None:
         """Set hyper-parameters of this actor.
 
         Args:
@@ -72,7 +74,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
             return bio.getvalue()
 
     def set_state(self, state: bytes) -> None:
-        """Set new internal state of the actor.
+        """Set new internal state of the actor. Note this doesn't change the setting of the actor hyper-parameters.
 
         Args:
             state: bytes to be used as internal state.
@@ -80,8 +82,10 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         if not state:
             return
         assert self.is_stateful(), 'State provided but actor stateless'
+        params = self.get_params()  # keep the original hyper-params
         with io.BytesIO(state) as bio:
             self.__dict__.update(joblib.load(bio))
+        self.set_params(**params)  # restore the original hyper-params
 
     def __str__(self):
         return self.__class__.__name__
@@ -102,11 +106,29 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
     def __getnewargs_ex__(self):
         return (self.actor, ), dict(self.params)
 
+    def __call__(self, **kwargs) -> Actor:
+        return self.actor(**{**self.params, **kwargs})
 
-class Wrapped:
+
+class Wrapping:
+    """Base class for actor wrapping.
+    """
+    def __init__(self, actor: typing.Type, mapping: typing.Mapping[str, str]):
+        self._actor: typing.Any = actor
+        self._mapping: typing.Mapping[str, str] = mapping
+
+    def is_stateful(self) -> bool:
+        """Emulation of native actor is_stateful class method.
+
+        Returns: True if the wrapped actor is stateful (has a train method).
+        """
+        return hasattr(self._actor, self._mapping[Actor.train.__name__])
+
+
+class Wrapped(Wrapping):
     """Decorator wrapper.
     """
-    class Actor(Actor):  # pylint: disable=abstract-method
+    class Actor(Wrapping, Actor):  # pylint: disable=abstract-method
         """Wrapper around user class implementing the Actor interface.
         """
         def __new__(cls, actor: typing.Any, mapping: typing.Mapping[str, str]):  # pylint: disable=unused-argument
@@ -114,9 +136,7 @@ class Wrapped:
             return super().__new__(cls)
 
         def __init__(self, actor: typing.Any, mapping: typing.Mapping[str, str]):
-            super().__init__()
-            self._actor: typing.Any = actor
-            self._mapping: typing.Mapping[str, str] = mapping
+            super().__init__(actor, mapping)
 
         def __getnewargs__(self):
             return self._actor, self._mapping
@@ -128,15 +148,7 @@ class Wrapped:
 
     def __init__(self, actor: typing.Type, mapping: typing.Mapping[str, str]):
         assert not issubclass(actor, Actor), 'Wrapping a true actor'
-        self._actor: typing.Type = actor
-        self._mapping: typing.Mapping[str, str] = mapping
-
-    def is_stateful(self) -> bool:
-        """Emulation of native actor is_stateful class method.
-
-        Returns: True if the wrapped actor is stateful (has a train method).
-        """
-        return hasattr(self._actor, self._mapping[Actor.train.__name__])
+        super().__init__(actor, mapping)
 
     def __str__(self):
         return str(self._actor.__name__)
