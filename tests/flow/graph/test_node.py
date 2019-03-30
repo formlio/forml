@@ -7,6 +7,7 @@ import abc
 
 import pytest
 
+from forml.flow import task
 from forml.flow.graph import node as grnode, port
 
 
@@ -15,7 +16,7 @@ class Atomic(metaclass=abc.ABCMeta):
     """
     @staticmethod
     @abc.abstractmethod
-    def node():
+    def node(spec: task.Spec) -> grnode.Atomic:
         """Node fixture.
         """
 
@@ -54,10 +55,10 @@ class TestWorker(Atomic):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def node():
+    def node(spec: task.Spec) -> grnode.Worker:
         """Node fixture.
         """
-        return grnode.Worker('worker', 1, 1)
+        return grnode.Worker(spec, 1, 1)
 
     def test_train(self, node: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
         """Test train subscription
@@ -75,10 +76,20 @@ class TestWorker(Atomic):
         """Testing node creation.
         """
         fork = node.fork()
-        assert {node, fork} == node._group == fork._group  # pylint: disable=protected-access
+        assert {node, fork} == node.fgroup
         node.train(multi[0], multi[1])
         with pytest.raises(AssertionError):  # Fork train non-exclusive
             fork.train(multi[0], multi[1])
+
+    def test_stateful(self, node: grnode.Worker):
+        """Test the node statefulness.
+        """
+        assert node.stateful
+
+    def test_spec(self, node: grnode.Worker, spec: task.Spec):
+        """Test the node spec.
+        """
+        assert node.spec is spec
 
 
 class TestFuture(Atomic):
@@ -86,7 +97,7 @@ class TestFuture(Atomic):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def node():
+    def node(_: task.Spec) -> grnode.Future:
         """Node fixture.
         """
         return grnode.Future()

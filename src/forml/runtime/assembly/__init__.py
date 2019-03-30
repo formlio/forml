@@ -7,6 +7,7 @@ import typing
 from forml import project as prjmod, etl
 from forml.flow.graph import view, node as grnode
 from forml.runtime import persistent
+from forml.runtime.assembly import instruction as instmod, symbol as symbmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,11 +36,14 @@ class Instruction(metaclass=abc.ABCMeta):
         return result
 
 
-class Symbol(collections.namedtuple('Symbol', 'address, instruction, input')):
+class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
     """Main entity of the assembled code.
     """
-    def __new__(cls, address: int, instruction: Instruction, input: typing.Optional[typing.Sequence[int]] = None):
-        return super().__new__(cls, address, instruction, tuple(input or []))
+    def __new__(cls, instruction: Instruction, arguments: typing.Optional[typing.Sequence[Instruction]] = None):
+        if arguments is None:
+            arguments = []
+        assert all(arguments), 'All arguments required'
+        return super().__new__(cls, instruction, tuple(arguments))
 
     def __str__(self):
         return f'#{self.key}: {self.instruction}{self.input}'
@@ -48,11 +52,23 @@ class Symbol(collections.namedtuple('Symbol', 'address, instruction, input')):
 class Visitor(view.Visitor, metaclass=abc.ABCMeta):
     """Symbol visitor base class.
     """
-    def visit_node(self, node: grnode.Atomic) -> None:
+    def __init__(self) -> None:
+        """
+        inputs
+            apply[x, y, z]
+            train
+            label
+        """
+        self._table: symbmod.Table = symbmod.Table()
+
+    def visit_node(self, node: grnode.Worker) -> None:
         """Expanding node into a (set of) symbols.
         """
-        symbol = ...
-        self.visit_symbol(symbol)
+        self._table.add(node)
+
+    def visit_path(self, path: 'view.Path') -> None:
+        for symbol in self._table:
+            self.visit_symbol(symbol)
 
     @abc.abstractmethod
     def visit_symbol(self, symbol: Symbol) -> None:

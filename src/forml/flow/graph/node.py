@@ -15,6 +15,7 @@ Trained node cannot be copied.
 """
 import abc
 import typing
+import uuid
 
 from forml.flow import task
 from forml.flow.graph import port
@@ -39,10 +40,11 @@ class Atomic(metaclass=abc.ABCMeta):
         assert szout >= 0, 'Invalid node output size'
         assert szin or szout, 'Invalid node size'
         self.szin: int = szin
+        self.uid: uuid.UUID = uuid.uuid4()
         self._output: typing.Tuple[typing.Set[port.Subscription]] = tuple(set() for _ in range(szout))
 
     def __str__(self):
-        return self.__class__.__name__
+        return f'{self.__class__.__name__}[uid={self.uid}]'
 
     def __getitem__(self, index) -> port.PubSub:
         """Semantical construct for creating PubSub port instance.
@@ -137,7 +139,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         assert 0 <= index < self.szout, 'Invalid output index'
         assert self is not subscription.node, 'Self subscription'
-        self._output[index].add(subscription)
+        self._output[index].insert(subscription)
 
     @abc.abstractmethod
     def fork(self) -> 'Atomic':
@@ -156,10 +158,10 @@ class Worker(Atomic):
         def __init__(self, spec: task.Spec):
             super().__init__()
             self.spec: task.Spec = spec
-            self.id: int = id(self)  # to make it constant after serde
+            self.uid: uuid.UUID = uuid.uuid4()
 
         def __str__(self):
-            return f'{self.spec}#{self.id}'
+            return f'{self.spec}[uid={self.uid}]'
 
     def __init__(self, meta: typing.Union[task.Spec, Group], szin: int, szout: int):
         super().__init__(szin, szout)
@@ -198,12 +200,28 @@ class Worker(Atomic):
         return any(isinstance(p, (port.Train, port.Label)) for p in self.input)
 
     @property
-    def gid(self) -> 'Worker.Group.ID':
+    def stateful(self) -> bool:
+        """Check this actor is stateful.
+
+        Returns: True if stateful.
+        """
+        return self._group.spec.actor.is_stateful()
+
+    @property
+    def gid(self) -> uuid.UUID:
         """Return the group ID shared by all forks of this worker.
 
         Returns: Group ID.
         """
-        return self._group.id
+        return self._group.uid
+
+    @property
+    def fgroup(self) -> typing.FrozenSet['Worker']:
+        """Set of forked workers in the same fork group.
+
+        Returns: Workers in same fork group.
+        """
+        return frozenset(self._group)
 
     def train(self, train: port.Publishable, label: port.Publishable) -> None:
         """Subscribe this node train and label port to given publishers.
@@ -215,6 +233,7 @@ class Worker(Atomic):
         Returns: Self node.
         """
         assert not any(f.trained for f in self._group), 'Fork train collision'
+        assert self.stateful, 'Stateless node training'
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
@@ -226,7 +245,7 @@ class Worker(Atomic):
         return Worker(self._group, self.szin, self.szout)
 
     @classmethod
-    def forks(cls, spec: task.Spec, szin: int, szout: int) -> typing.Generator['Worker', None, None]:
+    def fgen(cls, spec: task.Spec, szin: int, szout: int) -> typing.Generator['Worker', None, None]:
         """Generator producing forks of the same node.
 
         Args:

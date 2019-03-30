@@ -2,6 +2,7 @@
 ForML runtime instruction unit tests.
 """
 # pylint: disable=no-self-use
+import abc
 import pickle
 import typing
 
@@ -11,9 +12,15 @@ from forml.flow import task
 from forml.runtime.assembly import instruction
 
 
-class Functor:
+class Functor(metaclass=abc.ABCMeta):
     """Common functor tests.
     """
+    @staticmethod
+    @abc.abstractmethod
+    def functor(spec: task.Spec) -> instruction.Functional:
+        """Functor fixture.
+        """
+
     @staticmethod
     @pytest.fixture(scope='function')
     def shifting() -> typing.Callable[[task.Actor, typing.Any], task.Actor]:

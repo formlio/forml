@@ -21,6 +21,17 @@ class Loader(assembly.Instruction):
         return self._registry._read(self._sid)
 
 
+class Dumper(assembly.Instruction):
+    """Registry based state dumper.
+    """
+    def __init__(self, registry: persistent.Registry):
+        self._registry: persistent.Registry = registry
+        self._sid: uuid.UUID = sid
+
+    def execute(self, state: bytes) -> None:
+        self._registry._write(self._sid, statez)
+
+
 class Getter(assembly.Instruction):
     """Extracting single item from a vector.
     """
@@ -29,6 +40,16 @@ class Getter(assembly.Instruction):
 
     def execute(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:
         return sequence[self._index]
+
+
+class Committer(assembly.Instruction):
+    """Commit a new lineage generation.
+    """
+    def __init__(self, index: int):
+        self._registry: persistent.Registry = registry
+
+    def execute(self, *states: uuid.UUID) -> None:
+        self._registry.commit...
 
 
 class Functor(assembly.Instruction):
@@ -44,7 +65,7 @@ class Functor(assembly.Instruction):
             self._reducer: typing.Callable[[task.Actor, typing.Any], task.Actor] = reducer
             self._objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
 
-        def execute(self, actor: task.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
+        def __call__(self, actor: task.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
             if first:
                 actor = self._reducer(actor, first)
             return self._objective(actor, *args)
@@ -87,7 +108,7 @@ class Functor(assembly.Instruction):
         return Functor, (self._spec, self._objective)
 
     def shiftby(self, reducer: typing.Callable[[task.Actor, typing.Any], task.Actor]) -> 'Functor':
-        """Prepend the functor objective by extra reducer.
+        """Create new functor with its objective prepended by an extra reducer.
 
         Args:
             reducer: Callable taking the target actor and eating its first argument.

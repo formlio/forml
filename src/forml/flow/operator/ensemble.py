@@ -41,8 +41,8 @@ class Stack(flow.Operator):
         label_splitter[0].subscribe(label[0])
         train_merger: node.Worker = node.Worker(self._merger, len(self._bases), 1)
         apply_merger: node.Worker = train_merger.fork()
-        appender_forks: node.Worker = node.Worker.forks(self._appender, self._folds, 1)
-        averager_forks: node.Worker = node.Worker.forks(self._averager, self._folds, 1)
+        appender_forks: typing.Iterable[node.Worker] = node.Worker.fgen(self._appender, self._folds, 1)
+        averager_forks: typing.Iterable[node.Worker] = node.Worker.fgen(self._averager, self._folds, 1)
         train_appender: typing.Dict[segment.Composable, node.Worker] = dict()
         apply_averager: typing.Dict[segment.Composable, node.Worker] = dict()
         for index, (base, appender, averager) in enumerate(zip(self._bases, appender_forks, averager_forks)):
