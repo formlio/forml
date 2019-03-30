@@ -169,18 +169,4 @@ class Registry(metaclass=abc.ABCMeta):
         """
 
     def _open(self, project: str, lineage: int, generation: int) -> resource.Record:
-
-
-
-class Manager:
-    def __init__(self, generation: int):
-        self._lineage: Lineage = ...
-        self._generation = collections.defaultdict(lambda: generation)
-
-    def load(self, gid) -> bytes:
-        return self._lineage.get(self._generation[gid]).get(gid)
-
-    def save(self, gid, state) -> Checksum:
-        self._generation[gid] += 1
-
-    def commit(self, *checksums: Checksum) -> None:
+        ...
