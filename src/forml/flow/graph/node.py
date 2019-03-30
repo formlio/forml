@@ -20,10 +20,9 @@ from forml.flow import task
 from forml.flow.graph import port
 
 
-class Visitor(metaclass=abc.ABCMeta):
+class Visitor:
     """View visitor interface.
     """
-    @abc.abstractmethod
     def visit_node(self, node: 'Atomic') -> None:
         """Node visit.
 

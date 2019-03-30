@@ -45,14 +45,6 @@ class Dot(view.Visitor):
         for index, subscription in ((i, s) for i, p in enumerate(node.output) for s in p):
             self._dot.edge(str(id(node)), str(id(subscription.node)), label=f'{port.Apply(index)}->{subscription.port}')
 
-    def visit_path(self, path: view.Path) -> None:
-        """Path visit is a noop.
-
-        Args:
-            path: Visited path.
-        """
-        pass
-
     @property
     def source(self):
         """Return the graphviz source data structure.
