@@ -170,3 +170,8 @@ class Registry(metaclass=abc.ABCMeta):
 
     def _open(self, project: str, lineage: int, generation: int) -> resource.Record:
         ...
+
+
+class Assets:
+    """Persistent assets IO for loading and dumping models.
+    """

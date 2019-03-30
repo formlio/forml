@@ -11,34 +11,13 @@ from forml.flow.graph import node as grnode, port
 
 
 class Visitor(grnode.Visitor):
-    """View visitor interface.
+    """Path visitor interface.
     """
-    @abc.abstractmethod
     def visit_path(self, path: 'Path') -> None:
         """Path visit.
 
         Args:
             path: Path visit.
-        """
-
-
-class PreOrder(Visitor, metaclass=abc.ABCMeta):
-    """Visitor iterating over all nodes between head and tail including all sink branches.
-    """
-    @abc.abstractmethod
-    def visit_path(self, path: 'Path') -> None:
-        """Path visit.
-
-        Args:
-            path: Path visit.
-        """
-
-    @abc.abstractmethod
-    def visit_node(self, node: grnode.Atomic) -> None:
-        """Node processor.
-
-        Args:
-            node: Node being processed.
         """
 
 

@@ -1,34 +1,38 @@
 import abc
+import logging
 import typing
 import uuid
 
 from forml.flow import task
-from forml.runtime import code, persistent
+from forml.runtime import assembly, persistent
 
 
-class Loader(code.Symbol):
+LOGGER = logging.getLogger(__name__)
+
+
+class Loader(assembly.Instruction):
     """Registry based state loader.
     """
     def __init__(self, registry: persistent.Registry, sid: uuid.UUID):
         self._registry: persistent.Registry = registry
         self._sid: uuid.UUID = sid
 
-    def __call__(self) -> bytes:
+    def execute(self) -> bytes:
         return self._registry._read(self._sid)
 
 
-class Getter(code.Symbol):
+class Getter(assembly.Instruction):
     """Extracting single item from a vector.
     """
     def __init__(self, index: int):
         self._index: int = index
 
-    def __call__(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:
+    def execute(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:
         return sequence[self._index]
 
 
-class Functor(code.Symbol):
-    """Special symbol for wrapping task actors.
+class Functor(assembly.Instruction):
+    """Special instruction for wrapping task actors.
 
     Functor object must be serializable.
     """
@@ -40,7 +44,7 @@ class Functor(code.Symbol):
             self._reducer: typing.Callable[[task.Actor, typing.Any], task.Actor] = reducer
             self._objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
 
-        def __call__(self, actor: task.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
+        def execute(self, actor: task.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
             if first:
                 actor = self._reducer(actor, first)
             return self._objective(actor, *args)
@@ -55,6 +59,7 @@ class Functor(code.Symbol):
 
             Returns: Actor instance.
             """
+            LOGGER.debug('%s receiving state (%d bytes)', actor, len(state))
             actor.set_state(state)
             return actor
 
@@ -68,6 +73,7 @@ class Functor(code.Symbol):
 
             Returns: Actor instance.
             """
+            LOGGER.debug('%s receiving params (%s)', actor, params)
             actor.set_params(**params)
             return actor
 
@@ -100,7 +106,7 @@ class Functor(code.Symbol):
             self._instance = self._spec()
         return self._instance
 
-    def __call__(self, *args) -> typing.Any:
+    def execute(self, *args) -> typing.Any:
         return self._objective(self._actor, *args)
 
 
