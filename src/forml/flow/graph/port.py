@@ -3,55 +3,57 @@ Graph node port functionality.
 """
 import collections
 import typing
+from typing import Any
 
 from forml.flow.graph import node as grnode  # pylint: disable=unused-import
 
 
-class Type:
+class Type(int):
     """Input port base class.
-    """
-    def __str__(self):
-        return self.__class__.__name__
-
-    def __hash__(self):
-        return hash(self.__class__)
-
-    def __eq__(self, other):
-        return other.__class__ is self.__class__
-
-
-class SingletonMeta(type):
-    """Metaclass for singleton types.
-    """
-    _INSTANCE = None
-
-    def __call__(cls, *args, **kwargs):
-        if not cls._INSTANCE:
-            cls._INSTANCE = super().__call__(*args, **kwargs)
-        return cls._INSTANCE
-
-
-class Train(Type, metaclass=SingletonMeta):
-    """Train input port.
-    """
-
-
-class Label(Type, metaclass=SingletonMeta):
-    """Label input port.
-    """
-
-
-class Apply(Type, int):
-    """Apply input/output port at given index.
     """
     def __str__(self):
         return f'{self.__class__.__name__}[{int(self)}]'
 
     def __hash__(self):
-        return int.__hash__(self)
+        return hash(self.__class__) ^ int.__hash__(self)
 
     def __eq__(self, other):
-        return int.__eq__(self, other)
+        return other.__class__ is self.__class__ and int.__eq__(self, other)
+
+
+class SingletonMeta(type):
+    """Metaclass for singleton types.
+    """
+    def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
+        value = namespace.pop('VALUE')
+        instance = None
+
+        def new(cls):
+            """Injected class new method ensuring singletons with static value are only created.
+            """
+            nonlocal instance
+            if instance is None:
+                instance = bases[0].__new__(cls, value)
+            return instance
+        namespace['__new__'] = new
+        return super().__new__(mcs, name, bases, namespace)
+
+
+class Train(Type, metaclass=SingletonMeta):
+    """Train input port.
+    """
+    VALUE = 0
+
+
+class Label(Type, metaclass=SingletonMeta):
+    """Label input port.
+    """
+    VALUE = 1
+
+
+class Apply(Type):
+    """Apply input/output port at given index.
+    """
 
 
 class Subscription(collections.namedtuple('Subscription', 'node, port')):

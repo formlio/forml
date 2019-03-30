@@ -7,7 +7,7 @@ import abc
 
 import pytest
 
-from forml.flow.graph import port
+from forml.flow.graph import port as pmod
 
 
 class Type(metaclass=abc.ABCMeta):
@@ -15,36 +15,45 @@ class Type(metaclass=abc.ABCMeta):
     """
     @staticmethod
     @abc.abstractmethod
-    def ptype():
-        """Port type fixture
+    def port() -> pmod.Type:
+        """Port fixture
         """
 
-    def test_type(self, ptype: port.Type):
+    def test_int(self, port: pmod.Type):
         """Testing type of port type.
         """
-        assert isinstance(ptype, port.Type)
+        assert isinstance(port, int)
 
 
-class TestTrain(Type):
+class Singleton(Type):
+    """Base class for singleton port.
+    """
+    def test_singleton(self, port: pmod.Type):
+        """Test ports are singletons.
+        """
+        assert port.__class__() is port.__class__()
+
+
+class TestTrain(Singleton):
     """Train port type tests.
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def ptype() -> port.Type:
+    def port() -> pmod.Train:
         """Port type fixture
         """
-        return port.Train()
+        return pmod.Train()
 
 
-class TestLabel(Type):
+class TestLabel(Singleton):
     """Label port type tests.
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def ptype() -> port.Type:
+    def port() -> pmod.Label:
         """Port type fixture
         """
-        return port.Label()
+        return pmod.Label()
 
 
 class TestApply(Type):
@@ -52,7 +61,7 @@ class TestApply(Type):
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def ptype() -> port.Type:
+    def port() -> pmod.Type:
         """Port type fixture
         """
-        return port.Apply(1)
+        return pmod.Apply(1)
