@@ -15,19 +15,8 @@ LOGGER = logging.getLogger(__name__)
 class Generation:
     """Snapshot of project states in its particular training iteration.
     """
-    def __init__(self, record: resource.Record, reader: typing.Callable[[uuid.UUID], bytes]):
+    def __init__(self, record: resource.Record):
         self.record: resource.Record = record
-        self._reader: typing.Callable[[uuid.UUID], bytes] = reader
-
-    def get(self, sid: uuid.UUID) -> bytes:
-        """Get the state for given sid.
-
-        Args:
-            sid: State id
-
-        Returns: State value as bytes.
-        """
-        return self._reader(sid)
 
 
 class Lineage:
@@ -35,32 +24,44 @@ class Lineage:
     """
     def __init__(self, artifact: prjmod.Artifact,
                  getter: typing.Callable[[typing.Optional[int]], Generation],
-                 writer: typing.Callable[[bytes], uuid.UUID],
-                 closer: typing.Callable[[resource.Record], int]):
+                 putter: typing.Callable[[resource.Record], int]):
         self.artifact: prjmod.Artifact = artifact
         self._getter: typing.Callable[[typing.Optional[int]], Generation] = getter
-        self._writer: typing.Callable[[bytes], uuid.UUID] = writer
-        self._closer: typing.Callable[[resource.Record], int] = closer
+        self._putter: typing.Callable[[resource.Record], int] = putter
 
     def get(self, generation: typing.Optional[int] = None) -> Generation:
+        """Get a generation instance by its id.
+
+        Args:
+            generation: Integer generation id.
+
+        Returns: Generation instance.
+        """
         return self._getter(generation)
 
-    def put(self, meta: resource.Record) -> Generation:
-        return self._getter(self._closer(meta))
+    def put(self, record: resource.Record) -> Generation:
+        """Commit a new generation described by its record. All states listed on the record are expected to have been
+        provided previously by individual dumps.
 
-    def add(self, state: bytes) -> uuid.UUID:
-        return self._writer(state)
+        Args:
+            record: Generation metadata.
+
+        Returns: Generation instance.
+        """
+        return self._getter(self._putter(record))
 
 
 class Registry(metaclass=abc.ABCMeta):
     """must be serializable.
     """
     class Listing:
+        """Helper class representing a registry listing.
+        """
+        STEP = 1
+
         class Empty(runtime.Error):
             """Exception indicating empty listing.
             """
-
-        STEP = 1
 
         def __init__(self, items: typing.Iterable[int], step: int = STEP):
             self._items: typing.Iterable[int] = items
@@ -68,6 +69,10 @@ class Registry(metaclass=abc.ABCMeta):
 
         @property
         def last(self) -> int:
+            """Get the last (most recent) item from the listing.
+
+            Returns: Id of the last item.
+            """
             try:
                 return max(self._items)
             except ValueError:
@@ -75,19 +80,35 @@ class Registry(metaclass=abc.ABCMeta):
 
         @property
         def next(self) -> int:
+            """Get the first item not in the listing bigger then any existing item.
+
+            Returns: Id of the next item.
+            """
             try:
                 return self.last + self._step
             except self.Empty:
                 return self._step
 
+    def __str__(self):
+        return f'{self.__class__.__name__}'
+
     def get(self, project: str, lineage: typing.Optional[int] = None) -> Lineage:
+        """Get a lineage of given project.
+
+        Args:
+            project: Name of the project to work with.
+            lineage: Optional lineage id to be loaded (defaults to the most recent id).
+
+        Returns: Lineage instance.
+        """
         def getter(generation: typing.Optional[int]) -> Generation:
             if not generation:
                 generation = self._generations(project, lineage).last
             record = self._open(project, lineage, generation)
-            return Generation(record, reader)
+            return Generation(record)
 
         def closer(record: resource.Record) -> int:
+            # TODO: verify all states exist
             generation = self._generations(project, lineage).next
             self._close(project, lineage, generation, record)
             return generation
@@ -95,9 +116,17 @@ class Registry(metaclass=abc.ABCMeta):
         if not lineage:
             lineage = self._lineages(project).last
 
-        return Lineage(self._pull(project, lineage), getter, writer, closer)
+        return Lineage(self._pull(project, lineage), getter, closer)
 
     def put(self, project: str, artifact: prjmod.Artifact) -> Lineage:
+        """Publish new lineage to the repository based on provided artifact.
+
+        Args:
+            project: Project the lineage belongs to. # TODO: project should be extracted from the artifact.
+            artifact: Artifact to be published.
+
+        Returns: new lineage instance based on the artifact.
+        """
         lineage = self._lineages(project).next
         self._push(project, lineage, artifact)
         return self.get(project, lineage)
@@ -127,9 +156,6 @@ class Registry(metaclass=abc.ABCMeta):
         """
         LOGGER.debug('%s: Loading state %s', self, sid)
         return self._read(sid)
-
-    def __str__(self):
-        return f'{self.__class__.__name__}'
 
     @abc.abstractmethod
     def _lineages(self, project: str) -> 'Registry.Listing':
