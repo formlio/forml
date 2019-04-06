@@ -2,6 +2,7 @@
 Runtime persistence.
 """
 import abc
+import collections
 import logging
 import typing
 import uuid
@@ -12,54 +13,18 @@ from forml.runtime import resource
 LOGGER = logging.getLogger(__name__)
 
 
-class Generation:
-    """Snapshot of project states in its particular training iteration.
+class Error(runtime.Error):
+    """Persistence error.
     """
-    def __init__(self, record: resource.Record):
-        self.record: resource.Record = record
 
 
-class Lineage:
-    """Sequence of generations based on same project artifact.
-    """
-    def __init__(self, artifact: prjmod.Artifact,
-                 getter: typing.Callable[[typing.Optional[int]], Generation],
-                 putter: typing.Callable[[resource.Record], int]):
-        self.artifact: prjmod.Artifact = artifact
-        self._getter: typing.Callable[[typing.Optional[int]], Generation] = getter
-        self._putter: typing.Callable[[resource.Record], int] = putter
-
-    def get(self, generation: typing.Optional[int] = None) -> Generation:
-        """Get a generation instance by its id.
-
-        Args:
-            generation: Integer generation id.
-
-        Returns: Generation instance.
-        """
-        return self._getter(generation)
-
-    def put(self, record: resource.Record) -> Generation:
-        """Commit a new generation described by its record. All states listed on the record are expected to have been
-        provided previously by individual dumps.
-
-        Args:
-            record: Generation metadata.
-
-        Returns: Generation instance.
-        """
-        return self._getter(self._putter(record))
-
-
-class Registry(metaclass=abc.ABCMeta):
-    """must be serializable.
-    """
+class Level(metaclass=abc.ABCMeta):
     class Listing:
         """Helper class representing a registry listing.
         """
         STEP = 1
 
-        class Empty(runtime.Error):
+        class Empty(Error):
             """Exception indicating empty listing.
             """
 
@@ -89,6 +54,127 @@ class Registry(metaclass=abc.ABCMeta):
             except self.Empty:
                 return self._step
 
+    def __init__(self, registry: 'Registry', project: str, key: typing.Optional[int] = None,
+                 parent: typing.Optional['Level'] = None):
+        self._registry: Registry = registry
+        self.project: str = project
+        self._key: typing.Optional[int] = key
+        self._parent: typing.Optional[Level] = parent
+
+    def __str__(self):
+        return f'{self.project}\t{self.version}'
+
+    @property
+    def version(self) -> str:
+        def inspect(level: Level) -> str:
+            parent = f'{inspect(level._parent)}.' if level._parent else ''
+            return parent + str(self.key)
+        return inspect(self)
+
+    @property
+    def key(self) -> int:
+        """Level key.
+
+        Returns: ID of this level.
+        """
+        if self._key is None:
+            self._key = self._list.last
+        return self._key
+
+    @property
+    @abc.abstractmethod
+    def _list(self) -> 'Level.Listing':
+        """Return the listing of this level.
+
+        Args:
+            *args: Level listing spec. 
+
+        Returns: Level listing.
+        """
+
+
+class Registry(metaclass=abc.ABCMeta):
+    """Top-level persisten registry abstraction.
+    """
+    class Lineage(Level):
+        """Sequence of generations based on same project artifact.
+        """
+        class Generation(Level):
+            """Snapshot of project states in its particular training iteration.
+            """
+            def __init__(self, registry: 'Registry', project: str, lineage: int, key: typing.Optional[int] = None,
+                         parent: typing.Optional['Level'] = None):
+                super().__init__(registry, project, key, parent)
+                self.lineage: int = lineage
+
+            def _list(self) -> 'Level.Listing':
+                return self._registry._generations(self.project, self.lineage)
+
+            @property
+            def record(self) -> resource.Record:
+                return self._registry._open(self.project, self.lineage, self.key)
+
+        def __init__(self, registry: 'Registry', project: str, key: typing.Optional[int] = None):
+            super().__init__(registry, project, key)
+
+        @property
+        def _list(self) -> 'Level.Listing':
+            return self._registry._lineages(self.project)
+
+        @property
+        def artifact(self) -> prjmod.Artifact:
+            return self._registry._pull(self.project, self.key)
+
+        def get(self, generation: typing.Optional[int] = None) -> Generation:
+            """Get a generation instance by its id.
+
+            Args:
+                generation: Integer generation id.
+
+            Returns: Generation instance.
+            """
+            return self.Generation(self._registry, self.project, self.key, generation, self)
+
+        def put(self, record: resource.Record) -> Generation:
+            """Commit a new generation described by its record. All states listed on the record are expected to have
+            been provided previously by individual dumps.
+
+            Args:
+                record: Generation metadata.
+
+            Returns: Generation instance.
+            """
+            # TODO: verify all states exist
+            generation = self._list.next
+            self._registry._close(self.project, self.key, generation, record)
+            return self.get(generation)
+
+        def dump(self, state: bytes) -> uuid.UUID:
+            """Dump an unbound state (not belonging to any project) under given state id.
+
+            An unbound state is expected to be committed later into a new generation of specific lineage.
+
+            Args:
+                state: Serialized state to be persisted.
+
+            Returns: Associated state id.
+            """
+            sid = uuid.uuid4()
+            LOGGER.debug('%s: Dumping state %s', self, sid)
+            self._registry._write(self.project, self.key, sid, state)
+            return sid
+
+        def load(self, sid: uuid.UUID) -> bytes:
+            """Load the state based on provided id.
+
+            Args:
+                sid: Id of the state object to be loaded.
+
+            Returns: Serialized state.
+            """
+            LOGGER.debug('%s: Loading state %s', self, sid)
+            return self._registry._read(self.project, self.key, sid)
+
     def __str__(self):
         return f'{self.__class__.__name__}'
 
@@ -101,28 +187,13 @@ class Registry(metaclass=abc.ABCMeta):
 
         Returns: Lineage instance.
         """
-        def getter(generation: typing.Optional[int]) -> Generation:
-            if not generation:
-                generation = self._generations(project, lineage).last
-            record = self._open(project, lineage, generation)
-            return Generation(record)
-
-        def closer(record: resource.Record) -> int:
-            # TODO: verify all states exist
-            generation = self._generations(project, lineage).next
-            self._close(project, lineage, generation, record)
-            return generation
-
-        if not lineage:
-            lineage = self._lineages(project).last
-
-        return Lineage(self._pull(project, lineage), getter, closer)
+        return self.Lineage(self, project, lineage)
 
     def put(self, project: str, artifact: prjmod.Artifact) -> Lineage:
         """Publish new lineage to the repository based on provided artifact.
 
         Args:
-            project: Project the lineage belongs to. # TODO: project should be extracted from the artifact.
+            project: Project the lineage belongs to.
             artifact: Artifact to be published.
 
         Returns: new lineage instance based on the artifact.
@@ -131,34 +202,8 @@ class Registry(metaclass=abc.ABCMeta):
         self._push(project, lineage, artifact)
         return self.get(project, lineage)
 
-    def dump(self, state: bytes) -> uuid.UUID:
-        """Dump an unbound state (not belonging to any project) under given state id.
-
-        An unbound state is expected to be committed later into a new generation of specific lineage.
-
-        Args:
-            state: Serialized state to be persisted.
-
-        Returns: Associated state id.
-        """
-        sid = uuid.uuid4()
-        LOGGER.debug('%s: Dumping state %s', self, sid)
-        self._write(sid, state)
-        return sid
-
-    def load(self, sid: uuid.UUID) -> bytes:
-        """Load the state based on provided id.
-
-        Args:
-            sid: Id of the state object to be loaded.
-
-        Returns: Serialized state.
-        """
-        LOGGER.debug('%s: Loading state %s', self, sid)
-        return self._read(sid)
-
     @abc.abstractmethod
-    def _lineages(self, project: str) -> 'Registry.Listing':
+    def _lineages(self, project: str) -> 'Level.Listing':
         """List the lineages of given project.
 
         Args:
@@ -168,7 +213,7 @@ class Registry(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _generations(self, project: str, lineage: int) -> 'Registry.Listing':
+    def _generations(self, project: str, lineage: int) -> 'Level.Listing':
         """List the generations of given lineage.
 
         Args:
@@ -199,20 +244,24 @@ class Registry(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _read(self, sid: uuid.UUID) -> bytes:
+    def _read(self, project: str, lineage: int, sid: uuid.UUID) -> bytes:
         """Load the state based on provided id.
 
         Args:
+            project: Project to read the state from.
+            lineage: Lineage of the project to read the state from.
             sid: Id of the state object to be loaded.
 
         Returns: Serialized state.
         """
 
     @abc.abstractmethod
-    def _write(self, sid: uuid.UUID, state: bytes) -> None:
+    def _write(self, project: str, lineage: int, sid: uuid.UUID, state: bytes) -> None:
         """Dump an unbound state under given state id.
 
         Args:
+            project: Project to store the state into.
+            lineage: Lineage of the project to store the state into.
             sid: state id to associate the payload with.
             state: Serialized state to be persisted.
         """
@@ -221,9 +270,9 @@ class Registry(metaclass=abc.ABCMeta):
         """Return the metadata record of given generation.
 
         Args:
-            project:
-            lineage:
-            generation:
+            project: Project to read the metadata from.
+            lineage: Lineage of the project to read the metadata from.
+            generation: Generation of the project to read the metadata from.
 
         Returns: Generation metadata.
         """
@@ -243,17 +292,53 @@ class Registry(metaclass=abc.ABCMeta):
 class Assets:
     """Persistent assets IO for loading and dumping models.
     """
-    def __init__(self, registry: Registry, project: str, lineage: typing.Optional[int] = None,
-                 generation: typing.Optional[int] = None):
-        self._registry: Registry = registry
-        self._lineage: Lineage = registry.get(project, lineage)
-        self._generation: typing.Optional[int]
+    def __init__(self, index: typing.Sequence[uuid.UUID], registry: Registry, project: str,
+                 lineage: typing.Optional[int] = None, generation: typing.Optional[int] = None):
+        self._index: collections.OrderedDict[
+            uuid.UUID, typing.Optional[uuid.UUID]] = collections.OrderedDict((i, None) for i in index)
+        self._lineage: Registry.Lineage = registry.get(project, lineage)
+        self._generation: Registry.Lineage.Generation = self._lineage.get(generation)
+
+    def _bind(self) -> None:
+        """Bind the internal index of relative state IDs to the real IDs of current generation states.
+        """
+        record = self._generation.record
+        if len(record.states) != len(self._index):
+            raise Error('Persisted states cardinality mismatch')
+        for key, value in zip(self._index, record.states):
+            if not value:
+                raise Error('Invalid absolute state ID binding attempt')
+            self._index[key] = value
 
     def load(self, sid: uuid.UUID) -> bytes:
-        return self._registry.load(sid)
+        """Load the state bound currently to given relative state ID.
+
+        Args:
+            sid: Relative state ID.
+
+        Returns: Serialized state.
+        """
+        if sid not in self._index:
+            raise ValueError(f'Unknown relative state ID ({sid})')
+        if not self._index[sid]:
+            self._bind()
+        return self._lineage.load(self._index[sid])
 
     def dump(self, state: bytes) -> uuid.UUID:
-        return self._registry.dump(state)
+        """Dump an anonymous state to the repository.
+
+        Args:
+            state: State to be dumped.
+
+        Returns: Associated absolute state ID.
+        """
+        return self._lineage.dump(state)
 
     def commit(self, record: resource.Record) -> None:
-        self._lineage.put(record)
+        """Create new generation by committing its previously dumped states referred in provided record.
+
+        Args:
+            record: Generation metadata.
+        """
+        self._generation = self._lineage.put(record)
+        self._bind()
