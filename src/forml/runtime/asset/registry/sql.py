@@ -1,6 +1,3 @@
-"""
-Local filesystem based implementation of persisten registry.
-"""
 import uuid
 
 from forml import project as prjmod
@@ -24,6 +21,9 @@ class Registry(persistent.Registry):
         pass
 
     def _write(self, project: str, lineage: int, sid: uuid.UUID, state: bytes) -> None:
+        pass
+
+    def _open(self, project: str, lineage: int, generation: int) -> resource.Record:
         pass
 
     def _close(self, project: str, lineage: int, generation: int, record: resource.Record) -> None:
