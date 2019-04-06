@@ -1,5 +1,4 @@
 import abc
-import collections
 import datetime
 import logging
 import operator
@@ -19,6 +18,12 @@ class Error(asset.Error):
 
 
 class Level(metaclass=abc.ABCMeta):
+    """Abstract directory level.
+    """
+    class Invalid(Error):
+        """Indication of an invalid level.
+        """
+
     class Listing:
         """Helper class representing a registry listing.
         """
@@ -28,9 +33,12 @@ class Level(metaclass=abc.ABCMeta):
             """Exception indicating empty listing.
             """
 
-        def __init__(self, items: typing.Iterable[int], step: int = STEP):
-            self._items: typing.Iterable[int] = items
+        def __init__(self, items: typing.Collection[int], step: int = STEP):
+            self._items: typing.Collection[int] = items
             self._step = step
+
+        def __contains__(self, index: int) -> bool:
+            return index in self._items
 
         @property
         def last(self) -> int:
@@ -60,6 +68,7 @@ class Level(metaclass=abc.ABCMeta):
         self.project: str = project
         self._key: typing.Optional[int] = key
         self._parent: typing.Optional[Level] = parent
+        self._listing: typing.Optional[Level.Listing] = None
 
     def __str__(self):
         return f'{self.project} ({".".join(str(v) for v in self.version)})'
@@ -85,15 +94,26 @@ class Level(metaclass=abc.ABCMeta):
 
     @property
     def key(self) -> int:
-        """Level key.
+        """Either user specified or last listed level key.
 
         Returns: ID of this level.
         """
         if self._key is None:
-            self._key = self._list.last
+            self._key = self.listing.last
+        if self._key not in self.listing:
+            raise Level.Invalid(f'Invalid level key {self._key}')
         return self._key
 
     @property
+    def listing(self) -> 'Level.Listing':
+        """Lazily cached level listing.
+
+        Returns: Level listing.
+        """
+        if not self._listing:
+            self._listing = self._list()
+        return self._listing
+
     @abc.abstractmethod
     def _list(self) -> 'Level.Listing':
         """Return the listing of this level.
@@ -126,7 +146,7 @@ class Generation(Level):
                 def __getattr__(self, item):
                     return getattr(self._mode, item)
 
-                def __call__(self, **kwargs) -> 'Generation.Tag':
+                def replace(self, **kwargs) -> 'Generation.Tag':
                     """Mode attributes setter.
 
                     Args:
@@ -137,13 +157,12 @@ class Generation(Level):
                     return Generation.Tag(**{k: self._mode.__class__(**{**self._mode.__dict__, **kwargs})
                                              if v is self._mode else v for k, v in self._tag._asdict().items()})
 
-                @property
-                def triggered(self) -> 'Generation.Tag':
+                def trigger(self) -> 'Generation.Tag':
                     """Create new tag with given mode triggered (all attributes reset and timestamp set to now).
 
                     Returns: New tag.
                     """
-                    return self(timestamp=datetime.datetime.utcnow())
+                    return self.replace(timestamp=datetime.datetime.utcnow())
 
             def __init__(self, timestamp: typing.Optional[datetime.datetime], **kwargs: typing.Any):
                 super().__init__(timestamp=timestamp, **kwargs)
@@ -164,7 +183,7 @@ class Generation(Level):
 
         training: Training = Training()
         tuning: Tuning = Tuning()
-        states: typing.Iterable[uuid.UUID] = tuple()
+        states: typing.Sequence[uuid.UUID] = tuple()
 
         def __getattribute__(self, name: str) -> typing.Any:
             attribute = super().__getattribute__(name)
@@ -206,12 +225,17 @@ class Generation(Level):
 
     @property
     def tag(self) -> 'Generation.Tag':
-        """Generation metadata.
+        """Generation metadata. In case of implicit generation and empty lineage this return a "null" tag (a Tag object
+        with all fields empty)
 
-        Returns: Metadata object.
+        Returns: Generation tag (metadata) object.
         """
         if not self._tag:
-            self._tag = self._registry.open(self.project, self.lineage.key, self.key)
+            try:
+                self._tag = self._registry.open(self.project, self.lineage.key, self.key)
+            except self.Listing.Empty:
+                LOGGER.warning('No previous generations found - using a null tag')
+                self._tag = self.Tag()
         return self._tag
 
     def get(self, sid: typing.Union[uuid.UUID, int]) -> bytes:
@@ -237,7 +261,6 @@ class Lineage(Level):
         super().__init__(registry, project, key)
         self._artifact: typing.Optional[prjmod.Artifact] = None
 
-    @property
     def _list(self) -> Level.Listing:
         """List the content of this level.
 
@@ -275,7 +298,7 @@ class Lineage(Level):
         Returns: Generation instance.
         """
         # TODO: verify all states exist
-        generation = self._list.next
+        generation = self.listing.next
         self._registry.close(self.project, self.key, generation, tag)
         return self.get(generation)
 

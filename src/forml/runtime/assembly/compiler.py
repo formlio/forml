@@ -1,5 +1,5 @@
 """
-Runtime assembly symbols.
+Runtime symbols compilation.
 """
 
 import collections
@@ -181,3 +181,17 @@ class Table(view.Visitor, collections.Iterable[assembly.Symbol]):
             node: Node to be visited.
         """
         self.add(node)
+
+
+def generate(path: view.Path, assets: statemod.Manager) -> typing.Sequence[assembly.Symbol]:
+    """Generate the symbol code based on given flow path.
+
+    Args:
+        path: Flow path to generate the symbols for.
+        assets: Runtime assets dependencies.
+
+    Returns: Sequence of symbol code.
+    """
+    table = Table(assets)
+    path.accept(table)
+    return tuple(table)
