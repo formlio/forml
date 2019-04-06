@@ -6,8 +6,10 @@ import types
 import typing
 import uuid
 
-from forml import project as prjmod, etl
+from forml import etl, project as prjmod
 from forml.runtime import asset
+from forml.runtime.asset import persistent
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -62,9 +64,9 @@ class Level(metaclass=abc.ABCMeta):
             except self.Empty:
                 return self._step
 
-    def __init__(self, registry: asset.Registry, project: str, key: typing.Optional[int] = None,
+    def __init__(self, registry: persistent.Registry, project: str, key: typing.Optional[int] = None,
                  parent: typing.Optional['Level'] = None):
-        self._registry: asset.Registry = registry
+        self._registry: persistent.Registry = registry
         self.project: str = project
         self._key: typing.Optional[int] = key
         self._parent: typing.Optional[Level] = parent
@@ -204,7 +206,8 @@ class Generation(Level):
                 raise ValueError('Invalid replacement')
             return self._replace(**kwargs)
 
-    def __init__(self, registry: asset.Registry, project: str, lineage: 'Lineage', key: typing.Optional[int] = None):
+    def __init__(self, registry: persistent.Registry, project: str, lineage: 'Lineage',
+                 key: typing.Optional[int] = None):
         super().__init__(registry, project, key, parent=lineage)
         self._tag: typing.Optional[Generation.Tag] = None
 
@@ -257,7 +260,7 @@ class Generation(Level):
 class Lineage(Level):
     """Sequence of generations based on same project artifact.
     """
-    def __init__(self, registry: asset.Registry, project: str, key: typing.Optional[int] = None):
+    def __init__(self, registry: persistent.Registry, project: str, key: typing.Optional[int] = None):
         super().__init__(registry, project, key)
         self._artifact: typing.Optional[prjmod.Artifact] = None
 
