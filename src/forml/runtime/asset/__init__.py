@@ -2,11 +2,15 @@
 Specific metadata types used by the execution layer.
 """
 import abc
+import logging
 import typing
 import uuid
 
 from forml import runtime, project as prjmod
 from forml.runtime.asset import directory, state
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Error(runtime.Error):

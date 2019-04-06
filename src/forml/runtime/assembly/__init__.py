@@ -1,16 +1,13 @@
 import abc
 import collections
-import datetime
 import logging
 import time
 import typing
 
 from forml import etl
 from forml.flow import segment
-from forml.flow.graph import view, node as grnode
 from forml.runtime import asset
-from forml.runtime.assembly import instruction as instmod, symbol as symbmod
-from forml.runtime.asset import directory, state
+from forml.runtime.assembly import instruction as instmod, compiler
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,40 +69,45 @@ class Linker:
         """
         return cls(engine, asset.Manager(registry, project, lineage, generation))
 
-    def _tag(self) -> directory.Generation.Tag:
-        try:
-            return self._assets.tag
-        except directory.Level.Listing.Empty:
-            LOGGER.warning('No previous generations found - using emtpy tag')
-        return directory.Generation.Tag()
+    def _assemble(self, lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT],
+                  *blocks: segment.Track) -> segment.Track:
+        """Assemble the chain of blocks with the mandatory ETL cycle.
 
-    def _link(self, lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT],
-              *blocks: segment.Track) -> segment.Track:
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper:  Ordinal value as the upper bound for the ETL cycle.
+            *blocks: Additional block to assemble.
+
+        Returns: Assembled flow track.
+        """
         linked = self._engine.load(self._assets.project.source, lower, upper)
         for track in blocks:
             linked = linked.extend(track.apply, track.train, track.label)
         return linked
 
-    def _generate(self, path: view.Path, assets: state.Manager) -> typing.Sequence[Symbol]:
-        table = symbmod.Table(assets)
-        path.accept(table)
-        return tuple(table)
-
     def training(self, lower: typing.Optional[etl.OrdinalT] = None,
                  upper: typing.Optional[etl.OrdinalT] = None) -> typing.Sequence[Symbol]:
         """Return the training code.
 
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper:  Ordinal value as the upper bound for the ETL cycle.
+
         Returns: Training code.
         """
-        tag = self._tag()
-        path = self._link(lower or tag.training.ordinal, upper, self._assets.project.pipeline.expand()).train
-        return self._generate(path, self._assets.state(tag.training.triggered))
+        path = self._assemble(lower or self._assets.tag.training.ordinal, upper,
+                              self._assets.project.pipeline.expand()).train
+        return compiler.generate(path, self._assets.state(self._assets.tag.training.trigger()))
 
     def applying(self, lower: typing.Optional[etl.OrdinalT] = None,
                  upper: typing.Optional[etl.OrdinalT] = None) -> typing.Sequence[Symbol]:
         """Return the applying code.
 
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper:  Ordinal value as the upper bound for the ETL cycle.
+
         Returns: Applying code.
         """
-        path = self._link(lower, upper, self._assets.project.pipeline.expand()).apply
-        return self._generate(path, self._assets.state())
+        path = self._assemble(lower, upper, self._assets.project.pipeline.expand()).apply
+        return compiler.generate(path, self._assets.state())
