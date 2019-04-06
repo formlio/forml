@@ -44,6 +44,8 @@ class Registry(metaclass=abc.ABCMeta):
     def lineages(self, project: str) -> 'directory.Level.Listing':
         """List the lineages of given project.
 
+        Should raise directory.Level.Invalid in case of missing project.
+
         Args:
             project: Project to be listed.
 
@@ -53,6 +55,8 @@ class Registry(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def generations(self, project: str, lineage: int) -> 'directory.Level.Listing':
         """List the generations of given lineage.
+
+        Should raise directory.Level.Invalid in case of missing project/lineage.
 
         Args:
             project: Project of which the lineage is to be listed.

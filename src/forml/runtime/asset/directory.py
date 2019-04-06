@@ -67,7 +67,7 @@ class Level(metaclass=abc.ABCMeta):
             except self.Empty:
                 return self._step
 
-    def __init__(self, registry: persistent.Registry, project: str, key: typing.Optional[int] = None,
+    def __init__(self, registry: 'persistent.Registry', project: str, key: typing.Optional[int] = None,
                  parent: typing.Optional['Level'] = None):
         self._registry: persistent.Registry = registry
         self.project: str = project
@@ -209,7 +209,7 @@ class Generation(Level):
                 raise ValueError('Invalid replacement')
             return self._replace(**kwargs)
 
-    def __init__(self, registry: persistent.Registry, project: str, lineage: 'Lineage',
+    def __init__(self, registry: 'persistent.Registry', project: str, lineage: 'Lineage',
                  key: typing.Optional[int] = None):
         super().__init__(registry, project, key, parent=lineage)
         self._tag: typing.Optional[Generation.Tag] = None
@@ -263,7 +263,7 @@ class Generation(Level):
 class Lineage(Level):
     """Sequence of generations based on same project artifact.
     """
-    def __init__(self, registry: persistent.Registry, project: str, key: typing.Optional[int] = None):
+    def __init__(self, registry: 'persistent.Registry', project: str, key: typing.Optional[int] = None):
         super().__init__(registry, project, key)
         self._artifact: typing.Optional[prjmod.Artifact] = None
 

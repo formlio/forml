@@ -22,20 +22,20 @@ class Composable:
         """Testing noncomposable composition.
         """
         with pytest.raises(ValueError):
-            composable >> 1  # pylint: disable=pointless-statement
+            _ = composable >> 1
 
     def test_self(self, composable: segment.Composable):
         """Testing self composition.
         """
         with pytest.raises(ArithmeticError):
-            composable >> composable  # pylint: disable=pointless-statement
+            _ = composable >> composable
 
     def test_nonlinear(self, composable: segment.Composable, operator: flow.Operator):
         """Testing nonlinear composition.
         """
         expression = composable >> operator
         with pytest.raises(ArithmeticError):
-            expression >> operator  # pylint: disable=pointless-statement
+            _ = expression >> operator
 
 
 class TestOrigin(Composable):
