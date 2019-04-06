@@ -13,7 +13,7 @@ class Level:
     """Common level functionality.
     """
     @staticmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def invalid_level(last_level: int) -> int:
         """Level fixture.
         """
@@ -44,14 +44,14 @@ class TestLineage(Level):
         return lambda lineage: registry.get(None, lineage)
 
     @staticmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def valid_level(populated_lineage: int) -> int:
         """Level fixture.
         """
         return populated_lineage
 
     @staticmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def last_level(last_lineage: int) -> int:
         """Level fixture.
         """
@@ -78,14 +78,14 @@ class TestGeneration(Level):
         return lambda generation: registry.get(None, populated_lineage).get(generation)
 
     @staticmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def valid_level(valid_generation: int) -> int:
         """Level fixture.
         """
         return valid_generation
 
     @staticmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def last_level(last_generation: int) -> int:
         """Level fixture.
         """
