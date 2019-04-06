@@ -16,8 +16,8 @@ LOGGER = logging.getLogger(__name__)
 class Loader(assembly.Instruction):
     """Registry based state loader.
     """
-    def __init__(self, registry: persistent.Registry, sid: uuid.UUID):
-        self._registry: persistent.Registry = registry
+    def __init__(self, assets: persistent.Assets, sid: uuid.UUID):
+        self._assets: persistent.Assets = assets
         self._sid: uuid.UUID = sid
 
     def execute(self) -> bytes:
@@ -25,14 +25,14 @@ class Loader(assembly.Instruction):
 
         Returns: Loaded state.
         """
-        return self._registry.load(self._sid)
+        return self._assets.load(self._sid)
 
 
 class Dumper(assembly.Instruction):
     """Registry based state dumper.
     """
-    def __init__(self, registry: persistent.Registry):
-        self._registry: persistent.Registry = registry
+    def __init__(self, assets: persistent.Assets):
+        self._assets: persistent.Assets = assets
 
     def execute(self, state: bytes) -> uuid.UUID:
         """Instruction functionality.
@@ -40,9 +40,9 @@ class Dumper(assembly.Instruction):
         Args:
             state: State to be persisted.
 
-        Returns: State id.
+        Returns: Absolute state id.
         """
-        return self._registry.dump(state)
+        return self._assets.dump(state)
 
 
 class Getter(assembly.Instruction):
@@ -65,9 +65,9 @@ class Getter(assembly.Instruction):
 class Committer(assembly.Instruction):
     """Commit a new lineage generation.
     """
-    def __init__(self, lineage: persistent.Lineage):
+    def __init__(self, assets: persistent.Assets):
         self._record: ...
-        self._lineage: persistent.Lineage = lineage
+        self._assets: persistent.Assets = assets
 
     def execute(self, *states: uuid.UUID) -> None:
         """Instruction functionality.
@@ -76,7 +76,7 @@ class Committer(assembly.Instruction):
             *states: Sequence of state IDs.
         """
         record = ...
-        self._lineage.put(record)
+        self._assets.commit(record)
 
 
 class Functor(assembly.Instruction):
