@@ -7,12 +7,13 @@ import itertools
 import typing
 import uuid
 
-from forml.flow.graph import node as grnode
+from forml.flow.graph import node as grnode, view
+from forml.runtime import assembly, asset
 from forml.runtime.assembly import instruction as instmod
-from forml.runtime import assembly, persistent
+from forml.runtime.asset import state as statemod
 
 
-class Table:
+class Table(view.Visitor, collections.Iterable[assembly.Symbol]):
     """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys.
     """
     class Index:
@@ -131,8 +132,9 @@ class Table:
             del self._instructions[orig]
             return self.set(instruction, new)
 
-    def __init__(self, assets: persistent.Assets):
-        self._assets: persistent.Assets = assets
+    def __init__(self, assets: statemod.Manager):
+        self._assets: statemod.Manager = assets
+        self._offsets: typing.Dict[uuid.UUID, int] = dict()
         self._index: Table.Index = self.Index()
         self._content: Table.Content = self.Content()
         self._committer: typing.Optional[uuid.UUID] = None
@@ -153,15 +155,16 @@ class Table:
         aliases = [node.uid]
         if node.stateful:
             state = node.gid
+            offset = self._offsets.setdefault(state, len(self._offsets))
             if state not in self._content:
-                self._content.set(instmod.Loader(self._assets, state), state)
+                self._content.set(instmod.Loader(self._assets, offset), state)
             if node.trained:
                 functor = instmod.Consumer(node.spec)
                 if not self._committer:
-                    self._committer = self._content.set(instmod.Committer(self._assets, ...))
+                    self._committer = self._content.set(instmod.Committer(self._assets))
                 dumper = self._content.set(instmod.Dumper(self._assets))
                 self._index.insert(dumper, node.uid)
-                self._index.insert(self._committer, dumper, self._assets.index(node.uid))
+                self._index.insert(self._committer, dumper, offset)
                 aliases.append(state)
                 state = self._content.reset(state)  # re-register loader under it's own id
             functor = functor.shiftby(instmod.Functor.Shifting.state)
@@ -170,3 +173,11 @@ class Table:
             self._content.set(functor, key)
 
         self._index.update(node, lambda index: self._content.set(instmod.Getter(index)))
+
+    def visit_node(self, node: grnode.Worker) -> None:
+        """Visitor entrypoint.
+
+        Args:
+            node: Node to be visited.
+        """
+        self.add(node)

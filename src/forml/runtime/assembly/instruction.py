@@ -7,8 +7,8 @@ import typing
 import uuid
 
 from forml.flow import task
-from forml.runtime import assembly, persistent
-
+from forml.runtime import assembly
+from forml.runtime.asset import directory, state as statemod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,23 +16,27 @@ LOGGER = logging.getLogger(__name__)
 class Loader(assembly.Instruction):
     """Registry based state loader.
     """
-    def __init__(self, assets: persistent.Assets, sid: uuid.UUID):
-        self._assets: persistent.Assets = assets
-        self._sid: uuid.UUID = sid
+    def __init__(self, assets: statemod.Manager, index: int):
+        self._assets: statemod.Manager = assets
+        self._index: int = index
 
-    def execute(self) -> bytes:
+    def execute(self) -> typing.Optional[bytes]:
         """Instruction functionality.
 
         Returns: Loaded state.
         """
-        return self._assets.load(self._sid)
+        try:
+            return self._assets.load(self._index)
+        except directory.Level.Listing.Empty:
+            LOGGER.warning('No previous generations found - node #%d defaults to no state', self._index)
+            return None
 
 
 class Dumper(assembly.Instruction):
     """Registry based state dumper.
     """
-    def __init__(self, assets: persistent.Assets):
-        self._assets: persistent.Assets = assets
+    def __init__(self, assets: statemod.Manager):
+        self._assets: statemod.Manager = assets
 
     def execute(self, state: bytes) -> uuid.UUID:
         """Instruction functionality.
@@ -65,9 +69,8 @@ class Getter(assembly.Instruction):
 class Committer(assembly.Instruction):
     """Commit a new lineage generation.
     """
-    def __init__(self, assets: persistent.Assets):
-        self._record: ...
-        self._assets: persistent.Assets = assets
+    def __init__(self, assets: statemod.Manager):
+        self._assets: statemod.Manager = assets
 
     def execute(self, *states: uuid.UUID) -> None:
         """Instruction functionality.
@@ -75,8 +78,7 @@ class Committer(assembly.Instruction):
         Args:
             *states: Sequence of state IDs.
         """
-        record = ...
-        self._assets.commit(record)
+        self._assets.commit(states)
 
 
 class Functor(assembly.Instruction):
@@ -211,4 +213,3 @@ class Consumer(Functional):
         """
         actor.train(*args)
         return actor.get_state()
-
