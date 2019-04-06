@@ -3,28 +3,12 @@ Runtime that just renders the pipeline DAG visualization.
 """
 import collections
 import typing
+import uuid
 
 from dask.dot import graphviz
 
 from forml.flow import task
 from forml.flow.graph import view, node as grnode, port
-from forml import runtime
-from forml.runtime import resource
-
-
-class Runner(runtime.Runner[None, str, int]):
-    class Registry(runtime.Runner.Registry):
-        @classmethod
-        def load(cls, name: typing.Optional[str] = None) -> resource.Parcel:
-            return resource.Parcel()
-
-        @classmethod
-        def save(cls, parcel: resource.Parcel) -> None:
-            """Do nothing.
-            """
-
-    def _run(self, path: view.Path, states: resource.Binding[None]) -> resource.Binding[None]:
-        pass
 
 
 class Dot(view.Visitor):
@@ -32,7 +16,7 @@ class Dot(view.Visitor):
     """
     def __init__(self, *args, **kwargs):
         self._dot: graphviz.Digraph = graphviz.Digraph(*args, **kwargs)
-        self._titles: typing.Dict[task.Spec, typing.Dict[grnode.Worker.Group.ID, int]] = collections.defaultdict(dict)
+        self._titles: typing.Dict[task.Spec, typing.Dict[uuid.UUID, int]] = collections.defaultdict(dict)
 
     def visit_node(self, node: grnode.Worker) -> None:
         """Process new node.
@@ -40,10 +24,10 @@ class Dot(view.Visitor):
         Args:
             node: Node to be processed.
         """
-        self._dot.node(str(id(node)),
+        self._dot.node(str(node.uid),
                        f'{node.spec}#{self._titles[node.spec].setdefault(node.gid, len(self._titles[node.spec]) + 1)}')
         for index, subscription in ((i, s) for i, p in enumerate(node.output) for s in p):
-            self._dot.edge(str(id(node)), str(id(subscription.node)), label=f'{port.Apply(index)}->{subscription.port}')
+            self._dot.edge(str(node.uid), str(subscription.node.uid), label=f'{port.Apply(index)}->{subscription.port}')
 
     @property
     def source(self):

@@ -12,7 +12,7 @@ Graph topology validation.
 # * at most single trained node per each instance (enforced synchronously)
 # * either both train and label or all apply inputs and outputs are active
 """
-from forml.flow.graph import view, node
+from forml.flow.graph import view, node as grnode
 
 
 class NodeValidator(view.Visitor):
@@ -23,10 +23,10 @@ class NodeValidator(view.Visitor):
             * only both train and label or all input ports
             * only both train and label or all output ports
     """
-    def visit_path(self, head: node.Atomic, tail: node.Atomic) -> None:
-        """Path visit.
+
+    def visit_node(self, node: grnode.Atomic) -> None:
+        """Node visit.
 
         Args:
-            head: Path head node.
-            tail: Path tail node.
+            node: Node to be visited.
         """

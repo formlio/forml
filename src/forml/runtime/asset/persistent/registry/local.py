@@ -8,6 +8,8 @@ from forml.runtime.asset import directory, persistent
 
 
 class Registry(persistent.Registry):
+    """Local registry.
+    """
     def lineages(self, project: str) -> directory.Level.Listing:
         pass
 

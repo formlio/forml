@@ -1,3 +1,5 @@
+"""ForML assets accessing functionality.
+"""
 import typing
 import uuid
 
@@ -10,7 +12,7 @@ class State:
     """State persistence accessor.
     """
     def __init__(self, generation: forml.runtime.asset.directory.Generation, tag: typing.Optional[
-        forml.runtime.asset.directory.Generation.Tag] = None):
+            forml.runtime.asset.directory.Generation.Tag] = None):
         self._generation: forml.runtime.asset.directory.Generation = generation
         self._tag: typing.Optional[forml.runtime.asset.directory.Generation.Tag] = tag
 

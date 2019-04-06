@@ -33,7 +33,6 @@ class TestContext:
             import component  # component.py in this test directory
             assert provided is component.INSTANCE
 
-        from forml.project import component as compreload
+        from forml.project import component as compreload  # pylint: disable=reimported
         compreload.setup(object())
         assert provided is component.INSTANCE
-

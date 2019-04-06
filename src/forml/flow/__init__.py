@@ -4,7 +4,6 @@ ForML flow composition logic.
 
 import abc
 import collections
-import typing
 
 from forml.flow import task, segment
 from forml.flow.graph import node, view
@@ -22,6 +21,24 @@ class Pipeline(collections.namedtuple('Pipeline', 'apply, train')):
         assert isinstance(label, view.Closure), 'Label path not a closure'
         return super().__new__(cls, apply, train)
 
+    @classmethod
+    def compose(cls, *tracks: segment.Track) -> 'Pipeline':
+        """Compose the pipeline from the set of separate segments.
+
+        Args:
+            track: head segment of the pipeline.
+            *downstream: All further segments.
+
+        Returns: Pipeline instance.
+        """
+        if not tracks:
+            raise ValueError('Missing tracks for composition')
+        tracks = iter(tracks)
+        composed = next(tracks)
+        for other in tracks:
+            composed = composed.extend(other.apply, other.train, other.label)
+        return cls(composed)
+
 
 class Operator(segment.Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Task graph entity.
@@ -35,67 +52,3 @@ class Operator(segment.Composable, metaclass=abc.ABCMeta):  # pylint: disable=ab
         Returns: Segment track.
         """
         return self.compose(segment.Origin())
-
-
-class Composer:
-    """High-level flow composer.
-    """
-    class Cached:
-        """Path caching decorator.
-        """
-        def __init__(self, path: typing.Callable[['Composer'], view.Path]):
-            self._path: typing.Callable[[Composer], view.Path] = path
-
-        def __get__(self, composer: 'Composer', cls: typing.Type['Composer']):
-            return composer.__dict__.setdefault(self._path.__name__, self._path(composer))
-
-    def __init__(self, source: segment.Composable, pipeline: segment.Composable):
-        self._pipeline: segment.Composable = pipeline
-        self._source: segment.Composable = source
-        self._score = ...  # cv+metric -> single number
-        self._report = ...  # arbitrary metrics -> kv list
-
-    @Cached
-    def pipeline(self) -> Pipeline:
-        # TODO: assert no trained in source track
-        return Pipeline(self._source.expand().extend(*self._pipeline.expand()))
-
-    @property
-    def train(self) -> view.Path:
-        """Training lens.
-
-        Returns: Graph represented as compound node.
-        """
-        return self.pipeline.train
-
-    @property
-    def apply(self) -> view.Path:
-        """Apply lens.
-
-        Returns: Graph represented as compound node.
-        """
-        return self.pipeline.apply
-
-    @Cached
-    def tune(self) -> view.Path:
-        """Tuning lens.
-
-        Returns: Graph represented as compound node.
-        """
-        ...
-
-    @Cached
-    def score(self) -> view.Path:
-        """Scoring lens.
-
-        Returns: Graph represented as compound node.
-        """
-        ...
-
-    @Cached
-    def report(self) -> view.Path:
-        """Reporting lens.
-
-        Returns: Graph represented as compound node.
-        """
-        ...

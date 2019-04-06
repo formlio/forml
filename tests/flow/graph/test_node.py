@@ -29,7 +29,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """Test node subscribing.
         """
         simple[0].subscribe(node[0])
-        assert any(simple is s.node and s.port == 0 for s in node.output[0])
+        assert any(simple is s.node and s.port == port.Apply(0) for s in node.output[0])
         assert port.Apply(0) in simple.input
         with pytest.raises(AssertionError):  # self subscription
             simple[0].subscribe(node[0])
@@ -97,7 +97,7 @@ class TestFuture(Atomic):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def node(_: task.Spec) -> grnode.Future:
+    def node(spec: task.Spec) -> grnode.Future:
         """Node fixture.
         """
         return grnode.Future()

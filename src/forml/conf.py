@@ -4,7 +4,6 @@ import argparse
 import collections
 import configparser
 import contextlib
-import json
 import os.path
 import re
 import typing
@@ -12,7 +11,6 @@ import typing
 
 class Error(Exception):
     """Module Error class"""
-    pass
 
 
 @contextlib.contextmanager
@@ -29,6 +27,11 @@ def use_default(option: str, value: str) -> typing.ContextManager:
 
 
 def ensure_section(section) -> None:
+    """Add given section if missing.
+
+    Args:
+        section: name of the section to be added.
+    """
     try:
         CONFIG.add_section(section)
     except configparser.DuplicateSectionError:
@@ -69,13 +72,13 @@ class SectionMeta(type):
         return type.__new__(mcs, name, (Base, *bases), namespace)
 
 
-class Registry(object, metaclass=SectionMeta):
+class Registry(metaclass=SectionMeta):
     """Registry config container.
     """
     PATTERN = r'\s*(\w+)\s*$'
     FIELDS = 'name, cls, kwargs'
 
-    def __new__(cls, name: str, **kwargs) -> 'Registry':
+    def __new__(cls, name: str, **kwargs):  # pylint: disable=unused-argument
         section = f'{SECTION_REGISTRY}:{name}'
         ensure_section(section)
         # with use_default(OPTION_NAME, name):
@@ -118,4 +121,4 @@ LOG_CFGFILE = CONFIG.get(SECTION_DEFAULT, OPTION_LOG_CFGFILE)
 #     ensure_section(_section)
 
 
-REGISTRY = Registry.parse(CONFIG.get(SECTION_DEFAULT, OPTION_REGISTRY))
+REGISTRY = Registry.parse(CONFIG.get(SECTION_DEFAULT, OPTION_REGISTRY))  # pylint: disable=no-member

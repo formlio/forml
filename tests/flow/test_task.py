@@ -37,6 +37,8 @@ class TestActor:
         assert instance.get_params()['x'] == 100
 
     def test_state(self, instance: task.Actor, trainset, state, testset, prediction):
+        """Testing actor statefulness.
+        """
         instance.train(*trainset)
         assert instance.predict(testset) == prediction
         assert instance.get_state() == state

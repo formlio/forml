@@ -48,24 +48,25 @@ class Functor(metaclass=abc.ABCMeta):
 
         return Shifter()
 
-    def test_shiftby(self, functor: instruction.Functor, shifting: typing.Callable[[task.Actor, typing.Any], task.Actor],
-                     state: bytes, input: typing.Sequence):
+    def test_shiftby(self, functor: instruction.Functor,
+                     shifting: typing.Callable[[task.Actor, typing.Any], task.Actor],
+                     state: bytes, args: typing.Sequence):
         """Test shiftby.
         """
         functor = functor.shiftby(shifting).shiftby(instruction.Functor.Shifting.state)
-        functor(state, None, *input)
+        functor(state, None, *args)
         assert not shifting
-        functor(state, 'foobar', *input)
+        functor(state, 'foobar', *args)
         assert shifting == 'foobar'
 
-    def test_serializable(self, functor: instruction.Functor, state: bytes, input: typing.Sequence):
+    def test_serializable(self, functor: instruction.Functor, state: bytes, args: typing.Sequence):
         """Test functor serializability.
         """
         functor = functor.shiftby(instruction.Functor.Shifting.state)
-        output = functor(state, *input)
+        output = functor(state, *args)
         clone = pickle.loads(pickle.dumps(functor))
         assert isinstance(clone, instruction.Functor)
-        assert functor(state, *input) == output
+        assert functor(state, *args) == output
 
 
 class TestMapper(Functor):
@@ -80,8 +81,8 @@ class TestMapper(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def input(testset) -> typing.Sequence:
-        """Functor input fixture.
+    def args(testset) -> typing.Sequence:
+        """Functor args fixture.
         """
         return [testset]
 
@@ -108,8 +109,8 @@ class TestConsumer(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def input(trainset, testset) -> typing.Sequence:
-        """Functor input fixture.
+    def args(trainset, testset) -> typing.Sequence:
+        """Functor args fixture.
         """
         return [trainset, testset]
 

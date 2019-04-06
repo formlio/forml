@@ -1,4 +1,7 @@
+"""Generic assets directory.
+"""
 import abc
+import collections
 import datetime
 import logging
 import operator
@@ -127,7 +130,7 @@ class Level(metaclass=abc.ABCMeta):
 class Generation(Level):
     """Snapshot of project states in its particular training iteration.
     """
-    class Tag(typing.NamedTuple):
+    class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         """Generation metadata.
         """
         class Mode(types.SimpleNamespace):
@@ -157,7 +160,7 @@ class Generation(Level):
                     Returns: New tag instance with new values.
                     """
                     return Generation.Tag(**{k: self._mode.__class__(**{**self._mode.__dict__, **kwargs})
-                                             if v is self._mode else v for k, v in self._tag._asdict().items()})
+                                                if v is self._mode else v for k, v in self._tag._asdict().items()})
 
                 def trigger(self) -> 'Generation.Tag':
                     """Create new tag with given mode triggered (all attributes reset and timestamp set to now).
@@ -183,9 +186,9 @@ class Generation(Level):
                          score: typing.Optional[float] = None):
                 super().__init__(timestamp, score=score)
 
-        training: Training = Training()
-        tuning: Tuning = Tuning()
-        states: typing.Sequence[uuid.UUID] = tuple()
+        def __new__(cls, training: typing.Optional[Training] = None, tuning: typing.Optional[Tuning] = None,
+                    states: typing.Optional[typing.Sequence[uuid.UUID]] = None):
+            return super().__new__(cls, training or cls.Training(), tuning or cls.Tuning(), tuple(states or []))
 
         def __getattribute__(self, name: str) -> typing.Any:
             attribute = super().__getattribute__(name)

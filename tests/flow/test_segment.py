@@ -22,20 +22,20 @@ class Composable:
         """Testing noncomposable composition.
         """
         with pytest.raises(ValueError):
-            composable >> 1
+            composable >> 1  # pylint: disable=pointless-statement
 
     def test_self(self, composable: segment.Composable):
         """Testing self composition.
         """
         with pytest.raises(ArithmeticError):
-            composable >> composable
+            composable >> composable  # pylint: disable=pointless-statement
 
     def test_nonlinear(self, composable: segment.Composable, operator: flow.Operator):
         """Testing nonlinear composition.
         """
         expression = composable >> operator
         with pytest.raises(ArithmeticError):
-            expression >> operator
+            expression >> operator  # pylint: disable=pointless-statement
 
 
 class TestOrigin(Composable):
@@ -54,14 +54,13 @@ class TestExpression(Composable):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def composable(operator: flow.Operator):
+    def composable():
         """Expression composable fixture.
         """
-        return segment.Expression(operator, segment.Origin())
+        return segment.Expression(segment.Origin(), segment.Origin())
 
     def test_expression(self, composable: segment.Composable, operator: flow.Operator):
         """Testing linking action.
         """
         expression = composable >> operator
         assert isinstance(expression, segment.Expression)
-

@@ -12,7 +12,7 @@ from importlib import abc, machinery
 LOGGER = logging.getLogger(__name__)
 
 
-def setup(instance: typing.Any) -> None:
+def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
     """Dummy component setup (merely for the sake of IDE sanity). In real usecase this functions represents
     the Module.setup method.
 
@@ -29,7 +29,7 @@ class Context:
     class Finder(abc.MetaPathFinder):
         """Module path finder implementation.
         """
-        class Loader(abc.Loader):
+        class Loader(abc.Loader):  # pylint: disable=abstract-method
             """Module loader implementation.
             """
             def __init__(self, module: types.ModuleType):
@@ -55,6 +55,7 @@ class Context:
         def __init__(self, module: types.ModuleType):
             self._loader: Context.Finder.Loader = self.Loader(module)
 
+        # pylint: disable=unused-argument
         def find_spec(self, fullname: str, path, target) -> typing.Optional[machinery.ModuleSpec]:
             """Return module spec if asked for component module.
 
@@ -89,7 +90,8 @@ class Context:
 
         self._finder: typing.Optional[Context.Finder] = self.Finder(Module())
 
-    def _unload(self) -> None:
+    @staticmethod
+    def _unload() -> None:
         """Unload the current module instance.
         """
         if __name__ in sys.modules:
