@@ -38,4 +38,4 @@ class Manager:
             states: Generation states.
         """
         tag = self._tag or self._generation.tag
-        self._generation = self._generation.lineage.put(tag._replace(states=states))
+        self._generation = self._generation.lineage.put(tag.replace(states=states))

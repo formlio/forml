@@ -1,5 +1,5 @@
 """
-Local filesystem based implementation of persisten registry.
+CWD registry is a project-less registry in current working directory.
 """
 import uuid
 

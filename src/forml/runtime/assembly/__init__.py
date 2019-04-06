@@ -72,12 +72,12 @@ class Linker:
         """
         return cls(engine, asset.Manager(registry, project, lineage, generation))
 
-    def _tag(self, **modkw) -> directory.Generation.Tag:
+    def _tag(self) -> directory.Generation.Tag:
         try:
-            return self._assets.tag._replace(**modkw)
+            return self._assets.tag
         except directory.Level.Listing.Empty:
-            pass
-        return directory.Generation.Tag(**modkw)
+            LOGGER.warning('No previous generations found - using emtpy tag')
+        return directory.Generation.Tag()
 
     def _link(self, lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT],
               *blocks: segment.Track) -> segment.Track:
@@ -97,9 +97,9 @@ class Linker:
 
         Returns: Training code.
         """
-        tag = self._tag(training=directory.Generation.Tag.Training(timestamp=datetime.datetime.utcnow()))
+        tag = self._tag()
         path = self._link(lower or tag.training.ordinal, upper, self._assets.project.pipeline.expand()).train
-        return self._generate(path, self._assets.state(tag))
+        return self._generate(path, self._assets.state(tag.training.triggered))
 
     def applying(self, lower: typing.Optional[etl.OrdinalT] = None,
                  upper: typing.Optional[etl.OrdinalT] = None) -> typing.Sequence[Symbol]:

@@ -2,10 +2,12 @@ import abc
 import collections
 import datetime
 import logging
+import operator
+import types
 import typing
 import uuid
 
-from forml import project as prjmod
+from forml import project as prjmod, etl
 from forml.runtime import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -103,28 +105,85 @@ class Level(metaclass=abc.ABCMeta):
 class Generation(Level):
     """Snapshot of project states in its particular training iteration.
     """
-    class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
+    class Tag(typing.NamedTuple):
         """Generation metadata.
         """
-        class Training(collections.namedtuple('Training', 'timestamp, ordinal')):
-            """Collection for grouping training attributes.
+        class Mode(types.SimpleNamespace):
+            """Mode metadata.
             """
-            def __new__(cls, timestamp: typing.Optional[datetime.datetime] = None,
-                        ordinal: typing.Optional[] = None):
-                return super().__new__(cls, timestamp, ordinal)
+            class Proxy(tuple):
+                """Mode attributes proxy.
+                """
+                _tag = property(operator.itemgetter(0))
+                _mode = property(operator.itemgetter(1))
 
-        class Tuning(collections.namedtuple('Tuning', 'timestamp, score')):
-            """Collection for grouping tuning attributes.
+                def __new__(cls, tag: 'Generation.Tag', mode: 'Generation.Tag.Mode'):
+                    return super().__new__(cls, (tag, mode))
+
+                def __repr__(self):
+                    return f'Mode{repr(self._mode)}'
+
+                def __getattr__(self, item):
+                    return getattr(self._mode, item)
+
+                def __call__(self, **kwargs) -> 'Generation.Tag':
+                    """Mode attributes setter.
+
+                    Args:
+                        **kwargs: Keyword parameters to be set on given mode attributes.
+
+                    Returns: New tag instance with new values.
+                    """
+                    return Generation.Tag(**{k: self._mode.__class__(**{**self._mode.__dict__, **kwargs})
+                                             if v is self._mode else v for k, v in self._tag._asdict().items()})
+
+                @property
+                def triggered(self) -> 'Generation.Tag':
+                    """Create new tag with given mode triggered (all attributes reset and timestamp set to now).
+
+                    Returns: New tag.
+                    """
+                    return self(timestamp=datetime.datetime.utcnow())
+
+            def __init__(self, timestamp: typing.Optional[datetime.datetime], **kwargs: typing.Any):
+                super().__init__(timestamp=timestamp, **kwargs)
+
+        class Training(Mode):
+            """Training mode attributes.
             """
-            def __new__(cls, timestamp: typing.Optional[datetime.datetime] = None,
-                        score: typing.Optional[] = None):
-                return super().__new__(cls, timestamp, score)
+            def __init__(self, timestamp: typing.Optional[datetime.datetime] = None,
+                         ordinal: typing.Optional[etl.OrdinalT] = None):
+                super().__init__(timestamp, ordinal=ordinal)
 
-        def __new__(cls, training: typing.Optional[typing.Sequence] = None,
-                    tuning: typing.Optional[typing.Sequence] = None,
-                    states: typing.Optional[typing.Iterable[uuid.UUID]] = None):
-            return super().__new__(cls, cls.Training(*(training or [])), cls.Tuning(*(tuning or [])),
-                                   tuple(states or []))
+        class Tuning(Mode):
+            """Tuning mode attributes.
+            """
+            def __init__(self, timestamp: typing.Optional[datetime.datetime] = None,
+                         score: typing.Optional[float] = None):
+                super().__init__(timestamp, score=score)
+
+        training: Training = Training()
+        tuning: Tuning = Tuning()
+        states: typing.Iterable[uuid.UUID] = tuple()
+
+        def __getattribute__(self, name: str) -> typing.Any:
+            attribute = super().__getattribute__(name)
+            if isinstance(attribute, Generation.Tag.Mode):
+                attribute = self.Mode.Proxy(self, attribute)
+            return attribute
+
+        def replace(self, **kwargs) -> 'Generation.Tag':
+            """Replace give non-mode attributes.
+
+            Args:
+                **kwargs: Non-mode attributes to be replaced.
+
+            Returns: New tag instance.
+            """
+            if not {k for k, v in self._asdict().items()
+                    if not isinstance(v, Generation.Tag.Mode)}.issuperset(kwargs.keys()):
+                raise ValueError('Invalid replacement')
+            return self._replace(**kwargs)
 
     def __init__(self, registry: asset.Registry, project: str, lineage: 'Lineage', key: typing.Optional[int] = None):
         super().__init__(registry, project, key, parent=lineage)

@@ -1,40 +1,40 @@
 """
 Null registry is a dummy registry implementation that doesn't persist anything.
 """
+import typing
 import uuid
 
-import typing
-
 from forml import project as prjmod
-from forml.runtime import persistent, resource
+from forml.runtime import asset
+from forml.runtime.asset import directory
 
 
-class Registry(persistent.Registry):
+class Registry(asset.Registry):
     """Dummy registry implementation.
     """
     def __init__(self):
-        self._record: typing.Optional[resource.Record] = None
+        self._tag: typing.Optional[directory.Generation.Tag] = None
 
-    def _lineages(self, project: str) -> 'persistent.Level.Listing':
-        return persistent.Level.Listing([])
+    def lineages(self, project: str) -> directory.Level.Listing:
+        return directory.Level.Listing([])
 
-    def _generations(self, project: str, lineage: int) -> 'persistent.Level.Listing':
-        return persistent.Level.Listing([])
+    def generations(self, project: str, lineage: int) -> directory.Level.Listing:
+        return directory.Level.Listing([])
 
-    def _pull(self, project: str, lineage: int) -> prjmod.Artifact:
+    def pull(self, project: str, lineage: int) -> prjmod.Artifact:
         pass
 
-    def _push(self, project: str, lineage: int, artifact: prjmod.Artifact) -> None:
+    def push(self, project: str, lineage: int, artifact: prjmod.Artifact) -> None:
         return
 
-    def _read(self, project: str, lineage: int, sid: uuid.UUID) -> bytes:
+    def read(self, project: str, lineage: int, generation: int, sid: uuid.UUID) -> bytes:
         return bytes()
 
-    def _write(self, project: str, lineage: int, sid: uuid.UUID, state: bytes) -> None:
+    def write(self, project: str, lineage: int, sid: uuid.UUID, state: bytes) -> None:
         return
 
-    def _open(self, project: str, lineage: int, generation: int) -> resource.Record:
-        return self._record
+    def open(self, project: str, lineage: int, generation: int) -> directory.Generation.Tag:
+        return self._tag
 
-    def _close(self, project: str, lineage: int, generation: int, record: resource.Record) -> None:
-        self._record = record
+    def close(self, project: str, lineage: int, generation: int, tag: directory.Generation.Tag) -> None:
+        self._tag = tag
