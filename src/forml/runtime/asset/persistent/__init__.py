@@ -1,3 +1,7 @@
+"""
+ForML assets persistence.
+"""
+
 import abc
 import typing
 import uuid

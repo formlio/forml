@@ -139,7 +139,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         assert 0 <= index < self.szout, 'Invalid output index'
         assert self is not subscription.node, 'Self subscription'
-        self._output[index].insert(subscription)
+        self._output[index].add(subscription)
 
     @abc.abstractmethod
     def fork(self) -> 'Atomic':

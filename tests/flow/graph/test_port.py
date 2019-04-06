@@ -25,7 +25,7 @@ class Type(metaclass=abc.ABCMeta):
         assert isinstance(port, int)
 
 
-class Singleton(Type):
+class Singleton(Type):  # pylint: disable=abstract-method
     """Base class for singleton port.
     """
     def test_singleton(self, port: pmod.Type):

@@ -3,7 +3,6 @@ Graph node port functionality.
 """
 import collections
 import typing
-from typing import Any
 
 from forml.flow.graph import node as grnode  # pylint: disable=unused-import
 

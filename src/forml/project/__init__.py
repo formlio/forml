@@ -5,12 +5,11 @@ import importlib
 import sys
 import typing
 
+import setuptools
+
 import forml
 from forml import etl
 from forml.flow import segment
-
-import setuptools
-
 from forml.project import component as importer
 
 
@@ -92,7 +91,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
         Returns: Project descriptor.
         """
         builder = cls.Builder()
-        if not modkw.keys() <= builder:
+        if modkw.keys() > builder:
             raise Error('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, handler in builder:
@@ -110,11 +109,12 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
 
 
 class Artifact(collections.namedtuple('Artifact', 'path')):
+    """Project artifact handle.
+    """
 
     @property
     def descriptor(self) -> Descriptor:
-        """
-        forml.pyz (contains project code and all the deps)
+        """Extracting the project descriptor from this artifact.
 
         Returns: Project descriptor.
         """

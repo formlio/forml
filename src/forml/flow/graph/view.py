@@ -107,7 +107,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
             seen.add(publisher)
             path = frozenset(path | {publisher})
             for node in gensub(publisher, self._tail, mask=lambda s: s.node not in seen and (
-                    publisher != self.tail or not isinstance(s.port, port.Apply)), path=path):
+                    publisher != self._tail or not isinstance(s.port, port.Apply)), path=path):
                 scan(node, path=path)
 
         seen = set()

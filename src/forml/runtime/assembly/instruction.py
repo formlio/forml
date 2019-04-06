@@ -8,7 +8,7 @@ import uuid
 
 from forml.flow import task
 from forml.runtime import assembly
-from forml.runtime.asset import directory, state as statemod
+from forml.runtime.asset import access, directory
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,11 +16,11 @@ LOGGER = logging.getLogger(__name__)
 class Loader(assembly.Instruction):
     """Registry based state loader.
     """
-    def __init__(self, assets: statemod.Manager, index: int):
-        self._assets: statemod.Manager = assets
+    def __init__(self, assets: access.State, index: int):
+        self._assets: access.State = assets
         self._index: int = index
 
-    def execute(self) -> typing.Optional[bytes]:
+    def execute(self) -> typing.Optional[bytes]:  # pylint: disable=arguments-differ
         """Instruction functionality.
 
         Returns: Loaded state.
@@ -35,10 +35,10 @@ class Loader(assembly.Instruction):
 class Dumper(assembly.Instruction):
     """Registry based state dumper.
     """
-    def __init__(self, assets: statemod.Manager):
-        self._assets: statemod.Manager = assets
+    def __init__(self, assets: access.State):
+        self._assets: access.State = assets
 
-    def execute(self, state: bytes) -> uuid.UUID:
+    def execute(self, state: bytes) -> uuid.UUID:  # pylint: disable=arguments-differ
         """Instruction functionality.
 
         Args:
@@ -55,7 +55,7 @@ class Getter(assembly.Instruction):
     def __init__(self, index: int):
         self._index: int = index
 
-    def execute(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:
+    def execute(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:  # pylint: disable=arguments-differ
         """Instruction functionality.
 
         Args:
@@ -69,8 +69,8 @@ class Getter(assembly.Instruction):
 class Committer(assembly.Instruction):
     """Commit a new lineage generation.
     """
-    def __init__(self, assets: statemod.Manager):
-        self._assets: statemod.Manager = assets
+    def __init__(self, assets: access.State):
+        self._assets: access.State = assets
 
     def execute(self, *states: uuid.UUID) -> None:
         """Instruction functionality.
@@ -167,11 +167,11 @@ class Functional(Functor, metaclass=abc.ABCMeta):
     """Base class for mapper and consumer functors.
     """
     def __init__(self, spec: task.Spec):
-        super().__init__(spec, self._objective)
+        super().__init__(spec, self._function)
 
     @staticmethod
     @abc.abstractmethod
-    def _objective(actor: task.Actor, *args) -> typing.Any:
+    def _function(actor: task.Actor, *args) -> typing.Any:
         """Delegated actor objective.
 
         Args:
@@ -186,7 +186,7 @@ class Mapper(Functional):
     """Mapper (transformer) functor.
     """
     @staticmethod
-    def _objective(actor: task.Actor, *args) -> typing.Any:
+    def _function(actor: task.Actor, *args) -> typing.Any:
         """Mapper objective is the apply method.
 
         Args:
@@ -202,7 +202,7 @@ class Consumer(Functional):
     """Consumer (ie trainer) functor.
     """
     @staticmethod
-    def _objective(actor: task.Actor, *args) -> bytes:
+    def _function(actor: task.Actor, *args) -> bytes:
         """Consumer objective is the train method.
 
         Args:

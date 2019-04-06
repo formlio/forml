@@ -2,9 +2,9 @@
 ForML top level.
 """
 import configparser
-import logging
 import os.path
 import typing
+import logging
 from logging import handlers as loghandlers, config as logconfig
 
 from forml import conf
@@ -30,4 +30,3 @@ def _logsetup(configs: typing.Iterable[str]):
 _logsetup((os.path.join(d, conf.LOG_CFGFILE) for d in (conf.USR_DIR, conf.SYS_DIR)))
 logging.debug('Using configs from %s', conf.USED_CONFIGS)
 logging.captureWarnings(capture=True)
-

@@ -74,5 +74,3 @@ class TestDescriptor:
         from project import source, pipeline
         assert descriptor.source is source.INSTANCE
         assert descriptor.pipeline is pipeline.INSTANCE
-
-

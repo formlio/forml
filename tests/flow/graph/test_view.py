@@ -6,6 +6,7 @@ import typing
 
 import pytest
 
+from forml.flow import task
 from forml.flow.graph import node, port, view
 
 
@@ -32,11 +33,11 @@ class Path:
         assert isinstance(path, btype)
         assert path._head is simple
 
-    def test_copy(self, path: view.Path):
+    def test_copy(self, path: view.Path, spec: task.Spec):
         """Testing copying path nodes.
         """
         assert isinstance(path.copy(), view.Path)
-        node3 = node.Worker('node3', 1, 1)
+        node3 = node.Worker(spec, 1, 1)
         node3.train(path._head[0], path._head[0])  # not on path should be ignored
         path.copy()
 
@@ -46,11 +47,11 @@ class TestChannel(Path):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def path(simple: node.Worker):
+    def path(simple: node.Worker, spec: task.Spec):
         """Channel path fixture.
         """
-        node1 = node.Worker('node1', 1, 2)
-        node2 = node.Worker('node2', 2, 1)
+        node1 = node.Worker(spec, 1, 2)
+        node2 = node.Worker(spec, 2, 1)
         node1[0].subscribe(simple[0])
         node2[0].subscribe(node1[0])
         node2[1].subscribe(node1[1])
@@ -69,12 +70,12 @@ class TestClosure(Path):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def path(simple: node.Worker):
+    def path(simple: node.Worker, spec: task.Spec):
         """Closure path fixture.
         """
-        node1 = node.Worker('node1', 1, 2)
-        node2 = node.Worker('node2', 2, 1)
-        node3 = node.Worker('node3', 1, 1)
+        node1 = node.Worker(spec, 1, 2)
+        node2 = node.Worker(spec, 2, 1)
+        node3 = node.Worker(spec, 1, 1)
         node1[0].subscribe(simple[0])
         node2[0].subscribe(node1[0])
         node2[1].subscribe(node1[1])
