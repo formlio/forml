@@ -4,11 +4,10 @@ Local filesystem based implementation of persisten registry.
 import uuid
 
 from forml import project as prjmod
-from forml.runtime import asset
-from forml.runtime.asset import directory
+from forml.runtime.asset import directory, persistent
 
 
-class Registry(asset.Registry):
+class Registry(persistent.Registry):
     def lineages(self, project: str) -> directory.Level.Listing:
         pass
 

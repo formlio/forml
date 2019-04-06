@@ -3,12 +3,12 @@ CWD registry is a project-less registry in current working directory.
 """
 import uuid
 
-from forml import project as prjmod
-from forml.runtime import asset
 from forml.runtime.asset import directory
+from forml.runtime.asset import persistent
+from forml import project as prjmod
 
 
-class Registry(asset.Registry):
+class Registry(persistent.Registry):
     def lineages(self, project: str) -> directory.Level.Listing:
         pass
 
