@@ -62,14 +62,26 @@ class Level(metaclass=abc.ABCMeta):
         self._parent: typing.Optional[Level] = parent
 
     def __str__(self):
-        return f'{self.project}\t{self.version}'
+        return f'{self.project}\t{".".join(str(v) for v in self.version)}'
 
     @property
-    def version(self) -> str:
-        def inspect(level: Level) -> str:
-            parent = f'{inspect(level._parent)}.' if level._parent else ''
-            return parent + str(self.key)
-        return inspect(self)
+    def version(self) -> typing.Sequence[int]:
+        """Get the hierarchical version numbers.
+
+        Returns: Version numbers.
+        """
+        def inspect(level: Level) -> typing.List[int]:
+            """Get the version numbers of given levels parent tree.
+
+            Args:
+                level: Leaf level of the parent tree to scan through.
+
+            Returns: List of parent tree levels.
+            """
+            version = inspect(level._parent) if level._parent else list()
+            version.append(self.key)
+            return version
+        return tuple(inspect(self))
 
     @property
     def key(self) -> int:
@@ -86,15 +98,12 @@ class Level(metaclass=abc.ABCMeta):
     def _list(self) -> 'Level.Listing':
         """Return the listing of this level.
 
-        Args:
-            *args: Level listing spec. 
-
         Returns: Level listing.
         """
 
 
 class Registry(metaclass=abc.ABCMeta):
-    """Top-level persisten registry abstraction.
+    """Top-level persistent registry abstraction.
     """
     class Lineage(Level):
         """Sequence of generations based on same project artifact.
@@ -108,10 +117,18 @@ class Registry(metaclass=abc.ABCMeta):
                 self.lineage: int = lineage
 
             def _list(self) -> 'Level.Listing':
+                """Return the listing of this level.
+
+                Returns: Level listing.
+                """
                 return self._registry._generations(self.project, self.lineage)
 
             @property
             def record(self) -> resource.Record:
+                """Generation metadata.
+
+                Returns: Metadata object.
+                """
                 return self._registry._open(self.project, self.lineage, self.key)
 
         def __init__(self, registry: 'Registry', project: str, key: typing.Optional[int] = None):
@@ -119,10 +136,18 @@ class Registry(metaclass=abc.ABCMeta):
 
         @property
         def _list(self) -> 'Level.Listing':
+            """List the content of this level.
+
+            Returns: Level content listing.
+            """
             return self._registry._lineages(self.project)
 
         @property
         def artifact(self) -> prjmod.Artifact:
+            """Lineage artifact.
+
+            Returns: Artifact object.
+            """
             return self._registry._pull(self.project, self.key)
 
         def get(self, generation: typing.Optional[int] = None) -> Generation:
@@ -176,7 +201,7 @@ class Registry(metaclass=abc.ABCMeta):
             return self._registry._read(self.project, self.key, sid)
 
     def __str__(self):
-        return f'{self.__class__.__name__}'
+        return f'{self.__class__.__name__}-registry'
 
     def get(self, project: str, lineage: typing.Optional[int] = None) -> Lineage:
         """Get a lineage of given project.
@@ -292,16 +317,29 @@ class Registry(metaclass=abc.ABCMeta):
 class Assets:
     """Persistent assets IO for loading and dumping models.
     """
-    def __init__(self, index: typing.Sequence[uuid.UUID], registry: Registry, project: str,
+    def __init__(self, index: typing.Iterable[uuid.UUID], registry: Registry, project: str,
                  lineage: typing.Optional[int] = None, generation: typing.Optional[int] = None):
         self._index: collections.OrderedDict[
             uuid.UUID, typing.Optional[uuid.UUID]] = collections.OrderedDict((i, None) for i in index)
         self._lineage: Registry.Lineage = registry.get(project, lineage)
         self._generation: Registry.Lineage.Generation = self._lineage.get(generation)
 
-    def _bind(self) -> None:
+    def index(self, sid: uuid.UUID) -> int:
+        """Return the positional index of given relative state id.
+
+        Args:
+            sid: Searched relative state id.
+
+        Returns: Positional index of give state id.
+        """
+        if sid not in self._index:
+            raise ValueError(f'Unknown relative state ID ({sid})')
+        return next(i for i, k in enumerate(self._index.keys()) if k == sid)
+
+    def _rebind(self) -> None:
         """Bind the internal index of relative state IDs to the real IDs of current generation states.
         """
+        LOGGER.debug('(Re)binding assets state IDs')
         record = self._generation.record
         if len(record.states) != len(self._index):
             raise Error('Persisted states cardinality mismatch')
@@ -321,7 +359,7 @@ class Assets:
         if sid not in self._index:
             raise ValueError(f'Unknown relative state ID ({sid})')
         if not self._index[sid]:
-            self._bind()
+            self._rebind()
         return self._lineage.load(self._index[sid])
 
     def dump(self, state: bytes) -> uuid.UUID:
@@ -341,4 +379,4 @@ class Assets:
             record: Generation metadata.
         """
         self._generation = self._lineage.put(record)
-        self._bind()
+        self._rebind()

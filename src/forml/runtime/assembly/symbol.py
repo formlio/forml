@@ -9,7 +9,7 @@ import uuid
 
 from forml.flow.graph import node as grnode
 from forml.runtime.assembly import instruction as instmod
-from forml.runtime import assembly
+from forml.runtime import assembly, persistent
 
 
 class Table:
@@ -28,7 +28,7 @@ class Table:
         def items(self) -> typing.Iterable[typing.Tuple[uuid.UUID, typing.Sequence[uuid.UUID]]]:
             """Iterator of the final relations between target (receiver) instruction and its positional arguments.
 
-            Returns: Iterator of tuples representing instructions and their positional arguments
+            Returns: Iterator of tuples representing instructions and their positional arguments.
             """
             for instruction, arguments in ((i, itertools.chain(reversed(self._prefixed.get(i, [])),
                                                                self._absolute.get(i, [])))
@@ -38,7 +38,7 @@ class Table:
         def insert(self, instruction: uuid.UUID, argument: uuid.UUID, index: typing.Optional[int] = None) -> None:
             """Store given argument as a positional parameter of given instruction at absolute offset given by index.
 
-            Index can be ommitted for single-argument instructions.
+            Index can be omitted for single-argument instructions.
 
             Args:
                 instruction: Target (receiver) instruction.
@@ -131,7 +131,8 @@ class Table:
             del self._instructions[orig]
             return self.set(instruction, new)
 
-    def __init__(self):
+    def __init__(self, assets: persistent.Assets):
+        self._assets: persistent.Assets = assets
         self._index: Table.Index = self.Index()
         self._content: Table.Content = self.Content()
         self._committer: typing.Optional[uuid.UUID] = None
@@ -153,14 +154,14 @@ class Table:
         if node.stateful:
             state = node.gid
             if state not in self._content:
-                self._content.set(instmod.Loader(..., state), state)
+                self._content.set(instmod.Loader(self._assets, state), state)
             if node.trained:
                 functor = instmod.Consumer(node.spec)
                 if not self._committer:
-                    self._committer = self._content.set(instmod.Committer(committer_args))
-                dumper = self._content.set(instmod.Dumper(dumper_args))
+                    self._committer = self._content.set(instmod.Committer(self._assets, ...))
+                dumper = self._content.set(instmod.Dumper(self._assets))
                 self._index.insert(dumper, node.uid)
-                self._index.insert(self._committer, dumper, state_offset)
+                self._index.insert(self._committer, dumper, self._assets.index(node.uid))
                 aliases.append(state)
                 state = self._content.reset(state)  # re-register loader under it's own id
             functor = functor.shiftby(instmod.Functor.Shifting.state)

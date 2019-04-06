@@ -46,27 +46,29 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
         return super().__new__(cls, instruction, tuple(arguments))
 
     def __str__(self):
-        return f'#{self.key}: {self.instruction}{self.input}'
+        return f'{self.instruction}{self.arguments}'
 
 
 class Visitor(view.Visitor, metaclass=abc.ABCMeta):
     """Symbol visitor base class.
     """
     def __init__(self) -> None:
-        """
-        inputs
-            apply[x, y, z]
-            train
-            label
-        """
         self._table: symbmod.Table = symbmod.Table()
 
     def visit_node(self, node: grnode.Worker) -> None:
         """Expanding node into a (set of) symbols.
+
+        Args:
+            node: Node to be visited.
         """
         self._table.add(node)
 
     def visit_path(self, path: 'view.Path') -> None:
+        """Path visitor hook.
+
+        Args:
+            path: Path to be visited.
+        """
         for symbol in self._table:
             self.visit_symbol(symbol)
 
