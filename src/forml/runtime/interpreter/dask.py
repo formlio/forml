@@ -1,7 +1,7 @@
 """
 Dask runner.
 """
-
+import logging
 import typing
 
 from dask import threaded
@@ -11,6 +11,9 @@ from forml.runtime import interpreter, assembly
 from forml.runtime.asset import access
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 class Runner(interpreter.Runner):
     """Dask based runner implementation.
     """
@@ -18,5 +21,6 @@ class Runner(interpreter.Runner):
         super().__init__(engine, assets)
 
     def _run(self, symbols: typing.Sequence[assembly.Symbol]) -> None:
-        dag = dict(symbols)
-        threaded.get(dag, )
+        dag = {i: (i, *a) for i, a in symbols}
+        LOGGER.debug('Dask DAG: %s', {id(k): tuple(id(i) for i in t) for k, t in dag.items()})
+        threaded.get(dag, symbols[-1].instruction)

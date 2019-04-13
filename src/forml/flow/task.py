@@ -6,11 +6,15 @@ import abc
 import collections
 import inspect
 import io
+import logging
 import pickle
 import types
 import typing
 
 import joblib
+
+
+LOGGER = logging.getLogger(__name__)
 
 DataT = typing.TypeVar('DataT')
 
@@ -79,6 +83,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         """
         if not self.is_stateful():
             return bytes()
+        LOGGER.debug('Getting %s state', self)
         with io.BytesIO() as bio:
             joblib.dump(self.__dict__, bio, protocol=pickle.HIGHEST_PROTOCOL)
             return bio.getvalue()
@@ -92,6 +97,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         if not state:
             return
         assert self.is_stateful(), 'State provided but actor stateless'
+        LOGGER.debug('Setting %s state (%d bytes)', self, len(state))
         params = self.get_params()  # keep the original hyper-params
         with io.BytesIO(state) as bio:
             self.__dict__.update(joblib.load(bio))
