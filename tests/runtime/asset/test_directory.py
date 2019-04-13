@@ -127,7 +127,7 @@ class TestTag:
         assert tuned.tuning.timestamp > tag.tuning.timestamp
         assert tuned.training == tag.training
 
-    def test_bool(self, tag: directory.Generation.Tag):
+    def test_bool(self):
         """Test the boolean mode values.
         """
         empty = directory.Generation.Tag()

@@ -11,7 +11,7 @@ from forml.runtime.assembly import compiler
 from forml.runtime.asset import access
 
 
-class Runner(typing.Generic[etl.OrdinalT], metaclass=abc.ABCMeta):
+class Runner(metaclass=abc.ABCMeta):
     """Abstract base runtime class to be extended by particular runtime implementations.
     """
     def __init__(self, engine: etl.Engine[etl.OrdinalT], assets: access.Assets):
@@ -61,5 +61,5 @@ class Runner(typing.Generic[etl.OrdinalT], metaclass=abc.ABCMeta):
         """Actual run action to be implemented according to the specific runtime.
 
         Args:
-            path: task graph to be executed.
+            symbols: task graph to be executed.
         """
