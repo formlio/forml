@@ -151,6 +151,10 @@ class Generation(Level):
                 def __getattr__(self, item):
                     return getattr(self._mode, item)
 
+                def __eq__(self, other) -> bool:
+                    # pylint: disable=protected-access
+                    return isinstance(other, self.__class__) and self._mode == other._mode
+
                 def replace(self, **kwargs) -> 'Generation.Tag':
                     """Mode attributes setter.
 
