@@ -96,3 +96,32 @@ class TestGeneration(Level):
         """Test generation tag retrieval.
         """
         assert parent(valid_generation).tag == tag
+
+
+class TestTag:
+    """Generation tag unit tests.
+    """
+    def test_replace(self, tag: directory.Generation.Tag):
+        """Test replace strategies.
+        """
+        assert tag.replace(states=(1, 2, 3)).states == (1, 2, 3)
+        with pytest.raises(ValueError):
+            tag.replace(invalid=123)
+        with pytest.raises(ValueError):
+            tag.replace(training=123)
+        with pytest.raises(ValueError):
+            tag.replace(tuning=123)
+        assert tag.training.replace(ordinal=123).training.ordinal == 123
+        assert tag.tuning.replace(score=123).tuning.score == 123
+        with pytest.raises(TypeError):
+            tag.training.replace(invalid=123)
+
+    def test_trigger(self, tag: directory.Generation.Tag):
+        """Test triggering.
+        """
+        trained = tag.training.trigger()
+        assert trained.training.timestamp > tag.training.timestamp
+        assert trained.tuning == tag.tuning
+        tuned = tag.tuning.trigger()
+        assert tuned.tuning.timestamp > tag.tuning.timestamp
+        assert tuned.training == tag.training

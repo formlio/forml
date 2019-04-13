@@ -10,7 +10,7 @@ import uuid
 import pytest
 
 from forml import project as prjmod
-from forml.runtime.asset import persistent, directory
+from forml.runtime.asset import persistent, directory, access
 
 
 @pytest.fixture(scope='function')
@@ -76,7 +76,7 @@ def content(populated_lineage: int, empty_lineage: int, valid_generation: int,
 
 @pytest.fixture(scope='function')
 def registry(content: typing.Mapping[int, typing.Mapping[int, directory.Generation.Tag]],
-             states: typing.Mapping[uuid.UUID, bytes]):
+             states: typing.Mapping[uuid.UUID, bytes]) -> persistent.Registry:
     """Registry fixture.
     """
     class Registry(persistent.Registry):
@@ -115,3 +115,10 @@ def registry(content: typing.Mapping[int, typing.Mapping[int, directory.Generati
             raise NotImplementedError()
 
     return Registry()
+
+
+@pytest.fixture(scope='function')
+def valid_assets(registry: persistent.Registry, populated_lineage: int, valid_generation: int) -> access.Assets:
+    """Lineage fixture.
+    """
+    return access.Assets(registry, None, populated_lineage, valid_generation)
