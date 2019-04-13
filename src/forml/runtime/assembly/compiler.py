@@ -20,7 +20,7 @@ LOGGER = logging.getLogger(__name__)
 class Table(view.Visitor, collections.Iterable):
     """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys.
     """
-    class Index:
+    class Linkage:
         """Structure for registering instruction dependency tree as relations between target (receiving) instruction
         and its upstream dependency instructions representing its positional arguments.
         """
@@ -30,15 +30,8 @@ class Table(view.Visitor, collections.Iterable):
             self._prefixed: typing.Dict[uuid.UUID,
                                         typing.List[typing.Optional[uuid.UUID]]] = collections.defaultdict(list)
 
-        def items(self) -> typing.Iterable[typing.Tuple[uuid.UUID, typing.Sequence[uuid.UUID]]]:
-            """Iterator of the final relations between target (receiver) instruction and its positional arguments.
-
-            Returns: Iterator of tuples representing instructions and their positional arguments.
-            """
-            for instruction, arguments in ((i, itertools.chain(reversed(self._prefixed.get(i, [])),
-                                                               self._absolute.get(i, [])))
-                                           for i in self._prefixed.keys() | self._absolute.keys()):
-                yield instruction, tuple(arguments)
+        def __getitem__(self, instruction: uuid.UUID) -> typing.Sequence[uuid.UUID]:
+            return tuple(itertools.chain(reversed(self._prefixed[instruction]), self._absolute[instruction]))
 
         def insert(self, instruction: uuid.UUID, argument: uuid.UUID, index: typing.Optional[int] = None) -> None:
             """Store given argument as a positional parameter of given instruction at absolute offset given by index.
@@ -94,7 +87,7 @@ class Table(view.Visitor, collections.Iterable):
             """
             self._prefixed[instruction].append(argument)
 
-    class Content:
+    class Index:
         """Mapping of the stored instructions.
         """
         def __init__(self):
@@ -105,6 +98,13 @@ class Table(view.Visitor, collections.Iterable):
 
         def __getitem__(self, key: uuid.UUID):
             return self._instructions[key]
+
+        def items(self) -> typing.ItemsView[uuid.UUID, assembly.Instruction]:
+            """Content iterator.
+
+            Returns: Tuples of key-instruction pairs.
+            """
+            return self._instructions.items()
 
         def set(self, instruction: assembly.Instruction, key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
             """Store given instruction by provided or generated key.
@@ -139,13 +139,13 @@ class Table(view.Visitor, collections.Iterable):
     def __init__(self, assets: access.State):
         self._assets: access.State = assets
         self._offsets: typing.Dict[uuid.UUID, int] = dict()
+        self._linkage: Table.Linkage = self.Linkage()
         self._index: Table.Index = self.Index()
-        self._content: Table.Content = self.Content()
         self._committer: typing.Optional[uuid.UUID] = None
 
     def __iter__(self) -> assembly.Symbol:
-        for instruction, arguments in self._index.items():
-            yield assembly.Symbol(self._content[instruction], tuple(self._content[a] for a in arguments))
+        for key, instruction in self._index.items():
+            yield assembly.Symbol(instruction, tuple(self._index[a] for a in self._linkage[key]))
 
     def add(self, node: grnode.Worker) -> None:
         """Populate the symbol table to implement the logical flow of given node.
@@ -153,7 +153,7 @@ class Table(view.Visitor, collections.Iterable):
         Args:
             node: Node to be added - compiled into symbols.
         """
-        assert node.uid not in self._content, 'Node collision'
+        assert node.uid not in self._index, 'Node collision'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
         functor = instmod.Mapper(node.spec)
@@ -161,23 +161,23 @@ class Table(view.Visitor, collections.Iterable):
         if node.stateful:
             state = node.gid
             offset = self._offsets.setdefault(state, len(self._offsets))
-            if state not in self._content:
-                self._content.set(instmod.Loader(self._assets, offset), state)
+            if state not in self._index:
+                self._index.set(instmod.Loader(self._assets, offset), state)
             if node.trained:
                 functor = instmod.Consumer(node.spec)
                 if not self._committer:
-                    self._committer = self._content.set(instmod.Committer(self._assets))
-                dumper = self._content.set(instmod.Dumper(self._assets))
-                self._index.insert(dumper, node.uid)
-                self._index.insert(self._committer, dumper, offset)
+                    self._committer = self._index.set(instmod.Committer(self._assets))
+                dumper = self._index.set(instmod.Dumper(self._assets))
+                self._linkage.insert(dumper, node.uid)
+                self._linkage.insert(self._committer, dumper, offset)
                 aliases.append(state)
-                state = self._content.reset(state)  # re-register loader under it's own id
+                state = self._index.reset(state)  # re-register loader under it's own id
             functor = functor.shiftby(instmod.Functor.Shifting.state)
-            self._index.prepend(node.uid, state)
+            self._linkage.prepend(node.uid, state)
         for key in aliases:
-            self._content.set(functor, key)
+            self._index.set(functor, key)
 
-        self._index.update(node, lambda index: self._content.set(instmod.Getter(index)))
+        self._linkage.update(node, lambda index: self._index.set(instmod.Getter(index)))
 
     def visit_node(self, node: grnode.Worker) -> None:
         """Visitor entrypoint.
