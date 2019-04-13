@@ -2,32 +2,22 @@
 """
 import collections
 import importlib
+import logging
 import sys
 import typing
 
-import setuptools
 
 import forml
 from forml import etl
 from forml.flow import segment
 from forml.project import component as importer
 
+LOGGER = logging.getLogger(__name__)
+
 
 class Error(forml.Error):
     """Project exception.
     """
-
-
-def setup(**kwargs) -> setuptools.dist.Distribution:
-    """Setuptools wrapper for defining user projects using setup.py.
-
-    Args:
-        **kwargs:
-
-    Returns:
-
-    """
-    return setuptools.setup(**kwargs)
 
 
 class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
@@ -102,6 +92,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
                         del sys.modules[sys.modules[module].__package__]
                     del sys.modules[module]
                 try:
+                    LOGGER.debug('Importing project component from %s', module)
                     importlib.import_module(module)
                 except ImportError:
                     raise Error(f'Unknown project module: {module}')

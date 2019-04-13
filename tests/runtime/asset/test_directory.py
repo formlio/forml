@@ -38,10 +38,10 @@ class TestLineage(Level):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def parent(registry: persistent.Registry) -> typing.Callable[[typing.Optional[int]], directory.Lineage]:
+    def parent(registry: persistent.Registry, project: str) -> typing.Callable[[typing.Optional[int]], directory.Lineage]:
         """Parent fixture.
         """
-        return lambda lineage: registry.get(None, lineage)
+        return lambda lineage: registry.get(project, lineage)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -71,11 +71,11 @@ class TestGeneration(Level):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def parent(registry: persistent.Registry,
+    def parent(registry: persistent.Registry, project: str,
                populated_lineage: int) -> typing.Callable[[typing.Optional[int]], directory.Generation]:
         """Parent fixture.
         """
-        return lambda generation: registry.get(None, populated_lineage).get(generation)
+        return lambda generation: registry.get(project, populated_lineage).get(generation)
 
     @staticmethod
     @pytest.fixture(scope='session')

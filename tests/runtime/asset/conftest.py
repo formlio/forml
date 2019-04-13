@@ -32,6 +32,13 @@ def tag(states: typing.Mapping[uuid.UUID, bytes]) -> directory.Generation.Tag:
 
 
 @pytest.fixture(scope='session')
+def project() -> str:
+    """Project fixture.
+    """
+    return 'foo'
+
+
+@pytest.fixture(scope='session')
 def populated_lineage() -> int:
     """Lineage fixture.
     """
@@ -118,7 +125,8 @@ def registry(content: typing.Mapping[int, typing.Mapping[int, directory.Generati
 
 
 @pytest.fixture(scope='function')
-def valid_assets(registry: persistent.Registry, populated_lineage: int, valid_generation: int) -> access.Assets:
+def valid_assets(registry: persistent.Registry, project: str, populated_lineage: int,
+                 valid_generation: int) -> access.Assets:
     """Lineage fixture.
     """
-    return access.Assets(registry, None, populated_lineage, valid_generation)
+    return access.Assets(registry, project, populated_lineage, valid_generation)
