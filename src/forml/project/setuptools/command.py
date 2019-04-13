@@ -15,7 +15,7 @@ from forml import project
 from forml.etl.engine import devel as devetl
 from forml.runtime.asset import access
 from forml.runtime.asset.persistent.registry import devel as devreg
-from forml.runtime.interpreter import graphviz
+from forml.runtime.interpreter import graphviz, dask
 
 LOGGER = logging.getLogger(__name__)
 
@@ -127,9 +127,9 @@ class Train(setuptools.Command):
         """Command execution.
         """
         LOGGER.debug('%s: starting development training', self.distribution.name)
-        print(self.distribution.packages)
         with self.paths_on_pythonpath(d.location for d in self.install_dists(self.distribution)):
             with self.project_on_sys_path():
                 runner = graphviz.Runner(devetl.Engine(), access.Assets(
+                # runner = dask.Runner(devetl.Engine(), access.Assets(
                     devreg.Registry(self.artifact), self.distribution.name))
                 runner.train()
