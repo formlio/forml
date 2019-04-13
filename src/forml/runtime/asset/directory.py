@@ -166,12 +166,12 @@ class Generation(Level):
                     return Generation.Tag(**{k: self._mode.__class__(**{**self._mode.__dict__, **kwargs})
                                                 if v is self._mode else v for k, v in self._tag._asdict().items()})
 
-                def trigger(self) -> 'Generation.Tag':
+                def trigger(self, timestamp: typing.Optional[datetime.datetime] = None) -> 'Generation.Tag':
                     """Create new tag with given mode triggered (all attributes reset and timestamp set to now).
 
                     Returns: New tag.
                     """
-                    return self.replace(timestamp=datetime.datetime.utcnow())
+                    return self.replace(timestamp=(timestamp or datetime.datetime.utcnow()))
 
             def __init__(self, timestamp: typing.Optional[datetime.datetime], **kwargs: typing.Any):
                 super().__init__(timestamp=timestamp, **kwargs)
