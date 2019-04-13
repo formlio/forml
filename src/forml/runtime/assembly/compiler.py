@@ -51,13 +51,13 @@ class Table(view.Visitor, collections.Iterable):
                 index: Position offset of given argument.
             """
             args = self._absolute[instruction]
-            argsz = len(args)
+            argcnt = len(args)
             if index is None:
-                assert argsz == 1, 'Index required for multiarg instruction'
+                assert argcnt <= 1, f'Index required for multiarg ({argcnt}) instruction'
                 index = 0
             assert index >= 0, 'Invalid positional index'
-            if argsz <= index:
-                args.extend([None] * (index - argsz + 1))
+            if argcnt <= index:
+                args.extend([None] * (index - argcnt + 1))
             assert not args[index], 'Link collision'
             args[index] = argument
 

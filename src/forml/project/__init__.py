@@ -4,8 +4,8 @@ import collections
 import importlib
 import logging
 import sys
+import types
 import typing
-
 
 import forml
 from forml import etl
@@ -69,7 +69,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
         return super().__new__(cls, source, pipeline)
 
     @classmethod
-    def load(cls, package: typing.Optional[str] = None, **modkw) -> 'Descriptor':
+    def load(cls, package: typing.Optional[str] = None, **modules) -> 'Descriptor':
         """Setup the descriptor based on provider package and/or individual modules.
 
             Either package is provided and all individual modules are considered as relative to that package or each
@@ -77,18 +77,18 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
 
         Args:
             package: Base package to be considered as a root for all component modules.
-            **modkw: Component module mappings.
+            **modules: Component module mappings.
         Returns: Project descriptor.
         """
         builder = cls.Builder()
-        if modkw.keys() > builder:
+        if modules.keys() > builder:
             raise Error('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, handler in builder:
-            module = package + (modkw.get(component) or component)
+            module = package + (modules.get(component) or component)
             with importer.Context(handler):
                 if module in sys.modules:
-                    if sys.modules[module].__package__:
+                    if sys.modules[module].__package__ and sys.modules[module].__package__ != module:
                         del sys.modules[sys.modules[module].__package__]
                     del sys.modules[module]
                 try:
@@ -99,9 +99,14 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
         return builder.build()
 
 
-class Artifact(collections.namedtuple('Artifact', 'path')):
+class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     """Project artifact handle.
     """
+    def __new__(cls, path: typing.Optional[str] = None, package: typing.Optional[str] = None, **modules: str):
+        return super().__new__(cls, path, package, types.MappingProxyType(modules))
+
+    def __getnewargs_ex__(self):
+        return (self.path, self.package), dict(self.modules)
 
     @property
     def descriptor(self) -> Descriptor:
@@ -109,5 +114,6 @@ class Artifact(collections.namedtuple('Artifact', 'path')):
 
         Returns: Project descriptor.
         """
-        sys.path.insert(0, self.path)
-        return Descriptor.load(...)
+        if self.path:
+            sys.path.insert(0, self.path)
+        return Descriptor.load(self.package, **self.modules)

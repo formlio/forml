@@ -94,7 +94,7 @@ class Expression(Composable):
             if not isinstance(term, Composable):
                 raise ValueError(f'{type(term)} not composable')
             if term in self._TERMS:
-                raise ArithmeticError(f'Non-linear composition of {term}')
+                raise ArithmeticError(f'Non-linear {term} composition')
             self._TERMS.add(term)
         self._right: Composable = right
         self._left: Composable = left
