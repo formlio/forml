@@ -11,4 +11,4 @@ from forml.runtime.asset import access
 def test_generate(path: view.Path, valid_assets: access.Assets):
     """Compiler generate test.
     """
-    symbols = compiler.generate(path, valid_assets.state())
+    compiler.generate(path, valid_assets.state())
