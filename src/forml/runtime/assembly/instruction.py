@@ -95,18 +95,19 @@ class Functor(assembly.Instruction):
     class Shifting:
         """Extra functionality to be prepended to the main objective.
         """
-        def __init__(self, reducer: typing.Callable[[task.Actor, typing.Any], task.Actor],
+        def __init__(self, consumer: typing.Callable[[task.Actor, typing.Any], None],
                      objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any]):
-            self._reducer: typing.Callable[[task.Actor, typing.Any], task.Actor] = reducer
+            self._consumer: typing.Callable[[task.Actor, typing.Any], None] = consumer
             self._objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
 
         def __call__(self, actor: task.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
+            LOGGER.debug('Shifted functor %s left with %d arguments ', actor, len(args))
             if first:
-                actor = self._reducer(actor, first)
+                self._consumer(actor, first)
             return self._objective(actor, *args)
 
         @staticmethod
-        def state(actor: task.Actor, state: bytes) -> task.Actor:
+        def state(actor: task.Actor, state: bytes) -> None:
             """Predefined shifting for state taking objective.
 
             Args:
@@ -117,10 +118,9 @@ class Functor(assembly.Instruction):
             """
             LOGGER.debug('%s receiving state (%d bytes)', actor, len(state))
             actor.set_state(state)
-            return actor
 
         @staticmethod
-        def params(actor: task.Actor, params: typing.Mapping[str, typing.Any]) -> task.Actor:
+        def params(actor: task.Actor, params: typing.Mapping[str, typing.Any]) -> None:
             """Predefined shifting for params taking objective.
 
             Args:
@@ -131,7 +131,6 @@ class Functor(assembly.Instruction):
             """
             LOGGER.debug('%s receiving params (%s)', actor, params)
             actor.set_params(**params)
-            return actor
 
     def __init__(self, spec: task.Spec,
                  objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any]):
@@ -145,15 +144,15 @@ class Functor(assembly.Instruction):
     def __str__(self):
         return str(self._spec)
 
-    def shiftby(self, reducer: typing.Callable[[task.Actor, typing.Any], task.Actor]) -> 'Functor':
-        """Create new functor with its objective prepended by an extra reducer.
+    def shiftby(self, consumer: typing.Callable[[task.Actor, typing.Any], None]) -> 'Functor':
+        """Create new functor with its objective prepended by an extra consumer.
 
         Args:
-            reducer: Callable taking the target actor and eating its first argument.
+            consumer: Callable taking the target actor and eating its first argument.
 
         Returns: New Functor instance with the objective updated.
         """
-        return Functor(self._spec, self.Shifting(reducer, self._objective))
+        return Functor(self._spec, self.Shifting(consumer, self._objective))
 
     @property
     def _actor(self) -> task.Actor:

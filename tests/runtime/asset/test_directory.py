@@ -126,3 +126,12 @@ class TestTag:
         tuned = tag.tuning.trigger()
         assert tuned.tuning.timestamp > tag.tuning.timestamp
         assert tuned.training == tag.training
+
+    def test_bool(self, tag: directory.Generation.Tag):
+        """Test the boolean mode values.
+        """
+        empty = directory.Generation.Tag()
+        assert not empty.training
+        assert not empty.tuning
+        assert empty.training.trigger().training
+        assert empty.tuning.trigger().tuning

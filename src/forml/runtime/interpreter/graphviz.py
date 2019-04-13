@@ -2,6 +2,7 @@
 Runtime that just renders the pipeline DAG visualization.
 """
 import collections
+import logging
 import typing
 import uuid
 
@@ -12,6 +13,9 @@ from forml.flow import task
 from forml.flow.graph import view, node as grnode, port
 from forml.runtime import interpreter, assembly
 from forml.runtime.asset import access
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Dot(view.Visitor):

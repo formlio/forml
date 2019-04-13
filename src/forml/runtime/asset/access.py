@@ -1,11 +1,15 @@
 """ForML assets accessing functionality.
 """
+import logging
 import typing
 import uuid
 
 import forml.runtime.asset.directory
 from forml import project as prjmod
 from forml.runtime.asset import persistent
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class State:
@@ -24,6 +28,7 @@ class State:
 
         Returns: Serialized state.
         """
+        LOGGER.debug('Loading state %s', sid)
         return self._generation.get(sid)
 
     def dump(self, state: bytes) -> uuid.UUID:
@@ -34,6 +39,7 @@ class State:
 
         Returns: Associated absolute state ID.
         """
+        LOGGER.debug('Dumping state (%d bytes)', len(state))
         return self._generation.lineage.add(state)
 
     def commit(self, states: typing.Sequence[uuid.UUID]) -> None:
@@ -42,6 +48,7 @@ class State:
         Args:
             states: Generation states.
         """
+        LOGGER.debug('Committing %d states %s', len(states), states)
         tag = self._tag or self._generation.tag
         self._generation = self._generation.lineage.put(tag.replace(states=states))
 

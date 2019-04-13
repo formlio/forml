@@ -148,6 +148,9 @@ class Generation(Level):
                 def __repr__(self):
                     return f'Mode{repr(self._mode)}'
 
+                def __bool__(self):
+                    return bool(self._mode)
+
                 def __getattr__(self, item):
                     return getattr(self._mode, item)
 
@@ -175,6 +178,9 @@ class Generation(Level):
 
             def __init__(self, timestamp: typing.Optional[datetime.datetime], **kwargs: typing.Any):
                 super().__init__(timestamp=timestamp, **kwargs)
+
+            def __bool__(self):
+                return bool(self.timestamp)
 
         class Training(Mode):
             """Training mode attributes.
@@ -256,6 +262,8 @@ class Generation(Level):
 
         Returns: Serialized state.
         """
+        if not self.tag.training:
+            return bytes()
         if isinstance(sid, int):
             sid = self.tag.states[sid]
         if sid not in self.tag.states:

@@ -3,6 +3,7 @@ Runtime symbols compilation.
 """
 
 import collections
+import functools
 import itertools
 import logging
 import typing
@@ -88,7 +89,7 @@ class Table(view.Visitor, collections.Iterable):
             self._prefixed[instruction].append(argument)
 
     class Index:
-        """Mapping of the stored instructions.
+        """Mapping of the stored instructions. Same instruction might be stored under multiple keys.
         """
         def __init__(self):
             self._instructions: typing.Dict[uuid.UUID, assembly.Instruction] = dict()
@@ -99,12 +100,13 @@ class Table(view.Visitor, collections.Iterable):
         def __getitem__(self, key: uuid.UUID):
             return self._instructions[key]
 
-        def items(self) -> typing.ItemsView[uuid.UUID, assembly.Instruction]:
-            """Content iterator.
+        @property
+        def instructions(self) -> typing.Iterator[typing.Tuple[assembly.Instruction, typing.Iterator[uuid.UUID]]]:
+            """Iterator over tuples of instructions plus iterator of its keys.
 
-            Returns: Tuples of key-instruction pairs.
+            Returns: Instruction-keys tuples iterator.
             """
-            return self._instructions.items()
+            return itertools.groupby(self._instructions.keys(), self._instructions.__getitem__)
 
         def set(self, instruction: assembly.Instruction, key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
             """Store given instruction by provided or generated key.
@@ -144,8 +146,33 @@ class Table(view.Visitor, collections.Iterable):
         self._committer: typing.Optional[uuid.UUID] = None
 
     def __iter__(self) -> assembly.Symbol:
-        for key, instruction in self._index.items():
-            yield assembly.Symbol(instruction, tuple(self._index[a] for a in self._linkage[key]))
+        def merge(value: typing.Iterable[typing.Optional[uuid.UUID]],
+                  element: typing.Iterable[typing.Optional[uuid.UUID]]) -> typing.Iterable[uuid.UUID]:
+            """Merge two iterables with at most one of them having non-null value on each offset into single iterable
+            with this non-null values picked.
+
+            Args:
+                value: Left iterable.
+                element: Right iterable.
+
+            Returns: Merged iterable.
+            """
+            def pick(left: typing.Optional[uuid.UUID], right: typing.Optional[uuid.UUID]) -> typing.Optional[uuid.UUID]:
+                """Pick the non-null value from the two arguments.
+
+                Args:
+                    left: Left input argument to pick from.
+                    right: Right input argument to pick from.
+
+                Returns: The non-null value of the two (if any).
+                """
+                assert not all((left, right)), f'Expecting at most one non-null value'
+                return left if left else right
+            return (pick(a, b) for a, b in itertools.zip_longest(value, element))
+
+        for instruction, keys in self._index.instructions:
+            arguments = functools.reduce(merge, (self._linkage[k] for k in keys))
+            yield assembly.Symbol(instruction, tuple(self._index[a] for a in arguments))
 
     def add(self, node: grnode.Worker) -> None:
         """Populate the symbol table to implement the logical flow of given node.
