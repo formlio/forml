@@ -20,6 +20,9 @@ class Loader(assembly.Instruction):
         self._assets: access.State = assets
         self._index: int = index
 
+    def __str__(self):
+        return super().__str__() + f'#{self._index}'
+
     def execute(self) -> typing.Optional[bytes]:  # pylint: disable=arguments-differ
         """Instruction functionality.
 
@@ -54,6 +57,9 @@ class Getter(assembly.Instruction):
     """
     def __init__(self, index: int):
         self._index: int = index
+
+    def __str__(self):
+        return super().__str__() + f'#{self._index}'
 
     def execute(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:  # pylint: disable=arguments-differ
         """Instruction functionality.

@@ -54,6 +54,22 @@ class TestBuilder:
         assert descriptor.pipeline == pipeline
 
 
+@pytest.fixture(scope='session')
+def pipeline() -> segment.Composable:
+    """Pipeline fixture.
+    """
+    from project import pipeline
+    return pipeline.INSTANCE
+
+
+@pytest.fixture(scope='session')
+def source() -> etl.Source:
+    """Source fixture.
+    """
+    from project import source
+    return source.INSTANCE
+
+
 class TestDescriptor:
     """Descriptor unit tests.
     """
@@ -63,7 +79,7 @@ class TestDescriptor:
         with pytest.raises(project.Error):
             project.Descriptor('foo', 'bar')
 
-    def test_load(self):
+    def test_load(self, source: etl.Source, pipeline: segment.Composable):
         """Testing the descriptor loader.
         """
         with pytest.raises(project.Error):
@@ -71,6 +87,22 @@ class TestDescriptor:
         with pytest.raises(project.Error):
             project.Descriptor.load('foo')
         descriptor = project.Descriptor.load('project')  # project package in this test directory
-        from project import source, pipeline
-        assert descriptor.source is source.INSTANCE
-        assert descriptor.pipeline is pipeline.INSTANCE
+        assert descriptor.pipeline == pipeline
+        assert descriptor.source == source
+
+
+class TestArtifact:
+    """Artifact unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def artifact() -> project.Artifact:
+        """Artifact fixture.
+        """
+        return project.Artifact(package='project')
+
+    def test_descriptor(self, artifact: project.Artifact, source: etl.Source, pipeline: segment.Composable):
+        """Testing descriptor access.
+        """
+        assert artifact.descriptor.source == source
+        assert artifact.descriptor.pipeline == pipeline

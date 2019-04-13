@@ -17,7 +17,7 @@ setuptools.setup(name='forml',
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
                  install_requires=['joblib'],
                  extras_require={
-                     'visual': ['graphviz'],
+                     'graphviz': ['graphviz'],
                      'dask': ['dask']
                  },
                  zip_safe=False)
