@@ -14,3 +14,6 @@ class Select:
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.__class__ is other.__class__
+
+    def __str__(self):
+        return self.__class__.__name__

@@ -18,7 +18,7 @@ class Error(Exception):
 def _logsetup(configs: typing.Iterable[str]):
     """Setup logger according to the params.
     """
-    defaults = {'app_name': conf.APP_NAME, 'log_path': f'./{conf.APP_NAME}', #conf.LOG_PATH,
+    defaults = {'app_name': conf.APP_NAME, 'log_path': f'./{conf.APP_NAME}.log', #conf.LOG_PATH,
                 'log_facility': loghandlers.SysLogHandler.LOG_USER}
     for cfg_path in configs:
         if os.path.isfile(cfg_path):
