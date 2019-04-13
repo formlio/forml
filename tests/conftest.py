@@ -6,6 +6,7 @@ import typing
 
 import pytest
 
+from forml.stdlib import actor as actlib
 from forml.flow import task
 
 
@@ -48,7 +49,7 @@ class NativeActor(WrappedActor, task.Actor[typing.Any]):
         return self.predict(features[0])
 
 
-@pytest.fixture(scope='session', params=(NativeActor, task.Wrapped.actor(WrappedActor, apply='predict')))
+@pytest.fixture(scope='session', params=(NativeActor, actlib.Wrapped.actor(WrappedActor, apply='predict')))
 def actor(request) -> typing.Type[task.Actor]:
     """Actor fixture.
     """

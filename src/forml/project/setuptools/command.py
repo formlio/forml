@@ -26,6 +26,7 @@ class Train(setuptools.Command):
     description = 'trigger the development train mode'
     user_options = [
         ('runner=', None, 'runtime runner'),
+        ('engine=', None, 'etl engine'),
         ('lower=', None, 'lower trainset ordinal'),
         ('upper=', None, 'upper trainset ordinal'),
     ]
@@ -105,14 +106,30 @@ class Train(setuptools.Command):
         )
         return itertools.chain(ir_d, tr_d, er_d)
 
+    @property
+    def artifact(self) -> project.Artifact:
+        """Get the artifact for this project.
+
+        Returns: Artifact instance
+        """
+        modules = dict(self.distribution.component)
+        package = modules.pop('', None)
+        if not package:
+            for mod in modules.values():
+                if '.' in mod:
+                    package, _ = os.path.splitext(mod)
+                    break
+            else:
+                package = self.distributions.packages[0]
+        return project.Artifact(package=package, **modules)
+
     def run(self):
         """Command execution.
         """
         LOGGER.debug('%s: starting development training', self.distribution.name)
-        modules = dict(self.distribution.component)
-        package = modules.pop('', modules.pop(None, None))
+        print(self.distribution.packages)
         with self.paths_on_pythonpath(d.location for d in self.install_dists(self.distribution)):
             with self.project_on_sys_path():
                 runner = graphviz.Runner(devetl.Engine(), access.Assets(
-                    devreg.Registry(project.Artifact(package=package, **modules)), self.distribution.name))
+                    devreg.Registry(self.artifact), self.distribution.name))
                 runner.train()

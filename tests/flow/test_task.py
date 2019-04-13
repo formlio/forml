@@ -49,6 +49,11 @@ class TestActor:
         instance.set_state(state)
         assert instance.get_params()['x'] == 100  # state shouldn't override parameter setting
 
+    def test_spec(self, actor: typing.Type[task.Actor], hyperparams: typing.Mapping[str, int], spec: task.Spec):
+        """Test the spec creation of the actor class.
+        """
+        assert actor.spec(**hyperparams) == spec
+
     def test_serializable(self, instance: task.Actor, trainset, testset, prediction):
         """Test actor serializability.
         """

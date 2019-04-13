@@ -1,18 +1,17 @@
 """
 Null registry is a dummy registry implementation that doesn't persist anything.
 """
-import typing
 import uuid
 
-from forml import project as prjmod, project
+from forml import project as prjmod
 from forml.runtime.asset import directory, persistent
 
 
 class Registry(persistent.Registry):
     """Dummy registry implementation.
     """
-    def __init__(self, artifact: project.Artifact):
-        self._artifact: project.Artifact = artifact
+    def __init__(self, artifact: prjmod.Artifact):
+        self._artifact: prjmod.Artifact = artifact
 
     def lineages(self, project: str) -> directory.Level.Listing:
         return directory.Level.Listing([0])

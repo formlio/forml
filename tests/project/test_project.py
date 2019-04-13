@@ -8,7 +8,7 @@ import pytest
 from forml import project, etl
 from forml.etl import expression
 from forml.flow import task, segment
-from forml.flow.operator import simple
+from forml.stdlib.operator import simple
 
 
 class TestBuilder:
@@ -104,5 +104,5 @@ class TestArtifact:
     def test_descriptor(self, artifact: project.Artifact, source: etl.Source, pipeline: segment.Composable):
         """Testing descriptor access.
         """
-        assert artifact.descriptor.source == source
         assert artifact.descriptor.pipeline == pipeline
+        assert artifact.descriptor.source == source
