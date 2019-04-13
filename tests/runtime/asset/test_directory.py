@@ -38,7 +38,8 @@ class TestLineage(Level):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def parent(registry: persistent.Registry, project: str) -> typing.Callable[[typing.Optional[int]], directory.Lineage]:
+    def parent(registry: persistent.Registry,
+               project: str) -> typing.Callable[[typing.Optional[int]], directory.Lineage]:
         """Parent fixture.
         """
         return lambda lineage: registry.get(project, lineage)

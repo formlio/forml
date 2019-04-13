@@ -10,7 +10,7 @@ class TestRegistry:
     """Registry unit tests.
     """
 
-    def test_get(self, registry: persistent.Registry, project:str, populated_lineage: int):
+    def test_get(self, registry: persistent.Registry, project: str, populated_lineage: int):
         """Test lineage get.
         """
         lineage = registry.get(project, populated_lineage)

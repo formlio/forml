@@ -2,10 +2,11 @@
 Customized setuptools.
 """
 import logging
+import typing
 
 import setuptools
-from setuptools import *  # this makes ourselves a drop-in replacement of original setuptools
-import typing
+# this makes ourselves a drop-in replacement of original setuptools
+from setuptools import *  # pylint: disable=redefined-builtin
 from setuptools import dist
 
 from forml.project.setuptools import command
@@ -13,7 +14,7 @@ from forml.project.setuptools import command
 LOGGER = logging.getLogger(__name__)
 
 
-class Distribution(dist.Distribution):
+class Distribution(dist.Distribution):  # pylint: disable=function-redefined
     """Extended distribution type with extra forml attributes.
     """
     def __init__(self, attrs=None):
@@ -32,7 +33,7 @@ OPTIONS = {
 }
 
 
-def setup(**kwargs) -> dist.Distribution:
+def setup(**kwargs) -> dist.Distribution:  # pylint: disable=function-redefined
     """Setuptools wrapper for defining user projects using setup.py.
 
     Args:

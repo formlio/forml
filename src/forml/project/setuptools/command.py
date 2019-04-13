@@ -1,3 +1,6 @@
+"""
+Custom setuptools commands.
+"""
 import contextlib
 import itertools
 import logging
@@ -34,6 +37,8 @@ class Train(setuptools.Command):
 
     @contextlib.contextmanager
     def project_on_sys_path(self):
+        """Place the given project on the sys path.
+        """
         self.run_command('egg_info')
 
         # Build extensions in-place
@@ -49,7 +54,7 @@ class Train(setuptools.Command):
             project_path = pkg_resources.normalize_path(ei_cmd.egg_base)
             sys.path.insert(0, project_path)
             pkg_resources.working_set.__init__()
-            pkg_resources.add_activation_listener(lambda dist: dist.activate())
+            pkg_resources.add_activation_listener(lambda dist: dist.activate())  # pylint: disable=not-callable
             pkg_resources.require('%s==%s' % (ei_cmd.egg_name, ei_cmd.egg_version))
             with self.paths_on_pythonpath([project_path]):
                 yield
@@ -96,6 +101,8 @@ class Train(setuptools.Command):
         return itertools.chain(ir_d, tr_d, er_d)
 
     def run(self):
+        """Command execution.
+        """
         LOGGER.debug('%s: starting development training', self.distribution.name)
         compkw = dict(self.distribution.component)
         compargs = [compkw.pop(c) for c in compkw if not c][:1]
