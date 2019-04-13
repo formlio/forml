@@ -2,7 +2,6 @@
 Runtime that just renders the pipeline DAG visualization.
 """
 import collections
-import tempfile
 import typing
 import uuid
 

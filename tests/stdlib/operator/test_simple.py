@@ -8,7 +8,7 @@ import pytest
 
 from forml import flow
 from forml.flow import segment, task
-from forml.flow.operator import simple
+from forml.stdlib.operator import simple
 
 
 class TestMapper:

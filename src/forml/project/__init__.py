@@ -72,8 +72,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
     def load(cls, package: typing.Optional[str] = None, **modules) -> 'Descriptor':
         """Setup the descriptor based on provider package and/or individual modules.
 
-            Either package is provided and all individual modules are considered as relative to that package or each
-            module must be specified absolutely.
+            Either package is provided and all individual modules without dot in their names are considered as
+            relative to that package or each module must be specified absolutely.
 
         Args:
             package: Base package to be considered as a root for all component modules.
@@ -85,17 +85,19 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
             raise Error('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, handler in builder:
-            module = package + (modules.get(component) or component)
+            mod = modules.get(component) or component
+            if '.' not in mod:
+                mod = package + mod
             with importer.Context(handler):
-                if module in sys.modules:
-                    if sys.modules[module].__package__ and sys.modules[module].__package__ != module:
-                        del sys.modules[sys.modules[module].__package__]
-                    del sys.modules[module]
+                if mod in sys.modules:
+                    if sys.modules[mod].__package__ and sys.modules[mod].__package__ != mod:
+                        del sys.modules[sys.modules[mod].__package__]
+                    del sys.modules[mod]
                 try:
-                    LOGGER.debug('Importing project component from %s', module)
-                    importlib.import_module(module)
+                    LOGGER.debug('Importing project component from %s', mod)
+                    importlib.import_module(mod)
                 except ImportError:
-                    raise Error(f'Unknown project module: {module}')
+                    raise Error(f'Unknown project module: {mod}')
         return builder.build()
 
 
