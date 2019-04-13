@@ -64,7 +64,7 @@ class Runner(interpreter.Runner):
     def _run(self, symbols: typing.Sequence[assembly.Symbol]) -> None:
         dot: grviz.Digraph = grviz.Digraph(**self._gvkw)
         for sym in symbols:
-            dot.node(str(sym.instruction))
+            dot.node(str(id(sym.instruction)), str(sym.instruction))
             for idx, arg in enumerate(sym.arguments):
-                dot.edge(str(arg), str(sym.instruction), label=str(idx))
+                dot.edge(str(id(arg)), str(id(sym.instruction)), label=str(idx))
         dot.render(self._filepath, view=True)

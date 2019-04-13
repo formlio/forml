@@ -24,7 +24,7 @@ class Instruction(metaclass=abc.ABCMeta):
         """
 
     def __str__(self):
-        return f'{self.__class__.__name__}[{id(self)}]'
+        return self.__class__.__name__
 
     def __call__(self, *args: typing.Any) -> typing.Any:
         LOGGER.debug('%s invoked (%d args)', self, len(args))
