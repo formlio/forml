@@ -180,7 +180,7 @@ class Table(view.Visitor, collections.Iterable):
         Args:
             node: Node to be added - compiled into symbols.
         """
-        assert node.uid not in self._index, 'Node collision'
+        assert node.uid not in self._index, f'Node collision ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
         functor = instmod.Mapper(node.spec)
