@@ -11,19 +11,17 @@ from forml.flow import task
 class Source(task.Actor):
     """Custom data-source logic.
     """
-    def __init__(self, data: typing.Any):
+    def __init__(self,
+                 producer: typing.Callable[[typing.Optional[etl.OrdinalT], typing.Optional[etl.OrdinalT]], typing.Any],
+                 lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT]):
         super().__init__()
-        self._data: typing.Any = data
-
-    @classmethod
-    def is_stateful(cls) -> bool:
-        return False
+        self._producer: typing.Callable[[typing.Optional[etl.OrdinalT],
+                                         typing.Optional[etl.OrdinalT]], typing.Any] = producer
+        self._lower: typing.Optional[etl.OrdinalT] = lower
+        self._upper: typing.Optional[etl.OrdinalT] = upper
 
     def apply(self) -> typing.Any:  # pylint: disable=arguments-differ
-        return self._data
-
-    def set_params(self, **params: typing.Any) -> None:
-        return
+        return self._producer(self._lower, self._upper)
 
 
 class Engine(etl.Engine):
@@ -31,4 +29,4 @@ class Engine(etl.Engine):
     """
     def setup(self, select: expression.Select, lower: typing.Optional[etl.OrdinalT],
               upper: typing.Optional[etl.OrdinalT]) -> task.Spec:
-        return task.Spec(Source, data=select.data)
+        return task.Spec(Source, producer=select.producer, lower=lower, upper=upper)
