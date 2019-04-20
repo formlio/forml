@@ -7,7 +7,7 @@ from forml import project as prjmod
 from forml.runtime.asset import directory, persistent
 
 
-class Registry(persistent.Registry):
+class Registry(persistent.Registry, key='local'):
     """Local registry.
     """
     def lineages(self, project: str) -> directory.Level.Listing:

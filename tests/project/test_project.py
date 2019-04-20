@@ -87,7 +87,7 @@ class TestDescriptor:
         with pytest.raises(project.Error):
             project.Descriptor.load('foo')
         descriptor = project.Descriptor.load('project')  # project package in this test directory
-        assert descriptor.pipeline == pipeline
+        assert descriptor.pipeline._spec == pipeline._spec
         assert descriptor.source == source
 
 
@@ -104,5 +104,5 @@ class TestArtifact:
     def test_descriptor(self, artifact: project.Artifact, source: etl.Source, pipeline: segment.Composable):
         """Testing descriptor access.
         """
-        assert artifact.descriptor.pipeline == pipeline
+        assert artifact.descriptor.pipeline._spec == pipeline._spec
         assert artifact.descriptor.source == source

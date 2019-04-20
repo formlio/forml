@@ -8,12 +8,11 @@ import uuid
 
 from dask.dot import graphviz as grviz
 
-from forml import etl
+from forml import etl, runtime
 from forml.flow import task
 from forml.flow.graph import view, node as grnode, port
-from forml.runtime import interpreter, assembly
+from forml.runtime import assembly
 from forml.runtime.asset import access
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,7 +52,7 @@ class Dot(view.Visitor):
         self._dot.render(path, view=True)
 
 
-class Runner(interpreter.Runner):
+class Interpreter(runtime.Interpreter, key='graphviz'):
     """Graphviz based runner implementation.
     """
     FILEPATH = 'forml.dot'

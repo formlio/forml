@@ -4,7 +4,7 @@ import logging
 import typing
 import uuid
 
-import forml.runtime.asset.directory
+from forml.runtime.asset import directory
 from forml import project as prjmod
 from forml.runtime.asset import persistent
 
@@ -15,10 +15,9 @@ LOGGER = logging.getLogger(__name__)
 class State:
     """State persistence accessor.
     """
-    def __init__(self, generation: forml.runtime.asset.directory.Generation, tag: typing.Optional[
-            forml.runtime.asset.directory.Generation.Tag] = None):
-        self._generation: forml.runtime.asset.directory.Generation = generation
-        self._tag: typing.Optional[forml.runtime.asset.directory.Generation.Tag] = tag
+    def __init__(self, generation: directory.Generation, tag: typing.Optional[directory.Generation.Tag] = None):
+        self._generation: directory.Generation = generation
+        self._tag: typing.Optional[directory.Generation.Tag] = tag
 
     def load(self, sid: typing.Union[int, uuid.UUID]) -> bytes:
         """Load the state based on its ordering index.
@@ -58,7 +57,7 @@ class Assets:
     """
     def __init__(self, registry: persistent.Registry, project: str, lineage: typing.Optional[int] = None,
                  generation: typing.Optional[int] = None):
-        self._generation: forml.runtime.asset.directory.Generation = registry.get(project, lineage).get(generation)
+        self._generation: directory.Generation = registry.get(project, lineage).get(generation)
 
     @property
     def project(self) -> prjmod.Descriptor:
@@ -69,14 +68,14 @@ class Assets:
         return self._generation.lineage.artifact.descriptor
 
     @property
-    def tag(self) -> forml.runtime.asset.directory.Generation.Tag:
+    def tag(self) -> directory.Generation.Tag:
         """Get the generation tag.
 
         Returns: Generation tag.
         """
         return self._generation.tag
 
-    def state(self, tag: typing.Optional[forml.runtime.asset.directory.Generation.Tag] = None) -> State:
+    def state(self, tag: typing.Optional[directory.Generation.Tag] = None) -> State:
         """Get the state persistence accessor.
 
         Args:

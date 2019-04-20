@@ -8,14 +8,14 @@ import typing
 
 from dask import threaded
 
-from forml import etl
-from forml.runtime import interpreter, assembly
+from forml import etl, runtime
+from forml.runtime import assembly
 from forml.runtime.asset import access
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(interpreter.Runner):
+class Interpreter(runtime.Interpreter, key='dask'):
     """Dask based runner implementation.
     """
     class Dag(collections.Mapping):
