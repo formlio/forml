@@ -19,7 +19,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
         self._spec: task.Spec = spec
 
     @classmethod
-    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs):
+    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs) -> typing.Type['Simple']:
         """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
         call.
 
@@ -29,10 +29,10 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 
         Returns: Curried operator.
         """
-        def decorator(actor):
+        def decorator(actor: typing.Type[task.Actor]) -> typing.Type[Simple]:
             """Decorating function.
             """
-            def wrapper(**params):
+            def wrapper(**params) -> Simple:
                 """Curried operator.
 
                 Args:

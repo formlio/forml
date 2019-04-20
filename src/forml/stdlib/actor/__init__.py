@@ -72,7 +72,8 @@ class Wrapped(Wrapping):
         return task.Spec(self, **params)
 
     @staticmethod
-    def actor(cls: typing.Optional[typing.Type] = None, **mapping: str):  # pylint: disable=bad-staticmethod-argument
+    def actor(cls: typing.Optional[typing.Type] = None,  # pylint: disable=bad-staticmethod-argument
+              **mapping: str) -> typing.Type[task.Actor]:
         """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
         optionally with mapping of Actor methods to decorated user class implementation.
 
@@ -90,11 +91,11 @@ class Wrapped(Wrapping):
         for method in (task.Actor.apply, task.Actor.train, task.Actor.get_params, task.Actor.set_params):
             mapping.setdefault(method.__name__, method.__name__)
 
-        def decorator(cls):
+        def decorator(cls) -> typing.Type[task.Actor]:
             """Decorating function.
             """
             assert cls and inspect.isclass(cls), f'Invalid actor class {cls}'
-            if isinstance(cls, task.Actor):
+            if issubclass(cls, task.Actor):
                 return cls
             for target in {t for s, t in mapping.items() if s != task.Actor.train.__name__}:
                 assert callable(getattr(cls, target, None)), f'Wrapped actor missing required {target} implementation'

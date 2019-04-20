@@ -19,11 +19,11 @@ LOGGER = logging.getLogger(__name__)
 DataT = typing.TypeVar('DataT')
 
 
-class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
+class Actor(metaclass=abc.ABCMeta):
     """Abstract interface of an actor.
     """
     @classmethod
-    def spec(cls, **params) -> 'Spec':
+    def spec(cls, **params: typing.Any) -> 'Spec':
         """Shortcut for creating a spec of this actor.
 
         Args:
@@ -41,7 +41,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         """
         return cls.train.__code__ is not Actor.train.__code__
 
-    def train(self, features: DataT, label: DataT) -> None:  # pylint: disable=no-self-use
+    def train(self, features: typing.Any, label: typing.Any) -> None:  # pylint: disable=no-self-use
         """Train the actor using the provided features and label.
 
         Args:
@@ -51,7 +51,7 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         raise RuntimeError('Stateless actor')
 
     @abc.abstractmethod
-    def apply(self, *features: DataT) -> typing.Union[DataT, typing.Sequence[DataT]]:
+    def apply(self, *features: typing.Any) -> typing.Union[typing.Any, typing.Sequence[typing.Any]]:
         """Pass features through the apply function (typically transform or predict).
 
         Args:
@@ -68,13 +68,13 @@ class Actor(typing.Generic[DataT], metaclass=abc.ABCMeta):
         return {p.name: p.default for p in inspect.signature(self.__class__).parameters.values() if
                 p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD and p.default is not inspect.Parameter.empty}
 
-    @abc.abstractmethod
     def set_params(self, **params: typing.Any) -> None:
         """Set hyper-parameters of this actor.
 
         Args:
             params: Dictionary of hyper parameters.
         """
+        raise NotImplementedError(f'Params setter not implemented on {self.__class__.__name__}')
 
     def get_state(self) -> bytes:
         """Return the internal state of the actor.
