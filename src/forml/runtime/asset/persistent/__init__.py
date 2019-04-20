@@ -6,11 +6,11 @@ import abc
 import typing
 import uuid
 
-from forml import project as prjmod
+from forml import project as prjmod, provider
 from forml.runtime.asset import directory
 
 
-class Registry(metaclass=abc.ABCMeta):
+class Registry(provider.Interface):
     """Top-level persistent registry abstraction.
     """
     def __str__(self):

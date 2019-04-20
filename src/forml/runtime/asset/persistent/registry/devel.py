@@ -7,7 +7,7 @@ from forml import project as prjmod
 from forml.runtime.asset import directory, persistent
 
 
-class Registry(persistent.Registry):
+class Registry(persistent.Registry, key='devel'):
     """Dummy registry implementation.
     """
     def __init__(self, artifact: prjmod.Artifact):
