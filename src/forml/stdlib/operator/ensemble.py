@@ -4,22 +4,25 @@ Ensembling operators.
 
 import typing
 
+from sklearn import model_selection
+
 from forml import flow
 from forml.flow import segment, task
 from forml.flow.graph import view, node
+from forml.stdlib.actor import frame
 
 
 class Stack(flow.Operator):
     """Crossvalidating stacked ensembling transformation.
     """
 
-    def __init__(self, bases: typing.Sequence[segment.Composable], folds: int = 2):
+    def __init__(self, bases: typing.Sequence[segment.Composable], crossvalidator: model_selection.BaseCrossValidator):
         self._bases: typing.Sequence[segment.Composable] = bases
-        self._folds: int = folds
-        self._splitter: task.Spec = task.Spec('splitter', folds=self._folds)
-        self._merger: task.Spec = task.Spec('merger', szin=self._folds)
-        self._appender: task.Spec = task.Spec('appender', szin=self._folds)
-        self._averager: task.Spec = task.Spec('averager', szin=self._folds)
+        self._folds: int = crossvalidator.get_n_splits()
+        self._splitter: task.Spec = frame.TrainTestSplit.spec(crossvalidator=crossvalidator)
+        self._merger: task.Spec = frame.Merge.spec()
+        self._appender: task.Spec = frame.Append.spec()
+        self._averager: task.Spec = frame.Apply.spec(method=lambda df: df.mean(axis='columns'))
 
     def compose(self, left: segment.Composable) -> segment.Track:
         """Ensemble composition.
@@ -52,11 +55,11 @@ class Stack(flow.Operator):
             apply_merger[index].subscribe(apply_averager[base][0])
         for fold in range(self._folds):
             pretrack: segment.Track = left.expand()
-            pretrack.train.subscribe(features_splitter[fold])
-            pretrack.label.subscribe(label_splitter[fold])
+            pretrack.train.subscribe(features_splitter[2 * fold])
+            pretrack.label.subscribe(label_splitter[2 * fold])
             pretrack.apply.subscribe(apply[0])
             preapply = pretrack.apply.copy()
-            preapply.subscribe(features_splitter[fold + self._folds])
+            preapply.subscribe(features_splitter[2 * fold + 1])
             for base in self._bases:
                 basetrack = base.expand()
                 basetrack.train.subscribe(pretrack.train.publisher)

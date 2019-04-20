@@ -33,10 +33,10 @@ class ColumnExtractor(task.Actor):
         """
         return {'column': self._column}
 
-    def set_params(self, **params: typing.Any) -> None:
+    def set_params(self, column: str) -> None:
         """Standard params setter.
 
         Args:
-            **params: New params.
+            column: Label column name.
         """
-        self._column = params.get('column', self._column)
+        self._column = column
