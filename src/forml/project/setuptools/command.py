@@ -34,8 +34,10 @@ class Train(setuptools.Command):
     def initialize_options(self):
         """Init options.
         """
-        self.lower: typing.Optional = None
-        self.upper: typing.Optional = None
+        self.runner: str = 'dask'
+        self.engine: str = 'devel'
+        self.lower: typing.Optional[str] = None
+        self.upper: typing.Optional[str] = None
 
     def finalize_options(self):
         """Fini options.
@@ -132,4 +134,4 @@ class Train(setuptools.Command):
                 # runner = graphviz.Interpreter(devetl.Engine(), access.Assets(
                 runner = dask.Interpreter(devetl.Engine(), access.Assets(
                     devreg.Registry(self.artifact), self.distribution.name))
-                runner.train()
+                runner.train(lower=self.lower, upper=self.upper)
