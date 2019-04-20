@@ -84,20 +84,14 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
         if modules.keys() > builder:
             raise Error('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
-        for component, handler in builder:
+        for component, setter in builder:
             mod = modules.get(component) or component
             if '.' not in mod:
                 mod = package + mod
-            with importer.Context(handler):
-                if mod in sys.modules:
-                    if sys.modules[mod].__package__ and sys.modules[mod].__package__ != mod:
-                        del sys.modules[sys.modules[mod].__package__]
-                    del sys.modules[mod]
-                try:
-                    LOGGER.debug('Importing project component from %s', mod)
-                    importlib.import_module(mod)
-                except ImportError:
-                    raise Error(f'Unknown project module: {mod}')
+            try:
+                setter(importer.load(mod))
+            except ModuleNotFoundError as err:
+                raise Error(f'Project {component} error: {err}')
         return builder.build()
 
 

@@ -1,6 +1,8 @@
 """
 Project component management.
 """
+import functools
+import importlib
 import logging
 import sys
 import types
@@ -10,6 +12,8 @@ from importlib import abc, machinery
 
 
 LOGGER = logging.getLogger(__name__)
+
+_CACHE: typing.Dict[str, typing.Any] = dict()
 
 
 def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
@@ -106,3 +110,32 @@ class Context:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.meta_path.remove(self._finder)
         self._unload()
+
+
+def load(module: str, force: typing.Optional[bool] = False) -> typing.Any:
+    """Caching component loader.
+
+    Args:
+        module: Python module containing the component to be loaded.
+        force: Reimport the component even if already cached.
+
+    Returns: Component instance.
+    """
+    def handler(component: typing.Any) -> None:
+        """Loader callback.
+
+        Args:
+            component: Expected component instance.
+        """
+        _CACHE[module] = component
+
+    if module not in _CACHE or force:
+        with Context(handler):
+            if module in sys.modules:
+                if sys.modules[module].__package__ and sys.modules[module].__package__ != module:
+                    del sys.modules[sys.modules[module].__package__]
+                del sys.modules[module]
+            LOGGER.debug('Importing project component from %s', module)
+            importlib.import_module(module)
+
+    return _CACHE[module]
