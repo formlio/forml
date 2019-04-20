@@ -120,7 +120,7 @@ class Train(setuptools.Command):
                     package, _ = os.path.splitext(mod)
                     break
             else:
-                package = self.distributions.packages[0]
+                package = self.distribution.packages[0]
         return project.Artifact(package=package, **modules)
 
     def run(self):
@@ -129,7 +129,7 @@ class Train(setuptools.Command):
         LOGGER.debug('%s: starting development training', self.distribution.name)
         with self.paths_on_pythonpath(d.location for d in self.install_dists(self.distribution)):
             with self.project_on_sys_path():
-                # runner = graphviz.Runner(devetl.Engine(), access.Assets(
-                runner = dask.Interpreter(devetl.Engine(), access.Assets(
+                runner = graphviz.Interpreter(devetl.Engine(), access.Assets(
+                    # runner = dask.Interpreter(devetl.Engine(), access.Assets(
                     devreg.Registry(self.artifact), self.distribution.name))
                 runner.train()

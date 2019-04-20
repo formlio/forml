@@ -40,7 +40,7 @@ class WrappedActor:
         self._params.update(params)
 
 
-class NativeActor(WrappedActor, task.Actor[typing.Any]):
+class NativeActor(WrappedActor, task.Actor):
     """Actor implementation.
     """
     def apply(self, *features: typing.Any) -> typing.Any:
