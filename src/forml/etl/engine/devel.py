@@ -13,15 +13,14 @@ class Source(task.Actor):
     """
     def __init__(self,
                  producer: typing.Callable[[typing.Optional[etl.OrdinalT], typing.Optional[etl.OrdinalT]], typing.Any],
-                 lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT]):
+                 **params):
         super().__init__()
         self._producer: typing.Callable[[typing.Optional[etl.OrdinalT],
                                          typing.Optional[etl.OrdinalT]], typing.Any] = producer
-        self._lower: typing.Optional[etl.OrdinalT] = lower
-        self._upper: typing.Optional[etl.OrdinalT] = upper
+        self._params = params
 
     def apply(self) -> typing.Any:  # pylint: disable=arguments-differ
-        return self._producer(self._lower, self._upper)
+        return self._producer(**self._params)
 
 
 class Engine(etl.Engine):
@@ -29,4 +28,9 @@ class Engine(etl.Engine):
     """
     def setup(self, select: expression.Select, lower: typing.Optional[etl.OrdinalT],
               upper: typing.Optional[etl.OrdinalT]) -> task.Spec:
-        return task.Spec(Source, producer=select.producer, lower=lower, upper=upper)
+        params = dict(select.params)
+        if lower:
+            params['lower'] = lower
+        if upper:
+            params['upper'] = upper
+        return task.Spec(Source, producer=select.producer, **params)
