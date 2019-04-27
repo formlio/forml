@@ -2,8 +2,9 @@
 Flow segment unit tests.
 """
 # pylint: disable=no-self-use
+import pytest
 
-from forml.flow import pipeline
+from forml.flow import pipeline, graph
 from forml.flow.pipeline import topology
 
 
@@ -11,7 +12,10 @@ class TestComposition:
     """Composition unit tests.
     """
 
-    def test_compose(self, operator: topology.Operator):
+    def test_composition(self, origin: topology.Operator, operator: topology.Operator):
         """Test the pipeline.
         """
-        pipeline.Composition(operator.expand())
+        with pytest.raises(graph.Error):  # contains Future node
+            pipeline.Composition(operator.expand())
+
+        pipeline.Composition((origin >> operator).expand())
