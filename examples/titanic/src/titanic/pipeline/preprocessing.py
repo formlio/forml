@@ -6,7 +6,7 @@ import category_encoders
 import numpy as np
 import pandas
 import pandas as pd
-from sklearn import base
+from sklearn import base as skbase
 
 from forml.flow import task
 from forml.stdlib import actor
@@ -37,7 +37,7 @@ class NaNImputer(task.Actor):
 NANIMPUTER = simple.Mapper(NaNImputer.spec())
 
 
-class TitleParser(base.TransformerMixin):
+class TitleParser(skbase.TransformerMixin):
     """Transformer extracting a person's title from the name string implemented as scikit-learn compatible transformer.
     """
     def __init__(self, source: str = 'name', target: str = 'title'):
@@ -75,4 +75,5 @@ TITLEPARSER = simple.Mapper(actor.Wrapped.actor(
 
 
 ENCODER = simple.Mapper(actor.Wrapped.actor(
-    category_encoders.HashingEncoder, train='fit', apply='transform').spec())
+    category_encoders.HashingEncoder, train='fit', apply='transform').spec(
+        cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title']))
