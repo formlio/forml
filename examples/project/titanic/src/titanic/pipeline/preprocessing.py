@@ -1,4 +1,14 @@
-"""Transformers useful for the Titanic example.
+"""
+Transformers useful for the Titanic example.
+
+This module is informal from ForML perspective and has been created just for structuring the project code base.
+
+Here we just create couple of forml operators that implement particular transformers.
+
+We demonstrate three different was of creating a forml operator:
+  * Implementing native ForML actor (NANIMPUTER)
+  * Creating a wrapped actor from a Transformer-like class (TITLEPARSER)
+  * Wrapping a 3rd party Transformer-like class (ENCODER)
 """
 import typing
 
