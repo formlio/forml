@@ -5,7 +5,7 @@ import collections
 import typing
 
 from forml import flow
-from forml.flow.graph import view, node
+from forml.flow.graph import view, node, clean
 
 
 class Error(flow.Error):
@@ -70,5 +70,6 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         label = composed.label.extend()
         if not isinstance(label, view.Closure):
             raise Error('Label path not a closure')
-        # TODO: clean validation
+        for path in (apply, train):
+            path.accept(clean.Validator())
         return super().__new__(cls, apply, train)

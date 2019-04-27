@@ -23,7 +23,7 @@ class Source(task.Actor):
         return self._producer(**self._params)
 
 
-class Engine(etl.Engine):
+class Engine(etl.Engine, key='devel'):
     """Development engine.
     """
     def setup(self, select: expression.Select, lower: typing.Optional[etl.OrdinalT],

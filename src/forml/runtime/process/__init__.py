@@ -14,8 +14,8 @@ from forml.runtime.code import compiler
 class Runner(provider.Interface):
     """Abstract base runtime class to be extended by particular runtime implementations.
     """
-    def __init__(self, engine: etl.Engine[etl.OrdinalT], assets: access.Assets):
-        self._engine: etl.Engine[etl.OrdinalT] = engine
+    def __init__(self, engine: etl.Engine, assets: access.Assets):
+        self._engine: etl.Engine = engine
         self._assets: access.Assets = assets
 
     def _build(self, lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT],

@@ -5,6 +5,7 @@ import abc
 import collections
 import inspect
 import logging
+import sys
 import typing
 
 import forml
@@ -43,6 +44,8 @@ class Registry(collections.namedtuple('Registry', 'stage, provider')):
             except ModuleNotFoundError as err:
                 if self.strict:
                     raise Error(f'Explicit preload ({self.path}) failed ({err})')
+            if not getattr(sys.modules[self.path], '__all__', []):
+                LOGGER.warning('Package %s does not list any provider modules under __all__', self.path)
 
     def __new__(cls):
         return super().__new__(cls, set(), dict())
@@ -85,10 +88,13 @@ class Meta(abc.ABCMeta):
         try:
             return _REGISTRY[cls].get(key)
         except KeyError:
-            raise Error(f'No provider of type {cls.__name__} registered as {key}')
+            raise Error(f'No provider of type {cls.__name__} registered as {key} (known providers: {", ".join(cls)})')
+
+    def __iter__(cls):
+        return iter(_REGISTRY[cls].provider)
 
     def __str__(cls):
-        return f'{cls.__module__}.{cls.__name__}[{", ".join(_REGISTRY[cls].provider)}]'
+        return f'{cls.__module__}.{cls.__name__}[{", ".join(cls)}]'
 
     def __eq__(cls, other):
         return other.__module__ is cls.__module__ and other.__qualname__ is cls.__qualname__
@@ -109,5 +115,6 @@ class Interface(metaclass=Meta):
         packages = {Registry.Package(p if '.' not in p else f'{cls.__module__}.{p}') for p in packages or []}
         if not packages:
             packages = {Registry.Package(f'{cls.__module__}.{cls.__name__.lower()}', strict=False)}
+        print(f'registering {cls.__name__}')
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):
             _REGISTRY[parent].add(key, cls, packages)

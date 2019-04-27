@@ -8,9 +8,7 @@ import typing
 
 from dask import threaded
 
-from forml import etl
 from forml.runtime import code, process
-from forml.runtime.asset import access
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,9 +68,6 @@ class Interpreter(process.Runner, key='dask'):
 
         def __str__(self):
             return str({id(k): tuple(id(i) for i in self[k]) for k in self})
-
-    def __init__(self, engine: etl.Engine[etl.OrdinalT], assets: access.Assets):
-        super().__init__(engine, assets)
 
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         """Actual run action to be implemented according to the specific runtime.
