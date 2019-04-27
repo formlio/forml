@@ -12,7 +12,7 @@ from forml.runtime import code, process
 LOGGER = logging.getLogger(__name__)
 
 
-class Interpreter(process.Runner, key='dask'):
+class Runner(process.Runner, key='dask'):
     """Dask based runner implementation.
     """
     class Dag(dict):
@@ -61,7 +61,7 @@ class Interpreter(process.Runner, key='dask'):
         def __str__(self):
             return str({k: (str(i), *a) for k, (i, *a) in self.items()})
 
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
+    def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:
@@ -69,4 +69,4 @@ class Interpreter(process.Runner, key='dask'):
         """
         dag = self.Dag(symbols)
         LOGGER.debug('Dask DAG: %s', dag)
-        print(multiprocessing.get(dag, dag.output))
+        return multiprocessing.get(dag, dag.output)
