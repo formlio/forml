@@ -57,7 +57,7 @@ class Interpreter(process.Runner, key='graphviz'):
     """
     FILEPATH = 'forml.dot'
 
-    def __init__(self, engine: etl.Engine[etl.OrdinalT], assets: access.Assets, filepath: typing.Optional[str] = None,
+    def __init__(self, engine: etl.Engine, assets: access.Assets, filepath: typing.Optional[str] = None,
                  **gvkw: typing.Any):
         super().__init__(engine, assets)
         self._filepath: str = filepath or self.FILEPATH

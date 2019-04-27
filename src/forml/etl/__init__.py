@@ -5,6 +5,7 @@ import abc
 import collections
 import typing
 
+from forml import provider
 from forml.etl import expression
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
@@ -33,7 +34,7 @@ class Source(collections.namedtuple('Source', 'extract, transform')):
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
 
-class Engine(typing.Generic[OrdinalT], metaclass=abc.ABCMeta):
+class Engine(provider.Interface):
     """ETL engine is the implementation of a specific datasource access layer.
     """
     def load(self, source: Source, lower: typing.Optional[OrdinalT] = None,

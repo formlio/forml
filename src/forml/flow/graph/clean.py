@@ -12,10 +12,14 @@ Graph topology validation.
 # * at most single trained node per each instance (enforced synchronously)
 # * either both train and label or all apply inputs and outputs are active
 """
+import typing
+
+from forml.flow import graph
+
 from forml.flow.graph import view, node as grnode
 
 
-class NodeValidator(view.Visitor):
+class Validator(view.Visitor):
     """Visitor ensuring all nodes are in valid state which means:
 
         * are Worker instances (not Future)
@@ -23,6 +27,8 @@ class NodeValidator(view.Visitor):
             * only both train and label or all input ports
             * only both train and label or all output ports
     """
+    def __init__(self):
+        self._futures: typing.Set[grnode.Atomic] = set()
 
     def visit_node(self, node: grnode.Atomic) -> None:
         """Node visit.
@@ -30,3 +36,14 @@ class NodeValidator(view.Visitor):
         Args:
             node: Node to be visited.
         """
+        if isinstance(node, grnode.Future):
+            self._futures.add(node)
+
+    def visit_path(self, path: view.Path) -> None:
+        """Final visit.
+
+        Args:
+            path: Path to be visited.
+        """
+        if self._futures:
+            raise graph.Error(f'Future nodes on path: {", ".join(str(f) for f in self._futures)}')
