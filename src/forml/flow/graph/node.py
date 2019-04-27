@@ -86,26 +86,6 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         visitor.visit_node(self)
 
-    def publishing(self, subscriber: 'Atomic') -> bool:
-        """Checking given node is on our subscription list.
-
-        Args:
-            subscriber: Node to check for being our subscriber,
-
-        Returns: True if node is our subscriber.
-        """
-        return subscriber in {s.node for p in self._output for s in p}
-
-    def subscribed(self, publisher: 'Atomic') -> bool:
-        """Checking we are on given node's subscription list.
-
-        Args:
-            publisher: Node to check for being it's subscriber,
-
-        Returns: True if we are given node's subscriber.
-        """
-        return publisher.publishing(self)
-
     @property
     def szout(self) -> int:
         """Width of the input apply port.
@@ -113,14 +93,6 @@ class Atomic(metaclass=abc.ABCMeta):
         Returns: Input apply port width.
         """
         return len(self._output)
-
-    @property
-    def input(self) -> typing.Iterable[port.Type]:
-        """Get subscribed input ports.
-
-        Returns: Ports.
-        """
-        return port.Subscription.ports(self)
 
     @property
     def output(self) -> typing.Sequence[typing.Iterable[port.Subscription]]:
@@ -140,6 +112,16 @@ class Atomic(metaclass=abc.ABCMeta):
         assert 0 <= index < self.szout, 'Invalid output index'
         assert self is not subscription.node, 'Self subscription'
         self._output[index].add(subscription)
+
+    @abc.abstractmethod
+    def subscribed(self, publisher: 'Atomic') -> bool:
+        """Checking we are on given node's subscription list.
+
+        Args:
+            publisher: Node to check for being it's subscriber,
+
+        Returns: True if we are given node's subscriber.
+        """
 
     @abc.abstractmethod
     def fork(self) -> 'Atomic':
@@ -192,6 +174,14 @@ class Worker(Atomic):
         super()._publish(index, subscription)
 
     @property
+    def input(self) -> typing.Iterable[port.Type]:
+        """Get subscribed input ports.
+
+        Returns: Ports.
+        """
+        return port.Subscription.ports(self)
+
+    @property
     def trained(self) -> bool:
         """Check if this node is subscribed for training data.
 
@@ -236,6 +226,16 @@ class Worker(Atomic):
         assert self.stateful, 'Stateless node training'
         train.publish(self, port.Train())
         label.publish(self, port.Label())
+
+    def subscribed(self, publisher: 'Atomic') -> bool:
+        """Checking we are on given node's subscription list.
+
+        Args:
+            publisher: Node to check for being it's subscriber,
+
+        Returns: True if we are given node's subscriber.
+        """
+        return self in {s.node for p in publisher.output for s in p}
 
     def fork(self) -> 'Worker':
         """Create new node with same shape and actor as self but without any subscriptions.
