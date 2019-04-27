@@ -32,7 +32,8 @@ class TestInterface:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def subprovider(provider: typing.Type[provmod.Interface], subkey: str) -> typing.Type[provmod.Interface]:
+    def subprovider(provider: typing.Type[provmod.Interface],
+                    subkey: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
         """Provider fixture.
         """
         class SubProvider(provider, key=subkey):
@@ -49,7 +50,8 @@ class TestInterface:
         with pytest.raises(provmod.Error):
             assert subprovider['miss']
 
-    def test_collision(self, subprovider: typing.Type[provmod.Interface], subkey: str):
+    def test_collision(self, subprovider: typing.Type[provmod.Interface],
+                       subkey: str):  # pylint: disable=unused-argument
         """Test a colliding provider key.
         """
         with pytest.raises(provmod.Error):

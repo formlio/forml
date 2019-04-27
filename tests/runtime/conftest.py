@@ -81,7 +81,7 @@ def content(populated_lineage: int, empty_lineage: int, valid_generation: int,
     return {populated_lineage: {valid_generation: tag}, empty_lineage: {}}
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def registry(content: typing.Mapping[int, typing.Mapping[int, directory.Generation.Tag]],
              states: typing.Mapping[uuid.UUID, bytes]) -> persistent.Registry:
     """Registry fixture.

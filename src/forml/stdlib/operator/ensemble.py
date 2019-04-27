@@ -6,25 +6,25 @@ import typing
 
 from sklearn import model_selection
 
-from forml import flow
-from forml.flow import segment, task
+from forml.flow import task, pipeline
 from forml.flow.graph import view, node
+from forml.flow.pipeline import topology
 from forml.stdlib.actor import frame
 
 
-class Stack(flow.Operator):
+class Stack(topology.Operator):
     """Crossvalidating stacked ensembling transformation.
     """
 
-    def __init__(self, bases: typing.Sequence[segment.Composable], crossvalidator: model_selection.BaseCrossValidator):
-        self._bases: typing.Sequence[segment.Composable] = bases
+    def __init__(self, bases: typing.Sequence[topology.Composable], crossvalidator: model_selection.BaseCrossValidator):
+        self._bases: typing.Sequence[topology.Composable] = bases
         self._folds: int = crossvalidator.get_n_splits()
         self._splitter: task.Spec = frame.TrainTestSplit.spec(crossvalidator=crossvalidator)
         self._merger: task.Spec = frame.Merge.spec()
         self._appender: task.Spec = frame.Append.spec()
         self._averager: task.Spec = frame.Apply.spec(method=lambda df: df.mean(axis='columns'))
 
-    def compose(self, left: segment.Composable) -> segment.Track:
+    def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Ensemble composition.
 
         Args:
@@ -46,15 +46,15 @@ class Stack(flow.Operator):
         apply_merger: node.Worker = train_merger.fork()
         appender_forks: typing.Iterable[node.Worker] = node.Worker.fgen(self._appender, self._folds, 1)
         averager_forks: typing.Iterable[node.Worker] = node.Worker.fgen(self._averager, self._folds, 1)
-        train_appender: typing.Dict[segment.Composable, node.Worker] = dict()
-        apply_averager: typing.Dict[segment.Composable, node.Worker] = dict()
+        train_appender: typing.Dict[topology.Composable, node.Worker] = dict()
+        apply_averager: typing.Dict[topology.Composable, node.Worker] = dict()
         for index, (base, appender, averager) in enumerate(zip(self._bases, appender_forks, averager_forks)):
             train_appender[base] = appender
             apply_averager[base] = averager
             train_merger[index].subscribe(train_appender[base][0])
             apply_merger[index].subscribe(apply_averager[base][0])
         for fold in range(self._folds):
-            pretrack: segment.Track = left.expand()
+            pretrack: pipeline.Segment = left.expand()
             pretrack.train.subscribe(features_splitter[2 * fold])
             pretrack.label.subscribe(label_splitter[2 * fold])
             pretrack.apply.subscribe(apply[0])
@@ -70,4 +70,4 @@ class Stack(flow.Operator):
                 baseapply.subscribe(preapply.publisher)
                 train_appender[base][fold].subscribe(baseapply.publisher)
 
-        return segment.Track(view.Path(apply, apply_merger), view.Path(train, train_merger), view.Path(label, label))
+        return pipeline.Segment(view.Path(apply, apply_merger), view.Path(train, train_merger), view.Path(label, label))

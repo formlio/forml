@@ -17,7 +17,7 @@ import abc
 import typing
 import uuid
 
-from forml.flow import task
+from forml.flow import task, graph
 from forml.flow.graph import port
 
 
@@ -36,9 +36,8 @@ class Atomic(metaclass=abc.ABCMeta):
     """Abstract primitive task graph node.
     """
     def __init__(self, szin: int, szout: int):
-        assert szin >= 0, 'Invalid node input size'
-        assert szout >= 0, 'Invalid node output size'
-        assert szin or szout, 'Invalid node size'
+        if min(szin, szout) < 0 or szin == szout == 0:
+            raise ValueError('Invalid node shape')
         self.szin: int = szin
         self.uid: uuid.UUID = uuid.uuid4()
         self._output: typing.Tuple[typing.Set[port.Subscription]] = tuple(set() for _ in range(szout))
@@ -110,7 +109,8 @@ class Atomic(metaclass=abc.ABCMeta):
             subscription: Subscriber node and port to publish to.
         """
         assert 0 <= index < self.szout, 'Invalid output index'
-        assert self is not subscription.node, 'Self subscription'
+        if self is subscription.node:
+            raise graph.Error('Self subscription')
         self._output[index].add(subscription)
 
     @abc.abstractmethod
@@ -170,7 +170,8 @@ class Worker(Atomic):
 
         Trained node must not be publishing.
         """
-        assert not self.trained, 'Trained node publishing'
+        if self.trained:
+            raise graph.Error('Trained node publishing')
         super()._publish(index, subscription)
 
     @property
@@ -222,8 +223,10 @@ class Worker(Atomic):
 
         Returns: Self node.
         """
-        assert not any(f.trained for f in self._group), 'Fork train collision'
-        assert self.stateful, 'Stateless node training'
+        if any(f.trained for f in self._group):
+            raise graph.Error('Fork train collision')
+        if not self.stateful:
+            raise graph.Error('Stateless node training')
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
@@ -295,7 +298,8 @@ class Future(Atomic):
             Args:
                 publisher: Left side publisher
             """
-            assert publisher not in self._proxy, 'Publisher collision'
+            if publisher in self._proxy:
+                raise graph.Error('Publisher collision')
             self._proxy[publisher] = index
 
         return self.PubSub(self, index, register, self._sync)

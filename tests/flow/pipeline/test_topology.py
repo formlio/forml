@@ -5,36 +5,36 @@ Flow segment unit tests.
 
 import pytest
 
-from forml import flow
-from forml.flow import segment
+from forml.flow import pipeline, graph
+from forml.flow.pipeline import topology
 
 
 class Composable:
     """Composable tests base class.
     """
-    def test_track(self, composable: segment.Composable):
+    def test_track(self, composable: topology.Composable):
         """Testing composable track.
         """
-        assert isinstance(composable, segment.Composable)
-        assert isinstance(composable.expand(), segment.Track)
+        assert isinstance(composable, topology.Composable)
+        assert isinstance(composable.expand(), pipeline.Segment)
 
-    def test_noncomposable(self, composable: segment.Composable):
+    def test_noncomposable(self, composable: topology.Composable):
         """Testing noncomposable composition.
         """
         with pytest.raises(ValueError):
             _ = composable >> 1
 
-    def test_self(self, composable: segment.Composable):
+    def test_self(self, composable: topology.Composable):
         """Testing self composition.
         """
-        with pytest.raises(ArithmeticError):
+        with pytest.raises(graph.Error):
             _ = composable >> composable
 
-    def test_nonlinear(self, composable: segment.Composable, operator: flow.Operator):
+    def test_nonlinear(self, composable: topology.Composable, operator: topology.Operator):
         """Testing nonlinear composition.
         """
         expression = composable >> operator
-        with pytest.raises(ArithmeticError):
+        with pytest.raises(graph.Error):
             _ = expression >> operator
 
 
@@ -46,21 +46,21 @@ class TestOrigin(Composable):
     def composable():
         """Origin composable fixture.
         """
-        return segment.Origin()
+        return topology.Origin()
 
 
-class TestExpression(Composable):
-    """Recursive composable unit tests.
+class TestCompound(Composable):
+    """Compound composable unit tests.
     """
     @staticmethod
     @pytest.fixture(scope='function')
     def composable():
-        """Expression composable fixture.
+        """Compound composable fixture.
         """
-        return segment.Expression(segment.Origin(), segment.Origin())
+        return topology.Compound(topology.Origin(), topology.Origin())
 
-    def test_expression(self, composable: segment.Composable, operator: flow.Operator):
+    def test_compound(self, composable: topology.Composable, operator: topology.Operator):
         """Testing linking action.
         """
         expression = composable >> operator
-        assert isinstance(expression, segment.Expression)
+        assert isinstance(expression, topology.Compound)

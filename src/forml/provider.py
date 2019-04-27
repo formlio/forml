@@ -57,7 +57,7 @@ class Registry(collections.namedtuple('Registry', 'stage, provider')):
         self.stage.update(packages)
         if inspect.isabstract(provider):
             return
-        if key in self.provider:
+        if key in self.provider and self.provider[key] != provider:
             raise Error(f'Provider key collision ({key})')
         self.provider[key] = provider
 
@@ -89,6 +89,12 @@ class Meta(abc.ABCMeta):
 
     def __str__(cls):
         return f'{cls.__module__}.{cls.__name__}[{", ".join(_REGISTRY[cls].provider)}]'
+
+    def __eq__(cls, other):
+        return other.__module__ is cls.__module__ and other.__qualname__ is cls.__qualname__
+
+    def __hash__(cls):
+        return hash(cls.__module__) ^ hash(cls.__qualname__)
 
 
 class Interface(metaclass=Meta):

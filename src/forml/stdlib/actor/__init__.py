@@ -5,7 +5,13 @@ Stdlib actors.
 import inspect
 import typing
 
+from forml import stdlib
 from forml.flow import task
+
+
+class Error(stdlib.Error):
+    """Actor error.
+    """
 
 
 class Wrapping:
@@ -86,7 +92,8 @@ class Wrapped(Wrapping):
 
         Returns: Actor class.
         """
-        assert all(isinstance(a, str) for a in mapping.values()), 'Invalid mapping'
+        if not all(isinstance(a, str) for a in mapping.values()):
+            raise ValueError('Invalid mapping')
 
         for method in (task.Actor.apply, task.Actor.train, task.Actor.get_params, task.Actor.set_params):
             mapping.setdefault(method.__name__, method.__name__)
@@ -94,11 +101,13 @@ class Wrapped(Wrapping):
         def decorator(cls) -> typing.Type[task.Actor]:
             """Decorating function.
             """
-            assert cls and inspect.isclass(cls), f'Invalid actor class {cls}'
+            if not inspect.isclass(cls):
+                raise ValueError(f'Invalid actor class {cls}')
             if issubclass(cls, task.Actor):
                 return cls
             for target in {t for s, t in mapping.items() if s != task.Actor.train.__name__}:
-                assert callable(getattr(cls, target, None)), f'Wrapped actor missing required {target} implementation'
+                if not callable(getattr(cls, target, None)):
+                    raise Error(f'Wrapped actor missing required {target} implementation')
             return Wrapped(cls, mapping)
 
         if cls:

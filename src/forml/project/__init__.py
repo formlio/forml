@@ -1,7 +1,7 @@
 """Project setup mechanics.
 """
 import collections
-import importlib
+from collections import abc
 import logging
 import sys
 import types
@@ -9,7 +9,7 @@ import typing
 
 import forml
 from forml import etl
-from forml.flow import segment
+from forml.flow.pipeline import topology
 from forml.project import component as importer
 
 LOGGER = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class Error(forml.Error):
 class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
     """Top level ForML project descriptor holding the implementations of individual project components.
     """
-    class Builder(collections.abc.Set):
+    class Builder(abc.Set):
         """Descriptor builder allowing to setup attributes one by one.
         """
         class Handler:
@@ -61,8 +61,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
                 raise Error(f'Incomplete builder (missing {", ".join(c for c, h in self if not h)})')
             return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
 
-    def __new__(cls, source: etl.Source, pipeline: segment.Composable):
-        if not isinstance(pipeline, segment.Composable):
+    def __new__(cls, source: etl.Source, pipeline: topology.Composable):
+        if not isinstance(pipeline, topology.Composable):
             raise Error('Invalid pipeline')
         if not isinstance(source, etl.Source):
             raise Error('Invalid source')

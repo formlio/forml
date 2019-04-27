@@ -86,7 +86,7 @@ def testset(trainset) -> str:
 
 @pytest.fixture(scope='session')
 def state(spec: task.Spec, trainset) -> bytes:
-    """Prediction result fixture.
+    """Actor state fixture.
     """
     actor = spec()
     actor.train(*trainset)

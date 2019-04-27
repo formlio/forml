@@ -13,10 +13,9 @@ import typing
 
 import joblib
 
+from forml import flow
 
 LOGGER = logging.getLogger(__name__)
-
-DataT = typing.TypeVar('DataT')
 
 
 class Actor(metaclass=abc.ABCMeta):
@@ -96,7 +95,8 @@ class Actor(metaclass=abc.ABCMeta):
         """
         if not state:
             return
-        assert self.is_stateful(), 'State provided but actor stateless'
+        if not self.is_stateful():
+            raise flow.Error('State provided but actor stateless')
         LOGGER.debug('Setting %s state (%d bytes)', self, len(state))
         params = self.get_params()  # keep the original hyper-params
         with io.BytesIO(state) as bio:

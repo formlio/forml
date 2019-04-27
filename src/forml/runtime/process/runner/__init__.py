@@ -1,5 +1,5 @@
 """
-Interpreter implementations.
+Runner implementations.
 """
 
 __all__ = ['dask', 'graphviz']

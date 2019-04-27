@@ -11,8 +11,8 @@ import collections
 from collections import abc
 
 from forml.flow.graph import node as grnode, view
-from forml.runtime import assembly
-from forml.runtime.assembly import instruction as instmod
+from forml.runtime import code
+from forml.runtime.code import instruction as instmod
 from forml.runtime.asset import access
 
 LOGGER = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ class Table(view.Visitor, abc.Iterable):
         """Mapping of the stored instructions. Same instruction might be stored under multiple keys.
         """
         def __init__(self):
-            self._instructions: typing.Dict[uuid.UUID, assembly.Instruction] = dict()
+            self._instructions: typing.Dict[uuid.UUID, code.Instruction] = dict()
 
         def __contains__(self, key: uuid.UUID) -> bool:
             return key in self._instructions
@@ -101,14 +101,14 @@ class Table(view.Visitor, abc.Iterable):
             return self._instructions[key]
 
         @property
-        def instructions(self) -> typing.Iterator[typing.Tuple[assembly.Instruction, typing.Iterator[uuid.UUID]]]:
+        def instructions(self) -> typing.Iterator[typing.Tuple[code.Instruction, typing.Iterator[uuid.UUID]]]:
             """Iterator over tuples of instructions plus iterator of its keys.
 
             Returns: Instruction-keys tuples iterator.
             """
             return itertools.groupby(self._instructions.keys(), self._instructions.__getitem__)
 
-        def set(self, instruction: assembly.Instruction, key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
+        def set(self, instruction: code.Instruction, key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
             """Store given instruction by provided or generated key.
 
             It is an error to store instruction with existing key (to avoid, use the reset method).
@@ -145,7 +145,7 @@ class Table(view.Visitor, abc.Iterable):
         self._index: Table.Index = self.Index()
         self._committer: typing.Optional[uuid.UUID] = None
 
-    def __iter__(self) -> assembly.Symbol:
+    def __iter__(self) -> code.Symbol:
         def merge(value: typing.Iterable[typing.Optional[uuid.UUID]],
                   element: typing.Iterable[typing.Optional[uuid.UUID]]) -> typing.Iterable[uuid.UUID]:
             """Merge two iterables with at most one of them having non-null value on each offset into single iterable
@@ -172,7 +172,7 @@ class Table(view.Visitor, abc.Iterable):
 
         for instruction, keys in self._index.instructions:
             arguments = functools.reduce(merge, (self._linkage[k] for k in keys))
-            yield assembly.Symbol(instruction, tuple(self._index[a] for a in arguments))
+            yield code.Symbol(instruction, tuple(self._index[a] for a in arguments))
 
     def add(self, node: grnode.Worker) -> None:
         """Populate the symbol table to implement the logical flow of given node.
@@ -215,7 +215,7 @@ class Table(view.Visitor, abc.Iterable):
         self.add(node)
 
 
-def generate(path: view.Path, assets: access.State) -> typing.Sequence[assembly.Symbol]:
+def generate(path: view.Path, assets: access.State) -> typing.Sequence[code.Symbol]:
     """Generate the symbol code based on given flow path.
 
     Args:
