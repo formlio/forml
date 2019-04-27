@@ -73,7 +73,8 @@ class Actor(metaclass=abc.ABCMeta):
         Args:
             params: Dictionary of hyper parameters.
         """
-        raise RuntimeError(f'Params setter not implemented on {self.__class__.__name__}')
+        if params:
+            raise RuntimeError(f'Params setter for {params} not implemented on {self.__class__.__name__}')
 
     def get_state(self) -> bytes:
         """Return the internal state of the actor.

@@ -31,12 +31,16 @@ class Instruction(metaclass=abc.ABCMeta):
         """
 
     def __str__(self):
-        return self.__class__.__name__
+        return f'{self.__class__.__name__}[#{id(self)}]'
 
     def __call__(self, *args: typing.Any) -> typing.Any:
         LOGGER.debug('%s invoked (%d args)', self, len(args))
         start = time.time()
-        result = self.execute(*args)
+        try:
+            result = self.execute(*args)
+        except Exception as err:
+            LOGGER.exception('Instruction %s failed when processing arguments %s: ', self, args)
+            raise err
         LOGGER.debug('%s completed (%.2fms)', self, (time.time() - start) * 1000)
         return result
 
