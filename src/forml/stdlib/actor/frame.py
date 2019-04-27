@@ -52,8 +52,8 @@ class TrainTestSplit(task.Actor):
         """
         return {'crossvalidator': self._crossvalidator}
 
-    def set_params(self,
-                   crossvalidator: model_selection.BaseCrossValidator) -> None:  # pylint: disable=arguments-differ
+    def set_params(self,  # pylint: disable=arguments-differ
+                   crossvalidator: model_selection.BaseCrossValidator) -> None:
         """Standard params setter.
 
         Args:

@@ -84,22 +84,32 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         assert len(self.predecessors) > 1 or not expected and len(endings) == 1, 'Ambiguous tail'
         return endings.pop()
 
-    def each(self, acceptor: typing.Callable[[grnode.Atomic], None], tail: typing.Optional[grnode.Atomic]) -> None:
+    def each(self, tail: grnode.Atomic, acceptor: typing.Callable[[grnode.Atomic], None]) -> None:
         """Traverse the path downstream calling acceptor for each unique node.
 
         Args:
-            acceptor: Acceptor to call for each unique node.
             tail: Optional traversion breakpoint.
+            acceptor: Acceptor to call for each unique node.
         """
+        def unseen(node: grnode.Atomic) -> bool:
+            """Test for node recurrence.
+
+            Args:
+                node: Node instance to be checked for recurrence.
+
+            Returns: True if not recurrent.
+            """
+            return node not in seen
+
         def traverse(traversal: Traversal) -> None:
             """Recursive path scan.
 
             Args:
                 traversal: Node to be processed.
             """
-            mask = lambda n: n not in seen
+            mask = unseen
             if traversal.current == tail:
-                mask = lambda n: mask(n) and n.trained
+                mask = lambda n: unseen(n) and n.trained
             acceptor(traversal.current)
             seen.add(traversal.current)
             for node in traversal.directs(tail, mask=mask):
@@ -108,7 +118,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         seen = set()
         traverse(Traversal(self.current))
 
-    def copy(self, tail: typing.Optional[grnode.Atomic] = None) -> typing.Mapping[grnode.Atomic, grnode.Atomic]:
+    def copy(self, tail: grnode.Atomic) -> typing.Mapping[grnode.Atomic, grnode.Atomic]:
         """Make a copy of the apply path topology. Any nodes not on path are ignored.
 
         Only the main branch is copied ignoring all sink branches.
@@ -139,8 +149,6 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
                 for node in traversal.mappers(tail):
                     traverse(node)
 
-        if not tail:
-            tail = self.tail()
         copies = dict()
         traverse(self)
         return copies
@@ -170,7 +178,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Args:
             visitor: Visitor instance.
         """
-        Traversal(self._head).each(visitor.visit_node, self._tail)
+        Traversal(self._head).each(self._tail, visitor.visit_node)
         visitor.visit_path(self)
 
     # @abc.abstractmethod
