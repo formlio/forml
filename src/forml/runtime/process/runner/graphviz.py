@@ -52,7 +52,7 @@ class Dot(view.Visitor):
         self._dot.render(path, view=True)
 
 
-class Interpreter(process.Runner, key='graphviz'):
+class Runner(process.Runner, key='graphviz'):
     """Graphviz based runner implementation.
     """
     FILEPATH = 'forml.dot'

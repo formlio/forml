@@ -34,7 +34,7 @@ class NaNImputer(task.Actor):
         return data.fillna(self._fill)
 
 
-NANIMPUTER = simple.Mapper(NaNImputer.spec())
+NANIMPUTER = simple.Mapper.operator(NaNImputer)
 
 
 class TitleParser(skbase.TransformerMixin):
@@ -70,10 +70,5 @@ class TitleParser(skbase.TransformerMixin):
         self.target = target
 
 
-TITLEPARSER = simple.Mapper(actor.Wrapped.actor(
-    TitleParser, apply='transform').spec(source='Name', target='Title'))
-
-
-ENCODER = simple.Mapper(actor.Wrapped.actor(
-    category_encoders.HashingEncoder, train='fit', apply='transform').spec(
-        cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title']))
+TITLEPARSER = simple.Mapper.operator(actor.Wrapped.actor(TitleParser, apply='transform'))
+ENCODER = simple.Mapper.operator(actor.Wrapped.actor(category_encoders.HashingEncoder, train='fit', apply='transform'))

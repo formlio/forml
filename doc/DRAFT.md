@@ -52,7 +52,7 @@ myprj
   |                   |- crossval.py  # here the component is just a module
   |                   |- schedule.py
   |                   |- label.py
-  |                   |- etl.py
+  |                   |- source.py
   |                   \- report.py
   |- tests
   |    |- sample.sqlite
@@ -109,7 +109,7 @@ Definition of cross-validation iterator that is used to iteratively split the da
 crossvalidation (CI/benchmarking, tuning, ensembling).
 
 
-Producer Expression (`etl.py`)
+Producer Expression (`source.py`)
 ------------------------------
 
 Project allows to define the ETL process sourcing the data into the system using a _Producer Expression_. This mechanism

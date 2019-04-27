@@ -31,7 +31,8 @@ class Runner(provider.Interface):
         """
         return pipeline.Composition(self._engine.load(self._assets.project.source, lower, upper), *blocks)
 
-    def train(self, lower: typing.Optional[etl.OrdinalT] = None, upper: typing.Optional[etl.OrdinalT] = None) -> None:
+    def train(self, lower: typing.Optional[etl.OrdinalT] = None,
+              upper: typing.Optional[etl.OrdinalT] = None) -> None:
         """Return the training code.
 
         Args:
@@ -44,7 +45,8 @@ class Runner(provider.Interface):
                            self._assets.project.pipeline.expand()).train
         self._run(compiler.generate(path, self._assets.state(self._assets.tag.training.trigger())))
 
-    def apply(self, lower: typing.Optional[etl.OrdinalT] = None, upper: typing.Optional[etl.OrdinalT] = None) -> None:
+    def apply(self, lower: typing.Optional[etl.OrdinalT] = None,
+              upper: typing.Optional[etl.OrdinalT] = None) -> typing.Any:
         """Return the applying code.
 
         Args:
@@ -54,10 +56,10 @@ class Runner(provider.Interface):
         Returns: Applying code.
         """
         path = self._build(lower, upper, self._assets.project.pipeline.expand()).apply
-        self._run(compiler.generate(path, self._assets.state()))
+        return self._run(compiler.generate(path, self._assets.state()))
 
     @abc.abstractmethod
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
+    def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:
