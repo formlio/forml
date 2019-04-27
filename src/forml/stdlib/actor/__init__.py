@@ -22,7 +22,10 @@ class Wrapping:
         self._mapping: typing.Mapping[str, str] = mapping
 
     def __str__(self):
-        return self._actor.__name__ if inspect.isclass(self._actor) else str(self._actor)
+        cls = self._actor
+        if not inspect.isclass(cls):
+            cls = type(cls)
+        return cls.__name__
 
     def is_stateful(self) -> bool:
         """Emulation of native actor is_stateful class method.

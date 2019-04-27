@@ -101,7 +101,7 @@ class Functor(code.Instruction):
             self._objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
 
         def __call__(self, actor: task.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
-            LOGGER.debug('Shifted functor %s left with %d arguments ', actor, len(args))
+            LOGGER.debug('Shifting functor %s left with %d arguments ', actor, len(args))
             if first:
                 self._consumer(actor, first)
             return self._objective(actor, *args)
@@ -201,7 +201,7 @@ class Mapper(Functional):
         Returns: Output of the apply method.
         """
         result = actor.apply(*args)
-        LOGGER.debug('%s result: %s', actor, result)
+        LOGGER.debug('%s result: %s', actor, str(result))
         return result
 
 

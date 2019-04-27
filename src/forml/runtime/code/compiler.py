@@ -34,6 +34,17 @@ class Table(view.Visitor, abc.Iterable):
         def __getitem__(self, instruction: uuid.UUID) -> typing.Sequence[uuid.UUID]:
             return tuple(itertools.chain(reversed(self._prefixed[instruction]), self._absolute[instruction]))
 
+        @property
+        def leaves(self) -> typing.AbstractSet[uuid.UUID]:
+            """Return the leaf nodes that are anyone's dependency.
+
+            Returns: leaf nodes.
+            """
+            parents = {i for a in itertools.chain(self._absolute.values(), self._prefixed.values()) for i in a}
+            children = set(self._absolute).union(self._prefixed).difference(parents)
+            assert children, 'Not acyclic'
+            return children
+
         def insert(self, instruction: uuid.UUID, argument: uuid.UUID, index: typing.Optional[int] = None) -> None:
             """Store given argument as a positional parameter of given instruction at absolute offset given by index.
 
@@ -170,7 +181,11 @@ class Table(view.Visitor, abc.Iterable):
                 return left if left else right
             return (pick(a, b) for a, b in itertools.zip_longest(value, element))
 
+        stubs = {s for s in (self._index[l] for l in self._linkage.leaves) if isinstance(s, instmod.Getter)}
         for instruction, keys in self._index.instructions:
+            if instruction in stubs:
+                LOGGER.debug('Pruning stub getter %s', instruction)
+                continue
             arguments = functools.reduce(merge, (self._linkage[k] for k in keys))
             yield code.Symbol(instruction, tuple(self._index[a] for a in arguments))
 
@@ -203,9 +218,8 @@ class Table(view.Visitor, abc.Iterable):
             self._linkage.prepend(node.uid, state)
         for key in aliases:
             self._index.set(functor, key)
-
-        # TODO: trained node doesn't need getters
-        self._linkage.update(node, lambda index: self._index.set(instmod.Getter(index)))
+        if not node.trained:
+            self._linkage.update(node, lambda index: self._index.set(instmod.Getter(index)))
 
     def visit_node(self, node: grnode.Worker) -> None:
         """Visitor entrypoint.
