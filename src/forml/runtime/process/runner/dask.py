@@ -40,8 +40,8 @@ class Interpreter(process.Runner, key='dask'):
 
                     Returns: Non-null value of the two (if any).
                     """
-                    assert not (value and element), f'Multiple non-null outputs ({value}, {element})'
-                    return value if value else element
+                    assert value is None or element is None, f'Multiple non-null outputs ({value}, {element})'
+                    return element if value is None else value
                 return functools.reduce(nonnull, leaves, None)
 
         def __init__(self, symbols: typing.Sequence[code.Symbol]):

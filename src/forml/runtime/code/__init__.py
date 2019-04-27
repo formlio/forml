@@ -31,7 +31,7 @@ class Instruction(metaclass=abc.ABCMeta):
         """
 
     def __str__(self):
-        return f'{self.__class__.__name__}[#{id(self)}]'
+        return f'{self.__class__.__name__}'
 
     def __call__(self, *args: typing.Any) -> typing.Any:
         LOGGER.debug('%s invoked (%d args)', self, len(args))
@@ -39,7 +39,8 @@ class Instruction(metaclass=abc.ABCMeta):
         try:
             result = self.execute(*args)
         except Exception as err:
-            LOGGER.exception('Instruction %s failed when processing arguments %s: ', self, args)
+            LOGGER.exception('Instruction %s failed when processing arguments: %s',
+                             self, ', '.join(str(a) for a in args))
             raise err
         LOGGER.debug('%s completed (%.2fms)', self, (time.time() - start) * 1000)
         return result
