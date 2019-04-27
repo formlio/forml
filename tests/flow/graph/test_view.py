@@ -6,7 +6,7 @@ import typing
 
 import pytest
 
-from forml.flow import task
+from forml.flow import task, graph
 from forml.flow.graph import node, port, view
 
 
@@ -16,11 +16,11 @@ class TestPath:
     def test_invalid(self, simple: node.Worker, multi: node.Worker):
         """Testing invalid Compound nodes.
         """
-        with pytest.raises(AssertionError):  # multi-node not condensable
+        with pytest.raises(graph.Error):  # multi-node not condensable
             view.Path(multi)
         simple[0].subscribe(multi[0])
         multi[0].subscribe(simple[0])
-        with pytest.raises(AssertionError):  # cyclic flow
+        with pytest.raises(graph.Error):  # cyclic flow
             view.Path(multi)
 
 
@@ -92,6 +92,6 @@ class TestClosure(Path):
     def test_publish(self, path: view.Closure, multi: node.Worker):
         """Testing closure path publishing.
         """
-        with pytest.raises(AssertionError):  # closure path publishing
+        with pytest.raises(graph.Error):  # closure path publishing
             multi[0].subscribe(path.publisher)
         path.publisher.publish(multi, port.Train())

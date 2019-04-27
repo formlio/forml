@@ -4,12 +4,14 @@ Set of generic operator skeletons that can be simply used as wrappers about rele
 import abc
 import typing
 
-from forml import flow
-from forml.flow import task, segment
+from forml.stdlib import operator
+
+from forml.flow import task, pipeline
 from forml.flow.graph import node, view
+from forml.flow.pipeline import topology
 
 
-class Simple(flow.Operator, metaclass=abc.ABCMeta):
+class Simple(topology.Operator, metaclass=abc.ABCMeta):
     """Simple is a generic single actor operator.
     """
     _SZIN = 1
@@ -47,7 +49,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
             decorator = decorator(actor)
         return decorator
 
-    def compose(self, left: segment.Composable) -> segment.Track:
+    def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Abstract composition implementation.
 
         Args:
@@ -59,7 +61,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
         return self.apply(node.Worker(self._spec, self._SZIN, self._SZOUT), left.expand())
 
     @abc.abstractmethod
-    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
         """Apply functionality to be implemented by child.
 
         Args:
@@ -73,7 +75,7 @@ class Simple(flow.Operator, metaclass=abc.ABCMeta):
 class Mapper(Simple):
     """Basic transformation operator with one input and one output port for each mode.
     """
-    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
         """Mapper composition implementation.
 
         Args:
@@ -92,7 +94,7 @@ class Mapper(Simple):
 class Consumer(Simple):
     """Basic operator with one input and one output port in apply mode and no output in train mode.
     """
-    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
         """Consumer composition implementation.
 
         Args:
@@ -101,7 +103,8 @@ class Consumer(Simple):
 
         Returns: Composed segment track.
         """
-        assert self._spec.actor.is_stateful(), 'Stateless actor invalid for a consumer'
+        if not self._spec.actor.is_stateful():
+            raise operator.Error('Stateless actor invalid for a consumer')
         trainer: node.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
         return left.extend(view.Path(applier))
@@ -114,7 +117,7 @@ class Labeler(Simple):
     """
     _SZOUT = 2
 
-    def apply(self, applier: node.Worker, left: segment.Track) -> segment.Track:
+    def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
         """Labeler composition implementation.
 
         Args:

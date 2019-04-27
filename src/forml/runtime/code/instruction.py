@@ -1,5 +1,5 @@
 """
-Assembly instructions.
+Code instructions.
 """
 import abc
 import logging
@@ -7,13 +7,13 @@ import typing
 import uuid
 
 from forml.flow import task
-from forml.runtime import assembly
+from forml.runtime import code
 from forml.runtime.asset import access, directory
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Loader(assembly.Instruction):
+class Loader(code.Instruction):
     """Registry based state loader.
     """
     def __init__(self, assets: access.State, index: int):
@@ -35,7 +35,7 @@ class Loader(assembly.Instruction):
             return None
 
 
-class Dumper(assembly.Instruction):
+class Dumper(code.Instruction):
     """Registry based state dumper.
     """
     def __init__(self, assets: access.State):
@@ -52,7 +52,7 @@ class Dumper(assembly.Instruction):
         return self._assets.dump(state)
 
 
-class Getter(assembly.Instruction):
+class Getter(code.Instruction):
     """Extracting single item from a vector.
     """
     def __init__(self, index: int):
@@ -72,7 +72,7 @@ class Getter(assembly.Instruction):
         return sequence[self._index]
 
 
-class Committer(assembly.Instruction):
+class Committer(code.Instruction):
     """Commit a new lineage generation.
     """
     def __init__(self, assets: access.State):
@@ -87,7 +87,7 @@ class Committer(assembly.Instruction):
         self._assets.commit(states)
 
 
-class Functor(assembly.Instruction):
+class Functor(code.Instruction):
     """Special instruction for wrapping task actors.
 
     Functor object must be serializable.

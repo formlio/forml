@@ -8,20 +8,20 @@ import typing
 
 from dask import threaded
 
-from forml import etl, runtime
-from forml.runtime import assembly
+from forml import etl
+from forml.runtime import code, process
 from forml.runtime.asset import access
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Interpreter(runtime.Interpreter, key='dask'):
+class Interpreter(process.Runner, key='dask'):
     """Dask based runner implementation.
     """
     class Dag(collections.Mapping):
         """Dask DAG builder.
         """
-        class Output(assembly.Instruction):
+        class Output(code.Instruction):
             """Utility instruction for collecting multiple DAG leaves of which at most one is expected to return
             non-null value and passing that value through.
             """
@@ -46,8 +46,8 @@ class Interpreter(runtime.Interpreter, key='dask'):
                     return value if value else element
                 return functools.reduce(nonnull, leaves, None)
 
-        def __init__(self, symbols: typing.Sequence[assembly.Symbol]):
-            self._instructions: typing.Dict[assembly.Instruction, typing.Sequence[assembly.Instruction]] = dict(symbols)
+        def __init__(self, symbols: typing.Sequence[code.Symbol]):
+            self._instructions: typing.Dict[code.Instruction, typing.Sequence[code.Instruction]] = dict(symbols)
             assert len(self._instructions) == len(symbols), 'Duplicated symbols in DAG sequence'
             inputs = {i for a in self._instructions.values() for i in a}
             leaves = tuple(i for i in self._instructions if i not in inputs)
@@ -59,13 +59,13 @@ class Interpreter(runtime.Interpreter, key='dask'):
             else:
                 self.output = leaves[0]
 
-        def __getitem__(self, instruction: assembly.Instruction) -> typing.Sequence[assembly.Instruction]:
+        def __getitem__(self, instruction: code.Instruction) -> typing.Sequence[code.Instruction]:
             return (instruction, *self._instructions[instruction])
 
         def __len__(self) -> int:
             return len(self._instructions)
 
-        def __iter__(self) -> typing.Iterator[assembly.Instruction]:
+        def __iter__(self) -> typing.Iterator[code.Instruction]:
             return iter(self._instructions)
 
         def __str__(self):
@@ -74,7 +74,7 @@ class Interpreter(runtime.Interpreter, key='dask'):
     def __init__(self, engine: etl.Engine[etl.OrdinalT], assets: access.Assets):
         super().__init__(engine, assets)
 
-    def _run(self, symbols: typing.Sequence[assembly.Symbol]) -> None:
+    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:

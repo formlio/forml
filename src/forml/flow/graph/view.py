@@ -8,6 +8,8 @@ import itertools
 import operator
 import typing
 
+from forml.flow import graph
+
 from forml.flow.graph import node as grnode, port
 
 
@@ -81,7 +83,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             endings.add(tail)
         if not any(endings):
             return self
-        assert len(self.predecessors) > 1 or not expected and len(endings) == 1, 'Ambiguous tail'
+        if len(self.predecessors) == 1 and (expected or len(endings) > 1):
+            raise graph.Error('Ambiguous tail')
         return endings.pop()
 
     def each(self, tail: grnode.Atomic, acceptor: typing.Callable[[grnode.Atomic], None]) -> None:
@@ -165,9 +168,11 @@ class Path(tuple, metaclass=abc.ABCMeta):
     _tail: grnode.Atomic = property(operator.itemgetter(1))
 
     def __new__(cls, head: grnode.Atomic, tail: typing.Optional[grnode.Atomic] = None):
-        assert head.szin in {0, 1}, 'Simple head required'
+        if head.szin not in {0, 1}:
+            raise graph.Error('Simple head required')
         tail = Traversal(head).tail(tail).current
-        assert tail.szout in {0, 1}, 'Simple tail required'
+        if tail.szout not in {0, 1}:
+            raise graph.Error('Simple tail required')
         # pylint: disable=self-cls-assignment
         cls = Closure if any(s.node.trained for p in tail.output for s in p) else Channel
         return super().__new__(cls, (head, tail))
@@ -268,7 +273,8 @@ class Closure(Path):
             Args:
                 subscription: Existing subscription descriptor.
             """
-            assert isinstance(subscription.port, (port.Train, port.Label)), 'Closure path publishing'
+            if isinstance(subscription.port, port.Apply):
+                raise graph.Error('Closure path publishing')
             self._publisher.republish(subscription)
 
     def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
@@ -276,7 +282,7 @@ class Closure(Path):
         """
         if not right and (not tail or tail == self._tail):
             return Path(self._head, self._tail)
-        raise AssertionError('Extending closure path')
+        raise graph.Error('Extending closure path')
 
     @property
     def publisher(self) -> port.Publishable:

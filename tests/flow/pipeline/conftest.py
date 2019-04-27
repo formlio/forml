@@ -5,19 +5,20 @@ Flow unit tests fixtures.
 
 import pytest
 
-from forml import flow
-from forml.flow import segment, task
+import forml.flow.pipeline
 from forml.flow.graph import node, view
+from forml.flow.pipeline import topology
+from forml.flow import task
 
 
 @pytest.fixture(scope='function')
 def operator(spec: task.Spec):
     """Operator fixture.
     """
-    class Operator(flow.Operator):
+    class Operator(topology.Operator):
         """Operator mock.
         """
-        def compose(self, left: segment.Composable) -> segment.Track:
+        def compose(self, left: topology.Composable) -> forml.flow.pipeline.Segment:
             """Dummy composition.
             """
             track = left.expand()

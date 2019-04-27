@@ -9,7 +9,7 @@ import typing
 import pytest
 
 from forml.flow import task
-from forml.runtime.assembly import instruction
+from forml.runtime.code import instruction
 
 
 class Functor(metaclass=abc.ABCMeta):

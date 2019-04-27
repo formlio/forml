@@ -2,12 +2,18 @@
 """
 import typing
 
-from forml import flow
-from forml.flow import task, segment
+from forml import stdlib
+from forml.flow import task, pipeline
 from forml.flow.graph import node, view
+from forml.flow.pipeline import topology
 
 
-class Loader(flow.Operator):
+class Error(stdlib.Error):
+    """Operator error.
+    """
+
+
+class Loader(topology.Operator):
     """Basic source operator with optional label extraction.
 
     Label extractor is expected to be an actor with single input and two output ports - train and actual label.
@@ -18,12 +24,13 @@ class Loader(flow.Operator):
         self._train: task.Spec = train or apply
         self._label: task.Spec = label
 
-    def compose(self, left: segment.Composable) -> segment.Track:
+    def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Compose the source segment track.
 
         Returns: Source segment track.
         """
-        assert isinstance(left, segment.Origin), 'Source not origin'
+        if not isinstance(left, topology.Origin):
+            raise Error('Source not origin')
         apply: view.Path = view.Path(node.Worker(self._apply, 0, 1))
         train: view.Path = view.Path(node.Worker(self._train, 0, 1))
         label: typing.Optional[view.Path] = None
@@ -36,4 +43,4 @@ class Loader(flow.Operator):
             label_tail[0].subscribe(extract[1])
             train = train.extend(tail=train_tail)
             label = train.extend(tail=label_tail)
-        return segment.Track(apply, train, label)
+        return pipeline.Segment(apply, train, label)

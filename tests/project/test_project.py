@@ -7,7 +7,8 @@ import pytest
 
 from forml import project, etl
 from forml.etl import expression
-from forml.flow import task, segment
+from forml.flow import task
+from forml.flow.pipeline import topology
 from forml.stdlib.operator import simple
 
 
@@ -23,7 +24,7 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def pipeline() -> segment.Composable:
+    def pipeline() -> topology.Composable:
         """Pipeline fixture.
         """
         return simple.Consumer(task.Spec('Estimator'))
@@ -41,7 +42,7 @@ class TestBuilder:
         assert len(builder) == len(project.Descriptor._fields)
         assert all(f in builder for f in project.Descriptor._fields)
 
-    def test_build(self, builder: project.Descriptor.Builder, source: etl.Source, pipeline: segment.Composable):
+    def test_build(self, builder: project.Descriptor.Builder, source: etl.Source, pipeline: topology.Composable):
         """Testing build.
         """
         with pytest.raises(project.Error):
@@ -55,7 +56,7 @@ class TestBuilder:
 
 
 @pytest.fixture(scope='session')
-def pipeline() -> segment.Composable:
+def pipeline() -> topology.Composable:
     """Pipeline fixture.
     """
     from project import pipeline
@@ -79,7 +80,7 @@ class TestDescriptor:
         with pytest.raises(project.Error):
             project.Descriptor('foo', 'bar')
 
-    def test_load(self, source: etl.Source, pipeline: segment.Composable):
+    def test_load(self, source: etl.Source, pipeline: topology.Composable):
         """Testing the descriptor loader.
         """
         with pytest.raises(project.Error):
@@ -87,8 +88,8 @@ class TestDescriptor:
         with pytest.raises(project.Error):
             project.Descriptor.load('foo')
         descriptor = project.Descriptor.load('project')  # project package in this test directory
-        assert descriptor.pipeline._spec == pipeline._spec
-        assert descriptor.source == source
+        assert descriptor.pipeline.__dict__ == pipeline.__dict__
+        assert descriptor.source.__dict__ == source.__dict__
 
 
 class TestArtifact:
@@ -101,8 +102,8 @@ class TestArtifact:
         """
         return project.Artifact(package='project')
 
-    def test_descriptor(self, artifact: project.Artifact, source: etl.Source, pipeline: segment.Composable):
+    def test_descriptor(self, artifact: project.Artifact, source: etl.Source, pipeline: topology.Composable):
         """Testing descriptor access.
         """
-        assert artifact.descriptor.pipeline._spec == pipeline._spec
-        assert artifact.descriptor.source == source
+        assert artifact.descriptor.pipeline.__dict__ == pipeline.__dict__
+        assert artifact.descriptor.source.__dict__ == source.__dict__

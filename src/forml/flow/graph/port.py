@@ -4,6 +4,8 @@ Graph node port functionality.
 import collections
 import typing
 
+from forml.flow import graph
+
 from forml.flow.graph import node as grnode  # pylint: disable=unused-import
 
 
@@ -62,11 +64,15 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
     _PORTS: typing.Dict['grnode.Atomic', typing.Set[Type]] = collections.defaultdict(set)
 
     def __new__(cls, subscriber: 'grnode.Atomic', port: Type):
-        assert port not in cls._PORTS[subscriber], 'Already subscribed'
-        assert not cls._PORTS[subscriber] or (isinstance(port, (Train, Label)) ^ any(
-            isinstance(s, Apply) for s in cls._PORTS[subscriber])), 'Apply/Train collision'
-        assert not isinstance(port, (Train, Label)) or not any(subscriber.output), 'Publishing node trained'
-        assert not isinstance(subscriber, grnode.Future), 'Future node subscribing'
+        if port in cls._PORTS[subscriber]:
+            raise graph.Error('Double subscription')
+        if cls._PORTS[subscriber] and (isinstance(port, Apply) ^ any(
+                isinstance(s, Apply) for s in cls._PORTS[subscriber])):
+            raise graph.Error('Apply/Train collision')
+        if isinstance(port, (Train, Label)) and any(subscriber.output):
+            raise graph.Error('Publishing node trained')
+        if isinstance(subscriber, grnode.Future):
+            raise graph.Error('Future node subscribing')
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
 

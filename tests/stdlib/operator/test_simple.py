@@ -6,8 +6,8 @@ import typing
 
 import pytest
 
-from forml import flow
-from forml.flow import segment, task
+from forml.flow import task
+from forml.flow.pipeline import topology
 from forml.stdlib.operator import simple
 
 
@@ -20,7 +20,7 @@ class TestMapper:
         """
         return simple.Mapper.operator(actor)()
 
-    def test_compose(self, operator: flow.Operator):
+    def test_compose(self, operator: topology.Operator):
         """Operator composition test.
         """
-        operator.compose(segment.Origin())
+        operator.compose(topology.Origin())

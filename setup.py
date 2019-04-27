@@ -15,7 +15,7 @@ setuptools.setup(name='forml',
                  package_dir={'': 'src'},
                  setup_requires=['pytest-runner', 'pytest-pylint'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['joblib', 'pandas'],
+                 install_requires=['joblib', 'pandas', 'scikit-learn'],
                  extras_require={
                      'graphviz': ['graphviz'],
                      'dask': ['dask']
