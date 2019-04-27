@@ -3,6 +3,7 @@ Graph view - useful lenses and manipulation of graph topology parts.
 """
 
 import abc
+import collections
 import itertools
 import operator
 import typing
@@ -21,28 +22,85 @@ class Visitor(grnode.Visitor):
         """
 
 
-def gensub(publisher: grnode.Atomic, *futures: grnode.Atomic,
-           mask: typing.Optional[typing.Callable[[port.Subscription], bool]] = None,
-           path: typing.Optional[typing.FrozenSet[grnode.Atomic]] = None) -> typing.Set[grnode.Atomic]:
-    """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
-    subscribed directly).
-
-    Args:
-        publisher: Node for which subscribers should be listed.
-        *futures: Future nodes that might be subscribed to this publisher.
-        mask: Optional condition for filtering the subscriptions.
-        path: Set of upstream nodes for acyclicity validation.
-
-    Returns: Set of subscription nodes.
+class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
+    """Graph traversal helper.
     """
-    done = set()
-    for node in itertools.chain((s.node for p in publisher.output for s in p if not mask or mask(s)),
-                                (n for n in futures if n and n.subscribed(publisher))):
-        if node in done:
-            continue
-        assert node not in path, f'Cyclic flow near {node}'
-        done.add(node)
-        yield node
+    class Cyclic(AssertionError):
+        """Cyclic graph error.
+        """
+    def __new__(cls, current: grnode.Atomic, predecessors: typing.AbstractSet[grnode.Atomic] = frozenset()):
+        return super().__new__(cls,current, frozenset(predecessors | {current}))
+
+    def directs(self, *extras: grnode.Atomic, mask: typing.Optional[
+            typing.Callable[[grnode.Atomic], bool]] = None) -> typing.Iterator['Traversal']:
+        """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
+        subscribed directly).
+
+        Args:
+            *extras: Future nodes that might be subscribed to this publisher.
+            mask: Optional condition for filtering the subscriptions.
+
+        Returns: Iterable of new Traversals.
+        """
+        seen = set()
+        for node in itertools.chain((s.node for p in self.current.output for s in p),
+                                    (e for e in extras if e and e.subscribed(self.current))):
+            if node in seen or mask and not mask(node):
+                continue
+            if node in self.predecessors:
+                raise self.Cyclic(f'Cyclic flow near {node}')
+            seen.add(node)
+            yield self.__class__(node, self.predecessors)
+
+    def mappers(self, *extras: grnode.Atomic) -> typing.Iterator['Traversal']:
+        """Return subscribers with specific mask to pass only mapper (not trained) nodes.
+
+        Args:
+            *extras: Future nodes that might be subscribed to this publisher.
+
+        Returns: Subscribers instance.
+        """
+        return self.directs(*extras, mask=lambda n: not isinstance(n, grnode.Worker) or not n.trained)
+
+    def tail(self, expected: typing.Optional[grnode.Atomic] = None) -> 'Traversal':
+        """Recursive traversing all mapper subscription paths down to the tail mapper checking there is just one.
+
+        Args:
+            expected: Optional indication of the expected tail. If expected is a Future, it's matching Worker is
+                      returned instead.
+
+        Returns: Tail traversal of the flow.
+        """
+        if expected and self.current == expected:
+            return self
+        endings = set()
+        for node in self.mappers(expected):
+            tail = node.tail(expected)
+            if expected and tail == expected:
+                return tail
+            endings.add(tail)
+        if not any(endings):
+            return self
+        assert len(self.predecessors) > 1 or not expected and len(endings) == 1, 'Ambiguous tail'
+        return endings.pop()
+
+    def each(self, tail: typing.Optional[grnode.Atomic], acceptor: typing.Callable[[grnode.Atomic], None]) -> None:
+        def traverse(traversal: Traversal) -> None:
+            """Recursive path scan.
+
+            Args:
+                traversal: Node to be processed.
+            """
+            mask = lambda n: n not in seen
+            if traversal.current == tail:
+                mask = lambda n: mask(n) and n.trained
+            acceptor(traversal.current)
+            seen.add(traversal.current)
+            for node in traversal.directs(tail, mask=mask):
+                traverse(node)
+
+        seen = set()
+        traverse(Traversal(self.current))
 
 
 class Path(tuple, metaclass=abc.ABCMeta):
@@ -57,38 +115,11 @@ class Path(tuple, metaclass=abc.ABCMeta):
 
     def __new__(cls, head: grnode.Atomic, tail: typing.Optional[grnode.Atomic] = None):
         assert head.szin in {0, 1}, 'Simple head required'
-        tail = Path.tail(head, tail)
+        tail = Traversal(head).tail(tail).current
         assert tail.szout in {0, 1}, 'Simple tail required'
         # pylint: disable=self-cls-assignment
-        cls = Closure if any(isinstance(s.port, (port.Train, port.Label)) for p in tail.output for s in p) else Channel
+        cls = Closure if any(s.node.trained for p in tail.output for s in p) else Channel
         return super().__new__(cls, (head, tail))
-
-    @staticmethod
-    def tail(head: grnode.Atomic, expected: typing.Optional[grnode.Atomic] = None,
-             path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> grnode.Atomic:
-        """Recursive traversing all apply subscription paths down to the tail checking there is just one.
-
-        Args:
-            head: Start node for the traversal.
-            expected: Optional indication of the expected tail. If expected is a Future, it's matching Worker is
-                      returned instead.
-            path: Chain of nodes between current and head.
-
-        Returns: Tail of the flow.
-        """
-        if expected and head == expected:
-            return head
-        path = frozenset(path | {head})
-        endings = set()
-        for node in gensub(head, expected, mask=lambda s: isinstance(s.port, port.Apply), path=path):
-            tail = Path.tail(node, expected, path=path)
-            if expected and tail == expected:
-                return tail
-            endings.add(tail)
-        if not any(endings):
-            return head
-        assert len(path) > 1 or not expected and len(endings) == 1, 'Ambiguous tail'
-        return endings.pop()
 
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
@@ -96,22 +127,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Args:
             visitor: Visitor instance.
         """
-        def scan(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> None:
-            """Recursive path scan.
-
-            Args:
-                publisher: Node to be processed.
-                path: Chain of nodes between current and head.
-            """
-            visitor.visit_node(publisher)
-            seen.add(publisher)
-            path = frozenset(path | {publisher})
-            for node in gensub(publisher, self._tail, mask=lambda s: s.node not in seen and (
-                    publisher != self._tail or not isinstance(s.port, port.Apply)), path=path):
-                scan(node, path=path)
-
-        seen = set()
-        scan(self._head)
+        Traversal(self._head).each(self._tail, visitor.visit_node)
         visitor.visit_path(self)
 
     # @abc.abstractmethod
@@ -146,31 +162,31 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Returns: Copy of the apply path.
         """
 
-        def mkcopy(publisher: grnode.Atomic, path: typing.FrozenSet[grnode.Atomic] = frozenset()) -> None:
+        def traverse(traversal: Traversal) -> None:
             """Recursive path copy.
 
             Args:
-                publisher: Node to be copied.
+                traversal: Node to be copied.
                 path: Chain of nodes between current and head.
 
             Returns: Copy of the publisher node with all of it's subscriptions resolved.
 
             Only the main branch is copied ignoring all sink branches.
             """
-            path = frozenset(path | {publisher})
-            if publisher == self._tail:
-                for orig in path:
+            if traversal.current == self._tail:
+                for orig in traversal.predecessors:
                     pub = copies.get(orig) or copies.setdefault(orig, orig.fork())
-                    for index, subscription in ((i, s) for i, p in enumerate(orig.output) for s in p if s.node in path):
+                    for index, subscription in ((i, s) for i, p in enumerate(orig.output)
+                                                for s in p if s.node in traversal.predecessors):
                         sub = copies.get(subscription.node) or copies.setdefault(
                             subscription.node, subscription.node.fork())
                         sub[subscription.port].subscribe(pub[index])
             else:
-                for node in gensub(publisher, self._tail, mask=lambda s: isinstance(s.port, port.Apply), path=path):
-                    mkcopy(node, path=path)
+                for node in traversal.mappers(self._tail):
+                    traverse(node)
 
         copies = dict()
-        mkcopy(self._head)
+        traverse(Traversal(self._head))
         return Path(copies[self._head], copies[self._tail])
 
 
