@@ -6,7 +6,7 @@ from sklearn import model_selection
 
 
 RFC = simple.Consumer(actor.Wrapped.actor(
-    estimator.RandomForestClassifier, train='fit', apply='predict_proba').spec(random_state=42))
+    estimator.RandomForestClassifier, train='fit', apply='predict_proba').spec(n_estimators=10, random_state=42))
 GBC = simple.Consumer(actor.Wrapped.actor(
     estimator.GradientBoostingClassifier, train='fit', apply='predict_proba').spec(random_state=42))
 
