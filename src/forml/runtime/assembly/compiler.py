@@ -2,23 +2,23 @@
 Runtime symbols compilation.
 """
 
-import collections
 import functools
 import itertools
 import logging
 import typing
 import uuid
+import collections
+from collections import abc
 
 from forml.flow.graph import node as grnode, view
 from forml.runtime import assembly
 from forml.runtime.assembly import instruction as instmod
 from forml.runtime.asset import access
 
-
 LOGGER = logging.getLogger(__name__)
 
 
-class Table(view.Visitor, collections.Iterable):
+class Table(view.Visitor, abc.Iterable):
     """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys.
     """
     class Linkage:

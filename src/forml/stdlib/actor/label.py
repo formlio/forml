@@ -33,7 +33,7 @@ class ColumnExtractor(task.Actor):
         """
         return {'column': self._column}
 
-    def set_params(self, column: str) -> None:
+    def set_params(self, column: str) -> None:  # pylint: disable=arguments-differ
         """Standard params setter.
 
         Args:

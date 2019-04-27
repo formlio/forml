@@ -29,7 +29,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         """Cyclic graph error.
         """
     def __new__(cls, current: grnode.Atomic, predecessors: typing.AbstractSet[grnode.Atomic] = frozenset()):
-        return super().__new__(cls,current, frozenset(predecessors | {current}))
+        return super().__new__(cls, current, frozenset(predecessors | {current}))
 
     def directs(self, *extras: grnode.Atomic, mask: typing.Optional[
             typing.Callable[[grnode.Atomic], bool]] = None) -> typing.Iterator['Traversal']:
@@ -76,7 +76,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         endings = set()
         for node in self.mappers(expected):
             tail = node.tail(expected)
-            if expected and tail == expected:
+            if expected and tail.current == expected:
                 return tail
             endings.add(tail)
         if not any(endings):
@@ -84,7 +84,13 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         assert len(self.predecessors) > 1 or not expected and len(endings) == 1, 'Ambiguous tail'
         return endings.pop()
 
-    def each(self, tail: typing.Optional[grnode.Atomic], acceptor: typing.Callable[[grnode.Atomic], None]) -> None:
+    def each(self, acceptor: typing.Callable[[grnode.Atomic], None], tail: typing.Optional[grnode.Atomic]) -> None:
+        """Traverse the path downstream calling acceptor for each unique node.
+
+        Args:
+            acceptor: Acceptor to call for each unique node.
+            tail: Optional traversion breakpoint.
+        """
         def traverse(traversal: Traversal) -> None:
             """Recursive path scan.
 
@@ -101,6 +107,43 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
 
         seen = set()
         traverse(Traversal(self.current))
+
+    def copy(self, tail: typing.Optional[grnode.Atomic] = None) -> typing.Mapping[grnode.Atomic, grnode.Atomic]:
+        """Make a copy of the apply path topology. Any nodes not on path are ignored.
+
+        Only the main branch is copied ignoring all sink branches.
+
+        Args:
+            tail: Last node to copy.
+
+        Returns: Copy of the apply path.
+        """
+
+        def traverse(traversal: Traversal) -> None:
+            """Recursive path copy.
+
+            Args:
+                traversal: Node to be copied.
+
+            Returns: Copy of the publisher node with all of it's subscriptions resolved.
+            """
+            if traversal.current == tail:
+                for orig in traversal.predecessors:
+                    pub = copies.get(orig) or copies.setdefault(orig, orig.fork())
+                    for index, subscription in ((i, s) for i, p in enumerate(orig.output)
+                                                for s in p if s.node in traversal.predecessors):
+                        sub = copies.get(subscription.node) or copies.setdefault(
+                            subscription.node, subscription.node.fork())
+                        sub[subscription.port].subscribe(pub[index])
+            else:
+                for node in traversal.mappers(tail):
+                    traverse(node)
+
+        if not tail:
+            tail = self.tail()
+        copies = dict()
+        traverse(self)
+        return copies
 
 
 class Path(tuple, metaclass=abc.ABCMeta):
@@ -127,7 +170,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Args:
             visitor: Visitor instance.
         """
-        Traversal(self._head).each(self._tail, visitor.visit_node)
+        Traversal(self._head).each(visitor.visit_node, self._tail)
         visitor.visit_path(self)
 
     # @abc.abstractmethod
@@ -162,31 +205,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Returns: Copy of the apply path.
         """
 
-        def traverse(traversal: Traversal) -> None:
-            """Recursive path copy.
-
-            Args:
-                traversal: Node to be copied.
-                path: Chain of nodes between current and head.
-
-            Returns: Copy of the publisher node with all of it's subscriptions resolved.
-
-            Only the main branch is copied ignoring all sink branches.
-            """
-            if traversal.current == self._tail:
-                for orig in traversal.predecessors:
-                    pub = copies.get(orig) or copies.setdefault(orig, orig.fork())
-                    for index, subscription in ((i, s) for i, p in enumerate(orig.output)
-                                                for s in p if s.node in traversal.predecessors):
-                        sub = copies.get(subscription.node) or copies.setdefault(
-                            subscription.node, subscription.node.fork())
-                        sub[subscription.port].subscribe(pub[index])
-            else:
-                for node in traversal.mappers(self._tail):
-                    traverse(node)
-
-        copies = dict()
-        traverse(Traversal(self._head))
+        copies = Traversal(self._head).copy(self._tail)
         return Path(copies[self._head], copies[self._tail])
 
 
@@ -210,7 +229,7 @@ class Channel(Path):
             if not tail:
                 tail = right._tail
         elif not tail:
-            tail = Path.tail(self._tail)
+            tail = Traversal(self._tail).tail().current
         return Path(self._head, tail)
 
     @property
