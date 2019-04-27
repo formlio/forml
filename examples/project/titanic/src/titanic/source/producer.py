@@ -1,3 +1,12 @@
+"""
+Data producer logic.
+
+This module is informal from ForML perspective and has been created just for structuring the project code base.
+
+Note ForML ETL implementation is currently a total stub so this is just a temporal way of feeding data into the system
+and the eventual concept will be provided later.
+"""
+
 import os
 
 import pandas

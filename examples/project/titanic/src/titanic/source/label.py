@@ -1,3 +1,9 @@
+"""
+Label extraction logic.
+
+This module is informal from ForML perspective and has been created just for structuring the project code base.
+"""
+
 import pandas
 import typing
 
@@ -6,7 +12,8 @@ from forml.stdlib.operator import simple
 
 
 class LabelExtractor(task.Actor):
-    """Custom label-extraction logic.
+    """Here we just create a custom actor that simply expects the label to be a specific column in the input dataset and
+    returns two objects - a dataframe without the label column and a series with just the labels.
     """
     def __init__(self, column: str = 'label'):
         self._column: str = column
@@ -21,4 +28,5 @@ class LabelExtractor(task.Actor):
         self._column = column
 
 
+# Turning the actor into an forml operator using the stdlib Labeler operator.
 EXTRACTOR = simple.Labeler(LabelExtractor.spec(column='Survived'))
