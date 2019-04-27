@@ -1,12 +1,11 @@
 """
 Dask runner.
 """
-import collections
 import functools
 import logging
 import typing
 
-from dask import threaded
+from dask import multiprocessing
 
 from forml.runtime import code, process
 
@@ -16,7 +15,7 @@ LOGGER = logging.getLogger(__name__)
 class Interpreter(process.Runner, key='dask'):
     """Dask based runner implementation.
     """
-    class Dag(collections.Mapping):
+    class Dag(dict):
         """Dask DAG builder.
         """
         class Output(code.Instruction):
@@ -45,29 +44,22 @@ class Interpreter(process.Runner, key='dask'):
                 return functools.reduce(nonnull, leaves, None)
 
         def __init__(self, symbols: typing.Sequence[code.Symbol]):
-            self._instructions: typing.Dict[code.Instruction, typing.Sequence[code.Instruction]] = dict(symbols)
-            assert len(self._instructions) == len(symbols), 'Duplicated symbols in DAG sequence'
-            inputs = {i for a in self._instructions.values() for i in a}
-            leaves = tuple(i for i in self._instructions if i not in inputs)
+            tasks: typing.Dict[int, typing.Tuple[code.Instruction, int]] = {
+                id(i): (i, *(id(p) for p in a)) for i, a in symbols}
+            assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
+            leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'
             if len(leaves) > 1:
                 LOGGER.debug('Dag output based on %d leaves: %s', len(leaves), ','.join(str(l) for l in leaves))
-                self.output = self.Output()
-                self._instructions[self.output] = leaves
+                output = self.Output()
+                self.output = id(output)
+                tasks[self.output] = output, *leaves
             else:
-                self.output = leaves[0]
-
-        def __getitem__(self, instruction: code.Instruction) -> typing.Sequence[code.Instruction]:
-            return (instruction, *self._instructions[instruction])
-
-        def __len__(self) -> int:
-            return len(self._instructions)
-
-        def __iter__(self) -> typing.Iterator[code.Instruction]:
-            return iter(self._instructions)
+                self.output = leaves.pop()
+            super().__init__(tasks)
 
         def __str__(self):
-            return str({id(k): tuple(id(i) for i in self[k]) for k in self})
+            return str({k: (str(i), *a) for k, (i, *a) in self.items()})
 
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         """Actual run action to be implemented according to the specific runtime.
@@ -77,4 +69,4 @@ class Interpreter(process.Runner, key='dask'):
         """
         dag = self.Dag(symbols)
         LOGGER.debug('Dask DAG: %s', dag)
-        print(threaded.get(dag, dag.output))
+        print(multiprocessing.get(dag, dag.output))
