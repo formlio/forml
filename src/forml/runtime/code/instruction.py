@@ -200,7 +200,9 @@ class Mapper(Functional):
 
         Returns: Output of the apply method.
         """
-        return actor.apply(*args)
+        result = actor.apply(*args)
+        LOGGER.debug('%s result: %s', actor, result)
+        return result
 
 
 class Consumer(Functional):

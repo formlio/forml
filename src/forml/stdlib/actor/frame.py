@@ -22,7 +22,7 @@ class TrainTestSplit(task.Actor):
     """
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
         self._crossvalidator: model_selection.BaseCrossValidator = crossvalidator
-        self._indices: typing.Optional[typing.Sequence[typing.Tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
+        self._indices: typing.Optional[typing.Tuple[typing.Tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
 
     def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
         """Train the splitter on the provided data.
@@ -30,7 +30,7 @@ class TrainTestSplit(task.Actor):
             features: X table.
             label: Y series.
         """
-        self._indices = self._crossvalidator.split(features, label)
+        self._indices = tuple(self._crossvalidator.split(features, label))  # tuple it so it can be pickled
 
     def apply(self, source: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
@@ -43,7 +43,7 @@ class TrainTestSplit(task.Actor):
         if not self._indices:
             raise RuntimeError('Splitter not trained')
         LOGGER.debug('Splitting %d rows into %d train-test sets', len(source), len(self._indices))
-        return tuple(s for a, b in self._indices for s in (source[a], source[b]))
+        return tuple(s for a, b in self._indices for s in (source.iloc[a], source.iloc[b]))
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Standard param getter.

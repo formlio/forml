@@ -21,6 +21,9 @@ class Wrapping:
         self._actor: typing.Any = actor
         self._mapping: typing.Mapping[str, str] = mapping
 
+    def __str__(self):
+        return self._actor.__name__ if inspect.isclass(self._actor) else str(self._actor)
+
     def is_stateful(self) -> bool:
         """Emulation of native actor is_stateful class method.
 
@@ -53,9 +56,6 @@ class Wrapped(Wrapping):
     def __init__(self, actor: typing.Type, mapping: typing.Mapping[str, str]):
         assert not issubclass(actor, task.Actor), 'Wrapping a true actor'
         super().__init__(actor, mapping)
-
-    def __str__(self):
-        return str(self._actor.__name__)
 
     def __call__(self, *args, **kwargs) -> task.Actor:
         return self.Actor(self._actor(*args, **kwargs), self._mapping)  # pylint: disable=abstract-class-instantiated

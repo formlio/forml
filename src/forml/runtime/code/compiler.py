@@ -204,6 +204,7 @@ class Table(view.Visitor, abc.Iterable):
         for key in aliases:
             self._index.set(functor, key)
 
+        # TODO: trained node doesn't need getters
         self._linkage.update(node, lambda index: self._index.set(instmod.Getter(index)))
 
     def visit_node(self, node: grnode.Worker) -> None:
