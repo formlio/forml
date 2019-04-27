@@ -54,21 +54,26 @@ class Registry(collections.namedtuple('Registry', 'stage, provider')):
         """Push package to lazy loading stack.
 
         Args:
+            key: provider key
+            provider: implementation class
             packages: package paths to put on stage
         """
-        LOGGER.debug('Registering provider %s with %d more packages staged %s', key, len(packages), packages)
+        if key in self.provider:
+            if provider == self.provider[key]:
+                return
+            raise Error(f'Provider key collision ({key})')
         self.stage.update(packages)
         if inspect.isabstract(provider):
             return
-        if key in self.provider and self.provider[key] != provider:
-            raise Error(f'Provider key collision ({key})')
+        LOGGER.debug('Registering provider %s as "%s" with %d more packages staged %s',
+                     provider.__name__, key, len(packages), packages)
         self.provider[key] = provider
 
     def get(self, key: str) -> typing.Type['Interface']:
         """Get the registered provider or attempt to load all pre-staged packages that might be containing it.
 
         Args:
-            key: provider key.
+            key: provider key
 
         Returns: Registered provider.
         """
@@ -115,6 +120,5 @@ class Interface(metaclass=Meta):
         packages = {Registry.Package(p if '.' not in p else f'{cls.__module__}.{p}') for p in packages or []}
         if not packages:
             packages = {Registry.Package(f'{cls.__module__}.{cls.__name__.lower()}', strict=False)}
-        print(f'registering {cls.__name__}')
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):
             _REGISTRY[parent].add(key, cls, packages)

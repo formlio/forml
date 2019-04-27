@@ -13,11 +13,13 @@ setuptools.setup(name='forml',
                  license='Apache License 2.0',
                  packages=setuptools.find_packages(where='src'),
                  package_dir={'': 'src'},
+                 package_data={'forml.conf': ['*.ini']},
                  setup_requires=['pytest-runner', 'pytest-pylint'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['joblib', 'pandas', 'scikit-learn', 'cloudpickle'],
+                 install_requires=['joblib'],
                  extras_require={
+                     'stdlib': ['pandas', 'scikit-learn'],
                      'graphviz': ['graphviz'],
-                     'dask': ['dask']
+                     'dask': ['dask', 'cloudpickle']
                  },
                  zip_safe=False)
