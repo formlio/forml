@@ -32,7 +32,7 @@ class TrainTestSplit(task.Actor):
         """
         self._indices = self._crossvalidator.split(features, label)
 
-    def apply(self, source: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:
+    def apply(self, source: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
 
         Args:
@@ -52,7 +52,8 @@ class TrainTestSplit(task.Actor):
         """
         return {'crossvalidator': self._crossvalidator}
 
-    def set_params(self, crossvalidator: model_selection.BaseCrossValidator) -> None:
+    def set_params(self,
+                   crossvalidator: model_selection.BaseCrossValidator) -> None:  # pylint: disable=arguments-differ
         """Standard params setter.
 
         Args:
@@ -96,7 +97,7 @@ class Apply(task.Actor):
     def __init__(self, method: typing.Callable[[pandas.DataFrame], pandas.DataFrame]):
         self._method: typing.Callable[[pandas.DataFrame], pandas.DataFrame] = method
 
-    def apply(self, table: pandas.DataFrame) -> pandas.DataFrame:
+    def apply(self, table: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
         """Execute the provided method with the given table.
 
         Args:

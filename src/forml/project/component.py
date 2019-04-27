@@ -1,13 +1,12 @@
 """
 Project component management.
 """
-import functools
-import importlib
 import logging
 import sys
 import types
 import typing
 
+import importlib
 from importlib import abc, machinery
 
 
