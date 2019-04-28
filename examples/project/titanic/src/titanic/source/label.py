@@ -11,7 +11,8 @@ from forml.flow import task
 from forml.stdlib.operator import simple
 
 
-class LabelExtractor(task.Actor):
+@simple.Labeler.operator
+class Extractor(task.Actor):
     """Here we just create a custom actor that simply expects the label to be a specific column in the input dataset and
     returns two objects - a dataframe without the label column and a series with just the labels.
     """
@@ -26,7 +27,3 @@ class LabelExtractor(task.Actor):
 
     def set_params(self, column: str) -> None:
         self._column = column
-
-
-# Turning the actor into an forml operator using the stdlib Labeler operator.
-EXTRACTOR = simple.Labeler.operator(LabelExtractor)
