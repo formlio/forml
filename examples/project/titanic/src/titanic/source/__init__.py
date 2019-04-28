@@ -18,5 +18,5 @@ from titanic.source import producer, label
 TRAIN = expression.Select(producer.trainset)
 PREDICT = expression.Select(producer.testset)
 
-ETL = etl.Extract(PREDICT, TRAIN) >> label.EXTRACTOR
+ETL = etl.Extract(PREDICT, TRAIN) >> label.EXTRACTOR(column='Survived')
 component.setup(ETL)

@@ -37,7 +37,7 @@ def ndframed(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
         if isinstance(arg, pdtype.NDFrame):
             return arg
         if isinstance(arg, numpy.ndarray):
-            return pandas.Series(arg) if arg.shape[1] == 1 else pandas.DataFrame(arg)
+            return pandas.Series(arg) if arg.ndim == 1 else pandas.DataFrame(arg)
         LOGGER.warning('Unknown NDFrame conversion strategy for %s', type(arg))
         return arg
 

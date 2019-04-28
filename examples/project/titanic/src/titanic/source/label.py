@@ -29,4 +29,4 @@ class LabelExtractor(task.Actor):
 
 
 # Turning the actor into an forml operator using the stdlib Labeler operator.
-EXTRACTOR = simple.Labeler(LabelExtractor.spec(column='Survived'))
+EXTRACTOR = simple.Labeler.operator(LabelExtractor)
