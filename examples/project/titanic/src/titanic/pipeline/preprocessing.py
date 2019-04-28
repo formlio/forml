@@ -6,9 +6,9 @@ This module is informal from ForML perspective and has been created just for str
 Here we just create couple of forml operators that implement particular transformers.
 
 We demonstrate three different was of creating a forml operator:
-  * Implementing native ForML actor (NANIMPUTER)
-  * Creating a wrapped actor from a Transformer-like class (TITLEPARSER)
-  * Wrapping a 3rd party Transformer-like class (ENCODER)
+  * Implementing native ForML actor (NanImputer)
+  * Creating a wrapped actor from a Transformer-like class (TitleParser)
+  * Wrapping a 3rd party Transformer-like class (Encoder)
 """
 import typing
 
@@ -23,6 +23,7 @@ from forml.stdlib import actor
 from forml.stdlib.operator import simple
 
 
+@simple.Mapper.operator
 class NaNImputer(task.Actor):
     """Imputer for missing values implemented as native forml actor.
     """
@@ -44,9 +45,8 @@ class NaNImputer(task.Actor):
         return data.fillna(self._fill)
 
 
-NANIMPUTER = simple.Mapper.operator(NaNImputer)
-
-
+@simple.Mapper.operator
+@actor.Wrapped.actor(apply='transform')
 class TitleParser(skbase.TransformerMixin):
     """Transformer extracting a person's title from the name string implemented as scikit-learn compatible transformer.
     """
@@ -80,5 +80,4 @@ class TitleParser(skbase.TransformerMixin):
         self.target = target
 
 
-TITLEPARSER = simple.Mapper.operator(actor.Wrapped.actor(TitleParser, apply='transform'))
 ENCODER = simple.Mapper.operator(actor.Wrapped.actor(category_encoders.HashingEncoder, train='fit', apply='transform'))
