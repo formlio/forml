@@ -1,7 +1,7 @@
 """
 Titanic preprocessing unit tests.
 """
-# pylintq: disable=no-self-use, protected-access
+# pylint: disable=no-self-use
 import numpy
 import pandas
 import pytest
@@ -10,7 +10,7 @@ from forml.flow import task
 from titanic.pipeline import preprocessing
 
 
-class Transformer:
+class Transformer:  # pylint: disable=too-few-public-methods
     """Common class for Titanic transformation tests.
     """
     def test_transform(self, actor: task.Actor, dataset: pandas.DataFrame, expected: pandas.DataFrame):
@@ -49,7 +49,7 @@ class TestNaNImputer(Transformer):
     def actor(dataset: pandas.DataFrame) -> preprocessing.NaNImputer:
         """Actor instance under the test.
         """
-        instance = preprocessing.NaNImputer()._spec()
+        instance = preprocessing.NaNImputer().spec()
         instance.train(dataset, None)
         return instance
 
@@ -94,4 +94,4 @@ class TestTitleParser(Transformer):
     def actor(source: str, target: str) -> preprocessing.TitleParser:
         """Actor instance under the test.
         """
-        return preprocessing.TitleParser(source=source, target=target)._spec()
+        return preprocessing.TitleParser(source=source, target=target).spec()
