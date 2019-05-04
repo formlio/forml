@@ -12,7 +12,7 @@ from forml.flow.pipeline import topology
 from forml.stdlib.actor import frame
 
 
-class Stack(topology.Operator):
+class Stacked(topology.Operator):
     """Crossvalidating stacked ensembling transformation.
     """
 
@@ -29,7 +29,6 @@ class Stack(topology.Operator):
 
         Args:
             left: left segment.
-            context: Worker context instance.
 
         Returns: Composed segment track.
         """

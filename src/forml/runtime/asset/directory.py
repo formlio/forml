@@ -315,7 +315,7 @@ class Lineage(Level):
 
         Returns: Generation instance.
         """
-        # TODO: verify all states exist
+        # TO DO: verify all states exist
         generation = self.listing.next
         self._registry.close(self.project, self.key, generation, tag)
         return self.get(generation)
