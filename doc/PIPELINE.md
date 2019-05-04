@@ -65,39 +65,33 @@ import typing
 import pandas
 from forml.flow import task
 
-class LabelExtractor(task.Actor[pandas.DataFrame]):
+class LabelExtractor(task.Actor):
     """Simple label-extraction actor returning a specific column from input feature set.
     """
     def __init__(self, column: str = 'label'):
         self._column: str = column
-    
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:
-        """Label extraction logic.
-        """
-        return features[0][[self._column]]
+
+    def apply(self, features: pandas.DataFrame) -> typing.Tuple[pandas.DataFrame, pandas.Series]:
+        return features.drop(columns=self._column), features[self._column]
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
-        """Mandatory get params.
-        """
         return {'column': self._column}
 
-    def set_params(self, params: typing.Dict[str, typing.Any]) -> None:
-        """Mandatory set params.
-        """
-        self._column = params.get('column', self._column)
+    def set_params(self, column: str) -> None:
+        self._column = column
 ```
 
 Note this actor doesn't implement the `train` method making it a simple _stateless_ actor.
 
 Another option of defining actors is reusing third-party classes that are providing desired functionality. These classes
-cannot be changed to extend ForML base Actor class but can be wrapped using a `forml.flow.task.Actor.Wrapped.actor`
+cannot be changed to extend ForML base Actor class but can be wrapped using a `forml.stdlib.actor.Wrapped.actor`
 decorator like this:
 
 ```python
 from sklearn import ensemble as sklearn
-from forml.flow import task
+from forml.stdlib import actor
 
-gbc_actor = task.Wrapped.actor(sklearn.GradientBoostingClassifier, train='fit', apply='predict_proba')
+gbc_actor = actor.Wrapped.actor(sklearn.GradientBoostingClassifier, train='fit', apply='predict_proba')
 ```
 
 Note the extra parameters used to map the third-party class methods to the expected Actor API methods.
@@ -130,43 +124,35 @@ import typing
 import pandas
 import numpy
 from forml.flow import task
-from forml.flow.operator import simple
+from forml.stdlib.operator import simple
 
 @simple.Mapper.operator
-class NaNImputer(task.Actor[pandas.DataFrame]):
-    """Custom NaN imputation logic.
+class NaNImputer(task.Actor):
+    """Imputer for missing values implemented as native ForML actor.
     """
-    def train(self, features: pandas.DataFrame, label: pandas.DataFrame):
-        """Impute missing values using the median for numeric columns and the most common value for string columns.
-        """
-        self._fill = pandas.Series([features[f].value_counts().index[0] if features[f].dtype == numpy.dtype('O')
-                                    else features[f].median() for f in features], index=features.columns)
-        return self
+    def __init__(self):
+        self._fill: typing.Optional[pandas.Series] = None
 
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:
-        """Filling the NaNs.
+    def train(self, data: pandas.DataFrame, label: pandas.Series) -> None:
+        """Train the actor by learning the median for each numeric column and finding the most common value for strings.
         """
-        return features.fillna(self.fill)
+        self._fill = pandas.Series([data[c].value_counts().index[0] if data[c].dtype == numpy.dtype('O')
+                                    else data[c].median() for c in data], index=data.columns)
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
-        """Mandatory get params.
+    def apply(self, data: pandas.DataFrame) -> pandas.DataFrame:
+        """Apply the imputation to the given dataset.
         """
-        return {}
-
-    def set_params(self, params: typing.Dict[str, typing.Any]) -> None:
-        """Mandatory set params.
-        """
-        pass
+        return data.fillna(self._fill)
 ```
 
 It is also possible to use the decorator to create operators from third-party wrapped Actors:
 
 ```python
 from sklearn import ensemble as sklearn
-from forml.flow import task
-from forml.flow.operator import simple
+from forml.stdlib import actor
+from forml.stdlib.operator import simple
 
-RFC = simple.Consumer.operator(task.Wrapped.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
+RFC = simple.Consumer.operator(actor.Wrapped.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
 ```
 
 These operators are now good to be used for pipeline composition.
