@@ -22,4 +22,5 @@ setuptools.setup(name='forml',
                      'graphviz': ['graphviz'],
                      'dask': ['dask', 'cloudpickle']
                  },
+                 python_requires='>=3.6',
                  zip_safe=False)
