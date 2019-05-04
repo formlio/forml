@@ -18,7 +18,7 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
     _SZOUT = 1
 
     def __init__(self, spec: task.Spec):
-        self._spec: task.Spec = spec
+        self.spec: task.Spec = spec
 
     @classmethod
     def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs) -> typing.Type['Simple']:
@@ -57,7 +57,7 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
 
         Returns: Composed track.
         """
-        return self.apply(node.Worker(self._spec, self._SZIN, self._SZOUT), left.expand())
+        return self.apply(node.Worker(self.spec, self._SZIN, self._SZOUT), left.expand())
 
     @abc.abstractmethod
     def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
@@ -84,7 +84,7 @@ class Mapper(Simple):
         Returns: Composed segment track.
         """
         train_applier: node.Worker = applier.fork()
-        if self._spec.actor.is_stateful():
+        if self.spec.actor.is_stateful():
             train_trainer: node.Worker = applier.fork()
             train_trainer.train(left.train.publisher, left.label.publisher)
         return left.extend(view.Path(applier), view.Path(train_applier))
@@ -102,7 +102,7 @@ class Consumer(Simple):
 
         Returns: Composed segment track.
         """
-        if not self._spec.actor.is_stateful():
+        if not self.spec.actor.is_stateful():
             raise operator.Error('Stateless actor invalid for a consumer')
         trainer: node.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
