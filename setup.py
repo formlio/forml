@@ -18,7 +18,7 @@ EXTRAS_DASK = {
     'cloudpickle'
 }
 
-EXTRAS_ALL = EXTRAS_DASK | EXTRAS_GRAPHVIZ | EXTRAS_DASK
+EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK
 
 setuptools.setup(name='forml',
                  version='0.1.dev0',
