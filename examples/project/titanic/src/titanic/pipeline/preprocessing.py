@@ -13,9 +13,8 @@ We demonstrate three different ways of creating a forml operator:
 import typing
 
 import category_encoders
-import numpy as np
+import numpy
 import pandas
-import pandas as pd
 from sklearn import base as skbase
 
 from forml.flow import task
@@ -25,22 +24,19 @@ from forml.stdlib.operator import simple
 
 @simple.Mapper.operator
 class NaNImputer(task.Actor):
-    """Imputer for missing values implemented as native forml actor.
+    """Imputer for missing values implemented as native ForML actor.
     """
     def __init__(self):
         self._fill: typing.Optional[pandas.Series] = None
 
     def train(self, data: pandas.DataFrame, label: pandas.Series) -> None:
-        """Method required by the Sklearn API - fit.
-
-        Impute missing values using the median for numeric columns and
-        the most common value for string columns.
+        """Train the actor by learning the median for each numeric column and finding the most common value for strings.
         """
-        self._fill = pd.Series([data[c].value_counts().index[0] if data[c].dtype == np.dtype('O')
-                               else data[c].median() for c in data], index=data.columns)
+        self._fill = pandas.Series([data[c].value_counts().index[0] if data[c].dtype == numpy.dtype('O')
+                                    else data[c].median() for c in data], index=data.columns)
 
     def apply(self, data: pandas.DataFrame) -> pandas.DataFrame:
-        """Method required by the Sklearn API - transform.
+        """Apply the imputation to the given dataset.
         """
         return data.fillna(self._fill)
 
@@ -80,4 +76,5 @@ class TitleParser(skbase.TransformerMixin):
         self.target = target
 
 
+# 3rd party transformer wrapped as an actor into a mapper operator:
 ENCODER = simple.Mapper.operator(actor.Wrapped.actor(category_encoders.HashingEncoder, train='fit', apply='transform'))

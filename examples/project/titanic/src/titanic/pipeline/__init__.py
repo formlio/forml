@@ -9,16 +9,16 @@ created just for structuring the project code base splitting it into these parti
 """
 
 from sklearn import model_selection
-from titanic.pipeline import preprocessing, model
 
 from forml.project import component
 from forml.stdlib.operator import ensemble
+from titanic.pipeline import preprocessing, model
 
 # Stack of models implemented based on the forml stdlib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
-STACK = ensemble.Stack(bases=(model.RFC(n_estimators=10, random_state=42),
-                              model.GBC(random_state=42)),
-                       crossvalidator=model_selection.StratifiedKFold(n_splits=3, shuffle=True, random_state=42))
+STACK = ensemble.Stacked(bases=(model.RFC(n_estimators=10, random_state=42),
+                                model.GBC(random_state=42)),
+                         crossvalidator=model_selection.StratifiedKFold(n_splits=3, shuffle=True, random_state=42))
 
 
 # This is the main pipeline composition:

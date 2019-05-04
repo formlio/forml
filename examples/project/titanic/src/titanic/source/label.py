@@ -4,8 +4,9 @@ Label extraction logic.
 This module is informal from ForML perspective and has been created just for structuring the project code base.
 """
 
-import pandas
 import typing
+
+import pandas
 
 from forml.flow import task
 from forml.stdlib.operator import simple

@@ -21,4 +21,4 @@ GBC = simple.Consumer.operator(actor.Wrapped.actor(
     estimator.GradientBoostingClassifier, train='fit', apply='predict_proba'))
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-LR = simple.Consumer.operator(actor.Wrapped.actor(linear_model.LogisticRegression, train='fit', apply='predict'))
+LR = simple.Consumer.operator(actor.Wrapped.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba'))

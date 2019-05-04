@@ -17,9 +17,13 @@ TRAINSET_CSV = os.path.join(BASE_DIR, 'titanic_train.csv')
 TESTSET_CSV = os.path.join(BASE_DIR, 'titanic_train.csv')
 
 
-def trainset(**kwargs) -> pandas.DataFrame:
+def trainset(**_) -> pandas.DataFrame:
+    """Dummy trinset producer.
+    """
     return pandas.read_csv(TRAINSET_CSV)
 
 
-def testset(**kwargs) -> pandas.DataFrame:
+def testset(**_) -> pandas.DataFrame:
+    """Dummy testset producer.
+    """
     return pandas.read_csv(TESTSET_CSV)

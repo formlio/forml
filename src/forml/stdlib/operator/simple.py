@@ -53,7 +53,6 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
         """Abstract composition implementation.
 
         Args:
-            context: Worker context instance.
             left: Left side track builder.
 
         Returns: Composed track.
