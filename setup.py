@@ -4,6 +4,22 @@ Setuptools script for ForML package.
 import os.path
 import setuptools
 
+EXTRAS_STDLIB = {
+    'pandas',
+    'scikit-learn'
+}
+
+EXTRAS_GRAPHVIZ = {
+    'graphviz'
+}
+
+EXTRAS_DASK = {
+    'dask',
+    'cloudpickle'
+}
+
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_GRAPHVIZ | EXTRAS_DASK
+
 setuptools.setup(name='forml',
                  version='0.1.dev0',
                  description='Continuous Integration Formalization and Runtime for AI',
@@ -18,9 +34,10 @@ setuptools.setup(name='forml',
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
                  install_requires=['joblib'],
                  extras_require={
-                     'stdlib': ['pandas', 'scikit-learn'],
-                     'graphviz': ['graphviz'],
-                     'dask': ['dask', 'cloudpickle']
+                     'all': EXTRAS_ALL,
+                     'stdlib': EXTRAS_STDLIB,
+                     'graphviz': EXTRAS_GRAPHVIZ,
+                     'dask': EXTRAS_DASK
                  },
                  python_requires='>=3.6',
                  zip_safe=False)
