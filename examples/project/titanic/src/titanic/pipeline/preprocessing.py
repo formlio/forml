@@ -5,10 +5,10 @@ This module is informal from ForML perspective and has been created just for str
 
 Here we just create couple of forml operators that implement particular transformers.
 
-We demonstrate three different was of creating a forml operator:
+We demonstrate three different ways of creating a forml operator:
   * Implementing native ForML actor (NanImputer)
   * Creating a wrapped actor from a Transformer-like class (TitleParser)
-  * Wrapping a 3rd party Transformer-like class (Encoder)
+  * Wrapping a 3rd party Transformer-like class (ENCODER)
 """
 import typing
 
