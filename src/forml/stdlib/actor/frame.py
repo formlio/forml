@@ -38,20 +38,20 @@ def ndframed(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
             return arg
         if isinstance(arg, numpy.ndarray):
             return pandas.Series(arg) if arg.ndim == 1 else pandas.DataFrame(arg)
-        LOGGER.warning('Unknown NDFrame conversion strategy for %s', type(arg))
+        LOGGER.warning('Unknown NDFrame conversion strategy for %s: %.1024s', type(arg), arg)
         return arg
 
     @functools.wraps(wrapped)
-    def wrapper(self: task.Actor, *args: typing.Any) -> pdtype.NDFrame:
+    def wrapper(self: task.Actor, *args: typing.Any) -> typing.Any:
         """Decorating wrapper.
 
         Args:
             self: Actor self.
             *args: Input arguments to be converted.
 
-        Returns: Converted output of original method.
+        Returns: Original output.
         """
-        return convert(wrapped(self, *(convert(a) for a in args)))
+        return wrapped(self, *(convert(a) for a in args))
     return wrapper
 
 
