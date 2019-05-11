@@ -132,4 +132,4 @@ class Train(setuptools.Command):
             with self.project_on_sys_path():
                 runner = process.Runner[self.runner](etl.Engine[self.engine](), access.Assets(
                     devreg.Registry(self.artifact), self.distribution.name))
-                runner.cvscore(lower=self.lower, upper=self.upper)
+                print(runner.cvscore(lower=self.lower, upper=self.upper))
