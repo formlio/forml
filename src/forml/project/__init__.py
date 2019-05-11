@@ -20,7 +20,7 @@ class Error(forml.Error):
     """
 
 
-class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
+class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluation')):
     """Top level ForML project descriptor holding the implementations of individual project components.
     """
     class Builder(abc.Set):
@@ -61,12 +61,14 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline')):
                 raise Error(f'Incomplete builder (missing {", ".join(c for c, h in self if not h)})')
             return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
 
-    def __new__(cls, source: etl.Source, pipeline: topology.Composable):
+    def __new__(cls, source: etl.Source, pipeline: topology.Composable, evaluation: topology.Operator):
         if not isinstance(pipeline, topology.Composable):
             raise Error('Invalid pipeline')
         if not isinstance(source, etl.Source):
             raise Error('Invalid source')
-        return super().__new__(cls, source, pipeline)
+        if not isinstance(evaluation, topology.Operator):
+            raise Error('Invalid evaluation')
+        return super().__new__(cls, source, pipeline, evaluation)
 
     @classmethod
     def load(cls, package: typing.Optional[str] = None, **modules) -> 'Descriptor':

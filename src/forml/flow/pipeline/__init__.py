@@ -65,8 +65,8 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         if not isinstance(apply, view.Channel):
             raise Error('Apply path not a channel')
         train = composed.train.extend()
-        if not isinstance(train, view.Closure):
-            raise Error('Train path not a closure')
+        if not isinstance(train, view.Path):  # can't enforce Closure as some train modes are Channels (ie cvscore)
+            raise Error('Train path not a path')
         label = composed.label.extend()
         if not isinstance(label, view.Closure):
             raise Error('Label path not a closure')

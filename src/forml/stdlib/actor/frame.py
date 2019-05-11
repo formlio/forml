@@ -62,7 +62,7 @@ class TrainTestSplit(task.Actor):
     split data and labels independently.
     """
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
-        self._crossvalidator: model_selection.BaseCrossValidator = crossvalidator
+        self.crossvalidator: model_selection.BaseCrossValidator = crossvalidator
         self._indices: typing.Optional[typing.Tuple[typing.Tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
 
     def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
@@ -71,7 +71,7 @@ class TrainTestSplit(task.Actor):
             features: X table.
             label: Y series.
         """
-        self._indices = tuple(self._crossvalidator.split(features, label))  # tuple it so it can be pickled
+        self._indices = tuple(self.crossvalidator.split(features, label))  # tuple it so it can be pickled
 
     @ndframed
     def apply(self, source: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:  # pylint: disable=arguments-differ
@@ -92,7 +92,7 @@ class TrainTestSplit(task.Actor):
 
         Returns: Actor params.
         """
-        return {'crossvalidator': self._crossvalidator}
+        return {'crossvalidator': self.crossvalidator}
 
     def set_params(self,  # pylint: disable=arguments-differ
                    crossvalidator: model_selection.BaseCrossValidator) -> None:
@@ -101,46 +101,32 @@ class TrainTestSplit(task.Actor):
         Args:
             crossvalidator: New crossvalidator.
         """
-        self._crossvalidator = crossvalidator
+        self.crossvalidator = crossvalidator
 
 
-class Append(task.Actor):
-    """Vertically appending dataframes received on the input ports.
+class Concat(task.Actor):
+    """Concatenate objects received on the input ports into single dataframe.
     """
+    def __init__(self, axis: str = 'index'):
+        self.axis: str = axis
 
     @ndframed
-    def apply(self, *tables: pandas.DataFrame) -> pandas.DataFrame:
-        """Append the individual tables into one dataframe.
+    def apply(self, *source: pdtype.NDFrame) -> pandas.DataFrame:
+        """Concat the individual objects into one dataframe.
 
         Args:
-            *tables: Individual dataframes to be appended.
+            *source: Individual sources to be concatenated.
 
         Returns: Single concatenated dataframe.
         """
-        return pandas.concat(tables, axis='index', ignore_index=True)
-
-
-class Merge(task.Actor):
-    """Horizontally appending series received on the input ports.
-    """
-
-    @ndframed
-    def apply(self, *columns: pandas.Series) -> pandas.DataFrame:
-        """Append the individual columns into one dataframe.
-
-        Args:
-            *columns: Individual columns of the dataframe.
-
-        Returns: Single merged dataframe.
-        """
-        return pandas.concat(columns, axis='columns')
+        return pandas.concat(source, axis=self.axis, ignore_index=True)
 
 
 class Apply(task.Actor):
     """Generic dataframe apply actor.
     """
-    def __init__(self, method: typing.Callable[[pandas.DataFrame], pandas.DataFrame]):
-        self._method: typing.Callable[[pandas.DataFrame], pandas.DataFrame] = method
+    def __init__(self, function: typing.Callable[[pandas.DataFrame], pandas.DataFrame]):
+        self.function: typing.Callable[[pandas.DataFrame], pandas.DataFrame] = function
 
     @ndframed
     def apply(self, table: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
@@ -151,4 +137,4 @@ class Apply(task.Actor):
 
         Returns: Transformed output as returned by the provided method.
         """
-        return self._method(table)
+        return self.function(table)
