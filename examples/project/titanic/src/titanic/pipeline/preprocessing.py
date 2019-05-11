@@ -7,7 +7,7 @@ Here we just create couple of forml operators that implement particular transfor
 
 We demonstrate three different ways of creating a forml operator:
   * Implementing native ForML actor (NanImputer)
-  * Creating a wrapped actor from a Transformer-like class (TitleParser)
+  * Creating a wrapped actor from a plain function (parse_title)
   * Wrapping a 3rd party Transformer-like class (ENCODER)
 """
 import typing
@@ -15,7 +15,6 @@ import typing
 import category_encoders
 import numpy
 import pandas
-from sklearn import base as skbase
 
 from forml.flow import task
 from forml.stdlib.actor import wrapped
@@ -42,15 +41,10 @@ class NaNImputer(task.Actor):
 
 
 @simple.Mapper.operator
-@wrapped.Class.actor(apply='transform')
-class TitleParser(skbase.TransformerMixin):
-    """Transformer extracting a person's title from the name string implemented as scikit-learn compatible transformer.
+@wrapped.Function.actor
+def parse_title(data: pandas.DataFrame, source: str, target: str) -> pandas.DataFrame:
+    """Transformer extracting a person's title from the name string implemented as wrapped stateless function.
     """
-    def __init__(self, source: str = 'name', target: str = 'title'):
-        self.source = source
-        self.target = target
-
-    @staticmethod
     def get_title(name: str) -> str:
         """Auxiliary method for extracting the title.
         """
@@ -58,22 +52,8 @@ class TitleParser(skbase.TransformerMixin):
             return name.split(',')[1].split('.')[0].strip()
         return 'Unknown'
 
-    def transform(self, data: pandas.DataFrame) -> pandas.DataFrame:
-        """Method required by the Sklearn API - transform.
-        """
-        data[self.target] = data[self.source].map(self.get_title)
-        return data
-
-    def get_params(self) -> typing.Mapping[str, str]:
-        """Method required by the Sklearn API - get_params.
-        """
-        return dict(self.__dict__)
-
-    def set_params(self, source: str = 'name', target: str = 'title'):
-        """Method required by the Sklearn API - set_params.
-        """
-        self.source = source
-        self.target = target
+    data[target] = data[source].map(get_title)
+    return data
 
 
 # 3rd party transformer wrapped as an actor into a mapper operator:

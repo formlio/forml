@@ -23,7 +23,7 @@ STACK = ensemble.FullStacker(bases=(model.RFC(n_estimators=10, random_state=42),
 
 # This is the main pipeline composition:
 INSTANCE = preprocessing.NaNImputer() >> \
-           preprocessing.TitleParser(source='Name', target='Title') >> \
+           preprocessing.parse_title(source='Name', target='Title') >> \
            preprocessing.ENCODER(cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title']) >> \
            STACK >> \
            model.LR(random_state=42)
