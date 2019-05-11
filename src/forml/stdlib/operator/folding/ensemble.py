@@ -4,6 +4,7 @@ Ensembling operators.
 
 import typing
 
+import pandas
 from sklearn import model_selection
 
 from forml.flow import task, pipeline
@@ -40,7 +41,11 @@ class FullStacker(folding.Crossvalidated):
     def __init__(self, bases: typing.Sequence[topology.Composable], crossvalidator: model_selection.BaseCrossValidator):
         super().__init__(crossvalidator)
         self.bases: typing.Sequence[topology.Composable] = bases
-        self.merger: task.Spec = frame.Apply.spec(function=lambda df: df.mean(axis='columns'))
+
+    @staticmethod
+    def _merge(*folds: pandas.DataFrame) -> pandas.DataFrame:
+        return pandas.concat((pandas.concat(s, axis='columns').mean(axis='columns').rename(n[0])
+                              for n, s in (zip(*i) for i in zip(*(f.iteritems() for f in folds)))), axis='columns')
 
     def builder(self, head: pipeline.Segment, inner: pipeline.Segment) -> 'FullStacker.Builder':
         """Create a builder (folding context).
@@ -55,7 +60,7 @@ class FullStacker(folding.Crossvalidated):
         applied: node.Worker = trained.fork()
         stack_forks: typing.Iterable[node.Worker] = node.Worker.fgen(frame.Concat.spec(axis='index'), self.nsplits, 1)
         bay_forks: typing.Iterable[node.Worker] = node.Worker.fgen(frame.Concat.spec(axis='columns'), self.nsplits, 1)
-        merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(self.merger, 1, 1)
+        merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(frame.Apply.spec(function=self._merge), 1, 1)
         stackers: typing.Dict[topology.Composable, node.Worker] = dict()
         mergers: typing.Dict[topology.Composable, node.Worker] = dict()
         for index, (base, stack, bay, merge) in enumerate(zip(self.bases, stack_forks, bay_forks, merge_forks)):
@@ -74,7 +79,7 @@ class FullStacker(folding.Crossvalidated):
         Args:
             fold: Fold index.
             builder: Composition builder (folding context).
-            inner: Exclusive instance of the inner composition.
+            pretrack: Exclusive instance of the inner composition.
             features: Features splitter actor.
             labels: Labels splitter actor.
         """
