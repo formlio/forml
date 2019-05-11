@@ -36,13 +36,21 @@ class TestBuilder:
         """
         return etl.Source(etl.Extract(expression.Select()))
 
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def evaluation() -> topology.Composable:
+        """Evaluation fixture.
+        """
+        return simple.Consumer(task.Spec('Estimator'))
+
     def test_api(self, builder: project.Descriptor.Builder):
         """Testing the builder API.
         """
         assert len(builder) == len(project.Descriptor._fields)
         assert all(f in builder for f in project.Descriptor._fields)
 
-    def test_build(self, builder: project.Descriptor.Builder, source: etl.Source, pipeline: topology.Composable):
+    def test_build(self, builder: project.Descriptor.Builder, source: etl.Source, pipeline: topology.Composable,
+                   evaluation: topology.Composable):
         """Testing build.
         """
         with pytest.raises(project.Error):
@@ -50,9 +58,11 @@ class TestBuilder:
         handlers = dict(builder)
         handlers['source'](source)
         handlers['pipeline'](pipeline)
+        handlers['evaluation'](evaluation)
         descriptor = builder.build()
         assert descriptor.source == source
         assert descriptor.pipeline == pipeline
+        assert descriptor.evaluation == evaluation
 
 
 @pytest.fixture(scope='session')
@@ -71,6 +81,14 @@ def source() -> etl.Source:
     return source.INSTANCE
 
 
+@pytest.fixture(scope='session')
+def evaluation() -> topology.Composable:
+    """Pipeline evaluation.
+    """
+    from project import evaluation
+    return evaluation.INSTANCE
+
+
 class TestDescriptor:
     """Descriptor unit tests.
     """
@@ -78,9 +96,9 @@ class TestDescriptor:
         """Testing with invalid types.
         """
         with pytest.raises(project.Error):
-            project.Descriptor('foo', 'bar')
+            project.Descriptor('foo', 'bar', 'baz')
 
-    def test_load(self, source: etl.Source, pipeline: topology.Composable):
+    def test_load(self, source: etl.Source, pipeline: topology.Composable, evaluation: topology.Composable):
         """Testing the descriptor loader.
         """
         with pytest.raises(project.Error):
@@ -90,6 +108,7 @@ class TestDescriptor:
         descriptor = project.Descriptor.load('project')  # project package in this test directory
         assert descriptor.pipeline.__dict__ == pipeline.__dict__
         assert descriptor.source.__dict__ == source.__dict__
+        assert descriptor.evaluation.__dict__ == evaluation.__dict__
 
 
 class TestArtifact:
@@ -102,8 +121,10 @@ class TestArtifact:
         """
         return project.Artifact(package='project')
 
-    def test_descriptor(self, artifact: project.Artifact, source: etl.Source, pipeline: topology.Composable):
+    def test_descriptor(self, artifact: project.Artifact, source: etl.Source, pipeline: topology.Composable,
+                        evaluation: topology.Composable):
         """Testing descriptor access.
         """
         assert artifact.descriptor.pipeline.__dict__ == pipeline.__dict__
         assert artifact.descriptor.source.__dict__ == source.__dict__
+        assert artifact.descriptor.evaluation.__dict__ == evaluation.__dict__

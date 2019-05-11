@@ -7,7 +7,7 @@ import typing
 import pandas
 from sklearn import model_selection
 
-from forml.flow import task, pipeline
+from forml.flow import pipeline
 from forml.flow.graph import node
 from forml.flow.pipeline import topology
 from forml.stdlib.actor import frame
@@ -44,6 +44,13 @@ class FullStacker(folding.Crossvalidated):
 
     @staticmethod
     def _merge(*folds: pandas.DataFrame) -> pandas.DataFrame:
+        """Individual fold model predictions merging.
+
+        Args:
+            *folds: Individual model predictions.
+
+        Returns: Single dataframe with the merged predictions.
+        """
         return pandas.concat((pandas.concat(s, axis='columns').mean(axis='columns').rename(n[0])
                               for n, s in (zip(*i) for i in zip(*(f.iteritems() for f in folds)))), axis='columns')
 
@@ -59,14 +66,13 @@ class FullStacker(folding.Crossvalidated):
         trained: node.Worker = node.Worker(frame.Concat.spec(axis='columns'), len(self.bases), 1)
         applied: node.Worker = trained.fork()
         stack_forks: typing.Iterable[node.Worker] = node.Worker.fgen(frame.Concat.spec(axis='index'), self.nsplits, 1)
-        bay_forks: typing.Iterable[node.Worker] = node.Worker.fgen(frame.Concat.spec(axis='columns'), self.nsplits, 1)
-        merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(frame.Apply.spec(function=self._merge), 1, 1)
+        merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(
+            frame.Apply.spec(function=self._merge), self.nsplits, 1)
         stackers: typing.Dict[topology.Composable, node.Worker] = dict()
         mergers: typing.Dict[topology.Composable, node.Worker] = dict()
-        for index, (base, stack, bay, merge) in enumerate(zip(self.bases, stack_forks, bay_forks, merge_forks)):
+        for index, (base, stack, merge) in enumerate(zip(self.bases, stack_forks, merge_forks)):
             stackers[base] = stack
-            mergers[base] = bay
-            merge[0].subscribe(bay[0])
+            mergers[base] = merge
             trained[index].subscribe(stackers[base][0])
             applied[index].subscribe(merge[0])
 
