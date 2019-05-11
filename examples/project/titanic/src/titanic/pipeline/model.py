@@ -9,16 +9,16 @@ Here we just create couple of forml operators that implement particular classifi
 from sklearn import ensemble as estimator
 from sklearn import linear_model
 
-from forml.stdlib import actor
+from forml.stdlib.actor import wrapped
 from forml.stdlib.operator import simple
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-RFC = simple.Consumer.operator(actor.Wrapped.actor(
+RFC = simple.Consumer.operator(wrapped.Class.actor(
     estimator.RandomForestClassifier, train='fit', apply='predict_proba'))
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-GBC = simple.Consumer.operator(actor.Wrapped.actor(
+GBC = simple.Consumer.operator(wrapped.Class.actor(
     estimator.GradientBoostingClassifier, train='fit', apply='predict_proba'))
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-LR = simple.Consumer.operator(actor.Wrapped.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba'))
+LR = simple.Consumer.operator(wrapped.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba'))

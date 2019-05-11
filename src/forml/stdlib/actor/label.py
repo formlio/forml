@@ -13,7 +13,7 @@ class ColumnExtractor(task.Actor):
     """Column based label-extraction actor with 1:2 shape.
     """
     def __init__(self, column: str = 'label'):
-        self._column: str = column
+        self.column: str = column
 
     def apply(self, features: pandas.DataFrame) -> typing.Tuple[  # pylint: disable=arguments-differ
             pandas.DataFrame, pandas.Series]:
@@ -24,14 +24,14 @@ class ColumnExtractor(task.Actor):
 
         Returns: Features with label column removed plus just the label column in second new dataset.
         """
-        return features.drop(columns=self._column), features[self._column]
+        return features.drop(columns=self.column), features[self.column]
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Standard param getter.
 
         Returns: Actor params.
         """
-        return {'column': self._column}
+        return {'column': self.column}
 
     def set_params(self, column: str) -> None:  # pylint: disable=arguments-differ
         """Standard params setter.
@@ -39,4 +39,4 @@ class ColumnExtractor(task.Actor):
         Args:
             column: Label column name.
         """
-        self._column = column
+        self.column = column

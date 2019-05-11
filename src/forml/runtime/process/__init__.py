@@ -29,25 +29,24 @@ class Runner(provider.Interface):
 
         Returns: Assembled flow pipeline.
         """
-        return pipeline.Composition(self._engine.load(self._assets.project.source, lower, upper), *blocks)
+        return pipeline.Composition(self._engine.load(self._assets.project.source, lower, upper),
+                                    *(b.expand() for b in blocks))
 
     def train(self, lower: typing.Optional[etl.OrdinalT] = None,
               upper: typing.Optional[etl.OrdinalT] = None) -> None:
-        """Return the training code.
+        """Run the training code.
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
-
-        Returns: Training code.
         """
         path = self._build(lower or self._assets.tag.training.ordinal, upper,
-                           self._assets.project.pipeline.expand()).train
+                           self._assets.project.pipeline).train
         self._run(compiler.generate(path, self._assets.state(self._assets.tag.training.trigger())))
 
     def apply(self, lower: typing.Optional[etl.OrdinalT] = None,
               upper: typing.Optional[etl.OrdinalT] = None) -> typing.Any:
-        """Return the applying code.
+        """Run the applying code.
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
@@ -55,8 +54,32 @@ class Runner(provider.Interface):
 
         Returns: Applying code.
         """
-        path = self._build(lower, upper, self._assets.project.pipeline.expand()).apply
+        path = self._build(lower, upper, self._assets.project.pipeline).apply
         return self._run(compiler.generate(path, self._assets.state()))
+
+    def _evaluation(self, lower: typing.Optional[etl.OrdinalT] = None,
+                    upper: typing.Optional[etl.OrdinalT] = None) -> pipeline.Segment:
+        """Return the evaluation pipeline.
+
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper:  Ordinal value as the upper bound for the ETL cycle.
+
+        Returns: Evaluation pipeline.
+        """
+        return self._build(lower, upper, self._assets.project.pipeline >> self._assets.project.evaluation)
+
+    def cvscore(self, lower: typing.Optional[etl.OrdinalT] = None,
+                upper: typing.Optional[etl.OrdinalT] = None) -> typing.Any:
+        """Run the crossvalidating evaluation.
+
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper:  Ordinal value as the upper bound for the ETL cycle.
+
+        Returns: Crossvalidate evaluation score.
+        """
+        return self._run(compiler.generate(self._evaluation(lower, upper).train, self._assets.state()))
 
     @abc.abstractmethod
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:

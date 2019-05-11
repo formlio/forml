@@ -115,7 +115,11 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
         return super().__new__(cls, actor, types.MappingProxyType(params))
 
     def __str__(self):
-        return self.actor.__name__ if inspect.isclass(self.actor) else str(self.actor)
+        value = self.actor.__name__ if hasattr(self.actor, '__name__') else str(self.actor)
+        if self.params:
+            value += '(' + ', '.join(f"{k}={v.__name__ if hasattr(v, '__name__') else str(v)}"
+                                     for k, v in self.params.items()) + ')'
+        return value
 
     def __hash__(self):
         return hash(self.actor) ^ hash(tuple(sorted(self.params.items())))
