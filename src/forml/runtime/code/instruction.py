@@ -201,7 +201,7 @@ class Mapper(Functional):
         Returns: Output of the apply method.
         """
         result = actor.apply(*args)
-        LOGGER.debug('%s result: %s', actor, str(result))
+        LOGGER.debug('%s result: %.1024s...', actor, result)
         return result
 
 

@@ -51,14 +51,19 @@ The actor API is defined using an abstract class of `forml.flow.task.Actor`. For
 simply extend this class filling in the abstract methods with the desired functionality. The meaning of these methods
 is:
 
-* `apply(features: typing.Union[DataT, typing.Sequence[DataT]]) -> typing.Union[DataT, typing.Sequence[DataT]]` - 
+* `apply(*features: DataT) -> typing.Union[DataT, typing.Sequence[DataT]]` - 
 mandatory M:N input-output `Apply` ports 
-* `train(features: TableT, label: VectorT) -> None` - optional method engaging the _Train_ (`features`) and _Label_
+* `train(features: DataT, label: DataT) -> None` - optional method engaging the _Train_ (`features`) and _Label_
 (`label`) ports on stateful actors
 * `get_params() -> typing.Dict[str, typing.Any]` and `set_params(params: typing.Dict[str, typing.Any]) -> None` -
 mandatory input and output `Params` ports
 
-Example of user-defined actor:
+
+### Native Actors
+
+Basic mechanism for declaring custom actors is implementing the `task.Actor` interface.
+
+Example of user-defined native actor:
 
 ```python
 import typing
@@ -83,18 +88,44 @@ class LabelExtractor(task.Actor):
 
 Note this actor doesn't implement the `train` method making it a simple _stateless_ actor.
 
+
+### Wrapped Class Actors
+
 Another option of defining actors is reusing third-party classes that are providing desired functionality. These classes
-cannot be changed to extend ForML base Actor class but can be wrapped using a `forml.stdlib.actor.Wrapped.actor`
+cannot be changed to extend ForML base Actor class but can be wrapped using a `forml.stdlib.actor.wrapped.Class.actor`
 decorator like this:
 
 ```python
 from sklearn import ensemble as sklearn
-from forml.stdlib import actor
+from forml.stdlib.actor import wrapped
 
-gbc_actor = actor.Wrapped.actor(sklearn.GradientBoostingClassifier, train='fit', apply='predict_proba')
+gbc_actor = wrapped.Class.actor(sklearn.GradientBoostingClassifier, train='fit', apply='predict_proba')
 ```
 
 Note the extra parameters used to map the third-party class methods to the expected Actor API methods.
+
+
+### Decorated Function Actors
+
+Last option of defining actors is simplistic decorating of user-defined functions:
+
+```python
+from forml.stdlib.actor import wrapped
+
+@wrapped.Function.actor
+def parse_title(data: pandas.DataFrame, source: str, target: str) -> pandas.DataFrame:
+    """Transformer extracting a person's title from the name string implemented as wrapped stateless function.
+    """
+    def get_title(name: str) -> str:
+        """Auxiliary method for extracting the title.
+        """
+        if '.' in name:
+            return name.split(',')[1].split('.')[0].strip()
+        return 'Unknown'
+
+    data[target] = data[source].map(get_title)
+    return data
+```
 
 
 Operator

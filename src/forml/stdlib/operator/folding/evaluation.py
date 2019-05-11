@@ -61,7 +61,7 @@ class MergingScorer(folding.Crossvalidated):
 
         Returns: Builder instance.
         """
-        # TODO: apply path based on trainset is confusing compiler
+        # TO-DO: apply path based on trainset is confusing compiler
         # inner.apply.subscribe(head.train.publisher)
         # scorer = self.score(head.label.publisher, inner.apply.publisher)
         merger = node.Worker(self.merger, self.nsplits, 1)

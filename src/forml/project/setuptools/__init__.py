@@ -23,8 +23,9 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
         super().__init__(attrs)
 
 
-COMMANDS: typing.Mapping[str, typing.Type[Command]] = {
+COMMANDS: typing.Mapping[str, typing.Type[command.Mode]] = {
     'train': command.Train,
+    'score': command.Score
 }
 
 OPTIONS = {
