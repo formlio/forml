@@ -5,6 +5,7 @@ Ensembling operators.
 import typing
 
 import pandas
+from pandas.core import generic as pdtype
 from sklearn import model_selection
 
 from forml.flow import pipeline
@@ -43,16 +44,23 @@ class FullStacker(folding.Crossvalidated):
         self.bases: typing.Sequence[topology.Composable] = bases
 
     @staticmethod
-    def _merge(*folds: pandas.DataFrame) -> pandas.DataFrame:
+    def _merge(*folds: pdtype.NDFrame) -> pandas.DataFrame:
         """Individual fold model predictions merging.
+
+        Predictions can either be series or multicolumn dataframes in which case same position columns are merged
+        together.
 
         Args:
             *folds: Individual model predictions.
 
         Returns: Single dataframe with the merged predictions.
         """
-        return pandas.concat((pandas.concat(s, axis='columns').mean(axis='columns').rename(n[0])
-                              for n, s in (zip(*i) for i in zip(*(f.iteritems() for f in folds)))), axis='columns')
+        if not (folds and all(f.shape == folds[0].shape for f in folds)):
+            raise ValueError('Folds must have same shape')
+        folds = [([f.name for f in folds], folds)] if folds[0].ndim == 1 else (
+            zip(*i) for i in zip(*(f.iteritems() for f in folds)))
+        return pandas.concat((
+            pandas.concat(s, axis='columns').mean(axis='columns').rename(n[0]) for n, s in folds), axis='columns')
 
     def builder(self, head: pipeline.Segment, inner: pipeline.Segment) -> 'FullStacker.Builder':
         """Create a builder (folding context).
