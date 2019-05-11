@@ -49,11 +49,9 @@ myprj
   |                   |    |- __init__.py
   |                   |    |- <moduleX>.py  # arbitrary user defined module
   |                   |    \- <moduleY>.py
-  |                   |- crossval.py  # here the component is just a module
-  |                   |- schedule.py
-  |                   |- label.py
   |                   |- source.py
-  |                   \- report.py
+  |                   |- evaluation.py  # here the component is just a module
+  |                   |- schedule.py
   |- tests
   |    |- sample.sqlite
   |    \- ...
@@ -83,30 +81,12 @@ and _predicting_ or _transforming_). This needs to be reflected in the duality o
 Apart from the two modes there needs to be a syntax for indicating how and what parts of the pipeline should be
 optimized using hyperparameter tuning.
 
-**Discussion:**
-It is an open question whether the framework should provide higher granularity in the convention of describing
-particular parts of the pipeline (ie `feature_engineering.py`, `feature_selection.py`, `ensembling.py`, `tuning.py`,
-...) and letting the tool to compose the pipeline of it in a standard way or whether the convention should end just on
-the pipeline level itself letting the user to define it as a whole. The first approach would help structuring the
-project in standardized way and would help removing some boilerplate but is probably making too strong assumptions on
-how relevant are these steps in general and also whether there is anything like _"standard way"_ of composing a pipeline
-from them.
 
+Evaluation (`evaluation.py`)
+----------------------------
 
-Label Extraction (`label.py`)
------------------------------
-
-This is actually one of the components in question discussed in the previous paragraph - should it be treated in the
-framework as a separate topic or should it just be left to the user to build it into the main pipeline if necessary?
-Label extraction looks to be more settled procedure (in terms of it's position in the pipeline) to have its own
-component in the ForML project structure.
-
-
-Cross Validation (`crossval.py`)
---------------------------------
-
-Definition of cross-validation iterator that is used to iteratively split the data whenever it needs to do
-crossvalidation (CI/benchmarking, tuning, ensembling).
+Definition of model evaluation strategy for both the development mode (scoring developed model) or production
+evaluation of delivered predictions.
 
 
 Producer Expression (`source.py`)
@@ -133,35 +113,38 @@ time periods but also on performance evaluation results. It is the responsibilit
 the scheduling as requested. 
 
 
-Reporting (`report.py`)
------------------------
-
-Definition of metrics and insights to be regularly evaluated and reported by means of the particular runtime. This can
-be typical machine-learning metrics but possibly also more generic data stats.
-
-
 Lifecycle
 =========
 
-Once the project component structure is defined it can execute its lifecycle stages. This is typically controlled using
-the CLI and depends implementation-wise on specific _Runtime_.
+Once the project component structure is defined it can execute its lifecycle stages.
 
-The typical lifecycle is:
+Research Lifecycle
+------------------
 
-* **Build** - build and wrap the project into a runable _Artifact_ - what that means is totally specific to particular
-_Runtime_ (ie producing a Docker image and uploading it to a registry etc); Artifacts of same project are distinguished
-by their incremental version numbers
-* **Crossval** - perform a crossvalidation based on the specs defined in `crossval.py` using particular Artifact and
-return the score; one of the usecases is a CI integration to continuously monitor (evaluate) the changes in the project
+At this stage the project is being developed, no models are really produced, ale exectuion happens only within the
+project scope.
+
+* **Score** - perform a crossvalidation based on the specs defined in `evaluation.py` and return the score; one of the
+usecases is a CI integration to continuously monitor (evaluate) the changes in the project
 development. 
-* **Tune** - run hyper-parameter tuning of the selected pipeline _Artifact_ parameters and produce new _Instance_ (that
-get's persisted in a way specific to given Runtime)
-* **Train** - fit (incrementally) the stateful parts of the pipeline _Artifact_ using new labelled data producing a new
-_Instance_
-* **Apply** - run unlabelled data through a pipeline _Instance_ producing transformed output (most typically
+* **Tune** - run hyper-parameter tuning reporting the results
+* **Build** - build and wrap the project into a runable _Artifact_ producing a new _Lineage_ that can be used within
+the _Production Lifecycle_.
+
+
+Production Lifecycle
+--------------------
+
+This is typically controlled using the CLI and depends implementation-wise on specific _Runtime_. It is based on a
+pipeline _Artifact_ of specific _Lineage_ built out of the _Research Lifecycle_. 
+
+* **Train** - fit (incrementally) the stateful parts of the pipeline using new labelled data producing a new
+_Generation_
+* **Tune** - run hyper-parameter tuning of the selected pipeline and produce new _Generation_
+* **Apply** - run unlabelled data through a pipeline _Generation_ producing transformed output (most typically
 _predictions_); the interface mechanism is again Runtime specific (ie a synchronous REST service or async Kafka
 consumer-producer etc) 
-* **Report** - evaluate the metrics and insights defined in `report.py` and publish them in a way specific to given
+* **Score** - evaluate the metrics and insights defined in `evaluation.py` and publish them in a way specific to given
 Runtime (ie some dashboard)
 
 
@@ -169,27 +152,13 @@ Instance Persistence
 --------------------
 
 Fundamental aspect of the lifecycle is pipeline state transition occurring during _train_ and _tune_ stages. Each of
-these transitions produces a new _Instance_.
+these transitions produces a new _Generation_. Generations based on same build belong to one _Lineage_.
 
-Instances are distinguished by their incremental version numbers. Since Artifacts themselves are versioned (incremented
-by every _build_), the instance version number consists of `<artifact (build) version>.<instance (transition) version>`. 
+Both Lineages and Generations are distinguished by their incremental version numbers establishing a pipeline versioning
+schema of `<lineage version>.<generation version>`. 
 
-Particular _Runtime_ implementations need to provide a mechanism for Instance persistence - some kind of repository that
-allows publishing, locating and fetching these instances.
-
-Physical format of an Instance is again Runtime-specific but on the abstract level it needs to carry:
-
-* project reference
-* artifact (build) version
-* instance (transition) version
-* training history: 
-    * last training timestamp
-    * last trained data ordinal number (ie time)
-* tuning history (last tune timestamp)
-* all state information
-
-Since the format used for Instance persistence is Runtime-specific, an Instance produced by particular Runtime might not
-be compatible with another Runtime. 
+Particular _Runtime_ implementations need to provide a mechanism for Generation persistence - some kind of repository
+that allows publishing, locating and fetching these instances.
 
 
 Runtime
@@ -202,41 +171,10 @@ needs of particular user architectures.
 
 Actual Runtime itself can further be made extensible by external _IO Engines_ that can be installed as addons.
 
+First Runtime implementations are:
 
-Native Runtime
---------------
-
-Native runtime is the reference runtime implementation. It is not targeting large scale production usecases but should
-be ideal runtime for executing project CI jobs or local project development.
-
-Native Runtime is taking following approach implementing the abstract ForML concept:
-
-* Python multiprocessing used for distributing the Pipeline on local system (can't be distributed over multiple hosts
-though).
-* _Instance Persistence_ implemented using a Python Pickling format dumped as a single file into local directory
-structure
-* Artifacts are plain python (wheel) packages
-* Default _IO Engines_ (additional engines can be provided as addons):
-    * _synchronous streaming_ implemented as REST service
-    * _batch_ implemented on top of local sqlite files
-* Any reporting results are sent to stdout
-* Scheduling is unsupported
-
-
-Kube Runtime
-------------
-
-This Runtime allows running ForML project at scale on a Kubernetes cluster. It is based on following principles:
-
-* Argo used to map a pipeline into a workflow runable on kubernetes cluster
-* _Instance Persistence_ implemented using blob storage (S3, WASB or Minio for non-cloud deployments)
-* Artifacts are docker images that can run individual operators as entrypoints and interconnect within the graph across
-relevant PODs using TCP.
-* Default _IO Engines_ (additional engines can be provided as addons):
-    * _synchronous streaming_ implemented as REST service around Argo Events
-    * no default _batch_ engines (needs addons)
-* Graphana used for visualizing metric reports
-* Scheduling is implemented using native Argo capabilities
+* Dask
+* Graphviz (just to render the task dependency graph vizualization)
 
 
 CLI
@@ -249,23 +187,17 @@ The ForML lifecycle management can be fully operated from command-line using fol
 Usage: forml [--runtime <name> [--engine <name>]] <command> [options]
 
 Commands:
-    build
-         Build the project producing an Artifact for given runtime.
-    
-    score <artifact> [<common options>]
+    score <project> <generation> [<common options>]
          Crossvalidate using given dataset and return the score.
          
-    tune <instance> [<common options>]
+    tune <project> <generation> [<common options>]
          Perform hyper-parameter tuning and produce new instance.
     
-    train <instance> [<common options>]
+    train <project> <generation> [<common options>]
         Train the pipeline and produce new instance.
     
-    apply <instance> [<common options>]
+    apply <project> <generation> [<common options>]
         Run the pipeline in apply mode generating predictions/transformations.
-    
-    report <instance> [<common options>]
-        Calculate and publish project performance metric/insights. 
     
 Common Options:
     --etl <name>        Select project defined producer expressions (required if multiple defined).

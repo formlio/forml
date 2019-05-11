@@ -1,8 +1,9 @@
 """
 Titanic project pipeline.
 
-This is one of the main _formal_ forml components (along with `source`) that's being looked up by the forml loader.
-In this case it is implemented as a python package but it could be as well just a module `pipeline.py`.
+This is one of the main _formal_ forml components (along with `source` and `evaluation`) that's being looked up by
+the forml loader. In this case it is implemented as a python package but it could be as well just a module
+`pipeline.py`.
 
 All the submodules of this packages have no semantic meaning for ForML - they are completely informal and have been
 created just for structuring the project code base splitting it into these particular parts with arbitrary names.
