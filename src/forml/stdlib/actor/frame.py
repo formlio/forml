@@ -19,7 +19,7 @@ LOGGER = logging.getLogger(__name__)
 
 def ndframed(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
                                       typing.Any]) -> typing.Callable[[task.Actor, typing.Any], typing.Any]:
-    """Decorator for converting input parameters to pandas.
+    """Decorator for converting input parameters and return value to pandas.
 
     Args:
         wrapped: Actor method to be decorated.
@@ -42,16 +42,16 @@ def ndframed(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
         return arg
 
     @functools.wraps(wrapped)
-    def wrapper(self: task.Actor, *args: typing.Any) -> typing.Any:
+    def wrapper(self: task.Actor, *args: typing.Any) -> pdtype.NDFrame:
         """Decorating wrapper.
 
         Args:
             self: Actor self.
             *args: Input arguments to be converted.
 
-        Returns: Output of original method.
+        Returns: Converted output of original method.
         """
-        return wrapped(self, *(convert(a) for a in args))
+        return convert(wrapped(self, *(convert(a) for a in args)))
     return wrapper
 
 
@@ -123,18 +123,18 @@ class Concat(task.Actor):
 
 
 class Apply(task.Actor):
-    """Generic dataframe apply actor.
+    """Generic source apply actor.
     """
-    def __init__(self, function: typing.Callable[[pandas.DataFrame], pandas.DataFrame]):
-        self.function: typing.Callable[[pandas.DataFrame], pandas.DataFrame] = function
+    def __init__(self, function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame]):
+        self.function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame] = function
 
     @ndframed
-    def apply(self, table: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
-        """Execute the provided method with the given table.
+    def apply(self, *source: pdtype.NDFrame) -> pdtype.NDFrame:  # pylint: disable=arguments-differ
+        """Execute the provided method with the given sources.
 
         Args:
-            table: Dataframe to be passed through the provided method.
+            source: Inputs to be passed through the provided method.
 
         Returns: Transformed output as returned by the provided method.
         """
-        return self.function(table)
+        return self.function(*source)
