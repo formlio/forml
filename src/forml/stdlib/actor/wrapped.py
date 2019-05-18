@@ -30,10 +30,7 @@ class Wrapping(metaclass=abc.ABCMeta):
         return isinstance(other, self.__class__) and self._actor == other._actor and self._params == other._params
 
     def __str__(self):
-        cls = self._actor
-        if not inspect.isclass(cls):
-            cls = type(cls)
-        return cls.__name__
+        return task.name(self._actor, **self._params)
 
     @abc.abstractmethod
     def is_stateful(self) -> bool:
@@ -92,6 +89,9 @@ class Class(Mapping):
     def __call__(self, *args, **kwargs) -> task.Actor:
         return self.Actor(self._actor(*args, **kwargs), self._params)  # pylint: disable=abstract-class-instantiated
 
+    def __str__(self):
+        return task.name(self._actor)
+
     @staticmethod
     def actor(cls: typing.Optional[typing.Type] = None,  # pylint: disable=bad-staticmethod-argument
               **mapping: str) -> typing.Type[task.Actor]:
@@ -142,7 +142,7 @@ class Function(Wrapping):
             self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
         def __str__(self):
-            return self._function.__name__
+            return task.name(self._function, **self._kwargs)
 
         def apply(self, *features: typing.Any) -> typing.Union[typing.Any, typing.Sequence[typing.Any]]:
             return self._function(*features, **self._kwargs)
@@ -173,9 +173,6 @@ class Function(Wrapping):
 
     def __call__(self, **kwargs) -> 'Function.Actor':
         return self.Actor(self._actor, **{**self._params, **kwargs})
-
-    def __str__(self):
-        return str(self._actor)
 
     def is_stateful(self) -> bool:
         """Wrapped function is generally stateless.

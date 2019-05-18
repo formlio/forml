@@ -20,6 +20,9 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
     def __init__(self, spec: task.Spec):
         self.spec: task.Spec = spec
 
+    def __str__(self):
+        return f'{self.__class__.__name__}[{str(self.spec)}]'
+
     @classmethod
     def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs) -> typing.Type['Simple']:
         """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
