@@ -19,7 +19,7 @@ from titanic.pipeline import preprocessing, model
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
 STACK = ensemble.FullStacker(bases=(model.RFC(n_estimators=10, random_state=42),
                                     model.GBC(random_state=42)),
-                             crossvalidator=model_selection.StratifiedKFold(n_splits=3, shuffle=True, random_state=42))
+                             crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42))
 
 
 # This is the main pipeline composition:

@@ -18,6 +18,30 @@ from forml import flow
 LOGGER = logging.getLogger(__name__)
 
 
+def name(actor: typing.Any, **params) -> str:
+    """Infer the task name of given instance or type.
+
+    Args:
+        actor: Type or actor instance.
+        **params: Optional parameters belonging to actor.
+
+    Returns: String name representation.
+    """
+    def extract(obj: typing.Any) -> str:
+        """Extract the name of given object
+        Args:
+            obj: Object whose name to be extracted.
+
+        Returns: Extracted name.
+        """
+        return obj.__name__ if hasattr(obj, '__name__') else str(obj)
+
+    value = extract(actor)
+    if params:
+        value += '(' + ', '.join(f'{k}={extract(v)}' for k, v in params.items()) + ')'
+    return value
+
+
 class Actor(metaclass=abc.ABCMeta):
     """Abstract interface of an actor.
     """
@@ -74,7 +98,7 @@ class Actor(metaclass=abc.ABCMeta):
             params: Dictionary of hyper parameters.
         """
         if params:
-            raise RuntimeError(f'Params setter for {params} not implemented on {self.__class__.__name__}')
+            raise RuntimeError(f'Params setter for {params} not implemented on {self}')
 
     def get_state(self) -> bytes:
         """Return the internal state of the actor.
@@ -105,7 +129,7 @@ class Actor(metaclass=abc.ABCMeta):
         self.set_params(**params)  # restore the original hyper-params
 
     def __str__(self):
-        return self.__class__.__name__
+        return name(self.__class__, **self.get_params())
 
 
 class Spec(collections.namedtuple('Spec', 'actor, params')):
@@ -115,11 +139,7 @@ class Spec(collections.namedtuple('Spec', 'actor, params')):
         return super().__new__(cls, actor, types.MappingProxyType(params))
 
     def __str__(self):
-        value = self.actor.__name__ if hasattr(self.actor, '__name__') else str(self.actor)
-        if self.params:
-            value += '(' + ', '.join(f"{k}={v.__name__ if hasattr(v, '__name__') else str(v)}"
-                                     for k, v in self.params.items()) + ')'
-        return value
+        return name(self.actor, **self.params)
 
     def __hash__(self):
         return hash(self.actor) ^ hash(tuple(sorted(self.params.items())))
