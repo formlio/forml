@@ -2,96 +2,91 @@
 Graph unit tests.
 """
 # pylint: disable=no-self-use, protected-access
-import typing
 
 import pytest
 
 from forml.flow import task, graph
-from forml.flow.graph import node, port, view
+from forml.flow.graph import node as grnode, port, view
+
+
+class TestTraversal:
+    """Path traversal tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def flow(simple: grnode.Worker, multi: grnode.Worker) -> grnode.Worker:
+        """Flow fixture.
+        """
+        simple[0].subscribe(multi[0])
+        return multi
+
+    def test_acyclic(self, flow: grnode.Worker, simple: grnode.Worker):
+        """Test cycle detection.
+        """
+        flow[0].subscribe(simple[0])
+        with pytest.raises(view.Traversal.Cyclic):  # cyclic flow
+            view.Traversal(flow).tail()
+
+    def test_copy(self, flow: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
+        """Copy test.
+        """
+        copy = view.Traversal(flow).copy(simple)
+        assert copy[simple].gid == simple.gid
+        assert copy[multi].gid == multi.gid
+
+    def test_each(self, flow: grnode.Worker, simple: grnode.Worker, multi: grnode.Worker):
+        """Each test.
+        """
+        def check(node: grnode.Worker) -> None:
+            """Each step assertion.
+            """
+            assert node is expected.pop()
+
+        expected = [simple, multi]
+        view.Traversal(flow).each(simple, check)
+        assert not expected
 
 
 class TestPath:
-    """Generic path tests.
-    """
-    def test_invalid(self, simple: node.Worker, multi: node.Worker):
-        """Testing invalid Compound nodes.
-        """
-        with pytest.raises(graph.Error):  # multi-node not condensable
-            view.Path(multi)
-        simple[0].subscribe(multi[0])
-        multi[0].subscribe(simple[0])
-        with pytest.raises(graph.Error):  # cyclic flow
-            view.Path(multi)
-
-
-class Path:
     """Path tests.
     """
-    def test_type(self, simple: node.Worker, path: view.Path, btype: typing.Type[view.Path]):
-        """Testing attributes.
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def head(spec: task.Spec) -> grnode.Worker:
+        """Path head fixture.
         """
-        assert isinstance(path, btype)
-        assert path._head is simple
+        return grnode.Worker(spec, 1, 1)
 
-    def test_copy(self, path: view.Path, spec: task.Spec):
+    @staticmethod
+    @pytest.fixture(scope='function', params=(False, True))
+    def path(request, head: grnode.Worker, spec: task.Spec) -> view.Path:
+        """Path fixture.
+        """
+        grnode1 = grnode.Worker(spec, 1, 2)
+        grnode2 = grnode.Worker(spec, 2, 1)
+        grnode1[0].subscribe(head[0])
+        grnode2[0].subscribe(grnode1[0])
+        grnode2[1].subscribe(grnode1[1])
+        if request.param:  # stateful
+            grnode3 = grnode.Worker(spec, 1, 1)
+            grnode2[0].publish(grnode3, port.Train())
+        return view.Path(head)
+
+    def test_invalid(self, multi: grnode.Worker):
+        """Testing invalid path.
+        """
+        with pytest.raises(graph.Error):  # not a simple edge gnode
+            view.Path(multi)
+
+    def test_copy(self, path: view.Path):
         """Testing copying path nodes.
         """
-        assert isinstance(path.copy(), view.Path)
-        node3 = node.Worker(spec, 1, 1)
-        node3.train(path._head[0], path._head[0])  # not on path should be ignored
-        path.copy()
+        copy = path.copy()
+        assert copy._head.gid == path._head.gid
 
-
-class TestChannel(Path):
-    """Channel path unit tests.
-    """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def path(simple: node.Worker, spec: task.Spec):
-        """Channel path fixture.
+    def test_pubsub(self, path: view.Path, simple: grnode.Worker, multi: grnode.Worker):
+        """Testing path publishing.
         """
-        node1 = node.Worker(spec, 1, 2)
-        node2 = node.Worker(spec, 2, 1)
-        node1[0].subscribe(simple[0])
-        node2[0].subscribe(node1[0])
-        node2[1].subscribe(node1[1])
-        return view.Path(simple)
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def btype():
-        """Channel path type fixture.
-        """
-        return view.Channel
-
-
-class TestClosure(Path):
-    """Closure path unit tests.
-    """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def path(simple: node.Worker, spec: task.Spec):
-        """Closure path fixture.
-        """
-        node1 = node.Worker(spec, 1, 2)
-        node2 = node.Worker(spec, 2, 1)
-        node3 = node.Worker(spec, 1, 1)
-        node1[0].subscribe(simple[0])
-        node2[0].subscribe(node1[0])
-        node2[1].subscribe(node1[1])
-        node2[0].publish(node3, port.Train())
-        return view.Path(simple)
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def btype():
-        """Closure path type fixture.
-        """
-        return view.Closure
-
-    def test_publish(self, path: view.Closure, multi: node.Worker):
-        """Testing closure path publishing.
-        """
-        with pytest.raises(graph.Error):  # closure path publishing
-            multi[0].subscribe(path.publisher)
-        path.publisher.publish(multi, port.Train())
+        multi.train(path.publisher, path.publisher)
+        path.subscribe(simple[0])
+        assert view.Path(simple)._tail is path._tail

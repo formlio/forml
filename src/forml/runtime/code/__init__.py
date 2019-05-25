@@ -40,7 +40,7 @@ class Instruction(metaclass=abc.ABCMeta):
             result = self.execute(*args)
         except Exception as err:
             LOGGER.exception('Instruction %s failed when processing arguments: %s',
-                             self, ', '.join(str(a) for a in args))
+                             self, ', '.join(f'{str(a):.1024s}' for a in args))
             raise err
         LOGGER.debug('%s completed (%.2fms)', self, (time.time() - start) * 1000)
         return result

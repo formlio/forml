@@ -2,14 +2,12 @@
 Graph view - useful lenses and manipulation of graph topology parts.
 """
 
-import abc
 import collections
 import itertools
 import operator
 import typing
 
 from forml.flow import graph
-
 from forml.flow.graph import node as grnode, port
 
 
@@ -27,9 +25,10 @@ class Visitor(grnode.Visitor):
 class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
     """Graph traversal helper.
     """
-    class Cyclic(AssertionError):
+    class Cyclic(graph.Error):
         """Cyclic graph error.
         """
+
     def __new__(cls, current: grnode.Atomic, predecessors: typing.AbstractSet[grnode.Atomic] = frozenset()):
         return super().__new__(cls, current, frozenset(predecessors | {current}))
 
@@ -157,7 +156,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         return copies
 
 
-class Path(tuple, metaclass=abc.ABCMeta):
+class Path(tuple):
     """Representing acyclic apply path(s) between two nodes - a sub-graph with single head and tail node each with
     at most one apply input/output port.
 
@@ -168,13 +167,11 @@ class Path(tuple, metaclass=abc.ABCMeta):
     _tail: grnode.Atomic = property(operator.itemgetter(1))
 
     def __new__(cls, head: grnode.Atomic, tail: typing.Optional[grnode.Atomic] = None):
-        if head.szin not in {0, 1}:
+        if head.szin > 1:
             raise graph.Error('Simple head required')
         tail = Traversal(head).tail(tail).current
-        if tail.szout not in {0, 1}:
+        if tail.szout > 1:
             raise graph.Error('Simple tail required')
-        # pylint: disable=self-cls-assignment
-        cls = Closure if any(s.node.trained for p in tail.output for s in p) else Channel
         return super().__new__(cls, (head, tail))
 
     def accept(self, visitor: Visitor) -> None:
@@ -186,47 +183,7 @@ class Path(tuple, metaclass=abc.ABCMeta):
         Traversal(self._head).each(self._tail, visitor.visit_node)
         visitor.visit_path(self)
 
-    # @abc.abstractmethod
     def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[grnode.Atomic] = None) -> 'Path':
-        """Create new path by appending right head to our tail or traversing the graph to its actual tail.
-
-        Args:
-            right: Branch to extend with.
-            tail: Optional tail as a path output vertex.
-
-        Returns: New connected path.
-        """
-        raise NotImplementedError()
-
-    def subscribe(self, publisher: port.Publishable) -> None:
-        """Subscribe head node to given publisher.
-        """
-        self._head[0].subscribe(publisher)
-
-    @property
-    # @abc.abstractmethod
-    def publisher(self) -> port.Publishable:
-        """Publishable tail node representation.
-
-        Returns: Publishable tail apply port reference.
-        """
-        raise NotImplementedError()
-
-    def copy(self) -> 'Path':
-        """Make a copy of the apply path topology. Any nodes not on path are ignored.
-
-        Returns: Copy of the apply path.
-        """
-
-        copies = Traversal(self._head).copy(self._tail)
-        return Path(copies[self._head], copies[self._tail])
-
-
-class Channel(Path):
-    """Path with regular output passing data through.
-    """
-
-    def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
         """Create new path by appending right head to our tail or retracing this path up to its physical or specified
         tail.
 
@@ -238,12 +195,17 @@ class Channel(Path):
         """
         # pylint: disable=protected-access
         if right:
-            right._head[0].subscribe(self._tail[0])
+            right.subscribe(self.publisher)
             if not tail:
                 tail = right._tail
         elif not tail:
             tail = Traversal(self._tail).tail().current
         return Path(self._head, tail)
+
+    def subscribe(self, publisher: port.Publishable) -> None:
+        """Subscribe head node to given publisher.
+        """
+        self._head[0].subscribe(publisher)
 
     @property
     def publisher(self) -> port.Publishable:
@@ -253,41 +215,11 @@ class Channel(Path):
         """
         return self._tail[0].publisher
 
+    def copy(self) -> 'Path':
+        """Make a copy of the apply path topology. Any nodes not on path are ignored.
 
-class Closure(Path):
-    """Closure is a path with all of its output being published to train port(s) thus not passing anything through.
-    Note based on the definition of tail node (having a apply output) this refers to the last apply node before final
-    train port subscriber(s).
-    """
-
-    class Publishable(port.Publishable):
-        """Customized Publishable verifying it's publishing only to Train ports.
+        Returns: Copy of the apply path.
         """
-        def __init__(self, publisher: port.Publishable):
-            super().__init__(None, None)
-            self._publisher: port.Publishable = publisher
 
-        def republish(self, subscription: port.Subscription) -> None:
-            """Republish the subscription checking it's only for a train port.
-
-            Args:
-                subscription: Existing subscription descriptor.
-            """
-            if isinstance(subscription.port, port.Apply):
-                raise graph.Error('Closure path publishing')
-            self._publisher.republish(subscription)
-
-    def extend(self, right: typing.Optional[Path] = None, tail: typing.Optional[grnode.Atomic] = None) -> Path:
-        """Closure path is not extendable.
-        """
-        if not right and (not tail or tail == self._tail):
-            return Path(self._head, self._tail)
-        raise graph.Error('Extending closure path')
-
-    @property
-    def publisher(self) -> port.Publishable:
-        """Publishable tail node representation. Closure can only be published to Train ports.
-
-        Returns: Publishable tail apply port reference.
-        """
-        return self.Publishable(self._tail[0].publisher)
+        copies = Traversal(self._head).copy(self._tail)
+        return Path(copies[self._head], copies[self._tail])

@@ -22,7 +22,7 @@ class Loader(topology.Operator):
                  label: typing.Optional[task.Spec] = None):
         self._apply: task.Spec = apply
         self._train: task.Spec = train or apply
-        self._label: task.Spec = label
+        self._label: typing.Optional[task.Spec] = label
 
     def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Compose the source segment track.
