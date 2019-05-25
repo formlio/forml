@@ -56,7 +56,7 @@ class Atomic(metaclass=abc.ABCMeta):
         return port.PubSub(self, index)
 
     def __eq__(self, other: typing.Any) -> bool:
-        """If one of the nodes is a Future the equality is based on the equality of their subscriptions. Otherwise the
+        """If each node is of different type the equality is based on the equality of their subscriptions. Otherwise the
         equality is based on object identity.
 
         Args:
@@ -64,8 +64,9 @@ class Atomic(metaclass=abc.ABCMeta):
 
         Returns: True if equal.
         """
-        if isinstance(other, Atomic) and any(isinstance(n, Future) for n in (self, other)):
-            return self.szout == other.szout and all(s == o for s, o in zip(self.output, other.output))
+        if isinstance(other, Atomic) and other.__class__ is not self.__class__:
+            return self.szout == other.szout and any(self._output) and all(
+                s == o for s, o in zip(self.output, other.output))
         return id(self) == id(other)
 
     def __hash__(self) -> int:
@@ -238,7 +239,7 @@ class Worker(Atomic):
 
         Returns: True if we are given node's subscriber.
         """
-        return self in {s.node for p in publisher.output for s in p}
+        return any(s.node is self for p in publisher.output for s in p)
 
     def fork(self) -> 'Worker':
         """Create new node with same shape and actor as self but without any subscriptions.
