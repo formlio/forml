@@ -71,7 +71,7 @@ class Operator(Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
 class Compound(Composable):
     """Operator chaining descriptor.
     """
-    _TERMS = weakref.WeakSet()
+    _TERMS = weakref.WeakValueDictionary()
 
     def __init__(self, right: Composable, left: Composable):
         for term in (left, right):
@@ -79,7 +79,7 @@ class Compound(Composable):
                 raise ValueError(f'{type(term)} not composable')
             if term in self._TERMS:
                 raise graph.Error(f'Non-linear {term} composition')
-            self._TERMS.add(term)
+            self._TERMS[term] = self
         self._right: Composable = right
         self._left: Composable = left
 

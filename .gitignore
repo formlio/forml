@@ -9,4 +9,9 @@ junit.xml
 .idea
 .cache
 .coverage
+.coverage.*
+*.log
+*.log.?
+*.dot
 .pytest_cache/
+.ipynb_checkpoints/

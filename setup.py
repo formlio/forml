@@ -21,7 +21,7 @@ EXTRAS_DASK = {
 EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK
 
 setuptools.setup(name='forml',
-                 version='0.1.dev0',
+                 version='0.2.dev0',
                  description='Continuous Integration Formalization and Runtime for AI',
                  url='https://github.com/formlio/forml',
                  author='ForML Authors',

@@ -12,7 +12,6 @@ created just for structuring the project code base splitting it into these parti
 from sklearn import model_selection
 
 from forml.project import component
-from forml.stdlib.operator import debug
 from forml.stdlib.operator.folding import ensemble
 from titanic.pipeline import preprocessing, model
 
@@ -27,9 +26,8 @@ STACK = ensemble.FullStacker(bases=(model.RFC(n_estimators=10, random_state=42),
 INSTANCE = preprocessing.NaNImputer() >> \
            preprocessing.parse_title(source='Name', target='Title') >> \
            preprocessing.ENCODER(cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title']) >> \
-           debug.Dump(path='model') >> \
            STACK >> \
-           model.LR(random_state=42)
+           model.LR(random_state=42, solver='lbfgs')
 
 # And the final step is registering the pipeline instance as the forml component:
 component.setup(INSTANCE)

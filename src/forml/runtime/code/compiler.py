@@ -149,9 +149,8 @@ class Table(view.Visitor, abc.Iterable):
             del self._instructions[orig]
             return self.set(instruction, new)
 
-    def __init__(self, assets: access.State):
-        self._assets: access.State = assets
-        self._offsets: typing.Dict[uuid.UUID, int] = dict()
+    def __init__(self, assets: typing.Optional[access.State]):
+        self._assets: typing.Optional[access.State] = assets
         self._linkage: Table.Linkage = self.Linkage()
         self._index: Table.Index = self.Index()
         self._committer: typing.Optional[uuid.UUID] = None
@@ -196,26 +195,30 @@ class Table(view.Visitor, abc.Iterable):
             node: Node to be added - compiled into symbols.
         """
         assert node.uid not in self._index, f'Node collision ({node})'
+        assert isinstance(node, grnode.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
         functor = instmod.Mapper(node.spec)
         aliases = [node.uid]
         if node.stateful:
             state = node.gid
-            offset = self._offsets.setdefault(state, len(self._offsets))
-            if state not in self._index:
-                self._index.set(instmod.Loader(self._assets, offset), state)
+            persistent = self._assets and state in self._assets
+            assert persistent or any(n.trained for n in node.group), 'Non-persistent stateful node without training'
+            if persistent and state not in self._index:
+                self._index.set(instmod.Loader(self._assets, state), state)
             if node.trained:
                 functor = instmod.Consumer(node.spec)
-                if not self._committer:
-                    self._committer = self._index.set(instmod.Committer(self._assets))
-                dumper = self._index.set(instmod.Dumper(self._assets))
-                self._linkage.insert(dumper, node.uid)
-                self._linkage.insert(self._committer, dumper, offset)
                 aliases.append(state)
-                state = self._index.reset(state)  # re-register loader under it's own id
-            functor = functor.shiftby(instmod.Functor.Shifting.state)
-            self._linkage.prepend(node.uid, state)
+                if persistent:
+                    if not self._committer:
+                        self._committer = self._index.set(instmod.Committer(self._assets))
+                    dumper = self._index.set(instmod.Dumper(self._assets))
+                    self._linkage.insert(dumper, node.uid)
+                    self._linkage.insert(self._committer, dumper, self._assets.offset(state))
+                    state = self._index.reset(state)  # re-register loader under it's own id
+            if persistent or not node.trained:
+                functor = functor.shiftby(instmod.Functor.Shifting.state)
+                self._linkage.prepend(node.uid, state)
         for key in aliases:
             self._index.set(functor, key)
         if not node.trained:
@@ -230,7 +233,7 @@ class Table(view.Visitor, abc.Iterable):
         self.add(node)
 
 
-def generate(path: view.Path, assets: access.State) -> typing.Sequence[code.Symbol]:
+def generate(path: view.Path, assets: typing.Optional[access.State] = None) -> typing.Sequence[code.Symbol]:
     """Generate the symbol code based on given flow path.
 
     Args:

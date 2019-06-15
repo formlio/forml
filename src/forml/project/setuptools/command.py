@@ -8,10 +8,10 @@ import typing
 
 from setuptools.command import test
 
-from forml import project, etl
+from forml import etl, conf, project
 from forml.runtime import process
 from forml.runtime.asset import access
-from forml.runtime.asset.persistent.registry import devel as devreg
+from forml.runtime.asset.persistent.registry import virtual
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,8 +30,8 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """Init options.
         """
         super().initialize_options()
-        self.runner: str = 'dask'
-        self.engine: str = 'devel'
+        self.runner: str = conf.RUNNER.key
+        self.engine: str = conf.ENGINE.key
         self.lower: typing.Optional[str] = None
         self.upper: typing.Optional[str] = None
 
@@ -61,9 +61,13 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     def run_tests(self) -> None:
         """This is the original test command entry point - lets override it with our actions.
         """
-        LOGGER.debug('%s: starting %s', self.distribution.name, self.__class__.__name__.lower())
-        runner = process.Runner[self.runner](etl.Engine[self.engine](), access.Assets(
-            devreg.Registry(self.artifact), self.distribution.name))
+        name = self.distribution.metadata.name
+        version = self.distribution.metadata.version
+        registry = virtual.Registry()
+        registry.push(name, version, self.artifact)
+        LOGGER.debug('%s: starting %s', name, self.__class__.__name__.lower())
+        runner = process.Runner[self.runner](
+            access.Assets(name, registry=registry), etl.Engine[self.engine]())
         result = self.launch(runner, lower=self.lower, upper=self.upper)
         if result:
             print(result)

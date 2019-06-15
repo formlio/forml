@@ -135,3 +135,8 @@ class TestTag:
         assert not empty.tuning
         assert empty.training.trigger().training
         assert empty.tuning.trigger().tuning
+
+    def test_dumpload(self, tag: directory.Generation.Tag):
+        """Test tag serialization.
+        """
+        assert directory.Generation.Tag.loads(tag.dumps()).training.timestamp == tag.training.timestamp

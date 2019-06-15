@@ -7,10 +7,14 @@ import sys
 import types
 import typing
 
+from forml.runtime import process
+
 import forml
-from forml import etl
+from forml import etl, conf
 from forml.flow.pipeline import topology
 from forml.project import component as importer
+from forml.runtime.asset import access
+from forml.runtime.asset.persistent.registry import virtual
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,15 +62,16 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
             Returns: Descriptor instance.
             """
             if not all(self._handlers.values()):
-                raise Error(f'Incomplete builder (missing {", ".join(c for c, h in self if not h)})')
+                LOGGER.warning('Incomplete builder (missing %s)', ', '.join(c for c, h in self if not h))
             return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
 
-    def __new__(cls, source: etl.Source, pipeline: topology.Composable, evaluation: topology.Operator):
+    def __new__(cls, source: 'etl.Source', pipeline: topology.Composable,
+                evaluation: typing.Optional[topology.Operator] = None):
         if not isinstance(pipeline, topology.Composable):
             raise Error('Invalid pipeline')
         if not isinstance(source, etl.Source):
             raise Error('Invalid source')
-        if not isinstance(evaluation, topology.Operator):
+        if evaluation and not isinstance(evaluation, topology.Operator):
             raise Error('Invalid evaluation')
         return super().__new__(cls, source, pipeline, evaluation)
 
@@ -83,7 +88,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         Returns: Project descriptor.
         """
         builder = cls.Builder()
-        if modules.keys() > builder:
+        if any(c not in builder for c in modules):
             raise Error('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, setter in builder:
@@ -93,14 +98,30 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
             try:
                 setter(importer.load(mod))
             except ModuleNotFoundError as err:
-                raise Error(f'Project {component} error: {err}')
+                LOGGER.warning('Project %s error: %s', component, err)
         return builder.build()
 
 
 class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     """Project artifact handle.
     """
-    def __new__(cls, path: typing.Optional[str] = None, package: typing.Optional[str] = None, **modules: str):
+    class Launcher:
+        """Runner proxy class with preconfigured assets to launch given artifact.
+        """
+        def __init__(self, assets: access.Assets):
+            self._assets: access.Assets = assets
+
+        def __getitem__(self, runner: str) -> process.Runner:
+            return process.Runner[runner](self._assets)
+
+        def __getattr__(self, mode: str) -> typing.Callable:
+            return getattr(process.Runner(self._assets), mode)
+
+    def __new__(cls, path: typing.Optional[str] = None, package: typing.Optional[str] = None, **modules: typing.Any):
+        prefix = package or conf.PRJ_NAME
+        for key, value in modules.items():
+            if not isinstance(value, str):  # component provided as true instance rather then module path
+                modules[key] = importer.Virtual(value, f'{prefix}.{key}').path
         return super().__new__(cls, path, package, types.MappingProxyType(modules))
 
     def __getnewargs_ex__(self):
@@ -115,3 +136,14 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         if self.path:
             sys.path.insert(0, self.path)
         return Descriptor.load(self.package, **self.modules)
+
+    @property
+    def launcher(self) -> 'Artifact.Launcher':
+        """Return the launcher configured with a virtual registry preloaded with this artifact.
+
+        Returns: Launcher instance.
+        """
+        registry = virtual.Registry()
+        project = self.package or conf.PRJ_NAME
+        registry.push(project, 0, self)
+        return self.Launcher(access.Assets(project, registry=registry))

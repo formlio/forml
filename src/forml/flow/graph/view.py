@@ -89,6 +89,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
     def each(self, tail: grnode.Atomic, acceptor: typing.Callable[[grnode.Atomic], None]) -> None:
         """Traverse the path downstream calling acceptor for each unique node.
 
+        Potential tail Future node is ignored.
+
         Args:
             tail: Optional traversion breakpoint.
             acceptor: Acceptor to call for each unique node.
@@ -112,7 +114,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             mask = unseen
             if traversal.current == tail:
                 mask = lambda n: unseen(n) and n.trained
-            acceptor(traversal.current)
+            if isinstance(traversal.current, grnode.Worker) or traversal.current != tail:
+                acceptor(traversal.current)
             seen.add(traversal.current)
             for node in traversal.directs(tail, mask=mask):
                 traverse(node)

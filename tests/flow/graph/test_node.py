@@ -76,7 +76,7 @@ class TestWorker(Atomic):
         """Testing node creation.
         """
         fork = node.fork()
-        assert {node, fork} == node.fgroup
+        assert {node, fork} == node.group
         node.train(multi[0], multi[1])
         with pytest.raises(graph.Error):  # Fork train non-exclusive
             fork.train(multi[0], multi[1])

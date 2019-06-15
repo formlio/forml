@@ -14,12 +14,17 @@ from forml.runtime.asset import persistent, directory, access
 
 
 @pytest.fixture(scope='function')
-def states() -> typing.Mapping[uuid.UUID, bytes]:
-    """States fixture.
+def nodes() -> typing.Sequence[uuid.UUID]:
+    """Persistent nodes GID fixture.
     """
-    return collections.OrderedDict(((uuid.UUID(bytes=b'\x00' * 16), b'\x00'),
-                                    (uuid.UUID(bytes=b'\x01' * 16), b'\x01'),
-                                    (uuid.UUID(bytes=b'\x02' * 16), b'\x02')))
+    return uuid.UUID(bytes=b'\x00' * 16), uuid.UUID(bytes=b'\x01' * 16), uuid.UUID(bytes=b'\x02' * 16)
+
+
+@pytest.fixture(scope='function')
+def states(nodes) -> typing.Mapping[uuid.UUID, bytes]:
+    """State IDs to state values mapping fixture.
+    """
+    return collections.OrderedDict((n, n.bytes) for n in nodes)
 
 
 @pytest.fixture(scope='function')
@@ -125,8 +130,8 @@ def registry(content: typing.Mapping[int, typing.Mapping[int, directory.Generati
 
 
 @pytest.fixture(scope='function')
-def valid_assets(registry: persistent.Registry, project: str, populated_lineage: int,
-                 valid_generation: int) -> access.Assets:
+def valid_assets(project: str, populated_lineage: int, valid_generation: int,
+                 registry: persistent.Registry) -> access.Assets:
     """Lineage fixture.
     """
-    return access.Assets(registry, project, populated_lineage, valid_generation)
+    return access.Assets(project, populated_lineage, valid_generation, registry)

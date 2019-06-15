@@ -14,7 +14,7 @@ import pandas
 
 BASE_DIR = os.path.dirname(__file__)
 TRAINSET_CSV = os.path.join(BASE_DIR, 'titanic_train.csv')
-TESTSET_CSV = os.path.join(BASE_DIR, 'titanic_train.csv')
+TESTSET_CSV = os.path.join(BASE_DIR, 'titanic_test.csv')
 
 
 def trainset(**_) -> pandas.DataFrame:
