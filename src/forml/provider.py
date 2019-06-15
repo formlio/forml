@@ -89,6 +89,23 @@ _REGISTRY: typing.Dict[typing.Type['Interface'], Registry] = collections.default
 class Meta(abc.ABCMeta):
     """Provider metaclass.
     """
+    DEFAULTS: typing.Dict[typing.Type['Interface'], typing.Tuple[str, typing.Mapping[str, typing.Any]]] = dict()
+
+    def __new__(mcs, name, bases, namespace,
+                default: typing.Optional[typing.Tuple[str, typing.Mapping[str, typing.Any]]] = None, **kwargs):
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        if default:
+            if not inspect.isabstract(cls):
+                raise Error('Defaults provided but class not abstract')
+            mcs.DEFAULTS[cls] = default
+        return cls
+
+    def __call__(cls, *args, **kwargs):
+        if cls in Meta.DEFAULTS:
+            key, params = Meta.DEFAULTS[cls]
+            return cls[key](*args, **{**params, **kwargs})
+        return super().__call__(*args, **kwargs)
+
     def __getitem__(cls, key):
         try:
             return _REGISTRY[cls].get(key)

@@ -14,4 +14,4 @@ class Error(Exception):
 
 
 logging.setup(*(os.path.join(d, conf.LOG_CFGFILE) for d in (conf.SYS_DIR, conf.USR_DIR)),
-              app_name=conf.APP_NAME, log_facility=handlers.SysLogHandler.LOG_USER, log_path=f'./{conf.APP_NAME}.log')
+              prj_name=conf.PRJ_NAME, log_facility=handlers.SysLogHandler.LOG_USER, log_path=f'./{conf.PRJ_NAME}.log')

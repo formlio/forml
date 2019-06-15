@@ -41,17 +41,16 @@ project component structure wrapped within the python application layout might l
 myprj
   |- setup.py
   |- src
-  |    \- <optional_namespace1>
-  |         \- <optional_namespaceN>
-  |              \- myprj
-  |                   |- __init__.py
-  |                   |- pipeline  # here the component is a package 
-  |                   |    |- __init__.py
-  |                   |    |- <moduleX>.py  # arbitrary user defined module
-  |                   |    \- <moduleY>.py
-  |                   |- source.py
-  |                   |- evaluation.py  # here the component is just a module
-  |                   |- schedule.py
+  |    \- <project_namespace1>
+  |          \- myprj
+  |               |- __init__.py
+  |               |- pipeline  # here the component is a package 
+  |               |    |- __init__.py
+  |               |    |- <moduleX>.py  # arbitrary user defined module
+  |               |    \- <moduleY>.py
+  |               |- source.py
+  |               |- evaluation.py  # here the component is just a module
+  |               |- schedule.py
   |- tests
   |    |- sample.sqlite
   |    \- ...
@@ -101,8 +100,6 @@ a _Runtime_).
 
 There might possibly be separate expressions for individual lifecycle stages or even several expressions for same stage
 (just one would need to be selected during launching).
-
-Producer Expressions are implemented on top of _SQLAlchemy selectables_.
 
 
 Schedule (`schedule.py`)

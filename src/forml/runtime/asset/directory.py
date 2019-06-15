@@ -3,13 +3,14 @@
 import abc
 import collections
 import datetime
+import json
 import logging
 import operator
 import types
 import typing
 import uuid
 
-from forml import etl, project as prjmod
+from forml import etl, project as prjmod  # pylint: disable=unused-import
 from forml.runtime import asset
 from forml.runtime.asset import persistent
 
@@ -136,6 +137,7 @@ class Generation(Level):
         class Mode(types.SimpleNamespace):
             """Mode metadata.
             """
+
             class Proxy(tuple):
                 """Mode attributes proxy.
                 """
@@ -186,7 +188,7 @@ class Generation(Level):
             """Training mode attributes.
             """
             def __init__(self, timestamp: typing.Optional[datetime.datetime] = None,
-                         ordinal: typing.Optional[etl.OrdinalT] = None):
+                         ordinal: typing.Optional['etl.OrdinalT'] = None):
                 super().__init__(timestamp, ordinal=ordinal)
 
         class Tuning(Mode):
@@ -195,6 +197,8 @@ class Generation(Level):
             def __init__(self, timestamp: typing.Optional[datetime.datetime] = None,
                          score: typing.Optional[float] = None):
                 super().__init__(timestamp, score=score)
+
+        _TSFMT = '%Y-%m-%dT%H:%M:%S.%f'
 
         def __new__(cls, training: typing.Optional[Training] = None, tuning: typing.Optional[Tuning] = None,
                     states: typing.Optional[typing.Sequence[uuid.UUID]] = None):
@@ -218,6 +222,56 @@ class Generation(Level):
                     if not isinstance(v, Generation.Tag.Mode)}.issuperset(kwargs.keys()):
                 raise ValueError('Invalid replacement')
             return self._replace(**kwargs)
+
+        @classmethod
+        def _strftime(cls, timestamp: typing.Optional[datetime.datetime]) -> typing.Optional[str]:
+            """Encode the timestamp into string representation.
+
+            Args:
+                timestamp: Timestamp to be encoded.
+
+            Returns: Timestamp string representation.
+            """
+            if not timestamp:
+                return None
+            return timestamp.strftime(cls._TSFMT)
+
+        @classmethod
+        def _strptime(cls, raw: typing.Optional[str]) -> typing.Optional[datetime.datetime]:
+            """ Decode the timestamp from string representation.
+
+            Args:
+                raw: Timestamp string representation.
+
+            Returns: Timestamp instance.
+            """
+            if not raw:
+                return None
+            return datetime.datetime.strptime(raw, cls._TSFMT)
+
+        def dumps(self) -> bytes:
+            """Dump the tag into a string of bytes.
+
+            Returns: String of bytes representation.
+            """
+            return json.dumps({
+                'training': {'timestamp': self._strftime(self.training.timestamp)},
+                'tuning': {'timestamp': self._strftime(self.tuning.timestamp)},
+                'states': [str(s) for s in self.states]}, indent=4).encode('utf-8')
+
+        @classmethod
+        def loads(cls, raw: bytes) -> 'Generation.Tag':
+            """Loaded the dumped tag.
+
+            Args:
+                raw: Serialized tag representation to be loaded.
+
+            Returns: Tag instance.
+            """
+            meta = json.loads(raw, encoding='utf-8')
+            return cls(training=cls.Training(timestamp=cls._strptime(meta['training']['timestamp'])),
+                       tuning=cls.Tuning(timestamp=cls._strptime(meta['tuning']['timestamp'])),
+                       states=(uuid.UUID(s) for s in meta['states']))
 
     def __init__(self, registry: 'persistent.Registry', project: str, lineage: 'Lineage',
                  key: typing.Optional[int] = None):
@@ -287,7 +341,7 @@ class Lineage(Level):
         return self._registry.lineages(self.project)
 
     @property
-    def artifact(self) -> prjmod.Artifact:
+    def artifact(self) -> 'prjmod.Artifact':
         """Lineage artifact.
 
         Returns: Artifact object.

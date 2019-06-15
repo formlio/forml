@@ -6,11 +6,11 @@ import abc
 import typing
 import uuid
 
-from forml import project as prjmod, provider
+from forml import project as prjmod, provider, conf
 from forml.runtime.asset import directory
 
 
-class Registry(provider.Interface):
+class Registry(provider.Interface, default=conf.REGISTRY):
     """Top-level persistent registry abstraction.
     """
     def __str__(self):
@@ -27,7 +27,7 @@ class Registry(provider.Interface):
         """
         return directory.Lineage(self, project, lineage)
 
-    def put(self, project: str, artifact: prjmod.Artifact) -> 'directory.Lineage':
+    def put(self, project: str, artifact: 'prjmod.Artifact') -> 'directory.Lineage':
         """Publish new lineage to the repository based on provided artifact.
 
         Args:
@@ -66,7 +66,7 @@ class Registry(provider.Interface):
         """
 
     @abc.abstractmethod
-    def pull(self, project: str, lineage: int) -> prjmod.Artifact:
+    def pull(self, project: str, lineage: int) -> 'prjmod.Artifact':
         """Return the artifact of given lineage.
 
         Args:
@@ -77,7 +77,7 @@ class Registry(provider.Interface):
         """
 
     @abc.abstractmethod
-    def push(self, project: str, lineage: int, artifact: prjmod.Artifact) -> None:
+    def push(self, project: str, lineage: int, artifact: 'prjmod.Artifact') -> None:
         """Start new lineage of a project based on given artifact.
 
         Args:

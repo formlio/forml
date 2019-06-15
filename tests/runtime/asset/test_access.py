@@ -25,13 +25,14 @@ class TestState:
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def state(valid_assets: access.Assets) -> access.State:
+    def assets(valid_assets: access.Assets, nodes: typing.Sequence[uuid.UUID]) -> access.State:
         """State fixture.
         """
-        return valid_assets.state()
+        return valid_assets.state(nodes)
 
-    def test_load(self, state: access.State, states: typing.Mapping[uuid.UUID, bytes]):
+    def test_load(self, assets: access.State, nodes: typing.Sequence[uuid.UUID],
+                  states: typing.Mapping[uuid.UUID, bytes]):
         """Test state loading.
         """
-        for sid, value in states.items():
-            assert state.load(sid) == value
+        for node, value in zip(nodes, states.values()):
+            assert assets.load(node) == value

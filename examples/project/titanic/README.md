@@ -14,3 +14,9 @@ To execute the `score` flow in the development mode:
 3. Alternatively display the runtime graph instead of executing using following command
 
         $ python3 setup.py score --runner graphviz
+
+
+Jupyter Tutorial
+----------------
+
+See the [notebooks/tutorial.ipynb](notebooks/tutorial.ipynb) for simple tutorial of ForML Jupyter integration.

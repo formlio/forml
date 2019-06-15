@@ -6,6 +6,8 @@ import configparser
 import contextlib
 import os.path
 import re
+import sys
+import types
 import typing
 
 
@@ -54,7 +56,7 @@ class SectionMeta(type):
             """Tweaking base class.
             """
             @classmethod
-            def parse(cls, spec: str) -> typing.Tuple:
+            def parse(cls, spec: str, group: str = name) -> typing.Tuple:
                 """Get config list for pattern based non-repeated option tokens.
                 """
                 result = collections.OrderedDict()
@@ -62,7 +64,7 @@ class SectionMeta(type):
                     match = pattern.match(spec)
                     if not match:
                         raise Error('Invalid token (%s): "%s"' % (name, spec))
-                    value = cls(*(match.groups() or (match.group(),)))
+                    value = cls(group, *(match.groups() or (match.group(),)))
                     if value in result:
                         raise Error('Repeated value (%s): "%s"' % (name, spec))
                     result[value] = value
@@ -72,53 +74,71 @@ class SectionMeta(type):
         return type.__new__(mcs, name, (Base, *bases), namespace)
 
 
-class Registry(metaclass=SectionMeta):
-    """Registry config container.
+class Provider(metaclass=SectionMeta):
+    """Provider config container.
     """
     PATTERN = r'\s*(\w+)\s*$'
-    FIELDS = 'name, cls, kwargs'
+    FIELDS = 'key, kwargs'
 
-    def __new__(cls, name: str, **kwargs):  # pylint: disable=unused-argument
-        section = f'{SECTION_REGISTRY}:{name}'
+    def __new__(cls, group: str, key: str):  # pylint: disable=unused-argument
+        section = f'{group}:{key}'
         ensure_section(section)
-        # with use_default(OPTION_NAME, name):
-        #     name = CONFIG.get(section, OPTION_NAME)
-        # return super().__new__(
-        #     cls, name, CONFIG.get(section, OPTION_CLASS, vars=kwargs),
-        #     json.loads(CONFIG.get(section, OPTION_KWARGS, vars=kwargs)))
+        kwargs = dict()
+        for option, value in CONFIG.items(section):
+            if CONFIG.remove_option(section, option):  # take only non-default options
+                CONFIG.set(section, option, value)
+                kwargs[option] = value
+        key = kwargs.pop(OPTION_KEY, key)
+        return super().__new__(cls, key, types.MappingProxyType(kwargs))
+
+    def __hash__(self):
+        return hash(self.key)  # pylint: disable=no-member
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and other.key == self.key  # pylint: disable=no-member
 
 
+PRJ_NAME = re.sub(r'\.[^.]*$', '', os.path.basename(sys.argv[0]))
 APP_NAME = 'forml'
 USR_DIR = os.getenv(f'{APP_NAME.upper()}_HOME', os.path.join(os.path.expanduser('~'), f'.{APP_NAME}'))
 SYS_DIR = os.path.join('/etc', APP_NAME)
 
 SECTION_DEFAULT = 'DEFAULT'
 SECTION_REGISTRY = 'REGISTRY'
+APP_CFGFILE = 'config.ini'
 OPTION_LOG_CFGFILE = 'log_cfgfile'
+OPTION_KEY = 'key'
 OPTION_REGISTRY = 'registry'
 OPTION_ENGINE = 'engine'
-OPTION_RUNTIME = 'runtime'
+OPTION_RUNNER = 'runner'
 
 DEFAULT_OPTIONS = {
     OPTION_LOG_CFGFILE: 'logging.ini',
-    OPTION_REGISTRY: 'local',
-    OPTION_RUNTIME: 'dask',
+    OPTION_ENGINE: 'devio',
+    OPTION_REGISTRY: 'virtual',
+    OPTION_RUNNER: 'dask',
 }
 
 CLI_PARSER = argparse.ArgumentParser()
 CLI_PARSER.add_argument('-C', '--config', type=argparse.FileType(), help='Config file')
 CLI_ARGS, _ = CLI_PARSER.parse_known_args()
 
-APP_CFGFILE = CLI_ARGS.config or 'config.ini'
 CONFIG = configparser.ConfigParser(DEFAULT_OPTIONS)
 CONFIG.optionxform = str   # we need case sensitivity
+CONFIG.read(os.path.join(os.path.dirname(__file__), APP_CFGFILE))
 USED_CONFIGS = CONFIG.read((os.path.join(d, APP_CFGFILE) for d in (SYS_DIR, USR_DIR)))
+USR_CFGFILE = getattr(CLI_ARGS.config, 'name', None)
+if USR_CFGFILE:
+    USED_CONFIGS.extend(CONFIG.read(USR_CFGFILE))
 
 LOG_CFGFILE = CONFIG.get(SECTION_DEFAULT, OPTION_LOG_CFGFILE)
 
 # check if all section exist and add them if not so that config.get doesn't fail
-# for _section in (SECTION_DEFAULT, ):
-#     ensure_section(_section)
+for _section in (SECTION_REGISTRY, ):
+    ensure_section(_section)
 
 
-REGISTRY = Registry.parse(CONFIG.get(SECTION_DEFAULT, OPTION_REGISTRY))  # pylint: disable=no-member
+# pylint: disable=no-member
+REGISTRY = Provider.parse(CONFIG.get(SECTION_DEFAULT, OPTION_REGISTRY), OPTION_REGISTRY.upper())[0]
+ENGINE = Provider.parse(CONFIG.get(SECTION_DEFAULT, OPTION_ENGINE), OPTION_ENGINE.upper())[0]
+RUNNER = Provider.parse(CONFIG.get(SECTION_DEFAULT, OPTION_RUNNER), OPTION_RUNNER.upper())[0]

@@ -208,7 +208,7 @@ class Worker(Atomic):
         return self._group.uid
 
     @property
-    def fgroup(self) -> typing.FrozenSet['Worker']:
+    def group(self) -> typing.FrozenSet['Worker']:
         """Set of forked workers in the same fork group.
 
         Returns: Workers in same fork group.

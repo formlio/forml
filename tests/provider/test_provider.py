@@ -2,7 +2,7 @@
 Provider tests.
 """
 # pylint: disable=no-self-use
-
+import abc
 import typing
 
 import pytest
@@ -15,12 +15,39 @@ class TestInterface:
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provmod.Interface]:
+    def params() -> typing.Mapping[str, typing.Any]:
+        """Default provider kwargs fixture.
+        """
+        return {'foo': 'bar', 'baz': 10}
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def default(subkey: str,
+                params: typing.Mapping[str, typing.Any]) -> typing.Tuple[str, typing.Mapping[str, typing.Any]]:
+        """Default provider spec fixture.
+        """
+        return subkey, params
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def provider(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
+            str, typing.Any]]) -> typing.Type[provmod.Interface]:
         """Provider fixture.
         """
-        class Provider(provmod.Interface):
+        class Provider(provmod.Interface, default=default):
             """Provider implementation.
             """
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+            def __eq__(self, other):
+                return isinstance(other, self.__class__) and other.kwargs == self.kwargs
+
+            @abc.abstractmethod
+            def provide(self) -> None:
+                """Method required to make provider abstract.
+                """
+
         return Provider
 
     @staticmethod
@@ -39,14 +66,19 @@ class TestInterface:
         class SubProvider(provider, key=subkey):
             """Provider implementation.
             """
+            def provide(self) -> None:
+                """This provider must not be abstract.
+                """
+
         return SubProvider
 
-    def test_get(self, provider: typing.Type[provmod.Interface],
-                 subprovider: typing.Type[provmod.Interface], subkey: str):
+    def test_get(self, provider: typing.Type[provmod.Interface], subprovider: typing.Type[provmod.Interface],
+                 subkey: str, params: typing.Mapping[str, typing.Any]):
         """Test the provider lookup.
         """
         assert provider[subkey] is subprovider
         assert subprovider[subkey] is subprovider
+        assert provider(val=100) == subprovider(val=100, **params)
         with pytest.raises(provmod.Error):
             assert subprovider['miss']
 

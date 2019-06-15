@@ -16,12 +16,9 @@ LOGGER = logging.getLogger(__name__)
 class Loader(code.Instruction):
     """Registry based state loader.
     """
-    def __init__(self, assets: access.State, index: int):
+    def __init__(self, assets: access.State, key: typing.Union[int, uuid.UUID]):
         self._assets: access.State = assets
-        self._index: int = index
-
-    def __str__(self):
-        return super().__str__() + f'#{self._index}'
+        self._key: typing.Union[int, uuid.UUID] = key
 
     def execute(self) -> typing.Optional[bytes]:  # pylint: disable=arguments-differ
         """Instruction functionality.
@@ -29,9 +26,9 @@ class Loader(code.Instruction):
         Returns: Loaded state.
         """
         try:
-            return self._assets.load(self._index)
+            return self._assets.load(self._key)
         except directory.Level.Listing.Empty:
-            LOGGER.warning('No previous generations found - node #%d defaults to no state', self._index)
+            LOGGER.warning('No previous generations found - node #%d defaults to no state', self._key)
             return None
 
 

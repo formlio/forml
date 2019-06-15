@@ -2,10 +2,12 @@
 ForML pipeline composition logic.
 """
 import collections
+from collections import abc
 import typing
+import uuid
 
 from forml import flow
-from forml.flow.graph import view, node, clean
+from forml.flow.graph import view, clean, node as nodemod
 
 
 class Error(flow.Error):
@@ -18,8 +20,8 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
     """
     def __new__(cls, apply: typing.Optional[view.Path] = None, train: typing.Optional[view.Path] = None,
                 label: typing.Optional[view.Path] = None):
-        return super().__new__(cls, apply or view.Path(node.Future()), train or view.Path(node.Future()),
-                               label or view.Path(node.Future()))
+        return super().__new__(cls, apply or view.Path(nodemod.Future()), train or view.Path(nodemod.Future()),
+                               label or view.Path(nodemod.Future()))
 
     def extend(self, apply: typing.Optional[view.Path] = None,
                train: typing.Optional[view.Path] = None,
@@ -55,6 +57,19 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
 class Composition(collections.namedtuple('Composition', 'apply, train')):
     """Structure for holding related flow parts of different modes.
     """
+    class Stateful(view.Visitor, abc.Iterable):
+        """Visitor that cumulates gids of stateful nodes.
+        """
+        def __init__(self):
+            self._gids: typing.List[uuid.UUID] = list()
+
+        def __iter__(self) -> typing.Iterator[uuid.UUID]:
+            return iter(self._gids)
+
+        def visit_node(self, node: nodemod.Worker) -> None:
+            if node.stateful and node.gid not in self._gids:
+                self._gids.append(node.gid)
+
     def __new__(cls, *segments: Segment):
         segments = iter(segments)
         composed = next(segments)
@@ -68,3 +83,13 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         # label = composed.label.extend()
         # label.accept(clean.Validator())
         return super().__new__(cls, apply, train)
+
+    @property
+    def shared(self) -> typing.Sequence[uuid.UUID]:
+        """Get the set of nodes with state shared between the apply/train modes.
+
+        Returns: Set of nodes sharing state between pipeline modes.
+        """
+        apply = self.Stateful()
+        self.apply.accept(apply)
+        return tuple(apply)

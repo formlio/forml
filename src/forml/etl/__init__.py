@@ -5,7 +5,7 @@ import abc
 import collections
 import typing
 
-from forml import provider
+from forml import provider, conf, project
 from forml.etl import expression
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
@@ -14,11 +14,11 @@ from forml.stdlib import operator
 OrdinalT = typing.TypeVar('OrdinalT')
 
 
-class Extract(collections.namedtuple('Extract', 'apply, train')):
+class Extract(collections.namedtuple('Extract', 'train, apply')):
     """Combo of select statements for the different modes.
     """
-    def __new__(cls, apply: expression.Select, train: typing.Optional[expression.Select] = None):
-        return super().__new__(cls, apply, train or apply)
+    def __new__(cls, train: expression.Select, apply: typing.Optional[expression.Select] = None):
+        return super().__new__(cls, train, apply or train)
 
     def __rshift__(self, transform: topology.Composable) -> 'Source':
         return Source(self, transform)
@@ -33,8 +33,19 @@ class Source(collections.namedtuple('Source', 'extract, transform')):
     def __rshift__(self, transform: topology.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
+    def bind(self, pipeline: typing.Union[str, topology.Composable], **modules: typing.Any) -> 'project.Artifact':
+        """Create an artifact from this source and given pipeline.
 
-class Engine(provider.Interface):
+        Args:
+            pipeline: Pipeline to create the artifact with.
+            **modules: Other optional artifact modules.
+
+        Returns: Project artifact instance.
+        """
+        return project.Artifact(source=self, pipeline=pipeline, **modules)
+
+
+class Engine(provider.Interface, default=conf.ENGINE):
     """ETL engine is the implementation of a specific datasource access layer.
     """
     def load(self, source: Source, lower: typing.Optional[OrdinalT] = None,

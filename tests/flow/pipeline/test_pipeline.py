@@ -11,6 +11,12 @@ from forml.flow.pipeline import topology
 class TestComposition:
     """Composition unit tests.
     """
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def composition(origin: topology.Operator, operator: topology.Operator) -> pipeline.Composition:
+        """Composition fixture.
+        """
+        return pipeline.Composition((origin >> operator).expand())
 
     def test_composition(self, origin: topology.Operator, operator: topology.Operator):
         """Test the pipeline.
@@ -19,3 +25,8 @@ class TestComposition:
             pipeline.Composition(operator.expand())
 
         pipeline.Composition((origin >> operator).expand())
+
+    def test_shared(self, composition: pipeline.Composition):
+        """Test the composition shared nodes.
+        """
+        assert any(composition.shared)

@@ -7,7 +7,6 @@ import pytest
 
 from forml import project, etl
 from forml.etl import expression
-from forml.flow import task
 from forml.flow.pipeline import topology
 from forml.stdlib.operator import simple
 
@@ -24,10 +23,10 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def pipeline() -> topology.Composable:
+    def pipeline(spec) -> topology.Composable:
         """Pipeline fixture.
         """
-        return simple.Consumer(task.Spec('Estimator'))
+        return simple.Consumer(spec)
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -38,10 +37,10 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def evaluation() -> topology.Composable:
+    def evaluation(spec) -> topology.Composable:
         """Evaluation fixture.
         """
-        return simple.Consumer(task.Spec('Estimator'))
+        return simple.Consumer(spec)
 
     def test_api(self, builder: project.Descriptor.Builder):
         """Testing the builder API.
