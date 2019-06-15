@@ -103,7 +103,7 @@ class Meta(abc.ABCMeta):
     def __call__(cls, *args, **kwargs):
         if cls in Meta.DEFAULTS:
             key, params = Meta.DEFAULTS[cls]
-            return cls[key](*args, **{**params, **kwargs})
+            return cls[key](*args, **{**params, **kwargs})  # pylint: disable=unsubscriptable-object
         return super().__call__(*args, **kwargs)
 
     def __getitem__(cls, key):
