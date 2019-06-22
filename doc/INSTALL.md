@@ -25,7 +25,7 @@ Extra Features
 
 | Feature  | Install Command                   | Description                                                  |
 |----------|-----------------------------------|--------------------------------------------------------------|
-| all      | `pip3 install 'forml[all]'      | All extra features                                           |
-| stdlib   | `pip3 install 'forml[stdlib]'   | The standard operator and actor library shipped with ForML |
-| dask     | `pip3 install 'forml[dask]'     | The Dask runner                                              |
-| graphviz | `pip3 install 'forml[graphviz]' | The Graphviz pseudo-runner (also requires `graphviz` binary  |
+| all      | `pip3 install forml[all]`       | All extra features                                           |
+| stdlib   | `pip3 install forml[stdlib]`    | The standard operator and actor library shipped with ForML |
+| dask     | `pip3 install forml[dask]`      | The Dask runner                                              |
+| graphviz | `pip3 install forml[graphviz]`  | The Graphviz pseudo-runner (also requires `graphviz` binary) |
