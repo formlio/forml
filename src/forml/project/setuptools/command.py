@@ -69,7 +69,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         runner = process.Runner[self.runner](
             access.Assets(name, registry=registry), etl.Engine[self.engine]())
         result = self.launch(runner, lower=self.lower, upper=self.upper)
-        if result:
+        if result is not None:
             print(result)
 
     @staticmethod
