@@ -138,22 +138,3 @@ class Apply(task.Actor):
         Returns: Transformed output as returned by the provided method.
         """
         return self.function(*source)
-
-
-class Dump(task.Actor):
-    """Pass-through transformer that dumps the input datasets to CSV files.
-    """
-    def __init__(self, path: str):
-        self.path: str = path
-
-    @ndframed
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
-        """Transformer logic.
-
-        Args:
-            features: Input frames.
-
-        Returns: Original unchanged frames.
-        """
-        features.to_csv(self.path, index=False)
-        return features
