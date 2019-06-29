@@ -13,8 +13,8 @@ We demonstrate three different ways of creating a forml operator:
 import typing
 
 import category_encoders
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 
 from forml.flow import task
 from forml.stdlib.actor import wrapped
@@ -26,23 +26,23 @@ class NaNImputer(task.Actor):
     """Imputer for missing values implemented as native ForML actor.
     """
     def __init__(self):
-        self._fill: typing.Optional[pandas.Series] = None
+        self._fill: typing.Optional[pd.Series] = None
 
-    def train(self, data: pandas.DataFrame, label: pandas.Series) -> None:
+    def train(self, X: pd.DataFrame, y: pd.Series) -> None:
         """Train the actor by learning the median for each numeric column and finding the most common value for strings.
         """
-        self._fill = pandas.Series([data[c].value_counts().index[0] if data[c].dtype == numpy.dtype('O')
-                                    else data[c].median() for c in data], index=data.columns)
+        self._fill = pd.Series([X[c].value_counts().index[0] if X[c].dtype == np.dtype('O')
+                                else X[c].median() for c in X], index=X.columns)
 
-    def apply(self, data: pandas.DataFrame) -> pandas.DataFrame:
+    def apply(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the imputation to the given dataset.
         """
-        return data.fillna(self._fill)
+        return X.fillna(self._fill)
 
 
 @simple.Mapper.operator
 @wrapped.Function.actor
-def parse_title(data: pandas.DataFrame, source: str, target: str) -> pandas.DataFrame:
+def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
     """Transformer extracting a person's title from the name string implemented as wrapped stateless function.
     """
     def get_title(name: str) -> str:
@@ -52,8 +52,8 @@ def parse_title(data: pandas.DataFrame, source: str, target: str) -> pandas.Data
             return name.split(',')[1].split('.')[0].strip()
         return 'Unknown'
 
-    data[target] = data[source].map(get_title)
-    return data
+    df[target] = df[source].map(get_title)
+    return df
 
 
 # 3rd party transformer wrapped as an actor into a mapper operator:

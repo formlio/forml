@@ -6,7 +6,7 @@ This module is informal from ForML perspective and has been created just for str
 
 import typing
 
-import pandas
+import pandas as pd
 
 from forml.flow import task
 from forml.stdlib.operator import simple
@@ -20,8 +20,8 @@ class Extractor(task.Actor):
     def __init__(self, column: str = 'label'):
         self._column: str = column
 
-    def apply(self, features: pandas.DataFrame) -> typing.Tuple[pandas.DataFrame, pandas.Series]:
-        return features.drop(columns=self._column), features[self._column]
+    def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
+        return df.drop(columns=self._column), df[self._column]
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         return {'column': self._column}

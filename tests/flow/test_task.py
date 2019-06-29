@@ -77,4 +77,4 @@ class TestSpec:
     def test_instantiate(self, spec: task.Spec):
         """Testing specto actor instantiation.
         """
-        assert spec(b=3).get_params() == {**spec.params, 'b': 3}
+        assert spec(b=3).get_params() == {**spec.kwargs, 'b': 3}

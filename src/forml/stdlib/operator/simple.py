@@ -24,28 +24,28 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
         return f'{self.__class__.__name__}[{str(self.spec)}]'
 
     @classmethod
-    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **kwargs) -> typing.Type['Simple']:
+    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **params) -> typing.Type['Simple']:
         """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
         call.
 
         Args:
             actor: Decorated actor class.
-            **kwargs: Optional operator kwargs.
+            **params: Optional operator kwargs.
 
         Returns: Curried operator.
         """
         def decorator(actor: typing.Type[task.Actor]) -> typing.Type[Simple]:
             """Decorating function.
             """
-            def wrapper(**params) -> Simple:
+            def wrapper(*args, **kwargs) -> Simple:
                 """Curried operator.
 
                 Args:
-                    **params: Operator params.
+                    **kwargs: Operator params.
 
                 Returns: Operator instance.
                 """
-                return cls(task.Spec(actor, **params), **kwargs)
+                return cls(task.Spec(actor, *args, **kwargs), **params)
             return wrapper
 
         if actor:

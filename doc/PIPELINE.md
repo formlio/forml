@@ -67,7 +67,7 @@ Example of user-defined native actor:
 
 ```python
 import typing
-import pandas
+import pandas as pd
 from forml.flow import task
 
 class LabelExtractor(task.Actor):
@@ -76,8 +76,8 @@ class LabelExtractor(task.Actor):
     def __init__(self, column: str = 'label'):
         self._column: str = column
 
-    def apply(self, features: pandas.DataFrame) -> typing.Tuple[pandas.DataFrame, pandas.Series]:
-        return features.drop(columns=self._column), features[self._column]
+    def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
+        return df.drop(columns=self._column), df[self._column]
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         return {'column': self._column}
@@ -110,10 +110,11 @@ Note the extra parameters used to map the third-party class methods to the expec
 Last option of defining actors is simplistic decorating of user-defined functions:
 
 ```python
+import pandas as pd
 from forml.stdlib.actor import wrapped
 
 @wrapped.Function.actor
-def parse_title(data: pandas.DataFrame, source: str, target: str) -> pandas.DataFrame:
+def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
     """Transformer extracting a person's title from the name string implemented as wrapped stateless function.
     """
     def get_title(name: str) -> str:
@@ -123,8 +124,8 @@ def parse_title(data: pandas.DataFrame, source: str, target: str) -> pandas.Data
             return name.split(',')[1].split('.')[0].strip()
         return 'Unknown'
 
-    data[target] = data[source].map(get_title)
-    return data
+    df[target] = df[source].map(get_title)
+    return df
 ```
 
 
@@ -152,8 +153,8 @@ Following is an example of creating simple transformer operator by decorating an
 
 ```python
 import typing
-import pandas
-import numpy
+import pandas as pd
+import numpy as np
 from forml.flow import task
 from forml.stdlib.operator import simple
 
@@ -162,28 +163,28 @@ class NaNImputer(task.Actor):
     """Imputer for missing values implemented as native ForML actor.
     """
     def __init__(self):
-        self._fill: typing.Optional[pandas.Series] = None
+        self._fill: typing.Optional[pd.Series] = None
 
-    def train(self, data: pandas.DataFrame, label: pandas.Series) -> None:
+    def train(self, X: pd.DataFrame, y: pd.Series) -> None:
         """Train the actor by learning the median for each numeric column and finding the most common value for strings.
         """
-        self._fill = pandas.Series([data[c].value_counts().index[0] if data[c].dtype == numpy.dtype('O')
-                                    else data[c].median() for c in data], index=data.columns)
+        self._fill = pd.Series([X[c].value_counts().index[0] if X[c].dtype == np.dtype('O')
+                                else X[c].median() for c in X], index=X.columns)
 
-    def apply(self, data: pandas.DataFrame) -> pandas.DataFrame:
+    def apply(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply the imputation to the given dataset.
         """
-        return data.fillna(self._fill)
+        return X.fillna(self._fill)
 ```
 
 It is also possible to use the decorator to create operators from third-party wrapped Actors:
 
 ```python
 from sklearn import ensemble as sklearn
-from forml.stdlib import actor
+from forml.stdlib.actor import wrapped
 from forml.stdlib.operator import simple
 
-RFC = simple.Consumer.operator(actor.Wrapped.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
+RFC = simple.Consumer.operator(wrapped.Class.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
 ```
 
 These operators are now good to be used for pipeline composition.

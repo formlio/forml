@@ -9,7 +9,7 @@ and the eventual concept will be provided later.
 
 import os
 
-import pandas
+import pandas as pd
 
 
 BASE_DIR = os.path.dirname(__file__)
@@ -17,13 +17,13 @@ TRAINSET_CSV = os.path.join(BASE_DIR, 'titanic_train.csv')
 TESTSET_CSV = os.path.join(BASE_DIR, 'titanic_test.csv')
 
 
-def trainset(**_) -> pandas.DataFrame:
+def trainset(**_) -> pd.DataFrame:
     """Dummy trinset producer.
     """
-    return pandas.read_csv(TRAINSET_CSV)
+    return pd.read_csv(TRAINSET_CSV)
 
 
-def testset(**_) -> pandas.DataFrame:
+def testset(**_) -> pd.DataFrame:
     """Dummy testset producer.
     """
-    return pandas.read_csv(TESTSET_CSV)
+    return pd.read_csv(TESTSET_CSV)
