@@ -2,8 +2,8 @@
 Titanic preprocessing unit tests.
 """
 # pylint: disable=no-self-use
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import pytest
 from forml.flow import task
 
@@ -13,7 +13,7 @@ from titanic.pipeline import preprocessing
 class Transformer:  # pylint: disable=too-few-public-methods
     """Common class for Titanic transformation tests.
     """
-    def test_transform(self, actor: task.Actor, dataset: pandas.DataFrame, expected: pandas.DataFrame):
+    def test_transform(self, actor: task.Actor, dataset: pd.DataFrame, expected: pd.DataFrame):
         """Unit test action - ensuring the actor transformation of the input dataset returns expected values.
         """
         assert expected.equals(actor.apply(dataset))
@@ -24,21 +24,21 @@ class TestNaNImputer(Transformer):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def dataset() -> pandas.DataFrame:
+    def dataset() -> pd.DataFrame:
         """Input dataset fixture.
         """
-        return pandas.DataFrame({
-            'int': [0, 1, 2, None, 3, numpy.nan],
-            'float': [0.1, 1.2, None, 2.3, numpy.nan, 3.4],
-            'str': ['foo', None, 'foo', numpy.nan, 'bar', '']
+        return pd.DataFrame({
+            'int': [0, 1, 2, None, 3, np.nan],
+            'float': [0.1, 1.2, None, 2.3, np.nan, 3.4],
+            'str': ['foo', None, 'foo', np.nan, 'bar', '']
         })
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def expected(dataset: pandas.DataFrame) -> pandas.DataFrame:
+    def expected(dataset: pd.DataFrame) -> pd.DataFrame:
         """Expected output dataframe as a result of the transformation.
         """
-        return pandas.DataFrame({
+        return pd.DataFrame({
             'int': dataset['int'].fillna(dataset['int'].median()),
             'float': dataset['float'].fillna(dataset['float'].median()),
             'str': dataset['str'].fillna(dataset['str'].value_counts().index[0])
@@ -46,7 +46,7 @@ class TestNaNImputer(Transformer):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def actor(dataset: pandas.DataFrame) -> preprocessing.NaNImputer:
+    def actor(dataset: pd.DataFrame) -> preprocessing.NaNImputer:
         """Actor instance under the test.
         """
         instance = preprocessing.NaNImputer().spec()
@@ -73,17 +73,17 @@ class TestTitleParser(Transformer):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def dataset(source: str) -> pandas.DataFrame:
+    def dataset(source: str) -> pd.DataFrame:
         """Input dataset fixture.
         """
-        return pandas.DataFrame({
+        return pd.DataFrame({
             'foo': [0, 1, 2, 3],
             source: ['Smith, Mr. John', 'Black, Ms. Jane', 'Brown, Mrs. Jo', 'White, Ian'],
         })
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def expected(dataset: pandas.DataFrame, target: str) -> pandas.DataFrame:
+    def expected(dataset: pd.DataFrame, target: str) -> pd.DataFrame:
         """Expected output dataframe as a result of the transformation.
         """
         dataset[target] = ['Mr', 'Ms', 'Mrs', 'Unknown']
@@ -91,7 +91,7 @@ class TestTitleParser(Transformer):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def actor(source: str, target: str) -> preprocessing.TitleParser:
+    def actor(source: str, target: str) -> preprocessing.parse_title:
         """Actor instance under the test.
         """
-        return preprocessing.TitleParser(source=source, target=target).spec()
+        return preprocessing.parse_title(source=source, target=target).spec()

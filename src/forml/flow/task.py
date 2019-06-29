@@ -18,12 +18,13 @@ from forml import flow
 LOGGER = logging.getLogger(__name__)
 
 
-def name(actor: typing.Any, **params) -> str:
+def name(actor: typing.Any, *args, **kwargs) -> str:
     """Infer the task name of given instance or type.
 
     Args:
         actor: Type or actor instance.
-        **params: Optional parameters belonging to actor.
+        *args: Optional positional parameters.
+        **kwargs: Optional keyword parameters.
 
     Returns: String name representation.
     """
@@ -37,8 +38,9 @@ def name(actor: typing.Any, **params) -> str:
         return obj.__name__ if hasattr(obj, '__name__') else str(obj)
 
     value = extract(actor)
+    params = [extract(a) for a in args] + [f'{k}={extract(v)}' for k, v in kwargs.items()]
     if params:
-        value += '(' + ', '.join(f'{k}={extract(v)}' for k, v in params.items()) + ')'
+        value += '(' + ', '.join(params) + ')'
     return value
 
 
@@ -46,15 +48,16 @@ class Actor(metaclass=abc.ABCMeta):
     """Abstract interface of an actor.
     """
     @classmethod
-    def spec(cls, **params: typing.Any) -> 'Spec':
+    def spec(cls, *args, **kwargs: typing.Any) -> 'Spec':
         """Shortcut for creating a spec of this actor.
 
         Args:
-            **params: Params to be used for the spec.
+            *args: Positional params.
+            **kwargs: Keyword params.
 
         Returns: Actor spec instance.
         """
-        return Spec(cls, **params)
+        return Spec(cls, *args, **kwargs)
 
     @classmethod
     def is_stateful(cls) -> bool:
@@ -132,20 +135,20 @@ class Actor(metaclass=abc.ABCMeta):
         return name(self.__class__, **self.get_params())
 
 
-class Spec(collections.namedtuple('Spec', 'actor, params')):
+class Spec(collections.namedtuple('Spec', 'actor, args, kwargs')):
     """Wrapper of actor class and init params.
     """
-    def __new__(cls, actor: typing.Type[Actor], **params: typing.Any):
-        return super().__new__(cls, actor, types.MappingProxyType(params))
+    def __new__(cls, actor: typing.Type[Actor], *args: typing.Any, **kwargs: typing.Any):
+        return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 
     def __str__(self):
-        return name(self.actor, **self.params)
+        return name(self.actor, *self.args, **self.kwargs)
 
     def __hash__(self):
-        return hash(self.actor) ^ hash(tuple(sorted(self.params.items())))
+        return hash(self.actor) ^ hash(self.args) ^ hash(tuple(sorted(self.kwargs.items())))
 
     def __getnewargs_ex__(self):
-        return (self.actor, ), dict(self.params)
+        return (self.actor, *self.args), dict(self.kwargs)
 
-    def __call__(self, **kwargs) -> Actor:
-        return self.actor(**{**self.params, **kwargs})
+    def __call__(self, *args, **kwargs) -> Actor:
+        return self.actor(*(args or self.args), **{**self.kwargs, **kwargs})

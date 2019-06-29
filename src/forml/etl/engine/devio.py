@@ -33,4 +33,4 @@ class Engine(etl.Engine, key='devio'):
             params['lower'] = lower
         if upper:
             params['upper'] = upper
-        return task.Spec(Source, producer=select.producer, **params)
+        return Source.spec(producer=select.producer, **params)

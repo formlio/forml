@@ -34,7 +34,7 @@ class Crossvalidated(topology.Operator, metaclass=abc.ABCMeta):
 
         Returns: Number of folds.
         """
-        return self.splitter.params['crossvalidator'].get_n_splits()
+        return self.splitter.kwargs['crossvalidator'].get_n_splits()
 
     def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Ensemble composition.

@@ -1,5 +1,3 @@
-import numpy
-
 from demos import *
 from forml.flow import task
 from forml.stdlib.operator import simple
@@ -9,17 +7,17 @@ from forml.stdlib.operator import simple
 class NaNImputer(task.Actor):
     """Custom NaN imputation logic.
     """
-    def train(self, features: pandas.DataFrame, label: pandas.DataFrame):
+    def train(self, features: pd.DataFrame, label: pd.DataFrame):
         """Impute missing values using the median for numeric columns and the most common value for string columns.
         """
-        self._fill = pandas.Series([features[f].value_counts().index[0] if features[f].dtype == numpy.dtype('O')
+        self._fill = pd.Series([features[f].value_counts().index[0] if features[f].dtype == np.dtype('O')
                                     else features[f].median() for f in features], index=features.columns)
         return self
 
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:
+    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
         """Filling the NaNs.
         """
-        return features.fillna(self.fill)
+        return df.fillna(self.fill)
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Mandatory get params.

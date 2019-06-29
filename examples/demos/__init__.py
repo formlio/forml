@@ -1,6 +1,6 @@
 import typing
 
-import pandas
+import pandas as pd
 from sklearn import ensemble, linear_model, impute, preprocessing, feature_extraction, naive_bayes
 
 from forml import etl
@@ -36,8 +36,8 @@ class Extractor(task.Actor):
     def __init__(self, column: str = 'label'):
         self._column: str = column
 
-    def apply(self, features: pandas.DataFrame) -> typing.Tuple[pandas.DataFrame, pandas.Series]:
-        return features.drop(columns=self._column), features[self._column]
+    def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
+        return df.drop(columns=self._column), df[self._column]
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         return {'column': self._column}
@@ -48,18 +48,18 @@ class Extractor(task.Actor):
 
 @simple.Mapper.operator
 @wrapped.Function.actor
-def cleaner(df: pandas.DataFrame) -> pandas.DataFrame:
+def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     """Simple stateless transformer create from a plain function.
     """
     return df.dropna()
 
 
-def trainset(**_) -> pandas.DataFrame:
-    return pandas.DataFrame({'Survived': [1,1,1,0,0,0], 'Age': [10, 11, 12, 13, 14, 15]})
+def trainset(**_) -> pd.DataFrame:
+    return pd.DataFrame({'Survived': [1,1,1,0,0,0], 'Age': [10, 11, 12, 13, 14, 15]})
 
 
-def testset(**_) -> pandas.DataFrame:
-    return pandas.DataFrame({'Age': [10, 11, 12, 13, 14, 15]})
+def testset(**_) -> pd.DataFrame:
+    return pd.DataFrame({'Age': [10, 11, 12, 13, 14, 15]})
 
 
 TRAIN = expression.Select(trainset)
