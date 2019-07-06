@@ -9,7 +9,7 @@ import setuptools
 from setuptools import *  # pylint: disable=redefined-builtin
 from setuptools import dist
 
-from forml.project.setuptools import command
+from forml.project.setuptools.command import launch, bdist
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,9 +23,10 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
         super().__init__(attrs)
 
 
-COMMANDS: typing.Mapping[str, typing.Type[command.Mode]] = {
-    'train': command.Train,
-    'score': command.Score
+COMMANDS: typing.Mapping[str, typing.Type[launch.Mode]] = {
+    'train': launch.Train,
+    'score': launch.Score,
+    'bdist_mlp': bdist.Package
 }
 
 OPTIONS = {
