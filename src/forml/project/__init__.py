@@ -1,6 +1,7 @@
 """Project setup mechanics.
 """
 import collections
+import os
 from collections import abc
 import logging
 import sys
@@ -118,6 +119,8 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             return getattr(process.Runner(self._assets), mode)
 
     def __new__(cls, path: typing.Optional[str] = None, package: typing.Optional[str] = None, **modules: typing.Any):
+        if path:
+            path = os.path.abspath(path)
         prefix = package or conf.PRJ_NAME
         for key, value in modules.items():
             if not isinstance(value, str):  # component provided as true instance rather then module path
@@ -133,7 +136,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
         Returns: Project descriptor.
         """
-        if self.path:
+        if self.path and (not sys.path or sys.path[0] is not self.path):
             sys.path.insert(0, self.path)
         return Descriptor.load(self.package, **self.modules)
 
