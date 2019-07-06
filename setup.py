@@ -32,7 +32,7 @@ setuptools.setup(name='forml',
                  package_data={'forml.conf': ['*.ini']},
                  setup_requires=['pytest-runner', 'pytest-pylint'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['joblib'],
+                 install_requires=['joblib', 'pip'],
                  extras_require={
                      'all': EXTRAS_ALL,
                      'stdlib': EXTRAS_STDLIB,

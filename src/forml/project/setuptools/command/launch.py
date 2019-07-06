@@ -61,8 +61,8 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     def run_tests(self) -> None:
         """This is the original test command entry point - lets override it with our actions.
         """
-        name = self.distribution.metadata.name
-        version = self.distribution.metadata.version
+        name = self.distribution.get_name()
+        version = self.distribution.get_version()
         registry = virtual.Registry()
         registry.push(name, version, self.artifact)
         LOGGER.debug('%s: starting %s', name, self.__class__.__name__.lower())
