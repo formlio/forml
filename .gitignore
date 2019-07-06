@@ -13,5 +13,6 @@ junit.xml
 *.log
 *.log.?
 *.dot
+*.dot.pdf
 .pytest_cache/
 .ipynb_checkpoints/
