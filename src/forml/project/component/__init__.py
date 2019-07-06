@@ -2,6 +2,7 @@
 Project component management.
 """
 import logging
+import re
 import secrets
 import sys
 import types
@@ -11,7 +12,6 @@ import importlib
 from importlib import abc, machinery
 
 from forml.project.component import virtual
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -103,11 +103,13 @@ class Context:
 
     @staticmethod
     def _unload() -> None:
-        """Unload the current module instance.
+        """Unload the current module instance and all of its parent modules.
         """
-        for mod in {__name__, __name__.rsplit('.', 1)[0]}:
+        mod = __name__
+        while mod:
             if mod in sys.modules:
                 del sys.modules[mod]
+            mod, _ = re.match(r'(?:(.*)\.)?(.*)', mod).groups()
 
     def __enter__(self) -> 'Context':
         sys.meta_path.insert(0, self._finder)
