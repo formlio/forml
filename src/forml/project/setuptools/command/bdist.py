@@ -1,10 +1,12 @@
+"""
+Custom setuptools commands distribution packaging.
+"""
 import os
-import zipapp
+import sys
+import typing
 
 import pip._internal as pip
-import sys
 import setuptools
-import typing
 
 from forml.project import distribution
 
@@ -15,7 +17,7 @@ class Package(setuptools.Command):
     description = 'create a ForML distribution'
 
     user_options = [
-        ('bdist-dir=', 'b',  'temporary directory for creating the distribution'),
+        ('bdist-dir=', 'b', 'temporary directory for creating the distribution'),
         ('interpreter=', None, 'python interpreter'),
         ('dist-dir=', 'd', 'directory to put final built distributions in'),
     ]
@@ -27,7 +29,7 @@ class Package(setuptools.Command):
         self.interpreter: str = f'/usr/bin/env python{sys.version_info.major}'
         self.dist_dir: typing.Optional[str] = None
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         """Fini options.
         """
         if self.bdist_dir is None:
@@ -38,24 +40,25 @@ class Package(setuptools.Command):
         self.set_undefined_options('bdist', *zip(need_options, need_options))
 
     @property
-    def dist_name(self) -> str:
+    def filename(self) -> str:
+        """Target package file name.
+        """
         return f'{self.distribution.get_name()}-{self.distribution.get_version()}.{distribution.Package.FORMAT}'
 
     @property
     def manifest(self) -> distribution.Manifest:
+        """Package manifest.
+        """
         name = self.distribution.get_name()
         version = self.distribution.get_version()
         return distribution.Manifest(name=name, version=version, package='titanic')
 
-    def run(self):
-
+    def run(self) -> None:
+        """Trigger the packaging process.
+        """
         pip.main(['install', '--upgrade', '--no-user', '--target', self.bdist_dir,
                   os.path.abspath(os.path.dirname(sys.argv[0]))])
-
-        self.manifest.write(self.bdist_dir)
         if not os.path.exists(self.dist_dir):
             os.makedirs(self.dist_dir)
-        target = os.path.join(self.dist_dir, self.dist_name)
-        zipapp.create_archive(self.bdist_dir, target=target, interpreter=self.interpreter,
-                              main='foo.asd:qwe',
-                              compressed=True)
+        target = os.path.join(self.dist_dir, self.filename)
+        distribution.Package.create(self.bdist_dir, self.manifest, target)

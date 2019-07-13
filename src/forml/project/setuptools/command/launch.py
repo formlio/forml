@@ -1,5 +1,5 @@
 """
-Custom setuptools commands.
+Custom setuptools commands for pipeline execution modes.
 """
 import abc
 import logging

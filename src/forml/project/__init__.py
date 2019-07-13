@@ -1,19 +1,18 @@
 """Project setup mechanics.
 """
 import collections
-import os
 from collections import abc
 import logging
+import os
 import sys
 import types
 import typing
-
-from forml.runtime import process
 
 import forml
 from forml import etl, conf
 from forml.flow.pipeline import topology
 from forml.project import component as importer
+from forml.runtime import process
 from forml.runtime.asset import access
 from forml.runtime.asset.persistent.registry import virtual
 
