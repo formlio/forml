@@ -18,7 +18,6 @@ class Package(setuptools.Command):
 
     user_options = [
         ('bdist-dir=', 'b', 'temporary directory for creating the distribution'),
-        ('interpreter=', None, 'python interpreter'),
         ('dist-dir=', 'd', 'directory to put final built distributions in'),
     ]
 
@@ -26,7 +25,6 @@ class Package(setuptools.Command):
         """Init options.
         """
         self.bdist_dir: typing.Optional[str] = None
-        self.interpreter: str = f'/usr/bin/env python{sys.version_info.major}'
         self.dist_dir: typing.Optional[str] = None
 
     def finalize_options(self) -> None:
