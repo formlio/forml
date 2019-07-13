@@ -8,6 +8,9 @@ from forml import conf
 from forml.conf import logging
 
 
+__version__ = '0.2.dev0'
+
+
 class Error(Exception):
     """ForML base exception class.
     """
