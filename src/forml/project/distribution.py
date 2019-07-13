@@ -6,15 +6,14 @@ import importlib
 import json
 import logging
 import os
-import shutil
 import string
 import sys
+import tempfile
 import types
 import typing
 import zipfile
 
-from forml import project, conf
-
+from forml import project
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,53 +23,73 @@ class Error(project.Error):
     """
 
 
-class Package(collections.namedtuple('Package', 'path, manifest, staging')):
+class Package(collections.namedtuple('Package', 'path, manifest')):
     """Distribution package.
     """
     FORMAT = 'mlp'
+    COMPRESSION = zipfile.ZIP_DEFLATED
 
-    def __new__(cls, path: str, manifest: 'Manifest', staging: str):
-        return super().__new__(cls, os.path.abspath(path), manifest, os.path.abspath(staging))
+    def __new__(cls, path: str):
+        path = os.path.abspath(path)
+        return super().__new__(cls, path, Manifest.read(path))
 
     @classmethod
-    def load(cls, path: str, staging: str = conf.) -> 'Package':
-        """Load the package.
+    def create(cls, source: str, manifest: 'Manifest', path: str) -> 'Package':
+        """Create new package from given source tree.
 
         Args:
-            path: Package path.
-            staging: Staging directory for extracted package.
+            source: Filesystem path to the root of directory tree to be packaged.
+            manifest: Package manifest to be used.
+            path: Target package filesystem path.
 
         Returns: Package instance.
         """
-        return cls(path, Manifest.read(path), staging)
+        def write(root: str, archive: zipfile.ZipFile) -> None:
+            """Helper for adding directory tree content to an zip archive.
 
-    @property
-    def staged(self) -> str:
-        path = os.path.join(self.staging, self.manifest.name, self.manifest.version)
-        if os.path.exists(path):
-            try:
-                existing = Manifest.read(path)
-            except Error:
-                LOGGER.warning('Corrupted staging')
-            else:
-                if existing == self.manifest:
-                    LOGGER.debug('Existing staging')
-                    return path
-                LOGGER.warning('Colliding staging')
-            shutil.rmtree(path)
+            Args:
+                root: Root of directory tree to be added.
+                archive: zipfile instance opened for writing.
+            """
+            for path, _, files in os.walk(root):
+                base = os.path.relpath(path, root)
+                for file in files:
+                    archive.write(os.path.join(path, file), os.path.join(base, file))
 
-        LOGGER.info('Staging package to %s', path)
-        with zipfile.ZipFile(self.path) as package:
-            package.extractall(path)
-        return path
+        with zipfile.ZipFile(path, 'w', cls.COMPRESSION) as package:
+            with tempfile.TemporaryDirectory() as temp:
+                manifest.write(temp)
+                write(temp, package)
+            write(source, package)
+        return cls(path)
 
-    @property
-    def artifact(self) -> project.Artifact:
-        """Return the project artifact based on this package.
-
-        Returns: Artifact instance.
-        """
-        return project.Artifact(self.staged, self.manifest.package, **self.manifest.modules)
+    # @property
+    # def staged(self) -> str:
+    #     path = os.path.join(self.staging, self.manifest.name, self.manifest.version)
+    #     if os.path.exists(path):
+    #         try:
+    #             existing = Manifest.read(path)
+    #         except Error:
+    #             LOGGER.warning('Corrupted staging')
+    #         else:
+    #             if existing == self.manifest:
+    #                 LOGGER.debug('Existing staging')
+    #                 return path
+    #             LOGGER.warning('Colliding staging')
+    #         shutil.rmtree(path)
+    #
+    #     LOGGER.info('Staging package to %s', path)
+    #     with zipfile.ZipFile(self.path) as package:
+    #         package.extractall(path)
+    #     return path
+    #
+    # @property
+    # def artifact(self) -> project.Artifact:
+    #     """Return the project artifact based on this package.
+    #
+    #     Returns: Artifact instance.
+    #     """
+    #     return project.Artifact(self.staged, self.manifest.package, **self.manifest.modules)
 
 
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
@@ -92,7 +111,8 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
             def __init__(self, path: typing.Optional[str] = None):
                 self.path: typing.Optional[str] = path
 
-            def _unload(self) -> None:
+            @staticmethod
+            def _unload() -> None:
                 """Unload the module.
                 """
                 if Manifest.MODULE in sys.modules:
@@ -101,10 +121,10 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
             def __enter__(self) -> None:
                 self._unload()
                 if self.path:
-                    sys.path.insert(0, self.path)
+                    sys.path.insert(0, str(self.path))
 
             def __exit__(self, exc_type, exc_val, exc_tb):
-                if sys.path and self.path == sys.path[0]:
+                if sys.path and str(self.path) == sys.path[0]:
                     sys.path.pop(0)
                 self._unload()
                 if exc_type is ModuleNotFoundError:
@@ -142,7 +162,7 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         """Import the manifest content.
 
         Args:
-            path: Path to import from
+            path: Path to import from.
 
         Returns: Manifest instance.
         """
