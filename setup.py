@@ -2,7 +2,11 @@
 Setuptools script for ForML package.
 """
 import os.path
+import sys
 import setuptools
+
+sys.path.insert(0, 'src')
+import forml
 
 EXTRAS_STDLIB = {
     'pandas',
@@ -21,7 +25,7 @@ EXTRAS_DASK = {
 EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK
 
 setuptools.setup(name='forml',
-                 version='0.2.dev0',
+                 version=forml.__version__,
                  description='Continuous Integration Formalization and Runtime for AI',
                  url='https://github.com/formlio/forml',
                  author='ForML Authors',
