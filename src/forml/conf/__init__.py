@@ -16,7 +16,7 @@ class Error(Exception):
 
 
 @contextlib.contextmanager
-def use_default(option: str, value: str) -> typing.ContextManager:
+def use_default(option: str, value: str) -> typing.Generator:
     """Context manager for temporally setting default option value.
     """
     original = CONFIG.get(configparser.DEFAULTSECT, option, fallback=None)
@@ -59,7 +59,7 @@ class SectionMeta(type):
             def parse(cls, spec: str, group: str = name) -> typing.Tuple:
                 """Get config list for pattern based non-repeated option tokens.
                 """
-                result = collections.OrderedDict()
+                result: collections.OrderedDict = collections.OrderedDict()
                 while spec:
                     match = pattern.match(spec)
                     if not match:
