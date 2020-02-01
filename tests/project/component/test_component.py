@@ -32,10 +32,10 @@ class TestContext:
 
         provided = None
         with compload.Context(handler):
-            import component  # component.py in this test directory
+            import component  # pylint: disable=import-outside-toplevel
             assert provided is component.INSTANCE
 
-        from forml.project import component as compreload  # pylint: disable=reimported
+        from forml.project import component as compreload  # pylint: disable=reimported,import-outside-toplevel
         compreload.setup(object())
         assert provided is component.INSTANCE
 

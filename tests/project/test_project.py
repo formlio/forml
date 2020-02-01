@@ -68,7 +68,7 @@ class TestBuilder:
 def pipeline() -> topology.Composable:
     """Pipeline fixture.
     """
-    from project import pipeline
+    from project import pipeline  # pylint: disable=import-outside-toplevel
     return pipeline.INSTANCE
 
 
@@ -76,7 +76,7 @@ def pipeline() -> topology.Composable:
 def source() -> etl.Source:
     """Source fixture.
     """
-    from project import source
+    from project import source  # pylint: disable=import-outside-toplevel
     return source.INSTANCE
 
 
@@ -84,7 +84,7 @@ def source() -> etl.Source:
 def evaluation() -> topology.Composable:
     """Pipeline evaluation.
     """
-    from project import evaluation
+    from project import evaluation  # pylint: disable=import-outside-toplevel
     return evaluation.INSTANCE
 
 
