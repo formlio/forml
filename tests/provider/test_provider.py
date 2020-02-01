@@ -99,5 +99,5 @@ class TestProvider:
     def test_staged(self):
         """Test the staged imports loading.
         """
-        from tests.provider import service
+        from tests.provider import service  # pylint: disable=import-outside-toplevel
         assert issubclass(service.Provider['dummy'], service.Provider)

@@ -22,6 +22,6 @@ def conf(cfg_file: str):
     """
     with mock.patch('forml.conf.argparse.ArgumentParser.parse_known_args',
                     return_value=(argparse.Namespace(config=open(cfg_file, mode='r')), [])):
-        from forml import conf
+        from forml import conf  # pylint: disable=import-outside-toplevel
         importlib.reload(conf)
         return conf
