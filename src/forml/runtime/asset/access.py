@@ -1,13 +1,13 @@
 """ForML assets accessing functionality.
 """
+import contextlib
 import logging
 import typing
 import uuid
 
-from forml.runtime.asset import directory
 from forml import conf, project as prjmod  # pylint: disable=unused-import
+from forml.runtime.asset import directory
 from forml.runtime.asset import persistent
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -102,13 +102,21 @@ class Assets:
         """
         return self._generation.tag
 
-    def state(self, nodes: typing.Sequence[uuid.UUID], tag: typing.Optional[directory.Generation.Tag] = None) -> State:
-        """Get the state persistence accessor.
+    def state(self, nodes: typing.Sequence[uuid.UUID],
+              tag: typing.Optional[directory.Generation.Tag] = None) -> typing.ContextManager[State]:
+        """Get the state persistence accessor wrapped in a context manager.
 
         Args:
             nodes: List of expected persisted stateful nodes.
             tag: Optional generation tag template to be used when committing.
 
-        Returns: State persistence manager.
+        Returns: State persistence in a context manager.
         """
-        return State(self._generation, nodes, tag)
+        @contextlib.contextmanager
+        def context(state: State) -> typing.Generator[State, None, None]:
+            """State context manager that updates the generation upon exit.
+            """
+            yield state
+            self._generation = state._generation  # pylint: disable=protected-access
+
+        return context(State(self._generation, nodes, tag))

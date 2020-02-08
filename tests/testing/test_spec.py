@@ -15,12 +15,12 @@ class TestCase:
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def exception() -> typing.Type[Exception]:
+    def exception() -> spec.Scenario.Exception:
         """Exception fixture.
 
         Returns: Exception type.
         """
-        return AssertionError
+        return spec.Scenario.Exception(AssertionError, 'This is an Error')
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -69,18 +69,18 @@ class TestCase:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def init_raises(hyperparams: typing.Mapping[str, int], exception: typing.Type[Exception]) -> spec.Scenario:
+    def init_raises(hyperparams: typing.Mapping[str, int], exception: spec.Scenario.Exception) -> spec.Scenario:
         """Scenario fixture.
         """
-        return spec.Case(**hyperparams).raises(exception)
+        return spec.Case(**hyperparams).raises(exception.kind, exception.message)
 
     @staticmethod
     @pytest.fixture(scope='session')
     def plainapply_raises(hyperparams: typing.Mapping[str, int], apply_input: str,
-                          exception: typing.Type[Exception]) -> spec.Scenario:
+                          exception: spec.Scenario.Exception) -> spec.Scenario:
         """Scenario fixture.
         """
-        return spec.Case(**hyperparams).apply(apply_input).raises(exception)
+        return spec.Case(**hyperparams).apply(apply_input).raises(exception.kind, exception.message)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -92,10 +92,10 @@ class TestCase:
     @staticmethod
     @pytest.fixture(scope='session')
     def statetrain_raises(hyperparams: typing.Mapping[str, int], train_input: str, label_input: str,
-                          exception: typing.Type[Exception]) -> spec.Scenario:
+                          exception: spec.Scenario.Exception) -> spec.Scenario:
         """Scenario fixture.
         """
-        return spec.Case(**hyperparams).train(train_input, label_input).raises(exception)
+        return spec.Case(**hyperparams).train(train_input, label_input).raises(exception.kind, exception.message)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -108,10 +108,11 @@ class TestCase:
     @staticmethod
     @pytest.fixture(scope='session')
     def stateapply_raises(hyperparams: typing.Mapping[str, int], train_input: str, label_input: str,
-                          apply_input, exception: typing.Type[Exception]) -> spec.Scenario:
+                          apply_input, exception: spec.Scenario.Exception) -> spec.Scenario:
         """Scenario fixture.
         """
-        return spec.Case(**hyperparams).train(train_input, label_input).apply(apply_input).raises(exception)
+        return spec.Case(**hyperparams).train(
+            train_input, label_input).apply(apply_input).raises(exception.kind, exception.message)
 
     @staticmethod
     @pytest.fixture(scope='session')

@@ -45,4 +45,5 @@ def test_generate(path: view.Path, valid_assets: access.Assets, node1: node.Work
                   node3: node.Worker):
     """Compiler generate test.
     """
-    compiler.generate(path, valid_assets.state((node1.gid, node2.gid, node3.gid)))
+    with valid_assets.state((node1.gid, node2.gid, node3.gid)) as state:
+        compiler.generate(path, state)

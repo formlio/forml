@@ -33,8 +33,8 @@ class Runner(provider.Interface, default=conf.RUNNER):
         """
         composition = self._build(lower or self._assets.tag.training.ordinal, upper,
                                   self._assets.project.pipeline)
-        return self._exec(composition.train,
-                          self._assets.state(composition.shared, self._assets.tag.training.trigger()))
+        with self._assets.state(composition.shared, self._assets.tag.training.trigger()) as state:
+            return self._exec(composition.train, state)
 
     def apply(self, lower: typing.Optional['etl.OrdinalT'] = None,
               upper: typing.Optional['etl.OrdinalT'] = None) -> typing.Any:
@@ -47,7 +47,8 @@ class Runner(provider.Interface, default=conf.RUNNER):
         Returns: Applying code.
         """
         composition = self._build(lower, upper, self._assets.project.pipeline)
-        return self._exec(composition.apply, self._assets.state(composition.shared))
+        with self._assets.state(composition.shared) as state:
+            return self._exec(composition.apply, state)
 
     def cvscore(self, lower: typing.Optional['etl.OrdinalT'] = None,
                 upper: typing.Optional['etl.OrdinalT'] = None) -> typing.Any:

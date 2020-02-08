@@ -95,19 +95,36 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
             """
             return self.train is not None or self.label is not None
 
-    class Output(collections.namedtuple('Output', 'apply, train'), IO):
+    class Output(collections.namedtuple('Output', 'apply, train, matcher'), IO):
         """Output data type.
         """
-        def __new__(cls, apply: typing.Any = None, train: typing.Any = None):
+        def __new__(cls, apply: typing.Any = None, train: typing.Any = None,
+                    matcher: typing.Optional[typing.Callable[[typing.Any, typing.Any], bool]] = None):
             if apply is not None and train is not None:
                 raise ValueError('Output apply/train collision')
-            return super().__new__(cls, apply, train)
+            return super().__new__(cls, apply, train, matcher)
 
         @property
         def trained(self) -> bool:
             """Test this is a trained output.
             """
             return self.train is not None
+
+        @property
+        def value(self) -> typing.Any:
+            """Return the trained or applied exclusive value.
+
+            Returns: Trained or applied value.
+            """
+            return self.train if self.trained else self.apply
+
+    class Exception(collections.namedtuple('Exception', 'kind, message')):
+        """Exception type.
+        """
+        def __new__(cls, kind: typing.Type[Exception], message: typing.Optional[str] = None):
+            if not issubclass(kind, Exception):
+                raise ValueError('Invalid exception type')
+            return super().__new__(cls, kind, message)
 
     def __new__(cls, params: 'Scenario.Params',
                 input: typing.Optional['Scenario.Input'] = None,  # pylint: disable=redefined-builtin
@@ -122,6 +139,9 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
             if not exception:
                 raise ValueError('Unknown outcome')
         return super().__new__(cls, params, input, output, exception)
+
+    def __hash__(self):
+        return hash(self.params) ^ hash(self.input.trained) ^ hash(self.input.applied) ^ hash(self.exception)
 
     @property
     @functools.lru_cache()
@@ -141,19 +161,20 @@ class Raisable:
         self._params: Scenario.Params = params
         self._input: Scenario.Input = input or Scenario.Input()
 
-    def raises(self, exception: typing.Type[Exception]) -> Scenario:
+    def raises(self, kind: typing.Type[Exception], message: typing.Optional[str] = None) -> Scenario:
         """Assertion on expected exception.
         """
-        return Scenario(self._params, self._input, exception=exception)
+        return Scenario(self._params, self._input, exception=Scenario.Exception(kind, message))
 
 
 class Applied(Raisable):
     """Outcome with a apply input dataset defined.
     """
-    def returns(self, output: typing.Any) -> Scenario:
+    def returns(self, output: typing.Any,
+                matcher: typing.Optional[typing.Callable[[typing.Any, typing.Any], bool]] = None) -> Scenario:
         """Assertion on expected return value.
         """
-        return Scenario(self._params, self._input, Scenario.Output(apply=output))
+        return Scenario(self._params, self._input, Scenario.Output(apply=output, matcher=matcher))
 
 
 class Appliable(Raisable):
@@ -168,10 +189,11 @@ class Appliable(Raisable):
 class Trained(Appliable):
     """Outcome with a train input dataset defined.
     """
-    def returns(self, output: typing.Any) -> Scenario:
+    def returns(self, output: typing.Any,
+                matcher: typing.Optional[typing.Callable[[typing.Any, typing.Any], bool]] = None) -> Scenario:
         """Assertion on expected return value.
         """
-        return Scenario(self._params, self._input, Scenario.Output(train=output))
+        return Scenario(self._params, self._input, Scenario.Output(train=output, matcher=matcher))
 
 
 class Case(Appliable):
@@ -206,6 +228,6 @@ class Meta(abc.ABCMeta):
         if not any(issubclass(b, Suite) for b in bases):
             raise TypeError(f'{name} not a valid {Suite.__name__}')
         for title, scenario in [(t, s) for t, s in namespace.items() if isinstance(s, Scenario)]:
-            namespace[f'test_{title}'] = routine.generate(title, scenario)
+            namespace[f'test_{title}'] = routine.Case(title, scenario)
             del namespace[title]
         return super().__new__(mcs, name, bases, namespace)
