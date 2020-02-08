@@ -111,7 +111,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         def __init__(self, assets: access.Assets):
             self._assets: access.Assets = assets
 
-        def __getitem__(self, runner: str) -> process.Runner:
+        def __getitem__(self, runner: str) -> 'process.Runner':
             return process.Runner[runner](self._assets)
 
         def __getattr__(self, mode: str) -> typing.Callable:
