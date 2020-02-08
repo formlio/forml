@@ -1,20 +1,50 @@
 """
 Testing routines.
 """
+import abc
 import contextlib
 import logging
 import string
 import typing
+import unittest
+import uuid
 
 from forml import conf, etl
 from forml.etl import expression
 from forml.flow import task
+from forml.flow.graph import view
 from forml.flow.pipeline import topology
 from forml.runtime import process
 from forml.stdlib.operator import simple
 from forml.testing import spec
+from forml.flow.graph import node as nodemod
 
 LOGGER = logging.getLogger(__name__)
+
+
+class Suite(unittest.TestCase, metaclass=abc.ABCMeta):
+    """Abstract base class of operator testing suite.
+    """
+    def __str__(self):
+        return self.__class__.__name__
+
+    @property
+    @abc.abstractmethod
+    def __operator__(self) -> typing.Type[topology.Operator]:
+        """Operator instance.
+        """
+
+
+class Meta(abc.ABCMeta):
+    """Meta class for generating unittest classes out of our framework.
+    """
+    def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any], **kwargs):
+        if not any(issubclass(b, Suite) for b in bases):
+            raise TypeError(f'{name} not a valid {Suite.__name__}')
+        for title, scenario in [(t, s) for t, s in namespace.items() if isinstance(s, spec.Scenario)]:
+            namespace[f'test_{title}'] = Case(title, scenario)
+            del namespace[title]
+        return super().__new__(mcs, name, bases, namespace)
 
 
 class Runner:
@@ -28,7 +58,18 @@ class Runner:
         def apply(self, bundle: typing.Tuple[typing.Any, typing.Any]) -> typing.Tuple[typing.Any, typing.Any]:
             return bundle
 
-    def __init__(self, params: 'spec.Scenario.Params', scenario: 'spec.Scenario.Input',
+    class Initializer(view.Visitor):
+        """Visitor that tries to instantiate each node in attempt to validate it.
+        """
+        def __init__(self):
+            self._gids: typing.Set[uuid.UUID] = set()
+
+        def visit_node(self, node: nodemod.Worker) -> None:
+            if isinstance(node, nodemod.Worker) and node.gid not in self._gids:
+                self._gids.add(node.gid)
+                node.spec()
+
+    def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input,
                  runner: typing.Optional[str] = conf.TESTING_RUNNER):
         self._params: spec.Scenario.Params = params
         self._source: etl.Source = etl.Extract(expression.Select(lambda: (scenario.train, scenario.label)),
@@ -36,7 +77,13 @@ class Runner:
         self._runner: typing.Optional[str] = runner
 
     def __call__(self, operator: typing.Type[topology.Operator]) -> process.Runner:
-        return self._source.bind(operator(*self._params.args, **self._params.kwargs)).launcher[self._runner]
+        instance = operator(*self._params.args, **self._params.kwargs)
+        initializer = self.Initializer()
+        segment = instance.expand()
+        segment.apply.accept(initializer)
+        segment.train.accept(initializer)
+        segment.label.accept(initializer)
+        return self._source.bind(instance).launcher[self._runner]
 
 
 class Test:
@@ -45,13 +92,13 @@ class Test:
     def __init__(self, runner: Runner):
         self._runner: Runner = runner
 
-    def __call__(self, suite: 'spec.Suite') -> None:
+    def __call__(self, suite: Suite) -> None:
         runner = self.init(suite)
         if runner:
             with self.raises(suite):
                 self.matches(suite, self.test(runner))
 
-    def init(self, suite: 'spec.Suite') -> process.Runner:
+    def init(self, suite: Suite) -> process.Runner:
         """Test init phase.
 
         Args:
@@ -61,7 +108,7 @@ class Test:
         """
         return self._runner(suite.__operator__)
 
-    def raises(self, suite: 'spec.Suite') -> typing.ContextManager:  # pylint: disable=unused-argument, no-self-use
+    def raises(self, suite: Suite) -> typing.ContextManager:  # pylint: disable=unused-argument, no-self-use
         """Context manager for wrapping raising assertions.
 
         Args:
@@ -71,7 +118,7 @@ class Test:
         """
         return contextlib.suppress()  # or contextlib.nullcontext() in python3.7
 
-    def matches(self, suite: 'spec.Suite', value: typing.Any) -> None:
+    def matches(self, suite: Suite, value: typing.Any) -> None:
         """Context manager for wrapping raising assertions.
 
         Args:
@@ -92,11 +139,11 @@ class Test:
 class RaisableTest(Test):
     """Base test class for raising test cases.
     """
-    def __init__(self, runner: Runner, exception: 'spec.Scenario.Exception'):
+    def __init__(self, runner: Runner, exception: spec.Scenario.Exception):
         super().__init__(runner)
         self._exception: spec.Scenario.Exception = exception
 
-    def raises(self, suite: 'spec.Suite') -> typing.ContextManager:
+    def raises(self, suite: Suite) -> typing.ContextManager:
         """Context manager for wrapping raising assertions.
 
         Args:
@@ -112,11 +159,11 @@ class RaisableTest(Test):
 class ReturnableTest(Test):
     """Base test class for returning test cases.
     """
-    def __init__(self, runner: Runner, output: 'spec.Scenario.Output'):
+    def __init__(self, runner: Runner, output: spec.Scenario.Output):
         super().__init__(runner)
         self._output: spec.Scenario.Output = output
 
-    def matches(self, suite: 'spec.Suite', value: typing.Any) -> None:
+    def matches(self, suite: Suite, value: typing.Any) -> None:
         """Context manager for wrapping raising assertions.
 
         Args:
@@ -132,7 +179,7 @@ class ReturnableTest(Test):
 class TestInitRaises(RaisableTest, Test):
     """Test composite.
     """
-    def init(self, suite: 'spec.Suite') -> process.Runner:
+    def init(self, suite: Suite) -> process.Runner:
         with self.raises(suite):
             return super().init(suite)
 
@@ -174,7 +221,7 @@ class TestStateTrainRaises(RaisableTest, StateTrainTest):
 class StateApplyTest(Test):
     """Testcase logic.
     """
-    def init(self, suite: 'spec.Suite') -> process.Runner:
+    def init(self, suite: Suite) -> process.Runner:
         runner = super().init(suite)
         runner.train()
         return runner
@@ -196,13 +243,13 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine.
     """
-    def __init__(self, name: str, scenario: 'spec.Scenario', runner: typing.Optional[str] = conf.TESTING_RUNNER):
+    def __init__(self, name: str, scenario: spec.Scenario, runner: typing.Optional[str] = conf.TESTING_RUNNER):
         self._name: str = name
         runner = Runner(scenario.params, scenario.input, runner)
         self._test: Test = self.select(scenario, runner)
 
     @staticmethod
-    def select(scenario: 'spec.Scenario', runner: process.Runner) -> Test:
+    def select(scenario: spec.Scenario, runner: process.Runner) -> Test:
         """Selecting and setting up the test implementation for given scenario.
 
         Args:
@@ -227,7 +274,7 @@ class Case:
             return TestStateApplyReturns(runner, scenario.output)
         raise RuntimeError('Unexpected scenario outcome')
 
-    def __get__(self, suite: 'spec.Suite', cls):
+    def __get__(self, suite: Suite, cls):
         def case():
             """Bound routine representation.
             """

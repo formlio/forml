@@ -1,97 +1,43 @@
 """
-Titanic preprocessing unit tests.
+Preprocessing unit tests.
 """
-# pylint: disable=no-self-use
-import numpy as np
-import pandas as pd
-import pytest
-from forml.flow import task
+import pandas
 
+from forml import testing
 from titanic.pipeline import preprocessing
 
 
-class Transformer:  # pylint: disable=too-few-public-methods
-    """Common class for Titanic transformation tests.
+def dataframe_equals(expected: pandas.DataFrame, actual: pandas.DataFrame) -> bool:
+    """DataFrames can't be simply compared for equality so we need a custom matcher.
     """
-    def test_transform(self, actor: task.Actor, dataset: pd.DataFrame, expected: pd.DataFrame):
-        """Unit test action - ensuring the actor transformation of the input dataset returns expected values.
-        """
-        assert expected.equals(actor.apply(dataset))
+    if not actual.equals(expected):
+        print(f'Dataframe mismatch: {expected} vs {actual}')
+        return False
+    return True
 
 
-class TestNaNImputer(Transformer):
-    """Unit tests fo the statefull NaNImputer.
+class TestNaNImputer(testing.operator(preprocessing.NaNImputer)):
+    """NaNImputer unit tests.
     """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def dataset() -> pd.DataFrame:
-        """Input dataset fixture.
-        """
-        return pd.DataFrame({
-            'int': [0, 1, 2, None, 3, np.nan],
-            'float': [0.1, 1.2, None, 2.3, np.nan, 3.4],
-            'str': ['foo', None, 'foo', np.nan, 'bar', '']
-        })
+    # Dataset fixtures
+    TRAINSET = pandas.DataFrame({'foo': [1., 2., 3.], 'bar': ['a', 'b', 'b']})
+    TESTSET = pandas.DataFrame({'foo': [1., 4., None], 'bar': [None, 'c', 'a']})
+    EXPECTED = pandas.DataFrame({'foo': [1., 4., 2.], 'bar': ['b', 'c', 'a']})
 
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def expected(dataset: pd.DataFrame) -> pd.DataFrame:
-        """Expected output dataframe as a result of the transformation.
-        """
-        return pd.DataFrame({
-            'int': dataset['int'].fillna(dataset['int'].median()),
-            'float': dataset['float'].fillna(dataset['float'].median()),
-            'str': dataset['str'].fillna(dataset['str'].value_counts().index[0])
-        })
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def actor(dataset: pd.DataFrame) -> preprocessing.NaNImputer:
-        """Actor instance under the test.
-        """
-        instance = preprocessing.NaNImputer().spec()
-        instance.train(dataset, None)
-        return instance
+    # Test scenarios
+    invalid_params = testing.Case('foo').raises(TypeError, 'takes 1 positional argument but 2 were given')
+    not_trained = testing.Case().apply(TESTSET).raises(ValueError, "Must specify a fill 'value' or 'method'")
+    valid_imputation = testing.Case().train(TRAINSET).apply(TESTSET).returns(EXPECTED, dataframe_equals)
 
 
-class TestTitleParser(Transformer):
+class TestTitleParser(testing.operator(preprocessing.parse_title)):
     """Unit testing the stateless TitleParser transformer.
     """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def source() -> str:
-        """Fixture for the source column name.
-        """
-        return 'Name'
+    # Dataset fixtures
+    INPUT = pandas.DataFrame({'Name': ['Smith, Mr. John', 'Black, Ms. Jane', 'Brown, Mrs. Jo', 'White, Ian']})
+    EXPECTED = pandas.concat((INPUT, pandas.DataFrame({'Title': ['Mr', 'Ms', 'Mrs', 'Unknown']})), axis='columns')
 
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def target() -> str:
-        """Fixture for the target column name.
-        """
-        return 'Title'
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def dataset(source: str) -> pd.DataFrame:
-        """Input dataset fixture.
-        """
-        return pd.DataFrame({
-            'foo': [0, 1, 2, 3],
-            source: ['Smith, Mr. John', 'Black, Ms. Jane', 'Brown, Mrs. Jo', 'White, Ian'],
-        })
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def expected(dataset: pd.DataFrame, target: str) -> pd.DataFrame:
-        """Expected output dataframe as a result of the transformation.
-        """
-        dataset[target] = ['Mr', 'Ms', 'Mrs', 'Unknown']
-        return dataset
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def actor(source: str, target: str) -> preprocessing.parse_title:
-        """Actor instance under the test.
-        """
-        return preprocessing.parse_title(source=source, target=target).spec()
+    # Test scenarios
+    # missing_params = testing.Case(source='Baz').raises(TypeError, "parse_title() missing 1 required positional argument: 'target'")
+    invalid_source = testing.Case(source='Foo', target='Bar').apply(INPUT).raises(KeyError, 'Foo')
+    valid_parsing = testing.Case(source='Name', target='Title').apply(INPUT).returns(EXPECTED, dataframe_equals)
