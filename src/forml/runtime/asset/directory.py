@@ -204,6 +204,9 @@ class Generation(Level):
                     states: typing.Optional[typing.Sequence[uuid.UUID]] = None):
             return super().__new__(cls, training or cls.Training(), tuning or cls.Tuning(), tuple(states or []))
 
+        def __bool__(self):
+            return bool(self.training or self.tuning)
+
         def __getattribute__(self, name: str) -> typing.Any:
             attribute = super().__getattribute__(name)
             if isinstance(attribute, Generation.Tag.Mode):
@@ -295,7 +298,7 @@ class Generation(Level):
 
     @property
     def tag(self) -> 'Generation.Tag':
-        """Generation metadata. In case of implicit generation and empty lineage this return a "null" tag (a Tag object
+        """Generation metadata. In case of implicit generation and empty lineage this returns a "null" tag (a Tag object
         with all fields empty)
 
         Returns: Generation tag (metadata) object.
