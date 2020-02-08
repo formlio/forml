@@ -47,8 +47,9 @@ class Test:
 
     def __call__(self, suite: 'spec.Suite') -> None:
         runner = self.init(suite)
-        with self.raises(suite):
-            self.matches(suite, self.test(runner))
+        if runner:
+            with self.raises(suite):
+                self.matches(suite, self.test(runner))
 
     def init(self, suite: 'spec.Suite') -> process.Runner:
         """Test init phase.
@@ -197,10 +198,11 @@ class Case:
     """
     def __init__(self, name: str, scenario: 'spec.Scenario', runner: typing.Optional[str] = conf.TESTING_RUNNER):
         self._name: str = name
+        runner = Runner(scenario.params, scenario.input, runner)
         self._test: Test = self.select(scenario, runner)
 
     @staticmethod
-    def select(scenario: 'spec.Scenario', runner: typing.Optional[str]) -> Test:
+    def select(scenario: 'spec.Scenario', runner: process.Runner) -> Test:
         """Selecting and setting up the test implementation for given scenario.
 
         Args:
@@ -209,7 +211,6 @@ class Case:
 
         Returns: Test case instance.
         """
-        runner = Runner(scenario.params, scenario.input, runner)
         if scenario.outcome is spec.Scenario.Outcome.INIT_RAISES:
             return TestInitRaises(runner, scenario.exception)
         if scenario.outcome is spec.Scenario.Outcome.PLAINAPPLY_RAISES:
