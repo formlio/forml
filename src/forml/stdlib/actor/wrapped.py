@@ -4,6 +4,7 @@ Utilities for creating actors using decorator wrappings.
 
 import abc
 import inspect
+import itertools
 import typing
 
 from forml import stdlib
@@ -138,6 +139,11 @@ class Function(Wrapping):
         """
         def __init__(self, function: typing.Callable[[typing.Any], typing.Any],
                      *args: typing.Any, **kwargs: typing.Any):
+            # poor-man's args validation against the function signature; this works only partially as we don't know
+            # how many of the function arguments are data input ports (at least one but possibly more)
+            signature = inspect.signature(function)
+            signature.replace(parameters=itertools.islice(
+                signature.parameters.values(), 1, None)).bind_partial(*args, **kwargs)
             self._function: typing.Callable[[typing.Any], typing.Any] = function
             self._args: typing.Sequence[typing.Any] = args
             self._kwargs: typing.Mapping[str, typing.Any] = kwargs

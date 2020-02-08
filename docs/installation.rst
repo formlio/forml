@@ -14,11 +14,9 @@ this::
 
     pip3 install 'forml[stdlib,dask]'
 
-
 Install the graphviz ecosystem::
 
     apt-get install graphviz
-
 
 Extra Features
 --------------
@@ -27,6 +25,8 @@ Extra Features
 | Feature  | Install Command                       | Description                                                  |
 +==========+=======================================+==============================================================+
 | all      | ``pip3 install 'forml[all]'``       | All extra features                                           |
++----------+---------------------------------------+--------------------------------------------------------------+
+| doc      | ``pip3 install 'forml[doc]'``       | Documentation publishing dependencies                        |
 +----------+---------------------------------------+--------------------------------------------------------------+
 | stdlib   | ``pip3 install 'forml[stdlib]'``    | The standard operator and actor library shipped with ForML |
 +----------+---------------------------------------+--------------------------------------------------------------+
