@@ -210,19 +210,19 @@ class Case:
         Returns: Test case instance.
         """
         runner = Runner(scenario.params, scenario.input, runner)
-        if scenario.outcome == spec.Scenario.Outcome.INIT_RAISES:
+        if scenario.outcome is spec.Scenario.Outcome.INIT_RAISES:
             return TestInitRaises(runner, scenario.exception)
-        if scenario.outcome == spec.Scenario.Outcome.PLAINAPPLY_RAISES:
+        if scenario.outcome is spec.Scenario.Outcome.PLAINAPPLY_RAISES:
             return TestPlainApplyRaises(runner, scenario.exception)
-        if scenario.outcome == spec.Scenario.Outcome.STATETRAIN_RAISES:
+        if scenario.outcome is spec.Scenario.Outcome.STATETRAIN_RAISES:
             return TestStateTrainRaises(runner, scenario.exception)
-        if scenario.outcome == spec.Scenario.Outcome.STATEAPPLY_RAISES:
+        if scenario.outcome is spec.Scenario.Outcome.STATEAPPLY_RAISES:
             return TestStateApplyRaises(runner, scenario.exception)
-        if scenario.outcome == spec.Scenario.Outcome.PLAINAPPLY_RETURNS:
+        if scenario.outcome is spec.Scenario.Outcome.PLAINAPPLY_RETURNS:
             return TestPlainApplyReturns(runner, scenario.output)
-        if scenario.outcome == spec.Scenario.Outcome.STATETRAIN_RETURNS:
+        if scenario.outcome is spec.Scenario.Outcome.STATETRAIN_RETURNS:
             return TestStateTrainReturns(runner, scenario.output)
-        if scenario.outcome == spec.Scenario.Outcome.STATEAPPLY_RETURNS:
+        if scenario.outcome is spec.Scenario.Outcome.STATEAPPLY_RETURNS:
             return TestStateApplyReturns(runner, scenario.output)
         raise RuntimeError('Unexpected scenario outcome')
 
