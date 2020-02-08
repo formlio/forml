@@ -17,7 +17,7 @@ def exception() -> spec.Scenario.Exception:
 
     Returns: Exception type.
     """
-    return spec.Scenario.Exception(AssertionError, 'This is an Error')
+    return spec.Scenario.Exception(RuntimeError, 'This is an Error')
 
 
 @pytest.fixture(scope='session')
