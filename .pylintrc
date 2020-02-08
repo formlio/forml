@@ -53,6 +53,7 @@ confidence=
 # --disable=W"
 
 disable=
+  arguments-differ,
   attribute-defined-outside-init,
   cyclic-import,
   too-many-branches,
