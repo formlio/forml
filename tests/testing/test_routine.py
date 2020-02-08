@@ -63,10 +63,10 @@ class Runner:
 
 
 @pytest.fixture(scope='session')
-def suite() -> spec.Suite:
+def suite() -> routinemod.Suite:
     """Suite fixture.
     """
-    class Suite(spec.Suite):
+    class Suite(routinemod.Suite):
         """Suite mock.
         """
         __operator__ = None
@@ -90,7 +90,7 @@ class Routine(metaclass=abc.ABCMeta):
         """
         return routinemod.Case.select(scenario, Runner(scenario))
 
-    def test_routine(self, routine: routinemod.Test, suite: spec.Suite):
+    def test_routine(self, routine: routinemod.Test, suite: routinemod.Suite):
         """Routine test case.
         """
         routine(suite)

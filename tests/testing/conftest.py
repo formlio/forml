@@ -7,6 +7,7 @@ ForML testing unit tests fixtures.
 import typing
 
 import pytest
+from forml import testing
 
 from forml.testing import spec
 
@@ -69,7 +70,7 @@ def train_output() -> str:
 def init_raises(hyperparams: typing.Mapping[str, int], exception: spec.Scenario.Exception) -> spec.Scenario:
     """Scenario fixture.
     """
-    return spec.Case(**hyperparams).raises(exception.kind, exception.message)
+    return testing.Case(**hyperparams).raises(exception.kind, exception.message)
 
 
 @pytest.fixture(scope='session')
@@ -77,14 +78,14 @@ def plainapply_raises(hyperparams: typing.Mapping[str, int], apply_input: str,
                       exception: spec.Scenario.Exception) -> spec.Scenario:
     """Scenario fixture.
     """
-    return spec.Case(**hyperparams).apply(apply_input).raises(exception.kind, exception.message)
+    return testing.Case(**hyperparams).apply(apply_input).raises(exception.kind, exception.message)
 
 
 @pytest.fixture(scope='session')
 def plainapply_returns(hyperparams: typing.Mapping[str, int], apply_input: str, apply_output: str) -> spec.Scenario:
     """Scenario fixture.
     """
-    return spec.Case(**hyperparams).apply(apply_input).returns(apply_output)
+    return testing.Case(**hyperparams).apply(apply_input).returns(apply_output)
 
 
 @pytest.fixture(scope='session')
@@ -92,7 +93,7 @@ def statetrain_raises(hyperparams: typing.Mapping[str, int], train_input: str, l
                       exception: spec.Scenario.Exception) -> spec.Scenario:
     """Scenario fixture.
     """
-    return spec.Case(**hyperparams).train(train_input, label_input).raises(exception.kind, exception.message)
+    return testing.Case(**hyperparams).train(train_input, label_input).raises(exception.kind, exception.message)
 
 
 @pytest.fixture(scope='session')
@@ -100,7 +101,7 @@ def statetrain_returns(hyperparams: typing.Mapping[str, int], train_input: str, 
                        train_output: str) -> spec.Scenario:
     """Scenario fixture.
     """
-    return spec.Case(**hyperparams).train(train_input, label_input).returns(train_output)
+    return testing.Case(**hyperparams).train(train_input, label_input).returns(train_output)
 
 
 @pytest.fixture(scope='session')
@@ -108,7 +109,7 @@ def stateapply_raises(hyperparams: typing.Mapping[str, int], train_input: str, l
                       apply_input, exception: spec.Scenario.Exception) -> spec.Scenario:
     """Scenario fixture.
     """
-    return spec.Case(**hyperparams).train(
+    return testing.Case(**hyperparams).train(
         train_input, label_input).apply(apply_input).raises(exception.kind, exception.message)
 
 
@@ -117,4 +118,4 @@ def stateapply_returns(hyperparams: typing.Mapping[str, int], train_input: str, 
                        apply_input: str, apply_output: str) -> spec.Scenario:
     """Scenario fixture.
     """
-    return spec.Case(**hyperparams).train(train_input, label_input).apply(apply_input).returns(apply_output)
+    return testing.Case(**hyperparams).train(train_input, label_input).apply(apply_input).returns(apply_output)

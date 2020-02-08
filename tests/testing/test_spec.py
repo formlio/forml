@@ -8,7 +8,7 @@ import typing
 from forml.testing import spec
 
 
-class TestCase:
+class TestScenario:
     """Testing Case unit tests.
     """
     def test_init_raises(self, init_raises: spec.Scenario, hyperparams: typing.Mapping[str, int], exception: Exception):

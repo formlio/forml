@@ -7,10 +7,6 @@ import enum
 import functools
 import types
 import typing
-import unittest
-
-from forml.flow.pipeline import topology
-from forml.testing import routine
 
 
 class Scenario(collections.namedtuple('Scenario', 'params, input, output, exception')):
@@ -194,40 +190,3 @@ class Trained(Appliable):
         """Assertion on expected return value.
         """
         return Scenario(self._params, self._input, Scenario.Output(train=output, matcher=matcher))
-
-
-class Case(Appliable):
-    """Test case entrypoint.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(Scenario.Params(*args, **kwargs))
-
-    def train(self, features: typing.Any, labels: typing.Any) -> Trained:
-        """Train input dataset definition.
-        """
-        return Trained(self._params, Scenario.Input(train=features, label=labels))
-
-
-class Suite(unittest.TestCase, metaclass=abc.ABCMeta):
-    """Abstract base class of operator testing suite.
-    """
-    def __str__(self):
-        return self.__class__.__name__
-
-    @property
-    @abc.abstractmethod
-    def __operator__(self) -> typing.Type[topology.Operator]:
-        """Operator instance.
-        """
-
-
-class Meta(abc.ABCMeta):
-    """Meta class for generating unittest classes out of our framework.
-    """
-    def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any], **kwargs):
-        if not any(issubclass(b, Suite) for b in bases):
-            raise TypeError(f'{name} not a valid {Suite.__name__}')
-        for title, scenario in [(t, s) for t, s in namespace.items() if isinstance(s, Scenario)]:
-            namespace[f'test_{title}'] = routine.Case(title, scenario)
-            del namespace[title]
-        return super().__new__(mcs, name, bases, namespace)
