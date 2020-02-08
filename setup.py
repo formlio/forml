@@ -22,7 +22,11 @@ EXTRAS_DASK = {
     'cloudpickle'
 }
 
-EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK
+EXTRAS_DOC = {
+    'sphinx'
+}
+
+EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DOC
 
 setuptools.setup(name='forml',
                  version=forml.__version__,
@@ -39,6 +43,7 @@ setuptools.setup(name='forml',
                  install_requires=['joblib', 'pip'],
                  extras_require={
                      'all': EXTRAS_ALL,
+                     'doc': EXTRAS_DOC,
                      'stdlib': EXTRAS_STDLIB,
                      'graphviz': EXTRAS_GRAPHVIZ,
                      'dask': EXTRAS_DASK

@@ -14,8 +14,9 @@ from forml.stdlib.operator import simple
 class TestMapper:
     """Simple mapper unit tests.
     """
+    @staticmethod
     @pytest.fixture(scope='function')
-    def operator(self, actor: typing.Type[task.Actor]):
+    def operator(actor: typing.Type[task.Actor]):
         """Operator fixture.
         """
         return simple.Mapper.operator(actor)()

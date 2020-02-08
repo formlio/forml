@@ -1,5 +1,7 @@
 """
 Preprocessing unit tests.
+
+We are thoroughly testing our preprocessing transformers.
 """
 import pandas
 
@@ -38,6 +40,6 @@ class TestTitleParser(testing.operator(preprocessing.parse_title)):
     EXPECTED = pandas.concat((INPUT, pandas.DataFrame({'Title': ['Mr', 'Ms', 'Mrs', 'Unknown']})), axis='columns')
 
     # Test scenarios
-    # missing_params = testing.Case(source='Baz').raises(TypeError, "parse_title() missing 1 required positional argument: 'target'")
+    invalid_params = testing.Case(foo='bar').raises(TypeError, "got an unexpected keyword argument 'foo'")
     invalid_source = testing.Case(source='Foo', target='Bar').apply(INPUT).raises(KeyError, 'Foo')
     valid_parsing = testing.Case(source='Name', target='Title').apply(INPUT).returns(EXPECTED, dataframe_equals)

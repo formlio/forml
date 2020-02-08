@@ -6,6 +6,7 @@ low level it is a *Task Dependency Graph* where edges represent data flows and v
 
 ForML is providing a convenient API for defining complex Pipelines using simple notation based on two main pipeline
 entities:
+
 - *Operators* that can be seen as pipeline plugins implementing specific ML techniques.
 - *Actors* as the low level primitives forming the graph vertices.
 
@@ -19,7 +20,7 @@ like this::
 Given the particular implementation of the example operators this will render a pipeline with the *train* and *apply*
 graphs visualized as follows:
 
-.. image:: _static/pipeline.png
+.. image:: images/pipeline.png
 
 The meaning of operators and how are they defined using actors is described in more details in the following sections.
 
