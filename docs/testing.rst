@@ -1,14 +1,14 @@
 Operator Unit Testing
 =====================
 
-ForML provides custom testing framework for user defined operators. It is built on top of standard ``unittest``
+ForML provides custom testing framework for user defined operators. It is built on top of the standard ``unittest``
 library with an API specialized to cover all the standard operator outcomes while minimizing any boiler-plating.
 
-The tests needs to be placed under the ``tests/`` folder of your :doc:`project` (note ``unittest`` requires all test
+The tests need to be placed under the ``tests/`` folder of your :doc:`project` (note ``unittest`` requires all test
 files and the ``tests/`` directory itself to be python modules hence it needs to contain the appropriate
 ``__init__.py`` files).
 
-The testing framework is available after import the ``forml.testing`` module::
+The testing framework is available after importing the ``forml.testing`` module::
 
     from forml import testing
 
@@ -75,7 +75,7 @@ STATEAPPLY_RETURNS
 
 Operator Test Suite
 -------------------
-All test case assertions of the same operator are defined within the operator test suite that's created simple as
+All test case assertions of the same operator are defined within the operator test suite that's created simply as
 follows::
 
     class TestMyTransformer(testing.operator(mymodule.MyTransformer)):
@@ -86,8 +86,8 @@ follows::
         not_trained = testing.Case().apply('bar').raises(ValueError, "Must be trained ahead")
         valid_transformation = testing.Case().train('foo').apply('bar').returns('baz')
 
-You simply create the suite by inheriting a ``Test...`` class from the ``testing.operator()`` utility wrapping your
-operator under the test. You put your operator scenarios (test case outcome assertions) right into the body of your
+You simply create the suite by inheriting your ``Test...`` class from the ``testing.operator()`` utility wrapping your
+operator under the test. You then put your operator scenarios (test case outcome assertions) right into the body of your
 test suite class.
 
 
@@ -95,7 +95,7 @@ Running Your Tests
 ------------------
 
 All the suites are transparently expanded into full blown ``unittest.TestCase`` definition so from here you would treat
-them as normal unit tests, which means you can simple run them using the usual::
+them as normal unit tests, which means you can simply run them using the usual::
 
     $ python3 setup.py test
     running test
@@ -121,8 +121,8 @@ Custom Value Matchers
 ---------------------
 
 All the ``.returns()`` assertions are implemented using the ``unittest.TestCase.assertEquals()`` which compares the
-expected and actual values using simply the ``__eq__()`` equality. If this is not valid comparison for the particular
-data types used by the operator, you can supply custom matcher as a second parameter to the assertion.
+expected and actual values checking for ``__eq__()`` equality. If this is not valid comparison for the particular
+data types used by the operator, you have to supply custom matcher as a second parameter to the assertion.
 
 This can be useful for example for ``pandas.DataFrames``, which don't support simple boolean equality check. Following
 example uses a custom matcher for asserting the values returned as ``pandas.DataFrames``::
