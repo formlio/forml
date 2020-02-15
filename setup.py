@@ -52,7 +52,7 @@ setuptools.setup(name='forml',
                  },
                  python_requires='>=3.6',
                  classifiers=[
-                     'Development Status :: 1 - Planning Copy',
+                     'Development Status :: 1 - Planning',
                      'Environment :: Console',
                      'Intended Audience :: Developers',
                      'Intended Audience :: Science/Research',
