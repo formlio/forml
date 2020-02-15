@@ -30,7 +30,9 @@ EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DOC
 
 setuptools.setup(name='forml',
                  version=forml.__version__,
-                 description='Continuous Integration Formalization and Runtime for AI',
+                 description='Lifecycle management framework for Data science projects',
+                 long_description=open('README.md', 'r').read(),
+                 long_description_content_type='text/markdown',
                  url='https://github.com/formlio/forml',
                  author='ForML Authors',
                  author_email='noreply@forml.io',
@@ -49,4 +51,14 @@ setuptools.setup(name='forml',
                      'dask': EXTRAS_DASK
                  },
                  python_requires='>=3.6',
+                 classifiers=[
+                     'Development Status :: 1 - Planning Copy',
+                     'Environment :: Console',
+                     'Intended Audience :: Developers',
+                     'Intended Audience :: Science/Research',
+                     'License :: Other/Proprietary License',
+                     'Programming Language :: Python :: 3',
+                     'Topic :: Scientific/Engineering :: Artificial Intelligence',
+                     'Topic :: System :: Distributed Computing'
+                 ],
                  zip_safe=False)
