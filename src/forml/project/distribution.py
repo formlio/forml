@@ -26,7 +26,7 @@ class Error(project.Error):
 class Package(collections.namedtuple('Package', 'path, manifest')):
     """Distribution package.
     """
-    FORMAT = 'mlp'
+    FORMAT = '4ml'
     COMPRESSION = zipfile.ZIP_DEFLATED
 
     def __new__(cls, path: str):

@@ -3,7 +3,7 @@ Installation
 
 
 Getting ForML
----------------
+-------------
 
 To install the pre-packaged version of ForML simply use ``pip``::
 
