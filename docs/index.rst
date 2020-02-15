@@ -1,7 +1,7 @@
 .. forml documentation master file
 
 ForML Documentation
-=====================
+===================
 
 ForML is a framework for researching, implementing and operating machine learning projects.
 
