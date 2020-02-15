@@ -1,21 +1,10 @@
-(runner + ioengine + registry)
-
-
 Runtime
 =======
 
-Specific implementation of a system that can execute the lifecycle of a project based on its description (its *Task
-Dependency Graph* in particular) is called the *Runtime*. Having the Runtime decoupled from the generic framework
-provides extra level of robustness making the concept easily adaptable to different execution environments or the custom
-needs of particular user architectures.
+Runtime is a combination of three abstract concepts: *Runner*, *Registry* and an *IO Engine* (see bellow). These
 
-Actual Runtime itself can further be made extensible by external *IO Engines* that can be installed as addons.
-
-First Runtime implementations are:
-
-* Dask
-* Graphviz (just to render the task dependency graph vizualization)
-
+Having the Runtime components decoupled from the generic framework provides extra level of robustness making
+these concept easily adaptable to different execution environments or the custom needs of particular user architectures.
 
 CLI
 ---
@@ -45,8 +34,28 @@ The ForML lifecycle management can be fully operated from command-line using fol
         --upper <ordinal    Optional upper bound ordinal used for batch operations.
 
 
+Setup.py
+--------
+
+
+Runner
+======
+
+Specific implementation of a system that can execute the lifecycle of a project based on its description (its *Task
+Dependency Graph* in particular) is called the *Runner*.
+
+First Runner implementations are:
+
+* Dask
+* Graphviz (just to render the task dependency graph vizualization)
+
+
+Registry
+========
+
+
 IO Engine
----------
+=========
 
 IO Engines are Runtime Addons (at least one should be present before the Runtime can be practically used) that can
 interpret the project defined *Producer Expressions* and feed the Pipeline with some data.

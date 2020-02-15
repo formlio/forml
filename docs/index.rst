@@ -36,15 +36,14 @@ Despite *DAG* (directed acyclic graph) is at the heart of ForML operations, it s
 dependency processing systems due to:
 
 a. it's specialization on machine learning problems that's wired right into the flow topology and
-b. concept of high level operator composition which helps wrapping complex ML techniques into simple reusable units
+b. concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units
 
 
 Content
 -------
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
    :caption: Getting Started
 
    installation
@@ -52,8 +51,7 @@ Content
    tutorial
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
    :caption: Essentials
 
    principles
@@ -62,8 +60,7 @@ Content
    runtime
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
    :caption: Advanced
 
    interactive
@@ -72,13 +69,11 @@ Content
    testing
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
    :caption: Stdlib
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
    :caption: Runner
 
    dask

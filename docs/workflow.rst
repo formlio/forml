@@ -1,16 +1,17 @@
-Pipeline
+Workflow
 ========
 
-Pipeline is the backbone of the ML solution responsible for holding all its pieces in the right place together. On the
+Workflow is the backbone of the ML solution responsible for holding all its pieces in the right place together. On the
 low level it is a *Task Dependency Graph* where edges represent data flows and vertices are the data transformations.
 
-ForML is providing a convenient API for defining complex Pipelines using simple notation based on two main pipeline
-entities:
+ForML is providing a convenient API for defining complex workflows using simple notation based on two main entities:
 
-- *Operators* are high level pipeline macros that can be composed together and eventually expand into the task graph.
-- *Actors* as the low level primitives forming the graph vertices.
+Operators
+    are high level pipeline macros that can be composed together and eventually expand into the task graph.
+Actors
+    as the low level primitives forming the graph vertices.
 
-Each ForML pipeline has dual *train* vs *apply* mode for implementing the specific scenarios of supervised learning.
+Each ForML workflow has dual *train* vs *apply* mode for implementing the specific scenarios of supervised learning.
 
 The high-level API for describing a pipeline allows to formulate an operator composition expressions using a syntax
 like this::

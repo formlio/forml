@@ -70,3 +70,10 @@ Producer Expression (``source.py``)
 
 Project allows to define the ETL process sourcing the data into the system using a *Producer Expression*. This mechanism
 would still be fairly abstract from a physical data source as that's something that would supply a particular *Runtime*.
+
+
+Tests
+'''''
+
+ForML has an operator unit testing facility (see the :doc:`testing` sections) which can be integrated into the usual
+``tests/`` project structure.
