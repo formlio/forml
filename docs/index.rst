@@ -9,7 +9,7 @@ Use ForML to formally describe a machine learning problem as a composition of hi
 ForML expands your project into a task dependency graph specific to given life-cycle phase and executes it
 using one of its supported runners.
 
-When machine learning projects are described using formal structured expressions, they become more servisable,
+When machine learning projects are described using formal structured expressions, they become more serviceable,
 extensible, reproducible, and collaborative.
 
 
@@ -35,8 +35,8 @@ Not Just Another DAG
 Despite *DAG* (directed acyclic graph) is at the heart of ForML operations, it stands out amongst the many other task
 dependency processing systems due to:
 
-a. it's specialization on machine learning problems that's wired right into the flow topology and
-b. concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units
+a. It's specialization on machine learning problems that's wired right into the flow topology 
+b. Concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units
 
 
 Content
