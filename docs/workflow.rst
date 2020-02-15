@@ -36,7 +36,7 @@ Actor is the lowest level task graph entity representing an atomic blackbox with
 Additionally there are two types of *system ports* but they are not available for manipulation from the user API.
 These are:
 - one input and output *State* port
-- one input and output *Params* port (hyper parameters) 
+- one input and output *Params* port (hyper parameters)
 
 Actor is expected to process data arriving to input ports and return results using output ports if applicable. There is
 specific consistency constraint which ports can or need to be active (attached) at the same time: either both *Train*
@@ -53,7 +53,7 @@ The actor API is defined using an abstract class of ``forml.flow.task.Actor``. F
 simply extend this class filling in the abstract methods with the desired functionality. The meaning of these methods
 is:
 
-- ``apply(*features: DataT) -> typing.Union[DataT, typing.Sequence[DataT]]`` - mandatory M:N input-output *Apply* ports 
+- ``apply(*features: DataT) -> typing.Union[DataT, typing.Sequence[DataT]]`` - mandatory M:N input-output *Apply* ports
 - ``train(features: DataT, label: DataT) -> None`` - optional method engaging the *Train* (``features``) and *Label*
   (``label``) ports on stateful actors
 - ``get_params() -> typing.Dict[str, typing.Any]`` and ``set_params(params: typing.Dict[str, typing.Any]) -> None`` -
@@ -70,19 +70,19 @@ Example of user-defined native actor::
     import typing
     import pandas as pd
     from forml.flow import task
-    
+
     class LabelExtractor(task.Actor):
         """Simple label-extraction actor returning a specific column from input feature set.
         """
         def __init__(self, column: str = 'label'):
             self._column: str = column
-    
+
         def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
             return df.drop(columns=self._column), df[self._column]
-    
+
         def get_params(self) -> typing.Dict[str, typing.Any]:
             return {'column': self._column}
-    
+
         def set_params(self, column: str) -> None:
             self._column = column
 
@@ -98,7 +98,7 @@ decorator like this::
 
     from sklearn import ensemble as sklearn
     from forml.stdlib.actor import wrapped
-    
+
     gbc_actor = wrapped.Class.actor(sklearn.GradientBoostingClassifier, train='fit', apply='predict_proba')
 
 Note the extra parameters used to map the third-party class methods to the expected Actor API methods.
@@ -111,7 +111,7 @@ Last option of defining actors is simplistic decorating of user-defined function
 
     import pandas as pd
     from forml.stdlib.actor import wrapped
-    
+
     @wrapped.Function.actor
     def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
         """Transformer extracting a person's title from the name string implemented as wrapped stateless function.
@@ -122,7 +122,7 @@ Last option of defining actors is simplistic decorating of user-defined function
             if '.' in name:
                 return name.split(',')[1].split('.')[0].strip()
             return 'Unknown'
-    
+
         df[target] = df[source].map(get_title)
         return df
 
@@ -154,20 +154,20 @@ Following is an example of creating simple transformer operator by decorating an
     import numpy as np
     from forml.flow import task
     from forml.stdlib.operator import simple
-    
+
     @simple.Mapper.operator
     class NaNImputer(task.Actor):
         """Imputer for missing values implemented as native ForML actor.
         """
         def __init__(self):
             self._fill: typing.Optional[pd.Series] = None
-    
+
         def train(self, X: pd.DataFrame, y: pd.Series) -> None:
             """Train the actor by learning the median for each numeric column and finding the most common value for strings.
             """
             self._fill = pd.Series([X[c].value_counts().index[0] if X[c].dtype == np.dtype('O')
                                     else X[c].median() for c in X], index=X.columns)
-    
+
         def apply(self, X: pd.DataFrame) -> pd.DataFrame:
             """Apply the imputation to the given dataset.
             """
@@ -178,7 +178,7 @@ It is also possible to use the decorator to create operators from third-party wr
     from sklearn import ensemble as sklearn
     from forml.stdlib.actor import wrapped
     from forml.stdlib.operator import simple
-    
+
     RFC = simple.Consumer.operator(wrapped.Class.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
 
 These operators are now good to be used for pipeline composition.

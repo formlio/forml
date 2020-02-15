@@ -8,7 +8,7 @@ Getting ForML
 To install the pre-packaged version of ForML simply use ``pip``::
 
     pip3 install forml
-    
+
 ForML has number of optional features with their own dependencies which can be pulled in during the installation like
 this::
 
