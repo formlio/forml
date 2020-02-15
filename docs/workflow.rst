@@ -7,7 +7,7 @@ low level it is a *Task Dependency Graph* where edges represent data flows and v
 ForML is providing a convenient API for defining complex Pipelines using simple notation based on two main pipeline
 entities:
 
-- *Operators* that can be seen as pipeline plugins implementing specific ML techniques.
+- *Operators* are high level pipeline macros that can be composed together and eventually expand into the task graph.
 - *Actors* as the low level primitives forming the graph vertices.
 
 Each ForML pipeline has dual *train* vs *apply* mode for implementing the specific scenarios of supervised learning.
@@ -17,7 +17,7 @@ like this::
 
     flow = LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)
 
-Given the particular implementation of the example operators this will render a pipeline with the *train* and *apply*
+Given the particular implementation of the example operators, this will render a pipeline with the *train* and *apply*
 graphs visualized as follows:
 
 .. image:: images/pipeline.png

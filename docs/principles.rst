@@ -1,3 +1,20 @@
+Formalization
+=============
+
+Formalization is the prime concept ForML is built upon. Having a common structure for ML projects and an expression
+syntax for their workflows leads to a cleaner implementations that are easier to maintain, extend or share.
+
+
+Workflow Expression Interface
+-----------------------------
+ForML provides convenient interface for defining the project workflow using a high-level
+
+
+Project Component Structure
+---------------------------
+see project
+
+
 Lifecycle
 =========
 
@@ -6,7 +23,7 @@ Once the project component structure is defined it can execute its lifecycle sta
 Research Lifecycle
 ------------------
 
-At this stage the project is being developed, no models are really produced, ale exectuion happens only within the
+At this stage the project is being developed, no models are really produced, all exectuion happens only within the
 project scope.
 
 * **Score** - perform a crossvalidation based on the specs defined in ``evaluation.py`` and return the score; one of the usecases is a CI integration to continuously monitor (evaluate) the changes in the project development.
@@ -26,8 +43,12 @@ pipeline *Artifact* of specific *Lineage* built out of the *Research Lifecycle*.
 * **Score** - evaluate the metrics and insights defined in ``evaluation.py`` and publish them in a way specific to given Runtime (ie some dashboard)
 
 
-Instance Persistence
---------------------
+Composition
+===========
+
+
+Persistence
+===========
 
 Fundamental aspect of the lifecycle is pipeline state transition occurring during *train* and *tune* stages. Each of
 these transitions produces a new *Generation*. Generations based on same build belong to one *Lineage*.
