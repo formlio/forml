@@ -1,4 +1,10 @@
-from demos import *
+
+import typing
+
+import numpy as np
+import pandas as pd
+
+import demos
 from forml.flow import task
 from forml.stdlib.operator import simple
 
@@ -11,7 +17,7 @@ class NaNImputer(task.Actor):
         """Impute missing values using the median for numeric columns and the most common value for string columns.
         """
         self._fill = pd.Series([features[f].value_counts().index[0] if features[f].dtype == np.dtype('O')
-                                    else features[f].median() for f in features], index=features.columns)
+                                else features[f].median() for f in features], index=features.columns)
         return self
 
     def apply(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -30,8 +36,8 @@ class NaNImputer(task.Actor):
         pass
 
 
-PIPELINE = NaNImputer() >> LR(max_iter=3, solver='lbfgs')
+PIPELINE = NaNImputer() >> demos.LR(max_iter=3, solver='lbfgs')
 
-PROJECT = SOURCE.bind(PIPELINE)
+PROJECT = demos.SOURCE.bind(PIPELINE)
 
 PROJECT.launcher['graphviz'].train()

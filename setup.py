@@ -1,12 +1,12 @@
 """
 Setuptools script for ForML package.
 """
-import os.path
 import sys
+
 import setuptools
 
 sys.path.insert(0, 'src')
-import forml
+import forml  # noqa: E402
 
 EXTRAS_STDLIB = {
     'pandas',
@@ -26,7 +26,13 @@ EXTRAS_DOC = {
     'sphinx'
 }
 
-EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DOC
+EXTRAS_DEV = {
+    'pre-commit',
+    'flake8',
+    'mypy'
+}
+
+EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC
 
 setuptools.setup(name='forml',
                  version=forml.__version__,
@@ -40,11 +46,12 @@ setuptools.setup(name='forml',
                  packages=setuptools.find_packages(where='src'),
                  package_dir={'': 'src'},
                  package_data={'forml.conf': ['*.ini']},
-                 setup_requires=['pytest-runner', 'pytest-pylint'],
+                 setup_requires=['pytest-runner', 'pytest-pylint', 'pytest-flake8'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
                  install_requires=['joblib', 'pip'],
                  extras_require={
                      'all': EXTRAS_ALL,
+                     'dev': EXTRAS_DEV,
                      'doc': EXTRAS_DOC,
                      'stdlib': EXTRAS_STDLIB,
                      'graphviz': EXTRAS_GRAPHVIZ,
