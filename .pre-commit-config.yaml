@@ -14,7 +14,7 @@ repos:
     - --ignore-imports=yes
     - -E
     name: pylint
-    files: ^src/
+    exclude: examples
     entry: pylint
     language: system
     types: [python]
