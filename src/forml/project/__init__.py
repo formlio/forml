@@ -44,7 +44,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
 
         def __init__(self):
             self._handlers: typing.Mapping[str, Descriptor.Builder.Handler] = {
-                c:  self.Handler() for c in Descriptor._fields}
+                c: self.Handler() for c in Descriptor._fields}
 
         def __iter__(self) -> typing.Iterator[typing.Tuple[str, typing.Callable[[typing.Any], None]]]:
             for component, handler in self._handlers.items():

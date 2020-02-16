@@ -24,10 +24,10 @@ STACK = ensemble.FullStacker(bases=(model.RFC(n_estimators=10, random_state=42),
 
 # This is the main pipeline composition:
 INSTANCE = preprocessing.NaNImputer() >> \
-           preprocessing.parse_title(source='Name', target='Title') >> \
-           preprocessing.ENCODER(cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title']) >> \
-           STACK >> \
-           model.LR(random_state=42, solver='lbfgs')
+    preprocessing.parse_title(source='Name', target='Title') >> \
+    preprocessing.ENCODER(cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title']) >> \
+    STACK >> \
+    model.LR(random_state=42, solver='lbfgs')
 
 # And the final step is registering the pipeline instance as the forml component:
 component.setup(INSTANCE)

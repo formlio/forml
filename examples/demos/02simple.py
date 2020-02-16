@@ -1,7 +1,7 @@
-from demos import *
+import demos
 
-PIPELINE = SimpleImputer(strategy='mean') >> LR(max_iter=3, solver='lbfgs')
+PIPELINE = demos.SimpleImputer(strategy='mean') >> demos.LR(max_iter=3, solver='lbfgs')
 
-PROJECT = SOURCE.bind(PIPELINE)
+PROJECT = demos.SOURCE.bind(PIPELINE)
 
 PROJECT.launcher['graphviz'].train()

@@ -1,13 +1,13 @@
 from sklearn import model_selection
 
-from demos import *
+import demos
 from forml.stdlib.operator.folding import ensemble
 
-STACK = ensemble.FullStacker(bases=(RFC(max_depth=3), GBC(max_depth=3)),
+STACK = ensemble.FullStacker(bases=(demos.RFC(max_depth=3), demos.GBC(max_depth=3)),
                              crossvalidator=model_selection.StratifiedKFold(n_splits=2))
 
-PIPELINE = SimpleImputer(strategy='mean') >> STACK >> LR(max_iter=3, solver='lbfgs')
+PIPELINE = demos.SimpleImputer(strategy='mean') >> STACK >> demos.LR(max_iter=3, solver='lbfgs')
 
-PROJECT = SOURCE.bind(PIPELINE)
+PROJECT = demos.SOURCE.bind(PIPELINE)
 
 PROJECT.launcher['graphviz'].train()

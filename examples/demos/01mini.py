@@ -1,7 +1,7 @@
-from demos import *
+import demos
 
-PIPELINE = RFC(max_depth=3)
+PIPELINE = demos.RFC(max_depth=3)
 
-PROJECT = SOURCE.bind(PIPELINE)
+PROJECT = demos.SOURCE.bind(PIPELINE)
 
 PROJECT.launcher['graphviz'].train()

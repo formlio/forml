@@ -6,7 +6,7 @@ import typing
 
 import setuptools
 # this makes ourselves a drop-in replacement of original setuptools
-from setuptools import *  # pylint: disable=redefined-builtin
+from setuptools import *  # pylint: disable=redefined-builtin; # noqa: F401,F402,F403
 from setuptools import dist
 
 from forml.project import distribution

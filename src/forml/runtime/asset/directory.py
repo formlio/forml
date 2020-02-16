@@ -10,7 +10,7 @@ import types
 import typing
 import uuid
 
-from forml import etl, project as prjmod  # pylint: disable=unused-import
+from forml import etl, project as prjmod  # pylint: disable=unused-import; # noqa: F401
 from forml.runtime import asset
 from forml.runtime.asset import persistent
 
@@ -168,8 +168,8 @@ class Generation(Level):
 
                     Returns: New tag instance with new values.
                     """
-                    return Generation.Tag(**{k: self._mode.__class__(**{**self._mode.__dict__, **kwargs})
-                                                if v is self._mode else v for k, v in self._tag._asdict().items()})
+                    mode = self._mode.__class__(**{**self._mode.__dict__, **kwargs})
+                    return Generation.Tag(**{k: mode if v is self._mode else v for k, v in self._tag._asdict().items()})
 
                 def trigger(self, timestamp: typing.Optional[datetime.datetime] = None) -> 'Generation.Tag':
                     """Create new tag with given mode triggered (all attributes reset and timestamp set to now).

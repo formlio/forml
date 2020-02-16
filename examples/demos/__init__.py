@@ -55,7 +55,7 @@ def cleaner(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def trainset(**_) -> pd.DataFrame:
-    return pd.DataFrame({'Survived': [1,1,1,0,0,0], 'Age': [10, 11, 12, 13, 14, 15]})
+    return pd.DataFrame({'Survived': [1, 1, 1, 0, 0, 0], 'Age': [10, 11, 12, 13, 14, 15]})
 
 
 def testset(**_) -> pd.DataFrame:
