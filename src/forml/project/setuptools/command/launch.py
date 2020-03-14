@@ -19,8 +19,8 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     """Development mode extra commands (based on the standard test mode).
     """
     user_options = [
-        ('runner=', None, 'runtime runner'),
-        ('engine=', None, 'etl engine'),
+        ('runner=', 'R', 'runtime runner'),
+        ('engine=', 'E', 'etl engine'),
         ('lower=', None, 'lower trainset ordinal'),
         ('upper=', None, 'upper trainset ordinal'),
     ]

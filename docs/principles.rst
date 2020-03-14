@@ -21,7 +21,7 @@ Workflow Expression Interface
 Project Component Structure
     ForML also introduces its convention for organizing machine learning projects on the module level. This is to have
     some common basic structure that can be understood across projects and help (not only) ForML itself to understand
-    the project just by touching the expected structures.
+    the project just by visiting the expected places.
 
     There should still be enough flexibility to satisfy specific needs of any project. More details explained in the
     :doc:`project` sections.
@@ -46,8 +46,8 @@ in the :doc:`operator` sections.
 Persistence
 -----------
 
-Fundamental aspect of the lifecycle is pipeline state transition occurring during *train* and *tune* stages. Each of
-these transitions produces a new *Generation*. Generations based on same build belong to one *Lineage*.
+Fundamental aspect of the lifecycle is the pipeline state transition occurring during *train* and *tune* stages. Each of
+these transitions produces a new *Generation*. Generations based on same build of a project belong to one *Lineage*.
 
 Both Lineages and Generations are distinguished by their incremental version numbers establishing a pipeline versioning
 schema of ``<lineage_version>-<generation_version>``.

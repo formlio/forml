@@ -12,11 +12,11 @@ ForML project can either be created manually from scratch by defining the `compo
 Component Structure
 -------------------
 
-ForML project is defined as a set of specific components wrapped into a python package with the usual ``setuptools``
-layout. The framework offers the *Convention over Configuration* approach for organizing the internal package structure,
-which means it automatically discovers the relevant project components if the author follows this convention (there is
-still an option to ignore the convention, but the author is then responsible for configuring all the otherwise
-automatic steps himself).
+ForML project is defined as a set of specific components wrapped into a python package with the usual
+`setuptools <https://setuptools.readthedocs.io/en/latest/setuptools.html>`_ layout. The framework offers the
+*Convention over Configuration* approach for organizing the internal package structure, which means it automatically
+discovers the relevant project components if the author follows this convention (there is still an option to ignore the
+convention, but the author is then responsible for configuring all the otherwise automatic steps himself).
 
 The convention is simply based on implementing specific python *modules* (or *packages*) within the project
 namespace root. ForML doesn't care whether the component is defined as a module (a file with ``.py`` suffix) or

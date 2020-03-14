@@ -9,7 +9,9 @@ these concept easily adaptable to different execution environments or the custom
 CLI
 ---
 
-The production lifecycle management can be fully operated from command-line using the following syntax::
+The production :doc:`lifecycle` management can be fully operated from command-line using the following syntax:
+
+.. code-block:: none
 
     usage: forml [-h] [-C CONFIG] [-P REGISTRY] [-R RUNNER] [-E ENGINE]
                  {init,list,tune,train,apply} ...
