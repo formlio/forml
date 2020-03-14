@@ -83,7 +83,7 @@ Example of user-defined native actor::
         def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
             return df.drop(columns=self._column), df[self._column]
 
-        def get_params(self) -> typing.Dict[str, typing.Any]:
+        def get_params(self) -> typing.Mapping[str, typing.Any]:
             return {'column': self._column}
 
         def set_params(self, column: str) -> None:
