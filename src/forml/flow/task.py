@@ -86,7 +86,7 @@ class Actor(metaclass=abc.ABCMeta):
         Returns: Transformed features (ie predictions).
         """
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> typing.Mapping[str, typing.Any]:
         """Get hyper-parameters of this actor.
 
         Default implementation is poor-mans init inspection and is expected to be overridden if not suitable.
