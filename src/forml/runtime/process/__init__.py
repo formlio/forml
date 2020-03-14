@@ -4,16 +4,11 @@ Runtime process layer.
 import abc
 import typing
 
-from forml import provider, etl, runtime, conf
+from forml import provider, etl, conf, error
 from forml.flow import pipeline
 from forml.runtime import code
 from forml.runtime.asset import access
 from forml.runtime.code import compiler
-
-
-class Error(runtime.Error):
-    """Runtime process exception.
-    """
 
 
 class Runner(provider.Interface, default=conf.RUNNER):
@@ -33,8 +28,8 @@ class Runner(provider.Interface, default=conf.RUNNER):
         """
         composition = self._build(lower or self._assets.tag.training.ordinal, upper,
                                   self._assets.project.pipeline)
-        with self._assets.state(composition.shared, self._assets.tag.training.trigger()) as state:
-            return self._exec(composition.train, state)
+        return self._exec(composition.train,
+                          self._assets.state(composition.shared, self._assets.tag.training.trigger()))
 
     def apply(self, lower: typing.Optional['etl.OrdinalT'] = None,
               upper: typing.Optional['etl.OrdinalT'] = None) -> typing.Any:
@@ -47,8 +42,7 @@ class Runner(provider.Interface, default=conf.RUNNER):
         Returns: Applying code.
         """
         composition = self._build(lower, upper, self._assets.project.pipeline)
-        with self._assets.state(composition.shared) as state:
-            return self._exec(composition.apply, state)
+        return self._exec(composition.apply, self._assets.state(composition.shared))
 
     def cvscore(self, lower: typing.Optional['etl.OrdinalT'] = None,
                 upper: typing.Optional['etl.OrdinalT'] = None) -> typing.Any:
@@ -73,7 +67,7 @@ class Runner(provider.Interface, default=conf.RUNNER):
         Returns: Evaluation pipeline.
         """
         if not self._assets.project.evaluation:
-            raise Error('Project not evaluable')
+            raise error.Invalid('Project not evaluable')
         return self._build(lower, upper, self._assets.project.pipeline >> self._assets.project.evaluation)
 
     def _build(self, lower: typing.Optional['etl.OrdinalT'], upper: typing.Optional['etl.OrdinalT'],

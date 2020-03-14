@@ -2,42 +2,44 @@
 Project component tests.
 """
 # pylint: disable=no-self-use
+import importlib
+import pathlib
+import types
 import typing
 
 import pytest
 
-from forml.project import component as compload
+from forml.project import component as compmod, importer
 
 
 def test_setup():
     """Test the direct setup access.
     """
-    compload.setup(object())
+    compmod.setup(object())
 
 
 class TestContext:
     """Context unit tests.
     """
-    def test_import(self):
-        """Testing the contextual import.
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def name() -> str:
+        """Module name fixture.
         """
-        def handler(instance: typing.Any) -> None:
-            """Context handler storing the instance in the enclosing scope.
+        return 'foo'
 
-            Args:
-                instance: provided instance to be stored.
-            """
-            nonlocal provided
-            provided = instance
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def module(name: str) -> types.ModuleType:
+        """Module fixture.
+        """
+        return types.ModuleType(name)
 
-        provided = None
-        with compload.Context(handler):
-            import component  # pylint: disable=import-outside-toplevel
-            assert provided is component.INSTANCE
-
-        from forml.project import component as compreload  # pylint: disable=reimported,import-outside-toplevel
-        compreload.setup(object())
-        assert provided is component.INSTANCE
+    def test_context(self, name: str, module: types.ModuleType):
+        """Testing the context manager.
+        """
+        with importer.context(module):
+            assert importlib.import_module(name) == module
 
 
 class TestVirtual:
@@ -60,4 +62,12 @@ class TestVirtual:
     def test_load(self, component: typing.Any, package: str):
         """Test loading of the virtual component.
         """
-        assert compload.load(compload.Virtual(component, package=package).path) == component
+        assert compmod.load(compmod.Virtual(component, package=package).path) == component
+
+
+def test_load():
+    """Testing the top level component.load() function.
+    """
+    provided = compmod.load('component', pathlib.Path(__file__).parent)
+    import component  # pylint: disable=import-outside-toplevel
+    assert provided is component.INSTANCE

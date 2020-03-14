@@ -5,10 +5,11 @@ import abc
 import collections
 import typing
 
-from forml import provider, conf, project
+from forml import provider, conf
 from forml.etl import expression
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
+from forml.project import product
 from forml.stdlib import operator
 
 OrdinalT = typing.TypeVar('OrdinalT')
@@ -33,7 +34,7 @@ class Source(collections.namedtuple('Source', 'extract, transform')):
     def __rshift__(self, transform: topology.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
-    def bind(self, pipeline: typing.Union[str, topology.Composable], **modules: typing.Any) -> 'project.Artifact':
+    def bind(self, pipeline: typing.Union[str, topology.Composable], **modules: typing.Any) -> 'product.Artifact':
         """Create an artifact from this source and given pipeline.
 
         Args:
@@ -42,7 +43,7 @@ class Source(collections.namedtuple('Source', 'extract, transform')):
 
         Returns: Project artifact instance.
         """
-        return project.Artifact(source=self, pipeline=pipeline, **modules)
+        return product.Artifact(source=self, pipeline=pipeline, **modules)
 
 
 class Engine(provider.Interface, default=conf.ENGINE):

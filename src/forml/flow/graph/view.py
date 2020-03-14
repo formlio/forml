@@ -7,7 +7,7 @@ import itertools
 import operator
 import typing
 
-from forml.flow import graph
+from forml.flow import error
 from forml.flow.graph import node as grnode, port
 
 
@@ -25,7 +25,7 @@ class Visitor(grnode.Visitor):
 class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
     """Graph traversal helper.
     """
-    class Cyclic(graph.Error):
+    class Cyclic(error.Topology):
         """Cyclic graph error.
         """
 
@@ -83,7 +83,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         if not any(endings):
             return self
         if len(self.predecessors) == 1 and (expected or len(endings) > 1):
-            raise graph.Error('Ambiguous tail')
+            raise error.Topology('Ambiguous tail')
         return endings.pop()
 
     def each(self, tail: grnode.Atomic, acceptor: typing.Callable[[grnode.Atomic], None]) -> None:
@@ -171,10 +171,10 @@ class Path(tuple):
 
     def __new__(cls, head: grnode.Atomic, tail: typing.Optional[grnode.Atomic] = None):
         if head.szin > 1:
-            raise graph.Error('Simple head required')
+            raise error.Topology('Simple head required')
         tail = Traversal(head).tail(tail).current
         if tail.szout > 1:
-            raise graph.Error('Simple tail required')
+            raise error.Topology('Simple tail required')
         return super().__new__(cls, (head, tail))
 
     def accept(self, visitor: Visitor) -> None:

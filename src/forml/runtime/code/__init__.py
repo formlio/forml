@@ -7,14 +7,9 @@ import logging
 import time
 import typing
 
-from forml import runtime
+from forml import error
 
 LOGGER = logging.getLogger(__name__)
-
-
-class Error(runtime.Error):
-    """Code error.
-    """
 
 
 class Instruction(metaclass=abc.ABCMeta):
@@ -53,7 +48,7 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
         if arguments is None:
             arguments = []
         if not all(arguments):
-            raise Error('All arguments required')
+            raise error.Missing('All arguments required')
         return super().__new__(cls, instruction, tuple(arguments))
 
     def __str__(self):

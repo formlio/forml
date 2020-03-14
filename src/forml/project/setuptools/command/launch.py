@@ -8,10 +8,9 @@ import typing
 
 from setuptools.command import test
 
-from forml import etl, conf, project
+from forml import etl, conf
+from forml.project import product
 from forml.runtime import process
-from forml.runtime.asset import access
-from forml.runtime.asset.persistent.registry import virtual
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,19 +29,21 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """Init options.
         """
         super().initialize_options()
-        self.runner: str = conf.RUNNER.key
-        self.engine: str = conf.ENGINE.key
+        self.runner: typing.Optional[conf.Runner] = conf.RUNNER
+        self.engine: typing.Optional[conf.Engine] = conf.ENGINE
         self.lower: typing.Optional[str] = None
         self.upper: typing.Optional[str] = None
 
     def finalize_options(self) -> None:
         """Fini options.
-
-        Overriding to bypass the parent actions.
         """
+        if isinstance(self.runner, str):
+            self.runner = conf.Runner.parse(self.runner)
+        if isinstance(self.engine, str):
+            self.engine = conf.Engine.parse(self.engine)
 
     @property
-    def artifact(self) -> project.Artifact:
+    def artifact(self) -> product.Artifact:
         """Get the artifact for this project.
 
         Returns: Artifact instance.
@@ -56,18 +57,13 @@ class Mode(test.test, metaclass=abc.ABCMeta):
                     break
             else:
                 package = self.distribution.packages[0]
-        return project.Artifact(package=package, **modules)
+        return product.Artifact(self.distribution.package_dir.get('', '.'), package=package, **modules)
 
     def run_tests(self) -> None:
         """This is the original test command entry point - lets override it with our actions.
         """
-        name = self.distribution.get_name()
-        version = self.distribution.get_version()
-        registry = virtual.Registry()
-        registry.push(name, version, self.artifact)
-        LOGGER.debug('%s: starting %s', name, self.__class__.__name__.lower())
-        runner = process.Runner[self.runner](
-            access.Assets(name, registry=registry), etl.Engine[self.engine]())
+        LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
+        runner = self.artifact.launcher(process.Runner[self.runner.name], etl.Engine[self.engine.name]())
         result = self.launch(runner, lower=self.lower, upper=self.upper)
         if result is not None:
             print(result)
@@ -91,6 +87,16 @@ class Train(Mode):
     """
     description = 'trigger the development train mode'
     launch = staticmethod(process.Runner.train)
+
+
+class Tune(Mode):
+    """Development tune mode.
+    """
+    description = 'trigger the development tune mode'
+
+    @staticmethod
+    def launch(runner: process.Runner, *args, **kwargs) -> typing.Any:
+        raise NotImplementedError('Tune mode is not yet supported')
 
 
 class Score(Mode):

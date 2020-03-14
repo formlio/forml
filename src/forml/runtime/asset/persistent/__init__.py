@@ -1,50 +1,138 @@
 """
 ForML assets persistence.
 """
-
 import abc
+import functools
+import logging
+import pathlib
+import tempfile
 import typing
 import uuid
 
-from forml import project as prjmod, provider, conf
+from packaging import version
+
+from forml import provider, conf
 from forml.runtime.asset import directory
+
+if typing.TYPE_CHECKING:
+    from forml.project import distribution, product
+
+LOGGER = logging.getLogger(__name__)
+TMPDIR = tempfile.TemporaryDirectory(prefix=f'{conf.APPNAME}-persistent-', dir=conf.TMPDIR)
+
+
+def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = None) -> pathlib.Path:
+    """Custom temp-dir maker that puts all temps under our global temp.
+
+    Args:
+        prefix: Optional temp dir prefix.
+        suffix: Optional temp dir suffix.
+
+    Returns: Temp dir as pathlib path.
+    """
+    return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR.name))
+
+
+class Existing:
+    """Decorators for verifying existence of given registry levels.
+    """
+    @staticmethod
+    def project(method: typing.Callable) -> typing.Callable:
+        """Decorator for registry methods that require existing project.
+
+        Args:
+            method: Registry method to be decorated.
+
+        Returns: Decorated method with enforced project existence.
+        """
+        @functools.wraps(method)
+        def wrapped(registry: 'Registry', project: str, *args, **kwargs) -> typing.Any:
+            """Wrapped registry method.
+            """
+            if project not in registry.projects():
+                raise directory.Level.Invalid(f'Unknown project {project}')
+            return method(registry, project, *args, **kwargs)
+        return wrapped
+
+    @staticmethod
+    def lineage(method: typing.Callable) -> typing.Callable:
+        """Decorator for registry methods that require existing lineage.
+
+        Args:
+            method: Registry method to be decorated.
+
+        Returns: Decorated method with enforced lineage existence.
+        """
+        @functools.wraps(method)
+        def wrapped(registry: 'Registry', project: str, lineage: version.Version, *args, **kwargs) -> typing.Any:
+            """Wrapped registry method.
+            """
+            if lineage not in registry.lineages(project):
+                raise directory.Level.Invalid(f'Unknown lineage {lineage} for project {project}')
+            return method(registry, project, lineage, *args, **kwargs)
+        return wrapped
+
+    @staticmethod
+    def generation(method: typing.Callable) -> typing.Callable:
+        """Decorator for registry methods that require existing generation.
+
+        Args:
+            method: Registry method to be decorated.
+
+        Returns: Decorated method with enforced generation existence.
+        """
+        @functools.wraps(method)
+        def wrapped(registry: 'Registry', project: str, lineage: version.Version,
+                    generation: int, *args, **kwargs) -> typing.Any:
+            """Wrapped registry method.
+            """
+            if generation not in registry.generations(project, lineage):
+                raise directory.Level.Invalid(
+                    f'Unknown generation {generation} for project {project}, lineage {lineage}')
+            return method(registry, project, lineage, generation, *args, **kwargs)
+        return wrapped
 
 
 class Registry(provider.Interface, default=conf.REGISTRY):
     """Top-level persistent registry abstraction.
     """
-    def __str__(self):
-        return f'{self.__class__.__name__}-registry'
+    def __init__(self, staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):
+        if not staging:
+            LOGGER.warning('Using temporal non-distributed staging for %s', self)
+            staging = mkdtemp(prefix=f'{self}-staging-')
+        self._staging: pathlib.Path = pathlib.Path(staging)
 
-    def get(self, project: str, lineage: typing.Optional[int] = None) -> 'directory.Lineage':
-        """Get a lineage of given project.
+    def __str__(self):
+        name = self.__class__.__module__.rsplit('.', 1)[-1].capitalize()
+        return f'{name}-registry'
+
+    def get(self, project: 'str') -> 'directory.Project':
+        """Get the project handle.
+        """
+        return directory.Root(self).get(project)
+
+    def mount(self, project: str, lineage: version.Version) -> 'product.Artifact':
+        """Take given project/lineage package and return it as artifact instance.
 
         Args:
             project: Name of the project to work with.
-            lineage: Optional lineage id to be loaded (defaults to the most recent id).
+            lineage: Lineage to be loaded.
 
-        Returns: Lineage instance.
+        Returns: Product artifact.
         """
-        return directory.Lineage(self, project, lineage)
-
-    def put(self, project: str, artifact: 'prjmod.Artifact') -> 'directory.Lineage':
-        """Publish new lineage to the repository based on provided artifact.
-
-        Args:
-            project: Project the lineage belongs to.
-            artifact: Artifact to be published.
-
-        Returns: new lineage instance based on the artifact.
-        """
-        lineage = self.lineages(project).next
-        self.push(project, lineage, artifact)
-        return self.get(project, lineage)
+        package = self.pull(project, lineage)
+        return package.install(self._staging / package.manifest.name / str(package.manifest.version))
 
     @abc.abstractmethod
-    def lineages(self, project: str) -> 'directory.Level.Listing':
-        """List the lineages of given project.
+    def projects(self) -> 'directory.Level.Listing[str]':
+        """List projects in given repository.
 
-        Should raise directory.Level.Invalid in case of missing project.
+        Returns: Projects listing.
+        """
+
+    @abc.abstractmethod
+    def lineages(self, project: str) -> 'directory.Level.Listing[version.Version]':
+        """List the lineages of given project.
 
         Args:
             project: Project to be listed.
@@ -53,10 +141,8 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def generations(self, project: str, lineage: int) -> 'directory.Level.Listing':
+    def generations(self, project: str, lineage: version.Version) -> 'directory.Level.Listing[int]':
         """List the generations of given lineage.
-
-        Should raise directory.Level.Invalid in case of missing project/lineage.
 
         Args:
             project: Project of which the lineage is to be listed.
@@ -66,8 +152,8 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def pull(self, project: str, lineage: int) -> 'prjmod.Artifact':
-        """Return the artifact of given lineage.
+    def pull(self, project: str, lineage: version.Version) -> 'distribution.Package':
+        """Return the package of given lineage.
 
         Args:
             project: Project of which the lineage artifact is to be returned.
@@ -77,16 +163,15 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def push(self, project: str, lineage: int, artifact: 'prjmod.Artifact') -> None:
+    def push(self, package: 'distribution.Package') -> None:
         """Start new lineage of a project based on given artifact.
 
         Args:
-            project: Project to start the new lineage in.
-            artifact: Artifact of the new lineage.
+            package: Distribution package to be persisted.
         """
 
     @abc.abstractmethod
-    def read(self, project: str, lineage: int, generation: int, sid: uuid.UUID) -> bytes:
+    def read(self, project: str, lineage: version.Version, generation: int, sid: uuid.UUID) -> bytes:
         """Load the state based on provided id.
 
         Args:
@@ -95,11 +180,11 @@ class Registry(provider.Interface, default=conf.REGISTRY):
             generation: Generation of the project to read the state from.
             sid: Id of the state object to be loaded.
 
-        Returns: Serialized state.
+        Returns: Serialized state or empty byte-array if there is no such state for given (existing) generation.
         """
 
     @abc.abstractmethod
-    def write(self, project: str, lineage: int, sid: uuid.UUID, state: bytes) -> None:
+    def write(self, project: str, lineage: version.Version, sid: uuid.UUID, state: bytes) -> None:
         """Dump an unbound state under given state id.
 
         Args:
@@ -110,7 +195,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def open(self, project: str, lineage: int, generation: int) -> 'directory.Generation.Tag':
+    def open(self, project: str, lineage: version.Version, generation: int) -> 'directory.Generation.Tag':
         """Return the metadata tag of given generation.
 
         Args:
@@ -122,7 +207,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def close(self, project: str, lineage: int, generation: int, tag: 'directory.Generation.Tag') -> None:
+    def close(self, project: str, lineage: version.Version, generation: int, tag: 'directory.Generation.Tag') -> None:
         """Seal new generation by storing its metadata tag.
 
         Args:

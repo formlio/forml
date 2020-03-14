@@ -5,7 +5,6 @@ import os
 import sys
 import typing
 
-import pip._internal as pip
 import setuptools
 
 from forml.project import distribution
@@ -14,6 +13,7 @@ from forml.project import distribution
 class Package(setuptools.Command):
     """ForML build package.
     """
+    COMMAND = f'bdist_{distribution.Package.FORMAT}'
     description = 'create a ForML distribution'
 
     user_options = [
@@ -54,9 +54,12 @@ class Package(setuptools.Command):
     def run(self) -> None:
         """Trigger the packaging process.
         """
+        import pip._internal as pip  # pylint: disable=import-outside-toplevel
         pip.main(['install', '--upgrade', '--no-user', '--target', self.bdist_dir,
                   os.path.abspath(os.path.dirname(sys.argv[0]))])
         if not os.path.exists(self.dist_dir):
             os.makedirs(self.dist_dir)
         target = os.path.join(self.dist_dir, self.filename)
-        distribution.Package.create(self.bdist_dir, self.manifest, target)
+        data = (self.COMMAND, '', str(distribution.Package.create(self.bdist_dir, self.manifest, target).path))
+        if data not in self.distribution.dist_files:
+            self.distribution.dist_files.append(data)

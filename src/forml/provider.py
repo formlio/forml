@@ -8,14 +8,9 @@ import logging
 import sys
 import typing
 
-import forml
+from forml import error
 
 LOGGER = logging.getLogger(__name__)
-
-
-class Error(forml.Error):
-    """Provider error.
-    """
 
 
 class Registry(collections.namedtuple('Registry', 'stage, provider')):
@@ -43,7 +38,7 @@ class Registry(collections.namedtuple('Registry', 'stage, provider')):
                 __import__(self.path, fromlist=['*'])
             except ModuleNotFoundError as err:
                 if self.strict:
-                    raise Error(f'Explicit preload ({self.path}) failed ({err})')
+                    raise error.Failed(f'Explicit preload ({self.path}) failed ({err})')
             if not getattr(sys.modules[self.path], '__all__', []):
                 LOGGER.warning('Package %s does not list any provider modules under __all__', self.path)
 
@@ -61,7 +56,7 @@ class Registry(collections.namedtuple('Registry', 'stage, provider')):
         if key in self.provider:
             if provider == self.provider[key]:
                 return
-            raise Error(f'Provider key collision ({key})')
+            raise error.Unexpected(f'Provider key collision ({key})')
         self.stage.update(packages)
         if inspect.isabstract(provider):
             return
@@ -96,7 +91,7 @@ class Meta(abc.ABCMeta):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         if default:
             if not inspect.isabstract(cls):
-                raise Error('Defaults provided but class not abstract')
+                raise error.Unexpected('Defaults provided but class not abstract')
             mcs.DEFAULTS[cls] = default
         return cls
 
@@ -110,7 +105,7 @@ class Meta(abc.ABCMeta):
         try:
             return _REGISTRY[cls].get(key)
         except KeyError:
-            raise Error(f'No provider of type {cls.__name__} registered as {key} (known providers: {", ".join(cls)})')
+            raise error.Missing(f'No {cls.__name__} provider registered as {key} (known providers: {", ".join(cls)})')
 
     def __iter__(cls):
         return iter(_REGISTRY[cls].provider)
@@ -131,7 +126,7 @@ class Interface(metaclass=Meta):
     def __init_subclass__(cls, key: typing.Optional[str] = None,
                           packages: typing.Optional[typing.Iterable[str]] = None):
         if inspect.isabstract(cls) and key:
-            raise Error(f'Provider key ({key}) illegal on abstract class')
+            raise error.Unexpected(f'Provider key ({key}) illegal on abstract class')
         if not key:
             key = cls.__name__
         packages = {Registry.Package(p if '.' not in p else f'{cls.__module__}.{p}') for p in packages or []}

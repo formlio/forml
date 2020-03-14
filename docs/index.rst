@@ -56,6 +56,7 @@ Content
 
    principles
    project
+   lifecycle
    workflow
    runtime
 
@@ -78,3 +79,9 @@ Content
 
    dask
    graphviz
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Registry
+
+   filesystem

@@ -5,7 +5,7 @@ Graph unit tests.
 
 import pytest
 
-from forml.flow import task, graph
+from forml.flow import task, error
 from forml.flow.graph import node as grnode, port, view
 
 
@@ -75,7 +75,7 @@ class TestPath:
     def test_invalid(self, multi: grnode.Worker):
         """Testing invalid path.
         """
-        with pytest.raises(graph.Error):  # not a simple edge gnode
+        with pytest.raises(error.Topology):  # not a simple edge gnode
             view.Path(multi)
 
     def test_copy(self, path: view.Path):

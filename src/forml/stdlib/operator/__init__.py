@@ -2,15 +2,10 @@
 """
 import typing
 
-from forml import stdlib
+from forml import error
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
-
-
-class Error(stdlib.Error):
-    """Operator error.
-    """
 
 
 class Loader(topology.Operator):
@@ -30,7 +25,7 @@ class Loader(topology.Operator):
         Returns: Source segment track.
         """
         if not isinstance(left, topology.Origin):
-            raise Error('Source not origin')
+            raise error.Invalid('Source not origin')
         apply: view.Path = view.Path(node.Worker(self._apply, 0, 1))
         train: view.Path = view.Path(node.Worker(self._train, 0, 1))
         label: typing.Optional[view.Path] = None

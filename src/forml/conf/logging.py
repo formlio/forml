@@ -25,4 +25,4 @@ def setup(*configs: str, **defaults: typing.Any):
                 logging.warning('Unable to read logging config from %s: %s', cfg, err)
 
     logging.captureWarnings(capture=True)
-    LOGGER.debug('Using configs: %s', ', '.join(conf.USED_CONFIGS) or 'none')
+    LOGGER.debug('Using configs: %s', ', '.join(conf.SRC) or 'none')

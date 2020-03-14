@@ -2,17 +2,11 @@
 ForML pipeline composition logic.
 """
 import collections
-from collections import abc
 import typing
 import uuid
+from collections import abc
 
-from forml import flow
 from forml.flow.graph import view, clean, node as nodemod
-
-
-class Error(flow.Error):
-    """Custom pipeline error.
-    """
 
 
 class Segment(collections.namedtuple('Segment', 'apply, train, label')):

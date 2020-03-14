@@ -8,8 +8,9 @@ import typing
 import uuid
 
 import pytest
+from packaging import version
 
-from forml import project as prjmod
+from forml.project import distribution
 from forml.runtime.asset import persistent, directory, access
 
 
@@ -37,28 +38,21 @@ def tag(states: typing.Mapping[uuid.UUID, bytes]) -> directory.Generation.Tag:
 
 
 @pytest.fixture(scope='session')
-def project() -> str:
-    """Project fixture.
-    """
-    return 'foo'
-
-
-@pytest.fixture(scope='session')
-def populated_lineage() -> int:
+def populated_lineage(project_lineage: version.Version) -> version.Version:
     """Lineage fixture.
     """
-    return 1
+    return project_lineage
 
 
 @pytest.fixture(scope='session')
-def empty_lineage() -> int:
+def empty_lineage() -> version.Version:
     """Lineage fixture.
     """
-    return 2
+    return version.Version('2')
 
 
 @pytest.fixture(scope='session')
-def last_lineage(empty_lineage: int) -> int:
+def last_lineage(empty_lineage: version.Version) -> version.Version:
     """Lineage fixture.
     """
     return empty_lineage
@@ -79,59 +73,62 @@ def last_generation(valid_generation: int) -> int:
 
 
 @pytest.fixture(scope='function')
-def content(populated_lineage: int, empty_lineage: int, valid_generation: int,
-            tag: directory.Generation.Tag) -> typing.Mapping[int, typing.Mapping[int, directory.Generation.Tag]]:
-    """Repo data content fixture.
-    """
-    return {populated_lineage: {valid_generation: tag}, empty_lineage: {}}
-
-
-@pytest.fixture(scope='function')
-def registry(content: typing.Mapping[int, typing.Mapping[int, directory.Generation.Tag]],
-             states: typing.Mapping[uuid.UUID, bytes]) -> persistent.Registry:
+def registry(project_name: str, populated_lineage: version.Version, empty_lineage: version.Version,
+             valid_generation: int, tag: directory.Generation.Tag,
+             states: typing.Mapping[uuid.UUID, bytes], project_package: distribution.Package) -> persistent.Registry:
     """Registry fixture.
     """
+    content = {project_name: {populated_lineage: (project_package,
+                                                  {valid_generation: (tag, tuple(states.values()))}),
+                              empty_lineage: (project_package, {})}
+               }
+
     class Registry(persistent.Registry):
         """Fixture registry implementation
         """
-        def lineages(self, project: str) -> directory.Level.Listing:
+        def projects(self) -> directory.Level.Listing[str]:
             return directory.Level.Listing(content.keys())
 
-        def generations(self, project: str, lineage: int) -> directory.Level.Listing:
+        def lineages(self, project: str) -> directory.Level.Listing[version.Version]:
+            return directory.Level.Listing(content[project].keys())
+
+        def generations(self, project: str, lineage: version.Version) -> directory.Level.Listing[int]:
             try:
-                return directory.Level.Listing(content[lineage].keys())
+                return directory.Level.Listing(content[project][lineage][1].keys())
             except KeyError:
                 raise directory.Level.Invalid(f'Invalid lineage ({lineage})')
 
-        def pull(self, project: str, lineage: int) -> prjmod.Artifact:
+        def pull(self, project: str, lineage: version.Version) -> distribution.Package:
+            return content[project][lineage][0]
+
+        def push(self, package: distribution.Package) -> None:
             raise NotImplementedError()
 
-        def push(self, project: str, lineage: int, artifact: prjmod.Artifact) -> None:
-            raise NotImplementedError()
-
-        def read(self, project: str, lineage: int, generation: int, sid: uuid.UUID) -> bytes:
-            if sid not in content[lineage][generation].states:
+        def read(self, project: str, lineage: version.Version, generation: int, sid: uuid.UUID) -> bytes:
+            if sid not in content[project][lineage][1][generation][0].states:
                 raise directory.Level.Invalid(f'Invalid state id ({sid})')
-            return states[sid]
+            idx = content[project][lineage][1][generation][0].states.index(sid)
+            return content[project][lineage][1][generation][1][idx]
 
-        def write(self, project: str, lineage: int, sid: uuid.UUID, state: bytes) -> None:
+        def write(self, project: str, lineage: version.Version, sid: uuid.UUID, state: bytes) -> None:
             raise NotImplementedError()
 
-        def open(self, project: str, lineage: int, generation: int) -> directory.Generation.Tag:
+        def open(self, project: str, lineage: version.Version, generation: int) -> directory.Generation.Tag:
             try:
-                return content[lineage][generation]
+                return content[project][lineage][1][generation][0]
             except KeyError:
                 raise directory.Level.Invalid(f'Invalid generation ({lineage}.{generation})')
 
-        def close(self, project: str, lineage: int, generation: int, tag: directory.Generation.Tag) -> None:
+        def close(self, project: str, lineage: version.Version, generation: int,
+                  tag: directory.Generation.Tag) -> None:
             raise NotImplementedError()
 
     return Registry()
 
 
 @pytest.fixture(scope='function')
-def valid_assets(project: str, populated_lineage: int, valid_generation: int,
+def valid_assets(project_name: str, populated_lineage: version.Version, valid_generation: int,
                  registry: persistent.Registry) -> access.Assets:
     """Lineage fixture.
     """
-    return access.Assets(project, populated_lineage, valid_generation, registry)
+    return access.Assets(project_name, populated_lineage, valid_generation, registry)

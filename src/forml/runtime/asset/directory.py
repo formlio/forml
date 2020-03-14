@@ -9,126 +9,114 @@ import operator
 import types
 import typing
 import uuid
+from collections import abc as colabc
 
-from forml import etl, project as prjmod  # pylint: disable=unused-import; # noqa: F401
-from forml.runtime import asset
+from packaging import version
+
+from forml import error  # pylint: disable=unused-import; # noqa: F401
 from forml.runtime.asset import persistent
 
+if typing.TYPE_CHECKING:
+    from forml.project import product, distribution
+    from forml import etl  # pylint: disable=unused-import; # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
 
-
-class Error(asset.Error):
-    """Asset error.
-    """
+KeyT = typing.TypeVar('KeyT', str, version.Version, int)
+ItemT = typing.TypeVar('ItemT', version.Version, int)
 
 
-class Level(metaclass=abc.ABCMeta):
+# pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
+class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):
     """Abstract directory level.
     """
-    class Invalid(Error):
+    class Invalid(error.Invalid):
         """Indication of an invalid level.
         """
 
-    class Listing:
+    class Listing(typing.Generic[ItemT], colabc.Iterable):
         """Helper class representing a registry listing.
         """
-        STEP = 1
-
-        class Empty(Error):
+        class Empty(error.Missing):
             """Exception indicating empty listing.
             """
 
-        def __init__(self, items: typing.Collection[int], step: int = STEP):
-            self._items: typing.Collection[int] = items
-            self._step = step
+        def __init__(self, items: typing.Iterable[ItemT]):
+            self._items: typing.Tuple[ItemT] = tuple(sorted(set(items)))
 
-        def __contains__(self, index: int) -> bool:
-            return index in self._items
+        def __contains__(self, key: ItemT) -> bool:
+            return key in self._items
+
+        def __eq__(self, other):
+            return isinstance(other, self.__class__) and other._items == self._items
+
+        def __iter__(self):
+            return iter(self._items)
+
+        def __str__(self):
+            return ', '.join(str(i) for i in self._items)
 
         @property
-        def last(self) -> int:
+        def last(self) -> ItemT:
             """Get the last (most recent) item from the listing.
 
             Returns: Id of the last item.
             """
             try:
-                return max(self._items)
-            except ValueError:
+                return self._items[-1]
+            except IndexError:
                 raise self.Empty('Empty listing')
 
-        @property
-        def next(self) -> int:
-            """Get the first item not in the listing bigger then any existing item.
-
-            Returns: Id of the next item.
-            """
-            try:
-                return self.last + self._step
-            except self.Empty:
-                return self._step
-
-    def __init__(self, registry: 'persistent.Registry', project: str, key: typing.Optional[int] = None,
+    def __init__(self, registry: 'persistent.Registry', key: typing.Optional[KeyT] = None,
                  parent: typing.Optional['Level'] = None):
-        self._registry: persistent.Registry = registry
-        self.project: str = project
-        self._key: typing.Optional[int] = key
+        self._key: typing.Optional[KeyT] = key
         self._parent: typing.Optional[Level] = parent
-        self._listing: typing.Optional[Level.Listing] = None
+        self._registry: persistent.Registry = registry
 
     def __str__(self):
-        return f'{self.project} ({".".join(str(v) for v in self.version)})'
+        return f'{self.__class__.__name__.capitalize()} {self.version}'
 
     @property
-    def version(self) -> typing.Sequence[int]:
-        """Get the hierarchical version numbers.
+    def version(self) -> str:
+        """Get the hierarchical version number.
 
-        Returns: Version numbers.
+        Returns: Version number.
         """
-        def inspect(level: Level) -> typing.List[int]:
-            """Get the version numbers of given levels parent tree.
-
-            Args:
-                level: Leaf level of the parent tree to scan through.
-
-            Returns: List of parent tree levels.
-            """
-            version = inspect(level._parent) if level._parent else list()
-            version.append(self.key)
-            return version
-        return tuple(inspect(self))
+        return f'{self._parent}-{self.key}' if self._parent else self.key
 
     @property
-    def key(self) -> int:
-        """Either user specified or last listed level key.
+    def key(self) -> KeyT:
+        """Either user specified or last lazily listed level key.
 
         Returns: ID of this level.
         """
         if self._key is None:
-            self._key = self.listing.last
-        if self._key not in self.listing:
+            if not self._parent:
+                raise ValueError('Parent or key required')
+            self._key = self._parent.list().last
+        if self._parent and self._key not in self._parent.list():
             raise Level.Invalid(f'Invalid level key {self._key}')
         return self._key
 
-    @property
-    def listing(self) -> 'Level.Listing':
-        """Lazily cached level listing.
-
-        Returns: Level listing.
-        """
-        if not self._listing:
-            self._listing = self._list()
-        return self._listing
-
     @abc.abstractmethod
-    def _list(self) -> 'Level.Listing':
+    def list(self) -> 'Level.Listing[ItemT]':
         """Return the listing of this level.
 
         Returns: Level listing.
         """
 
+    @abc.abstractmethod
+    def get(self, key: ItemT) -> 'Level[ItemT, typing.Any]':
+        """Get an item from this level.
 
-class Generation(Level):
+        Args:
+            key: Item key to get.
+
+        Returns: Item as a level instance.
+        """
+
+
+class Generation(Level[int, uuid.UUID]):
     """Snapshot of project states in its particular training iteration.
     """
     class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
@@ -258,8 +246,8 @@ class Generation(Level):
             Returns: String of bytes representation.
             """
             return json.dumps({
-                'training': {'timestamp': self._strftime(self.training.timestamp)},
-                'tuning': {'timestamp': self._strftime(self.tuning.timestamp)},
+                'training': {'timestamp': self._strftime(self.training.timestamp), 'ordinal': self.training.ordinal},
+                'tuning': {'timestamp': self._strftime(self.tuning.timestamp), 'score': self.tuning.score},
                 'states': [str(s) for s in self.states]}, indent=4).encode('utf-8')
 
         @classmethod
@@ -272,14 +260,27 @@ class Generation(Level):
             Returns: Tag instance.
             """
             meta = json.loads(raw, encoding='utf-8')
-            return cls(training=cls.Training(timestamp=cls._strptime(meta['training']['timestamp'])),
-                       tuning=cls.Tuning(timestamp=cls._strptime(meta['tuning']['timestamp'])),
+            return cls(training=cls.Training(timestamp=cls._strptime(meta['training']['timestamp']),
+                                             ordinal=meta['training']['ordinal']),
+                       tuning=cls.Tuning(timestamp=cls._strptime(meta['tuning']['timestamp']),
+                                         score=meta['tuning']['score']),
                        states=(uuid.UUID(s) for s in meta['states']))
 
-    def __init__(self, registry: 'persistent.Registry', project: str, lineage: 'Lineage',
-                 key: typing.Optional[int] = None):
-        super().__init__(registry, project, key, parent=lineage)
+    NOTAG = Tag()
+
+    def __init__(self, registry: 'persistent.Registry', lineage: 'Lineage', key: typing.Optional[int] = None):
+        if key:
+            key = int(key)
+        super().__init__(registry, key, parent=lineage)
         self._tag: typing.Optional[Generation.Tag] = None
+
+    @property
+    def project(self) -> 'Project':
+        """Get the project of this generation.
+
+        Returns: Project of this generation.
+        """
+        return self.lineage.project
 
     @property
     def lineage(self) -> 'Lineage':
@@ -289,13 +290,6 @@ class Generation(Level):
         """
         return self._parent
 
-    def _list(self) -> Level.Listing:
-        """Return the listing of this level.
-
-        Returns: Level listing.
-        """
-        return self._registry.generations(self.project, self.lineage.key)
-
     @property
     def tag(self) -> 'Generation.Tag':
         """Generation metadata. In case of implicit generation and empty lineage this returns a "null" tag (a Tag object
@@ -304,12 +298,20 @@ class Generation(Level):
         Returns: Generation tag (metadata) object.
         """
         if not self._tag:
+            lineage = self.lineage.key  # lineage must exist so let's fetch it outside of try-except
             try:
-                self._tag = self._registry.open(self.project, self.lineage.key, self.key)
-            except self.Listing.Empty:
-                LOGGER.warning('No previous generations found - using a null tag')
-                self._tag = self.Tag()
+                self._tag = self._registry.open(self.project.key, lineage, self.key)
+            except self.Listing.Empty:  # generation doesn't exist
+                LOGGER.debug('No previous generations found - using a null tag')
+                return self.NOTAG
         return self._tag
+
+    def list(self) -> Level.Listing[uuid.UUID]:
+        """Return the listing of this level.
+
+        Returns: Level listing.
+        """
+        return self.Listing(self.tag.states)
 
     def get(self, sid: typing.Union[uuid.UUID, int]) -> bytes:
         """Load the state based on provided id or positional index.
@@ -324,60 +326,40 @@ class Generation(Level):
         if isinstance(sid, int):
             sid = self.tag.states[sid]
         if sid not in self.tag.states:
-            raise ValueError(f'Unknown state reference for {self}: {sid}')
+            raise Level.Invalid(f'Unknown state reference for {self}: {sid}')
         LOGGER.debug('%s: Loading state %s', self, sid)
-        return self._registry.read(self.project, self.lineage.key, self.key, sid)
+        return self._registry.read(self.project.key, self.lineage.key, self.key, sid)
 
 
-class Lineage(Level):
+class Lineage(Level[version.Version, int]):
     """Sequence of generations based on same project artifact.
     """
-    def __init__(self, registry: 'persistent.Registry', project: str, key: typing.Optional[int] = None):
-        super().__init__(registry, project, key)
-        self._artifact: typing.Optional[prjmod.Artifact] = None
-
-    def _list(self) -> Level.Listing:
-        """List the content of this level.
-
-        Returns: Level content listing.
-        """
-        return self._registry.lineages(self.project)
+    def __init__(self, registry: 'persistent.Registry', project: 'Project',
+                 key: typing.Optional[typing.Union[str, version.Version]] = None):
+        if key:
+            key = version.Version(str(key))
+        super().__init__(registry, key, parent=project)
+        self._artifact: typing.Optional['product.Artifact'] = None
 
     @property
-    def artifact(self) -> 'prjmod.Artifact':
+    def project(self) -> 'Project':
+        """Get the project of this generation.
+
+        Returns: Project of this generation.
+        """
+        return self._parent
+
+    @property
+    def artifact(self) -> 'product.Artifact':
         """Lineage artifact.
 
         Returns: Artifact object.
         """
         if not self._artifact:
-            self._artifact = self._registry.pull(self.project, self.key)
+            self._artifact = self._registry.mount(self.project.key, self.key)
         return self._artifact
 
-    def get(self, generation: typing.Optional[int] = None) -> Generation:
-        """Get a generation instance by its id.
-
-        Args:
-            generation: Integer generation id.
-
-        Returns: Generation instance.
-        """
-        return Generation(self._registry, self.project, self, generation)
-
-    def put(self, tag: Generation.Tag) -> Generation:
-        """Commit a new generation described by its tag. All states listed on the tag are expected to have
-        been provided previously by individual dumps.
-
-        Args:
-            tag: Generation metadata.
-
-        Returns: Generation instance.
-        """
-        # TO DO: verify all states exist
-        generation = self.listing.next
-        self._registry.close(self.project, self.key, generation, tag)
-        return self.get(generation)
-
-    def add(self, state: bytes) -> uuid.UUID:
+    def dump(self, state: bytes) -> uuid.UUID:
         """Dump an unbound state (not belonging to any project) under given state id.
 
         An unbound state is expected to be committed later into a new generation of specific lineage.
@@ -389,5 +371,114 @@ class Lineage(Level):
         """
         sid = uuid.uuid4()
         LOGGER.debug('%s: Dumping state %s', self, sid)
-        self._registry.write(self.project, self.key, sid, state)
+        self._registry.write(self.project.key, self.key, sid, state)
         return sid
+
+    def list(self) -> Level.Listing[int]:
+        """List the content of this level.
+
+        Returns: Level content listing.
+        """
+        return self._registry.generations(self.project.key, self.key)
+
+    def get(self, generation: typing.Optional[int] = None) -> Generation:
+        """Get a generation instance by its id.
+
+        Args:
+            generation: Integer generation id.
+
+        Returns: Generation instance.
+        """
+        return Generation(self._registry, self, generation)
+
+    def put(self, tag: Generation.Tag) -> Generation:
+        """Commit a new generation described by its tag. All states listed on the tag are expected to have
+        been provided previously by individual dumps.
+
+        Args:
+            tag: Generation metadata.
+
+        Returns: Generation instance.
+        """
+        try:
+            generation = self.list().last + 1
+        except self.Listing.Empty:
+            generation = 1
+        self._registry.close(self.project.key, self.key, generation, tag)
+        return self.get(generation)
+
+
+class Project(Level[str, version.Version]):
+    """Sequence of lineages based on same project.
+    """
+    def __init__(self, registry: 'persistent.Registry', root: 'Root', key: str):
+        super().__init__(registry, str(key), parent=root)
+
+    def list(self) -> Level.Listing[version.Version]:
+        """List the content of this level.
+
+        Returns: Level content listing.
+        """
+        return self._registry.lineages(self.key)
+
+    def get(self, lineage: typing.Optional[version.Version] = None) -> Lineage:
+        """Get a lineage instance by its id.
+
+        Args:
+            lineage: Lineage version.
+
+        Returns: Lineage instance.
+        """
+        return Lineage(self._registry, self, lineage)
+
+    def put(self, package: 'distribution.Package') -> Lineage:
+        """Publish new lineage to the repository based on provided package.
+
+        Args:
+            package: Distribution package to be persisted.
+
+        Returns: new lineage instance based on the package.
+        """
+        project = package.manifest.name
+        lineage = package.manifest.version
+        try:
+            previous = self.list().last
+        except (Level.Invalid, Level.Listing.Empty):
+            LOGGER.debug('No previous lineage for %s-%s', project, lineage)
+        else:
+            if project != self.key:
+                raise error.Invalid(f'Project key mismatch')
+            if not lineage > previous:
+                raise Level.Invalid(f'{project}-{lineage} not an increment from existing {previous}')
+        self._registry.push(package)
+        return self.get(lineage)
+
+
+class Root(Level[None, str]):
+    """Sequence of projects.
+    """
+    def __init__(self, registry: 'persistent.Registry'):  # pylint: disable=useless-super-delegation
+        super().__init__(registry)
+
+    def list(self) -> Level.Listing[str]:
+        """List the content of this level.
+
+        Returns: Level content listing.
+        """
+        return self._registry.projects()
+
+    def get(self, project: str) -> Project:
+        """Get a project instance by its name.
+
+        Args:
+            project: Project name.
+
+        Returns: Project instance.
+        """
+        return Project(self._registry, self, project)
+
+    @property
+    def key(self) -> None:
+        """No key for the root.
+        """
+        return None

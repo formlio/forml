@@ -48,7 +48,7 @@ setuptools.setup(name='forml',
                  package_data={'forml.conf': ['*.ini']},
                  setup_requires=['pytest-runner', 'pytest-pylint', 'pytest-flake8'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['joblib', 'pip'],
+                 install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0'],
                  extras_require={
                      'all': EXTRAS_ALL,
                      'dev': EXTRAS_DEV,
@@ -57,9 +57,12 @@ setuptools.setup(name='forml',
                      'graphviz': EXTRAS_GRAPHVIZ,
                      'dask': EXTRAS_DASK
                  },
+                 entry_points={'console_scripts': [
+                     'forml = forml.cli.forml:Parser',
+                 ]},
                  python_requires='>=3.6',
                  classifiers=[
-                     'Development Status :: 1 - Planning',
+                     'Development Status :: 2 - Pre-Alpha',
                      'Environment :: Console',
                      'Intended Audience :: Developers',
                      'Intended Audience :: Science/Research',

@@ -4,8 +4,7 @@ Set of generic operator skeletons that can be simply used as wrappers about rele
 import abc
 import typing
 
-from forml.stdlib import operator
-
+from forml import error
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
@@ -106,7 +105,7 @@ class Consumer(Simple):
         Returns: Composed segment track.
         """
         if not self.spec.actor.is_stateful():
-            raise operator.Error('Stateless actor invalid for a consumer')
+            raise error.Invalid('Stateless actor invalid for a consumer')
         trainer: node.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
         return left.extend(view.Path(applier))

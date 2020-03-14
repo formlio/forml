@@ -2,11 +2,14 @@
 Global ForML unit tests fixtures.
 """
 # pylint: disable=no-self-use
+import pathlib
 import typing
 
 import pytest
+from packaging import version
 
 from forml.flow import task
+from forml.project import distribution, product
 from forml.stdlib.actor import wrapped
 
 
@@ -100,3 +103,45 @@ def prediction(spec: task.Spec, state: bytes, testset) -> int:
     actor = spec()
     actor.set_state(state)
     return actor.apply(testset)
+
+
+@pytest.fixture(scope='session')
+def project_path() -> pathlib.Path:
+    """Test project path.
+    """
+    return pathlib.Path(__file__).parent / 'helloworld'
+
+
+@pytest.fixture(scope='session')
+def project_package(project_path: pathlib.Path) -> distribution.Package:
+    """Test project package fixture.
+    """
+    return distribution.Package(project_path)
+
+
+@pytest.fixture(scope='session')
+def project_manifest(project_package: distribution.Package) -> distribution.Manifest:
+    """Test project manifest fixture.
+    """
+    return project_package.manifest
+
+
+@pytest.fixture(scope='session')
+def project_artifact(project_package: distribution.Package, project_path: str) -> product.Artifact:
+    """Test project artifact fixture.
+    """
+    return project_package.install(project_path)
+
+
+@pytest.fixture(scope='session')
+def project_name(project_package: distribution.Package) -> str:
+    """Test project name fixture.
+    """
+    return project_package.manifest.name
+
+
+@pytest.fixture(scope='session')
+def project_lineage(project_package: distribution.Package) -> version.Version:
+    """Test project lineage fixture.
+    """
+    return project_package.manifest.version
