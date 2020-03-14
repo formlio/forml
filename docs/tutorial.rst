@@ -41,6 +41,8 @@ Development Lifecycle Actions
 
     $ python3 setup.py train --runner graphviz
 
+.. image:: images/titanic-train.png
+
 4. Run the ``score`` mode on the (default) ``dask`` runner to get the cross-validation score::
 
     $ python3 setup.py score
@@ -91,6 +93,7 @@ before executing the commands.
 
     $ forml -R graphviz apply forml-example-titanic
 
+.. image:: images/titanic-apply.png
 
 Working with Jupyter Notebooks
 ------------------------------
