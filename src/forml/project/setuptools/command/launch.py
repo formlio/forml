@@ -63,7 +63,9 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """This is the original test command entry point - lets override it with our actions.
         """
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        runner = self.artifact.launcher(process.Runner[self.runner.name], etl.Engine[self.engine.name]())
+        runner = self.artifact.launcher(process.Runner[self.runner.name],
+                                        etl.Engine[self.engine.name](**self.engine.kwargs),
+                                        **self.runner.kwargs)
         result = self.launch(runner, lower=self.lower, upper=self.upper)
         if result is not None:
             print(result)

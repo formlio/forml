@@ -108,8 +108,8 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             self._assets: access.Assets = assets
 
         def __call__(self, runner: typing.Type['process.Runner'],
-                     engine: typing.Optional['etl.Engine'] = None) -> 'process.Runner':
-            return runner(self._assets, engine)
+                     engine: typing.Optional['etl.Engine'] = None, **kwargs: typing.Any) -> 'process.Runner':
+            return runner(self._assets, engine, **kwargs)
 
         def __getitem__(self, runner: str) -> 'process.Runner':
             return process.Runner[runner](self._assets)
