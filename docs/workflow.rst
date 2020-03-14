@@ -29,14 +29,16 @@ Actor
 -----
 
 Actor is the lowest level task graph entity representing an atomic blackbox with three types of *application ports*:
-- M input and N output *Apply* ports
-- one *Train* input port
-- one *Label* input port
+
+* M input and N output *Apply* ports
+* one *Train* input port
+* one *Label* input port
 
 Additionally there are two types of *system ports* but they are not available for manipulation from the user API.
 These are:
-- one input and output *State* port
-- one input and output *Params* port (hyper parameters)
+
+* one input and output *State* port
+* one input and output *Params* port (hyper parameters)
 
 Actor is expected to process data arriving to input ports and return results using output ports if applicable. There is
 specific consistency constraint which ports can or need to be active (attached) at the same time: either both *Train*
@@ -53,11 +55,12 @@ The actor API is defined using an abstract class of ``forml.flow.task.Actor``. F
 simply extend this class filling in the abstract methods with the desired functionality. The meaning of these methods
 is:
 
-- ``apply(*features: DataT) -> typing.Union[DataT, typing.Sequence[DataT]]`` - mandatory M:N input-output *Apply* ports
-- ``train(features: DataT, label: DataT) -> None`` - optional method engaging the *Train* (``features``) and *Label*
-  (``label``) ports on stateful actors
-- ``get_params() -> typing.Dict[str, typing.Any]`` and ``set_params(params: typing.Dict[str, typing.Any]) -> None`` -
-  mandatory input and output *Params* ports
+``apply(*features: DataT) -> Union[DataT, Sequence[DataT]]``
+    mandatory M:N input-output *Apply* ports
+``train(features: DataT, label: DataT) -> None``
+    optional method engaging the *Train* (``features``) and *Label* (``label``) ports on stateful actors
+``get_params() -> Mapping[str, Any]`` and ``set_params(params: Mapping[str, Any]) -> None``
+    mandatory input and output *Params* ports
 
 
 Native Actors
