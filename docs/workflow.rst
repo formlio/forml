@@ -134,17 +134,23 @@ Operators represent the high-level abstraction of the task dependency graph. The
 and support a *composition operation* (the ``>>`` syntax) for building up the pipeline. Each operator defines its actors
 and their wiring and expands the task graph through composition with other operators.
 
-To implement the pipeline mode duality operators actually define the composition separately for each of the two modes.
-This eventually allows to produce different graph topology for *train* vs *apply* mode while defining the pipeline
-just once using one set of operators. This also prevents any inconsistencies between the *train* vs *apply* flows as
-these are only assembled along each other when composing the encapsulating operators.
+Pipeline for supervised learning project has typically two modes - *learning* and *applying* (also known as *training*
+or *fitting* and *predicting* or *transforming*). To implement the pipeline mode duality, operators actually define
+the composition separately for each of the two modes. This eventually allows to produce different graph topology for
+*train* vs *apply* mode while defining the pipeline just once using one set of operators. This also prevents any
+inconsistencies between the *train* vs *apply* flows as these are only assembled along each other when composing
+the encapsulating operators.
 
 Operators can implement whatever complex functionality using any number of actors. There is however one condition: the
 subgraph defined by an operator can internally split into multiple branches but can only be connected (both on input and
 output side) to other operators using single port of single node.
 
-For simple operators (typically single-actor operators) like *transformers* or *estimators* are available convenient
-decorators under the ``forml.flow.operator.simple`` that make it really easy to create specific instances.
+Standard ML entities like *transformers* or *estimators* can be turned into operators easily by wrapping them within the
+provided decorators or adding a provided mixin class into the class hierarchy. More complex entities like for example
+a *stacked ensembler* need to be implemented as operators from scratch (reusable entities can be maintained centrally as
+library operators). For simple operators (typically single-actor operators) are available convenient decorators under
+the ``forml.flow.operator.simple`` that make it really easy to create specific instances. More details on the topic of
+operator development can be found in the :doc:`operator` sections.
 
 Following is an example of creating simple transformer operator by decorating an user defined actor with the
 ``simple.Mapper.operator`` decorator::

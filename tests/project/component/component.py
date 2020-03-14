@@ -3,7 +3,7 @@
 
 from forml.project import component
 
-INSTANCE = object()
+INSTANCE = 'foobar'
 
 
 component.setup(INSTANCE)

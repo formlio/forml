@@ -7,13 +7,8 @@ import inspect
 import itertools
 import typing
 
-from forml import stdlib
+from forml import error
 from forml.flow import task
-
-
-class Error(stdlib.Error):
-    """Actor error.
-    """
 
 
 class Wrapping(metaclass=abc.ABCMeta):
@@ -123,7 +118,7 @@ class Class(Mapping):
                 return cls
             for target in {t for s, t in mapping.items() if s != task.Actor.train.__name__}:
                 if not callable(getattr(cls, target, None)):
-                    raise Error(f'Wrapped actor missing required {target} implementation')
+                    raise error.Missing(f'Wrapped actor missing required {target} implementation')
             return Class(cls, mapping)
 
         if cls:

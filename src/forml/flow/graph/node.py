@@ -17,7 +17,7 @@ import abc
 import typing
 import uuid
 
-from forml.flow import task, graph
+from forml.flow import task, error
 from forml.flow.graph import port
 
 
@@ -111,7 +111,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         assert 0 <= index < self.szout, 'Invalid output index'
         if self is subscription.node:
-            raise graph.Error('Self subscription')
+            raise error.Topology('Self subscription')
         self._output[index].add(subscription)
 
     @abc.abstractmethod
@@ -172,7 +172,7 @@ class Worker(Atomic):
         Trained node must not be publishing.
         """
         if self.trained:
-            raise graph.Error('Trained node publishing')
+            raise error.Topology('Trained node publishing')
         super()._publish(index, subscription)
 
     @property
@@ -225,9 +225,9 @@ class Worker(Atomic):
         Returns: Self node.
         """
         if any(f.trained for f in self._group):
-            raise graph.Error('Fork train collision')
+            raise error.Topology('Fork train collision')
         if not self.stateful:
-            raise graph.Error('Stateless node training')
+            raise error.Topology('Stateless node training')
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
@@ -300,7 +300,7 @@ class Future(Atomic):
                 publisher: Left side publisher
             """
             if publisher in self._proxy:
-                raise graph.Error('Publisher collision')
+                raise error.Topology('Publisher collision')
             self._proxy[publisher] = index
 
         return self.PubSub(self, index, register, self._sync)

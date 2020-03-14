@@ -1,13 +1,17 @@
 """ForML assets accessing functionality.
 """
-import contextlib
 import logging
 import typing
 import uuid
 
-from forml import conf, project as prjmod  # pylint: disable=unused-import
-from forml.runtime.asset import directory
+from packaging import version
+
+from forml import conf, error
+from forml.project import product  # pylint: disable=unused-import
 from forml.runtime.asset import persistent
+
+if typing.TYPE_CHECKING:
+    from forml.runtime.asset import directory
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,11 +19,11 @@ LOGGER = logging.getLogger(__name__)
 class State:
     """State persistence accessor.
     """
-    def __init__(self, generation: directory.Generation, nodes: typing.Sequence[uuid.UUID],
-                 tag: typing.Optional[directory.Generation.Tag] = None):
-        self._generation: directory.Generation = generation
+    def __init__(self, generation: 'directory.Generation', nodes: typing.Sequence[uuid.UUID],
+                 tag: typing.Optional['directory.Generation.Tag'] = None):
+        self._generation: 'directory.Generation' = generation
         self._nodes: typing.Tuple[uuid.UUID] = tuple(nodes)
-        self._tag: typing.Optional[directory.Generation.Tag] = tag
+        self._tag: typing.Optional['directory.Generation.Tag'] = tag
 
     def __contains__(self, gid: uuid.UUID) -> bool:
         """Check whether given node is persistent (on our state list).
@@ -40,7 +44,7 @@ class State:
         Returns: Offset of given node.
         """
         if gid not in self._nodes:
-            raise ValueError(f'Unknown node ({gid})')
+            raise error.Unexpected(f'Unknown node ({gid})')
         return self._nodes.index(gid)
 
     def load(self, gid: uuid.UUID) -> bytes:
@@ -64,7 +68,7 @@ class State:
         Returns: Associated absolute state ID.
         """
         LOGGER.debug('Dumping state (%d bytes)', len(state))
-        return self._generation.lineage.add(state)
+        return self._generation.lineage.dump(state)
 
     def commit(self, states: typing.Sequence[uuid.UUID]) -> None:
         """Create new generation by committing its previously dumped states.
@@ -81,13 +85,15 @@ class State:
 class Assets:
     """Persistent assets IO for loading and dumping models.
     """
-    def __init__(self, project: str = conf.PRJ_NAME,
-                 lineage: typing.Optional[int] = None, generation: typing.Optional[int] = None,
-                 registry: persistent.Registry = persistent.Registry()):
-        self._generation: directory.Generation = registry.get(project, lineage).get(generation)
+    def __init__(self, project: str = conf.PRJNAME,
+                 lineage: typing.Optional[version.Version] = None, generation: typing.Optional[int] = None,
+                 registry: typing.Optional['persistent.Registry'] = None):
+        if not registry:
+            registry = persistent.Registry()
+        self._generation: 'directory.Generation' = registry.get(project).get(lineage).get(generation)
 
     @property
-    def project(self) -> 'prjmod.Descriptor':
+    def project(self) -> 'product.Descriptor':
         """Get the project descriptor.
 
         Returns: Project descriptor.
@@ -95,7 +101,7 @@ class Assets:
         return self._generation.lineage.artifact.descriptor
 
     @property
-    def tag(self) -> directory.Generation.Tag:
+    def tag(self) -> 'directory.Generation.Tag':
         """Get the generation tag.
 
         Returns: Generation tag.
@@ -103,20 +109,13 @@ class Assets:
         return self._generation.tag
 
     def state(self, nodes: typing.Sequence[uuid.UUID],
-              tag: typing.Optional[directory.Generation.Tag] = None) -> typing.ContextManager[State]:
+              tag: typing.Optional['directory.Generation.Tag'] = None) -> State:
         """Get the state persistence accessor wrapped in a context manager.
 
         Args:
             nodes: List of expected persisted stateful nodes.
             tag: Optional generation tag template to be used when committing.
 
-        Returns: State persistence in a context manager.
+        Returns: State persistence.
         """
-        @contextlib.contextmanager
-        def context(state: State) -> typing.Generator[State, None, None]:
-            """State context manager that updates the generation upon exit.
-            """
-            yield state
-            self._generation = state._generation  # pylint: disable=protected-access
-
-        return context(State(self._generation, nodes, tag))
+        return State(self._generation, nodes, tag)

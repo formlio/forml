@@ -7,13 +7,13 @@ import typing
 import uuid
 
 import graphviz as grviz
-from forml.runtime.code import instruction
 
-from forml import etl
+from forml import etl, conf
 from forml.flow import task
 from forml.flow.graph import view, node as grnode, port
 from forml.runtime import code, process
 from forml.runtime.asset import access
+from forml.runtime.code import instruction
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class Dot(view.Visitor):
 class Runner(process.Runner, key='graphviz'):
     """Graphviz based runner implementation.
     """
-    FILEPATH = 'forml.dot'
+    FILEPATH = f'{conf.APPNAME}.dot'
 
     def __init__(self, assets: typing.Optional[access.Assets] = None, engine: typing.Optional[etl.Engine] = None,
                  filepath: typing.Optional[str] = None, **gvkw: typing.Any):

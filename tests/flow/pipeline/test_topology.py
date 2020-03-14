@@ -5,7 +5,7 @@ Flow segment unit tests.
 
 import pytest
 
-from forml.flow import pipeline, graph
+from forml.flow import pipeline, error
 from forml.flow.pipeline import topology
 
 
@@ -27,14 +27,14 @@ class Composable:
     def test_self(self, composable: topology.Composable):
         """Testing self composition.
         """
-        with pytest.raises(graph.Error):
+        with pytest.raises(error.Topology):
             _ = composable >> composable
 
     def test_nonlinear(self, composable: topology.Composable, operator: topology.Operator):
         """Testing nonlinear composition.
         """
         expression = composable >> operator
-        with pytest.raises(graph.Error):
+        with pytest.raises(error.Topology):
             _ = expression >> operator
 
 

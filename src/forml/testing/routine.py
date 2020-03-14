@@ -69,8 +69,7 @@ class Runner:
                 self._gids.add(node.gid)
                 node.spec()
 
-    def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input,
-                 runner: typing.Optional[str] = conf.TESTING_RUNNER):
+    def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: typing.Optional[str]):
         self._params: spec.Scenario.Params = params
         self._source: etl.Source = etl.Extract(expression.Select(lambda: (scenario.train, scenario.label)),
                                                expression.Select(lambda: scenario.apply)) >> Runner.Extractor()
@@ -243,7 +242,7 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine.
     """
-    def __init__(self, name: str, scenario: spec.Scenario, runner: typing.Optional[str] = conf.TESTING_RUNNER):
+    def __init__(self, name: str, scenario: spec.Scenario, runner: typing.Optional[str] = conf.TESTING_RUNNER.name):
         self._name: str = name
         runner = Runner(scenario.params, scenario.input, runner)
         self._test: Test = self.select(scenario, runner)

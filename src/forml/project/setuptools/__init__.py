@@ -9,8 +9,7 @@ import setuptools
 from setuptools import *  # pylint: disable=redefined-builtin; # noqa: F401,F402,F403
 from setuptools import dist
 
-from forml.project import distribution
-from forml.project.setuptools.command import launch, bdist
+from forml.project.setuptools.command import launch, bdist, upload
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,8 +25,10 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
 
 COMMANDS: typing.Mapping[str, typing.Type[launch.Mode]] = {
     'train': launch.Train,
+    'tune': launch.Tune,
     'score': launch.Score,
-    f'bdist_{distribution.Package.FORMAT}': bdist.Package
+    bdist.Package.COMMAND: bdist.Package,
+    'upload': upload.Registry
 }
 
 OPTIONS = {

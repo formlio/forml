@@ -7,7 +7,7 @@ import typing
 
 import pytest
 
-from forml import provider as provmod
+from forml import provider as provmod, error
 
 
 class TestInterface:
@@ -79,14 +79,14 @@ class TestInterface:
         assert provider[subkey] is subprovider
         assert subprovider[subkey] is subprovider
         assert provider(val=100) == subprovider(val=100, **params)
-        with pytest.raises(provmod.Error):
+        with pytest.raises(error.Missing):
             assert subprovider['miss']
 
     def test_collision(self, subprovider: typing.Type[provmod.Interface],
                        subkey: str):  # pylint: disable=unused-argument
         """Test a colliding provider key.
         """
-        with pytest.raises(provmod.Error):
+        with pytest.raises(error.Unexpected):
             class Colliding(subprovider, key=subkey):
                 """colliding implementation.
                 """

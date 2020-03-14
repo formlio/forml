@@ -14,8 +14,7 @@ Graph topology validation.
 """
 import typing
 
-from forml.flow import graph
-
+from forml.flow import error
 from forml.flow.graph import view, node as grnode
 
 
@@ -46,4 +45,4 @@ class Validator(view.Visitor):
             path: Path to be visited.
         """
         if self._futures:
-            raise graph.Error(f'Future nodes on path: {", ".join(str(f) for f in self._futures)}')
+            raise error.Topology(f'Future nodes on path: {", ".join(str(f) for f in self._futures)}')
