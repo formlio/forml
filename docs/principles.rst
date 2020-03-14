@@ -50,7 +50,7 @@ Fundamental aspect of the lifecycle is pipeline state transition occurring durin
 these transitions produces a new *Generation*. Generations based on same build belong to one *Lineage*.
 
 Both Lineages and Generations are distinguished by their incremental version numbers establishing a pipeline versioning
-schema of ``<lineage version>-<generation version>``.
+schema of ``<lineage_version>-<generation_version>``.
 
 Particular :doc:`runtime` implementations provide a mechanism for Lineage/Generation persistence - a *Registry*
 that allows publishing, locating and fetching these instances.
