@@ -5,8 +5,8 @@ Global ForML unit tests fixtures.
 import pathlib
 import typing
 
-import pytest
 from packaging import version
+import pytest
 
 from forml.flow import task
 from forml.project import distribution, product

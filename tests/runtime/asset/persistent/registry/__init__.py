@@ -6,8 +6,8 @@ import abc
 import typing
 import uuid
 
-import pytest
 from packaging import version
+import pytest
 
 from forml.project import distribution
 from forml.runtime.asset import persistent, directory
