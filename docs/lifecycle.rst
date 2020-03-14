@@ -4,8 +4,8 @@ Lifecycle
 Machine learning projects are operated in typical modes that are followed in particular order. This pattern is what we
 call a lifecycle. ForML supports two specific lifecycles depending on the state of the project.
 
-Research Lifecycle
-------------------
+Development Lifecycle
+---------------------
 
 This lifecycle is typically followed during the project development. All work is done in scope of the project source
 code working copy and no persistent modules are produced upon execution. It is typically managed using the
