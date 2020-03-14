@@ -58,9 +58,9 @@ Upload
     Build and wrap the project into a runable *Artifact* producing a new *Lineage* (that can then be used within
     the *Production Lifecycle*) and upload it to a persistent registry.
 
-    Note each particular registry allows uploading only distinct monotonically increasing lineages per any given
-    project, hence executing this stage twice against the same registry without incrementing the project version will
-    fail.
+    .. note::
+       Each particular registry allows uploading only distinct monotonically increasing lineages per any given project,
+       hence executing this stage twice against the same registry without incrementing the project version will fail.
 
     Example::
 
