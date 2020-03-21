@@ -4,8 +4,8 @@ ForML asset directory unit tests.
 # pylint: disable=no-self-use
 import typing
 
-import pytest
 from packaging import version
+import pytest
 
 from forml.project import distribution
 from forml.runtime.asset import directory
