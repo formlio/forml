@@ -73,7 +73,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
 
         Returns: Runner instance.
         """
-        registry = persistent.Registry[conf.REGISTRY.name](**conf.REGISTRY.kwargs)
+        registry = root.Level(persistent.Registry[conf.REGISTRY.name](**conf.REGISTRY.kwargs))
         assets = access.Assets(project, lineage, generation, registry)
         engine = etl.Engine[conf.ENGINE.name](**conf.ENGINE.kwargs)
         return process.Runner[conf.RUNNER.name](assets, engine, **conf.RUNNER.kwargs)
