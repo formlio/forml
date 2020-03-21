@@ -12,6 +12,7 @@ import pytest
 
 from forml.project import distribution
 from forml.runtime.asset import persistent, directory, access
+from forml.runtime.asset.directory import generation as genmod
 
 
 @pytest.fixture(scope='function')
@@ -29,12 +30,12 @@ def states(nodes) -> typing.Mapping[uuid.UUID, bytes]:
 
 
 @pytest.fixture(scope='function')
-def tag(states: typing.Mapping[uuid.UUID, bytes]) -> directory.Generation.Tag:
+def tag(states: typing.Mapping[uuid.UUID, bytes]) -> genmod.Tag:
     """Tag fixture.
     """
-    return directory.Generation.Tag(training=directory.Generation.Tag.Training(datetime.datetime(2019, 4, 1), 123),
-                                    tuning=directory.Generation.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
-                                    states=states.keys())
+    return genmod.Tag(training=genmod.Tag.Training(datetime.datetime(2019, 4, 1), 123),
+                      tuning=genmod.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
+                      states=states.keys())
 
 
 @pytest.fixture(scope='session')
@@ -74,7 +75,7 @@ def last_generation(valid_generation: int) -> int:
 
 @pytest.fixture(scope='function')
 def registry(project_name: str, populated_lineage: version.Version, empty_lineage: version.Version,
-             valid_generation: int, tag: directory.Generation.Tag,
+             valid_generation: int, tag: genmod.Tag,
              states: typing.Mapping[uuid.UUID, bytes], project_package: distribution.Package) -> persistent.Registry:
     """Registry fixture.
     """
@@ -113,14 +114,14 @@ def registry(project_name: str, populated_lineage: version.Version, empty_lineag
         def write(self, project: str, lineage: version.Version, sid: uuid.UUID, state: bytes) -> None:
             raise NotImplementedError()
 
-        def open(self, project: str, lineage: version.Version, generation: int) -> directory.Generation.Tag:
+        def open(self, project: str, lineage: version.Version, generation: int) -> genmod.Tag:
             try:
                 return content[project][lineage][1][generation][0]
             except KeyError:
                 raise directory.Level.Invalid(f'Invalid generation ({lineage}.{generation})')
 
         def close(self, project: str, lineage: version.Version, generation: int,
-                  tag: directory.Generation.Tag) -> None:
+                  tag: genmod.Tag) -> None:
             raise NotImplementedError()
 
     return Registry()

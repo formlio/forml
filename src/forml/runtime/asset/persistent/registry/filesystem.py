@@ -14,6 +14,7 @@ from packaging import version
 from forml import conf
 from forml.project import distribution
 from forml.runtime.asset import directory, persistent
+from forml.runtime.asset.directory import generation as genmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -262,15 +263,15 @@ class Registry(persistent.Registry, key='filesystem'):
         with path.open('wb') as statefile:
             statefile.write(state)
 
-    def open(self, project: str, lineage: version.Version, generation: int) -> 'directory.Generation.Tag':
+    def open(self, project: str, lineage: version.Version, generation: int) -> 'genmod.Tag':
         path = self._path.tag(project, lineage, generation)
         try:
             with path.open('rb') as tagfile:
-                return directory.Generation.Tag.loads(tagfile.read())
+                return genmod.Tag.loads(tagfile.read())
         except FileNotFoundError:
             raise directory.Level.Listing.Empty(f'No tag under {path}')
 
-    def close(self, project: str, lineage: version.Version, generation: int, tag: 'directory.Generation.Tag') -> None:
+    def close(self, project: str, lineage: version.Version, generation: int, tag: 'genmod.Tag') -> None:
         path = self._path.tag(project, lineage, generation)
         LOGGER.debug('Committing states of tag %s as %s', tag, path)
         path.parent.mkdir(parents=True, exist_ok=True)

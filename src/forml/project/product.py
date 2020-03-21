@@ -13,6 +13,7 @@ from forml.flow.pipeline import topology
 from forml.project import component as compmod, distribution, importer
 from forml.runtime import process
 from forml.runtime.asset import access, persistent
+from forml.runtime.asset.directory import root
 from forml.runtime.asset.persistent.registry import virtual
 
 LOGGER = logging.getLogger(__name__)
@@ -165,5 +166,5 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             # dummy package forced to load our fake manifest
             package = distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-'))
         registry = virtual.Registry()
-        registry.get(project).put(package)
+        root.Level(registry).get(project).put(package)
         return self.Launcher(access.Assets(Manifest.NAME, registry=registry))

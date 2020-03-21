@@ -11,7 +11,7 @@ from forml.runtime.asset.persistent.registry import virtual
 from . import Registry
 
 
-class TestVirtual(Registry):
+class TestRegistry(Registry):
     """Registry unit tests.
     """
     @staticmethod

@@ -7,14 +7,15 @@ import uuid
 
 import pytest
 
-from forml.runtime.asset import directory, access
+from forml.runtime.asset import access
+from forml.runtime.asset.directory import generation as genmod
 
 
 class TestAssets:
     """Assets unit tests.
     """
 
-    def test_tag(self, valid_assets: access.Assets, tag: directory.Generation.Tag):
+    def test_tag(self, valid_assets: access.Assets, tag: genmod.Tag):
         """Test default empty lineage generation retrieval.
         """
         assert valid_assets.tag is tag

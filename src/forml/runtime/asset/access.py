@@ -9,9 +9,10 @@ from packaging import version
 from forml import conf, error
 from forml.project import product  # pylint: disable=unused-import
 from forml.runtime.asset import persistent
+from forml.runtime.asset.directory import root
 
 if typing.TYPE_CHECKING:
-    from forml.runtime.asset import directory
+    from forml.runtime.asset.directory import generation as genmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,11 +20,11 @@ LOGGER = logging.getLogger(__name__)
 class State:
     """State persistence accessor.
     """
-    def __init__(self, generation: 'directory.Generation', nodes: typing.Sequence[uuid.UUID],
-                 tag: typing.Optional['directory.Generation.Tag'] = None):
-        self._generation: 'directory.Generation' = generation
+    def __init__(self, generation: 'genmod.Level', nodes: typing.Sequence[uuid.UUID],
+                 tag: typing.Optional['genmod.Tag'] = None):
+        self._generation: 'genmod.Level' = generation
         self._nodes: typing.Tuple[uuid.UUID] = tuple(nodes)
-        self._tag: typing.Optional['directory.Generation.Tag'] = tag
+        self._tag: typing.Optional['genmod.Tag'] = tag
 
     def __contains__(self, gid: uuid.UUID) -> bool:
         """Check whether given node is persistent (on our state list).
@@ -90,7 +91,7 @@ class Assets:
                  registry: typing.Optional['persistent.Registry'] = None):
         if not registry:
             registry = persistent.Registry()
-        self._generation: 'directory.Generation' = registry.get(project).get(lineage).get(generation)
+        self._generation: 'genmod.Level' = root.Level(registry).get(project).get(lineage).get(generation)
 
     @property
     def project(self) -> 'product.Descriptor':
@@ -101,7 +102,7 @@ class Assets:
         return self._generation.lineage.artifact.descriptor
 
     @property
-    def tag(self) -> 'directory.Generation.Tag':
+    def tag(self) -> 'genmod.Tag':
         """Get the generation tag.
 
         Returns: Generation tag.
@@ -109,7 +110,7 @@ class Assets:
         return self._generation.tag
 
     def state(self, nodes: typing.Sequence[uuid.UUID],
-              tag: typing.Optional['directory.Generation.Tag'] = None) -> State:
+              tag: typing.Optional['genmod.Tag'] = None) -> State:
         """Get the state persistence accessor wrapped in a context manager.
 
         Args:
