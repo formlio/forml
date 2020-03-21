@@ -108,15 +108,24 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         def __init__(self, assets: access.Assets):
             self._assets: access.Assets = assets
 
+        @property
+        def _engine(self) -> etl.Engine:
+            """Default engine instance.
+
+            Returns: Engine instance.
+            """
+            return etl.Engine[conf.ENGINE.name](**conf.ENGINE.kwargs)
+
         def __call__(self, runner: typing.Type['process.Runner'],
                      engine: typing.Optional['etl.Engine'] = None, **kwargs: typing.Any) -> 'process.Runner':
             return runner(self._assets, engine, **kwargs)
 
         def __getitem__(self, runner: str) -> 'process.Runner':
-            return process.Runner[runner](self._assets)
+            config = conf.Runner.parse(runner)
+            return process.Runner[config.name](self._assets, self._engine, **config.kwargs)
 
         def __getattr__(self, mode: str) -> typing.Callable:
-            return getattr(process.Runner(self._assets), mode)
+            return getattr(process.Runner[conf.RUNNER.name](self._assets, self._engine, **conf.RUNNER.kwargs), mode)
 
     def __new__(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
                 package: typing.Optional[str] = None, **modules: typing.Any):

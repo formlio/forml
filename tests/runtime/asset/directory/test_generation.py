@@ -5,8 +5,8 @@ ForML asset directory unit tests.
 import typing
 import uuid
 
-import pytest
 from packaging import version
+import pytest
 
 from forml.runtime.asset import directory
 from forml.runtime.asset.directory import generation as genmod, root as rootmod
