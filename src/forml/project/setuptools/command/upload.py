@@ -4,6 +4,7 @@ Custom setuptools commands distribution publishing.
 import typing
 
 import setuptools
+from forml.runtime.asset.directory import root
 
 from forml import error, conf
 from forml.project import distribution
@@ -40,4 +41,4 @@ class Registry(setuptools.Command):
                                 f'(e.g. setup.py {bdist.Package.COMMAND} upload)')
         project = self.distribution.get_name()
         for pkg in packages:
-            persistent.Registry[self.registry.name](**self.registry.kwargs).get(project).put(pkg)
+            root.Level(persistent.Registry[self.registry.name](**self.registry.kwargs)).get(project).put(pkg)
