@@ -28,7 +28,7 @@ class Level(directory.Level[str, lngmod.Version]):
         """
         return self.Listing(lngmod.Version(l) for l in self.registry.lineages(self.key))
 
-    def get(self, lineage: typing.Optional[lngmod.Version] = None) -> lngmod.Level:
+    def get(self, lineage: typing.Optional[typing.Union[str, lngmod.Version]] = None) -> lngmod.Level:
         """Get a lineage instance by its id.
 
         Args:
