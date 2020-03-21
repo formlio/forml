@@ -9,6 +9,8 @@ import sys
 import types
 import typing
 
+from forml import error
+
 from forml.project import importer
 from forml.project.component import virtual
 
@@ -74,6 +76,8 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
             """
             LOGGER.debug('Component setup using %s', component)
             nonlocal result
+            if result:
+                raise error.Unexpected('Repeated call to component setup')
             result = component
 
     result = None

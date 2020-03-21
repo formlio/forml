@@ -4,7 +4,6 @@ import abc
 import functools
 import logging
 import typing
-from collections import abc as colabc
 
 from packaging import version
 
@@ -24,27 +23,14 @@ class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):
         """Indication of an invalid level.
         """
 
-    class Listing(typing.Generic[ItemT], colabc.Iterable):
+    class Listing(tuple, typing.Generic[ItemT]):
         """Helper class representing a registry listing.
         """
         class Empty(error.Missing):
             """Exception indicating empty listing.
             """
-
-        def __init__(self, items: typing.Iterable[ItemT]):
-            self._items: typing.Tuple[ItemT] = tuple(sorted(set(items)))
-
-        def __contains__(self, key: ItemT) -> bool:
-            return key in self._items
-
-        def __eq__(self, other):
-            return isinstance(other, self.__class__) and other._items == self._items
-
-        def __iter__(self):
-            return iter(self._items)
-
-        def __str__(self):
-            return ', '.join(str(i) for i in self._items)
+        def __new__(cls, items: typing.Iterable[ItemT]):
+            return super().__new__(cls, tuple(sorted(set(items))))
 
         @property
         def last(self) -> ItemT:
@@ -53,7 +39,7 @@ class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):
             Returns: Id of the last item.
             """
             try:
-                return self._items[-1]
+                return self[-1]
             except IndexError:
                 raise self.Empty('Empty listing')
 
