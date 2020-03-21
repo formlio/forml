@@ -5,15 +5,16 @@ import functools
 import logging
 import typing
 
-from packaging import version
-
 from forml import error  # pylint: disable=unused-import; # noqa: F401
 from forml.runtime.asset import persistent
 
+if typing.TYPE_CHECKING:
+    from forml.runtime.asset.directory import lineage as lngmod  # noqa: F401
+
 LOGGER = logging.getLogger(__name__)
 
-KeyT = typing.TypeVar('KeyT', str, version.Version, int)
-ItemT = typing.TypeVar('ItemT', version.Version, int)
+KeyT = typing.TypeVar('KeyT', str, 'lngmod.Version', int)
+ItemT = typing.TypeVar('ItemT', 'lngmod.Version', int)
 
 
 class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):

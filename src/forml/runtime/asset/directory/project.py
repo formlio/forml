@@ -3,8 +3,6 @@
 import logging
 import typing
 
-from packaging import version
-
 from forml import error  # pylint: disable=unused-import; # noqa: F401
 from forml.runtime.asset import directory
 from forml.runtime.asset.directory import lineage as lngmod
@@ -17,20 +15,20 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Level(directory.Level[str, version.Version]):
+class Level(directory.Level[str, lngmod.Version]):
     """Sequence of lineages based on same project.
     """
     def __init__(self, root: 'rootmod.Level', key: str):
         super().__init__(str(key), parent=root)
 
-    def list(self) -> directory.Level.Listing[version.Version]:
+    def list(self) -> directory.Level.Listing[lngmod.Version]:
         """List the content of this level.
 
         Returns: Level content listing.
         """
-        return self.registry.lineages(self.key)
+        return self.Listing(lngmod.Version(l) for l in self.registry.lineages(self.key))
 
-    def get(self, lineage: typing.Optional[version.Version] = None) -> lngmod.Level:
+    def get(self, lineage: typing.Optional[lngmod.Version] = None) -> lngmod.Level:
         """Get a lineage instance by its id.
 
         Args:

@@ -5,6 +5,7 @@ import os
 import sys
 import typing
 
+import pip._internal as pip
 import setuptools
 
 from forml.project import distribution
@@ -54,7 +55,6 @@ class Package(setuptools.Command):
     def run(self) -> None:
         """Trigger the packaging process.
         """
-        import pip._internal as pip  # pylint: disable=import-outside-toplevel
         pip.main(['install', '--upgrade', '--no-user', '--target', self.bdist_dir,
                   os.path.abspath(os.path.dirname(sys.argv[0]))])
         if not os.path.exists(self.dist_dir):

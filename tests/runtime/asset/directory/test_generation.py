@@ -5,11 +5,10 @@ ForML asset directory unit tests.
 import typing
 import uuid
 
-from packaging import version
 import pytest
 
 from forml.runtime.asset import directory
-from forml.runtime.asset.directory import generation as genmod, root as rootmod
+from forml.runtime.asset.directory import root as rootmod, lineage as lngmod, generation as genmod
 from . import Level
 
 
@@ -18,7 +17,7 @@ class TestLevel(Level):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def parent(root: rootmod.Level, project_name: str, populated_lineage: version.Version) -> typing.Callable[
+    def parent(root: rootmod.Level, project_name: str, populated_lineage: lngmod.Version) -> typing.Callable[
             [typing.Optional[int]], genmod.Level]:
         """Parent fixture.
         """
@@ -47,13 +46,13 @@ class TestLevel(Level):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_lineage(last_lineage: version.Version) -> version.Version:
+    def invalid_lineage(last_lineage: lngmod.Version) -> lngmod.Version:
         """Level fixture.
         """
-        return version.Version(f'{last_lineage.release[0] + 1}')
+        return lngmod.Version(f'{last_lineage.release[0] + 1}')
 
     def test_tag(self, root: rootmod.Level, project_name: str,
-                 project_lineage: version.Version, empty_lineage: version.Version,
+                 project_lineage: lngmod.Version, empty_lineage: lngmod.Version,
                  valid_generation: int, tag: genmod.Tag):
         """Registry checkout unit test.
         """
@@ -64,7 +63,7 @@ class TestLevel(Level):
         assert project.get(empty_lineage).get(None).tag == genmod.Tag()
 
     def test_read(self, root: rootmod.Level, project_name: str,
-                  project_lineage: version.Version, invalid_lineage: version.Version,
+                  project_lineage: lngmod.Version, invalid_lineage: lngmod.Version,
                   valid_generation: int, states: typing.Mapping[uuid.UUID, bytes]):
         """Registry load unit test.
         """

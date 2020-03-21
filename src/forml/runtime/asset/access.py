@@ -4,15 +4,13 @@ import logging
 import typing
 import uuid
 
-from packaging import version
-
 from forml import conf, error
 from forml.project import product  # pylint: disable=unused-import
 from forml.runtime.asset import persistent
 from forml.runtime.asset.directory import root
 
 if typing.TYPE_CHECKING:
-    from forml.runtime.asset.directory import generation as genmod
+    from forml.runtime.asset.directory import lineage as lngmod, generation as genmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
 
@@ -87,8 +85,8 @@ class Assets:
     """Persistent assets IO for loading and dumping models.
     """
     def __init__(self, project: str = conf.PRJNAME,
-                 lineage: typing.Optional[version.Version] = None, generation: typing.Optional[int] = None,
-                 registry: typing.Optional['persistent.Registry'] = None):
+                 lineage: typing.Optional[typing.Union[str, 'lngmod.Version']] = None,
+                 generation: typing.Optional[int] = None, registry: typing.Optional['persistent.Registry'] = None):
         if not registry:
             registry = persistent.Registry()
         self._generation: 'genmod.Level' = root.Level(registry).get(project).get(lineage).get(generation)
