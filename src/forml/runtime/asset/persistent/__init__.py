@@ -16,6 +16,7 @@ from forml.runtime.asset import directory
 
 if typing.TYPE_CHECKING:
     from forml.project import distribution, product
+    from forml.runtime.asset.directory import generation as genmod
 
 LOGGER = logging.getLogger(__name__)
 TMPDIR = tempfile.TemporaryDirectory(prefix=f'{conf.APPNAME}-persistent-', dir=conf.TMPDIR)
@@ -106,10 +107,11 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         name = self.__class__.__module__.rsplit('.', 1)[-1].capitalize()
         return f'{name}-registry'
 
-    def get(self, project: 'str') -> 'directory.Project':
-        """Get the project handle.
-        """
-        return directory.Root(self).get(project)
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(self._staging)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and other._staging == self._staging
 
     def mount(self, project: str, lineage: version.Version) -> 'product.Artifact':
         """Take given project/lineage package and return it as artifact instance.
@@ -195,7 +197,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def open(self, project: str, lineage: version.Version, generation: int) -> 'directory.Generation.Tag':
+    def open(self, project: str, lineage: version.Version, generation: int) -> 'genmod.Tag':
         """Return the metadata tag of given generation.
 
         Args:
@@ -207,12 +209,12 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def close(self, project: str, lineage: version.Version, generation: int, tag: 'directory.Generation.Tag') -> None:
+    def close(self, project: str, lineage: version.Version, generation: int, tag: 'genmod.Tag') -> None:
         """Seal new generation by storing its metadata tag.
 
         Args:
             project: Project to store the metadata into.
-            lineage: directory.Lineage of the project to store the metadata into.
+            lineage: Lineage of the project to store the metadata into.
             generation: Generation of the project to store the metadata into.
             tag: Generation metadata to be stored.
         """

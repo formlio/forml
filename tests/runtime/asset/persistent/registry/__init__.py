@@ -11,6 +11,7 @@ import pytest
 
 from forml.project import distribution
 from forml.runtime.asset import persistent, directory
+from forml.runtime.asset.directory import generation as genmod
 
 
 class Registry(metaclass=abc.ABCMeta):
@@ -34,7 +35,7 @@ class Registry(metaclass=abc.ABCMeta):
     @pytest.fixture(scope='function')
     def populated(constructor: typing.Callable[[], persistent.Registry], project_package: distribution.Package,
                   project_name: str, project_lineage: version.Version, valid_generation: int,
-                  states: typing.Mapping[uuid.UUID, bytes], tag: directory.Generation.Tag) -> persistent.Registry:
+                  states: typing.Mapping[uuid.UUID, bytes], tag: genmod.Tag) -> persistent.Registry:
         """Populated registry fixture.
         """
         registry = constructor()
@@ -84,7 +85,7 @@ class Registry(metaclass=abc.ABCMeta):
             assert populated.read(project_name, project_lineage, valid_generation, sid) == value
 
     def test_open(self, populated: persistent.Registry, project_name: str,
-                  project_lineage: version.Version, valid_generation: int, tag: directory.Generation.Tag):
+                  project_lineage: version.Version, valid_generation: int, tag: genmod.Tag):
         """Registry checkout unit test.
         """
         assert populated.open(project_name, project_lineage, valid_generation) == tag
