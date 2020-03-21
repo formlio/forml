@@ -6,6 +6,7 @@ import typing
 
 import pytest
 
+import forml
 from forml.project import distribution
 from forml.runtime.asset import directory
 from forml.runtime.asset.directory import lineage as lngmod, root as rootmod
@@ -20,6 +21,7 @@ class TestVersion:
         """
         ver = lngmod.Version('0.1.dev2')
         lngmod.Version(ver)
+        lngmod.Version(forml.__version__)
         with pytest.raises(lngmod.Version.Invalid):
             lngmod.Version('foobar')
 
