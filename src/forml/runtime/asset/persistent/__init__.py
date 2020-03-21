@@ -9,14 +9,12 @@ import tempfile
 import typing
 import uuid
 
-from packaging import version
-
 from forml import provider, conf
 from forml.runtime.asset import directory
 
 if typing.TYPE_CHECKING:
     from forml.project import distribution, product
-    from forml.runtime.asset.directory import generation as genmod
+    from forml.runtime.asset.directory import lineage as lngmod, generation as genmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
 TMPDIR = tempfile.TemporaryDirectory(prefix=f'{conf.APPNAME}-persistent-', dir=conf.TMPDIR)
@@ -65,7 +63,8 @@ class Existing:
         Returns: Decorated method with enforced lineage existence.
         """
         @functools.wraps(method)
-        def wrapped(registry: 'Registry', project: str, lineage: version.Version, *args, **kwargs) -> typing.Any:
+        def wrapped(registry: 'Registry', project: str, lineage: typing.Union[str, 'lngmod.Version'],
+                    *args, **kwargs) -> typing.Any:
             """Wrapped registry method.
             """
             if lineage not in registry.lineages(project):
@@ -83,7 +82,7 @@ class Existing:
         Returns: Decorated method with enforced generation existence.
         """
         @functools.wraps(method)
-        def wrapped(registry: 'Registry', project: str, lineage: version.Version,
+        def wrapped(registry: 'Registry', project: str, lineage: typing.Union[str, 'lngmod.Version'],
                     generation: int, *args, **kwargs) -> typing.Any:
             """Wrapped registry method.
             """
@@ -113,7 +112,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other._staging == self._staging
 
-    def mount(self, project: str, lineage: version.Version) -> 'product.Artifact':
+    def mount(self, project: str, lineage: typing.Union[str, 'lngmod.Version']) -> 'product.Artifact':
         """Take given project/lineage package and return it as artifact instance.
 
         Args:
@@ -126,14 +125,14 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         return package.install(self._staging / package.manifest.name / str(package.manifest.version))
 
     @abc.abstractmethod
-    def projects(self) -> 'directory.Level.Listing[str]':
+    def projects(self) -> typing.Iterable[str]:
         """List projects in given repository.
 
         Returns: Projects listing.
         """
 
     @abc.abstractmethod
-    def lineages(self, project: str) -> 'directory.Level.Listing[version.Version]':
+    def lineages(self, project: str) -> typing.Iterable[str]:
         """List the lineages of given project.
 
         Args:
@@ -143,7 +142,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def generations(self, project: str, lineage: version.Version) -> 'directory.Level.Listing[int]':
+    def generations(self, project: str, lineage: typing.Union[str, 'lngmod.Version']) -> typing.Iterable[int]:
         """List the generations of given lineage.
 
         Args:
@@ -154,7 +153,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def pull(self, project: str, lineage: version.Version) -> 'distribution.Package':
+    def pull(self, project: str, lineage: typing.Union[str, 'lngmod.Version']) -> 'distribution.Package':
         """Return the package of given lineage.
 
         Args:
@@ -173,7 +172,8 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def read(self, project: str, lineage: version.Version, generation: int, sid: uuid.UUID) -> bytes:
+    def read(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], generation: int,
+             sid: uuid.UUID) -> bytes:
         """Load the state based on provided id.
 
         Args:
@@ -186,7 +186,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def write(self, project: str, lineage: version.Version, sid: uuid.UUID, state: bytes) -> None:
+    def write(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], sid: uuid.UUID, state: bytes) -> None:
         """Dump an unbound state under given state id.
 
         Args:
@@ -197,7 +197,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def open(self, project: str, lineage: version.Version, generation: int) -> 'genmod.Tag':
+    def open(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], generation: int) -> 'genmod.Tag':
         """Return the metadata tag of given generation.
 
         Args:
@@ -209,7 +209,8 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def close(self, project: str, lineage: version.Version, generation: int, tag: 'genmod.Tag') -> None:
+    def close(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], generation: int,
+              tag: 'genmod.Tag') -> None:
         """Seal new generation by storing its metadata tag.
 
         Args:

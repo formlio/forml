@@ -4,8 +4,9 @@ import logging
 import typing
 import uuid
 
-from packaging import version
+from packaging import version as vermod
 
+from forml import error
 from forml.runtime.asset import directory, persistent
 from forml.runtime.asset.directory import generation as genmod
 
@@ -17,14 +18,27 @@ LOGGER = logging.getLogger(__name__)
 ARTIFACTS = directory.Cache(persistent.Registry.mount)
 
 
+class Version(vermod.Version):
+    """Custom version type.
+    """
+    class Invalid(error.Invalid):
+        """Invalid version value.
+        """
+    def __init__(self, version: typing.Union[str, vermod.Version, 'Version']):
+        try:
+            super().__init__(str(version))
+        except vermod.InvalidVersion:
+            raise self.Invalid(f'Invalid version {version} (not PEP 440 compliant)')
+
+
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Level(directory.Level[version.Version, int]):
+class Level(directory.Level[Version, int]):
     """Sequence of generations based on same project artifact.
     """
     def __init__(self, project: 'prjmod.Level',
-                 key: typing.Optional[typing.Union[str, version.Version]] = None):
+                 key: typing.Optional[typing.Union[str, Version]] = None):
         if key:
-            key = version.Version(str(key))
+            key = Version(key)
         super().__init__(key, parent=project)
 
     @property
@@ -63,7 +77,7 @@ class Level(directory.Level[version.Version, int]):
 
         Returns: Level content listing.
         """
-        return self.registry.generations(self.project.key, self.key)
+        return self.Listing(int(g) for g in self.registry.generations(self.project.key, self.key))
 
     def get(self, generation: typing.Optional[int] = None) -> genmod.Level:
         """Get a generation instance by its id.

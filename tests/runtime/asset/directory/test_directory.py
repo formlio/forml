@@ -2,11 +2,10 @@
 ForML asset directory unit tests.
 """
 # pylint: disable=no-self-use
-from packaging import version
 import pytest
 
 from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import generation as genmod
+from forml.runtime.asset.directory import lineage as lngmod, generation as genmod
 
 
 class TestCache:
@@ -22,7 +21,7 @@ class TestCache:
         return instance
 
     def test_cycle(self, cache: directory.Cache, registry: persistent.Registry, project_name: str,
-                   populated_lineage: version.Version, valid_generation: int, tag: genmod.Tag):
+                   populated_lineage: lngmod.Version, valid_generation: int, tag: genmod.Tag):
         """Test the cache lifecycle.
         """
         assert cache.info.currsize == 0

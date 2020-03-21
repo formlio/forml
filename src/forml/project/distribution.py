@@ -15,10 +15,9 @@ import types
 import typing
 import zipfile
 
-from packaging import version as vermod
-
 from forml import error
 from forml.project import product, importer
+from forml.runtime.asset.directory import lineage
 
 LOGGER = logging.getLogger(__name__)
 
@@ -139,11 +138,8 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         'PACKAGE = "$package"\n'
         'MODULES = $modules\n')
 
-    def __new__(cls, name: str, version: typing.Union[str, vermod.Version], package: str, **modules: str):
-        try:
-            version = vermod.Version(str(version))
-        except vermod.InvalidVersion:
-            raise error.Invalid(f'Invalid version {version} (not PEP 440 compliant)')
+    def __new__(cls, name: str, version: typing.Union[str, lineage.Version], package: str, **modules: str):
+        version = lineage.Version(version)
         return super().__new__(cls, name, version, package, types.MappingProxyType(modules))
 
     def __getnewargs_ex__(self):

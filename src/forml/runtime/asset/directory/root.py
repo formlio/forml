@@ -38,7 +38,7 @@ class Level(directory.Level[None, str]):
 
         Returns: Level content listing.
         """
-        return self.registry.projects()
+        return self.Listing(self.registry.projects())
 
     def get(self, project: str) -> 'prjmod.Level':
         """Get a project instance by its name.
