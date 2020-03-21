@@ -8,8 +8,8 @@ import pytest
 
 import forml
 from forml.project import distribution
-from forml.runtime.asset import directory
-from forml.runtime.asset.directory import lineage as lngmod, root as rootmod
+from forml.runtime.asset import directory as dirmod
+from forml.runtime.asset.directory import root as rootmod, lineage as lngmod
 from . import Level
 
 
@@ -31,11 +31,11 @@ class TestLevel(Level):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def parent(root: rootmod.Level,
+    def parent(directory: rootmod.Level,
                project_name: str) -> typing.Callable[[typing.Optional[lngmod.Version]], lngmod.Level]:
         """Parent fixture.
         """
-        return lambda lineage: root.get(project_name).get(lineage)
+        return lambda lineage: directory.get(project_name).get(lineage)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -63,18 +63,18 @@ class TestLevel(Level):
         """Test default empty lineage generation retrieval.
         """
         generation = parent(empty_lineage).get()
-        with pytest.raises(directory.Level.Listing.Empty):
+        with pytest.raises(dirmod.Level.Listing.Empty):
             _ = generation.key
         assert not generation.tag.states
 
-    def test_artifact(self, root: rootmod.Level, project_name: str, invalid_level: lngmod.Version):
+    def test_artifact(self, directory: rootmod.Level, project_name: str, invalid_level: lngmod.Version):
         """Registry take unit test.
         """
-        with pytest.raises(directory.Level.Invalid):
-            _ = root.get(project_name).get(invalid_level).artifact
+        with pytest.raises(dirmod.Level.Invalid):
+            _ = directory.get(project_name).get(invalid_level).artifact
 
-    def test_put(self, root: rootmod.Level, project_name: str, project_package: distribution.Package):
+    def test_put(self, directory: rootmod.Level, project_name: str, project_package: distribution.Package):
         """Registry put unit test.
         """
-        with pytest.raises(directory.Level.Invalid):  # lineage already exists
-            root.get(project_name).put(project_package)
+        with pytest.raises(dirmod.Level.Invalid):  # lineage already exists
+            directory.get(project_name).put(project_package)

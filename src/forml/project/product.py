@@ -174,6 +174,6 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         with importer.context(Manifest()):
             # dummy package forced to load our fake manifest
             package = distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-'))
-        registry = virtual.Registry()
-        root.Level(registry).get(project).put(package)
+        registry = root.Level(virtual.Registry())
+        registry.get(project).put(package)
         return self.Launcher(access.Assets(Manifest.NAME, registry=registry))

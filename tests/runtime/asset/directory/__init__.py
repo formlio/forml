@@ -6,20 +6,12 @@ import typing
 
 import pytest
 
-from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import root as rootmod
+from forml.runtime.asset import directory
 
 
 class Level:
     """Common level functionality.
     """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def root(registry: persistent.Registry) -> rootmod.Level:
-        """Directory root level fixture.
-        """
-        return rootmod.Level(registry)
-
     def test_default(self, parent: typing.Callable[[typing.Optional[directory.KeyT]], directory.Level],
                      last_level: directory.KeyT):
         """Test default level retrieval.

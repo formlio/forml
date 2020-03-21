@@ -10,8 +10,8 @@ import uuid
 import pytest
 
 from forml.project import distribution
-from forml.runtime.asset import persistent, directory, access
-from forml.runtime.asset.directory import lineage as lngmod, generation as genmod
+from forml.runtime.asset import persistent, directory as dirmod, access
+from forml.runtime.asset.directory import root as rootmod, lineage as lngmod, generation as genmod
 
 
 @pytest.fixture(scope='function')
@@ -96,7 +96,7 @@ def registry(project_name: str, populated_lineage: lngmod.Version, empty_lineage
             try:
                 return content[project][lineage][1].keys()
             except KeyError:
-                raise directory.Level.Invalid(f'Invalid lineage ({lineage})')
+                raise dirmod.Level.Invalid(f'Invalid lineage ({lineage})')
 
         def pull(self, project: str, lineage: lngmod.Version) -> distribution.Package:
             return content[project][lineage][0]
@@ -106,7 +106,7 @@ def registry(project_name: str, populated_lineage: lngmod.Version, empty_lineage
 
         def read(self, project: str, lineage: lngmod.Version, generation: int, sid: uuid.UUID) -> bytes:
             if sid not in content[project][lineage][1][generation][0].states:
-                raise directory.Level.Invalid(f'Invalid state id ({sid})')
+                raise dirmod.Level.Invalid(f'Invalid state id ({sid})')
             idx = content[project][lineage][1][generation][0].states.index(sid)
             return content[project][lineage][1][generation][1][idx]
 
@@ -117,7 +117,7 @@ def registry(project_name: str, populated_lineage: lngmod.Version, empty_lineage
             try:
                 return content[project][lineage][1][generation][0]
             except KeyError:
-                raise directory.Level.Invalid(f'Invalid generation ({lineage}.{generation})')
+                raise dirmod.Level.Invalid(f'Invalid generation ({lineage}.{generation})')
 
         def close(self, project: str, lineage: lngmod.Version, generation: int,
                   tag: genmod.Tag) -> None:
@@ -127,8 +127,15 @@ def registry(project_name: str, populated_lineage: lngmod.Version, empty_lineage
 
 
 @pytest.fixture(scope='function')
+def directory(registry: persistent.Registry) -> rootmod.Level:
+    """Directory root fixture.
+    """
+    return rootmod.Level(registry)
+
+
+@pytest.fixture(scope='function')
 def valid_assets(project_name: str, populated_lineage: lngmod.Version, valid_generation: int,
-                 registry: persistent.Registry) -> access.Assets:
+                 directory: rootmod.Level) -> access.Assets:
     """Lineage fixture.
     """
-    return access.Assets(project_name, populated_lineage, valid_generation, registry)
+    return access.Assets(project_name, populated_lineage, valid_generation, directory)

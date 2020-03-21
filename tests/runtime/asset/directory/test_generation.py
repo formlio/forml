@@ -7,7 +7,7 @@ import uuid
 
 import pytest
 
-from forml.runtime.asset import directory
+from forml.runtime.asset import directory as dirmod
 from forml.runtime.asset.directory import root as rootmod, lineage as lngmod, generation as genmod
 from . import Level
 
@@ -17,11 +17,11 @@ class TestLevel(Level):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def parent(root: rootmod.Level, project_name: str, populated_lineage: lngmod.Version) -> typing.Callable[
+    def parent(directory: rootmod.Level, project_name: str, populated_lineage: lngmod.Version) -> typing.Callable[
             [typing.Optional[int]], genmod.Level]:
         """Parent fixture.
         """
-        return lambda generation: root.get(project_name).get(populated_lineage).get(generation)
+        return lambda generation: directory.get(project_name).get(populated_lineage).get(generation)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -51,26 +51,26 @@ class TestLevel(Level):
         """
         return lngmod.Version(f'{last_lineage.release[0] + 1}')
 
-    def test_tag(self, root: rootmod.Level, project_name: str,
+    def test_tag(self, directory: rootmod.Level, project_name: str,
                  project_lineage: lngmod.Version, empty_lineage: lngmod.Version,
                  valid_generation: int, tag: genmod.Tag):
         """Registry checkout unit test.
         """
-        project = root.get(project_name)
-        with pytest.raises(directory.Level.Invalid):
+        project = directory.get(project_name)
+        with pytest.raises(dirmod.Level.Invalid):
             _ = project.get(empty_lineage).get(valid_generation).tag
         assert project.get(project_lineage).get(valid_generation).tag == tag
         assert project.get(empty_lineage).get(None).tag == genmod.Tag()
 
-    def test_read(self, root: rootmod.Level, project_name: str,
+    def test_read(self, directory: rootmod.Level, project_name: str,
                   project_lineage: lngmod.Version, invalid_lineage: lngmod.Version,
                   valid_generation: int, states: typing.Mapping[uuid.UUID, bytes]):
         """Registry load unit test.
         """
-        project = root.get(project_name)
-        with pytest.raises(directory.Level.Invalid):
+        project = directory.get(project_name)
+        with pytest.raises(dirmod.Level.Invalid):
             project.get(invalid_lineage).get(None).get(None)
-        with pytest.raises(directory.Level.Invalid):
+        with pytest.raises(dirmod.Level.Invalid):
             project.get(project_lineage).get(valid_generation).get(None)
         for sid, value in states.items():
             assert project.get(project_lineage).get(valid_generation).get(sid) == value
