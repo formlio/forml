@@ -36,15 +36,12 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             project: Name of project to be listed.
             lineage: Lineage version to be listed.
         """
-        registry = persistent.Registry[conf.REGISTRY.name](**conf.REGISTRY.kwargs)
+        level = root.Level(persistent.Registry[conf.REGISTRY.name](**conf.REGISTRY.kwargs))
         if project:
-            level = root.Level(registry).get(project)
+            level = level.get(project)
             if lineage:
                 level = level.get(lineage)
-            listing = level.list()
-        else:
-            listing = registry.projects()
-        cli.lprint(listing)
+        cli.lprint(level.list())
 
     @cli.Command(help='tune the given project lineage producing new generation', description='Tune mode execution')
     @cli.Param('project', type=str, help='project to be tuned')
