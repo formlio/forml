@@ -9,6 +9,7 @@ from packaging import version
 from forml import cli, error, conf, etl
 from forml.runtime import process
 from forml.runtime.asset import persistent, access
+from forml.runtime.asset.directory import root
 
 
 class Parser(cli.Parser, description='Lifecycle Management for Datascience Projects'):
@@ -37,7 +38,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         """
         registry = persistent.Registry[conf.REGISTRY.name](**conf.REGISTRY.kwargs)
         if project:
-            level = registry.get(project)
+            level = root.Level(registry).get(project)
             if lineage:
                 level = level.get(lineage)
             listing = level.list()
