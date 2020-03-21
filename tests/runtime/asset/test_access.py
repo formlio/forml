@@ -14,7 +14,6 @@ from forml.runtime.asset.directory import generation as genmod
 class TestAssets:
     """Assets unit tests.
     """
-
     def test_tag(self, valid_assets: access.Assets, tag: genmod.Tag):
         """Test default empty lineage generation retrieval.
         """
