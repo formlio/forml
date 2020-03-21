@@ -48,7 +48,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             def constructs(name: str) -> bool:
                 try:
                     cls.constructor(name)
-                except (TypeError, ValueError):
+                except (TypeError, ValueError, lngmod.Version.Invalid):
                     return False
                 return True
 
