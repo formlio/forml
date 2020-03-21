@@ -109,7 +109,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             self._assets: access.Assets = assets
 
         @property
-        def _engine(self) -> etl.Engine:
+        def _engine(self) -> 'etl.Engine':
             """Default engine instance.
 
             Returns: Engine instance.
