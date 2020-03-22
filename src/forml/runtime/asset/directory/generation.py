@@ -197,8 +197,6 @@ class Level(directory.Level):
             return self.__class__(self + 1)
 
     def __init__(self, lineage: 'lngmod.Level', key: typing.Optional[typing.Union[str, int, 'Level.Key']] = None):
-        if key:
-            key = int(key)
         super().__init__(key, parent=lineage)
 
     @property
