@@ -2,12 +2,15 @@
 Dask runner.
 """
 import functools
+import importlib
 import logging
 import typing
 
-from dask import multiprocessing
+import dask
 
+from forml import etl  # pylint: disable=unused-import; # noqa: F401
 from forml.runtime import code, process
+from forml.runtime.asset import access
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +64,13 @@ class Runner(process.Runner, key='dask'):
         def __str__(self):
             return str({k: (str(i), *a) for k, (i, *a) in self.items()})
 
+    SCHEDULER = 'multiprocessing'
+
+    def __init__(self, assets: typing.Optional[access.Assets] = None, engine: typing.Optional['etl.Engine'] = None,
+                 scheduler: typing.Optional[str] = None):
+        super().__init__(assets, engine)
+        self._scheduler: str = scheduler or self.SCHEDULER
+
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:
         """Actual run action to be implemented according to the specific runtime.
 
@@ -69,4 +79,4 @@ class Runner(process.Runner, key='dask'):
         """
         dag = self.Dag(symbols)
         LOGGER.debug('Dask DAG: %s', dag)
-        return multiprocessing.get(dag, dag.output)
+        return importlib.import_module(f'{dask.__name__}.{self._scheduler}').get(dag, dag.output)
