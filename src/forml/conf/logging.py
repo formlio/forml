@@ -23,14 +23,12 @@ def setup(*path: pathlib.Path, **defaults: typing.Any):
     used = list()
     for base, name in itertools.product(itertools.chain(conf.PATH, path), [conf.LOGCFG, conf.get(conf.OPT_LOGCFG)]):
         cfg = (base / name).resolve()
-        if cfg in used or not cfg.is_file():
+        if cfg in used:
             continue
         try:
-            parser.read(cfg)
+            used.extend(parser.read(cfg))
         except configparser.Error as err:
             logging.warning('Unable to read logging config from %s: %s', cfg, err)
-            continue
-        used.append(cfg)
     config.fileConfig(parser, disable_existing_loggers=True)
     logging.captureWarnings(capture=True)
     LOGGER.debug('Application configs: %s', ', '.join(conf.SRC) or 'none')
