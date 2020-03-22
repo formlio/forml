@@ -11,7 +11,7 @@ from forml.runtime.asset.persistent.registry import filesystem
 
 if typing.TYPE_CHECKING:
     from forml.project import product, distribution  # pylint: disable=unused-import
-    from forml.runtime.asset.directory import lineage as lngmod
+    from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,20 +23,20 @@ class Registry(filesystem.Registry, key='virtual'):
     def __init__(self):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(
             prefix='registry-virtual-', dir=persistent.TMPDIR.name)
-        self._artifacts: typing.Dict[str, typing.Dict[
-            'lngmod.Version', 'product.Artifact']] = collections.defaultdict(dict)
+        self._artifacts: typing.Dict['prjmod.Level.Key', typing.Dict[
+            'lngmod.Level.Key', 'product.Artifact']] = collections.defaultdict(dict)
         super().__init__(self._storage.name)
 
-    def projects(self) -> typing.Iterable[str]:
+    def projects(self) -> typing.Iterable['prjmod.Level.Key']:
         return iter(self._artifacts.keys())
 
-    def lineages(self, project: str) -> typing.Iterable[str]:
+    def lineages(self, project: 'prjmod.Level.Key') -> typing.Iterable['lngmod.Level.Key']:
         return iter(self._artifacts[project].keys())
 
-    def mount(self, project: str, lineage: 'lngmod.Version') -> 'product.Artifact':
+    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'product.Artifact':
         return self._artifacts[project][lineage]
 
-    def pull(self, project: str, lineage: 'lngmod.Version') -> 'distribution.Package':
+    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'distribution.Package':
         raise NotImplementedError('No packages in virtual repository')
 
     def push(self, package: 'distribution.Package') -> None:

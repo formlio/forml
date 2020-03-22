@@ -2,7 +2,6 @@
 ForML assets persistence.
 """
 import abc
-import functools
 import logging
 import pathlib
 import tempfile
@@ -10,11 +9,10 @@ import typing
 import uuid
 
 from forml import provider, conf
-from forml.runtime.asset import directory
 
 if typing.TYPE_CHECKING:
     from forml.project import distribution, product
-    from forml.runtime.asset.directory import lineage as lngmod, generation as genmod  # noqa: F401
+    from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
 TMPDIR = tempfile.TemporaryDirectory(prefix=f'{conf.APPNAME}-persistent-', dir=conf.TMPDIR)
@@ -30,67 +28,6 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
     Returns: Temp dir as pathlib path.
     """
     return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR.name))
-
-
-class Existing:
-    """Decorators for verifying existence of given registry levels.
-    """
-    @staticmethod
-    def project(method: typing.Callable) -> typing.Callable:
-        """Decorator for registry methods that require existing project.
-
-        Args:
-            method: Registry method to be decorated.
-
-        Returns: Decorated method with enforced project existence.
-        """
-        @functools.wraps(method)
-        def wrapped(registry: 'Registry', project: str, *args, **kwargs) -> typing.Any:
-            """Wrapped registry method.
-            """
-            if project not in registry.projects():
-                raise directory.Level.Invalid(f'Unknown project {project}')
-            return method(registry, project, *args, **kwargs)
-        return wrapped
-
-    @staticmethod
-    def lineage(method: typing.Callable) -> typing.Callable:
-        """Decorator for registry methods that require existing lineage.
-
-        Args:
-            method: Registry method to be decorated.
-
-        Returns: Decorated method with enforced lineage existence.
-        """
-        @functools.wraps(method)
-        def wrapped(registry: 'Registry', project: str, lineage: typing.Union[str, 'lngmod.Version'],
-                    *args, **kwargs) -> typing.Any:
-            """Wrapped registry method.
-            """
-            if lineage not in registry.lineages(project):
-                raise directory.Level.Invalid(f'Unknown lineage {lineage} for project {project}')
-            return method(registry, project, lineage, *args, **kwargs)
-        return wrapped
-
-    @staticmethod
-    def generation(method: typing.Callable) -> typing.Callable:
-        """Decorator for registry methods that require existing generation.
-
-        Args:
-            method: Registry method to be decorated.
-
-        Returns: Decorated method with enforced generation existence.
-        """
-        @functools.wraps(method)
-        def wrapped(registry: 'Registry', project: str, lineage: typing.Union[str, 'lngmod.Version'],
-                    generation: int, *args, **kwargs) -> typing.Any:
-            """Wrapped registry method.
-            """
-            if generation not in registry.generations(project, lineage):
-                raise directory.Level.Invalid(
-                    f'Unknown generation {generation} for project {project}, lineage {lineage}')
-            return method(registry, project, lineage, generation, *args, **kwargs)
-        return wrapped
 
 
 class Registry(provider.Interface, default=conf.REGISTRY):
@@ -112,7 +49,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other._staging == self._staging
 
-    def mount(self, project: str, lineage: typing.Union[str, 'lngmod.Version']) -> 'product.Artifact':
+    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'product.Artifact':
         """Take given project/lineage package and return it as artifact instance.
 
         Args:
@@ -125,14 +62,14 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         return package.install(self._staging / package.manifest.name / str(package.manifest.version))
 
     @abc.abstractmethod
-    def projects(self) -> typing.Iterable[str]:
+    def projects(self) -> typing.Iterable[typing.Union[str, 'prjmod.Level.Key']]:
         """List projects in given repository.
 
         Returns: Projects listing.
         """
 
     @abc.abstractmethod
-    def lineages(self, project: str) -> typing.Iterable[str]:
+    def lineages(self, project: 'prjmod.Level.Key') -> typing.Iterable[typing.Union[str, 'lngmod.Level.Key']]:
         """List the lineages of given project.
 
         Args:
@@ -142,7 +79,8 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def generations(self, project: str, lineage: typing.Union[str, 'lngmod.Version']) -> typing.Iterable[int]:
+    def generations(self, project: 'prjmod.Level.Key',
+                    lineage: 'lngmod.Level.Key') -> typing.Iterable[typing.Union[str, int, 'genmod.Level.Key']]:
         """List the generations of given lineage.
 
         Args:
@@ -153,7 +91,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def pull(self, project: str, lineage: typing.Union[str, 'lngmod.Version']) -> 'distribution.Package':
+    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'distribution.Package':
         """Return the package of given lineage.
 
         Args:
@@ -172,7 +110,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def read(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], generation: int,
+    def read(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key',
              sid: uuid.UUID) -> bytes:
         """Load the state based on provided id.
 
@@ -186,7 +124,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def write(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], sid: uuid.UUID, state: bytes) -> None:
+    def write(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', sid: uuid.UUID, state: bytes) -> None:
         """Dump an unbound state under given state id.
 
         Args:
@@ -197,7 +135,8 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def open(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], generation: int) -> 'genmod.Tag':
+    def open(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key',
+             generation: 'genmod.Level.Key') -> 'genmod.Tag':
         """Return the metadata tag of given generation.
 
         Args:
@@ -209,7 +148,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         """
 
     @abc.abstractmethod
-    def close(self, project: str, lineage: typing.Union[str, 'lngmod.Version'], generation: int,
+    def close(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key',
               tag: 'genmod.Tag') -> None:
         """Seal new generation by storing its metadata tag.
 

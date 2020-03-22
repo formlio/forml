@@ -5,7 +5,7 @@ ForML asset directory unit tests.
 import pytest
 
 from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import lineage as lngmod, generation as genmod
+from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
 
 
 class TestCache:
@@ -20,8 +20,8 @@ class TestCache:
         instance.clear()
         return instance
 
-    def test_cycle(self, cache: directory.Cache, registry: persistent.Registry, project_name: str,
-                   populated_lineage: lngmod.Version, valid_generation: int, tag: genmod.Tag):
+    def test_cycle(self, cache: directory.Cache, registry: persistent.Registry, project_name: prjmod.Level.Key,
+                   populated_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key, tag: genmod.Tag):
         """Test the cache lifecycle.
         """
         assert cache.info.currsize == 0

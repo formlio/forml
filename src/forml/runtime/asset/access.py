@@ -10,7 +10,7 @@ from forml.runtime.asset import persistent
 from forml.runtime.asset.directory import root
 
 if typing.TYPE_CHECKING:
-    from forml.runtime.asset.directory import lineage as lngmod, generation as genmod  # noqa: F401
+    from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,9 +84,9 @@ class State:
 class Assets:
     """Persistent assets IO for loading and dumping models.
     """
-    def __init__(self, project: str = conf.PRJNAME,
-                 lineage: typing.Optional[typing.Union[str, 'lngmod.Version']] = None,
-                 generation: typing.Optional[typing.Union[str, int]] = None,
+    def __init__(self, project: typing.Union[str, 'prjmod.Level.Key'] = conf.PRJNAME,
+                 lineage: typing.Optional[typing.Union[str, 'lngmod.Level.Key']] = None,
+                 generation: typing.Optional[typing.Union[str, int, 'genmod.Level.Key']] = None,
                  registry: typing.Optional['root.Level'] = None):
         if not registry:
             registry = root.Level(persistent.Registry())

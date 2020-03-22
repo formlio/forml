@@ -10,7 +10,7 @@ import pytest
 
 from forml.project import distribution
 from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import lineage as lngmod, generation as genmod
+from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
 
 
 class Registry(metaclass=abc.ABCMeta):
@@ -33,7 +33,7 @@ class Registry(metaclass=abc.ABCMeta):
     @staticmethod
     @pytest.fixture(scope='function')
     def populated(constructor: typing.Callable[[], persistent.Registry], project_package: distribution.Package,
-                  project_name: str, project_lineage: lngmod.Version, valid_generation: int,
+                  project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key,
                   states: typing.Mapping[uuid.UUID, bytes], tag: genmod.Tag) -> persistent.Registry:
         """Populated registry fixture.
         """
@@ -45,21 +45,22 @@ class Registry(metaclass=abc.ABCMeta):
         return registry
 
     def test_projects(self, empty: persistent.Registry, populated: persistent.Registry,
-                      project_name: str):
+                      project_name: prjmod.Level.Key):
         """Registry projects unit test.
         """
         assert not any(empty.projects())
         assert list(populated.projects()) == [project_name]
 
     def test_lineages(self, empty: persistent.Registry, populated: persistent.Registry,
-                      project_name: str, project_lineage: lngmod.Version):
+                      project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key):
         """Registry lineages unit test.
         """
         assert not any(empty.lineages(project_name))
         assert list(populated.lineages(project_name)) == [project_lineage]
 
     def test_generations(self, empty: persistent.Registry, populated: persistent.Registry,
-                         project_name: str, project_lineage: lngmod.Version, valid_generation: int):
+                         project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key,
+                         valid_generation: genmod.Level.Key):
         """Registry generations unit test.
         """
         assert not any(empty.lineages(project_name))
@@ -71,20 +72,22 @@ class Registry(metaclass=abc.ABCMeta):
         empty.push(project_package)
 
     def test_mount(self, populated: persistent.Registry,
-                   project_name: str, project_lineage: lngmod.Version, project_package: distribution.Package):
+                   project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key,
+                   project_package: distribution.Package):
         """Registry take unit test.
         """
         assert populated.mount(project_name, project_lineage).package == project_package.manifest.package
 
-    def test_read(self, populated: persistent.Registry, project_name: str,
-                  project_lineage: lngmod.Version, valid_generation: int, states: typing.Mapping[uuid.UUID, bytes]):
+    def test_read(self, populated: persistent.Registry, project_name: prjmod.Level.Key,
+                  project_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key,
+                  states: typing.Mapping[uuid.UUID, bytes]):
         """Registry load unit test.
         """
         for sid, value in states.items():
             assert populated.read(project_name, project_lineage, valid_generation, sid) == value
 
-    def test_open(self, populated: persistent.Registry, project_name: str,
-                  project_lineage: lngmod.Version, valid_generation: int, tag: genmod.Tag):
+    def test_open(self, populated: persistent.Registry, project_name: prjmod.Level.Key,
+                  project_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key, tag: genmod.Tag):
         """Registry checkout unit test.
         """
         assert populated.open(project_name, project_lineage, valid_generation) == tag

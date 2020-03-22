@@ -12,7 +12,7 @@ import uuid
 from forml import conf
 from forml.project import distribution
 from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import lineage as lngmod, generation as genmod
+from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
         @staticmethod
         @abc.abstractmethod
-        def constructor(key: str) -> 'directory.KeyT':
+        def constructor(key: str) -> 'directory.Level.Key':
             """Level key constructor.
 
             Args:
@@ -85,7 +85,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     class Project(Matcher):
         """Project matcher.
         """
-        constructor = staticmethod(str)
+        constructor = staticmethod(prjmod.Level.Key)
 
         @staticmethod
         def content(root: pathlib.Path) -> bool:
@@ -94,7 +94,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     class Lineage(Matcher):
         """Lineage matcher.
         """
-        constructor = staticmethod(lngmod.Version)
+        constructor = staticmethod(lngmod.Level.Key)
 
         @staticmethod
         def content(root: pathlib.Path) -> bool:
@@ -103,7 +103,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     class Generation(Matcher):
         """Generation matcher.
         """
-        constructor = staticmethod(int)
+        constructor = staticmethod(genmod.Level.Key)
 
         @staticmethod
         def content(root: pathlib.Path) -> bool:
@@ -115,7 +115,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     PKGFILE = f'package.{distribution.Package.FORMAT}'
 
     @functools.lru_cache()
-    def project(self, project: str) -> pathlib.Path:
+    def project(self, project: prjmod.Level.Key) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
@@ -126,7 +126,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self / project
 
     @functools.lru_cache()
-    def lineage(self, project: str, lineage: lngmod.Version) -> pathlib.Path:
+    def lineage(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
@@ -138,7 +138,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.project(project) / str(lineage)
 
     @functools.lru_cache()
-    def generation(self, project: str, lineage: lngmod.Version, generation: int) -> pathlib.Path:
+    def generation(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key,
+                   generation: genmod.Level.Key) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
@@ -151,7 +152,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.lineage(project, lineage) / str(generation)
 
     @functools.lru_cache()
-    def package(self, project: str, lineage: lngmod.Version) -> pathlib.Path:
+    def package(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> pathlib.Path:
         """Package file path of given project name/lineage.
 
         Args:
@@ -163,8 +164,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.lineage(project, lineage) / self.PKGFILE
 
     @functools.lru_cache()
-    def state(self, sid: uuid.UUID, project: str, lineage: lngmod.Version,
-              generation: typing.Optional[int] = None) -> pathlib.Path:
+    def state(self, sid: uuid.UUID, project: prjmod.Level.Key, lineage: lngmod.Level.Key,
+              generation: typing.Optional[genmod.Level.Key] = None) -> pathlib.Path:
         """State file path of given sid an project name.
 
         Args:
@@ -180,7 +181,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.generation(project, lineage, generation) / f'{sid}.{self.STATESFX}'
 
     @functools.lru_cache()
-    def tag(self, project: str, lineage: lngmod.Version, generation: int) -> pathlib.Path:
+    def tag(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key) -> pathlib.Path:
         """Tag file path of given project name.
 
         Args:
@@ -219,16 +220,16 @@ class Registry(persistent.Registry, key='filesystem'):
         except FileNotFoundError:
             return tuple()
 
-    def projects(self) -> typing.Iterable[str]:
+    def projects(self) -> typing.Iterable[prjmod.Level.Key]:
         return self._listing(self._path, Path.Project)
 
-    def lineages(self, project: str) -> typing.Iterable[str]:
+    def lineages(self, project: prjmod.Level.Key) -> typing.Iterable[lngmod.Level.Key]:
         return self._listing(self._path.project(project), Path.Lineage)
 
-    def generations(self, project: str, lineage: lngmod.Version) -> typing.Iterable[int]:
+    def generations(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> typing.Iterable[genmod.Level.Key]:
         return self._listing(self._path.lineage(project, lineage), Path.Generation)
 
-    def pull(self, project: str, lineage: lngmod.Version) -> 'distribution.Package':
+    def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> 'distribution.Package':
         return distribution.Package(self._path.package(project, lineage))
 
     def push(self, package: 'distribution.Package') -> None:
@@ -242,7 +243,8 @@ class Registry(persistent.Registry, key='filesystem'):
             assert package.path.is_file(), 'Expecting file package'
             path.write_bytes(package.path.read_bytes())
 
-    def read(self, project: str, lineage: lngmod.Version, generation: int, sid: uuid.UUID) -> bytes:
+    def read(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key,
+             sid: uuid.UUID) -> bytes:
         path = self._path.state(sid, project, lineage, generation)
         LOGGER.debug('Reading state from %s', path)
         if not path.parent.exists():
@@ -254,14 +256,14 @@ class Registry(persistent.Registry, key='filesystem'):
             LOGGER.warning('No state %s under %s', sid, path)
             return bytes()
 
-    def write(self, project: str, lineage: lngmod.Version, sid: uuid.UUID, state: bytes) -> None:
+    def write(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, sid: uuid.UUID, state: bytes) -> None:
         path = self._path.state(sid, project, lineage)
         LOGGER.debug('Staging state of %d bytes to %s', len(state), path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open('wb') as statefile:
             statefile.write(state)
 
-    def open(self, project: str, lineage: lngmod.Version, generation: int) -> 'genmod.Tag':
+    def open(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key) -> 'genmod.Tag':
         path = self._path.tag(project, lineage, generation)
         try:
             with path.open('rb') as tagfile:
@@ -269,7 +271,8 @@ class Registry(persistent.Registry, key='filesystem'):
         except FileNotFoundError:
             raise directory.Level.Listing.Empty(f'No tag under {path}')
 
-    def close(self, project: str, lineage: lngmod.Version, generation: int, tag: 'genmod.Tag') -> None:
+    def close(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key,
+              tag: 'genmod.Tag') -> None:
         path = self._path.tag(project, lineage, generation)
         LOGGER.debug('Committing states of tag %s as %s', tag, path)
         path.parent.mkdir(parents=True, exist_ok=True)

@@ -8,7 +8,7 @@ import uuid
 import pytest
 
 from forml.runtime.asset import directory as dirmod
-from forml.runtime.asset.directory import root as rootmod, lineage as lngmod, generation as genmod
+from forml.runtime.asset.directory import root as rootmod, project as prjmod, lineage as lngmod, generation as genmod
 from . import Level
 
 
@@ -17,43 +17,43 @@ class TestLevel(Level):
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def parent(directory: rootmod.Level, project_name: str, populated_lineage: lngmod.Version) -> typing.Callable[
-            [typing.Optional[int]], genmod.Level]:
+    def parent(directory: rootmod.Level, project_name: str, populated_lineage: lngmod.Level.Key) -> typing.Callable[
+            [typing.Optional[genmod.Level.Key]], genmod.Level]:
         """Parent fixture.
         """
         return lambda generation: directory.get(project_name).get(populated_lineage).get(generation)
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def valid_level(valid_generation: int) -> int:
+    def valid_level(valid_generation: genmod.Level.Key) -> genmod.Level.Key:
         """Level fixture.
         """
         return valid_generation
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def last_level(last_generation: int) -> int:
+    def last_level(last_generation: genmod.Level.Key) -> genmod.Level.Key:
         """Level fixture.
         """
         return last_generation
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_level(last_generation: int) -> int:
+    def invalid_level(last_generation: genmod.Level.Key) -> genmod.Level.Key:
         """Level fixture.
         """
         return last_generation + 1
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_lineage(last_lineage: lngmod.Version) -> lngmod.Version:
+    def invalid_lineage(last_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
         """Level fixture.
         """
-        return lngmod.Version(f'{last_lineage.release[0] + 1}')
+        return lngmod.Level.Key(f'{last_lineage.release[0] + 1}')
 
-    def test_tag(self, directory: rootmod.Level, project_name: str,
-                 project_lineage: lngmod.Version, empty_lineage: lngmod.Version,
-                 valid_generation: int, tag: genmod.Tag):
+    def test_tag(self, directory: rootmod.Level, project_name: prjmod.Level.Key,
+                 project_lineage: lngmod.Level.Key, empty_lineage: lngmod.Level.Key,
+                 valid_generation: genmod.Level.Key, tag: genmod.Tag):
         """Registry checkout unit test.
         """
         project = directory.get(project_name)
@@ -62,9 +62,9 @@ class TestLevel(Level):
         assert project.get(project_lineage).get(valid_generation).tag == tag
         assert project.get(empty_lineage).get(None).tag == genmod.Tag()
 
-    def test_read(self, directory: rootmod.Level, project_name: str,
-                  project_lineage: lngmod.Version, invalid_lineage: lngmod.Version,
-                  valid_generation: int, states: typing.Mapping[uuid.UUID, bytes]):
+    def test_read(self, directory: rootmod.Level, project_name: prjmod.Level.Key,
+                  project_lineage: lngmod.Level.Key, invalid_lineage: lngmod.Level.Key,
+                  valid_generation: genmod.Level.Key, states: typing.Mapping[uuid.UUID, bytes]):
         """Registry load unit test.
         """
         project = directory.get(project_name)

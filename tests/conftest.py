@@ -9,7 +9,7 @@ import pytest
 
 from forml.flow import task
 from forml.project import distribution, product
-from forml.runtime.asset.directory import lineage as lngmod
+from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
 from forml.stdlib.actor import wrapped
 
 
@@ -134,14 +134,14 @@ def project_artifact(project_package: distribution.Package, project_path: str) -
 
 
 @pytest.fixture(scope='session')
-def project_name(project_package: distribution.Package) -> str:
+def project_name(project_package: distribution.Package) -> prjmod.Level.Key:
     """Test project name fixture.
     """
     return project_package.manifest.name
 
 
 @pytest.fixture(scope='session')
-def project_lineage(project_package: distribution.Package) -> lngmod.Version:
+def project_lineage(project_package: distribution.Package) -> lngmod.Level.Key:
     """Test project lineage fixture.
     """
     return project_package.manifest.version

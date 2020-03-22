@@ -2,6 +2,8 @@
 """
 import logging
 
+import typing
+
 from forml.runtime.asset import persistent, directory
 from forml.runtime.asset.directory import project as prjmod
 
@@ -9,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Level(directory.Level[None, str]):
+class Level(directory.Level):
     """Sequence of projects.
     """
     def __init__(self, registry: 'persistent.Registry'):  # pylint: disable=useless-super-delegation
@@ -33,14 +35,14 @@ class Level(directory.Level[None, str]):
         """
         return self._registry
 
-    def list(self) -> directory.Level.Listing[str]:
+    def list(self) -> directory.Level.Listing:
         """List the content of this level.
 
         Returns: Level content listing.
         """
-        return self.Listing(self.registry.projects())
+        return self.Listing(prjmod.Level.Key(k) for k in self.registry.projects())
 
-    def get(self, project: str) -> 'prjmod.Level':
+    def get(self, project: typing.Union[str, prjmod.Level.Key]) -> 'prjmod.Level':
         """Get a project instance by its name.
 
         Args:
