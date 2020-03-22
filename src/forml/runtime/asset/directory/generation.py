@@ -175,10 +175,28 @@ STATES = directory.Cache(persistent.Registry.read)
 
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Level(directory.Level[int, uuid.UUID]):
+class Level(directory.Level):
     """Snapshot of project states in its particular training iteration.
     """
-    def __init__(self, lineage: 'lngmod.Level', key: typing.Optional[typing.Union[str, int]] = None):
+    class Key(directory.Level.Key, int):
+        """Generation key.
+        """
+        MIN = 1
+
+        def __new__(cls, key: typing.Optional[typing.Union[str, int, 'Level.Key']] = MIN):
+            try:
+                instance = super().__new__(cls, str(key))
+            except ValueError:
+                raise cls.Invalid(f'Invalid key {key} (not an integer)')
+            if instance < cls.MIN:
+                raise cls.Invalid(f'Invalid key {key} (not natural)')
+            return instance
+
+        @property
+        def next(self) -> 'Level.Key':
+            return self.__class__(self + 1)
+
+    def __init__(self, lineage: 'lngmod.Level', key: typing.Optional[typing.Union[str, int, 'Level.Key']] = None):
         if key:
             key = int(key)
         super().__init__(key, parent=lineage)
@@ -216,7 +234,7 @@ class Level(directory.Level[int, uuid.UUID]):
             return NOTAG
         return TAGS(self.registry, project, lineage, generation)
 
-    def list(self) -> directory.Level.Listing[uuid.UUID]:
+    def list(self) -> directory.Level.Listing:
         """Return the listing of this level.
 
         Returns: Level listing.

@@ -13,28 +13,40 @@ if typing.TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-KeyT = typing.TypeVar('KeyT', str, 'lngmod.Version', int)
-ItemT = typing.TypeVar('ItemT', 'lngmod.Version', int)
 
-
-class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):
+class Level(metaclass=abc.ABCMeta):
     """Abstract directory level.
     """
     class Invalid(error.Invalid):
         """Indication of an invalid level.
         """
 
-    class Listing(tuple, typing.Generic[ItemT]):
+    class Key(metaclass=abc.ABCMeta):
+        """Level key type.
+        """
+        class Invalid(error.Invalid, TypeError):
+            """Invalid key type.
+            """
+
+        @property
+        def next(self) -> 'Level.Key':
+            """Get the next key in sequence.
+
+            Returns: Next key.
+            """
+            raise NotImplementedError(f'Next key not supported for {self.__class__}')
+
+    class Listing(tuple):
         """Helper class representing a registry listing.
         """
         class Empty(error.Missing):
             """Exception indicating empty listing.
             """
-        def __new__(cls, items: typing.Iterable[ItemT]):
+        def __new__(cls, items: typing.Iterable['Level.Key']):
             return super().__new__(cls, tuple(sorted(set(items))))
 
         @property
-        def last(self) -> ItemT:
+        def last(self) -> 'Level.Key':
             """Get the last (most recent) item from the listing.
 
             Returns: Id of the last item.
@@ -44,8 +56,10 @@ class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):
             except IndexError:
                 raise self.Empty('Empty listing')
 
-    def __init__(self, key: typing.Optional[KeyT] = None, parent: typing.Optional['Level'] = None):
-        self._key: typing.Optional[KeyT] = key
+    def __init__(self, key: typing.Any = None, parent: typing.Optional['Level'] = None):
+        if key is not None:
+            key = self.Key(key)
+        self._key: typing.Optional['Level.Key'] = key
         self._parent: typing.Optional[Level] = parent
 
     def __str__(self):
@@ -66,7 +80,7 @@ class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):
         return self._parent.registry
 
     @property
-    def key(self) -> KeyT:
+    def key(self) -> 'Level.Key':
         """Either user specified or last lazily listed level key.
 
         Returns: ID of this level.
@@ -81,14 +95,14 @@ class Level(typing.Generic[KeyT, ItemT], metaclass=abc.ABCMeta):
         return self._key
 
     @abc.abstractmethod
-    def list(self) -> 'Level.Listing[ItemT]':
+    def list(self) -> 'Level.Listing':
         """Return the listing of this level.
 
         Returns: Level listing.
         """
 
     @abc.abstractmethod
-    def get(self, key: ItemT) -> 'Level[ItemT, typing.Any]':
+    def get(self, key: 'Level.Key') -> 'Level':
         """Get an item from this level.
 
         Args:

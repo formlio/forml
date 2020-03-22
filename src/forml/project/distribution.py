@@ -17,7 +17,7 @@ import zipfile
 
 from forml import error
 from forml.project import product, importer
-from forml.runtime.asset.directory import lineage
+from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -138,9 +138,10 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         'PACKAGE = "$package"\n'
         'MODULES = $modules\n')
 
-    def __new__(cls, name: str, version: typing.Union[str, lineage.Version], package: str, **modules: str):
-        version = lineage.Version(version)
-        return super().__new__(cls, name, version, package, types.MappingProxyType(modules))
+    def __new__(cls, name: typing.Union[str, prjmod.Level.Key], version: typing.Union[str, lngmod.Level.Key],
+                package: str, **modules: str):
+        return super().__new__(cls, prjmod.Level.Key(name), lngmod.Level.Key(version), package,
+                               types.MappingProxyType(modules))
 
     def __getnewargs_ex__(self):
         return (self.name, self.version, self.package), dict(self.modules)

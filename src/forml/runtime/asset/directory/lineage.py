@@ -6,7 +6,6 @@ import uuid
 
 from packaging import version as vermod
 
-from forml import error
 from forml.runtime.asset import directory, persistent
 from forml.runtime.asset.directory import generation as genmod
 
@@ -18,27 +17,22 @@ LOGGER = logging.getLogger(__name__)
 ARTIFACTS = directory.Cache(persistent.Registry.mount)
 
 
-class Version(vermod.Version):
-    """Custom version type.
-    """
-    class Invalid(error.Invalid, TypeError):
-        """Invalid version value.
-        """
-    def __init__(self, version: typing.Union[str, vermod.Version, 'Version']):
-        try:
-            super().__init__(str(version))
-        except vermod.InvalidVersion:
-            raise self.Invalid(f'Invalid version {version} (not PEP 440 compliant)')
-
-
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Level(directory.Level[Version, int]):
+class Level(directory.Level):
     """Sequence of generations based on same project artifact.
     """
-    def __init__(self, project: 'prjmod.Level',
-                 key: typing.Optional[typing.Union[str, Version]] = None):
-        if key:
-            key = Version(key)
+    class Key(directory.Level.Key, vermod.Version):  # pylint: disable=abstract-method
+        """Lineage key.
+        """
+        MIN = '0'
+
+        def __init__(self, key: typing.Union[str, 'Level.Key'] = MIN):
+            try:
+                super().__init__(str(key))
+            except vermod.InvalidVersion:
+                raise self.Invalid(f'Invalid version {key} (not PEP 440 compliant)')
+
+    def __init__(self, project: 'prjmod.Level', key: typing.Optional[typing.Union[str, 'Level.Key']] = None):
         super().__init__(key, parent=project)
 
     @property
@@ -72,14 +66,14 @@ class Level(directory.Level[Version, int]):
         self.registry.write(self.project.key, self.key, sid, state)
         return sid
 
-    def list(self) -> directory.Level.Listing[int]:
+    def list(self) -> directory.Level.Listing:
         """List the content of this level.
 
         Returns: Level content listing.
         """
-        return self.Listing(int(g) for g in self.registry.generations(self.project.key, self.key))
+        return self.Listing(genmod.Level.Key(g) for g in self.registry.generations(self.project.key, self.key))
 
-    def get(self, generation: typing.Optional[typing.Union[str, int]] = None) -> genmod.Level:
+    def get(self, generation: typing.Optional[typing.Union[str, int, genmod.Level.Key]] = None) -> genmod.Level:
         """Get a generation instance by its id.
 
         Args:
@@ -99,7 +93,7 @@ class Level(directory.Level[Version, int]):
         Returns: genmod.Level instance.
         """
         try:
-            generation = self.list().last + 1
+            generation = self.list().last.next
         except self.Listing.Empty:
             generation = 1
         self.registry.close(self.project.key, self.key, generation, tag)

@@ -12,14 +12,14 @@ from forml.runtime.asset import directory
 class Level:
     """Common level functionality.
     """
-    def test_default(self, parent: typing.Callable[[typing.Optional[directory.KeyT]], directory.Level],
-                     last_level: directory.KeyT):
+    def test_default(self, parent: typing.Callable[[typing.Optional[directory.Level.Key]], directory.Level],
+                     last_level: directory.Level.Key):
         """Test default level retrieval.
         """
         assert parent(None).key == last_level
 
-    def test_explicit(self, parent: typing.Callable[[typing.Optional[directory.KeyT]], directory.Level],
-                      valid_level: directory.KeyT, invalid_level: directory.KeyT):
+    def test_explicit(self, parent: typing.Callable[[typing.Optional[directory.Level.Key]], directory.Level],
+                      valid_level: directory.Level.Key, invalid_level: directory.Level.Key):
         """Test explicit level retrieval.
         """
         assert parent(valid_level).key == valid_level
