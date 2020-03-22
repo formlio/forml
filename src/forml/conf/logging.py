@@ -20,16 +20,11 @@ def setup(*path: pathlib.Path, **defaults: typing.Any):
     """Setup logger according to the params.
     """
     parser = configparser.ConfigParser({**DEFAULTS, **defaults})
-    used = list()
-    for base, name in itertools.product(itertools.chain(conf.PATH, path), [conf.LOGCFG, conf.get(conf.OPT_LOGCFG)]):
-        cfg = (base / name).resolve()
-        if cfg in used:
-            continue
-        try:
-            used.extend(parser.read(cfg))
-        except configparser.Error as err:
-            logging.warning('Unable to read logging config from %s: %s', cfg, err)
+    names = conf.LOGCFG, conf.get(conf.OPT_LOGCFG)
+    todo = ((b / n).resolve() for b, n in itertools.product(itertools.chain(conf.PATH, path), names))
+    tried = set()
+    used = parser.read((p for p in todo if not (p in tried or tried.add(p))))
     config.fileConfig(parser, disable_existing_loggers=True)
     logging.captureWarnings(capture=True)
     LOGGER.debug('Application configs: %s', ', '.join(conf.SRC) or 'none')
-    LOGGER.debug('Logging configs: %s', ', '.join(str(p) for p in used) or 'none')
+    LOGGER.debug('Logging configs: %s', ', '.join(used) or 'none')
