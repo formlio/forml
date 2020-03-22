@@ -32,6 +32,7 @@ USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() /
 PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
 TMPDIR = pathlib.Path(tempfile.gettempdir())
 APPCFG = 'config.ini'
+LOGCFG = 'logging.ini'
 
 SECTION_DEFAULT = 'DEFAULT'
 SECTION_REGISTRY = 'REGISTRY'
@@ -69,8 +70,6 @@ def get(key: str, section: str = SECTION_DEFAULT, **kwargs) -> str:
     """
     return PARSER.get(section, key, **kwargs)
 
-
-LOGCFG = get(OPT_LOGCFG)
 
 # check if all section exist and add them if not so that config.get doesn't fail
 for _section in (SECTION_STAGING, SECTION_TESTING):
