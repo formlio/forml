@@ -14,6 +14,7 @@ Apply and train input port subscriptions are exclusive.
 Trained node cannot be copied.
 """
 import abc
+import collections
 import typing
 import uuid
 
@@ -32,6 +33,24 @@ class Visitor:
         """
 
 
+class Port(collections.Iterable):
+    """Output port subscriptions as an ordered set.
+    """
+    def __init__(self):
+        self._subscriptions: typing.Dict[port.Subscription, None] = collections.OrderedDict()
+
+    def add(self, subscription: port.Subscription) -> None:
+        """Add new subscription to this port.
+
+        Args:
+            subscription: Subscription to be registered.
+        """
+        self._subscriptions[subscription] = None
+
+    def __iter__(self):
+        return iter(self._subscriptions.keys())
+
+
 class Atomic(metaclass=abc.ABCMeta):
     """Abstract primitive task graph node.
     """
@@ -40,7 +59,7 @@ class Atomic(metaclass=abc.ABCMeta):
             raise ValueError('Invalid node shape')
         self.szin: int = szin
         self.uid: uuid.UUID = uuid.uuid4()
-        self._output: typing.Tuple[typing.Set[port.Subscription]] = tuple(set() for _ in range(szout))
+        self._output: typing.Tuple[Port] = tuple(Port() for _ in range(szout))
 
     def __str__(self):
         return f'{self.__class__.__name__}[uid={self.uid}]'
@@ -88,9 +107,9 @@ class Atomic(metaclass=abc.ABCMeta):
 
     @property
     def szout(self) -> int:
-        """Width of the input apply port.
+        """Width of the output apply port.
 
-        Returns: Input apply port width.
+        Returns: Output apply port width.
         """
         return len(self._output)
 
@@ -100,7 +119,7 @@ class Atomic(metaclass=abc.ABCMeta):
 
         Returns: Output subscriptions.
         """
-        return tuple(frozenset(s) for s in self._output)
+        return tuple(tuple(s) for s in self._output)
 
     def _publish(self, index: int, subscription: port.Subscription) -> None:
         """Publish an output port based on the given subscription.
