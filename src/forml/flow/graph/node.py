@@ -17,6 +17,7 @@ import abc
 import collections
 import typing
 import uuid
+from collections import abc as colabc
 
 from forml.flow import task, error
 from forml.flow.graph import port
@@ -33,7 +34,7 @@ class Visitor:
         """
 
 
-class Port(collections.Iterable):
+class Port(colabc.Iterable):
     """Output port subscriptions as an ordered set.
     """
     def __init__(self):
