@@ -21,4 +21,4 @@ def test_src(conf: types.ModuleType, cfg_file: pathlib.Path):
 def test_logcfg(conf: types.ModuleType):
     """Test the LOGCFG value matches the test config.ini
     """
-    assert conf.LOGCFG == '/dev/null'
+    assert conf.get(conf.OPT_LOGCFG) == '/dev/null'

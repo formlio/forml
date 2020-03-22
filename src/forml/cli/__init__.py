@@ -16,6 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 PARSER = argparse.ArgumentParser(add_help=False)
 PARSER.add_argument('-C', '--config', type=argparse.FileType(), help='additional config file')
+PARSER.add_argument('-L', '--loglevel', help='log with given level')  # not implemented
 COMMON = PARSER.parse_known_args()[0]
 
 CLICFG = getattr(COMMON.config, 'name', None)
