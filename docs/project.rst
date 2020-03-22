@@ -25,24 +25,24 @@ a package (a subdirectory with ``__init__.py`` file in it) since both have the s
 These naming conventions for the different project components are described in the following subsections. The general
 project component structure wrapped within the python application layout might look similar to this::
 
-    myprj
-      |- setup.py
-      |- src
-      |    \- <project_namespace>
-      |          \- myprj
-      |               |- __init__.py
-      |               |- pipeline  # here the component is a package
-      |               |    |- __init__.py
-      |               |    |- <moduleX>.py  # arbitrary user defined module
-      |               |    \- <moduleY>.py
-      |               |- source.py
-      |               |- evaluation.py  # here the component is just a module
-      |- tests
-      |    |- __init__.py
-      |    |- test_pipeline.py
-      |    \- ...
-      |- README.md
-      \- ...
+    <project_name>
+      ├── setup.py
+      ├── src
+      │    └── <optional_project_namespace>
+      │          └── <project_name>
+      │               ├── __init__.py
+      │               ├── pipeline  # here the component is a package
+      │               │    ├── __init__.py
+      │               │    ├── <moduleX>.py  # arbitrary user defined module
+      │               │    └── <moduleY>.py
+      │               ├── source.py
+      │               └── evaluation.py  # here the component is just a module
+      ├── tests
+      │    ├── __init__.py
+      │    ├── test_pipeline.py
+      │    └── ...
+      ├── README.md
+      └── ...
 
 
 Setup.py

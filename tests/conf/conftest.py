@@ -1,31 +1,39 @@
 """
 Common fixtures.
 """
-import argparse
+import configparser
 import importlib
 import pathlib
+import typing
 from unittest import mock
 
 import pytest
 
 
 @pytest.fixture(scope='session')
-def cfg_file() -> str:
+def cfg_file() -> pathlib.Path:
     """Fixture for the test config file.
     """
     return pathlib.Path(__file__).parent / 'config.ini'
 
 
 @pytest.fixture(scope='session')
-def conf(cfg_file: str):
+def conf(cfg_file: pathlib.Path):
     """Fixture for the forml.conf module.
     """
-    with mock.patch('forml.conf.argparse.ArgumentParser.parse_known_args',
-                    return_value=(argparse.Namespace(
-                        config=open(cfg_file, mode='r'),
-                        registry=None,
-                        engine=None,
-                        runner=None), [])):
+    class ConfigParser(configparser.ConfigParser):
+        """Fake config parser that reads only our config file.
+        """
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            super().read([cfg_file])
+
+        def read(self, *_, **__) -> typing.Sequence[str]:
+            """Ignore actual readings.
+            """
+            return [str(cfg_file)]
+
+    with mock.patch('forml.conf.configparser.ConfigParser', return_value=ConfigParser()):
         from forml import conf  # pylint: disable=import-outside-toplevel
         importlib.reload(conf)
         return conf

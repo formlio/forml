@@ -4,14 +4,15 @@ Runtime process layer.
 import abc
 import typing
 
-from forml import provider, etl, conf, error
+from forml import provider, etl, error
+from forml.conf import provider as provcfg
 from forml.flow import pipeline
 from forml.runtime import code
 from forml.runtime.asset import access
 from forml.runtime.code import compiler
 
 
-class Runner(provider.Interface, default=conf.RUNNER):
+class Runner(provider.Interface, default=provcfg.Runner.default):
     """Abstract base runtime class to be extended by particular runtime implementations.
     """
     def __init__(self, assets: typing.Optional[access.Assets] = None, engine: typing.Optional['etl.Engine'] = None):

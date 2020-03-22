@@ -1,8 +1,10 @@
 """
 Config section helpers.
 """
+import abc
 import collections
 import configparser
+import functools
 import re
 
 import typing
@@ -23,7 +25,7 @@ def ensure(parser: configparser.ConfigParser, section: str) -> None:
         pass
 
 
-class Meta(type):
+class Meta(abc.ABCMeta):
     """Metaclass for parsed config options.
     """
     FIELDS_REF = 'FIELDS'
@@ -39,19 +41,35 @@ class Meta(type):
             """Tweaking base class.
             """
             @classmethod
-            def parse(cls, spec: str, group: str = name) -> typing.Tuple:
+            def parse(cls, ref: str) -> typing.Tuple:
                 """Get config list for pattern based non-repeated option tokens.
                 """
                 result: collections.OrderedDict = collections.OrderedDict()
-                while spec:
-                    match = pattern.match(spec)
+                while ref:
+                    match = pattern.match(ref)
                     if not match:
-                        raise error.Unexpected('Invalid token (%s): "%s"' % (name, spec))
-                    value = cls(group, *(match.groups() or (match.group(),)))
+                        raise error.Unexpected('Invalid token (%s): "%s"' % (name, ref))
+                    value = cls(*(match.groups() or (match.group(),)))
                     if value in result:
-                        raise error.Unexpected('Repeated value (%s): "%s"' % (name, spec))
+                        raise error.Unexpected('Repeated value (%s): "%s"' % (name, ref))
                     result[value] = value
-                    spec = spec[match.end():]
+                    ref = ref[match.end():]
                 return tuple(result)
 
-        return type.__new__(mcs, name, bases or tuple([Base]), namespace)
+            @classmethod
+            @abc.abstractmethod
+            def _default(cls) -> tuple:
+                """Return the default parsing.
+                """
+                raise NotImplementedError(f'No defaults for {name}')
+
+        return super().__new__(mcs, name, bases or tuple([Base]), namespace)
+
+    @property
+    @functools.lru_cache()
+    def default(cls) -> tuple:
+        """Convenience "class" property for the default getter.
+
+        Returns: default instance.
+        """
+        return cls._default()

@@ -10,8 +10,18 @@ import sys
 import typing
 
 from forml import conf, error
+from forml.conf import logging as logmod
 
 LOGGER = logging.getLogger(__name__)
+
+PARSER = argparse.ArgumentParser(add_help=False)
+PARSER.add_argument('-C', '--config', type=argparse.FileType(), help='additional config file')
+COMMON = PARSER.parse_known_args()[0]
+
+CLICFG = getattr(COMMON.config, 'name', None)
+if CLICFG:
+    conf.SRC.extend(conf.PARSER.read(CLICFG))
+    logmod.setup()  # reload logging to reflect new config
 
 
 class Handler:
@@ -116,7 +126,7 @@ class Meta(type):
     CMDKEY = 'command'
 
     def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any], **kwargs):
-        parser = argparse.ArgumentParser(parents=[conf.CLI], add_help=True, **kwargs)
+        parser = argparse.ArgumentParser(parents=[PARSER], add_help=True, **kwargs)
         subparsers = parser.add_subparsers(dest=mcs.CMDKEY, help='program subcommands (-h for individual description)',
                                            required=True)
 

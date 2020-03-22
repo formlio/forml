@@ -9,6 +9,7 @@ import typing
 import uuid
 
 from forml import provider, conf
+from forml.conf import provider as provcfg
 
 if typing.TYPE_CHECKING:
     from forml.project import distribution, product
@@ -30,7 +31,7 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
     return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR.name))
 
 
-class Registry(provider.Interface, default=conf.REGISTRY):
+class Registry(provider.Interface, default=provcfg.Registry.default):
     """Top-level persistent registry abstraction.
     """
     def __init__(self, staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):
@@ -67,6 +68,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
 
         Returns: Projects listing.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def lineages(self, project: 'prjmod.Level.Key') -> typing.Iterable[typing.Union[str, 'lngmod.Level.Key']]:
@@ -77,6 +79,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
 
         Returns: Lineages listing.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def generations(self, project: 'prjmod.Level.Key',
@@ -89,6 +92,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
 
         Returns: Generations listing.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'distribution.Package':
@@ -100,6 +104,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
 
         Returns: Project artifact object.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def push(self, package: 'distribution.Package') -> None:
@@ -108,6 +113,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
         Args:
             package: Distribution package to be persisted.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def read(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key',
@@ -122,6 +128,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
 
         Returns: Serialized state or empty byte-array if there is no such state for given (existing) generation.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def write(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', sid: uuid.UUID, state: bytes) -> None:
@@ -133,6 +140,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
             sid: state id to associate the payload with.
             state: Serialized state to be persisted.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def open(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key',
@@ -146,6 +154,7 @@ class Registry(provider.Interface, default=conf.REGISTRY):
 
         Returns: Generation metadata.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def close(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key',
@@ -158,3 +167,4 @@ class Registry(provider.Interface, default=conf.REGISTRY):
             generation: Generation of the project to store the metadata into.
             tag: Generation metadata to be stored.
         """
+        raise NotImplementedError()
