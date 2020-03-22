@@ -21,7 +21,7 @@ ARTIFACTS = directory.Cache(persistent.Registry.mount)
 class Version(vermod.Version):
     """Custom version type.
     """
-    class Invalid(error.Invalid):
+    class Invalid(error.Invalid, TypeError):
         """Invalid version value.
         """
     def __init__(self, version: typing.Union[str, vermod.Version, 'Version']):
@@ -79,7 +79,7 @@ class Level(directory.Level[Version, int]):
         """
         return self.Listing(int(g) for g in self.registry.generations(self.project.key, self.key))
 
-    def get(self, generation: typing.Optional[int] = None) -> genmod.Level:
+    def get(self, generation: typing.Optional[typing.Union[str, int]] = None) -> genmod.Level:
         """Get a generation instance by its id.
 
         Args:

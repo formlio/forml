@@ -86,7 +86,8 @@ class Assets:
     """
     def __init__(self, project: str = conf.PRJNAME,
                  lineage: typing.Optional[typing.Union[str, 'lngmod.Version']] = None,
-                 generation: typing.Optional[int] = None, registry: typing.Optional['root.Level'] = None):
+                 generation: typing.Optional[typing.Union[str, int]] = None,
+                 registry: typing.Optional['root.Level'] = None):
         if not registry:
             registry = root.Level(persistent.Registry())
         self._generation: 'genmod.Level' = registry.get(project).get(lineage).get(generation)

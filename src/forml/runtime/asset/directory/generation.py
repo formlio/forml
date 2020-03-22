@@ -178,7 +178,7 @@ STATES = directory.Cache(persistent.Registry.read)
 class Level(directory.Level[int, uuid.UUID]):
     """Snapshot of project states in its particular training iteration.
     """
-    def __init__(self, lineage: 'lngmod.Level', key: typing.Optional[int] = None):
+    def __init__(self, lineage: 'lngmod.Level', key: typing.Optional[typing.Union[str, int]] = None):
         if key:
             key = int(key)
         super().__init__(key, parent=lineage)
