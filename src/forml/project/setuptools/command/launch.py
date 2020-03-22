@@ -8,7 +8,8 @@ import typing
 
 from setuptools.command import test
 
-from forml import etl, conf
+from forml import etl
+from forml.conf import provider
 from forml.project import product
 from forml.runtime import process
 
@@ -29,18 +30,14 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """Init options.
         """
         super().initialize_options()
-        self.runner: typing.Optional[conf.Runner] = conf.RUNNER
-        self.engine: typing.Optional[conf.Engine] = conf.ENGINE
+        self.runner: typing.Optional[str] = None
+        self.engine: typing.Optional[str] = None
         self.lower: typing.Optional[str] = None
         self.upper: typing.Optional[str] = None
 
     def finalize_options(self) -> None:
         """Fini options.
         """
-        if isinstance(self.runner, str):
-            self.runner = conf.Runner.parse(self.runner)
-        if isinstance(self.engine, str):
-            self.engine = conf.Engine.parse(self.engine)
 
     @property
     def artifact(self) -> product.Artifact:
@@ -63,10 +60,11 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """This is the original test command entry point - lets override it with our actions.
         """
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        runner = self.artifact.launcher(process.Runner[self.runner.name],
-                                        etl.Engine[self.engine.name](**self.engine.kwargs),
-                                        **self.runner.kwargs)
-        result = self.launch(runner, lower=self.lower, upper=self.upper)
+        engine = provider.Engine.parse(self.engine)
+        runner = provider.Runner.parse(self.runner)
+        launcher = self.artifact.launcher(process.Runner[runner.name], etl.Engine[engine.name](**engine.kwargs),
+                                          **runner.kwargs)
+        result = self.launch(launcher, lower=self.lower, upper=self.upper)
         if result is not None:
             print(result)
 

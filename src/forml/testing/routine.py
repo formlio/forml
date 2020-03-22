@@ -9,15 +9,16 @@ import typing
 import unittest
 import uuid
 
-from forml import conf, etl
+from forml import etl
+from forml.conf import provider as provcfg
 from forml.etl import expression
 from forml.flow import task
+from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology
 from forml.runtime import process
 from forml.stdlib.operator import simple
 from forml.testing import spec
-from forml.flow.graph import node as nodemod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,11 +70,13 @@ class Runner:
                 self._gids.add(node.gid)
                 node.spec()
 
-    def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: typing.Optional[str]):
+    def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input,
+                 runner: provcfg.Runner, engine: provcfg.Engine):
         self._params: spec.Scenario.Params = params
         self._source: etl.Source = etl.Extract(expression.Select(lambda: (scenario.train, scenario.label)),
                                                expression.Select(lambda: scenario.apply)) >> Runner.Extractor()
-        self._runner: typing.Optional[str] = runner
+        self._runner: provcfg.Runner = runner
+        self._engine: provcfg.Engine = engine
 
     def __call__(self, operator: typing.Type[topology.Operator]) -> process.Runner:
         instance = operator(*self._params.args, **self._params.kwargs)
@@ -82,7 +85,8 @@ class Runner:
         segment.apply.accept(initializer)
         segment.train.accept(initializer)
         segment.label.accept(initializer)
-        return self._source.bind(instance).launcher[self._runner]
+        engine = etl.Engine[self._engine.name](**self._engine.kwargs)
+        return self._source.bind(instance).launcher(process.Runner[self._runner.name], engine, **self._runner.kwargs)
 
 
 class Test:
@@ -242,9 +246,10 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine.
     """
-    def __init__(self, name: str, scenario: spec.Scenario, runner: typing.Optional[str] = conf.TESTING_RUNNER.name):
+    def __init__(self, name: str, scenario: spec.Scenario, runner: provcfg.Runner = provcfg.Testing.Runner.default,
+                 engine: provcfg.Engine = provcfg.Testing.Engine.default):
         self._name: str = name
-        runner = Runner(scenario.params, scenario.input, runner)
+        runner = Runner(scenario.params, scenario.input, runner, engine)
         self._test: Test = self.select(scenario, runner)
 
     @staticmethod

@@ -21,13 +21,10 @@ class TestMeta:
             """
             FIELDS = 'foo'
 
-            def __new__(cls, group, field):
-                return super().__new__(cls, f'{group}:{field}')
-
         # pylint: disable=no-member
         assert Simple.parse('') == ()
-        assert Simple.parse('bar')[0].foo == 'Simple:bar'
-        assert [s.foo for s in Simple.parse('bar, baz', 'foo')] == ['foo:bar', 'foo:baz']
+        assert Simple.parse('bar')[0].foo == 'bar'
+        assert [s.foo for s in Simple.parse('bar, baz')] == ['bar', 'baz']
         with pytest.raises(error.Unexpected):
             Simple.parse(',bar')
         with pytest.raises(error.Unexpected):
@@ -42,12 +39,9 @@ class TestMeta:
             PATTERN = r'\s*(\w+)(?:\[(.*?)\])?\s*(?:,|$)'
             FIELDS = 'foo, bar'
 
-            def __new__(cls, group, field, params):
-                return super().__new__(cls, f'{group}:{field}', params)
-
         # pylint: disable=no-member
-        assert Complex.parse('baz')[0] == ('Complex:baz', None)
-        assert [(s.foo, s.bar) for s in Complex.parse('baz[a, b]')] == [('Complex:baz', 'a, b')]
-        assert Complex.parse('baz[a, b], boo[c]') == (('Complex:baz', 'a, b'), ('Complex:boo', 'c'))
+        assert Complex.parse('baz')[0] == ('baz', None)
+        assert [(s.foo, s.bar) for s in Complex.parse('baz[a, b]')] == [('baz', 'a, b')]
+        assert Complex.parse('baz[a, b], boo[c]') == (('baz', 'a, b'), ('boo', 'c'))
         with pytest.raises(error.Unexpected):
             Complex.parse(',baz[a, b]')

@@ -9,6 +9,7 @@ import typing
 from collections import abc
 
 from forml import conf, etl, error
+from forml.conf import provider as provcfg
 from forml.flow.pipeline import topology
 from forml.project import component as compmod, distribution, importer
 from forml.runtime import process
@@ -114,18 +115,20 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
             Returns: Engine instance.
             """
-            return etl.Engine[conf.ENGINE.name](**conf.ENGINE.kwargs)
+            config = provcfg.Engine.default
+            return etl.Engine[config.name](**config.kwargs)
 
         def __call__(self, runner: typing.Type['process.Runner'],
                      engine: typing.Optional['etl.Engine'] = None, **kwargs: typing.Any) -> 'process.Runner':
             return runner(self._assets, engine, **kwargs)
 
         def __getitem__(self, runner: str) -> 'process.Runner':
-            config = conf.Runner.parse(runner)
+            config = provcfg.Runner.parse(runner)
             return process.Runner[config.name](self._assets, self._engine, **config.kwargs)
 
         def __getattr__(self, mode: str) -> typing.Callable:
-            return getattr(process.Runner[conf.RUNNER.name](self._assets, self._engine, **conf.RUNNER.kwargs), mode)
+            config = provcfg.Runner.default
+            return getattr(process.Runner[config.name](self._assets, self._engine, **config.kwargs), mode)
 
     def __new__(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
                 package: typing.Optional[str] = None, **modules: typing.Any):

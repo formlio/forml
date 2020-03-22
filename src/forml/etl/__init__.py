@@ -5,7 +5,8 @@ import abc
 import collections
 import typing
 
-from forml import provider, conf
+from forml import provider
+from forml.conf import provider as provcfg
 from forml.etl import expression
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
@@ -46,7 +47,7 @@ class Source(collections.namedtuple('Source', 'extract, transform')):
         return product.Artifact(source=self, pipeline=pipeline, **modules)
 
 
-class Engine(provider.Interface, default=conf.ENGINE):
+class Engine(provider.Interface, default=provcfg.Engine.default):
     """ETL engine is the implementation of a specific datasource access layer.
     """
     def load(self, source: Source, lower: typing.Optional[OrdinalT] = None,

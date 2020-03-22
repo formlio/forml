@@ -4,12 +4,13 @@ Custom setuptools commands distribution publishing.
 import typing
 
 import setuptools
-from forml.runtime.asset.directory import root
 
-from forml import error, conf
+from forml import error
+from forml.conf import provider as provcfg
 from forml.project import distribution
 from forml.project.setuptools.command import bdist
 from forml.runtime.asset import persistent
+from forml.runtime.asset.directory import root
 
 
 class Registry(setuptools.Command):
@@ -24,13 +25,11 @@ class Registry(setuptools.Command):
     def initialize_options(self) -> None:
         """Init options.
         """
-        self.registry: typing.Optional[conf.Registry] = conf.REGISTRY
+        self.registry: typing.Optional[str] = None
 
     def finalize_options(self) -> None:
         """Fini options.
         """
-        if isinstance(self.registry, str):
-            self.registry = conf.Registry.parse(self.registry)
 
     def run(self) -> None:
         """Trigger the deployment process.
@@ -40,5 +39,6 @@ class Registry(setuptools.Command):
             raise error.Invalid('Must create and upload files in one command '
                                 f'(e.g. setup.py {bdist.Package.COMMAND} upload)')
         project = self.distribution.get_name()
+        registry = provcfg.Registry.parse(self.registry)
         for pkg in packages:
-            root.Level(persistent.Registry[self.registry.name](**self.registry.kwargs)).get(project).put(pkg)
+            root.Level(persistent.Registry[registry.name](**registry.kwargs)).get(project).put(pkg)

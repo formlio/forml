@@ -2,25 +2,23 @@
 ForML config unit tests.
 """
 # pylint: disable=protected-access,no-self-use
+import pathlib
+import types
 
 
-class TestConf:
-    """Conf unit tests.
+def test_exists(cfg_file: pathlib.Path):
+    """Test the config file exists.
     """
-    def test_registry(self, conf):
-        """Test the registry config field.
-        """
-        provider = conf.REGISTRY
-        assert provider.name == 'filesystem'
+    assert cfg_file.is_file()
 
-    def test_engine(self, conf):
-        """Test the engine config field.
-        """
-        provider = conf.ENGINE
-        assert provider.name == 'devio'
 
-    def test_runner(self, conf):
-        """Test the runner config field.
-        """
-        provider = conf.RUNNER
-        assert provider.name == 'dask'
+def test_src(conf: types.ModuleType, cfg_file: pathlib.Path):
+    """Test the registry config field.
+    """
+    assert set(conf.SRC) == {str(cfg_file)}
+
+
+def test_logcfg(conf: types.ModuleType):
+    """Test the LOGCFG value matches the test config.ini
+    """
+    assert conf.LOGCFG == '/dev/null'
