@@ -32,7 +32,6 @@ USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() /
 PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
 TMPDIR = pathlib.Path(tempfile.gettempdir())
 APPCFG = 'config.ini'
-LOGCFG = 'logging.ini'
 
 SECTION_DEFAULT = 'DEFAULT'
 SECTION_REGISTRY = 'REGISTRY'
@@ -40,7 +39,7 @@ SECTION_ENGINE = 'ENGINE'
 SECTION_RUNNER = 'RUNNER'
 SECTION_STAGING = 'STAGING'
 SECTION_TESTING = 'TESTING'
-OPT_LOGCFG = 'log_cfgfile'
+OPT_LOGCFG = 'logcfg'
 OPT_PROVIDER = 'provider'
 OPT_REGISTRY = 'registry'
 OPT_ENGINE = 'engine'
