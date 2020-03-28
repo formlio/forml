@@ -4,6 +4,8 @@ Common fixtures.
 import configparser
 import importlib
 import pathlib
+import sys
+import types
 import typing
 from unittest import mock
 
@@ -18,7 +20,7 @@ def cfg_file() -> pathlib.Path:
 
 
 @pytest.fixture(scope='session')
-def conf(cfg_file: pathlib.Path):
+def conf(cfg_file: pathlib.Path) -> types.ModuleType:
     """Fixture for the forml.conf module.
     """
     class ConfigParser(configparser.ConfigParser):
@@ -33,7 +35,9 @@ def conf(cfg_file: pathlib.Path):
             """
             return [str(cfg_file)]
 
+    # pylint: disable=import-outside-toplevel
     with mock.patch('forml.conf.configparser.ConfigParser', return_value=ConfigParser()):
-        from forml import conf  # pylint: disable=import-outside-toplevel
+        from forml import conf
         importlib.reload(conf)
-        return conf
+    del sys.modules[conf.__name__]
+    return conf

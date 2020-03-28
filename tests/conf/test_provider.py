@@ -24,7 +24,9 @@ class Section(metaclass=abc.ABCMeta):
     def test_default(self, conf: types.ModuleType, provider: typing.Type[provcfg.Section]):
         """Default provider config test.
         """
-        assert provider.parse(conf.get(provider.SUBJECT, provider.SELECTOR)) == provider.default
+        key = conf.get(provider.SUBJECT, provider.SELECTOR)
+        name = conf.get(conf.OPT_PROVIDER, f'{provider.SUBJECT.upper()}:{key}')
+        assert provider.parse(key).name == name
 
 
 class TestRegistry(Section):

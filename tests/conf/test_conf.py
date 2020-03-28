@@ -18,7 +18,7 @@ def test_src(conf: types.ModuleType, cfg_file: pathlib.Path):
     assert set(conf.SRC) == {str(cfg_file)}
 
 
-def test_logcfg(conf: types.ModuleType):
-    """Test the LOGCFG value matches the test config.ini
+def test_get(conf: types.ModuleType):
+    """Test the get value matches the test config.ini
     """
-    assert conf.get(conf.OPT_LOGCFG) == '/dev/null'
+    assert conf.get('foobar') == 'baz'
