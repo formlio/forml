@@ -7,13 +7,26 @@ import typing
 
 from forml import provider
 from forml.conf import provider as provcfg
-from forml.etl import expression
+from forml.etl import expression, schema
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.project import product
 from forml.stdlib import operator
 
 OrdinalT = typing.TypeVar('OrdinalT')
+
+
+class Field(collections.namedtuple('Field', 'kind, name')):
+    """Schema field class.
+    """
+    def __new__(cls, kind: ..., name: typing.Optional[str] = None):
+        return super().__new__(cls, kind, name)
+
+
+class Schema(metaclass=schema.Table):  # pylint: disable=invalid-metaclass
+    """Base class for table schema definitions. Note the meta class is actually going to turn it into an instance
+    of statement.Table.
+    """
 
 
 class Extract(collections.namedtuple('Extract', 'train, apply')):
