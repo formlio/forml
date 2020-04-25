@@ -4,7 +4,6 @@ Flow actor abstraction.
 
 import abc
 import collections
-import inspect
 import io
 import logging
 import pickle
@@ -89,10 +88,10 @@ class Actor(metaclass=abc.ABCMeta):
     def get_params(self) -> typing.Mapping[str, typing.Any]:
         """Get hyper-parameters of this actor.
 
-        Default implementation is poor-mans init inspection and is expected to be overridden if not suitable.
+        Returns: Dictionary of the name-value of the hyperparameters. All of the returned parameters must be acceptable
+        by the companion set_params.
         """
-        return {p.name: p.default for p in inspect.signature(self.__class__).parameters.values() if
-                p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD and p.default is not inspect.Parameter.empty}
+        return {}
 
     def set_params(self, **params: typing.Any) -> None:
         """Set hyper-parameters of this actor.
