@@ -47,7 +47,7 @@ class Visitor(metaclass=abc.ABCMeta):
         """
         self.visit_column(field)
 
-    def visit_lieral(self, literal: 'Literal') -> None:
+    def visit_literal(self, literal: 'Literal') -> None:
         """Generic literal hook.
 
         Args:
@@ -196,6 +196,8 @@ class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
 
 
 class Literal(collections.namedtuple('Literal', 'value, kind'), Column):
+    """Literal value.
+    """
     @property
     def name(self) -> None:
         """Literal has no name without an explicit aliasing.
