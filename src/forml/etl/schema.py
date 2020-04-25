@@ -7,6 +7,8 @@ import operator
 
 import typing
 
+from forml.etl import kind as kindmod
+
 if typing.TYPE_CHECKING:
     from forml import etl  # pylint: disable=unused-import; # noqa: F401
 
@@ -36,17 +38,33 @@ class Visitor(metaclass=abc.ABCMeta):
             column: Column instance to be visited.
         """
 
+    def visit_field(self, field: 'Field') -> None:
+        """Generic expression hook.
+
+        Args:
+            field: Field instance to be visited.
+        """
+        self.visit_column(field)
+
+    def visit_expression(self, expression: 'Expression') -> None:
+        """Generic expression hook.
+
+        Args:
+            expression: Expression instance to be visited.
+        """
+        self.visit_column(expression)
+
 
 class Source(metaclass=abc.ABCMeta):
     """Source base class.
     """
+    @abc.abstractmethod
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:
             visitor: Visitor instance.
         """
-        visitor.visit_source(self)
 
 
 class Table(tuple, Source):
@@ -73,7 +91,6 @@ class Table(tuple, Source):
         return Field(self.__schema__, field.name or name, field.kind)
 
     def accept(self, visitor: Visitor) -> None:
-        super().accept(visitor)
         visitor.visit_table(self)
 
 
@@ -96,13 +113,13 @@ class Column(metaclass=abc.ABCMeta):
         Returns: type.
         """
 
+    @abc.abstractmethod
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:
             visitor: Visitor instance.
         """
-        visitor.visit_column(self)
 
     def alias(self, alias: str) -> 'Aliased':
         """Use an alias for this column.
@@ -114,7 +131,7 @@ class Column(metaclass=abc.ABCMeta):
         """
         return Aliased(self, alias)
 
-    def __gt__(self, other: typing.Union['Column', int, float, str]) -> 'Condition':
+    def __gt__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
         ...
 
     def __add__(self, other: typing.Union['Column', int, float]) -> 'Expression':
@@ -145,19 +162,45 @@ class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
         """
         return self.column.kind
 
+    def accept(self, visitor: Visitor) -> None:
+        """Visitor acceptor.
+
+        Args:
+            visitor: Visitor instance.
+        """
+        self.column.accept(visitor)
+
 
 class Field(collections.namedtuple('Field', 'schema, name, kind'), Column):
     """Schema field class bound to its table schema.
     """
-    def __new__(cls, schema: typing.Type['etl.Schema'], name: str, kind: ...):
+    def __new__(cls, schema: typing.Type['etl.Schema'], name: str, kind: kindmod.Data):
         return super().__new__(cls, schema, name, kind)
 
+    def accept(self, visitor: Visitor) -> None:
+        """Visitor acceptor.
 
-class Expression(Column):  # pylint: disable=abstract-method
+        Args:
+            visitor: Visitor instance.
+        """
+        visitor.visit_field(self)
+
+
+class Expression(tuple, Column, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
+    def __new__(cls, *terms: Column):
+        return super().__new__(cls, terms)
 
+    @property
+    def name(self) -> None:
+        """Expression has no name without an explicit aliasing.
 
-class Condition(Expression):  # pylint: disable=abstract-method
-    """Condition is a boolean expression.
-    """
+        Returns: None.
+        """
+        return None
+
+    def accept(self, visitor: Visitor) -> None:
+        for term in self:
+            term.accept(visitor)
+        visitor.visit_expression(self)
