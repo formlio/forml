@@ -4,31 +4,25 @@ import abc
 import typing
 
 
-class Singleton(abc.ABCMeta):
+class Meta(abc.ABCMeta):
     """Metaclass for singleton types.
     """
     def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
-        def singleton(old: typing.Optional[typing.Callable]) -> typing.Callable:  # pylint: disable=unused-argument
-            instance = None
+        instance = None
 
-            def new(cls, *args, **kwargs) -> typing.Type:
-                """Injected class new method ensuring singletons are only created.
-                """
-                nonlocal instance
-                nonlocal old
-                if not instance:
-                    if not old:
-                        old = super(cls, cls).__new__
-                    instance = old(cls, *args, **kwargs)
-                elif not isinstance(instance, cls):  # subclass calling parent new
-                    return old(cls, *args, **kwargs)
-                return instance
-            return new
-        namespace['__new__'] = singleton(namespace.get('__new__'))
+        def new(cls: typing.Type['Data']) -> 'Data':
+            """Injected class new method ensuring singletons are only created.
+            """
+            nonlocal instance
+            if not instance:
+                instance = object.__new__(cls)
+            return instance
+
+        namespace['__new__'] = new
         return super().__new__(mcs, name, bases, namespace)
 
 
-class Data(metaclass=Singleton):
+class Data(metaclass=Meta):
     """Type base class.
     """
     def __eq__(self, other):
@@ -49,24 +43,16 @@ class Data(metaclass=Singleton):
 class Primitive(Data):
     """Primitive data type base class.
     """
-    def __gt__(self, other: 'Primitive') -> 'Logical':
-        ...
 
 
-class Logical(Primitive):
-    """Logical data type base class.
+class Boolean(Primitive):
+    """Boolean data type class.
     """
-
-    def __and__(self, other):
-        ...
 
 
 class Numeric(Primitive):
     """Numeric data type base class.
     """
-
-    def __add__(self, other):
-        ...
 
 
 class Integer(Numeric):
@@ -81,11 +67,6 @@ class Float(Numeric):
 
 class Decimal(Numeric):
     """Decimal data type class.
-    """
-
-
-class Boolean(Logical):
-    """Boolean data type class.
     """
 
 

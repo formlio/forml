@@ -21,7 +21,7 @@ class Type(int):
         return other.__class__ is self.__class__ and int.__eq__(self, other)
 
 
-class Singleton(type):
+class Meta(type):
     """Metaclass for singleton types.
     """
     def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
@@ -33,19 +33,19 @@ class Singleton(type):
             """
             nonlocal instance
             if instance is None:
-                instance = super(cls, cls).__new__(cls, value)  # pylint: disable=bad-super-call
+                instance = bases[0].__new__(cls, value)
             return instance
         namespace['__new__'] = new
         return super().__new__(mcs, name, bases, namespace)
 
 
-class Train(Type, metaclass=Singleton):
+class Train(Type, metaclass=Meta):
     """Train input port.
     """
     VALUE = 0
 
 
-class Label(Type, metaclass=Singleton):
+class Label(Type, metaclass=Meta):
     """Label input port.
     """
     VALUE = 1

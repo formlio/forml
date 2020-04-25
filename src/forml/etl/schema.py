@@ -8,6 +8,7 @@ import operator
 import typing
 
 from forml.etl import kind as kindmod
+from forml.etl.expression.symbol import comparison
 
 if typing.TYPE_CHECKING:
     from forml import etl  # pylint: disable=unused-import; # noqa: F401
@@ -45,6 +46,14 @@ class Visitor(metaclass=abc.ABCMeta):
             field: Field instance to be visited.
         """
         self.visit_column(field)
+
+    def visit_lieral(self, literal: 'Literal') -> None:
+        """Generic literal hook.
+
+        Args:
+            literal: Literal instance to be visited.
+        """
+        self.visit_column(literal)
 
     def visit_expression(self, expression: 'Expression') -> None:
         """Generic expression hook.
@@ -131,8 +140,23 @@ class Column(metaclass=abc.ABCMeta):
         """
         return Aliased(self, alias)
 
+    def __lt__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
+        return comparison.LessThan(self, other)
+
+    def __le__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
+        return comparison.LessEqual(self, other)
+
     def __gt__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
-        ...
+        return comparison.GreaterThan(self, other)
+
+    def __ge__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
+        return comparison.GreaterEqual(self, other)
+
+    def __eq__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
+        return comparison.Equal(self, other)
+
+    def __ne__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
+        return comparison.NotEqual(self, other)
 
     def __add__(self, other: typing.Union['Column', int, float]) -> 'Expression':
         ...
@@ -169,6 +193,24 @@ class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
             visitor: Visitor instance.
         """
         self.column.accept(visitor)
+
+
+class Literal(collections.namedtuple('Literal', 'value, kind'), Column):
+    @property
+    def name(self) -> None:
+        """Literal has no name without an explicit aliasing.
+
+        Returns: None.
+        """
+        return None
+
+    def accept(self, visitor: Visitor) -> None:
+        """Visitor acceptor.
+
+        Args:
+            visitor: Visitor instance.
+        """
+        visitor.visit_literal(self)
 
 
 class Field(collections.namedtuple('Field', 'schema, name, kind'), Column):

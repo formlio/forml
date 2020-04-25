@@ -3,6 +3,8 @@ ETL expression language.
 """
 import typing
 
+from forml.etl.expression.symbol.comparison import *  # noqa: F401,F403
+
 
 class Select:
     """ForML ETL select statement.
