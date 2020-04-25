@@ -6,7 +6,7 @@ import collections
 import enum
 import typing
 
-from forml.etl import schema as schemamod
+from forml.etl import schema as schemamod, kind
 
 if typing.TYPE_CHECKING:
     pass
@@ -15,13 +15,6 @@ if typing.TYPE_CHECKING:
 class Visitor(schemamod.Visitor, metaclass=abc.ABCMeta):
     """Statement visitor.
     """
-    def visit_source(self, source: 'schemamod.Source') -> None:
-        """Generic source hook.
-
-        Args:
-            source: schemamod.Source instance to be visited.
-        """
-
     def visit_join(self, source: 'Join') -> None:
         """Generic source hook.
 
@@ -47,6 +40,15 @@ class Visitor(schemamod.Visitor, metaclass=abc.ABCMeta):
         self.visit_source(source)
 
 
+class Condition(collections.namedtuple('Condition', 'expression')):
+    """Special type to wrap boolean expressions that can be used as conditions.
+    """
+    def __new__(cls, expression: schemamod.Expression):
+        if not isinstance(expression.kind, kind.Boolean):
+            raise ValueError(f'{expression.kind} expression cannot be used as a condition')
+        return super().__new__(cls, expression)
+
+
 class Join(collections.namedtuple('Join', 'left, right, condition, kind'), schemamod.Source):
     """Source made of two join-combined subsources.
     """
@@ -60,15 +62,14 @@ class Join(collections.namedtuple('Join', 'left, right, condition, kind'), schem
         FULL = 'full'
         CROSS = 'cross'
 
-    def __new__(cls, left: schemamod.Source, right: schemamod.Source, condition: schemamod.Condition,
+    def __new__(cls, left: schemamod.Source, right: schemamod.Source, condition: schemamod.Expression,
                 kind: 'Join.Kind' = Kind.LEFT):
-        return super().__new__(cls, left, right, condition, kind)
+        return super().__new__(cls, left, right, Condition(condition), kind)
 
     def accept(self, visitor: Visitor) -> None:
         self.left.accept(visitor)
-        super().accept(visitor)
-        visitor.visit_join(self)
         self.right.accept(visitor)
+        visitor.visit_join(self)
 
 
 class Set(collections.namedtuple('Set', 'left, right, kind'), schemamod.Source):
@@ -87,16 +88,17 @@ class Set(collections.namedtuple('Set', 'left, right, kind'), schemamod.Source):
 
     def accept(self, visitor: Visitor) -> None:
         self.left.accept(visitor)
-        super().accept(visitor)
-        visitor.visit_set(self)
         self.right.accept(visitor)
+        visitor.visit_set(self)
 
 
 class Aggregation(collections.namedtuple('Aggregation', 'columns, condition')):
     """GroupBy spec.
     """
     def __new__(cls, columns: typing.Iterable[schemamod.Column],
-                condition: typing.Optional[schemamod.Condition] = None):
+                condition: typing.Optional[schemamod.Expression] = None):
+        if condition:
+            condition = Condition(condition)
         return super().__new__(cls, tuple(columns), condition)
 
 
@@ -126,14 +128,15 @@ class Query(collections.namedtuple('Query', 'source, columns, condition, aggrega
     """Generic source descriptor.
     """
     def __new__(cls, source: 'schemamod.Source', columns: typing.Optional[typing.Sequence[schemamod.Column]] = None,
-                condition: typing.Optional[schemamod.Condition] = None,
+                condition: typing.Optional[schemamod.Expression] = None,
                 aggregation: typing.Optional[Aggregation] = None, ordering: typing.Optional[schemamod.Column] = None,
                 rows: typing.Optional[Rows] = None):
+        if condition:
+            condition = Condition(condition)
         return super().__new__(cls, source, tuple(columns or []), condition, aggregation, ordering, rows)
 
     def accept(self, visitor: Visitor) -> None:
         self.source.accept(visitor)
-        super().accept(visitor)
         visitor.visit_query(self)
 
     def select(self, columns: typing.Sequence[schemamod.Column]) -> 'Query':
@@ -141,12 +144,12 @@ class Query(collections.namedtuple('Query', 'source, columns, condition, aggrega
         """
         return Query(self.source, columns, self.condition, self.aggregation, self.ordering, self.rows)
 
-    def filter(self, condition: schemamod.Condition) -> 'Query':
+    def filter(self, condition: schemamod.Expression) -> 'Query':
         """Add a row filtering condition.
         """
-        return Query(self.source, self.columns, condition, self.aggregation, self.ordering, self.rows)
+        return Query(self.source, self.columns, Condition(condition), self.aggregation, self.ordering, self.rows)
 
-    def join(self, other: schemamod.Source, condition: schemamod.Condition,
+    def join(self, other: schemamod.Source, condition: schemamod.Expression,
              kind: Join.Kind = Join.Kind.LEFT) -> 'Query':
         """Join with other source.
         """
@@ -154,7 +157,7 @@ class Query(collections.namedtuple('Query', 'source, columns, condition, aggrega
                      self.ordering, self.rows)
 
     def groupby(self, columns: typing.Iterable[schemamod.Column],
-                condition: typing.Optional[schemamod.Condition] = None) -> 'Query':
+                condition: typing.Optional[schemamod.Expression] = None) -> 'Query':
         """Aggregating spec.
         """
         return Query(self.source, self.columns, self.condition, Aggregation(columns, condition), self.ordering,
