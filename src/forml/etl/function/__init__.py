@@ -3,7 +3,7 @@ ETL expression language.
 """
 import typing
 
-from forml.etl.schema import (  # noqa: F401
+from forml.etl.schema.series import (  # noqa: F401
     LessThan, LessEqual, GreaterThan, GreaterEqual, Equal, NotEqual, IsNull, NotNull, And, Or, Not)
 from forml.etl.function.conversion import (  # noqa: F401
     Cast)

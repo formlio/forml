@@ -3,7 +3,7 @@ Statement tests.
 """
 import pytest
 
-from forml.etl import schema
+from forml.etl.schema import frame
 
 
 class TestQuery:
@@ -11,6 +11,6 @@ class TestQuery:
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def source(school: schema.Table, student: schema.Table) -> schema.Source:
+    def source(school: frame.Table, student: frame.Table) -> frame.Source:
         """Source fixture.
         """
