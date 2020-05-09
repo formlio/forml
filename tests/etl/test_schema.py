@@ -14,13 +14,13 @@ from forml.etl import schema
 class TestTable:
     """Table unit tests.
     """
-    def test_fields(self, table: schema.Table):
+    def test_fields(self, student: schema.Table):
         """Fields getter tests.
         """
-        assert table.field1.name == 'field1'
-        assert table.field2.name == 'baz'
+        assert student.dob.name == 'birthday'
+        assert student.score.name == 'score'
         with pytest.raises(AttributeError):
-            _ = table.xyz
+            _ = student.xyz
 
 
 class Column(metaclass=abc.ABCMeta):
@@ -80,7 +80,7 @@ class TestField(Column):
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def column(table: schema.Table) -> schema.Field:
+    def column(student: schema.Table) -> schema.Field:
         """Field fixture.
         """
-        return table.field1
+        return student.surname
