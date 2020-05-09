@@ -161,7 +161,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
 
         Returns: Tag instance.
         """
-        meta = json.loads(raw, encoding='utf-8')
+        meta = json.loads(raw.decode('utf-8'))
         return cls(training=cls.Training(timestamp=cls._strptime(meta['training']['timestamp']),
                                          ordinal=meta['training']['ordinal']),
                    tuning=cls.Tuning(timestamp=cls._strptime(meta['tuning']['timestamp']),

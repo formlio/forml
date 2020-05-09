@@ -7,6 +7,7 @@ import decimal
 import functools
 import operator
 import typing
+from collections import abc as colabc
 
 
 class Meta(abc.ABCMeta):
@@ -173,9 +174,9 @@ def reflect(value: typing.Any) -> Data:
     if isinstance(value, datetime.date):
         return Date()
     if value:
-        if isinstance(value, collections.Sequence):
+        if isinstance(value, colabc.Sequence):
             return Array(reflect(value[0]))
-        if isinstance(value, collections.Mapping):
+        if isinstance(value, colabc.Mapping):
             keys = tuple(value.keys())
             vals = tuple(value.values())
             if same(keys):
