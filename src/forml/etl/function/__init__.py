@@ -3,7 +3,8 @@ ETL expression language.
 """
 import typing
 
-from forml.etl.expression.symbol.comparison import *  # noqa: F401,F403
+from forml.etl.schema import (  # noqa: F401
+    LessThan, LessEqual, GreaterThan, GreaterEqual, Equal, NotEqual, IsNull, NotNull, And, Or, Not)
 
 
 class Select:

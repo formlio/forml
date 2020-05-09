@@ -85,7 +85,7 @@ class Actor(metaclass=abc.ABCMeta):
         Returns: Transformed features (ie predictions).
         """
 
-    def get_params(self) -> typing.Mapping[str, typing.Any]:
+    def get_params(self) -> typing.Mapping[str, typing.Any]:  # pylint: disable=no-self-use
         """Get hyper-parameters of this actor.
 
         Returns: Dictionary of the name-value of the hyperparameters. All of the returned parameters must be acceptable

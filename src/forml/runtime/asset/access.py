@@ -76,7 +76,7 @@ class State:
             states: Generation state IDs.
         """
         LOGGER.debug('Committing %d states %s', len(states), states)
-        assert len(states) == len(self._nodes), f'Committed number of states not matching the number of nodes'
+        assert len(states) == len(self._nodes), 'Committed number of states not matching the number of nodes'
         tag = self._tag or self._generation.tag
         self._generation = self._generation.lineage.put(tag.replace(states=states))
 

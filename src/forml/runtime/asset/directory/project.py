@@ -58,7 +58,7 @@ class Level(directory.Level):
             LOGGER.debug('No previous lineage for %s-%s', project, lineage)
         else:
             if project != self.key:
-                raise error.Invalid(f'Project key mismatch')
+                raise error.Invalid('Project key mismatch')
             if not lineage > previous:
                 raise directory.Level.Invalid(f'{project}-{lineage} not an increment from existing {previous}')
         self.registry.push(package)

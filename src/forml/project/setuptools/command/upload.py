@@ -41,4 +41,5 @@ class Registry(setuptools.Command):
         project = self.distribution.get_name()
         registry = provcfg.Registry.parse(self.registry)
         for pkg in packages:
+            # pylint: disable=no-member
             root.Level(persistent.Registry[registry.name](**registry.kwargs)).get(project).put(pkg)

@@ -27,7 +27,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Command(help='show the content of the selected registry', description='Persistent registry listing')
     @cli.Param('project', nargs='?', help='project to be listed')
     @cli.Param('lineage', nargs='?', help='lineage to be listed')
-    @cli.Param('-P', '--registry', type=str, help=f'persistent registry reference')
+    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
     def list(cls, project: typing.Optional[str], lineage: typing.Optional[str], registry: typing.Optional[str]) -> None:
         """Repository listing subcommand.
 
@@ -73,9 +73,9 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('project', help='project to be tuned')
     @cli.Param('lineage', nargs='?', help='lineage to be tuned')
     @cli.Param('generation', nargs='?', help='generation to be tuned')
-    @cli.Param('-P', '--registry', type=str, help=f'persistent registry reference')
-    @cli.Param('-R', '--runner', type=str, help=f'runtime runner reference')
-    @cli.Param('-E', '--engine', type=str, help=f'IO engine reference')
+    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @cli.Param('-E', '--engine', type=str, help='IO engine reference')
     @cli.Param('--lower', help='lower tuneset ordinal')
     @cli.Param('--upper', help='upper tuneset ordinal')
     def tune(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
@@ -99,9 +99,9 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('project', help='project to be trained')
     @cli.Param('lineage', nargs='?', help='lineage to be trained')
     @cli.Param('generation', nargs='?', help='generation to be trained')
-    @cli.Param('-P', '--registry', type=str, help=f'persistent registry reference')
-    @cli.Param('-R', '--runner', type=str, help=f'runtime runner reference')
-    @cli.Param('-E', '--engine', type=str, help=f'IO engine reference')
+    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @cli.Param('-E', '--engine', type=str, help='IO engine reference')
     @cli.Param('--lower', help='lower trainset ordinal')
     @cli.Param('--upper', help='upper trainset ordinal')
     def train(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
@@ -127,9 +127,9 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('project', help='project to be applied')
     @cli.Param('lineage', nargs='?', help='lineage to be applied')
     @cli.Param('generation', nargs='?', help='generation to be applied')
-    @cli.Param('-P', '--registry', type=str, help=f'persistent registry reference')
-    @cli.Param('-R', '--runner', type=str, help=f'runtime runner reference')
-    @cli.Param('-E', '--engine', type=str, help=f'IO engine reference')
+    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @cli.Param('-E', '--engine', type=str, help='IO engine reference')
     @cli.Param('--lower', help='lower testset ordinal')
     @cli.Param('--upper', help='upper testset ordinal')
     def apply(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],

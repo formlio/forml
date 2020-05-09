@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn import ensemble, linear_model, impute, preprocessing, feature_extraction, naive_bayes
 
 from forml import etl
-from forml.etl import expression
+from forml.etl import function
 from forml.flow import task
 from forml.stdlib.actor import wrapped
 from forml.stdlib.operator import simple
@@ -62,6 +62,6 @@ def testset(**_) -> pd.DataFrame:
     return pd.DataFrame({'Age': [10, 11, 12, 13, 14, 15]})
 
 
-TRAIN = expression.Select(trainset)
-TEST = expression.Select(trainset)
+TRAIN = function.Select(trainset)
+TEST = function.Select(trainset)
 SOURCE = etl.Extract(TRAIN, TEST) >> cleaner() >> Extractor(column='Survived')

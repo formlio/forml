@@ -10,14 +10,14 @@ created just for structuring the project code base splitting it into these parti
 """
 
 from forml import etl
-from forml.etl import expression
+from forml.etl import function
 from forml.project import component
 
 from titanic.source import producer, label
 
 
-TRAIN = expression.Select(producer.trainset)
-PREDICT = expression.Select(producer.testset)
+TRAIN = function.Select(producer.trainset)
+PREDICT = function.Select(producer.testset)
 
 ETL = etl.Extract(TRAIN, PREDICT) >> label.Extractor(column='Survived')
 component.setup(ETL)

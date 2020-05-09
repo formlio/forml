@@ -116,7 +116,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             Returns: Engine instance.
             """
             config = provcfg.Engine.default
-            return etl.Engine[config.name](**config.kwargs)
+            return etl.Engine[config.name](**config.kwargs)   # pylint: disable=no-member
 
         def __call__(self, runner: typing.Type['process.Runner'],
                      engine: typing.Optional['etl.Engine'] = None, **kwargs: typing.Any) -> 'process.Runner':
@@ -128,6 +128,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
         def __getattr__(self, mode: str) -> typing.Callable:
             config = provcfg.Runner.default
+            # pylint: disable=no-member
             return getattr(process.Runner[config.name](self._assets, self._engine, **config.kwargs), mode)
 
     def __new__(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None,

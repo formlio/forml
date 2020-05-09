@@ -3,15 +3,18 @@ ETL schema types.
 """
 import abc
 import collections
+import functools
+import logging
 import operator
-
 import typing
 
 from forml.etl import kind as kindmod
-from forml.etl.expression.symbol import comparison
 
 if typing.TYPE_CHECKING:
     from forml import etl  # pylint: disable=unused-import; # noqa: F401
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Visitor(metaclass=abc.ABCMeta):
@@ -103,6 +106,42 @@ class Table(tuple, Source):
         visitor.visit_table(self)
 
 
+def columnize(handler: typing.Callable[['Column'], typing.Any]) -> typing.Callable[[typing.Any], typing.Any]:
+    """Decorator for forcing function arguments to columns.
+
+    Args:
+        handler: Callable to be decorated.
+
+    Returns: Decorated callable.
+    """
+
+    def cast(value: typing.Any) -> 'Column':
+        """Attempt to create a literal instance of the value unless already a column.
+
+        Args:
+            value: Column to be.
+
+        Returns: Column instance.
+        """
+        if not isinstance(value, Column):
+            LOGGER.debug('Converting value of %s to a literal type', value)
+            value = Literal(value)
+        return value
+
+    @functools.wraps(handler)
+    def wrapper(*args: typing.Any) -> typing.Sequence['Column']:
+        """Actual decorator.
+
+        Args:
+            *args: Arguments to be forced to columns.
+
+        Returns: Arguments converted to columns.
+        """
+        return handler(*(cast(a) for a in args))
+
+    return wrapper
+
+
 class Column(metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions).
     """
@@ -140,25 +179,40 @@ class Column(metaclass=abc.ABCMeta):
         """
         return Aliased(self, alias)
 
-    def __lt__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
-        return comparison.LessThan(self, other)
+    @columnize
+    def __lt__(self, other: 'Column') -> 'Expression':
+        return LessThan(self, other)
 
-    def __le__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
-        return comparison.LessEqual(self, other)
+    @columnize
+    def __le__(self, other: 'Column') -> 'Expression':
+        return LessEqual(self, other)
 
-    def __gt__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
-        return comparison.GreaterThan(self, other)
+    @columnize
+    def __gt__(self, other: 'Column') -> 'Expression':
+        return GreaterThan(self, other)
 
-    def __ge__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
-        return comparison.GreaterEqual(self, other)
+    @columnize
+    def __ge__(self, other: 'Column') -> 'Expression':
+        return GreaterEqual(self, other)
 
-    def __eq__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
-        return comparison.Equal(self, other)
+    @columnize
+    def __eq__(self, other: 'Column') -> 'Expression':
+        return Equal(self, other)
 
-    def __ne__(self, other: typing.Union['Column', int, float, str]) -> 'Expression':
-        return comparison.NotEqual(self, other)
+    @columnize
+    def __ne__(self, other: 'Column') -> 'Expression':
+        return NotEqual(self, other)
 
-    def __add__(self, other: typing.Union['Column', int, float]) -> 'Expression':
+    @columnize
+    def __and__(self, other: 'Column') -> 'Expression':
+        return And(self, other)
+
+    @columnize
+    def __or__(self, other: 'Column') -> 'Expression':
+        return Or(self, other)
+
+    @columnize
+    def __add__(self, other: 'Column') -> 'Expression':
         ...
 
 
@@ -179,7 +233,7 @@ class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
         return Aliased(self.column, alias)
 
     @property
-    def kind(self):
+    def kind(self) -> kindmod.Data:
         """Column type.
 
         Returns: Inner column type.
@@ -198,6 +252,9 @@ class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
 class Literal(collections.namedtuple('Literal', 'value, kind'), Column):
     """Literal value.
     """
+    def __new__(cls, value: typing.Any):
+        return super().__new__(cls, value, kindmod.inspect(value))
+
     @property
     def name(self) -> None:
         """Literal has no name without an explicit aliasing.
@@ -248,3 +305,78 @@ class Expression(tuple, Column, metaclass=abc.ABCMeta):  # pylint: disable=abstr
         for term in self:
             term.accept(visitor)
         visitor.visit_expression(self)
+
+
+class Univariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
+    """Base class for functions/operators of just one argument/operand.
+    """
+    def __new__(cls, arg: Column):
+        return super().__new__(cls, arg)
+
+
+class Bivariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
+    """Base class for functions/operators of two arguments/operands.
+    """
+    def __new__(cls, arg1: Column, arg2: Column):
+        return super().__new__(cls, arg1, arg2)
+
+
+class Logical:
+    """Mixin for logical functions/operators.
+    """
+    kind = kindmod.Boolean()
+
+
+class LessThan(Logical, Bivariate):
+    """Less-Than operator.
+    """
+
+
+class LessEqual(Logical, Bivariate):
+    """Less-Equal operator.
+    """
+
+
+class GreaterThan(Logical, Bivariate):
+    """Greater-Than operator.
+    """
+
+
+class GreaterEqual(Logical, Bivariate):
+    """Greater-Equal operator.
+    """
+
+
+class Equal(Logical, Bivariate):
+    """Equal operator.
+    """
+
+
+class NotEqual(Logical, Bivariate):
+    """Not-Equal operator.
+    """
+
+
+class IsNull(Logical, Bivariate):
+    """Is-Null operator.
+    """
+
+
+class NotNull(Logical, Bivariate):
+    """Not-Null operator.
+    """
+
+
+class And(Logical, Bivariate):
+    """And operator.
+    """
+
+
+class Or(Logical, Bivariate):
+    """Or operator.
+    """
+
+
+class Not(Logical, Univariate):
+    """Not operator.
+    """
