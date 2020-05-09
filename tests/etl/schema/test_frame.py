@@ -6,9 +6,10 @@ ETL unit tests.
 import pytest
 
 from forml.etl.schema import frame
+from . import Queryable
 
 
-class TestTable:
+class TestTable(Queryable):
     """Table unit tests.
     """
     def test_fields(self, student: frame.Table):
@@ -19,8 +20,7 @@ class TestTable:
         with pytest.raises(AttributeError):
             _ = student.xyz
 
-    def test_select(self, student: frame.Table):
-        """Select test.
-        """
-        assert [getattr(c, 'name') for c in
-                student.select(student.score, student.surname).columns] == ['score', 'surname']
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def source(student: frame.Table) -> frame.Queryable:
+        return student
