@@ -14,7 +14,7 @@ def base() -> schema.Table:
     """Base table fixture.
     """
 
-    class Table(metaclass=schema.Table):  # pylint: disable=invalid-metaclass
+    class Table(etl.Schema):  # pylint: disable=invalid-metaclass
         """Base table.
         """
         field1 = etl.Field(kind.Integer())
