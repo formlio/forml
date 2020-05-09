@@ -25,7 +25,7 @@ class Field(collections.namedtuple('Field', 'kind, name')):
 
 class Schema(metaclass=schema.Table):  # pylint: disable=invalid-metaclass
     """Base class for table schema definitions. Note the meta class is actually going to turn it into an instance
-    of statement.Table.
+    of schema.Table.
     """
 
 

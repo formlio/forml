@@ -8,9 +8,6 @@ import typing
 
 from forml.etl import schema as schemamod, kind
 
-if typing.TYPE_CHECKING:
-    pass
-
 
 class Visitor(schemamod.Visitor, metaclass=abc.ABCMeta):
     """Statement visitor.

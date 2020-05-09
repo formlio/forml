@@ -10,26 +10,43 @@ from forml.etl import schema, kind
 
 
 @pytest.fixture(scope='session')
-def base() -> schema.Table:
+def person() -> schema.Table:
     """Base table fixture.
     """
 
-    class Table(etl.Schema):  # pylint: disable=invalid-metaclass
+    class Person(etl.Schema):
         """Base table.
         """
-        field1 = etl.Field(kind.Integer())
+        surname = etl.Field(kind.String())
+        dob = etl.Field(kind.Date(), 'birthday')
 
-    return Table
+    return Person
 
 
 @pytest.fixture(scope='session')
-def table(base: schema.Table) -> schema.Table:
+def student(person: schema.Table) -> schema.Table:
     """Extended table fixture.
     """
 
-    class Table(base):
+    class Student(person):
         """Extended table.
         """
-        field2 = etl.Field(kind.Float(), 'baz')
+        level = etl.Field(kind.Integer())
+        score = etl.Field(kind.Float())
+        school = etl.Field(kind.Integer())
 
-    return Table
+    return Student
+
+
+@pytest.fixture(scope='session')
+def school() -> schema.Table:
+    """School table fixture.
+    """
+
+    class School(etl.Schema):
+        """School table.
+        """
+        id = etl.Field(kind.Integer())
+        name = etl.Field(kind.String())
+
+    return School
