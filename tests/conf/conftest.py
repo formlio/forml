@@ -30,7 +30,7 @@ def conf(cfg_file: pathlib.Path) -> types.ModuleType:
             super().__init__(*args, **kwargs)
             super().read([cfg_file])
 
-        def read(self, *_, **__) -> typing.Sequence[str]:
+        def read(self, *_, **__) -> typing.Sequence[str]:  # pylint: disable=signature-differs
             """Ignore actual readings.
             """
             return [str(cfg_file)]
