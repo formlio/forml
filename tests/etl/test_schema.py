@@ -5,7 +5,7 @@ ETL unit tests.
 import pytest
 
 from forml import etl
-from forml.etl import schema
+from forml.etl import schema, kind
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def base() -> schema.Table:
     class Table(metaclass=schema.Table):  # pylint: disable=invalid-metaclass
         """Base table.
         """
-        field1 = etl.Field('int')
+        field1 = etl.Field(kind.Integer())
 
     return Table
 
@@ -29,7 +29,7 @@ def table(base: schema.Table) -> schema.Table:
     class Table(base):
         """Extended table.
         """
-        field2 = etl.Field('float', 'baz')
+        field2 = etl.Field(kind.Float(), 'baz')
 
     return Table
 
