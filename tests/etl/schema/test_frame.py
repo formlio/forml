@@ -22,6 +22,5 @@ class TestTable:
     def test_select(self, student: frame.Table):
         """Select test.
         """
-        query = student.select(student.score)
-        assert len(query.columns) == 1
-        assert query.columns[0].name == 'score'
+        assert [getattr(c, 'name') for c in
+                student.select(student.score, student.surname).columns] == ['score', 'surname']
