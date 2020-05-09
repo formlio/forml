@@ -19,7 +19,7 @@ class TestMapper:
     def operator(actor: typing.Type[task.Actor]):
         """Operator fixture.
         """
-        return simple.Mapper.operator(actor)()
+        return simple.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
 
     def test_compose(self, operator: topology.Operator):
         """Operator composition test.

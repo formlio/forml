@@ -83,7 +83,7 @@ class Table(Source, tuple):
 
     This type can be used either as metaclass or as a base class to inherit from.
     """
-    __schema__ = property(operator.itemgetter(0))
+    __schema__: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
 
     def __new__(mcs, schema: typing.Union[str, typing.Type['etl.Schema']],  # pylint: disable=bad-classmethod-argument
                 bases: typing.Optional[typing.Tuple[typing.Type]] = None,
