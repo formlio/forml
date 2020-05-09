@@ -11,7 +11,7 @@ import uuid
 
 from forml import etl
 from forml.conf import provider as provcfg
-from forml.etl import expression
+from forml.etl import function
 from forml.flow import task
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
@@ -73,8 +73,8 @@ class Runner:
     def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input,
                  runner: provcfg.Runner, engine: provcfg.Engine):
         self._params: spec.Scenario.Params = params
-        self._source: etl.Source = etl.Extract(expression.Select(lambda: (scenario.train, scenario.label)),
-                                               expression.Select(lambda: scenario.apply)) >> Runner.Extractor()
+        self._source: etl.Source = etl.Extract(function.Select(lambda: (scenario.train, scenario.label)),
+                                               function.Select(lambda: scenario.apply)) >> Runner.Extractor()
         self._runner: provcfg.Runner = runner
         self._engine: provcfg.Engine = engine
 

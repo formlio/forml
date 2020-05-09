@@ -2,6 +2,7 @@
 Project component management.
 """
 import importlib
+import inspect
 import logging
 import pathlib
 import secrets
@@ -74,6 +75,10 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
             Args:
                 component: Component instance to be registered.
             """
+            caller = inspect.getmodule(inspect.stack()[1][0])
+            if caller and caller.__name__ != module:
+                LOGGER.warning('Ignoring setup from unexpected component of %s', caller.__name__)
+                return
             LOGGER.debug('Component setup using %s', component)
             nonlocal result
             if result:

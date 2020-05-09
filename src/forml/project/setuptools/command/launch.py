@@ -62,6 +62,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
         engine = provider.Engine.parse(self.engine)
         runner = provider.Runner.parse(self.runner)
+        # pylint: disable=no-member
         launcher = self.artifact.launcher(process.Runner[runner.name], etl.Engine[engine.name](**engine.kwargs),
                                           **runner.kwargs)
         result = self.launch(launcher, lower=self.lower, upper=self.upper)

@@ -7,7 +7,7 @@ import typing
 
 from forml import provider
 from forml.conf import provider as provcfg
-from forml.etl import expression, schema
+from forml.etl import schema, kind as kindmod, statement
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.project import product
@@ -19,7 +19,7 @@ OrdinalT = typing.TypeVar('OrdinalT')
 class Field(collections.namedtuple('Field', 'kind, name')):
     """Schema field class.
     """
-    def __new__(cls, kind: ..., name: typing.Optional[str] = None):
+    def __new__(cls, kind: kindmod.Data, name: typing.Optional[str] = None):
         return super().__new__(cls, kind, name)
 
 
@@ -32,7 +32,7 @@ class Schema(metaclass=schema.Table):  # pylint: disable=invalid-metaclass
 class Extract(collections.namedtuple('Extract', 'train, apply')):
     """Combo of select statements for the different modes.
     """
-    def __new__(cls, train: expression.Select, apply: typing.Optional[expression.Select] = None):
+    def __new__(cls, train: statement.Query, apply: typing.Optional[statement.Query] = None):
         return super().__new__(cls, train, apply or train)
 
     def __rshift__(self, transform: topology.Composable) -> 'Source':
@@ -82,7 +82,7 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
         return etl.expand()
 
     @abc.abstractmethod
-    def setup(self, select: expression.Select,
+    def setup(self, select: statement.Query,
               lower: typing.Optional[OrdinalT], upper: typing.Optional[OrdinalT]) -> task.Spec:
         """Actual engine provider to be implemented by subclass.
 

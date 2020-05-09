@@ -176,7 +176,7 @@ class Table(view.Visitor, abc.Iterable):
 
                 Returns: The non-null value of the two (if any).
                 """
-                assert not (left and right), f'Expecting at most one non-null value'
+                assert not (left and right), 'Expecting at most one non-null value'
                 return left if left else right
             return (pick(a, b) for a, b in itertools.zip_longest(value, element))
 
