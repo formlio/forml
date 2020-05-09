@@ -2,7 +2,6 @@
 ETL schema types.
 """
 import abc
-import collections
 import functools
 import logging
 import operator
@@ -79,7 +78,7 @@ class Source(metaclass=abc.ABCMeta):
         """
 
 
-class Table(tuple, Source):
+class Table(Source, tuple):
     """Table based source.
 
     This type can be used either as metaclass or as a base class to inherit from.
@@ -235,11 +234,14 @@ class Column(metaclass=abc.ABCMeta):
         return Modulus(self, other)
 
 
-class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
+class Aliased(Column, tuple):
     """Aliased column representation.
     """
+    column: Column = property(operator.itemgetter(0))
+    name: str = property(operator.itemgetter(1))
+
     def __new__(cls, column: Column, alias: str):
-        return super().__new__(cls, column, alias)
+        return super().__new__(cls, [column, alias])
 
     def alias(self, alias: str) -> 'Aliased':
         """Use an alias for this column.
@@ -268,11 +270,14 @@ class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
         self.column.accept(visitor)
 
 
-class Literal(collections.namedtuple('Literal', 'value, kind'), Column):
+class Literal(Column, tuple):
     """Literal value.
     """
+    value: typing.Any = property(operator.itemgetter(0))
+    kind: kindmod.Data = property(operator.itemgetter(1))
+
     def __new__(cls, value: typing.Any):
-        return super().__new__(cls, value, kindmod.reflect(value))
+        return super().__new__(cls, [value, kindmod.reflect(value)])
 
     @property
     def name(self) -> None:
@@ -291,11 +296,15 @@ class Literal(collections.namedtuple('Literal', 'value, kind'), Column):
         visitor.visit_literal(self)
 
 
-class Field(collections.namedtuple('Field', 'schema, name, kind'), Column):
+class Field(Column, tuple):
     """Schema field class bound to its table schema.
     """
+    schema: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
+    name: str = property(operator.itemgetter(1))
+    kind: kindmod.Data = property(operator.itemgetter(2))
+
     def __new__(cls, schema: typing.Type['etl.Schema'], name: str, kind: kindmod.Data):
-        return super().__new__(cls, schema, name, kind)
+        return super().__new__(cls, [schema, name, kind])
 
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
@@ -306,7 +315,7 @@ class Field(collections.namedtuple('Field', 'schema, name, kind'), Column):
         visitor.visit_field(self)
 
 
-class Expression(tuple, Column, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
+class Expression(Column, tuple, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
     def __new__(cls, *terms: Column):
