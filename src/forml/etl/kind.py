@@ -138,7 +138,7 @@ class Struct(tuple, Compound):
         return functools.reduce(operator.xor, self, Compound.__hash__(self))
 
 
-def inspect(value: typing.Any) -> Data:
+def reflect(value: typing.Any) -> Data:
     """Get the type of the provided value.
 
     Args:
@@ -146,6 +146,18 @@ def inspect(value: typing.Any) -> Data:
 
     Returns: ETL type.
     """
+    def same(seq: typing.Iterable[typing.Any]) -> bool:
+        """Return true if all elements of a non-empty sequence have same type.
+
+        Args:
+            seq: Sequence of elements to check.
+
+        Returns: True if all same.
+        """
+        seq = iter(seq)
+        first = type(next(seq))
+        return all(isinstance(i, first) for i in seq)
+
     if isinstance(value, bool):
         return Boolean()
     if isinstance(value, int):
@@ -160,4 +172,16 @@ def inspect(value: typing.Any) -> Data:
         return Timestamp()
     if isinstance(value, datetime.date):
         return Date()
+    if value:
+        if isinstance(value, collections.Sequence):
+            return Array(reflect(value[0]))
+        if isinstance(value, collections.Mapping):
+            keys = tuple(value.keys())
+            vals = tuple(value.values())
+            if same(keys):
+                ktype = reflect(keys[0])
+                if same(vals):
+                    return Map(ktype, reflect(vals[0]))
+                if ktype == String():
+                    return Struct(**{k: reflect(v) for k, v in value.items()})
     raise ValueError(f'Value {value} is of unknown ETL type')
