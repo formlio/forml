@@ -6,11 +6,11 @@ Global ForML unit tests fixtures.
 import pytest
 
 from forml import etl
-from forml.etl import schema, kind
+from forml.etl.schema import kind, frame
 
 
 @pytest.fixture(scope='session')
-def person() -> schema.Table:
+def person() -> frame.Table:
     """Base table fixture.
     """
 
@@ -24,7 +24,7 @@ def person() -> schema.Table:
 
 
 @pytest.fixture(scope='session')
-def student(person: schema.Table) -> schema.Table:
+def student(person: frame.Table) -> frame.Table:
     """Extended table fixture.
     """
 
@@ -39,14 +39,14 @@ def student(person: schema.Table) -> schema.Table:
 
 
 @pytest.fixture(scope='session')
-def school() -> schema.Table:
+def school() -> frame.Table:
     """School table fixture.
     """
 
     class School(etl.Schema):
         """School table.
         """
-        id = etl.Field(kind.Integer())
+        sid = etl.Field(kind.Integer(), 'id')
         name = etl.Field(kind.String())
 
     return School

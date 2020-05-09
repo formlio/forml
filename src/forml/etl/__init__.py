@@ -7,7 +7,8 @@ import typing
 
 from forml import provider
 from forml.conf import provider as provcfg
-from forml.etl import schema, kind as kindmod, statement
+from forml.etl import statement
+from forml.etl.schema import kind as kindmod, frame
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.project import product
@@ -23,7 +24,7 @@ class Field(collections.namedtuple('Field', 'kind, name')):
         return super().__new__(cls, kind, name)
 
 
-class Schema(metaclass=schema.Table):  # pylint: disable=invalid-metaclass
+class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     """Base class for table schema definitions. Note the meta class is actually going to turn it into an instance
     of schema.Table.
     """

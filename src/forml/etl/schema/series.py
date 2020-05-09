@@ -7,7 +7,7 @@ import logging
 import operator
 import typing
 
-from forml.etl import kind as kindmod
+from forml.etl.schema import kind as kindmod
 
 if typing.TYPE_CHECKING:
     from forml import etl  # pylint: disable=unused-import; # noqa: F401
@@ -19,21 +19,6 @@ LOGGER = logging.getLogger(__name__)
 class Visitor(metaclass=abc.ABCMeta):
     """Schema visitor.
     """
-    def visit_source(self, source: 'Source') -> None:
-        """Generic source hook.
-
-        Args:
-            source: Source instance to be visited.
-        """
-
-    def visit_table(self, table: 'Table') -> None:
-        """Generic source hook.
-
-        Args:
-            table: Source instance to be visited.
-        """
-        self.visit_source(table)
-
     def visit_column(self, column: 'Column') -> None:
         """Generic column hook.
 
@@ -64,45 +49,6 @@ class Visitor(metaclass=abc.ABCMeta):
             expression: Expression instance to be visited.
         """
         self.visit_column(expression)
-
-
-class Source(metaclass=abc.ABCMeta):
-    """Source base class.
-    """
-    @abc.abstractmethod
-    def accept(self, visitor: Visitor) -> None:
-        """Visitor acceptor.
-
-        Args:
-            visitor: Visitor instance.
-        """
-
-
-class Table(Source, tuple):
-    """Table based source.
-
-    This type can be used either as metaclass or as a base class to inherit from.
-    """
-    __schema__: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
-
-    def __new__(mcs, schema: typing.Union[str, typing.Type['etl.Schema']],  # pylint: disable=bad-classmethod-argument
-                bases: typing.Optional[typing.Tuple[typing.Type]] = None,
-                namespace: typing.Optional[typing.Dict[str, typing.Any]] = None):
-        if issubclass(mcs, Table):  # used as metaclass
-            if bases:
-                bases = (bases[0].__schema__, )
-            schema = type(schema, bases, namespace)
-        else:
-            if bases or namespace:
-                raise TypeError('Unexpected use of schema table')
-        return super().__new__(mcs, [schema])  # used as constructor
-
-    def __getattr__(self, name: str) -> 'Field':
-        field: 'etl.Field' = getattr(self.__schema__, name)
-        return Field(self.__schema__, field.name or name, field.kind)
-
-    def accept(self, visitor: Visitor) -> None:
-        visitor.visit_table(self)
 
 
 def columnize(handler: typing.Callable[['Column'], typing.Any]) -> typing.Callable[[typing.Any], typing.Any]:

@@ -6,17 +6,17 @@ import collections
 import enum
 import typing
 
-from forml.etl import schema as schemamod, kind
+from forml.etl.schema import kind, frame, series
 
 
-class Visitor(schemamod.Visitor, metaclass=abc.ABCMeta):
+class Visitor(frame.Visitor, metaclass=abc.ABCMeta):
     """Statement visitor.
     """
     def visit_join(self, source: 'Join') -> None:
         """Generic source hook.
 
         Args:
-            source: schemamod.Source instance to be visited.
+            source: frame.Source instance to be visited.
         """
         self.visit_source(source)
 
@@ -24,7 +24,7 @@ class Visitor(schemamod.Visitor, metaclass=abc.ABCMeta):
         """Generic source hook.
 
         Args:
-            source: schemamod.Source instance to be visited.
+            source: frame.Source instance to be visited.
         """
         self.visit_source(source)
 
@@ -32,7 +32,7 @@ class Visitor(schemamod.Visitor, metaclass=abc.ABCMeta):
         """Generic source hook.
 
         Args:
-            source: schemamod.Source instance to be visited.
+            source: frame.Source instance to be visited.
         """
         self.visit_source(source)
 
@@ -40,13 +40,13 @@ class Visitor(schemamod.Visitor, metaclass=abc.ABCMeta):
 class Condition(collections.namedtuple('Condition', 'expression')):
     """Special type to wrap boolean expressions that can be used as conditions.
     """
-    def __new__(cls, expression: schemamod.Expression):
+    def __new__(cls, expression: series.Expression):
         if not isinstance(expression.kind, kind.Boolean):
             raise ValueError(f'{expression.kind} expression cannot be used as a condition')
         return super().__new__(cls, expression)
 
 
-class Join(collections.namedtuple('Join', 'left, right, condition, kind'), schemamod.Source):
+class Join(collections.namedtuple('Join', 'left, right, condition, kind'), frame.Source):
     """Source made of two join-combined subsources.
     """
     @enum.unique
@@ -59,9 +59,9 @@ class Join(collections.namedtuple('Join', 'left, right, condition, kind'), schem
         FULL = 'full'
         CROSS = 'cross'
 
-    def __new__(cls, left: schemamod.Source, right: schemamod.Source, condition: schemamod.Expression,
-                kind: 'Join.Kind' = Kind.LEFT):
-        return super().__new__(cls, left, right, Condition(condition), kind)
+    def __new__(cls, left: frame.Source, right: frame.Source, condition: series.Expression,
+                kind: typing.Optional['Join.Kind'] = None):
+        return super().__new__(cls, left, right, Condition(condition), kind or cls.Kind.LEFT)
 
     def accept(self, visitor: Visitor) -> None:
         self.left.accept(visitor)
@@ -69,7 +69,7 @@ class Join(collections.namedtuple('Join', 'left, right, condition, kind'), schem
         visitor.visit_join(self)
 
 
-class Set(collections.namedtuple('Set', 'left, right, kind'), schemamod.Source):
+class Set(collections.namedtuple('Set', 'left, right, kind'), frame.Source):
     """Source made of two set-combined subsources.
     """
     @enum.unique
@@ -80,7 +80,7 @@ class Set(collections.namedtuple('Set', 'left, right, kind'), schemamod.Source):
         INTERSECTION = 'intersection'
         DIFFERENCE = 'difference'
 
-    def __new__(cls, left: schemamod.Source, right: schemamod.Source, kind: 'Set.Kind'):
+    def __new__(cls, left: frame.Source, right: frame.Source, kind: 'Set.Kind'):
         return super().__new__(cls, left, right, kind)
 
     def accept(self, visitor: Visitor) -> None:
@@ -92,8 +92,8 @@ class Set(collections.namedtuple('Set', 'left, right, kind'), schemamod.Source):
 class Aggregation(collections.namedtuple('Aggregation', 'columns, condition')):
     """GroupBy spec.
     """
-    def __new__(cls, columns: typing.Iterable[schemamod.Column],
-                condition: typing.Optional[schemamod.Expression] = None):
+    def __new__(cls, columns: typing.Iterable[series.Column],
+                condition: typing.Optional[series.Expression] = None):
         if condition:
             condition = Condition(condition)
         return super().__new__(cls, tuple(columns), condition)
@@ -109,8 +109,8 @@ class Ordering(collections.namedtuple('Ordering', 'columns, direction')):
         ASCENDING = 'ascending'
         DESCENDING = 'descending'
 
-    def __new__(cls, columns: typing.Sequence[schemamod.Column], direction: 'Ordering.Direction' = Direction.ASCENDING):
-        return super().__new__(cls, tuple(columns), direction)
+    def __new__(cls, columns: typing.Sequence[series.Column], direction: typing.Optional['Ordering.Direction'] = None):
+        return super().__new__(cls, tuple(columns), direction or cls.Direction.ASCENDING)
 
 
 class Rows(collections.namedtuple('Rows', 'count, offset')):
@@ -121,12 +121,12 @@ class Rows(collections.namedtuple('Rows', 'count, offset')):
 
 
 class Query(collections.namedtuple('Query', 'source, columns, condition, aggregation, ordering, rows'),
-            schemamod.Source):
+            frame.Queryable):
     """Generic source descriptor.
     """
-    def __new__(cls, source: 'schemamod.Source', columns: typing.Optional[typing.Sequence[schemamod.Column]] = None,
-                condition: typing.Optional[schemamod.Expression] = None,
-                aggregation: typing.Optional[Aggregation] = None, ordering: typing.Optional[schemamod.Column] = None,
+    def __new__(cls, source: 'frame.Source', columns: typing.Optional[typing.Sequence[series.Column]] = None,
+                condition: typing.Optional[series.Expression] = None,
+                aggregation: typing.Optional[Aggregation] = None, ordering: typing.Optional[series.Column] = None,
                 rows: typing.Optional[Rows] = None):
         if condition:
             condition = Condition(condition)
@@ -136,51 +136,27 @@ class Query(collections.namedtuple('Query', 'source, columns, condition, aggrega
         self.source.accept(visitor)
         visitor.visit_query(self)
 
-    def select(self, columns: typing.Sequence[schemamod.Column]) -> 'Query':
-        """Specify the output columns to be provided.
-        """
+    def select(self, *columns: typing.Sequence[series.Column]) -> 'Query':
         return Query(self.source, columns, self.condition, self.aggregation, self.ordering, self.rows)
 
-    def filter(self, condition: schemamod.Expression) -> 'Query':
-        """Add a row filtering condition.
-        """
+    def filter(self, condition: series.Expression) -> 'Query':
         return Query(self.source, self.columns, Condition(condition), self.aggregation, self.ordering, self.rows)
 
-    def join(self, other: schemamod.Source, condition: schemamod.Expression,
-             kind: Join.Kind = Join.Kind.LEFT) -> 'Query':
-        """Join with other source.
-        """
+    def join(self, other: frame.Source, condition: series.Expression,
+             kind: typing.Optional[Join.Kind] = None) -> 'Query':
         return Query(Join(self.source, other, condition, kind), self.columns, self.condition, self.aggregation,
                      self.ordering, self.rows)
 
-    def groupby(self, columns: typing.Iterable[schemamod.Column],
-                condition: typing.Optional[schemamod.Expression] = None) -> 'Query':
-        """Aggregating spec.
-        """
+    def groupby(self, columns: typing.Iterable[series.Column],
+                condition: typing.Optional[series.Expression] = None) -> 'Query':
         return Query(self.source, self.columns, self.condition, Aggregation(columns, condition), self.ordering,
                      self.rows)
 
-    def orderby(self, columns: typing.Sequence[schemamod.Column]) -> 'Query':
-        """Ordering spec.
-        """
-
-    def union(self, other: schemamod.Source) -> 'Query':
-        """Set union with the other source.
-        """
-        return Query(Set(self, other, Set.Kind.UNION))
-
-    def intersection(self, other: schemamod.Source) -> 'Query':
-        """Set intersection with the other source.
-        """
-        return Query(Set(self, other, Set.Kind.INTERSECTION))
-
-    def difference(self, other: schemamod.Source) -> 'Query':
-        """Set difference with the other source.
-        """
-        return Query(Set(self, other, Set.Kind.DIFFERENCE))
+    def orderby(self, columns: typing.Sequence[series.Column],
+                direction: typing.Optional[Ordering.Direction] = None) -> 'Query':
+        return Query(self.source, self.columns, self.condition, self.aggregation, Ordering(columns, direction),
+                     self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':
-        """Restrict the result rows by its max count with an optional offset.
-        """
         return Query(self.source, self.columns, self.condition, self.aggregation, self.ordering,
                      Rows(count, offset))
