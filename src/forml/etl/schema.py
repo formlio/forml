@@ -211,9 +211,28 @@ class Column(metaclass=abc.ABCMeta):
     def __or__(self, other: 'Column') -> 'Expression':
         return Or(self, other)
 
+    def __invert__(self) -> 'Expression':
+        return Not(self)
+
     @columnize
     def __add__(self, other: 'Column') -> 'Expression':
-        ...
+        return Addition(self, other)
+
+    @columnize
+    def __sub__(self, other: 'Column') -> 'Expression':
+        return Subtraction(self, other)
+
+    @columnize
+    def __mul__(self, other: 'Column') -> 'Expression':
+        return Multiplication(self, other)
+
+    @columnize
+    def __truediv__(self, other: 'Column') -> 'Expression':
+        return Division(self, other)
+
+    @columnize
+    def __mod__(self, other: 'Column') -> 'Expression':
+        return Modulus(self, other)
 
 
 class Aliased(collections.namedtuple('Aliased', 'column, name'), Column):
@@ -253,7 +272,7 @@ class Literal(collections.namedtuple('Literal', 'value, kind'), Column):
     """Literal value.
     """
     def __new__(cls, value: typing.Any):
-        return super().__new__(cls, value, kindmod.inspect(value))
+        return super().__new__(cls, value, kindmod.reflect(value))
 
     @property
     def name(self) -> None:
@@ -379,4 +398,35 @@ class Or(Logical, Bivariate):
 
 class Not(Logical, Univariate):
     """Not operator.
+    """
+
+
+class Arithmetic:
+    """Mixin for numerical functions/operators.
+    """
+    kind = kindmod.Numeric()
+
+
+class Addition(Arithmetic, Bivariate):
+    """Plus operator.
+    """
+
+
+class Subtraction(Arithmetic, Bivariate):
+    """Minus operator.
+    """
+
+
+class Multiplication(Arithmetic, Bivariate):
+    """Times operator.
+    """
+
+
+class Division(Arithmetic, Bivariate):
+    """Divide operator.
+    """
+
+
+class Modulus(Arithmetic, Bivariate):
+    """Modulus operator.
     """
