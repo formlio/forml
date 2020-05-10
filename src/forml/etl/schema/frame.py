@@ -52,49 +52,49 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     """Base class for queryable sources.
     """
     @abc.abstractmethod
-    def select(self, *columns: typing.Sequence['series.Column']) -> 'Queryable':
+    def select(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']]) -> 'statement.Query':
         """Specify the output columns to be provided.
         """
 
     @abc.abstractmethod
-    def filter(self, condition: 'series.Expression') -> 'Queryable':
+    def filter(self, condition: 'series.Expression') -> 'statement.Query':
         """Add a row filtering condition.
         """
 
     @abc.abstractmethod
     def join(self, other: Source, condition: 'series.Expression',
-             kind: typing.Optional['statement.Join.Kind'] = None) -> 'Queryable':
+             kind: typing.Optional['statement.Join.Kind'] = None) -> 'statement.Query':
         """Join with other source.
         """
 
     @abc.abstractmethod
-    def groupby(self, columns: typing.Iterable['series.Column'],
-                condition: typing.Optional['series.Expression'] = None) -> 'Queryable':
+    def groupby(self, columns: typing.Union['series.Column', typing.Iterable['series.Column']],
+                condition: typing.Optional['series.Expression'] = None) -> 'statement.Query':
         """Aggregating spec.
         """
 
     @abc.abstractmethod
-    def orderby(self, columns: typing.Sequence['series.Column'],
-                direction: typing.Optional['statement.Ordering.Direction'] = None) -> 'Queryable':
+    def orderby(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']],
+                direction: typing.Optional['statement.Ordering.Direction'] = None) -> 'statement.Query':
         """Ordering spec.
         """
 
     @abc.abstractmethod
-    def limit(self, count: int, offset: int = 0) -> 'Queryable':
+    def limit(self, count: int, offset: int = 0) -> 'statement.Query':
         """Restrict the result rows by its max count with an optional offset.
         """
 
-    def union(self, other: Source) -> 'Queryable':
+    def union(self, other: Source) -> 'statement.Query':
         """Set union with the other source.
         """
         return statement.Query(statement.Set(self, other, statement.Set.Kind.UNION))
 
-    def intersection(self, other: Source) -> 'Queryable':
+    def intersection(self, other: Source) -> 'statement.Query':
         """Set intersection with the other source.
         """
         return statement.Query(statement.Set(self, other, statement.Set.Kind.INTERSECTION))
 
-    def difference(self, other: Source) -> 'Queryable':
+    def difference(self, other: Source) -> 'statement.Query':
         """Set difference with the other source.
         """
         return statement.Query(statement.Set(self, other, statement.Set.Kind.DIFFERENCE))
@@ -126,23 +126,23 @@ class Table(Queryable, tuple):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_table(self)
 
-    def select(self, *columns: typing.Sequence[series.Column]) -> Queryable:
+    def select(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']]) -> 'statement.Query':
         return statement.Query(self, columns)
 
-    def filter(self, condition: series.Expression) -> Queryable:
+    def filter(self, condition: series.Expression) -> 'statement.Query':
         return statement.Query(self, condition=statement.Condition(condition))
 
     def join(self, other: Source, condition: series.Expression,
-             kind: typing.Optional['statement.Join.Kind'] = None) -> Queryable:
+             kind: typing.Optional['statement.Join.Kind'] = None) -> 'statement.Query':
         return statement.Query(statement.Join(self, other, condition, kind))
 
-    def groupby(self, columns: typing.Iterable[series.Column],
-                condition: typing.Optional[series.Expression] = None) -> Queryable:
-        return statement.Query(self, aggregation=statement.Aggregation(columns, condition))
+    def groupby(self, columns: typing.Union['series.Column', typing.Iterable['series.Column']],
+                condition: typing.Optional[series.Expression] = None) -> 'statement.Query':
+        return statement.Query(self, grouping=statement.Grouping(columns, condition))
 
-    def orderby(self, columns: typing.Sequence[series.Column],
-                direction: typing.Optional['statement.Ordering.Direction'] = None) -> Queryable:
+    def orderby(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']],
+                direction: typing.Optional['statement.Ordering.Direction'] = None) -> 'statement.Query':
         return statement.Query(self, ordering=statement.Ordering(columns, direction))
 
-    def limit(self, count: int, offset: int = 0) -> Queryable:
+    def limit(self, count: int, offset: int = 0) -> 'statement.Query':
         return statement.Query(self, rows=statement.Rows(count, offset))

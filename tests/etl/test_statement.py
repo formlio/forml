@@ -2,6 +2,7 @@
 Statement tests.
 """
 import pytest
+from forml.etl import statement
 
 from forml.etl.schema import frame
 
@@ -13,7 +14,7 @@ class TestQuery(schema.Queryable):
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def source(school: frame.Table, student: frame.Table) -> frame.Source:
+    def source(student: frame.Table) -> frame.Source:
         """Source fixture.
         """
-        return student.join(school, student.school == school.sid)
+        return statement.Query(student)
