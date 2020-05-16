@@ -110,7 +110,7 @@ class Transpiler(typing.Generic[TargetT], statement.Visitor, series.Visitor, met
         self._stack.append(self.generate_literal(literal))
 
     def visit_expression(self, expression: series.Expression) -> None:
-        arguments = tuple(reversed(self._stack.pop() for _ in expression))
+        arguments = tuple(reversed([self._stack.pop() for _ in expression]))
         self._stack.append(self.generate_expression(expression.__class__, arguments))
 
     @abc.abstractmethod
