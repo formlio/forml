@@ -2,9 +2,9 @@
 Statement tests.
 """
 import pytest
-from forml.etl import statement
+from forml.etl.dsl import statement
 
-from forml.etl.schema import frame
+from forml.etl.dsl.schema import frame
 
 from . import schema
 

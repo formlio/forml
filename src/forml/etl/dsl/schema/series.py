@@ -7,7 +7,7 @@ import logging
 import operator
 import typing
 
-from forml.etl.schema import kind as kindmod
+from forml.etl.dsl.schema import kind as kindmod
 
 if typing.TYPE_CHECKING:
     from forml import etl  # pylint: disable=unused-import; # noqa: F401
@@ -25,6 +25,7 @@ class Visitor(metaclass=abc.ABCMeta):
         Args:
             column: Column instance to be visited.
         """
+        raise NotImplementedError(f'{self.__class__.__name__}.visit_column not implemented')
 
     def visit_field(self, field: 'Field') -> None:
         """Generic expression hook.
@@ -87,7 +88,7 @@ def columnize(handler: typing.Callable[['Column'], typing.Any]) -> typing.Callab
     return wrapper
 
 
-class Column(metaclass=abc.ABCMeta):
+class Column(tuple, metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions).
     """
     @property
@@ -123,6 +124,9 @@ class Column(metaclass=abc.ABCMeta):
         Returns: New column instance with given alias.
         """
         return Aliased(self, alias)
+
+    def __hash__(self):
+        return hash(self.__class__) ^ tuple.__hash__(self)
 
     @columnize
     def __lt__(self, other: 'Column') -> 'Expression':
@@ -180,7 +184,7 @@ class Column(metaclass=abc.ABCMeta):
         return Modulus(self, other)
 
 
-class Aliased(Column, tuple):
+class Aliased(Column):
     """Aliased column representation.
     """
     column: Column = property(operator.itemgetter(0))
@@ -216,7 +220,7 @@ class Aliased(Column, tuple):
         self.column.accept(visitor)
 
 
-class Literal(Column, tuple):
+class Literal(Column):
     """Literal value.
     """
     value: typing.Any = property(operator.itemgetter(0))
@@ -242,7 +246,7 @@ class Literal(Column, tuple):
         visitor.visit_literal(self)
 
 
-class Field(Column, tuple):
+class Field(Column):
     """Schema field class bound to its table schema.
     """
     schema: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
@@ -261,7 +265,7 @@ class Field(Column, tuple):
         visitor.visit_field(self)
 
 
-class Expression(Column, tuple, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
+class Expression(Column, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
     def __new__(cls, *terms: Column):
@@ -300,6 +304,14 @@ class Logical:
     """
     kind = kindmod.Boolean()
 
+    @classmethod
+    def ensure(cls, column: Column) -> Column:
+        """Ensure given expression is a logical one.
+        """
+        if not isinstance(column.kind, cls.kind.__class__):
+            raise ValueError(f'{column.kind} not a valid {cls.kind}')
+        return column
+
 
 class LessThan(Logical, Bivariate):
     """Less-Than operator.
@@ -324,6 +336,12 @@ class GreaterEqual(Logical, Bivariate):
 class Equal(Logical, Bivariate):
     """Equal operator.
     """
+    def __bool__(self):
+        """Since this instance is also returned when python internally compares two Column instances for equality, we
+        want to evaluate the boolean value for python perspective of the objects (rather than just the ETL perspective
+        of the data).
+        """
+        return hash(self[0]) == hash(self[1])
 
 
 class NotEqual(Logical, Bivariate):

@@ -11,7 +11,7 @@ import uuid
 
 from forml import etl
 from forml.conf import provider as provcfg
-from forml.etl import function
+from forml.etl.dsl import function
 from forml.flow import task
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view

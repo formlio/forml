@@ -7,8 +7,8 @@ import typing
 
 from forml import provider
 from forml.conf import provider as provcfg
-from forml.etl import statement
-from forml.etl.schema import kind as kindmod, frame
+from forml.etl.dsl import statement
+from forml.etl.dsl.schema import kind as kindmod, frame
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.project import product

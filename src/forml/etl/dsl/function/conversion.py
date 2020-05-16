@@ -3,7 +3,7 @@ Conversion functions.
 """
 import operator
 
-from forml.etl.schema import series, kind as kindmod
+from forml.etl.dsl.schema import series, kind as kindmod
 
 
 class Cast(series.Expression):

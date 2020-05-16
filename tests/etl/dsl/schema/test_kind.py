@@ -9,7 +9,7 @@ import typing
 
 import pytest
 
-from forml.etl.schema import kind as kindmod
+from forml.etl.dsl.schema import kind as kindmod
 
 
 def test_reflect():
