@@ -8,7 +8,7 @@ import decimal
 
 import pytest
 
-from forml.etl.schema import series, frame
+from forml.etl.dsl.schema import series, frame
 
 
 class Column(metaclass=abc.ABCMeta):
@@ -20,6 +20,11 @@ class Column(metaclass=abc.ABCMeta):
     def column() -> series.Column:
         """Column undertest.
         """
+
+    def test_identity(self, column: series.Column):
+        """Test the identity (hashability + equality).
+        """
+        assert len({column, column}) == 1
 
     def test_alias(self, column: series.Column):
         """Field aliasing test.

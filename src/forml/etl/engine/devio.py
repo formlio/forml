@@ -4,7 +4,7 @@ Development ETL engine.
 import typing
 
 from forml import etl
-from forml.etl import function
+from forml.etl.dsl import function
 from forml.flow import task
 
 

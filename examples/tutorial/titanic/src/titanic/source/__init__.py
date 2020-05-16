@@ -10,7 +10,7 @@ created just for structuring the project code base splitting it into these parti
 """
 
 from forml import etl
-from forml.etl import function
+from forml.etl.dsl import function
 from forml.project import component
 
 from titanic.source import producer, label

@@ -6,9 +6,9 @@ import logging
 import operator
 import typing
 
-from forml.etl import statement
+from forml.etl.dsl import statement
 
-from forml.etl.schema import series
+from forml.etl.dsl.schema import series
 
 if typing.TYPE_CHECKING:
     from forml import etl  # pylint: disable=unused-import; # noqa: F401
@@ -26,6 +26,7 @@ class Visitor(metaclass=abc.ABCMeta):
         Args:
             source: Source instance to be visited.
         """
+        raise NotImplementedError(f'{self.__class__.__name__}.visit_source not implemented')
 
     def visit_table(self, table: 'Table') -> None:
         """Generic source hook.
@@ -52,13 +53,18 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     """Base class for queryable sources.
     """
     @abc.abstractmethod
-    def select(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']]) -> 'statement.Query':
+    def select(self, *columns: 'series.Column') -> 'statement.Query':
         """Specify the output columns to be provided.
         """
 
     @abc.abstractmethod
-    def filter(self, condition: 'series.Expression') -> 'statement.Query':
-        """Add a row filtering condition.
+    def where(self, condition: 'series.Expression') -> 'statement.Query':
+        """Add a row pre-filtering condition.
+        """
+
+    @abc.abstractmethod
+    def having(self, condition: 'series.Expression') -> 'statement.Query':
+        """Add a row post-filtering condition.
         """
 
     @abc.abstractmethod
@@ -68,14 +74,14 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def groupby(self, columns: typing.Union['series.Column', typing.Iterable['series.Column']],
-                condition: typing.Optional['series.Expression'] = None) -> 'statement.Query':
+    def groupby(self, *columns: 'series.Column') -> 'statement.Query':
         """Aggregating spec.
         """
 
     @abc.abstractmethod
-    def orderby(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']],
-                direction: typing.Optional['statement.Ordering.Direction'] = None) -> 'statement.Query':
+    def orderby(self, *columns: typing.Union[series.Column, typing.Union[
+            'statement.Ordering.Direction', str], typing.Tuple[series.Column, typing.Union[
+                'statement.Ordering.Direction', str]]]) -> 'statement.Query':
         """Ordering spec.
         """
 
@@ -119,6 +125,9 @@ class Table(Queryable, tuple):
                 raise TypeError('Unexpected use of schema table')
         return super().__new__(mcs, [schema])  # used as constructor
 
+    def __hash__(self):
+        return hash(self.__schema__)
+
     def __getattr__(self, name: str) -> 'series.Field':
         field: 'etl.Field' = getattr(self.__schema__, name)
         return series.Field(self.__schema__, field.name or name, field.kind)
@@ -126,23 +135,26 @@ class Table(Queryable, tuple):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_table(self)
 
-    def select(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']]) -> 'statement.Query':
+    def select(self, *columns: 'series.Column') -> 'statement.Query':
         return statement.Query(self, columns)
 
-    def filter(self, condition: series.Expression) -> 'statement.Query':
-        return statement.Query(self, condition=statement.Condition(condition))
+    def where(self, condition: series.Expression) -> 'statement.Query':
+        return statement.Query(self, prefilter=condition)
+
+    def having(self, condition: series.Expression) -> 'statement.Query':
+        return statement.Query(self, postfilter=condition)
 
     def join(self, other: Source, condition: series.Expression,
              kind: typing.Optional['statement.Join.Kind'] = None) -> 'statement.Query':
         return statement.Query(statement.Join(self, other, condition, kind))
 
-    def groupby(self, columns: typing.Union['series.Column', typing.Iterable['series.Column']],
-                condition: typing.Optional[series.Expression] = None) -> 'statement.Query':
-        return statement.Query(self, grouping=statement.Grouping(columns, condition))
+    def groupby(self, *columns: 'series.Column') -> 'statement.Query':
+        return statement.Query(self, grouping=columns)
 
-    def orderby(self, columns: typing.Union['series.Column', typing.Sequence['series.Column']],
-                direction: typing.Optional['statement.Ordering.Direction'] = None) -> 'statement.Query':
-        return statement.Query(self, ordering=statement.Ordering(columns, direction))
+    def orderby(self, *columns: typing.Union[series.Column, typing.Union[
+            'statement.Ordering.Direction', str], typing.Tuple[series.Column, typing.Union[
+                'statement.Ordering.Direction', str]]]) -> 'statement.Query':
+        return statement.Query(self, ordering=columns)
 
     def limit(self, count: int, offset: int = 0) -> 'statement.Query':
         return statement.Query(self, rows=statement.Rows(count, offset))
