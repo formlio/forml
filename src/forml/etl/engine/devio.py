@@ -4,7 +4,6 @@ Development ETL engine.
 import typing
 
 from forml import etl
-from forml.etl.dsl import function
 from forml.flow import task
 
 
@@ -26,7 +25,7 @@ class Source(task.Actor):
 class Engine(etl.Engine, key='devio'):
     """Development engine.
     """
-    def setup(self, select: function.Select, lower: typing.Optional[etl.OrdinalT],
+    def setup(self, select: etl.Select, lower: typing.Optional[etl.OrdinalT],
               upper: typing.Optional[etl.OrdinalT]) -> task.Spec:
         params = dict(select.params)
         if lower:
