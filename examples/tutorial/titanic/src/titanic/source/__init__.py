@@ -8,16 +8,13 @@ the forml loader. In this case it is implemented as a python package but it coul
 All the submodules of this packages have no semantic meaning for ForML - they are completely informal and have been
 created just for structuring the project code base splitting it into these particular parts with arbitrary names.
 """
-
-from forml import etl
-from forml.etl.dsl import function
-from forml.project import component
-
 from titanic.source import producer, label
 
+from forml import etl
+from forml.project import component
 
-TRAIN = function.Select(producer.trainset)
-PREDICT = function.Select(producer.testset)
+TRAIN = etl.Select(producer.trainset)
+PREDICT = etl.Select(producer.testset)
 
 ETL = etl.Extract(TRAIN, PREDICT) >> label.Extractor(column='Survived')
 component.setup(ETL)

@@ -6,7 +6,6 @@ Project tests.
 import pytest
 
 from forml import etl, error
-from forml.etl.dsl import function
 from forml.flow.pipeline import topology
 from forml.project import product, distribution, importer
 from forml.stdlib.operator import simple
@@ -34,7 +33,7 @@ class TestBuilder:
     def source() -> etl.Source:
         """Source fixture.
         """
-        return etl.Source(etl.Extract(function.Select()))
+        return etl.Source(etl.Extract(etl.Select()))
 
     @staticmethod
     @pytest.fixture(scope='function')
