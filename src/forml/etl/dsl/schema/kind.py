@@ -4,13 +4,34 @@ import abc
 import collections
 import datetime
 import decimal
-import functools
+import inspect
 import operator
 import typing
 from collections import abc as colabc
 
 
 class Meta(abc.ABCMeta):
+    """Meta class for all kinds.
+    """
+    @property
+    def __subkinds__(cls) -> typing.Iterable[typing.Type['Data']]:
+        """Return all non-abstract sub-classes of given kind class.
+
+        Returns: Iterable of all sub-kinds.
+        """
+        def scan(subs: typing.Iterable[typing.Type['Data']]) -> typing.Iterable[typing.Type['Data']]:
+            """Scan the class subtree of given types.
+
+            Args:
+                subs: Iterable of classes to descend from.
+
+            Returns: Iterable of all subclasses.
+            """
+            return (s for c in subs for s in (c, *scan(c.__subclasses__())))
+        return {k for k in scan(cls.__subclasses__()) if not inspect.isabstract(k)}
+
+
+class Singleton(Meta):
     """Metaclass for singleton types.
     """
     def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
@@ -28,23 +49,35 @@ class Meta(abc.ABCMeta):
         return super().__new__(mcs, name, bases, namespace)
 
 
-class Data(metaclass=abc.ABCMeta):
+Native = typing.TypeVar('Native')
+
+
+class Data(metaclass=Meta):
     """Type base class.
     """
+
+    @property
     @abc.abstractmethod
-    def __eq__(self, other):
-        """Kind equality.
+    def __native__(self) -> Native:
+        """Native python type representing this kind.
+
+        Returns: Native type.
+        """
+
+    @property
+    @abc.abstractmethod
+    def __cardinality__(self) -> int:
+        """Cardinality (relative size) of give kind. Useful to for example distinguish largest subkind of given kind.
+
+        Returns: Cardinality value.
         """
 
     @abc.abstractmethod
-    def __hash__(self):
-        """Kind hashcode.
+    def __new__(cls, *args, **kwargs):
+        """Abstract constructor.
         """
+        raise NotImplementedError()
 
-
-class Primitive(Data, metaclass=Meta):
-    """Primitive data type base class.
-    """
     def __eq__(self, other):
         return other.__class__ == self.__class__
 
@@ -52,7 +85,16 @@ class Primitive(Data, metaclass=Meta):
         return hash(self.__class__)
 
 
-class Numeric(Primitive):
+class Primitive(Data, metaclass=Singleton):  # pylint: disable=abstract-method
+    """Primitive data type base class.
+    """
+    def __new__(cls, *args, **kwargs):
+        """This gets actually overwritten by metaclass.
+        """
+        assert False, 'Expected to be replaced by metaclass'
+
+
+class Numeric(Primitive):  # pylint: disable=abstract-method
     """Numeric data type base class.
     """
 
@@ -60,64 +102,94 @@ class Numeric(Primitive):
 class Boolean(Primitive):
     """Boolean data type class.
     """
+    __native__ = bool
+    __cardinality__ = 2
 
 
 class Integer(Numeric):
     """Integer data type class.
     """
+    __native__ = int
+    __cardinality__ = 1
 
 
 class Float(Numeric):
     """Float data type class.
     """
+    __native__ = float
+    __cardinality__ = 2
 
 
 class Decimal(Numeric):
     """Decimal data type class.
     """
+    __native__ = decimal.Decimal
+    __cardinality__ = 3
 
 
 class String(Primitive):
     """String data type class.
     """
+    __native__ = str
+    __cardinality__ = 1
 
 
 class Date(Primitive):
     """Date data type class.
     """
+    __native__ = datetime.date
+    __cardinality__ = 1
 
 
-class Timestamp(Primitive):
+class Timestamp(Date):
     """Timestamp data type class.
     """
+    __native__ = datetime.datetime
+    __cardinality__ = 2
 
 
-class Compound(Data, metaclass=abc.ABCMeta):
+class Compound(Data, tuple):
     """Complex data type class.
     """
+    @property
+    def __cardinality__(self) -> int:
+        return len(self)
+
+    @abc.abstractmethod
+    def __new__(cls, *args, **kwargs):
+        """Abstract constructor.
+        """
+        raise NotImplementedError()
+
+    def __eq__(self, other):
+        return Data.__eq__(self, other) and tuple.__eq__(self, other)
+
+    def __hash__(self):
+        return Data.__hash__(self) ^ tuple.__hash__(self)
 
 
-class Array(collections.namedtuple('Array', 'element'), Compound):
+class Array(Compound):
     """Array data type class.
     """
-    def __eq__(self, other):
-        return super().__eq__(other) and other.element == self.element
+    element: Data = property(operator.itemgetter(0))
+    __native__ = list
 
-    def __hash__(self):
-        return Compound.__hash__(self) ^ hash(self.element)
+    def __new__(cls, element: Data):
+        return tuple.__new__(cls, [element])
 
 
-class Map(collections.namedtuple('Map', 'key, value'), Compound):
+class Map(Compound):
     """Map data type class.
     """
-    def __eq__(self, other):
-        return super().__eq__(other) and other.key == self.key and other.value == self.value
+    key: Data = property(operator.itemgetter(0))
+    value: Data = property(operator.itemgetter(1))
+    __native__ = dict
 
-    def __hash__(self):
-        return Compound.__hash__(self) ^ hash(self.key) ^ hash(self.value)
+    def __new__(cls, key: Data, value: Data):
+        return tuple.__new__(cls, [key, value])
 
 
-class Struct(tuple, Compound):
+class Struct(Compound):
     """Struct data type class.
     """
     class Element(collections.namedtuple('Element', 'name, kind')):
@@ -129,14 +201,10 @@ class Struct(tuple, Compound):
         def __hash__(self):
             return hash(self.__class__) ^ super().__hash__()
 
+    __native__ = object
+
     def __new__(cls, **element: Data):
-        return super().__new__(cls, [cls.Element(n, k) for n, k in element.items()])
-
-    def __eq__(self, other):
-        return super().__eq__(other) and all(s == o for s, o in zip(self, other))
-
-    def __hash__(self):
-        return functools.reduce(operator.xor, self, Compound.__hash__(self))
+        return tuple.__new__(cls, [cls.Element(n, k) for n, k in element.items()])
 
 
 def reflect(value: typing.Any) -> Data:
@@ -159,20 +227,9 @@ def reflect(value: typing.Any) -> Data:
         first = type(next(seq))
         return all(isinstance(i, first) for i in seq)
 
-    if isinstance(value, bool):
-        return Boolean()
-    if isinstance(value, int):
-        return Integer()
-    if isinstance(value, float):
-        return Float()
-    if isinstance(value, str):
-        return String()
-    if isinstance(value, decimal.Decimal):
-        return Decimal()
-    if isinstance(value, datetime.datetime):
-        return Timestamp()
-    if isinstance(value, datetime.date):
-        return Date()
+    for primitive in sorted(Primitive.__subkinds__, key=lambda k: k.__cardinality__, reverse=True):
+        if isinstance(value, primitive.__native__):
+            return primitive()
     if value:
         if isinstance(value, colabc.Sequence):
             return Array(reflect(value[0]))

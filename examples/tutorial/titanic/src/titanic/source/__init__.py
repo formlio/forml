@@ -16,5 +16,5 @@ from forml.project import component
 TRAIN = etl.Select(producer.trainset)
 PREDICT = etl.Select(producer.testset)
 
-ETL = etl.Extract(TRAIN, PREDICT) >> label.Extractor(column='Survived')
+ETL = etl.Source.query(TRAIN, PREDICT) >> label.Extractor(column='Survived')
 component.setup(ETL)

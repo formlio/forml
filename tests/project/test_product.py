@@ -33,7 +33,7 @@ class TestBuilder:
     def source() -> etl.Source:
         """Source fixture.
         """
-        return etl.Source(etl.Extract(etl.Select()))
+        return etl.Source(None)
 
     @staticmethod
     @pytest.fixture(scope='function')

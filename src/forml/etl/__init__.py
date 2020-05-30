@@ -8,23 +8,11 @@ import typing
 from forml import provider
 from forml.conf import provider as provcfg
 from forml.etl.dsl import statement
-from forml.etl.dsl.schema import kind as kindmod, frame
+from forml.etl.dsl.schema import kind as kindmod, frame, series
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.project import product
-from forml.stdlib import operator
-
-OrdinalT = typing.TypeVar('OrdinalT')
-
-
-class Select:
-    """ForML ETL select statement.
-
-    This is just a hacked implementation as the the ETL engine concept needs yet to be developed.
-    """
-    def __init__(self, producer: typing.Callable = None, **params):
-        self.producer: typing.Callable = producer
-        self.params = params
+from forml.stdlib import operator as oplib
 
 
 class Field(collections.namedtuple('Field', 'kind, name')):
@@ -40,21 +28,82 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     """
 
 
-class Extract(collections.namedtuple('Extract', 'train, apply')):
-    """Combo of select statements for the different modes.
-    """
-    def __new__(cls, train: statement.Query, apply: typing.Optional[statement.Query] = None):
-        return super().__new__(cls, train, apply or train)
-
-    def __rshift__(self, transform: topology.Composable) -> 'Source':
-        return Source(self, transform)
-
-
 class Source(collections.namedtuple('Source', 'extract, transform')):
     """Engine independent data provider description.
     """
+    class Extract(collections.namedtuple('Extract', 'train, apply')):
+        """Combo of select statements for the different modes.
+        """
+        class Select(collections.namedtuple('Select', 'query, ordinal')):
+            """Select statement defined as a query and definition of the ordinal expression.
+            """
+            def __new__(cls, query: statement.Query, ordinal: typing.Optional[series.Column]):
+                return super().__new__(cls, query, ordinal)
+
+            def __call__(self, lower: typing.Optional[kindmod.Native] = None,
+                         upper: typing.Optional[kindmod.Native] = None):
+                query = self.query
+                if self.ordinal is not None:
+                    if lower:
+                        query = query.where(self.ordinal >= lower)
+                    if upper:
+                        query = query.where(self.ordinal < upper)
+                elif lower or upper:
+                    raise TypeError('Bounds provided but source not ordinal')
+                return query
+
+        def __new__(cls, train: Select, apply: Select):
+            return super().__new__(cls, train, apply)
+
     def __new__(cls, extract: Extract, transform: typing.Optional[topology.Composable] = None):
         return super().__new__(cls, extract, transform)
+
+    @classmethod
+    @typing.overload
+    def query(cls, train: statement.Query, apply: typing.Optional[statement.Query] = None,
+              ordinal: typing.Optional[series.Column] = None) -> 'Source':
+        """Query signature with plain train/apply queries and common ordinal expression.
+
+        Args:
+            train: Train query.
+            apply: Optional apply query.
+            ordinal: Optional ordinal expression common to both train and apply queries.
+
+        Returns: Source instance.
+        """
+
+    @classmethod
+    @typing.overload
+    def query(cls, train: typing.Tuple[statement.Query, series.Column],
+              apply: typing.Optional[typing.Tuple[statement.Query, series.Column]] = None) -> 'Source':
+        """Query signature with train/apply specs provided with specific distinct ordinal expression each.
+
+        Args:
+            train: Tuple of train query and ordinal expression.
+            apply: Optional tuple of apply query and ordinal expression.
+
+        Returns: Source instance.
+        """
+
+    @classmethod
+    def query(cls, *, train, apply=None, ordinal=None):
+        """Actual implementations of the overloaded versions of query - see above for details.
+        """
+        if isinstance(train, statement.Query):  # plain query with (optional) common ordinal expression
+            train = cls.Extract.Select(train, ordinal)
+            if apply:
+                if not isinstance(apply, statement.Query):
+                    raise TypeError('Plain apply query expected')
+                apply = cls.Extract.Select(apply, ordinal)
+        else:  # explicit per query ordinal expression
+            if ordinal is not None:
+                raise TypeError('Common ordinal not expected')
+            train = cls.Extract.Select(*train)
+            if apply:
+                if isinstance(apply, statement.Query):
+                    raise TypeError('Ordinal for apply query required')
+                apply = cls.Extract.Select(*apply)
+        return cls(cls.Extract(train, apply or train))
 
     def __rshift__(self, transform: topology.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
@@ -74,8 +123,8 @@ class Source(collections.namedtuple('Source', 'extract, transform')):
 class Engine(provider.Interface, default=provcfg.Engine.default):
     """ETL engine is the implementation of a specific datasource access layer.
     """
-    def load(self, source: Source, lower: typing.Optional[OrdinalT] = None,
-             upper: typing.Optional[OrdinalT] = None) -> pipeline.Segment:
+    def load(self, source: Source, lower: typing.Optional[kindmod.Native] = None,
+             upper: typing.Optional[kindmod.Native] = None) -> pipeline.Segment:
         """Provide a flow track implementing the etl actions.
 
         Args:
@@ -87,14 +136,14 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
         """
         apply: task.Spec = self.setup(source.extract.apply, lower, upper)
         train: task.Spec = self.setup(source.extract.train, lower, upper)
-        etl: operator.Loader = operator.Loader(apply, train)
+        etl: oplib.Loader = oplib.Loader(apply, train)
         if source.transform:
             etl >>= source.transform
         return etl.expand()
 
     @abc.abstractmethod
-    def setup(self, select: statement.Query,
-              lower: typing.Optional[OrdinalT], upper: typing.Optional[OrdinalT]) -> task.Spec:
+    def setup(self, select: Source.Extract.Select,
+              lower: typing.Optional[kindmod.Native], upper: typing.Optional[kindmod.Native]) -> task.Spec:
         """Actual engine provider to be implemented by subclass.
 
         Args:

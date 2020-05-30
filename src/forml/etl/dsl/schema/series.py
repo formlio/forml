@@ -340,6 +340,8 @@ class Equal(Logical, Bivariate):
         """Since this instance is also returned when python internally compares two Column instances for equality, we
         want to evaluate the boolean value for python perspective of the objects (rather than just the ETL perspective
         of the data).
+
+        Note this doesn't reflect mathematical commutativity - order of potential sub-expression operands matters.
         """
         return hash(self[0]) == hash(self[1])
 
@@ -377,7 +379,14 @@ class Not(Logical, Univariate):
 class Arithmetic:
     """Mixin for numerical functions/operators.
     """
-    kind = kindmod.Numeric()
+    @property
+    def kind(self) -> kindmod.Numeric:
+        """Largest cardinality kind of all operators kinds.
+
+        Returns: Numeric kind.
+        """
+        return functools.reduce(functools.partial(max, key=lambda k: k.__cardinality__),
+                                (o.kind for o in self))  # pylint: disable=not-an-iterable
 
 
 class Addition(Arithmetic, Bivariate):
