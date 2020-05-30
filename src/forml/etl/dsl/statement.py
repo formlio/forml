@@ -164,9 +164,13 @@ class Query(collections.namedtuple('Query', 'source, columns, prefilter, groupin
         return Query(self.source, columns, self.prefilter, self.grouping, self.postfilter, self.ordering, self.rows)
 
     def where(self, condition: series.Expression) -> 'Query':
+        if self.prefilter is not None:
+            condition &= self.prefilter
         return Query(self.source, self.columns, condition, self.grouping, self.postfilter, self.ordering, self.rows)
 
     def having(self, condition: series.Expression) -> 'Query':
+        if self.postfilter is not None:
+            condition &= self.postfilter
         return Query(self.source, self.columns, self.prefilter, self.grouping, condition, self.ordering, self.rows)
 
     def join(self, other: frame.Source, condition: series.Expression,

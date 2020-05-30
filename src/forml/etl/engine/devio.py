@@ -5,17 +5,18 @@ import typing
 
 from forml import etl
 from forml.flow import task
+from forml.etl.dsl.schema import kind
 
 
 class Source(task.Actor):
     """Custom data-source logic.
     """
     def __init__(self,
-                 producer: typing.Callable[[typing.Optional[etl.OrdinalT], typing.Optional[etl.OrdinalT]], typing.Any],
+                 producer: typing.Callable[[typing.Optional[kind.Native], typing.Optional[kind.Native]], typing.Any],
                  **params):
         super().__init__()
-        self._producer: typing.Callable[[typing.Optional[etl.OrdinalT],
-                                         typing.Optional[etl.OrdinalT]], typing.Any] = producer
+        self._producer: typing.Callable[[typing.Optional[kind.Native],
+                                         typing.Optional[kind.Native]], typing.Any] = producer
         self._params = params
 
     def apply(self) -> typing.Any:  # pylint: disable=arguments-differ
@@ -25,8 +26,8 @@ class Source(task.Actor):
 class Engine(etl.Engine, key='devio'):
     """Development engine.
     """
-    def setup(self, select: etl.Select, lower: typing.Optional[etl.OrdinalT],
-              upper: typing.Optional[etl.OrdinalT]) -> task.Spec:
+    def setup(self, select: etl.Source.Extract.Select,
+              lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> task.Spec:
         params = dict(select.params)
         if lower:
             params['lower'] = lower
