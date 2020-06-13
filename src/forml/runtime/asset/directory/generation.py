@@ -9,10 +9,10 @@ import types
 import typing
 import uuid
 
+from forml.etl.dsl.schema import kind
 from forml.runtime.asset import directory, persistent
 
 if typing.TYPE_CHECKING:
-    from forml import etl  # pylint: disable=unused-import; # noqa: F401
     from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
 
 LOGGER = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         """
 
         def __init__(self, timestamp: typing.Optional[datetime.datetime] = None,
-                     ordinal: typing.Optional['etl.OrdinalT'] = None):
+                     ordinal: typing.Optional[kind.Native] = None):
             super().__init__(timestamp, ordinal=ordinal)
 
     class Tuning(Mode):

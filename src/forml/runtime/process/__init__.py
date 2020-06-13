@@ -6,6 +6,7 @@ import typing
 
 from forml import provider, etl, error
 from forml.conf import provider as provcfg
+from forml.etl.dsl.schema import kind
 from forml.flow import pipeline
 from forml.runtime import code
 from forml.runtime.asset import access
@@ -19,8 +20,8 @@ class Runner(provider.Interface, default=provcfg.Runner.default):
         self._assets: access.Assets = assets or access.Assets()
         self._engine: etl.Engine = engine or etl.Engine()
 
-    def train(self, lower: typing.Optional['etl.OrdinalT'] = None,
-              upper: typing.Optional['etl.OrdinalT'] = None) -> typing.Any:
+    def train(self, lower: typing.Optional['kind.Native'] = None,
+              upper: typing.Optional['kind.Native'] = None) -> typing.Any:
         """Run the training code.
 
         Args:
@@ -32,8 +33,8 @@ class Runner(provider.Interface, default=provcfg.Runner.default):
         return self._exec(composition.train,
                           self._assets.state(composition.shared, self._assets.tag.training.trigger()))
 
-    def apply(self, lower: typing.Optional['etl.OrdinalT'] = None,
-              upper: typing.Optional['etl.OrdinalT'] = None) -> typing.Any:
+    def apply(self, lower: typing.Optional['kind.Native'] = None,
+              upper: typing.Optional['kind.Native'] = None) -> typing.Any:
         """Run the applying code.
 
         Args:
@@ -45,8 +46,8 @@ class Runner(provider.Interface, default=provcfg.Runner.default):
         composition = self._build(lower, upper, self._assets.project.pipeline)
         return self._exec(composition.apply, self._assets.state(composition.shared))
 
-    def cvscore(self, lower: typing.Optional['etl.OrdinalT'] = None,
-                upper: typing.Optional['etl.OrdinalT'] = None) -> typing.Any:
+    def cvscore(self, lower: typing.Optional['kind.Native'] = None,
+                upper: typing.Optional['kind.Native'] = None) -> typing.Any:
         """Run the crossvalidating evaluation.
 
         Args:
@@ -57,8 +58,8 @@ class Runner(provider.Interface, default=provcfg.Runner.default):
         """
         return self._exec(self._evaluation(lower, upper).train)
 
-    def _evaluation(self, lower: typing.Optional['etl.OrdinalT'] = None,
-                    upper: typing.Optional['etl.OrdinalT'] = None) -> pipeline.Segment:
+    def _evaluation(self, lower: typing.Optional['kind.Native'] = None,
+                    upper: typing.Optional['kind.Native'] = None) -> pipeline.Segment:
         """Return the evaluation pipeline.
 
         Args:
@@ -71,7 +72,7 @@ class Runner(provider.Interface, default=provcfg.Runner.default):
             raise error.Invalid('Project not evaluable')
         return self._build(lower, upper, self._assets.project.pipeline >> self._assets.project.evaluation)
 
-    def _build(self, lower: typing.Optional['etl.OrdinalT'], upper: typing.Optional['etl.OrdinalT'],
+    def _build(self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'],
                *blocks: pipeline.Segment) -> pipeline.Composition:
         """Assemble the chain of blocks with the mandatory ETL cycle.
 

@@ -26,11 +26,10 @@ class Source(task.Actor):
 class Engine(etl.Engine, key='devio'):
     """Development engine.
     """
-    def setup(self, select: etl.Source.Extract.Select,
-              lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> task.Spec:
+    def setup(self, select: 'etl.Source.Extract.Statement.Binding') -> task.Spec:
         params = dict(select.params)
-        if lower:
-            params['lower'] = lower
-        if upper:
-            params['upper'] = upper
+        if select.lower:
+            params['lower'] = select.lower
+        if select.upper:
+            params['upper'] = select.upper
         return Source.spec(producer=select.producer, **params)

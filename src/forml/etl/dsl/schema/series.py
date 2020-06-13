@@ -11,6 +11,7 @@ from forml.etl.dsl.schema import kind as kindmod
 
 if typing.TYPE_CHECKING:
     from forml import etl  # pylint: disable=unused-import; # noqa: F401
+    from forml.etl.dsl.schema import frame
 
 
 LOGGER = logging.getLogger(__name__)
@@ -249,12 +250,12 @@ class Literal(Column):
 class Field(Column):
     """Schema field class bound to its table schema.
     """
-    schema: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
+    table: typing.Type['frame.Table'] = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
     kind: kindmod.Data = property(operator.itemgetter(2))
 
-    def __new__(cls, schema: typing.Type['etl.Schema'], name: str, kind: kindmod.Data):
-        return super().__new__(cls, [schema, name, kind])
+    def __new__(cls, table: typing.Type['frame.Table'], name: str, kind: kindmod.Data):
+        return super().__new__(cls, [table, name, kind])
 
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
