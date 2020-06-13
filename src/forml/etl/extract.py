@@ -92,22 +92,39 @@ class Operator(topology.Operator):
 class Reader(metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
-    class Parser(parsing.Visitor, metaclass=abc.ABCMeta):
-        """Parser implementation for this engine.
-        """
-
     def __init__(self, sources: typing.Mapping[frame.Source, parsing.ResultT],
                  columns: typing.Mapping[series.Column, parsing.ResultT]):
         self._sources: typing.Mapping[frame.Source, parsing.ResultT] = sources
         self._columns: typing.Mapping[series.Column, parsing.ResultT] = columns
 
     def __call__(self, query: stmntmod.Query) -> typing.Any:
-        parser = self.Parser(self._sources, self._columns)  # pylint: disable=abstract-class-instantiated
+        parser = self.parser(self._sources, self._columns)
         query.accept(parser)
         return self.read(parser.result)
 
+    @classmethod
     @abc.abstractmethod
-    def read(self, statement: parsing.ResultT) -> typing.Any:
+    def parser(cls, sources: typing.Mapping[frame.Source, parsing.ResultT],
+               columns: typing.Mapping[series.Column, parsing.ResultT]) -> parsing.Visitor:
+        """Return the parser instance of this reader.
+
+        Args:
+            sources: Source mappings to be used by the parser.
+            co    class Reader(extract.Reader):
+        def __init__(self, sources: typing.Mapping[frame.Source, parsing.ResultT],
+                     columns: typing.Mapping[series.Column, parsing.ResultT]):
+            super().__init__(sources, columns)
+            self._scenario: spec.Scenario.Input = scenario
+    def __call__(self, query: statement.Query) -> typing.Any:
+        ...
+lumns: Column mappings to be used by the parser.
+
+        Returns: Parser instance.
+        """
+
+    @classmethod
+    @abc.abstractmethod
+    def read(cls, statement: parsing.ResultT) -> typing.Any:
         """Perform the read operation with the given statement.
 
         Args:
@@ -120,8 +137,9 @@ class Reader(metaclass=abc.ABCMeta):
 class Actor(task.Actor):
     """Data extraction actor using the provided reader and statement to load the data.
     """
-    def __init__(self, reader: Reader, statement: Statement.Binding):  # pylint: disable=no-member
-        self._reader: Reader = reader
+    def __init__(self, reader: typing.Callable[[stmntmod.Query], typing.Any],
+                 statement: Statement.Binding):  # pylint: disable=no-member
+        self._reader: typing.Callable[[stmntmod.Query], typing.Any] = reader
         self._statement: Statement.Binding = statement  # pylint: disable=no-member
 
     def apply(self) -> typing.Any:
