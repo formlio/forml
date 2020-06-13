@@ -21,6 +21,11 @@ class Column(metaclass=abc.ABCMeta):
         """Column undertest.
         """
 
+    @abc.abstractmethod
+    def test_element(self, column: series.Column):
+        """Test the element getter.
+        """
+
     def test_identity(self, column: series.Column):
         """Test the identity (hashability + equality).
         """
@@ -56,7 +61,28 @@ class Column(metaclass=abc.ABCMeta):
         assert isinstance(column % 1, series.Modulus)
 
 
-class TestLiteral(Column):
+class TestAliased(Column):
+    """Aliased column tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session', params=(series.Literal('baz'), ))
+    def column(request) -> series.Aliased:
+        """Aliased fixture.
+        """
+        return request.param.alias('foobar')
+
+    def test_element(self, column: series.Aliased):
+        assert isinstance(column.element, series.Element)
+
+
+class Element(Column, metaclass=abc.ABCMeta):
+    """Base class for element columns.
+    """
+    def test_element(self, column: series.Element):
+        assert column.element == column
+
+
+class TestLiteral(Element):
     """Literal column tests.
     """
     @staticmethod
@@ -68,7 +94,7 @@ class TestLiteral(Column):
         return series.Literal(request.param)
 
 
-class TestField(Column):
+class TestField(Element):
     """Field unit tests.
     """
     @staticmethod

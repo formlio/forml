@@ -2,17 +2,15 @@
 ETL schema types.
 """
 import abc
+import inspect
 import logging
 import operator
 import typing
+from typing import Any
 
+from forml import etl
 from forml.etl.dsl import statement
-
 from forml.etl.dsl.schema import series
-
-if typing.TYPE_CHECKING:
-    from forml import etl  # pylint: disable=unused-import; # noqa: F401
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +38,14 @@ class Visitor(metaclass=abc.ABCMeta):
 class Source(metaclass=abc.ABCMeta):
     """Source base class.
     """
+    @property
+    @abc.abstractmethod
+    def columns(self) -> typing.Sequence[series.Element]:
+        """Get the list of columns representing this source.
+
+        Returns: Sequence of columns.
+        """
+
     @abc.abstractmethod
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
@@ -74,13 +80,13 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def groupby(self, *columns: 'series.Column') -> 'statement.Query':
+    def groupby(self, *columns: 'series.Element') -> 'statement.Query':
         """Aggregating spec.
         """
 
     @abc.abstractmethod
-    def orderby(self, *columns: typing.Union[series.Column, typing.Union[
-            'statement.Ordering.Direction', str], typing.Tuple[series.Column, typing.Union[
+    def orderby(self, *columns: typing.Union[series.Element, typing.Union[
+            'statement.Ordering.Direction', str], typing.Tuple[series.Element, typing.Union[
                 'statement.Ordering.Direction', str]]]) -> 'statement.Query':
         """Ordering spec.
         """
@@ -114,11 +120,31 @@ class Table(Queryable, tuple):
     class Schema(type):
         """Meta class for schema type ensuring consistent hashing.
         """
+        def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any]) -> Any:
+            existing = {s[k].name or k for s in bases if isinstance(s, Table.Schema) for k in s}
+            for key, field in namespace.items():
+                if not isinstance(field, etl.Field):
+                    continue
+                new = field.name or key
+                if new in existing:
+                    raise TypeError(f'Colliding field name {new} in schema {name}')
+                existing.add(new)
+            if bases and not existing:
+                raise TypeError(f'No fields defined for schema {name}')
+            return super().__new__(mcs, name, bases, namespace)
+
         def __hash__(cls):
             return hash(cls.__module__) ^ hash(cls.__qualname__)
 
         def __eq__(cls, other):
             return hash(cls) == hash(other)
+
+        def __getitem__(cls, key: str) -> 'etl.Field':
+            return getattr(cls, key)
+
+        def __iter__(cls) -> typing.Iterator[str]:
+            return iter(k for c in reversed(inspect.getmro(cls))
+                        for k, f in c.__dict__.items() if isinstance(f, etl.Field))
 
     __schema__: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
 
@@ -138,8 +164,12 @@ class Table(Queryable, tuple):
         return hash(self.__schema__)
 
     def __getattr__(self, name: str) -> 'series.Field':
-        field: 'etl.Field' = getattr(self.__schema__, name)
+        field: 'etl.Field' = self.__schema__[name]
         return series.Field(self, field.name or name, field.kind)
+
+    @property
+    def columns(self) -> typing.Sequence[series.Field]:
+        return tuple(getattr(self, n) for n in self.__schema__)
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_table(self)
@@ -157,11 +187,11 @@ class Table(Queryable, tuple):
              kind: typing.Optional['statement.Join.Kind'] = None) -> 'statement.Query':
         return statement.Query(statement.Join(self, other, condition, kind))
 
-    def groupby(self, *columns: 'series.Column') -> 'statement.Query':
+    def groupby(self, *columns: 'series.Element') -> 'statement.Query':
         return statement.Query(self, grouping=columns)
 
-    def orderby(self, *columns: typing.Union[series.Column, typing.Union[
-            'statement.Ordering.Direction', str], typing.Tuple[series.Column, typing.Union[
+    def orderby(self, *columns: typing.Union[series.Element, typing.Union[
+            'statement.Ordering.Direction', str], typing.Tuple[series.Element, typing.Union[
                 'statement.Ordering.Direction', str]]]) -> 'statement.Query':
         return statement.Query(self, ordering=columns)
 

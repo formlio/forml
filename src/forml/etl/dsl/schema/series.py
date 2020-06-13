@@ -10,7 +10,6 @@ import typing
 from forml.etl.dsl.schema import kind as kindmod
 
 if typing.TYPE_CHECKING:
-    from forml import etl  # pylint: disable=unused-import; # noqa: F401
     from forml.etl.dsl.schema import frame
 
 
@@ -27,6 +26,14 @@ class Visitor(metaclass=abc.ABCMeta):
             column: Column instance to be visited.
         """
         raise NotImplementedError(f'{self.__class__.__name__}.visit_column not implemented')
+
+    def visit_aliased(self, aliased: 'Aliased') -> None:
+        """Generic expression hook.
+
+        Args:
+            aliased: Aliased column instance to be visited.
+        """
+        self.visit_column(aliased)
 
     def visit_field(self, field: 'Field') -> None:
         """Generic expression hook.
@@ -116,6 +123,22 @@ class Column(tuple, metaclass=abc.ABCMeta):
             visitor: Visitor instance.
         """
 
+    @property
+    @abc.abstractmethod
+    def element(self) -> 'Element':
+        """Return the element of this column (apart from Aliased, element is the column itself).
+
+        Returns: Column's element.
+        """
+
+    @classmethod
+    def ensure(cls, column: 'Column') -> 'Column':
+        """Ensure given given column is of our type.
+        """
+        if not isinstance(column, cls):
+            raise ValueError(f'{column} not a {cls.__name__}')
+        return column
+
     def alias(self, alias: str) -> 'Aliased':
         """Use an alias for this column.
 
@@ -198,11 +221,15 @@ class Aliased(Column):
         """Use an alias for this column.
 
         Args:
-            alias:
+            alias: new alias value.
 
         Returns: New column instance with given alias.
         """
         return Aliased(self.column, alias)
+
+    @property
+    def element(self) -> 'Element':
+        return self.column.element
 
     @property
     def kind(self) -> kindmod.Data:
@@ -219,9 +246,18 @@ class Aliased(Column):
             visitor: Visitor instance.
         """
         self.column.accept(visitor)
+        visitor.visit_aliased(self)
 
 
-class Literal(Column):
+class Element(Column, metaclass=abc.ABCMeta):
+    """Base class for any non-aliased columns.
+    """
+    @property
+    def element(self) -> 'Element':
+        return self
+
+
+class Literal(Element):
     """Literal value.
     """
     value: typing.Any = property(operator.itemgetter(0))
@@ -247,7 +283,7 @@ class Literal(Column):
         visitor.visit_literal(self)
 
 
-class Field(Column):
+class Field(Element):
     """Schema field class bound to its table schema.
     """
     table: typing.Type['frame.Table'] = property(operator.itemgetter(0))
@@ -266,7 +302,7 @@ class Field(Column):
         visitor.visit_field(self)
 
 
-class Expression(Column, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
+class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
     def __new__(cls, *terms: Column):
