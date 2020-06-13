@@ -4,8 +4,10 @@ Development ETL engine.
 import typing
 
 from forml import etl
+from forml.etl import extract
+from forml.etl.dsl import parsing, statement as stmntmod
+from forml.etl.dsl.schema import kind, frame, series
 from forml.flow import task
-from forml.etl.dsl.schema import kind
 
 
 class Source(task.Actor):
@@ -26,10 +28,15 @@ class Source(task.Actor):
 class Engine(etl.Engine, key='devio'):
     """Development engine.
     """
-    def setup(self, select: 'etl.Source.Extract.Statement.Binding') -> task.Spec:
-        params = dict(select.params)
-        if select.lower:
-            params['lower'] = select.lower
-        if select.upper:
-            params['upper'] = select.upper
-        return Source.spec(producer=select.producer, **params)
+    def setup(self, statement: 'extract.Statement.Binding') -> task.Spec:
+        params = dict()
+        if statement.lower:
+            params['lower'] = statement.lower
+        if statement.upper:
+            params['upper'] = statement.upper
+        return Source.spec(producer=statement.producer, **params)
+
+    @classmethod
+    def reader(cls, sources: typing.Mapping[frame.Source, parsing.ResultT], columns: typing.Mapping[
+            series.Column, parsing.ResultT]) -> typing.Callable[[stmntmod.Query], typing.Any]:
+        pass

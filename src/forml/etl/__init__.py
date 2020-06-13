@@ -105,10 +105,6 @@ class Source(typing.NamedTuple):
 class Engine(provider.Interface, default=provcfg.Engine.default):
     """ETL engine is the implementation of a specific datasource access layer.
     """
-    class Reader(extract.Reader, metaclass=abc.ABCMeta):
-        """Engine specific reader implementation
-        """
-
     def __init__(self, **readerkw):
         self._readerkw: typing.Dict[str, typing.Any] = readerkw
 
@@ -138,11 +134,22 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
 
         Returns: Actor task spec.
         """
-        return extract.Actor.spec(self.Reader(  # pylint: disable=abstract-class-instantiated
-            self.sources, self.columns), statement, **self._readerkw)
+        return extract.Actor.spec(self.reader(self.sources, self.columns), statement, **self._readerkw)
+
+    @classmethod
+    @abc.abstractmethod
+    def reader(cls, sources: typing.Mapping[frame.Source, parsing.ResultT], columns: typing.Mapping[
+            series.Column, parsing.ResultT]) -> typing.Callable[[stmntmod.Query], typing.Any]:
+        """Return the reader instance of this engine.
+
+        Args:
+            sources: Source mappings to be used by the reader.
+            columns: Column mappings to be used by the reader.
+
+        Returns: Reader instance (presumably extract.Reader).
+        """
 
     @property
-    @abc.abstractmethod
     def sources(self) -> typing.Mapping[frame.Source, parsing.ResultT]:
         """The explicit sources mapping implemented by this engine to be used by the query parser.
 

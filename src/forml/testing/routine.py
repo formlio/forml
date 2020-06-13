@@ -7,17 +7,11 @@ import logging
 import string
 import typing
 import unittest
-import uuid
 
-from forml import etl
 from forml.conf import provider as provcfg
-from forml.flow import task
-from forml.flow.graph import node as nodemod
-from forml.flow.graph import view
 from forml.flow.pipeline import topology
 from forml.runtime import process
-from forml.stdlib.operator import simple
-from forml.testing import spec
+from forml.testing import spec, facility
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,52 +41,11 @@ class Meta(abc.ABCMeta):
         return super().__new__(mcs, name, bases, namespace)
 
 
-class Runner:
-    """Test runner is a minimal forml pipeline wrapping the tested operator.
-    """
-    @simple.Labeler.operator
-    class Extractor(task.Actor):
-        """Just split the features-label pair.
-        """
-
-        def apply(self, bundle: typing.Tuple[typing.Any, typing.Any]) -> typing.Tuple[typing.Any, typing.Any]:
-            return bundle
-
-    class Initializer(view.Visitor):
-        """Visitor that tries to instantiate each node in attempt to validate it.
-        """
-        def __init__(self):
-            self._gids: typing.Set[uuid.UUID] = set()
-
-        def visit_node(self, node: nodemod.Worker) -> None:
-            if isinstance(node, nodemod.Worker) and node.gid not in self._gids:
-                self._gids.add(node.gid)
-                node.spec()
-
-    def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input,
-                 runner: provcfg.Runner, engine: provcfg.Engine):
-        self._params: spec.Scenario.Params = params
-        self._source: etl.Source = etl.Extract(etl.Select(lambda: (scenario.train, scenario.label)),
-                                               etl.Select(lambda: scenario.apply)) >> Runner.Extractor()
-        self._runner: provcfg.Runner = runner
-        self._engine: provcfg.Engine = engine
-
-    def __call__(self, operator: typing.Type[topology.Operator]) -> process.Runner:
-        instance = operator(*self._params.args, **self._params.kwargs)
-        initializer = self.Initializer()
-        segment = instance.expand()
-        segment.apply.accept(initializer)
-        segment.train.accept(initializer)
-        segment.label.accept(initializer)
-        engine = etl.Engine[self._engine.name](**self._engine.kwargs)
-        return self._source.bind(instance).launcher(process.Runner[self._runner.name], engine, **self._runner.kwargs)
-
-
 class Test:
     """Base class for test implementations.
     """
-    def __init__(self, runner: Runner):
-        self._runner: Runner = runner
+    def __init__(self, runner: facility.Runner):
+        self._runner: facility.Runner = runner
 
     def __call__(self, suite: Suite) -> None:
         runner = self.init(suite)
@@ -141,7 +94,7 @@ class Test:
 class RaisableTest(Test):
     """Base test class for raising test cases.
     """
-    def __init__(self, runner: Runner, exception: spec.Scenario.Exception):
+    def __init__(self, runner: facility.Runner, exception: spec.Scenario.Exception):
         super().__init__(runner)
         self._exception: spec.Scenario.Exception = exception
 
@@ -161,7 +114,7 @@ class RaisableTest(Test):
 class ReturnableTest(Test):
     """Base test class for returning test cases.
     """
-    def __init__(self, runner: Runner, output: spec.Scenario.Output):
+    def __init__(self, runner: facility.Runner, output: spec.Scenario.Output):
         super().__init__(runner)
         self._output: spec.Scenario.Output = output
 
@@ -245,10 +198,9 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine.
     """
-    def __init__(self, name: str, scenario: spec.Scenario, runner: provcfg.Runner = provcfg.Testing.Runner.default,
-                 engine: provcfg.Engine = provcfg.Testing.Engine.default):
+    def __init__(self, name: str, scenario: spec.Scenario, runner: provcfg.Runner = provcfg.Testing.Runner.default):
         self._name: str = name
-        runner = Runner(scenario.params, scenario.input, runner, engine)
+        runner = facility.Runner(scenario.params, scenario.input, runner)
         self._test: Test = self.select(scenario, runner)
 
     @staticmethod
