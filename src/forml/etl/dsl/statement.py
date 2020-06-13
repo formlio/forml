@@ -54,8 +54,12 @@ class Join(collections.namedtuple('Join', 'left, right, condition, kind'), frame
 
     def __new__(cls, left: frame.Source, right: frame.Source, condition: series.Expression,
                 kind: typing.Optional[typing.Union['Join.Kind', str]] = None):
-        return super().__new__(cls, left, right, series.Logical.ensure(condition),
+        return super().__new__(cls, left, right, series.Logical.ensure(series.Element.ensure(condition)),
                                cls.Kind(kind) if kind else cls.Kind.LEFT)
+
+    @property
+    def columns(self) -> typing.Sequence[series.Column]:
+        return self.left.columns + self.right.columns
 
     def accept(self, visitor: Visitor) -> None:
         self.left.accept(visitor)
@@ -77,6 +81,10 @@ class Set(collections.namedtuple('Set', 'left, right, kind'), frame.Source):
     def __new__(cls, left: frame.Source, right: frame.Source, kind: 'Set.Kind'):
         return super().__new__(cls, left, right, kind)
 
+    @property
+    def columns(self) -> typing.Sequence[series.Column]:
+        return self.left.columns + self.right.columns
+
     def accept(self, visitor: Visitor) -> None:
         self.left.accept(visitor)
         self.right.accept(visitor)
@@ -93,18 +101,20 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         ASCENDING = 'ascending'
         DESCENDING = 'descending'
 
-        def __call__(self, column: typing.Union[series.Column, 'Ordering']) -> 'Ordering':
+        def __call__(self, column: typing.Union[series.Element, 'Ordering']) -> 'Ordering':
             if isinstance(column, Ordering):
                 column = column.column
             return Ordering(column, self)
 
-    def __new__(cls, column: series.Column, direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
-        return super().__new__(cls, column, cls.Direction(direction) if direction else cls.Direction.ASCENDING)
+    def __new__(cls, column: series.Element,
+                direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
+        return super().__new__(cls, series.Element.ensure(column),
+                               cls.Direction(direction) if direction else cls.Direction.ASCENDING)
 
     @classmethod
-    def make(cls, specs: typing.Sequence[typing.Union[series.Column,
+    def make(cls, specs: typing.Sequence[typing.Union[series.Element,
                                                       typing.Union['Ordering.Direction', str],
-                                                      typing.Tuple[series.Column, typing.Union[
+                                                      typing.Tuple[series.Element, typing.Union[
                                                           'Ordering.Direction', str]]]]) -> typing.Iterable['Ordering']:
         """Helper to generate orderings from given columns and directions.
 
@@ -115,7 +125,7 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         """
         specs = itertools.zip_longest(specs, specs[1:])
         for column, direction in specs:
-            if isinstance(column, series.Column):
+            if isinstance(column, series.Element):
                 if isinstance(direction, (Ordering.Direction, str)):
                     yield Ordering.Direction(direction)(column)
                     next(specs)  # pylint: disable=stop-iteration-return
@@ -135,26 +145,33 @@ class Rows(collections.namedtuple('Rows', 'count, offset')):
         return super().__new__(cls, count, offset)
 
 
-class Query(collections.namedtuple('Query', 'source, columns, prefilter, grouping, postfilter, ordering, rows'),
+class Query(collections.namedtuple('Query', 'source, selection, prefilter, grouping, postfilter, ordering, rows'),
             frame.Queryable):
     """Generic source descriptor.
     """
     def __new__(cls, source: 'frame.Source',
-                columns: typing.Optional[typing.Iterable[series.Column]] = None,
+                selection: typing.Optional[typing.Iterable[series.Column]] = None,
                 prefilter: typing.Optional[series.Expression] = None,
-                grouping: typing.Optional[typing.Iterable[series.Column]] = None,
+                grouping: typing.Optional[typing.Iterable[series.Element]] = None,
                 postfilter: typing.Optional[series.Expression] = None,
-                ordering: typing.Optional[typing.Sequence[typing.Union[series.Column,
+                ordering: typing.Optional[typing.Sequence[typing.Union[series.Element,
                                                                        typing.Union['Ordering.Direction', str],
-                                                                       typing.Tuple[series.Column, typing.Union[
+                                                                       typing.Tuple[series.Element, typing.Union[
                                                                            'Ordering.Direction', str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
+        if selection and {series.Column.ensure(s).element for s in selection}.difference(source.columns):
+            raise ValueError('Selection is not a subset of source columns')
         if prefilter is not None:
-            series.Logical.ensure(prefilter)
+            series.Logical.ensure(series.Element.ensure(prefilter))
         if postfilter is not None:
-            series.Logical.ensure(postfilter)
-        return super().__new__(cls, source, tuple(columns or []), prefilter, tuple(grouping or []), postfilter,
+            series.Logical.ensure(series.Element.ensure(postfilter))
+        return super().__new__(cls, source, tuple(selection or []), prefilter,
+                               tuple(series.Element.ensure(g) for g in grouping or []), postfilter,
                                tuple(Ordering.make(ordering or [])), rows)
+
+    @property
+    def columns(self) -> typing.Sequence[series.Column]:
+        return self.selection if self.selection else self.source.columns
 
     def accept(self, visitor: Visitor) -> None:
         self.source.accept(visitor)
@@ -166,25 +183,25 @@ class Query(collections.namedtuple('Query', 'source, columns, prefilter, groupin
     def where(self, condition: series.Expression) -> 'Query':
         if self.prefilter is not None:
             condition &= self.prefilter
-        return Query(self.source, self.columns, condition, self.grouping, self.postfilter, self.ordering, self.rows)
+        return Query(self.source, self.selection, condition, self.grouping, self.postfilter, self.ordering, self.rows)
 
     def having(self, condition: series.Expression) -> 'Query':
         if self.postfilter is not None:
             condition &= self.postfilter
-        return Query(self.source, self.columns, self.prefilter, self.grouping, condition, self.ordering, self.rows)
+        return Query(self.source, self.selection, self.prefilter, self.grouping, condition, self.ordering, self.rows)
 
     def join(self, other: frame.Source, condition: series.Expression,
              kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
-        return Query(Join(self.source, other, condition, kind), self.columns, self.prefilter, self.grouping,
+        return Query(Join(self.source, other, condition, kind), self.selection, self.prefilter, self.grouping,
                      self.postfilter, self.ordering, self.rows)
 
-    def groupby(self, *columns: series.Column) -> 'Query':
-        return Query(self.source, self.columns, self.prefilter, columns, self.postfilter, self.ordering, self.rows)
+    def groupby(self, *columns: series.Element) -> 'Query':
+        return Query(self.source, self.selection, self.prefilter, columns, self.postfilter, self.ordering, self.rows)
 
-    def orderby(self, *columns: typing.Union[series.Column, typing.Union['Ordering.Direction', str], typing.Tuple[
-            series.Column, typing.Union['Ordering.Direction', str]]]) -> 'Query':
-        return Query(self.source, self.columns, self.prefilter, self.grouping, self.postfilter, columns, self.rows)
+    def orderby(self, *columns: typing.Union[series.Element, typing.Union['Ordering.Direction', str], typing.Tuple[
+            series.Element, typing.Union['Ordering.Direction', str]]]) -> 'Query':
+        return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, columns, self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':
-        return Query(self.source, self.columns, self.prefilter, self.grouping, self.postfilter, self.ordering,
+        return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, self.ordering,
                      Rows(count, offset))

@@ -123,7 +123,7 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
         """
 
     @abc.abstractmethod
-    def generate_query(self, source: ResultT, columns: typing.Sequence[ResultT],
+    def generate_query(self, source: ResultT, selection: typing.Sequence[ResultT],
                        where: typing.Optional[ResultT], groupby: typing.Sequence[ResultT],
                        having: typing.Optional[ResultT], orderby: typing.Sequence[ResultT],
                        rows: typing.Optional[statement.Rows]) -> ResultT:
@@ -131,7 +131,7 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
 
         Args:
             source: Source already in target code.
-            columns: Sequence of selected columns in target code.
+            selection: Sequence of selected columns in target code.
             where: Where condition in target code.
             groupby: Sequence of grouping specifiers in target code.
             having: Having condition in target code.
@@ -181,17 +181,12 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
 
     @bypass(generate_table)
     def visit_query(self, source: statement.Query) -> None:
-        def mkcol(col: series.Column) -> ResultT:
-            val = self.generate_column(col)
-            if isinstance(col, series.Aliased):
-                val = self.generate_alias(val, col.name)
-            return val
-        columns = [mkcol(c) for c in source.columns]
+        selection = [self.generate_column(c) for c in source.selection]
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
         orderby = [self.generate_ordering(self.generate_column(c), o) for c, o in source.ordering]
-        self._stack.append(self.generate_query(self._stack.pop(), columns, where, groupby, having, orderby,
+        self._stack.append(self.generate_query(self._stack.pop(), selection, where, groupby, having, orderby,
                                                source.rows))
 
     def generate_field(self, field: series.Field) -> ResultT:
@@ -231,6 +226,10 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
 
     def visit_field(self, column: series.Field) -> None:
         self._stack.append(self.generate_field(column))
+
+    @bypass(generate_field)
+    def visit_aliased(self, column: series.Aliased) -> None:
+        self._stack.append(self.generate_alias(self._stack.pop(), column.name))
 
     @bypass(generate_field)
     def visit_literal(self, column: series.Literal) -> None:

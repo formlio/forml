@@ -15,7 +15,7 @@ class Statement(typing.NamedTuple):
     """Select statement defined as a query and definition of the ordinal expression.
     """
     query: stmntmod.Query
-    ordinal: typing.Optional[series.Column]
+    ordinal: typing.Optional[series.Element]
 
     class Binding(typing.NamedTuple):
         """Statement bound with particular lower/upper parameters.
@@ -110,14 +110,7 @@ class Reader(metaclass=abc.ABCMeta):
 
         Args:
             sources: Source mappings to be used by the parser.
-            co    class Reader(extract.Reader):
-        def __init__(self, sources: typing.Mapping[frame.Source, parsing.ResultT],
-                     columns: typing.Mapping[series.Column, parsing.ResultT]):
-            super().__init__(sources, columns)
-            self._scenario: spec.Scenario.Input = scenario
-    def __call__(self, query: statement.Query) -> typing.Any:
-        ...
-lumns: Column mappings to be used by the parser.
+            columns: Column mappings to be used by the parser.
 
         Returns: Parser instance.
         """
