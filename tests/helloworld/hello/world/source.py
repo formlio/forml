@@ -13,5 +13,5 @@ class HelloWorld(etl.Schema):
     name = etl.Field(kind.String())
 
 
-INSTANCE = etl.Source(HelloWorld.select(HelloWorld.name))
+INSTANCE = etl.Source.query(train=HelloWorld.select(HelloWorld.name))
 component.setup(INSTANCE)

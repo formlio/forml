@@ -77,3 +77,8 @@ class TestField(Column):
         """Field fixture.
         """
         return student.surname
+
+    def test_table(self, column: series.Field, student: frame.Table):
+        """Test the column table reference.
+        """
+        assert column.table == student

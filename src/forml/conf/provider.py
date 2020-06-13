@@ -75,12 +75,6 @@ class Runner(Section):
 class Testing:
     """Providers specific to testing.
     """
-    class Engine(Section):
-        """Engine provider.
-        """
-        SUBJECT = conf.OPT_ENGINE
-        SELECTOR = conf.SECTION_TESTING
-
     class Runner(Section):
         """Runner provider.
         """

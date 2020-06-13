@@ -6,6 +6,7 @@ import typing
 
 from forml import cli, error, etl
 from forml.conf import provider as provcfg
+from forml.etl.dsl.schema import kind
 from forml.runtime import process
 from forml.runtime.asset import persistent, access
 from forml.runtime.asset.directory import root
@@ -80,7 +81,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('--upper', help='upper tuneset ordinal')
     def tune(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
              registry: typing.Optional[str], runner: typing.Optional[str], engine: typing.Optional[str],
-             lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT]) -> None:
+             lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> None:
         """Tune mode execution.
 
         Args:
@@ -106,7 +107,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('--upper', help='upper trainset ordinal')
     def train(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
               registry: typing.Optional[str], runner: typing.Optional[str], engine: typing.Optional[str],
-              lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT]) -> None:
+              lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> None:
         """Train mode execution.
 
         Args:
@@ -134,7 +135,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('--upper', help='upper testset ordinal')
     def apply(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
               registry: typing.Optional[str], runner: typing.Optional[str], engine: typing.Optional[str],
-              lower: typing.Optional[etl.OrdinalT], upper: typing.Optional[etl.OrdinalT]) -> None:
+              lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> None:
         """Apply mode execution.
 
         Args:

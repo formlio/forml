@@ -111,7 +111,7 @@ class TestDescriptor:
             product.Descriptor.load('foo')
         descriptor = product.Descriptor.load(project_package.manifest.package, project_package.path)
         assert descriptor.pipeline.__dict__ == pipeline.__dict__
-        assert descriptor.source.__dict__ == source.__dict__
+        assert descriptor.source == source
         assert descriptor.evaluation.__dict__ == evaluation.__dict__
 
 
@@ -123,7 +123,7 @@ class TestArtifact:
         """Testing descriptor access.
         """
         assert project_artifact.descriptor.pipeline.__dict__ == pipeline.__dict__
-        assert project_artifact.descriptor.source.__dict__ == source.__dict__
+        assert project_artifact.descriptor.source == source
         assert project_artifact.descriptor.evaluation.__dict__ == evaluation.__dict__
 
     def test_launcher(self, project_artifact: product.Artifact):

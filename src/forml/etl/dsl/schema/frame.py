@@ -111,6 +111,15 @@ class Table(Queryable, tuple):
 
     This type can be used either as metaclass or as a base class to inherit from.
     """
+    class Schema(type):
+        """Meta class for schema type ensuring consistent hashing.
+        """
+        def __hash__(cls):
+            return hash(cls.__module__) ^ hash(cls.__qualname__)
+
+        def __eq__(cls, other):
+            return hash(cls) == hash(other)
+
     __schema__: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
 
     def __new__(mcs, schema: typing.Union[str, typing.Type['etl.Schema']],  # pylint: disable=bad-classmethod-argument
@@ -119,7 +128,7 @@ class Table(Queryable, tuple):
         if issubclass(mcs, Table):  # used as metaclass
             if bases:
                 bases = (bases[0].__schema__, )
-            schema = type(schema, bases, namespace)
+            schema = mcs.Schema(schema, bases, namespace)
         else:
             if bases or namespace:
                 raise TypeError('Unexpected use of schema table')
@@ -130,7 +139,7 @@ class Table(Queryable, tuple):
 
     def __getattr__(self, name: str) -> 'series.Field':
         field: 'etl.Field' = getattr(self.__schema__, name)
-        return series.Field(self.__schema__, field.name or name, field.kind)
+        return series.Field(self, field.name or name, field.kind)
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_table(self)
