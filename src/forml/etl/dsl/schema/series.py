@@ -19,13 +19,13 @@ LOGGER = logging.getLogger(__name__)
 class Visitor(metaclass=abc.ABCMeta):
     """Schema visitor.
     """
+    @abc.abstractmethod
     def visit_column(self, column: 'Column') -> None:
         """Generic column hook.
 
         Args:
             column: Column instance to be visited.
         """
-        raise NotImplementedError(f'{self.__class__.__name__}.visit_column not implemented')
 
     def visit_aliased(self, aliased: 'Aliased') -> None:
         """Generic expression hook.

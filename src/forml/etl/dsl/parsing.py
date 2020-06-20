@@ -14,7 +14,75 @@ LOGGER = logging.getLogger(__name__)
 ResultT = typing.TypeVar('ResultT')
 
 
-def bypass(override: typing.Callable[['Visitor', typing.Any], None]) -> typing.Callable:
+class Stack(typing.Generic[ResultT]):
+    """Stack as a base parser structure.
+    """
+    def __init__(self):
+        self._values: typing.List[ResultT] = list()
+
+    def push(self, item: ResultT) -> None:
+        """Push new parsed item to the stack.
+
+        Args:
+            item: Item to be added.
+        """
+        self._values.append(item)
+
+    def pop(self) -> ResultT:
+        """Remove and return a value from the top of the stack.
+
+        Returns: Item from the stack top.
+        """
+        return self._values.pop()
+
+    @property
+    def result(self) -> ResultT:
+        """Return the target code after this visitor instance has been accepted by a statement.
+
+        Returns: Target code of given statement.
+        """
+        assert len(self._values) == 1, 'Unexpected stack state'
+        return self._values[0]
+
+
+class Stackable(metaclass=abc.ABCMeta):
+    """Interface for stackable parsers.
+    """
+    @abc.abstractmethod
+    def push(self, item: ResultT) -> None:
+        """Push new parsed item to the stack.
+
+        Args:
+            item: Item to be added.
+        """
+
+    @abc.abstractmethod
+    def pop(self) -> ResultT:
+        """Remove and return a value from the top of the stack.
+
+        Returns: Item from the stack top.
+        """
+
+    @property
+    @abc.abstractmethod
+    def result(self) -> ResultT:
+        """Return the target code after this visitor instance has been accepted by a statement.
+
+        Returns: Target code of given statement.
+        """
+
+    @abc.abstractmethod
+    def generate_column(self, column: series.Column) -> ResultT:
+        """Generate target code for the generic column type.
+
+        Args:
+            column: Column instance
+
+        Returns: Column in target code.
+        """
+
+
+def bypass(override: typing.Callable[[Stack, typing.Any], None]) -> typing.Callable:
     """By pass the (result of) the particular visit_* implementation if the supplied override resolver provides an
     alternative value.
 
@@ -24,7 +92,7 @@ def bypass(override: typing.Callable[['Visitor', typing.Any], None]) -> typing.C
 
     Returns: Visitor method decorator.
     """
-    def decorator(visit: typing.Callable[['Visitor', typing.Any], None]) -> typing.Callable:
+    def decorator(visit: typing.Callable[[Stack, typing.Any], None]) -> typing.Callable:
         """Visitor method decorator with added bypassing capability.
 
         Args:
@@ -33,7 +101,7 @@ def bypass(override: typing.Callable[['Visitor', typing.Any], None]) -> typing.C
         Returns: Decorated version of the visit_* method.
         """
         @functools.wraps(visit)
-        def wrapped(self: 'Visitor', subject: typing.Any) -> None:
+        def wrapped(self: Stack, subject: typing.Any) -> None:
             """Decorated version of the visit_* method.
 
             Args:
@@ -47,30 +115,18 @@ def bypass(override: typing.Callable[['Visitor', typing.Any], None]) -> typing.C
                 pass
             else:
                 LOGGER.debug('Overriding result for %s', subject)
-                # pylint: disable=protected-access
-                self._stack.pop()
-                self._stack.append(result)
+                self.pop()
+                self.push(result)
 
         return wrapped
     return decorator
 
 
-class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metaclass=abc.ABCMeta):
-    """Parsing interface implemented as a statement/series visitor.
+class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.ABCMeta):
+    """Mixin implementing a series parser.
     """
-    def __init__(self, sources: typing.Mapping[frame.Source, ResultT], columns: typing.Mapping[series.Column, ResultT]):
-        self._sources: typing.Mapping[frame.Source, ResultT] = types.MappingProxyType(sources)
+    def __init__(self, columns: typing.Mapping[series.Column, ResultT]):
         self._columns: typing.Mapping[series.Column, ResultT] = types.MappingProxyType(columns)
-        self._stack: typing.List[ResultT] = list()
-
-    @property
-    def result(self) -> ResultT:
-        """Return the target code after this visitor instance has been accepted by a statement.
-
-        Returns: Target code of given statement.
-        """
-        assert len(self._stack) == 1, 'Unexpected visitor state'
-        return self._stack[0]
 
     @functools.lru_cache()
     def generate_column(self, column: series.Column) -> ResultT:
@@ -82,7 +138,79 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
         Returns: Column in target code.
         """
         column.accept(self)
-        return self._stack.pop()
+        return self.pop()
+
+    def generate_field(self, field: series.Field) -> ResultT:
+        """Generate target code for a field value.
+
+        Args:
+            field: Schema field instance.
+
+        Returns: Field in target code representation.
+        """
+        try:
+            return self._columns[field]
+        except KeyError:
+            raise error.Mapping(f'Unknown mapping for field {field}')
+
+    @abc.abstractmethod
+    def generate_alias(self, column: ResultT, alias: str) -> ResultT:
+        """Generate column alias code.
+
+        Args:
+            column: Column value already in target code.
+            alias: Alias to be used for given column.
+
+        Returns: Aliased column in target code.
+        """
+
+    @abc.abstractmethod
+    def generate_literal(self, literal: series.Literal) -> ResultT:
+        """Generate target code for a literal value.
+
+        Args:
+            literal: Literal value instance.
+
+        Returns: Literal in target code representation.
+        """
+
+    @abc.abstractmethod
+    def generate_expression(self, expression: typing.Type[series.Expression],
+                            arguments: typing.Sequence[ResultT]) -> ResultT:
+        """Generate target code for an expression of given arguments.
+
+        Args:
+            expression: Operator or function implementing the expression.
+            arguments: Expression arguments.
+
+        Returns: Expression in target code representation.
+        """
+
+    def visit_column(self, column: series.Column) -> None:
+        raise RuntimeError(f'Unexpected call to {self.__class__.__name__}.visit_column')
+
+    def visit_field(self, column: series.Field) -> None:
+        self.push(self.generate_field(column))
+
+    @bypass(generate_field)
+    def visit_aliased(self, column: series.Aliased) -> None:
+        self.push(self.generate_alias(self.pop(), column.name))
+
+    @bypass(generate_field)
+    def visit_literal(self, column: series.Literal) -> None:
+        self.push(self.generate_literal(column))
+
+    @bypass(generate_field)
+    def visit_expression(self, column: series.Expression) -> None:
+        arguments = tuple(reversed([self.pop() for _ in column]))
+        self.push(self.generate_expression(column.__class__, arguments))
+
+
+class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass=abc.ABCMeta):
+    """Mixin implementing a statement parser.
+    """
+    def __init__(self, sources: typing.Mapping[frame.Source, ResultT]):
+        self._sources: typing.Mapping[frame.Source, ResultT] = types.MappingProxyType(sources)
 
     def generate_table(self, table: frame.Table) -> ResultT:
         """Generate target code for a table type.
@@ -142,17 +270,6 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
         """
 
     @abc.abstractmethod
-    def generate_alias(self, column: ResultT, alias: str) -> ResultT:
-        """Generate column alias code.
-
-        Args:
-            column: Column value already in target code.
-            alias: Alias to be used for given column.
-
-        Returns: Aliased column in target code.
-        """
-
-    @abc.abstractmethod
     def generate_ordering(self, column: ResultT, direction: statement.Ordering.Direction) -> ResultT:
         """Generate column ordering code.
 
@@ -163,21 +280,24 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
         Returns: Column ordering in target code.
         """
 
+    def visit_source(self, source: frame.Source) -> None:
+        raise RuntimeError(f'Unexpected call to {self.__class__.__name__}.visit_source')
+
     def visit_table(self, source: frame.Table) -> None:
-        self._stack.append(self.generate_table(source))
+        self.push(self.generate_table(source))
 
     @bypass(generate_table)
     def visit_join(self, source: statement.Join) -> None:
-        right = self._stack.pop()
-        left = self._stack.pop()
+        right = self.pop()
+        left = self.pop()
         expression = self.generate_column(source.condition)
-        self._stack.append(self.generate_join(left, right, expression, source.kind))
+        self.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(generate_table)
     def visit_set(self, source: statement.Set) -> None:
-        right = self._stack.pop()
-        left = self._stack.pop()
-        self._stack.append(self.generate_set(left, right, source.kind))
+        right = self.pop()
+        left = self.pop()
+        self.push(self.generate_set(left, right, source.kind))
 
     @bypass(generate_table)
     def visit_query(self, source: statement.Query) -> None:
@@ -186,56 +306,4 @@ class Visitor(typing.Generic[ResultT], statement.Visitor, series.Visitor, metacl
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
         orderby = [self.generate_ordering(self.generate_column(c), o) for c, o in source.ordering]
-        self._stack.append(self.generate_query(self._stack.pop(), selection, where, groupby, having, orderby,
-                                               source.rows))
-
-    def generate_field(self, field: series.Field) -> ResultT:
-        """Generate target code for a field value.
-
-        Args:
-            field: Schema field instance.
-
-        Returns: Field in target code representation.
-        """
-        try:
-            return self._columns[field]
-        except KeyError:
-            raise error.Mapping(f'Unknown mapping for field {field}')
-
-    @abc.abstractmethod
-    def generate_literal(self, literal: series.Literal) -> ResultT:
-        """Generate target code for a literal value.
-
-        Args:
-            literal: Literal value instance.
-
-        Returns: Literal in target code representation.
-        """
-
-    @abc.abstractmethod
-    def generate_expression(self, expression: typing.Type[series.Expression],
-                            arguments: typing.Sequence[ResultT]) -> ResultT:
-        """Generate target code for an expression of given arguments.
-
-        Args:
-            expression: Operator or function implementing the expression.
-            arguments: Expression arguments.
-
-        Returns: Expression in target code representation.
-        """
-
-    def visit_field(self, column: series.Field) -> None:
-        self._stack.append(self.generate_field(column))
-
-    @bypass(generate_field)
-    def visit_aliased(self, column: series.Aliased) -> None:
-        self._stack.append(self.generate_alias(self._stack.pop(), column.name))
-
-    @bypass(generate_field)
-    def visit_literal(self, column: series.Literal) -> None:
-        self._stack.append(self.generate_literal(column))
-
-    @bypass(generate_field)
-    def visit_expression(self, column: series.Expression) -> None:
-        arguments = tuple(reversed([self._stack.pop() for _ in column]))
-        self._stack.append(self.generate_expression(column.__class__, arguments))
+        self.push(self.generate_query(self.pop(), selection, where, groupby, having, orderby, source.rows))

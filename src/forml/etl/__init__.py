@@ -5,10 +5,10 @@ import abc
 import collections
 import typing
 
-from forml import provider, error
+from forml import provider
 from forml.conf import provider as provcfg
 from forml.etl import extract
-from forml.etl.dsl import parsing, statement as stmntmod
+from forml.etl.dsl import parsing, statement as stmtmod
 from forml.etl.dsl.schema import kind as kindmod, frame, series
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
@@ -34,58 +34,31 @@ class Source(typing.NamedTuple):
     extract: 'Source.Extract'
     transform: typing.Optional[topology.Composable] = None
 
-    class Extract(typing.NamedTuple):
+    class Extract(collections.namedtuple('Extract', 'train, apply, label, ordinal')):
         """Combo of select statements for the different modes.
         """
-        train: 'extract.Statement'
-        apply: 'extract.Statement'
+        def __new__(cls, train: stmtmod.Query, apply: stmtmod.Query, label: typing.Sequence[series.Column],
+                    ordinal: typing.Optional[series.Element]):
+            if {c.element for c in train.columns}.intersection(c.element for c in label):
+                raise ValueError('Label-feature overlap')
+            if ordinal:
+                series.Element.ensure(ordinal)
+            return super().__new__(cls, train, apply, tuple(label), ordinal)
 
     @classmethod
-    @typing.overload
-    def query(cls, train: stmntmod.Query, apply: typing.Optional[stmntmod.Query] = None,
-              ordinal: typing.Optional[series.Column] = None) -> 'Source':
-        """Query signature with plain train/apply queries and common ordinal expression.
+    def query(cls, features: stmtmod.Query, *label: series.Column, apply: typing.Optional[stmtmod.Query] = None,
+              ordinal: typing.Optional[series.Element] = None) -> 'Source':
+        """Create new source with the given extraction.
 
         Args:
-            train: Train query.
-            apply: Optional apply query.
-            ordinal: Optional ordinal expression common to both train and apply queries.
+            features: Query defining the train (and possibly apply) features.
+            label: List of training label columns.
+            apply: Optional query defining the apply features (if different from train ones).
+            ordinal: Optional specification of an ordinal column.
 
-        Returns: Source instance.
+        Returns: New source instance.
         """
-
-    @classmethod
-    @typing.overload
-    def query(cls, train: typing.Tuple[stmntmod.Query, series.Column],
-              apply: typing.Optional[typing.Tuple[stmntmod.Query, series.Column]] = None) -> 'Source':
-        """Query signature with train/apply specs provided with specific distinct ordinal expression each.
-
-        Args:
-            train: Tuple of train query and ordinal expression.
-            apply: Optional tuple of apply query and ordinal expression.
-
-        Returns: Source instance.
-        """
-
-    @classmethod
-    def query(cls, *, train, apply=None, ordinal=None):
-        """Actual implementations of the overloaded versions of query - see above for details.
-        """
-        if isinstance(train, stmntmod.Query):  # plain query with (optional) common ordinal expression
-            train = extract.Statement(train, ordinal)
-            if apply:
-                if not isinstance(apply, stmntmod.Query):
-                    raise error.Missing('Plain apply query expected')
-                apply = extract.Statement(apply, ordinal)
-        else:  # explicit per query ordinal expression
-            if ordinal is not None:
-                raise error.Unexpected('Common ordinal not expected')
-            train = extract.Statement(*train)
-            if apply:
-                if isinstance(apply, stmntmod.Query):
-                    raise error.Missing('Ordinal for apply query required')
-                apply = extract.Statement(*apply)
-        return cls(cls.Extract(train, apply or train))  # pylint: disable=no-member
+        return cls(cls.Extract(features, apply or features, label, ordinal))  # pylint: disable=no-member
 
     def __rshift__(self, transform: topology.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
@@ -119,35 +92,52 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
 
         Returns: Flow track.
         """
-        apply: task.Spec = self.setup(source.extract.apply.bind(lower, upper))
-        train: task.Spec = self.setup(source.extract.train.bind(lower, upper))
-        etl: topology.Composable = extract.Operator(apply, train)
+        def reader(query: stmtmod.Query) -> task.Spec:
+            """Helper for creating the reader actor spec for given query.
+
+            Args:
+                query: Data loading statement.
+
+            Returns: Reader actor spec.
+            """
+            return extract.Reader.Actor.spec(self.reader(self.sources, self.columns), extract.Statement.prepare(
+                query, source.extract.ordinal, lower, upper), **self._readerkw)
+
+        train: stmtmod.Query = source.extract.train
+        label: typing.Optional[task.Spec] = None
+        if source.extract.label:
+            train = train.select(*(*source.extract.train.columns, *source.extract.label))
+            label = extract.Selector.Actor.spec(self.selector(self.columns), source.extract.train.columns,
+                                                source.extract.label)
+        etl: topology.Composable = extract.Operator(reader(source.extract.apply), reader(train), label)
         if source.transform:
             etl >>= source.transform
         return etl.expand()
 
-    def setup(self, statement: extract.Statement.Binding) -> task.Spec:  # pylint: disable=no-member
-        """Actual engine provider to be implemented by subclass.
-
-        Args:
-            statement: The select statement binding.
-
-        Returns: Actor task spec.
-        """
-        return extract.Actor.spec(self.reader(self.sources, self.columns), statement, **self._readerkw)
-
     @classmethod
     @abc.abstractmethod
     def reader(cls, sources: typing.Mapping[frame.Source, parsing.ResultT], columns: typing.Mapping[
-            series.Column, parsing.ResultT]) -> typing.Callable[[stmntmod.Query], typing.Any]:
-        """Return the reader instance of this engine.
+            series.Column, parsing.ResultT]) -> typing.Callable[[stmtmod.Query], typing.Any]:
+        """Return the reader instance of this engine (any callable, presumably extract.Reader).
 
         Args:
             sources: Source mappings to be used by the reader.
             columns: Column mappings to be used by the reader.
 
-        Returns: Reader instance (presumably extract.Reader).
+        Returns: Reader instance.
         """
+
+    @classmethod
+    def selector(cls, columns: typing.Mapping[series.Column, parsing.ResultT]) -> typing.Callable[
+            [typing.Any, typing.Sequence[series.Column]], typing.Any]:
+        """Return the selector instance of this engine, that is able to split the loaded dataset column-wise.
+
+        Args:
+            columns: Column mappings to be used by the selector.
+
+        Returns: Selector instance.
+        """
+        raise NotImplementedError(f'No selector implemented for {cls.__name__}')
 
     @property
     def sources(self) -> typing.Mapping[frame.Source, parsing.ResultT]:
