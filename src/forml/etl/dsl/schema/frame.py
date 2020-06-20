@@ -18,13 +18,13 @@ LOGGER = logging.getLogger(__name__)
 class Visitor(metaclass=abc.ABCMeta):
     """Schema visitor.
     """
+    @abc.abstractmethod
     def visit_source(self, source: 'Source') -> None:
         """Generic source hook.
 
         Args:
             source: Source instance to be visited.
         """
-        raise NotImplementedError(f'{self.__class__.__name__}.visit_source not implemented')
 
     def visit_table(self, table: 'Table') -> None:
         """Generic source hook.

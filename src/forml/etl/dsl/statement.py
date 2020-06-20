@@ -160,7 +160,7 @@ class Query(collections.namedtuple('Query', 'source, selection, prefilter, group
                                                                            'Ordering.Direction', str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
         if selection and {series.Column.ensure(s).element for s in selection}.difference(source.columns):
-            raise ValueError('Selection is not a subset of source columns')
+            raise ValueError(f'Selection ({selection}) is not a subset of source columns ({source.columns})')
         if prefilter is not None:
             series.Logical.ensure(series.Element.ensure(prefilter))
         if postfilter is not None:

@@ -20,21 +20,13 @@ from forml.testing import spec
 LOGGER = logging.getLogger(__name__)
 
 
-class TrainSet(etl.Schema):
-    """Testing trainset schema.
+class DataSet(etl.Schema):
+    """Testing schema.
 
     The actual fields are irrelevant.
     """
     feature: etl.Field = etl.Field(kind.Integer())
     label: etl.Field = etl.Field(kind.Float())
-
-
-class TestSet(etl.Schema):
-    """Testing testset schema.
-
-    The actual fields are irrelevant.
-    """
-    feature: etl.Field = etl.Field(kind.Integer())
 
 
 class Engine(etl.Engine, key='testing'):
@@ -55,18 +47,29 @@ class Engine(etl.Engine, key='testing'):
 
             Returns: Data.
             """
-            try:
-                return sources[query.source]
-            except KeyError:
-                raise RuntimeError(f'Expected either {TrainSet.__schema__.__qualname__} or '
-                                   f'{TestSet.__schema__.__qualname__}, got {query}')
+            return columns[DataSet.label] if DataSet.label in query.columns else columns[DataSet.feature]
         return read
 
+    @classmethod
+    def selector(cls, columns: typing.Mapping[series.Column, parsing.ResultT]) -> typing.Callable[
+            [typing.Any, typing.Sequence[series.Column]], typing.Any]:
+        def select(source: typing.Tuple[typing.Any], subset: typing.Sequence[series.Column]) -> typing.Any:
+            """Select callback.
+
+            Args:
+                source: Input dataset.
+                subset: List of columns to be selected.
+
+            Returns: Selected dataset.
+            """
+            return source[1] if DataSet.label in subset else source[0]
+        return select
+
     @property
-    def sources(self) -> typing.Mapping[frame.Source, parsing.ResultT]:
+    def columns(self) -> typing.Mapping[series.Column, parsing.ResultT]:
         return {
-            TrainSet: (self._scenario.train, self._scenario.label),
-            TestSet: self._scenario.apply
+            DataSet.label: (self._scenario.train, self._scenario.label),
+            DataSet.feature: self._scenario.apply
         }
 
 
@@ -93,8 +96,7 @@ class Runner:
 
     def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: provcfg.Runner):
         self._params: spec.Scenario.Params = params
-        self._source: etl.Source = etl.Source.query(train=TrainSet.select(),
-                                                    apply=TestSet.select()) >> Runner.Extractor()
+        self._source: etl.Source = etl.Source.query(DataSet.select(DataSet.feature), DataSet.label)
         self._engine: etl.Engine = Engine(scenario)
         self._runner: provcfg.Runner = runner
 
