@@ -11,7 +11,16 @@ from forml.etl.dsl import statement, function
 from forml.etl.dsl.schema import frame, series
 
 
-class Queryable(metaclass=abc.ABCMeta):
+class Source(metaclass=abc.ABCMeta):
+    """Source tests base class.
+    """
+    def test_columns(self, source: frame.Queryable, student: frame.Table):
+        """Test the reported column.
+        """
+        assert student.surname in source.columns
+
+
+class Queryable(Source, metaclass=abc.ABCMeta):
     """Base class for queryable tests.
     """
     @staticmethod
@@ -21,11 +30,13 @@ class Queryable(metaclass=abc.ABCMeta):
         """Undertest source.
         """
 
-    def test_select(self, source: frame.Queryable, student: frame.Table):
+    def test_select(self, source: frame.Queryable, student: frame.Table, school: frame.Table):
         """Select test.
         """
         assert source.select(student.score).selection[0] == student.score
         assert source.select(student.score, student.surname).selection == (student.score, student.surname)
+        with pytest.raises(ValueError):
+            source.select(school.name)  # school.name not part of source
 
     @classmethod
     def _expression(cls, source: frame.Queryable, student: frame.Table,
