@@ -89,7 +89,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
         @staticmethod
         def content(root: pathlib.Path) -> bool:
-            return any(Path.Lineage.valid(l) for l in root.iterdir())
+            return any(Path.Lineage.valid(i) for i in root.iterdir())
 
     class Lineage(Matcher):
         """Lineage matcher.

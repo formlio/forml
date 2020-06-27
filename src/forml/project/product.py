@@ -110,26 +110,26 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             self._assets: access.Assets = assets
 
         @property
-        def _engine(self) -> 'etl.Engine':
-            """Default engine instance.
+        def _feed(self) -> 'etl.Feed':
+            """Default feed instance.
 
-            Returns: Engine instance.
+            Returns: Feed instance.
             """
-            config = provcfg.Engine.default
-            return etl.Engine[config.name](**config.kwargs)   # pylint: disable=no-member
+            config = provcfg.Feed.default
+            return etl.Feed[config.name](**config.kwargs)   # pylint: disable=no-member
 
         def __call__(self, runner: typing.Type['process.Runner'],
-                     engine: typing.Optional['etl.Engine'] = None, **kwargs: typing.Any) -> 'process.Runner':
-            return runner(self._assets, engine, **kwargs)
+                     feed: typing.Optional['etl.Feed'] = None, **kwargs: typing.Any) -> 'process.Runner':
+            return runner(self._assets, feed, **kwargs)
 
         def __getitem__(self, runner: str) -> 'process.Runner':
             config = provcfg.Runner.parse(runner)
-            return process.Runner[config.name](self._assets, self._engine, **config.kwargs)
+            return process.Runner[config.name](self._assets, self._feed, **config.kwargs)
 
         def __getattr__(self, mode: str) -> typing.Callable:
             config = provcfg.Runner.default
             # pylint: disable=no-member
-            return getattr(process.Runner[config.name](self._assets, self._engine, **config.kwargs), mode)
+            return getattr(process.Runner[config.name](self._assets, self._feed, **config.kwargs), mode)
 
     def __new__(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
                 package: typing.Optional[str] = None, **modules: typing.Any):

@@ -29,8 +29,8 @@ class DataSet(etl.Schema):
     label: etl.Field = etl.Field(kind.Float())
 
 
-class Engine(etl.Engine, key='testing'):
-    """Special engine to feed the test cases.
+class Feed(etl.Feed, key='testing'):
+    """Special feed to feed the test cases.
     """
     def __init__(self, scenario: spec.Scenario.Input, **kw):
         super().__init__(**kw)
@@ -97,7 +97,7 @@ class Runner:
     def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: provcfg.Runner):
         self._params: spec.Scenario.Params = params
         self._source: etl.Source = etl.Source.query(DataSet.select(DataSet.feature), DataSet.label)
-        self._engine: etl.Engine = Engine(scenario)
+        self._feed: etl.Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
     def __call__(self, operator: typing.Type[topology.Operator]) -> process.Runner:
@@ -107,5 +107,5 @@ class Runner:
         segment.apply.accept(initializer)
         segment.train.accept(initializer)
         segment.label.accept(initializer)
-        return self._source.bind(instance).launcher(process.Runner[self._runner.name], self._engine,
+        return self._source.bind(instance).launcher(process.Runner[self._runner.name], self._feed,
                                                     **self._runner.kwargs)

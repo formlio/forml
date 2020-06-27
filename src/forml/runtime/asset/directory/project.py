@@ -30,7 +30,7 @@ class Level(directory.Level):
 
         Returns: Level content listing.
         """
-        return self.Listing(lngmod.Level.Key(l) for l in self.registry.lineages(self.key))
+        return self.Listing(lngmod.Level.Key(n) for n in self.registry.lineages(self.key))
 
     def get(self, lineage: typing.Optional[typing.Union[str, lngmod.Level.Key]] = None) -> lngmod.Level:
         """Get a lineage instance by its id.

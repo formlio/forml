@@ -53,7 +53,7 @@ class Runner(process.Runner, key='dask'):
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'
             if len(leaves) > 1:
-                LOGGER.debug('Dag output based on %d leaves: %s', len(leaves), ','.join(str(l) for l in leaves))
+                LOGGER.debug('Dag output based on %d leaves: %s', len(leaves), ','.join(str(n) for n in leaves))
                 output = self.Output()
                 self.output = id(output)
                 tasks[self.output] = output, *leaves
@@ -66,9 +66,9 @@ class Runner(process.Runner, key='dask'):
 
     SCHEDULER = 'multiprocessing'
 
-    def __init__(self, assets: typing.Optional[access.Assets] = None, engine: typing.Optional['etl.Engine'] = None,
+    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['etl.Feed'] = None,
                  scheduler: typing.Optional[str] = None):
-        super().__init__(assets, engine)
+        super().__init__(assets, feed)
         self._scheduler: str = scheduler or self.SCHEDULER
 
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:

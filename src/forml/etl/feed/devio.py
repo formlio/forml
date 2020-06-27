@@ -1,5 +1,5 @@
 """
-Development ETL engine.
+Development ETL feed.
 """
 import typing
 
@@ -25,10 +25,10 @@ class Source(task.Actor):
         return self._producer(**self._params)
 
 
-class Engine(etl.Engine, key='devio'):
-    """Development engine.
+class Feed(etl.Feed, key='devio'):
+    """Development feed.
     """
-    def setup(self, statement: 'extract.Statement.Binding') -> task.Spec:
+    def setup(self, statement: 'extract.Statement.Prepared') -> task.Spec:
         params = dict()
         if statement.lower:
             params['lower'] = statement.lower

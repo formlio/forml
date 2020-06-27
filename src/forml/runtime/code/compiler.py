@@ -180,7 +180,7 @@ class Table(view.Visitor, abc.Iterable):
                 return left if left else right
             return (pick(a, b) for a, b in itertools.zip_longest(value, element))
 
-        stubs = {s for s in (self._index[l] for l in self._linkage.leaves) if isinstance(s, instmod.Getter)}
+        stubs = {s for s in (self._index[n] for n in self._linkage.leaves) if isinstance(s, instmod.Getter)}
         for instruction, keys in self._index.instructions:
             if instruction in stubs:
                 LOGGER.debug('Pruning stub getter %s', instruction)

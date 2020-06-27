@@ -158,7 +158,7 @@ def lprint(listing: typing.Iterable[typing.Any]) -> None:
     listing = tuple(str(i) for i in listing)
     if not listing:
         return
-    width = max(len(l) for l in listing) + 2
+    width = max(len(i) for i in listing) + 2
     count = min(shutil.get_terminal_size().columns // width, len(listing))
     for row in itertools.zip_longest(*(listing[i::count] for i in range(count)), fillvalue=''):
         print(*(f'{c:<{width}}' for c in row), sep='')

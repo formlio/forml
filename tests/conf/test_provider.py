@@ -40,15 +40,15 @@ class TestRegistry(Section):
         return provcfg.Registry
 
 
-class TestEngine(Section):
+class TestFeed(Section):
     """Conf unit tests.
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Engine]:
+    def provider() -> typing.Type[provcfg.Feed]:
         """Provider type.
         """
-        return provcfg.Engine
+        return provcfg.Feed
 
 
 class TestRunner(Section):
