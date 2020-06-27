@@ -3,10 +3,11 @@ Development ETL feed.
 """
 import typing
 
-from forml import etl
-from forml.etl import extract
-from forml.etl.dsl import parsing, statement as stmntmod
-from forml.etl.dsl.schema import kind, frame, series
+from forml import io
+from forml.io.etl import extract
+from forml.io.dsl import parsing
+from forml.io.dsl import statement as stmntmod
+from forml.io.dsl.schema import series, frame, kind
 from forml.flow import task
 
 
@@ -25,7 +26,7 @@ class Source(task.Actor):
         return self._producer(**self._params)
 
 
-class Feed(etl.Feed, key='devio'):
+class Feed(io.Feed, key='devio'):
     """Development feed.
     """
     def setup(self, statement: 'extract.Statement.Prepared') -> task.Spec:

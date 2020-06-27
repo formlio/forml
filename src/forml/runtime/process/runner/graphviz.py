@@ -6,10 +6,14 @@ import typing
 
 import graphviz as grviz
 
-from forml import etl, conf
+from forml import conf
 from forml.runtime import code, process
 from forml.runtime.asset import access
 from forml.runtime.code import instruction
+
+if typing.TYPE_CHECKING:
+    from forml import io
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,7 +23,7 @@ class Runner(process.Runner, key='graphviz'):
     """
     FILEPATH = f'{conf.APPNAME}.dot'
 
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional[etl.Feed] = None,
+    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None,
                  filepath: typing.Optional[str] = None, **gvkw: typing.Any):
         super().__init__(assets, feed)
         self._filepath: str = filepath or self.FILEPATH

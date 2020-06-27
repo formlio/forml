@@ -7,8 +7,9 @@ import logging
 import types
 import typing
 
-from forml.etl.dsl import statement, error
-from forml.etl.dsl.schema import frame, series
+from forml.io.dsl import error
+from forml.io.dsl import statement
+from forml.io.dsl.schema import series, frame
 
 LOGGER = logging.getLogger(__name__)
 ResultT = typing.TypeVar('ResultT')

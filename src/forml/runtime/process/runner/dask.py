@@ -8,9 +8,12 @@ import typing
 
 import dask
 
-from forml import etl  # pylint: disable=unused-import; # noqa: F401
 from forml.runtime import code, process
 from forml.runtime.asset import access
+
+if typing.TYPE_CHECKING:
+    from forml import io
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +69,7 @@ class Runner(process.Runner, key='dask'):
 
     SCHEDULER = 'multiprocessing'
 
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['etl.Feed'] = None,
+    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None,
                  scheduler: typing.Optional[str] = None):
         super().__init__(assets, feed)
         self._scheduler: str = scheduler or self.SCHEDULER

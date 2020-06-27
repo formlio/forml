@@ -8,7 +8,7 @@ import decimal
 
 import pytest
 
-from forml.etl.dsl.schema import series, frame
+from forml.io.dsl.schema import series, frame
 
 
 class Column(metaclass=abc.ABCMeta):
@@ -65,7 +65,7 @@ class TestAliased(Column):
     """Aliased column tests.
     """
     @staticmethod
-    @pytest.fixture(scope='session', params=(series.Literal('baz'), ))
+    @pytest.fixture(scope='session', params=(series.Literal('baz'),))
     def column(request) -> series.Aliased:
         """Aliased fixture.
         """

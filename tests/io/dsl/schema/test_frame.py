@@ -4,9 +4,9 @@ ETL unit tests.
 # pylint: disable=no-self-use
 
 import pytest
-from forml import etl
+from forml.io import etl
 
-from forml.etl.dsl.schema import frame, kind
+from forml.io.dsl.schema import frame, kind
 from . import Queryable
 
 

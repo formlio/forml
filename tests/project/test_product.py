@@ -5,7 +5,8 @@ Project tests.
 
 import pytest
 
-from forml import etl, error
+from forml import error
+from forml.io import etl
 from forml.flow.pipeline import topology
 from forml.project import product, distribution, importer
 from forml.stdlib.operator import simple

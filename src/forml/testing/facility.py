@@ -5,10 +5,12 @@ import logging
 import typing
 import uuid
 
-from forml import etl
+from forml import io
+from forml.io import etl
 from forml.conf import provider as provcfg
-from forml.etl.dsl import parsing, statement
-from forml.etl.dsl.schema import frame, series, kind
+from forml.io.dsl import parsing
+from forml.io.dsl import statement
+from forml.io.dsl.schema import series, frame, kind
 from forml.flow import task
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
@@ -29,7 +31,7 @@ class DataSet(etl.Schema):
     label: etl.Field = etl.Field(kind.Float())
 
 
-class Feed(etl.Feed, key='testing'):
+class Feed(io.Feed, key='testing'):
     """Special feed to feed the test cases.
     """
     def __init__(self, scenario: spec.Scenario.Input, **kw):
@@ -97,7 +99,7 @@ class Runner:
     def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: provcfg.Runner):
         self._params: spec.Scenario.Params = params
         self._source: etl.Source = etl.Source.query(DataSet.select(DataSet.feature), DataSet.label)
-        self._feed: etl.Feed = Feed(scenario)
+        self._feed: io.Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
     def __call__(self, operator: typing.Type[topology.Operator]) -> process.Runner:

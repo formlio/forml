@@ -10,7 +10,7 @@ created just for structuring the project code base splitting it into these parti
 """
 from titanic.source import producer, label
 
-from forml import etl
+from forml.io import etl
 from forml.project import component
 
 TRAIN = etl.Select(producer.trainset)

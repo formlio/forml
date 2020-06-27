@@ -5,8 +5,8 @@ Global ForML unit tests fixtures.
 
 import pytest
 
-from forml import etl
-from forml.etl.dsl.schema import kind, frame
+from forml.io import etl
+from forml.io.dsl.schema import frame, kind
 
 
 @pytest.fixture(scope='session')
