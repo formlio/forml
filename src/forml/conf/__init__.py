@@ -35,19 +35,19 @@ APPCFG = 'config.ini'
 
 SECTION_DEFAULT = 'DEFAULT'
 SECTION_REGISTRY = 'REGISTRY'
-SECTION_ENGINE = 'ENGINE'
+SECTION_FEED = 'FEED'
 SECTION_RUNNER = 'RUNNER'
 SECTION_STAGING = 'STAGING'
 SECTION_TESTING = 'TESTING'
 OPT_LOGCFG = 'logcfg'
 OPT_PROVIDER = 'provider'
 OPT_REGISTRY = 'registry'
-OPT_ENGINE = 'engine'
+OPT_FEED = 'feed'
 OPT_RUNNER = 'runner'
 
 DEFAULT_OPTIONS = {
     OPT_LOGCFG: 'logging.ini',
-    OPT_ENGINE: 'devio',
+    OPT_FEED: 'devio',
     OPT_REGISTRY: 'virtual',
     OPT_RUNNER: 'dask',
 }

@@ -29,7 +29,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
 
 
 class Source(typing.NamedTuple):
-    """Engine independent data provider description.
+    """Feed independent data provider description.
     """
     extract: 'Source.Extract'
     transform: typing.Optional[topology.Composable] = None
@@ -75,8 +75,8 @@ class Source(typing.NamedTuple):
         return product.Artifact(source=self, pipeline=pipeline, **modules)
 
 
-class Engine(provider.Interface, default=provcfg.Engine.default):
-    """ETL engine is the implementation of a specific datasource access layer.
+class Feed(provider.Interface, default=provcfg.Feed.default):
+    """ETL feed is the implementation of a specific datasource access layer.
     """
     def __init__(self, **readerkw):
         self._readerkw: typing.Dict[str, typing.Any] = readerkw
@@ -118,7 +118,7 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
     @abc.abstractmethod
     def reader(cls, sources: typing.Mapping[frame.Source, parsing.ResultT], columns: typing.Mapping[
             series.Column, parsing.ResultT]) -> typing.Callable[[stmtmod.Query], typing.Any]:
-        """Return the reader instance of this engine (any callable, presumably extract.Reader).
+        """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
             sources: Source mappings to be used by the reader.
@@ -130,7 +130,7 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
     @classmethod
     def selector(cls, columns: typing.Mapping[series.Column, parsing.ResultT]) -> typing.Callable[
             [typing.Any, typing.Sequence[series.Column]], typing.Any]:
-        """Return the selector instance of this engine, that is able to split the loaded dataset column-wise.
+        """Return the selector instance of this feed, that is able to split the loaded dataset column-wise.
 
         Args:
             columns: Column mappings to be used by the selector.
@@ -141,7 +141,7 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
 
     @property
     def sources(self) -> typing.Mapping[frame.Source, parsing.ResultT]:
-        """The explicit sources mapping implemented by this engine to be used by the query parser.
+        """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
         """
@@ -149,7 +149,7 @@ class Engine(provider.Interface, default=provcfg.Engine.default):
 
     @property
     def columns(self) -> typing.Mapping[series.Column, parsing.ResultT]:
-        """The explicit columns mapping implemented by this engine to be used by the query parser.
+        """The explicit columns mapping implemented by this feed to be used by the query parser.
 
         Returns: Columns mapping.
         """

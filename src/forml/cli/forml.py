@@ -48,7 +48,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @classmethod
     def _runner(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
                 registry: typing.Optional[str], runner: typing.Optional[str],
-                engine: typing.Optional[str]) -> process.Runner:
+                feed: typing.Optional[str]) -> process.Runner:
         """Common helper for train/apply methods.
 
         Args:
@@ -57,18 +57,18 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             generation: Generation index.
             registry: Optional registry reference.
             runner: Optional runner reference.
-            engine: Optional engine reference.
+            feed: Optional feed reference.
 
         Returns: Runner instance.
         """
         regcfg = provcfg.Registry.parse(registry)
-        engcfg = provcfg.Engine.parse(engine)
+        engcfg = provcfg.Feed.parse(feed)
         runcfg = provcfg.Runner.parse(runner)
 
         registry = root.Level(persistent.Registry[regcfg.name](**regcfg.kwargs))
         assets = access.Assets(project, lineage, generation, registry)
-        engine = etl.Engine[engcfg.name](**engcfg.kwargs)
-        return process.Runner[runcfg.name](assets, engine, **runcfg.kwargs)
+        feed = etl.Feed[engcfg.name](**engcfg.kwargs)
+        return process.Runner[runcfg.name](assets, feed, **runcfg.kwargs)
 
     @cli.Command(help='tune the given project lineage producing new generation', description='Tune mode execution')
     @cli.Param('project', help='project to be tuned')
@@ -76,11 +76,11 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('generation', nargs='?', help='generation to be tuned')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
-    @cli.Param('-E', '--engine', type=str, help='IO engine reference')
+    @cli.Param('-I', '--feed', type=str, help='IO feed reference')
     @cli.Param('--lower', help='lower tuneset ordinal')
     @cli.Param('--upper', help='upper tuneset ordinal')
     def tune(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-             registry: typing.Optional[str], runner: typing.Optional[str], engine: typing.Optional[str],
+             registry: typing.Optional[str], runner: typing.Optional[str], feed: typing.Optional[str],
              lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> None:
         """Tune mode execution.
 
@@ -90,7 +90,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             generation: Generation index to be tuned.
             registry: Optional registry reference.
             runner: Optional runner reference.
-            engine: Optional engine reference.
+            feed: Optional feed reference.
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
@@ -102,11 +102,11 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('generation', nargs='?', help='generation to be trained')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
-    @cli.Param('-E', '--engine', type=str, help='IO engine reference')
+    @cli.Param('-I', '--feed', type=str, help='IO feed reference')
     @cli.Param('--lower', help='lower trainset ordinal')
     @cli.Param('--upper', help='upper trainset ordinal')
     def train(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-              registry: typing.Optional[str], runner: typing.Optional[str], engine: typing.Optional[str],
+              registry: typing.Optional[str], runner: typing.Optional[str], feed: typing.Optional[str],
               lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> None:
         """Train mode execution.
 
@@ -116,11 +116,11 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             generation: Generation index to be trained.
             registry: Optional registry reference.
             runner: Optional runner reference.
-            engine: Optional engine reference.
+            feed: Optional feed reference.
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        result = cls._runner(project, lineage, generation, registry, runner, engine).train(lower, upper)
+        result = cls._runner(project, lineage, generation, registry, runner, feed).train(lower, upper)
         if result is not None:
             print(result)
 
@@ -130,11 +130,11 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('generation', nargs='?', help='generation to be applied')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
-    @cli.Param('-E', '--engine', type=str, help='IO engine reference')
+    @cli.Param('-I', '--feed', type=str, help='IO feed reference')
     @cli.Param('--lower', help='lower testset ordinal')
     @cli.Param('--upper', help='upper testset ordinal')
     def apply(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-              registry: typing.Optional[str], runner: typing.Optional[str], engine: typing.Optional[str],
+              registry: typing.Optional[str], runner: typing.Optional[str], feed: typing.Optional[str],
               lower: typing.Optional[kind.Native], upper: typing.Optional[kind.Native]) -> None:
         """Apply mode execution.
 
@@ -144,8 +144,8 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             generation: Generation index to be applied.
             registry: Optional registry reference.
             runner: Optional runner reference.
-            engine: Optional engine reference.
+            feed: Optional feed reference.
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        print(cls._runner(project, lineage, generation, registry, runner, engine).apply(lower, upper))
+        print(cls._runner(project, lineage, generation, registry, runner, feed).apply(lower, upper))

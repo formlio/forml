@@ -16,9 +16,9 @@ from forml.runtime.code import compiler
 class Runner(provider.Interface, default=provcfg.Runner.default):
     """Abstract base runtime class to be extended by particular runtime implementations.
     """
-    def __init__(self, assets: typing.Optional[access.Assets] = None, engine: typing.Optional['etl.Engine'] = None):
+    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['etl.Feed'] = None):
         self._assets: access.Assets = assets or access.Assets()
-        self._engine: etl.Engine = engine or etl.Engine()
+        self._feed: etl.Feed = feed or etl.Feed()
 
     def train(self, lower: typing.Optional['kind.Native'] = None,
               upper: typing.Optional['kind.Native'] = None) -> typing.Any:
@@ -83,7 +83,7 @@ class Runner(provider.Interface, default=provcfg.Runner.default):
 
         Returns: Assembled flow pipeline.
         """
-        return pipeline.Composition(self._engine.load(self._assets.project.source, lower, upper),
+        return pipeline.Composition(self._feed.load(self._assets.project.source, lower, upper),
                                     *(b.expand() for b in blocks))
 
     def _exec(self, path: pipeline.Segment, assets: typing.Optional[access.State] = None) -> typing.Any:

@@ -60,10 +60,10 @@ class Registry(Section):
     SUBJECT = conf.OPT_REGISTRY
 
 
-class Engine(Section):
-    """Engine provider.
+class Feed(Section):
+    """Feed provider.
     """
-    SUBJECT = conf.OPT_ENGINE
+    SUBJECT = conf.OPT_FEED
 
 
 class Runner(Section):

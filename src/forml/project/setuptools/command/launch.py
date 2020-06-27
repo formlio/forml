@@ -21,7 +21,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     """
     user_options = [
         ('runner=', 'R', 'runtime runner'),
-        ('engine=', 'E', 'etl engine'),
+        ('feed=', 'I', 'etl feed'),
         ('lower=', None, 'lower trainset ordinal'),
         ('upper=', None, 'upper trainset ordinal'),
     ]
@@ -31,7 +31,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """
         super().initialize_options()
         self.runner: typing.Optional[str] = None
-        self.engine: typing.Optional[str] = None
+        self.feed: typing.Optional[str] = None
         self.lower: typing.Optional[str] = None
         self.upper: typing.Optional[str] = None
 
@@ -60,10 +60,10 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """This is the original test command entry point - lets override it with our actions.
         """
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        engine = provider.Engine.parse(self.engine)
+        feed = provider.Feed.parse(self.feed)
         runner = provider.Runner.parse(self.runner)
         # pylint: disable=no-member
-        launcher = self.artifact.launcher(process.Runner[runner.name], etl.Engine[engine.name](**engine.kwargs),
+        launcher = self.artifact.launcher(process.Runner[runner.name], etl.Feed[feed.name](**feed.kwargs),
                                           **runner.kwargs)
         result = self.launch(launcher, lower=self.lower, upper=self.upper)
         if result is not None:
