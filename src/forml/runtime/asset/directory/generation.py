@@ -9,7 +9,7 @@ import types
 import typing
 import uuid
 
-from forml.etl.dsl.schema import kind
+from forml.io.dsl.schema import kind
 from forml.runtime.asset import directory, persistent
 
 if typing.TYPE_CHECKING:

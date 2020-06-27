@@ -8,9 +8,10 @@ import types
 import typing
 from collections import abc
 
-from forml import conf, etl, error
+from forml import conf, error, io
 from forml.conf import provider as provcfg
 from forml.flow.pipeline import topology
+from forml.io import etl
 from forml.project import component as compmod, distribution, importer
 from forml.runtime import process
 from forml.runtime.asset import access, persistent
@@ -110,16 +111,16 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             self._assets: access.Assets = assets
 
         @property
-        def _feed(self) -> 'etl.Feed':
+        def _feed(self) -> 'io.Feed':
             """Default feed instance.
 
             Returns: Feed instance.
             """
             config = provcfg.Feed.default
-            return etl.Feed[config.name](**config.kwargs)   # pylint: disable=no-member
+            return io.Feed[config.name](**config.kwargs)   # pylint: disable=no-member
 
         def __call__(self, runner: typing.Type['process.Runner'],
-                     feed: typing.Optional['etl.Feed'] = None, **kwargs: typing.Any) -> 'process.Runner':
+                     feed: typing.Optional['io.Feed'] = None, **kwargs: typing.Any) -> 'process.Runner':
             return runner(self._assets, feed, **kwargs)
 
         def __getitem__(self, runner: str) -> 'process.Runner':

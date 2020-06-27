@@ -7,8 +7,9 @@ import typing
 
 import pytest
 
-from forml.etl.dsl import parsing, statement as stmtmod
-from forml.etl.dsl.schema import series as sermod, frame
+from forml.io.dsl import parsing
+from forml.io.dsl import statement as stmtmod
+from forml.io.dsl.schema import series as sermod, frame
 
 
 @pytest.fixture(scope='session')

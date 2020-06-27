@@ -4,8 +4,9 @@ import abc
 import typing
 
 from forml import error
-from forml.etl.dsl import parsing, statement as stmtmod
-from forml.etl.dsl.schema import kind as kindmod, series, frame
+from forml.io.dsl import parsing
+from forml.io.dsl import statement as stmtmod
+from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology

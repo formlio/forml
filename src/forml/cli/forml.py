@@ -4,9 +4,9 @@ Main cli frontend.
 # pylint: disable=no-self-argument, no-self-use
 import typing
 
-from forml import cli, error, etl
+from forml import cli, error, io
 from forml.conf import provider as provcfg
-from forml.etl.dsl.schema import kind
+from forml.io.dsl.schema import kind
 from forml.runtime import process
 from forml.runtime.asset import persistent, access
 from forml.runtime.asset.directory import root
@@ -67,7 +67,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
 
         registry = root.Level(persistent.Registry[regcfg.name](**regcfg.kwargs))
         assets = access.Assets(project, lineage, generation, registry)
-        feed = etl.Feed[engcfg.name](**engcfg.kwargs)
+        feed = io.Feed[engcfg.name](**engcfg.kwargs)
         return process.Runner[runcfg.name](assets, feed, **runcfg.kwargs)
 
     @cli.Command(help='tune the given project lineage producing new generation', description='Tune mode execution')

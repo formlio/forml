@@ -7,8 +7,8 @@ import typing
 
 import pytest
 
-from forml.etl.dsl import statement, function
-from forml.etl.dsl.schema import frame, series
+from forml.io.dsl import function, statement
+from forml.io.dsl.schema import series, frame
 
 
 class Source(metaclass=abc.ABCMeta):
@@ -103,9 +103,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             student.score, statement.Ordering.Direction.ASCENDING)
         assert source.orderby(statement.Ordering(student.score)).ordering[0] == (
             student.score, statement.Ordering.Direction.ASCENDING)
-        assert source.orderby(statement.Ordering(student.score,
-                                                 statement.Ordering.Direction.DESCENDING)).ordering[0] == (
-                                                     student.score, statement.Ordering.Direction.DESCENDING)
+        assert source.orderby(statement.Ordering(
+            student.score, statement.Ordering.Direction.DESCENDING)).ordering[0] == (
+                student.score, statement.Ordering.Direction.DESCENDING)
         assert source.orderby(student.score, 'descending').ordering[0] == (
             student.score, statement.Ordering.Direction.DESCENDING)
         assert source.orderby(student.score, statement.Ordering.Direction.DESCENDING).ordering[0] == (

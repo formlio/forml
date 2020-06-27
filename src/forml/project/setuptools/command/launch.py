@@ -8,7 +8,7 @@ import typing
 
 from setuptools.command import test
 
-from forml import etl
+from forml import io
 from forml.conf import provider
 from forml.project import product
 from forml.runtime import process
@@ -63,7 +63,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         feed = provider.Feed.parse(self.feed)
         runner = provider.Runner.parse(self.runner)
         # pylint: disable=no-member
-        launcher = self.artifact.launcher(process.Runner[runner.name], etl.Feed[feed.name](**feed.kwargs),
+        launcher = self.artifact.launcher(process.Runner[runner.name], io.Feed[feed.name](**feed.kwargs),
                                           **runner.kwargs)
         result = self.launch(launcher, lower=self.lower, upper=self.upper)
         if result is not None:

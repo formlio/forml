@@ -7,11 +7,10 @@ import logging
 import operator
 import typing
 
-from forml.etl.dsl.schema import kind as kindmod
+from forml.io.dsl.schema import kind as kindmod
 
 if typing.TYPE_CHECKING:
-    from forml.etl.dsl.schema import frame
-
+    from forml.io.dsl.schema import frame
 
 LOGGER = logging.getLogger(__name__)
 

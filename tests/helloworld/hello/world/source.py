@@ -1,9 +1,9 @@
 """
 Dummy project source.
 """
-from forml.etl.dsl.schema import kind
+from forml.io.dsl.schema import kind
 
-from forml import etl
+from forml.io import etl
 from forml.project import component
 
 

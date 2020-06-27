@@ -8,9 +8,9 @@ import operator
 import typing
 from typing import Any
 
-from forml import etl
-from forml.etl.dsl import statement
-from forml.etl.dsl.schema import series
+from forml.io import etl
+from forml.io.dsl import statement
+from forml.io.dsl.schema import series
 
 LOGGER = logging.getLogger(__name__)
 

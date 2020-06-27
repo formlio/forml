@@ -3,7 +3,7 @@ import typing
 import pandas as pd
 from sklearn import ensemble, linear_model, impute, preprocessing, feature_extraction, naive_bayes
 
-from forml import etl
+from forml.io import etl
 from forml.flow import task
 from forml.stdlib.actor import wrapped
 from forml.stdlib.operator import simple

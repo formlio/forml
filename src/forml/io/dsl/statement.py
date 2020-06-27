@@ -8,7 +8,7 @@ import itertools
 import typing
 from collections import abc as colabc
 
-from forml.etl.dsl.schema import frame, series
+from forml.io.dsl.schema import series, frame
 
 
 class Visitor(frame.Visitor, metaclass=abc.ABCMeta):
