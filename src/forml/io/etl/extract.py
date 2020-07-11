@@ -122,8 +122,10 @@ class Reader(metaclass=abc.ABCMeta):
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __call__(self, query: stmtmod.Query) -> Columnar:
+        LOGGER.debug('Parsing ETL query')
         parser = self.parser(self._sources, self._columns)
         query.accept(parser)
+        LOGGER.debug('Starting ETL read using: %s', parser.result)
         return self.read(parser.result, **self._kwargs)
 
     @classmethod

@@ -3,6 +3,7 @@ ANSI SQL ETL feed.
 """
 import abc
 import contextlib
+import logging
 import re
 import typing
 
@@ -11,9 +12,11 @@ from forml.io.dsl import parsing, statement as stmtmod, function, error
 from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.io.etl import extract
 
+LOGGER = logging.getLogger(__name__)
+
 
 class Feed(io.Feed):
-    """SQL feed.
+    """SQL feed with abstract reader.
     """
     class Reader(extract.Reader, metaclass=abc.ABCMeta):
         """SQL reader base class for PEP249 compliant DB APIs.
@@ -243,9 +246,11 @@ class Feed(io.Feed):
             """
 
         @classmethod
-        def read(cls, statement: parsing.ResultT, **kwargs) -> extract.Columnar:
+        def read(cls, statement: str, **kwargs) -> extract.Columnar:
+            LOGGER.debug('Establishing SQL connection')
             with contextlib.closing(cls.connection(**kwargs)) as connection:
                 cursor = connection.cursor()
+                LOGGER.debug('Executing SQL query')
                 cursor.execute(statement)
                 return cursor.fetchall()
 
@@ -255,7 +260,6 @@ class Feed(io.Feed):
             return cls.Parser(columns, sources)
 
     @classmethod
-    def reader(cls, sources: typing.Mapping['frame.Source', 'parsing.ResultT'],
-               columns: typing.Mapping['series.Column', 'parsing.ResultT'],
+    def reader(cls, sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str],
                **kwargs: typing.Any) -> typing.Callable[[stmtmod.Query], extract.Columnar]:
         return cls.Reader(sources, columns, **kwargs)  # pylint: disable=abstract-class-instantiated
