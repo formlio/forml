@@ -112,7 +112,7 @@ class TestExpression(Parser):
     @classmethod
     @pytest.fixture(scope='session', params=(Parser.Case(function.Cast(series.Literal(1), kind.String()) + 1,
                                                          'cast(1 AS VARCHAR) + 1'),
-                                             Parser.Case((series.Literal(1) + 1) * 2, '(1 + 1) * 2'),
+                                             Parser.Case(1 + series.Literal(1) * 2, '1 + (1 * 2)'),
                                              Parser.Case(series.Literal(1) + datetime.datetime(2020, 7, 9, 16, 58, 32),
                                                          "1 + TIMESTAMP '2020-07-09 16:58:32.000000'"),
                                              Parser.Case(series.Literal(1) + datetime.date(2020, 7, 9),
