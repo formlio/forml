@@ -7,9 +7,9 @@ import typing
 
 import pytest
 
-from forml.io.dsl import parsing
+from forml.io.dsl import parsing, function
 from forml.io.dsl import statement as stmtmod
-from forml.io.dsl.schema import series as sermod, frame
+from forml.io.dsl.schema import series as sermod, frame, kind as kindmod
 
 
 @pytest.fixture(scope='session')
@@ -109,8 +109,10 @@ class TestStatement:
         """Target test.
         """
         query = student.join(person, student.surname == person.surname)\
-            .join(school, student.school == school.sid).select(student.surname, school.name)\
+            .join(school, student.school == school.sid)\
+            .select(student.surname, school.name, function.Cast(student.score, kindmod.String()))\
             .where(student.score < 2).orderby(student.level, student.score).limit(10)
         query.accept(statement)
         assert statement.result[0][0] == ('foo', )
-        assert statement.result[1] == ((student.surname, ), (school.name, ))
+        assert statement.result[1] == ((student.surname, ), (school.name, ),
+                                       (function.Cast, (student.score, ), kindmod.String()))
