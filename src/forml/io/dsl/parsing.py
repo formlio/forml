@@ -203,7 +203,7 @@ class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.A
 
     @bypass(generate_field)
     def visit_expression(self, column: series.Expression) -> None:
-        arguments = tuple(reversed([self.pop() for _ in column]))
+        arguments = tuple(reversed([self.pop() if isinstance(c, series.Column) else c for c in reversed(column)]))
         self.push(self.generate_expression(column.__class__, arguments))
 
 

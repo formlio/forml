@@ -46,23 +46,37 @@ class Column(metaclass=abc.ABCMeta):
     def test_logical(self, column: series.Column):
         """Logical operators tests.
         """
+        # pylint: disable=misplaced-comparison-constant
+        assert isinstance(1 < column, series.GreaterThan)
         assert isinstance(column > 1, series.GreaterThan)
+        assert isinstance(1 <= column, series.GreaterEqual)
         assert isinstance(column >= 1, series.GreaterEqual)
+        assert isinstance(1 > column, series.LessThan)
         assert isinstance(column < 1, series.LessThan)
+        assert isinstance(1 >= column, series.LessEqual)
         assert isinstance(column <= 1, series.LessEqual)
+        assert isinstance(1 == column, series.Equal)
         assert isinstance(column == 1, series.Equal)
+        assert isinstance(1 != column, series.NotEqual)
         assert isinstance(column != 1, series.NotEqual)
+        assert isinstance(True & column, series.And)
         assert isinstance(column & True, series.And)
+        assert isinstance(True | column, series.Or)
         assert isinstance(column | True, series.Or)
         assert isinstance(~column, series.Not)
 
     def test_arithmetic(self, column: series.Column):
         """Arithmetic operators tests.
         """
+        assert isinstance(1 + column, series.Addition)
         assert isinstance(column + 1, series.Addition)
+        assert isinstance(1 - column, series.Subtraction)
         assert isinstance(column - 1, series.Subtraction)
+        assert isinstance(1 / column, series.Division)
         assert isinstance(column / 1, series.Division)
+        assert isinstance(1 * column, series.Multiplication)
         assert isinstance(column * 1, series.Multiplication)
+        assert isinstance(1 % column, series.Modulus)
         assert isinstance(column % 1, series.Modulus)
 
 

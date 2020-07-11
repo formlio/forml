@@ -209,8 +209,16 @@ class Column(tuple, metaclass=abc.ABCMeta):
         return And(self, other)
 
     @columnize
+    def __rand__(self, other: 'Column') -> 'Expression':
+        return And(other, self)
+
+    @columnize
     def __or__(self, other: 'Column') -> 'Expression':
         return Or(self, other)
+
+    @columnize
+    def __ror__(self, other: 'Column') -> 'Expression':
+        return Or(other, self)
 
     def __invert__(self) -> 'Expression':
         return Not(self)
@@ -220,20 +228,40 @@ class Column(tuple, metaclass=abc.ABCMeta):
         return Addition(self, other)
 
     @columnize
+    def __radd__(self, other: 'Column') -> 'Expression':
+        return Addition(other, self)
+
+    @columnize
     def __sub__(self, other: 'Column') -> 'Expression':
         return Subtraction(self, other)
+
+    @columnize
+    def __rsub__(self, other: 'Column') -> 'Expression':
+        return Subtraction(other, self)
 
     @columnize
     def __mul__(self, other: 'Column') -> 'Expression':
         return Multiplication(self, other)
 
     @columnize
+    def __rmul__(self, other: 'Column') -> 'Expression':
+        return Multiplication(other, self)
+
+    @columnize
     def __truediv__(self, other: 'Column') -> 'Expression':
         return Division(self, other)
 
     @columnize
+    def __rtruediv__(self, other: 'Column') -> 'Expression':
+        return Division(other, self)
+
+    @columnize
     def __mod__(self, other: 'Column') -> 'Expression':
         return Modulus(self, other)
+
+    @columnize
+    def __rmod__(self, other: 'Column') -> 'Expression':
+        return Modulus(other, self)
 
 
 class Aliased(Column):
@@ -346,7 +374,8 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
 
     def accept(self, visitor: Visitor) -> None:
         for term in self:
-            term.accept(visitor)
+            if isinstance(term, Column):
+                term.accept(visitor)
         visitor.visit_expression(self)
 
 

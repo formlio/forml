@@ -3,6 +3,7 @@ ANSI SQL ETL feed.
 """
 import abc
 import contextlib
+import re
 import typing
 
 from forml import io
@@ -20,20 +21,70 @@ class Feed(io.Feed):
         class Parser(parsing.Stack, parsing.Series[str], parsing.Statement[str]):
             """DSL parser producing an ANSI SQL select statements.
             """
+            class Expression:
+                """Expression generator/formatter.
+                """
+                PARENTHESIZE = re.compile(r'\s*((?!\())\S+\s*[-+*/%\s]\s*\S+(?(1)(?<!\)))\s*')
+
+                def __init__(self, template: str, mapper: typing.Optional[
+                        typing.Callable[..., typing.Sequence]] = None):
+                    self._template: str = template
+                    self._mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = mapper
+
+                def __call__(self, *args: typing.Any) -> str:
+                    """Actual expression generator.
+
+                    Args:
+                        *args: Expression arguments.
+
+                    Returns: Generated expression value.
+                    """
+                    def clean(arg: str) -> str:
+                        """Add parentheses if necessary.
+
+                        Args:
+                            arg: Argument to be cleaned.
+
+                        Returns: clean argument.
+                        """
+                        if self.PARENTHESIZE.fullmatch(arg):
+                            arg = f'({arg})'
+                        return arg
+
+                    if self._mapper:
+                        args = self._mapper(*args)
+                    args = [clean(a) for a in args]
+                    return self._template.format(*args)
+
+            KIND: typing.Mapping[kindmod.Any, str] = {
+                kindmod.Boolean(): 'BOOLEAN',
+                kindmod.Integer(): 'BIGINT',
+                kindmod.Float(): 'DOUBLE',
+                kindmod.Decimal(): 'DECIMAL',
+                kindmod.String(): 'VARCHAR',
+                kindmod.Date(): 'DATE',
+                kindmod.Timestamp(): 'TIMESTAMP'
+            }
+
             EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., str]] = {
-                function.LessThan: lambda a, b: f'{a} < {b}',
-                function.LessEqual: lambda a, b: f'{a} <= {b}',
-                function.GreaterThan: lambda a, b: f'{a} > {b}',
-                function.GreaterEqual: lambda a, b: f'{a} >= {b}',
-                function.Equal: lambda a, b: f'{a} = {b}',
-                function.NotEqual: lambda a, b: f'{a} != {b}',
-                function.IsNull: lambda a: f'{a} IS NULL',
-                function.NotNull: lambda a: f'{a} IS NOT NULL',
-                function.And: lambda a, b: f'{a} AND {b}',
-                function.Or: lambda a, b: f'{a} OR {b}',
-                function.Not: lambda a: f'NOT {a}',
-                function.Cast: lambda a, b: f'cast({a} AS {b})',
-                function.Count: lambda a=None: f'count({a if a is not None else "*"})'
+                function.Addition: Expression('{} + {}'),
+                function.Subtraction: Expression('{} - {}'),
+                function.Multiplication: Expression('{} * {}'),
+                function.Division: Expression('{} / {}'),
+                function.Modulus: Expression('{} % {}'),
+                function.LessThan: Expression('{} < {}'),
+                function.LessEqual: Expression('{} <= {}'),
+                function.GreaterThan: Expression('{} > {}'),
+                function.GreaterEqual: Expression('{} >= {}'),
+                function.Equal: Expression('{} = {}'),
+                function.NotEqual: Expression('{} != {}'),
+                function.IsNull: Expression('{} IS NULL'),
+                function.NotNull: Expression('{} IS NOT NULL'),
+                function.And: Expression('{} AND {}'),
+                function.Or: Expression('{} OR {}'),
+                function.Not: Expression('NOT {}'),
+                function.Cast: Expression('cast({} AS {})', lambda _, k: (_, Feed.Reader.Parser.KIND[k])),
+                function.Count: Expression('count({})', lambda c=None: c if c is not None else "*")
             }
 
             JOIN: typing.Mapping[stmtmod.Join.Kind, str] = {
@@ -87,10 +138,10 @@ class Feed(io.Feed):
                     return f"'{literal.value}'"
                 if isinstance(literal.kind, kindmod.Numeric):
                     return f'{literal.value}'
-                if isinstance(literal.kind, kindmod.Date):
-                    return f"DATE '{literal.value.strptime(self.DATE)}'"
                 if isinstance(literal.kind, kindmod.Timestamp):
-                    return f"TIMESTAMP '{literal.value.strptime(self.TIMESTAMP)}'"
+                    return f"TIMESTAMP '{literal.value.strftime(self.TIMESTAMP)}'"
+                if isinstance(literal.kind, kindmod.Date):
+                    return f"DATE '{literal.value.strftime(self.DATE)}'"
                 if isinstance(literal.kind, kindmod.Array):
                     return f"ARRAY[{', '.join(self.generate_literal(v) for v in literal.value)}]"
                 raise error.Unsupported(f'Unsupported literal kind: {literal.kind}')
