@@ -111,7 +111,15 @@ class TestExpression(Parser):
     """
     @classmethod
     @pytest.fixture(scope='session', params=(Parser.Case(function.Cast(series.Literal(1), kind.String()),
-                                                         "cast(1 AS VARCHAR)"),
+                                                         'cast(1 AS VARCHAR)'),
+                                             Parser.Case(series.Literal(1) + 1, '1 + 1'),
+                                             Parser.Case((series.Literal(1) + 1) * 2, '(1 + 1) * 2'),
+                                             Parser.Case(series.Literal(1) + datetime.datetime(2020, 7, 9, 16, 58, 32),
+                                                         "1 + TIMESTAMP '2020-07-09 16:58:32.000000'"),
+                                             Parser.Case(series.Literal(1) + datetime.date(2020, 7, 9),
+                                                         "1 + DATE '2020-07-09'"),
+                                             Parser.Case(2 * (datetime.date(2020, 7, 9) + series.Literal(1)),
+                                                         "2 * (DATE '2020-07-09' + 1)")
                                              ))
     def case(cls, request, student: frame.Table, school: frame.Table) -> Parser.Case:
         query = student.select(request.param.query)

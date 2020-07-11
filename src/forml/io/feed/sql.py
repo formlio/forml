@@ -24,7 +24,7 @@ class Feed(io.Feed):
             class Expression:
                 """Expression generator/formatter.
                 """
-                PARENTHESIZE = re.compile(r'\s*((?!\())\S+\s*[-+*/%\s]\s*\S+(?(1)(?<!\)))\s*')
+                ASSOCIATIVE = re.compile(r"\s*(?:(\()?\s*[^-+*/%\s]+\s*(?(1).*\))|TIMESTAMP *'.+'|DATE *'.+')\s*")
 
                 def __init__(self, template: str, mapper: typing.Optional[
                         typing.Callable[..., typing.Sequence]] = None):
@@ -47,7 +47,7 @@ class Feed(io.Feed):
 
                         Returns: clean argument.
                         """
-                        if self.PARENTHESIZE.fullmatch(arg):
+                        if not self.ASSOCIATIVE.fullmatch(arg):
                             arg = f'({arg})'
                         return arg
 
@@ -83,8 +83,8 @@ class Feed(io.Feed):
                 function.And: Expression('{} AND {}'),
                 function.Or: Expression('{} OR {}'),
                 function.Not: Expression('NOT {}'),
-                function.Cast: Expression('cast({} AS {})', lambda _, k: (_, Feed.Reader.Parser.KIND[k])),
-                function.Count: Expression('count({})', lambda c=None: c if c is not None else "*")
+                function.Cast: Expression('cast({} AS {})', lambda _, k: [_, Feed.Reader.Parser.KIND[k]]),
+                function.Count: Expression('count({})', lambda c=None: [c if c is not None else "*"])
             }
 
             JOIN: typing.Mapping[stmtmod.Join.Kind, str] = {
