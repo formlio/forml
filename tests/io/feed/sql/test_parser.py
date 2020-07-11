@@ -110,9 +110,8 @@ class TestExpression(Parser):
     """SQL parser expression unit test.
     """
     @classmethod
-    @pytest.fixture(scope='session', params=(Parser.Case(function.Cast(series.Literal(1), kind.String()),
-                                                         'cast(1 AS VARCHAR)'),
-                                             Parser.Case(series.Literal(1) + 1, '1 + 1'),
+    @pytest.fixture(scope='session', params=(Parser.Case(function.Cast(series.Literal(1), kind.String()) + 1,
+                                                         'cast(1 AS VARCHAR) + 1'),
                                              Parser.Case((series.Literal(1) + 1) * 2, '(1 + 1) * 2'),
                                              Parser.Case(series.Literal(1) + datetime.datetime(2020, 7, 9, 16, 58, 32),
                                                          "1 + TIMESTAMP '2020-07-09 16:58:32.000000'"),
