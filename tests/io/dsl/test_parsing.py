@@ -93,11 +93,11 @@ def statement(columns: typing.Mapping[sermod.Column, tuple],
         def generate_ordering(self, column: tuple, direction: stmtmod.Ordering.Direction) -> tuple:
             return column, direction
 
-        def generate_query(self, source: tuple, selection: typing.Sequence[tuple],
+        def generate_query(self, source: tuple, columns: typing.Sequence[tuple],
                            where: typing.Optional[tuple],
                            groupby: typing.Sequence[tuple], having: typing.Optional[tuple],
                            orderby: typing.Sequence[tuple], rows: typing.Optional[stmtmod.Rows]) -> tuple:
-            return source, tuple(selection), where, tuple(groupby), having, tuple(orderby), rows
+            return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows
 
     return Statement()
 

@@ -1,6 +1,7 @@
 """Extract utilities.
 """
 import abc
+import logging
 import typing
 
 from forml import error
@@ -10,6 +11,9 @@ from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Statement(typing.NamedTuple):
@@ -94,28 +98,33 @@ class Operator(topology.Operator):
         return pipeline.Segment(apply, train, label)
 
 
+Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
+
+
 class Reader(metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
     class Actor(task.Actor):
         """Data extraction actor using the provided reader and statement to load the data.
         """
-        def __init__(self, reader: typing.Callable[[stmtmod.Query], typing.Any], statement: Statement):
-            self._reader: typing.Callable[[stmtmod.Query], typing.Any] = reader
+        def __init__(self, reader: typing.Callable[[stmtmod.Query], Columnar], statement: Statement):
+            self._reader: typing.Callable[[stmtmod.Query], Columnar] = reader
             self._statement: Statement = statement
 
         def apply(self) -> typing.Any:
             return self._reader(self._statement())
 
     def __init__(self, sources: typing.Mapping[frame.Source, parsing.ResultT],
-                 columns: typing.Mapping[series.Column, parsing.ResultT]):
+                 columns: typing.Mapping[series.Column, parsing.ResultT],
+                 **kwargs: typing.Any):
         self._sources: typing.Mapping[frame.Source, parsing.ResultT] = sources
         self._columns: typing.Mapping[series.Column, parsing.ResultT] = columns
+        self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-    def __call__(self, query: stmtmod.Query) -> typing.Any:
+    def __call__(self, query: stmtmod.Query) -> Columnar:
         parser = self.parser(self._sources, self._columns)
         query.accept(parser)
-        return self.read(parser.result)
+        return self.read(parser.result, **self._kwargs)
 
     @classmethod
     @abc.abstractmethod
@@ -132,61 +141,40 @@ class Reader(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def read(cls, statement: parsing.ResultT) -> typing.Any:
+    def read(cls, statement: parsing.ResultT, **kwargs: typing.Any) -> Columnar:
         """Perform the read operation with the given statement.
 
         Args:
             statement: Query statement in the reader's native syntax.
+            kwargs: Optional reader keyword args.
 
         Returns: Data provided by the reader.
         """
 
 
-class Selector(metaclass=abc.ABCMeta):
-    """Base class for selector implementation.
+class Slicer:
+    """Base class for slicer implementation.
     """
     class Actor(task.Actor):
-        """Data extraction actor using the provided reader and statement to load the data.
+        """Column extraction actor using the provided slicer to separate features from labels.
         """
-        def __init__(self, selector: typing.Callable[[typing.Any, typing.Sequence[series.Column]], typing.Any],
-                     features: typing.Sequence[series.Column], label: typing.Sequence[series.Column]):
-            self._selector: typing.Callable[[typing.Any, typing.Sequence[series.Column]], typing.Any] = selector
-            self._features: typing.Sequence[series.Column] = features
-            self._label: typing.Sequence[series.Column] = label
+        def __init__(self, slicer: typing.Callable[[Columnar, typing.Union[slice, int]], Columnar],
+                     features: typing.Sequence[series.Column], labels: typing.Sequence[series.Column]):
+            self._slicer: typing.Callable[[Columnar, typing.Union[slice, int]], Columnar] = slicer
+            fstop = len(features)
+            lcount = len(labels)
+            self._features: slice = slice(fstop)
+            self._label: typing.Union[slice, int] = slice(fstop, fstop + lcount) if lcount > 1 else fstop
 
-        def apply(self, features: typing.Any) -> typing.Tuple[typing.Any, typing.Any]:
-            return self._selector(features, self._features), self._selector(features, self._label)
+        def apply(self, columns: Columnar) -> typing.Tuple[typing.Any, typing.Any]:
+            assert len(columns) == (self._label.stop if isinstance(self._label, slice)
+                                    else self._label + 1), 'Unexpected number of columns for splitting'
+            return self._slicer(columns, self._features), self._slicer(columns, self._label)
 
-    def __init__(self, columns: typing.Mapping[series.Column, parsing.ResultT]):
+    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsing.ResultT]):
+        self._schema: typing.Sequence[series.Column] = schema
         self._columns: typing.Mapping[series.Column, parsing.ResultT] = columns
 
-    def __call__(self, source: typing.Any, selection: typing.Sequence[series.Column]) -> typing.Any:
-        def parse(column: series.Column) -> parsing.ResultT:
-            parser = self.parser(self._columns)
-            column.accept(parser)
-            return parser.result
-
-        return self.select(source, [parse(c) for c in selection])
-
-    @classmethod
-    @abc.abstractmethod
-    def parser(cls, columns: typing.Mapping[series.Column, parsing.ResultT]) -> parsing.Series:
-        """Return the parser instance of this selector.
-
-        Args:
-            columns: Column mappings to be used by the parser.
-
-        Returns: Parser instance.
-        """
-
-    @classmethod
-    @abc.abstractmethod
-    def select(cls, source: typing.Any, subset: typing.Sequence[parsing.ResultT]) -> typing.Any:
-        """Perform the select operation with the given list of columns.
-
-        Args:
-            source: Input dataset to select from.
-            subset: List of columns in the reader's native syntax.
-
-        Returns: Data provided by the reader.
-        """
+    def __call__(self, source: Columnar, selection: typing.Union[slice, int]) -> Columnar:
+        LOGGER.debug('Selecting columns: %s', self._schema[selection])
+        return source[selection]
