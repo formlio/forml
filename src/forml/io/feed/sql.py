@@ -24,7 +24,7 @@ class Feed(io.Feed):
             class Expression:
                 """Expression generator/formatter.
                 """
-                ASSOCIATIVE = re.compile(r"\s*(?:(\()?\s*[^-+*/%\s]+\s*(?(1).*\))|TIMESTAMP *'.+'|DATE *'.+')\s*")
+                ASSOCIATIVE = re.compile(r"\s*(?:(\S*\()?\s*[^-+*/%\s]+\s*(?(1).*\))|TIMESTAMP *'.+'|DATE *'.+')\s*")
 
                 def __init__(self, template: str, mapper: typing.Optional[
                         typing.Callable[..., typing.Sequence]] = None):
