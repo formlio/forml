@@ -26,6 +26,11 @@ class Column(metaclass=abc.ABCMeta):
         """Test the element getter.
         """
 
+    def test_disect(self, column: series.Column):
+        """Test the column disection.
+        """
+        assert column in type(column).disect(column)
+
     def test_identity(self, column: series.Column):
         """Test the identity (hashability + equality).
         """
