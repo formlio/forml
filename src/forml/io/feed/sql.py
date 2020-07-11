@@ -21,7 +21,7 @@ class Feed(io.Feed):
     class Reader(extract.Reader, metaclass=abc.ABCMeta):
         """SQL reader base class for PEP249 compliant DB APIs.
         """
-        class Parser(parsing.Stack, parsing.Series[str], parsing.Statement[str]):
+        class Parser(parsing.Bundle[str]):
             """DSL parser producing an ANSI SQL select statements.
             """
             class Expression:
@@ -111,12 +111,6 @@ class Feed(io.Feed):
 
             DATE = '%Y-%m-%d'
             TIMESTAMP = '%Y-%m-%d %H:%M:%S.%f'
-
-            def __init__(self, columns: typing.Mapping[series.Column, str], sources: typing.Mapping[frame.Source, str]):
-                parsing.Stack.__init__(self)
-                # pylint: disable=non-parent-init-called (#3505)
-                parsing.Series.__init__(self, columns)
-                parsing.Statement.__init__(self, sources)
 
             def generate_alias(self, column: str, alias: str) -> str:  # pylint: disable=no-self-use
                 """Generate column alias code.

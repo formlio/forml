@@ -83,7 +83,7 @@ class Stackable(metaclass=abc.ABCMeta):
         """
 
 
-def bypass(override: typing.Callable[[Stack, typing.Any], None]) -> typing.Callable:
+def bypass(override: typing.Callable[[Stackable, typing.Any], None]) -> typing.Callable:
     """By pass the (result of) the particular visit_* implementation if the supplied override resolver provides an
     alternative value.
 
@@ -93,7 +93,7 @@ def bypass(override: typing.Callable[[Stack, typing.Any], None]) -> typing.Calla
 
     Returns: Visitor method decorator.
     """
-    def decorator(visit: typing.Callable[[Stack, typing.Any], None]) -> typing.Callable:
+    def decorator(visit: typing.Callable[[Stackable, typing.Any], None]) -> typing.Callable:
         """Visitor method decorator with added bypassing capability.
 
         Args:
@@ -102,7 +102,7 @@ def bypass(override: typing.Callable[[Stack, typing.Any], None]) -> typing.Calla
         Returns: Decorated version of the visit_* method.
         """
         @functools.wraps(visit)
-        def wrapped(self: Stack, subject: typing.Any) -> None:
+        def wrapped(self: Stackable, subject: typing.Any) -> None:
             """Decorated version of the visit_* method.
 
             Args:
@@ -308,3 +308,13 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
         orderby = [self.generate_ordering(self.generate_column(c), o) for c, o in source.ordering]
         self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))
+
+
+class Bundle(Stack, Series[ResultT], Statement[ResultT], metaclass=abc.ABCMeta):
+    """Combined series+statement parser.
+    """
+    def __init__(self, columns: typing.Mapping[series.Column, ResultT], sources: typing.Mapping[frame.Source, ResultT]):
+        Stack.__init__(self)
+        # pylint: disable=non-parent-init-called (#3505)
+        Series.__init__(self, columns)
+        Statement.__init__(self, sources)
