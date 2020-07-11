@@ -98,6 +98,25 @@ def columnize(handler: typing.Callable[['Column'], typing.Any]) -> typing.Callab
 class Column(tuple, metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions).
     """
+    class Disect(Visitor):
+        """Visitor extracting column elements of given type(s).
+        """
+        def __init__(self, *types: typing.Type['Column']):
+            self._types: typing.FrozenSet[typing.Type['Column']] = frozenset(types)
+            self._terms: typing.Set['Column'] = set()
+
+        @property
+        def terms(self) -> typing.AbstractSet['Column']:
+            """Extracted terms.
+
+            Returns: Set of extracted column terms.
+            """
+            return frozenset(self._terms)
+
+        def visit_column(self, column: 'Column') -> None:
+            if type(column) in self._types:
+                self._terms.add(column)
+
     @property
     @abc.abstractmethod
     def name(self) -> str:
@@ -129,6 +148,16 @@ class Column(tuple, metaclass=abc.ABCMeta):
 
         Returns: Column's element.
         """
+
+    @classmethod
+    def disect(cls, column: 'Column') -> typing.AbstractSet['Column']:
+        """Return an iterable of instances of this type composing given column.
+
+        Returns: Set of this type instances used in given column.
+        """
+        disector = cls.Disect(cls)
+        column.accept(disector)
+        return disector.terms
 
     @classmethod
     def ensure(cls, column: 'Column') -> 'Column':
