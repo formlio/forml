@@ -13,7 +13,7 @@ from forml.project import product
 class Field(collections.namedtuple('Field', 'kind, name')):
     """Schema field class.
     """
-    def __new__(cls, kind: kindmod.Data, name: typing.Optional[str] = None):
+    def __new__(cls, kind: kindmod.Any, name: typing.Optional[str] = None):
         return super().__new__(cls, kind, name)
 
 

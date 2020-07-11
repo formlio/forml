@@ -6,17 +6,16 @@ import typing
 import uuid
 
 from forml import io
-from forml.io import etl
 from forml.conf import provider as provcfg
-from forml.io.dsl import parsing
-from forml.io.dsl import statement
-from forml.io.dsl.schema import series, frame, kind
-from forml.flow import task
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology
+from forml.io import etl
+from forml.io.dsl import parsing
+from forml.io.dsl import statement
+from forml.io.dsl.schema import series, frame, kind
+from forml.io.etl import extract
 from forml.runtime import process
-from forml.stdlib.operator import simple
 from forml.testing import spec
 
 LOGGER = logging.getLogger(__name__)
@@ -34,13 +33,14 @@ class DataSet(etl.Schema):
 class Feed(io.Feed, key='testing'):
     """Special feed to feed the test cases.
     """
-    def __init__(self, scenario: spec.Scenario.Input, **kw):
-        super().__init__(**kw)
+    def __init__(self, scenario: spec.Scenario.Input, **kwargs):
+        super().__init__(**kwargs)
         self._scenario: spec.Scenario.Input = scenario
 
     @classmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, parsing.ResultT], columns: typing.Mapping[
-            series.Column, parsing.ResultT]) -> typing.Callable[[statement.Query], typing.Any]:
+    def reader(cls, sources: typing.Mapping[frame.Source, parsing.ResultT],
+               columns: typing.Mapping[series.Column, parsing.ResultT],
+               **kwargs) -> typing.Callable[[statement.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
         def read(query: statement.Query) -> typing.Any:
             """Reader callback.
 
@@ -53,24 +53,15 @@ class Feed(io.Feed, key='testing'):
         return read
 
     @classmethod
-    def selector(cls, columns: typing.Mapping[series.Column, parsing.ResultT]) -> typing.Callable[
-            [typing.Any, typing.Sequence[series.Column]], typing.Any]:
-        def select(source: typing.Tuple[typing.Any], subset: typing.Sequence[series.Column]) -> typing.Any:
-            """Select callback.
-
-            Args:
-                source: Input dataset.
-                subset: List of columns to be selected.
-
-            Returns: Selected dataset.
-            """
-            return source[1] if DataSet.label in subset else source[0]
-        return select
+    def slicer(cls, schema: typing.Sequence['series.Column'],
+               columns: typing.Mapping['series.Column', 'parsing.ResultT']) -> typing.Callable[
+                   [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
+        return lambda c, s: c[s][0]
 
     @property
     def columns(self) -> typing.Mapping[series.Column, parsing.ResultT]:
         return {
-            DataSet.label: (self._scenario.train, self._scenario.label),
+            DataSet.label: (self._scenario.train, [self._scenario.label]),
             DataSet.feature: self._scenario.apply
         }
 
@@ -78,13 +69,6 @@ class Feed(io.Feed, key='testing'):
 class Runner:
     """Test runner is a minimal forml pipeline wrapping the tested operator.
     """
-    @simple.Labeler.operator
-    class Extractor(task.Actor):
-        """Just split the features-label pair.
-        """
-        def apply(self, bundle: typing.Tuple[typing.Any, typing.Any]) -> typing.Tuple[typing.Any, typing.Any]:
-            return bundle
-
     class Initializer(view.Visitor):
         """Visitor that tries to instantiate each node in attempt to validate it.
         """

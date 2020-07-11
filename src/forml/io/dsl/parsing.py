@@ -252,7 +252,7 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
         """
 
     @abc.abstractmethod
-    def generate_query(self, source: ResultT, selection: typing.Sequence[ResultT],
+    def generate_query(self, source: ResultT, columns: typing.Sequence[ResultT],
                        where: typing.Optional[ResultT], groupby: typing.Sequence[ResultT],
                        having: typing.Optional[ResultT], orderby: typing.Sequence[ResultT],
                        rows: typing.Optional[statement.Rows]) -> ResultT:
@@ -260,7 +260,7 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
 
         Args:
             source: Source already in target code.
-            selection: Sequence of selected columns in target code.
+            columns: Sequence of selected columns in target code.
             where: Where condition in target code.
             groupby: Sequence of grouping specifiers in target code.
             having: Having condition in target code.
@@ -302,9 +302,9 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
 
     @bypass(generate_table)
     def visit_query(self, source: statement.Query) -> None:
-        selection = [self.generate_column(c) for c in source.selection]
+        columns = [self.generate_column(c) for c in source.columns]
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
         orderby = [self.generate_ordering(self.generate_column(c), o) for c, o in source.ordering]
-        self.push(self.generate_query(self.pop(), selection, where, groupby, having, orderby, source.rows))
+        self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))

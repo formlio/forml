@@ -41,47 +41,53 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
 
             Returns: Reader actor spec.
             """
-            return extract.Reader.Actor.spec(self.reader(self.sources, self.columns), extract.Statement.prepare(
-                query, source.extract.ordinal, lower, upper), **self._readerkw)
+            return extract.Reader.Actor.spec(self.reader(self.sources, self.columns, **self._readerkw),
+                                             extract.Statement.prepare(query, source.extract.ordinal, lower, upper))
 
         train: 'stmtmod.Query' = source.extract.train
         label: typing.Optional[task.Spec] = None
         if source.extract.label:
             train = train.select(*(*source.extract.train.columns, *source.extract.label))
-            label = extract.Selector.Actor.spec(self.selector(self.columns), source.extract.train.columns,
-                                                source.extract.label)
-        etl: topology.Composable = extract.Operator(reader(source.extract.apply), reader(train), label)
+            label = extract.Slicer.Actor.spec(self.slicer(train.columns, self.columns), source.extract.train.columns,
+                                              source.extract.label)
+        loader: topology.Composable = extract.Operator(reader(source.extract.apply), reader(train), label)
         if source.transform:
-            etl >>= source.transform
-        return etl.expand()
+            loader >>= source.transform
+        return loader.expand()
 
     @classmethod
     @abc.abstractmethod
-    def reader(cls, sources: typing.Mapping['frame.Source', 'parsing.ResutlT'], columns: typing.Mapping[
-            'series.Column', 'parsing.ResutlT']) -> typing.Callable[['stmtmod.Query'], typing.Any]:
+    def reader(cls, sources: typing.Mapping['frame.Source', 'parsing.ResultT'],
+               columns: typing.Mapping['series.Column', 'parsing.ResultT'],
+               **kwargs: typing.Any) -> typing.Callable[['stmtmod.Query'], extract.Columnar]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
             sources: Source mappings to be used by the reader.
             columns: Column mappings to be used by the reader.
+            kwargs: Optional reader keyword arguments.
 
         Returns: Reader instance.
         """
 
     @classmethod
-    def selector(cls, columns: typing.Mapping['series.Column', 'parsing.ResutlT']) -> typing.Callable[
-            [typing.Any, typing.Sequence['series.Column']], typing.Any]:
-        """Return the selector instance of this feed, that is able to split the loaded dataset column-wise.
+    def slicer(cls, schema: typing.Sequence['series.Column'],
+               columns: typing.Mapping['series.Column', 'parsing.ResultT']) -> typing.Callable[
+                   [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
+        """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
+
+        This default slicer is plain positional sequence slicer.
 
         Args:
+            schema: List of expected columns to be sliced from.
             columns: Column mappings to be used by the selector.
 
-        Returns: Selector instance.
+        Returns: Slicer instance.
         """
-        raise NotImplementedError(f'No selector implemented for {cls.__name__}')
+        return extract.Slicer(schema, columns)
 
     @property
-    def sources(self) -> typing.Mapping['frame.Source', 'parsing.ResutlT']:
+    def sources(self) -> typing.Mapping['frame.Source', 'parsing.ResultT']:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
@@ -89,7 +95,7 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
         return {}
 
     @property
-    def columns(self) -> typing.Mapping['series.Column', 'parsing.ResutlT']:
+    def columns(self) -> typing.Mapping['series.Column', 'parsing.ResultT']:
         """The explicit columns mapping implemented by this feed to be used by the query parser.
 
         Returns: Columns mapping.

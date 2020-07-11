@@ -231,7 +231,7 @@ class Aliased(Column):
         return self.column.element
 
     @property
-    def kind(self) -> kindmod.Data:
+    def kind(self) -> kindmod.Any:
         """Column type.
 
         Returns: Inner column type.
@@ -260,7 +260,7 @@ class Literal(Element):
     """Literal value.
     """
     value: typing.Any = property(operator.itemgetter(0))
-    kind: kindmod.Data = property(operator.itemgetter(1))
+    kind: kindmod.Any = property(operator.itemgetter(1))
 
     def __new__(cls, value: typing.Any):
         return super().__new__(cls, [value, kindmod.reflect(value)])
@@ -287,9 +287,9 @@ class Field(Element):
     """
     table: typing.Type['frame.Table'] = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
-    kind: kindmod.Data = property(operator.itemgetter(2))
+    kind: kindmod.Any = property(operator.itemgetter(2))
 
-    def __new__(cls, table: typing.Type['frame.Table'], name: str, kind: kindmod.Data):
+    def __new__(cls, table: typing.Type['frame.Table'], name: str, kind: kindmod.Any):
         return super().__new__(cls, [table, name, kind])
 
     def accept(self, visitor: Visitor) -> None:

@@ -14,12 +14,12 @@ class Meta(abc.ABCMeta):
     """Meta class for all kinds.
     """
     @property
-    def __subkinds__(cls) -> typing.Iterable[typing.Type['Data']]:
+    def __subkinds__(cls) -> typing.Iterable[typing.Type['Any']]:
         """Return all non-abstract sub-classes of given kind class.
 
         Returns: Iterable of all sub-kinds.
         """
-        def scan(subs: typing.Iterable[typing.Type['Data']]) -> typing.Iterable[typing.Type['Data']]:
+        def scan(subs: typing.Iterable[typing.Type['Any']]) -> typing.Iterable[typing.Type['Any']]:
             """Scan the class subtree of given types.
 
             Args:
@@ -37,7 +37,7 @@ class Singleton(Meta):
     def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
         instance = None
 
-        def new(cls: typing.Type['Data']) -> 'Data':
+        def new(cls: typing.Type['Any']) -> 'Any':
             """Injected class new method ensuring singletons are only created.
             """
             nonlocal instance
@@ -52,7 +52,7 @@ class Singleton(Meta):
 Native = typing.TypeVar('Native')
 
 
-class Data(metaclass=Meta):
+class Any(metaclass=Meta):
     """Type base class.
     """
 
@@ -85,7 +85,7 @@ class Data(metaclass=Meta):
         return hash(self.__class__)
 
 
-class Primitive(Data, metaclass=Singleton):  # pylint: disable=abstract-method
+class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
     """Primitive data type base class.
     """
     def __new__(cls, *args, **kwargs):
@@ -148,7 +148,7 @@ class Timestamp(Date):
     __cardinality__ = 2
 
 
-class Compound(Data, tuple):
+class Compound(Any, tuple):
     """Complex data type class.
     """
     @property
@@ -162,30 +162,30 @@ class Compound(Data, tuple):
         raise NotImplementedError()
 
     def __eq__(self, other):
-        return Data.__eq__(self, other) and tuple.__eq__(self, other)
+        return Any.__eq__(self, other) and tuple.__eq__(self, other)
 
     def __hash__(self):
-        return Data.__hash__(self) ^ tuple.__hash__(self)
+        return Any.__hash__(self) ^ tuple.__hash__(self)
 
 
 class Array(Compound):
     """Array data type class.
     """
-    element: Data = property(operator.itemgetter(0))
+    element: Any = property(operator.itemgetter(0))
     __native__ = list
 
-    def __new__(cls, element: Data):
+    def __new__(cls, element: Any):
         return tuple.__new__(cls, [element])
 
 
 class Map(Compound):
     """Map data type class.
     """
-    key: Data = property(operator.itemgetter(0))
-    value: Data = property(operator.itemgetter(1))
+    key: Any = property(operator.itemgetter(0))
+    value: Any = property(operator.itemgetter(1))
     __native__ = dict
 
-    def __new__(cls, key: Data, value: Data):
+    def __new__(cls, key: Any, value: Any):
         return tuple.__new__(cls, [key, value])
 
 
@@ -203,11 +203,11 @@ class Struct(Compound):
 
     __native__ = object
 
-    def __new__(cls, **element: Data):
+    def __new__(cls, **element: Any):
         return tuple.__new__(cls, [cls.Element(n, k) for n, k in element.items()])
 
 
-def reflect(value: typing.Any) -> Data:
+def reflect(value: typing.Any) -> Any:
     """Get the type of the provided value.
 
     Args:
