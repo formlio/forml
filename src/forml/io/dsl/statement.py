@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """
 ETL statement types.
 """
@@ -159,17 +176,8 @@ class Query(collections.namedtuple('Query', 'source, selection, prefilter, group
                                                                        typing.Tuple[series.Element, typing.Union[
                                                                            'Ordering.Direction', str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
-        def fields(columns: typing.Iterable[series.Column]) -> typing.Set[series.Field]:
-            """Extract true Field instances from given set of columns.
 
-            Args:
-                columns: Input set of columns to extract the fields from.
-
-            Returns: Set of extracted fields.
-            """
-            return {f for c in columns for f in series.Field.disect(series.Column.ensure(c))}
-
-        if selection and fields(selection).difference(fields(source.columns)):
+        if selection and series.Field.disect(*selection) - series.Field.disect(*source.columns):
             raise ValueError(f'Selection ({selection}) is not a subset of source columns ({source.columns})')
         if prefilter is not None:
             series.Logical.ensure(series.Element.ensure(prefilter))
