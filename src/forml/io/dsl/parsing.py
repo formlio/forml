@@ -29,16 +29,16 @@ from forml.io.dsl import statement
 from forml.io.dsl.schema import series, frame
 
 LOGGER = logging.getLogger(__name__)
-ResultT = typing.TypeVar('ResultT')
+Symbol = typing.TypeVar('Symbol')
 
 
-class Stack(typing.Generic[ResultT]):
+class Stack(typing.Generic[Symbol]):
     """Stack as a base parser structure.
     """
     def __init__(self):
-        self._values: typing.List[ResultT] = list()
+        self._values: typing.List[Symbol] = list()
 
-    def push(self, item: ResultT) -> None:
+    def push(self, item: Symbol) -> None:
         """Push new parsed item to the stack.
 
         Args:
@@ -46,7 +46,7 @@ class Stack(typing.Generic[ResultT]):
         """
         self._values.append(item)
 
-    def pop(self) -> ResultT:
+    def pop(self) -> Symbol:
         """Remove and return a value from the top of the stack.
 
         Returns: Item from the stack top.
@@ -54,7 +54,7 @@ class Stack(typing.Generic[ResultT]):
         return self._values.pop()
 
     @property
-    def result(self) -> ResultT:
+    def result(self) -> Symbol:
         """Return the target code after this visitor instance has been accepted by a statement.
 
         Returns: Target code of given statement.
@@ -67,7 +67,7 @@ class Stackable(metaclass=abc.ABCMeta):
     """Interface for stackable parsers.
     """
     @abc.abstractmethod
-    def push(self, item: ResultT) -> None:
+    def push(self, item: Symbol) -> None:
         """Push new parsed item to the stack.
 
         Args:
@@ -75,7 +75,7 @@ class Stackable(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def pop(self) -> ResultT:
+    def pop(self) -> Symbol:
         """Remove and return a value from the top of the stack.
 
         Returns: Item from the stack top.
@@ -83,14 +83,14 @@ class Stackable(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def result(self) -> ResultT:
+    def result(self) -> Symbol:
         """Return the target code after this visitor instance has been accepted by a statement.
 
         Returns: Target code of given statement.
         """
 
     @abc.abstractmethod
-    def generate_column(self, column: series.Column) -> ResultT:
+    def generate_column(self, column: series.Column) -> Symbol:
         """Generate target code for the generic column type.
 
         Args:
@@ -140,14 +140,14 @@ def bypass(override: typing.Callable[[Stackable, typing.Any], None]) -> typing.C
     return decorator
 
 
-class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.ABCMeta):
+class Series(typing.Generic[Symbol], Stackable, series.Visitor, metaclass=abc.ABCMeta):
     """Mixin implementing a series parser.
     """
-    def __init__(self, columns: typing.Mapping[series.Column, ResultT]):
-        self._columns: typing.Mapping[series.Column, ResultT] = types.MappingProxyType(columns)
+    def __init__(self, columns: typing.Mapping[series.Column, Symbol]):
+        self._columns: typing.Mapping[series.Column, Symbol] = types.MappingProxyType(columns)
 
     @functools.lru_cache()
-    def generate_column(self, column: series.Column) -> ResultT:
+    def generate_column(self, column: series.Column) -> Symbol:
         """Generate target code for the generic column type.
 
         Args:
@@ -158,7 +158,7 @@ class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.A
         column.accept(self)
         return self.pop()
 
-    def generate_field(self, field: series.Field) -> ResultT:
+    def generate_field(self, field: series.Field) -> Symbol:
         """Generate target code for a field value.
 
         Args:
@@ -172,7 +172,7 @@ class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.A
             raise error.Mapping(f'Unknown mapping for field {field}')
 
     @abc.abstractmethod
-    def generate_alias(self, column: ResultT, alias: str) -> ResultT:
+    def generate_alias(self, column: Symbol, alias: str) -> Symbol:
         """Generate column alias code.
 
         Args:
@@ -183,7 +183,7 @@ class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.A
         """
 
     @abc.abstractmethod
-    def generate_literal(self, literal: series.Literal) -> ResultT:
+    def generate_literal(self, literal: series.Literal) -> Symbol:
         """Generate target code for a literal value.
 
         Args:
@@ -194,7 +194,7 @@ class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.A
 
     @abc.abstractmethod
     def generate_expression(self, expression: typing.Type[series.Expression],
-                            arguments: typing.Sequence[ResultT]) -> ResultT:
+                            arguments: typing.Sequence[Symbol]) -> Symbol:
         """Generate target code for an expression of given arguments.
 
         Args:
@@ -224,13 +224,13 @@ class Series(typing.Generic[ResultT], Stackable, series.Visitor, metaclass=abc.A
         self.push(self.generate_expression(column.__class__, arguments))
 
 
-class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass=abc.ABCMeta):
+class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=abc.ABCMeta):
     """Mixin implementing a statement parser.
     """
-    def __init__(self, sources: typing.Mapping[frame.Source, ResultT]):
-        self._sources: typing.Mapping[frame.Source, ResultT] = types.MappingProxyType(sources)
+    def __init__(self, sources: typing.Mapping[frame.Source, Symbol]):
+        self._sources: typing.Mapping[frame.Source, Symbol] = types.MappingProxyType(sources)
 
-    def generate_table(self, table: frame.Table) -> ResultT:
+    def generate_table(self, table: frame.Table) -> Symbol:
         """Generate target code for a table type.
 
         Args:
@@ -244,7 +244,7 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
             raise error.Mapping(f'Unknown mapping for table {table}')
 
     @abc.abstractmethod
-    def generate_join(self, left: ResultT, right: ResultT, condition: ResultT, kind: statement.Join.Kind) -> ResultT:
+    def generate_join(self, left: Symbol, right: Symbol, condition: Symbol, kind: statement.Join.Kind) -> Symbol:
         """Generate target code for a join operation using the left/right terms, given condition and a join type.
 
         Args:
@@ -257,7 +257,7 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
         """
 
     @abc.abstractmethod
-    def generate_set(self, left: ResultT, right: ResultT, kind: statement.Set.Kind) -> ResultT:
+    def generate_set(self, left: Symbol, right: Symbol, kind: statement.Set.Kind) -> Symbol:
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -269,10 +269,10 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
         """
 
     @abc.abstractmethod
-    def generate_query(self, source: ResultT, columns: typing.Sequence[ResultT],
-                       where: typing.Optional[ResultT], groupby: typing.Sequence[ResultT],
-                       having: typing.Optional[ResultT], orderby: typing.Sequence[ResultT],
-                       rows: typing.Optional[statement.Rows]) -> ResultT:
+    def generate_query(self, source: Symbol, columns: typing.Sequence[Symbol],
+                       where: typing.Optional[Symbol], groupby: typing.Sequence[Symbol],
+                       having: typing.Optional[Symbol], orderby: typing.Sequence[Symbol],
+                       rows: typing.Optional[statement.Rows]) -> Symbol:
         """Generate query statement code.
 
         Args:
@@ -288,7 +288,7 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
         """
 
     @abc.abstractmethod
-    def generate_ordering(self, column: ResultT, direction: statement.Ordering.Direction) -> ResultT:
+    def generate_ordering(self, column: Symbol, direction: statement.Ordering.Direction) -> Symbol:
         """Generate column ordering code.
 
         Args:
@@ -327,10 +327,10 @@ class Statement(typing.Generic[ResultT], Stackable, statement.Visitor, metaclass
         self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))
 
 
-class Bundle(Stack, Series[ResultT], Statement[ResultT], metaclass=abc.ABCMeta):
+class Bundle(Stack, Series[Symbol], Statement[Symbol], metaclass=abc.ABCMeta):
     """Combined series+statement parser.
     """
-    def __init__(self, columns: typing.Mapping[series.Column, ResultT], sources: typing.Mapping[frame.Source, ResultT]):
+    def __init__(self, columns: typing.Mapping[series.Column, Symbol], sources: typing.Mapping[frame.Source, Symbol]):
         Stack.__init__(self)
         # pylint: disable=non-parent-init-called (#3505)
         Series.__init__(self, columns)
