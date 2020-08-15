@@ -131,11 +131,11 @@ class Reader(metaclass=abc.ABCMeta):
         def apply(self) -> typing.Any:
             return self._reader(self._statement())
 
-    def __init__(self, sources: typing.Mapping[frame.Source, parsing.ResultT],
-                 columns: typing.Mapping[series.Column, parsing.ResultT],
+    def __init__(self, sources: typing.Mapping[frame.Source, parsing.Symbol],
+                 columns: typing.Mapping[series.Column, parsing.Symbol],
                  **kwargs: typing.Any):
-        self._sources: typing.Mapping[frame.Source, parsing.ResultT] = sources
-        self._columns: typing.Mapping[series.Column, parsing.ResultT] = columns
+        self._sources: typing.Mapping[frame.Source, parsing.Symbol] = sources
+        self._columns: typing.Mapping[series.Column, parsing.Symbol] = columns
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __call__(self, query: stmtmod.Query) -> Columnar:
@@ -147,8 +147,8 @@ class Reader(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def parser(cls, sources: typing.Mapping[frame.Source, parsing.ResultT],
-               columns: typing.Mapping[series.Column, parsing.ResultT]) -> parsing.Statement:
+    def parser(cls, sources: typing.Mapping[frame.Source, parsing.Symbol],
+               columns: typing.Mapping[series.Column, parsing.Symbol]) -> parsing.Statement:
         """Return the parser instance of this reader.
 
         Args:
@@ -160,7 +160,7 @@ class Reader(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def read(cls, statement: parsing.ResultT, **kwargs: typing.Any) -> Columnar:
+    def read(cls, statement: parsing.Symbol, **kwargs: typing.Any) -> Columnar:
         """Perform the read operation with the given statement.
 
         Args:
@@ -190,9 +190,9 @@ class Slicer:
                                     else self._label + 1), 'Unexpected number of columns for splitting'
             return self._slicer(columns, self._features), self._slicer(columns, self._label)
 
-    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsing.ResultT]):
+    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsing.Symbol]):
         self._schema: typing.Sequence[series.Column] = schema
-        self._columns: typing.Mapping[series.Column, parsing.ResultT] = columns
+        self._columns: typing.Mapping[series.Column, parsing.Symbol] = columns
 
     def __call__(self, source: Columnar, selection: typing.Union[slice, int]) -> Columnar:
         LOGGER.debug('Selecting columns: %s', self._schema[selection])

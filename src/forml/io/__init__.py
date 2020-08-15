@@ -74,8 +74,8 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
 
     @classmethod
     @abc.abstractmethod
-    def reader(cls, sources: typing.Mapping['frame.Source', 'parsing.ResultT'],
-               columns: typing.Mapping['series.Column', 'parsing.ResultT'],
+    def reader(cls, sources: typing.Mapping['frame.Source', 'parsing.Symbol'],
+               columns: typing.Mapping['series.Column', 'parsing.Symbol'],
                **kwargs: typing.Any) -> typing.Callable[['stmtmod.Query'], extract.Columnar]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
@@ -89,7 +89,7 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
 
     @classmethod
     def slicer(cls, schema: typing.Sequence['series.Column'],
-               columns: typing.Mapping['series.Column', 'parsing.ResultT']) -> typing.Callable[
+               columns: typing.Mapping['series.Column', 'parsing.Symbol']) -> typing.Callable[
                    [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
@@ -104,7 +104,7 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
         return extract.Slicer(schema, columns)
 
     @property
-    def sources(self) -> typing.Mapping['frame.Source', 'parsing.ResultT']:
+    def sources(self) -> typing.Mapping['frame.Source', 'parsing.Symbol']:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
@@ -112,7 +112,7 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
         return {}
 
     @property
-    def columns(self) -> typing.Mapping['series.Column', 'parsing.ResultT']:
+    def columns(self) -> typing.Mapping['series.Column', 'parsing.Symbol']:
         """The explicit columns mapping implemented by this feed to be used by the query parser.
 
         Returns: Columns mapping.
