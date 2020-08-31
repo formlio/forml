@@ -47,11 +47,13 @@ class TestInterface:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
+    def genprovider(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
             str, typing.Any]]) -> typing.Type[provmod.Interface]:
         """Provider fixture.
         """
-        class Provider(provmod.Interface, default=default):
+        _T = typing.TypeVar('_T')
+
+        class Provider(provmod.Interface, typing.Generic[_T], default=default):
             """Provider implementation.
             """
             def __init__(self, **kwargs):
@@ -76,11 +78,11 @@ class TestInterface:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def subprovider(provider: typing.Type[provmod.Interface],
+    def subprovider(genprovider: typing.Type[provmod.Interface],
                     subkey: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
         """Provider fixture.
         """
-        class SubProvider(provider, key=subkey):
+        class SubProvider(genprovider[set], key=subkey):
             """Provider implementation.
             """
             def provide(self) -> None:
@@ -89,13 +91,13 @@ class TestInterface:
 
         return SubProvider
 
-    def test_get(self, provider: typing.Type[provmod.Interface], subprovider: typing.Type[provmod.Interface],
+    def test_get(self, genprovider: typing.Type[provmod.Interface], subprovider: typing.Type[provmod.Interface],
                  subkey: str, params: typing.Mapping[str, typing.Any]):
         """Test the provider lookup.
         """
-        assert provider[subkey] is subprovider
+        assert genprovider[subkey] is subprovider
         assert subprovider[subkey] is subprovider
-        assert provider(val=100) == subprovider(val=100, **params)
+        assert genprovider(val=100) == subprovider(val=100, **params)
         with pytest.raises(error.Missing):
             assert subprovider['miss']
 

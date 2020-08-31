@@ -27,13 +27,15 @@ from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.io.etl import extract
 
+from forml.io.dsl import parsing
+
 if typing.TYPE_CHECKING:
     from forml.io import etl as etlmod
-    from forml.io.dsl import parsing, statement as stmtmod
+    from forml.io.dsl import statement as stmtmod
     from forml.io.dsl.schema import series, frame, kind as kindmod
 
 
-class Feed(provider.Interface, default=provcfg.Feed.default):
+class Feed(provider.Interface, typing.Generic[parsing.Symbol], default=provcfg.Feed.default):
     """ETL feed is the implementation of a specific datasource access layer.
     """
     def __init__(self, **readerkw):
@@ -74,8 +76,8 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
 
     @classmethod
     @abc.abstractmethod
-    def reader(cls, sources: typing.Mapping['frame.Source', 'parsing.Symbol'],
-               columns: typing.Mapping['series.Column', 'parsing.Symbol'],
+    def reader(cls, sources: typing.Mapping['frame.Source', parsing.Symbol],
+               columns: typing.Mapping['series.Column', parsing.Symbol],
                **kwargs: typing.Any) -> typing.Callable[['stmtmod.Query'], extract.Columnar]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
@@ -89,7 +91,7 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
 
     @classmethod
     def slicer(cls, schema: typing.Sequence['series.Column'],
-               columns: typing.Mapping['series.Column', 'parsing.Symbol']) -> typing.Callable[
+               columns: typing.Mapping['series.Column', parsing.Symbol]) -> typing.Callable[
                    [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
@@ -104,7 +106,7 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
         return extract.Slicer(schema, columns)
 
     @property
-    def sources(self) -> typing.Mapping['frame.Source', 'parsing.Symbol']:
+    def sources(self) -> typing.Mapping['frame.Source', parsing.Symbol]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
@@ -112,7 +114,7 @@ class Feed(provider.Interface, default=provcfg.Feed.default):
         return {}
 
     @property
-    def columns(self) -> typing.Mapping['series.Column', 'parsing.Symbol']:
+    def columns(self) -> typing.Mapping['series.Column', parsing.Symbol]:
         """The explicit columns mapping implemented by this feed to be used by the query parser.
 
         Returns: Columns mapping.
