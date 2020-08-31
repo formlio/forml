@@ -39,7 +39,7 @@ class Registry(collections.namedtuple('Registry', 'stage, provider')):
         the package or its modules are not found.
         """
         path: str
-        strict: bool = True
+        strict: bool = True  # whether to fail on import errors
 
         def __hash__(self):
             return hash(self.path)
@@ -109,16 +109,18 @@ class Meta(abc.ABCMeta):
         if default:
             if not inspect.isabstract(cls):
                 raise error.Unexpected('Defaults provided but class not abstract')
-            mcs.DEFAULTS[cls] = default
+            Meta.DEFAULTS[cls] = default
         return cls
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args, **kwargs) -> 'Interface':
         if cls in Meta.DEFAULTS:
             key, params = Meta.DEFAULTS[cls]
             return cls[key](*args, **{**params, **kwargs})  # pylint: disable=unsubscriptable-object
         return super().__call__(*args, **kwargs)
 
-    def __getitem__(cls, key):
+    def __getitem__(cls, key: typing.Any) -> typing.Type['Interface']:
+        if not isinstance(key, str) and issubclass(cls, typing.Generic):
+            return cls.__class_getitem__(key)
         try:
             return _REGISTRY[cls].get(key)
         except KeyError:
@@ -142,6 +144,15 @@ class Interface(metaclass=Meta):
     """
     def __init_subclass__(cls, key: typing.Optional[str] = None,
                           packages: typing.Optional[typing.Iterable[str]] = None):
+        """Register the provider based on its optional key.
+
+        Normally would be implemented using the Meta.__init__ but it needs the Interface class to exist.
+
+        Args:
+            key: Optional key to register the provider as.
+            packages: Additional packages to be imported when registering.
+        """
+        super().__init_subclass__()
         if inspect.isabstract(cls) and key:
             raise error.Unexpected(f'Provider key ({key}) illegal on abstract class')
         if not key:

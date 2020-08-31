@@ -32,10 +32,10 @@ from forml.io.etl import extract
 LOGGER = logging.getLogger(__name__)
 
 
-class Feed(io.Feed):
+class Feed(io.Feed[str]):
     """SQL feed with abstract reader.
     """
-    class Reader(extract.Reader, metaclass=abc.ABCMeta):
+    class Reader(extract.Reader[str], metaclass=abc.ABCMeta):
         """SQL reader base class for PEP249 compliant DB APIs.
         """
         class Parser(parsing.Bundle[str]):
@@ -172,8 +172,8 @@ class Feed(io.Feed):
                 """
                 try:
                     return self.EXPRESSION[expression](*arguments)
-                except KeyError:
-                    raise error.Unsupported(f'Unsupported expression: {expression}')
+                except KeyError as err:
+                    raise error.Unsupported(f'Unsupported expression: {expression}') from err
 
             def generate_join(self, left: str, right: str, condition: str, kind: stmtmod.Join.Kind) -> str:
                 """Generate target code for a join operation using the left/right terms, condition and a join type.
@@ -257,7 +257,28 @@ class Feed(io.Feed):
             """
 
         @classmethod
+        def parser(cls, sources: typing.Mapping[frame.Source, str],
+                   columns: typing.Mapping[series.Column, str]) -> parsing.Statement:
+            """Return the parser instance of this reader.
+
+            Args:
+                sources: Source mappings to be used by the parser.
+                columns: Column mappings to be used by the parser.
+
+            Returns: Parser instance.
+            """
+            return cls.Parser(columns, sources)
+
+        @classmethod
         def read(cls, statement: str, **kwargs) -> extract.Columnar:
+            """Perform the read operation with the given statement.
+
+            Args:
+                statement: Query statement in the reader's native syntax.
+                kwargs: Optional reader keyword args.
+
+            Returns: Data provided by the reader.
+            """
             LOGGER.debug('Establishing SQL connection')
             with contextlib.closing(cls.connection(**kwargs)) as connection:
                 cursor = connection.cursor()
@@ -265,12 +286,16 @@ class Feed(io.Feed):
                 cursor.execute(statement)
                 return cursor.fetchall()
 
-        @classmethod
-        def parser(cls, sources: typing.Mapping[frame.Source, str],
-                   columns: typing.Mapping[series.Column, str]) -> parsing.Statement:
-            return cls.Parser(columns, sources)
-
     @classmethod
     def reader(cls, sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str],
                **kwargs: typing.Any) -> typing.Callable[[stmtmod.Query], extract.Columnar]:
+        """Return the reader instance of this feed.
+
+        Args:
+            sources: Source mappings to be used by the reader.
+            columns: Column mappings to be used by the reader.
+            kwargs: Optional reader keyword arguments.
+
+        Returns: Reader instance.
+        """
         return cls.Reader(sources, columns, **kwargs)  # pylint: disable=abstract-class-instantiated

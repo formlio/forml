@@ -118,7 +118,7 @@ class Operator(topology.Operator):
 Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
 
 
-class Reader(metaclass=abc.ABCMeta):
+class Reader(typing.Generic[parsing.Symbol], metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
     class Actor(task.Actor):
