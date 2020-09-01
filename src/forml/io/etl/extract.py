@@ -22,7 +22,7 @@ import logging
 import typing
 
 from forml import error
-from forml.io.dsl import parsing
+from forml.io.dsl import parser as parsmod
 from forml.io.dsl import statement as stmtmod
 from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.flow import task, pipeline
@@ -118,7 +118,7 @@ class Operator(topology.Operator):
 Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
 
 
-class Reader(typing.Generic[parsing.Symbol], metaclass=abc.ABCMeta):
+class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
     class Actor(task.Actor):
@@ -131,11 +131,11 @@ class Reader(typing.Generic[parsing.Symbol], metaclass=abc.ABCMeta):
         def apply(self) -> typing.Any:
             return self._reader(self._statement())
 
-    def __init__(self, sources: typing.Mapping[frame.Source, parsing.Symbol],
-                 columns: typing.Mapping[series.Column, parsing.Symbol],
+    def __init__(self, sources: typing.Mapping[frame.Source, parsmod.Symbol],
+                 columns: typing.Mapping[series.Column, parsmod.Symbol],
                  **kwargs: typing.Any):
-        self._sources: typing.Mapping[frame.Source, parsing.Symbol] = sources
-        self._columns: typing.Mapping[series.Column, parsing.Symbol] = columns
+        self._sources: typing.Mapping[frame.Source, parsmod.Symbol] = sources
+        self._columns: typing.Mapping[series.Column, parsmod.Symbol] = columns
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __call__(self, query: stmtmod.Query) -> Columnar:
@@ -143,12 +143,12 @@ class Reader(typing.Generic[parsing.Symbol], metaclass=abc.ABCMeta):
         parser = self.parser(self._sources, self._columns)
         query.accept(parser)
         LOGGER.debug('Starting ETL read using: %s', parser.result)
-        return self.read(parser.result, **self._kwargs)
+        return self.format(self.read(parser.result, **self._kwargs))
 
     @classmethod
     @abc.abstractmethod
-    def parser(cls, sources: typing.Mapping[frame.Source, parsing.Symbol],
-               columns: typing.Mapping[series.Column, parsing.Symbol]) -> parsing.Statement:
+    def parser(cls, sources: typing.Mapping[frame.Source, parsmod.Symbol],
+               columns: typing.Mapping[series.Column, parsmod.Symbol]) -> parsmod.Statement:
         """Return the parser instance of this reader.
 
         Args:
@@ -159,8 +159,19 @@ class Reader(typing.Generic[parsing.Symbol], metaclass=abc.ABCMeta):
         """
 
     @classmethod
+    def format(cls, data: typing.Any) -> Columnar:
+        """Format the input data into the required Columnar format.
+
+        Args:
+            data: Input data.
+
+        Returns: Data formatted into Columnar format.
+        """
+        return data
+
+    @classmethod
     @abc.abstractmethod
-    def read(cls, statement: parsing.Symbol, **kwargs: typing.Any) -> Columnar:
+    def read(cls, statement: parsmod.Symbol, **kwargs: typing.Any) -> typing.Any:
         """Perform the read operation with the given statement.
 
         Args:
@@ -190,9 +201,9 @@ class Slicer:
                                     else self._label + 1), 'Unexpected number of columns for splitting'
             return self._slicer(columns, self._features), self._slicer(columns, self._label)
 
-    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsing.Symbol]):
+    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsmod.Symbol]):
         self._schema: typing.Sequence[series.Column] = schema
-        self._columns: typing.Mapping[series.Column, parsing.Symbol] = columns
+        self._columns: typing.Mapping[series.Column, parsmod.Symbol] = columns
 
     def __call__(self, source: Columnar, selection: typing.Union[slice, int]) -> Columnar:
         LOGGER.debug('Selecting columns: %s', self._schema[selection])

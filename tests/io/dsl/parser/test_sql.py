@@ -28,7 +28,7 @@ import pytest
 
 from forml.io.dsl import statement, function
 from forml.io.dsl.schema import series, frame, kind
-from forml.io.feed import sql
+from forml.io.dsl.parser import sql
 
 
 class Parser(metaclass=abc.ABCMeta):
@@ -40,7 +40,7 @@ class Parser(metaclass=abc.ABCMeta):
         query: statement.Query
         expected: str
 
-        def __call__(self, parser: sql.Feed.Reader.Parser):
+        def __call__(self, parser: sql.Parser):
             def strip(value: str) -> str:
                 """Replace all whitespace with single space.
                 """
@@ -79,10 +79,10 @@ class Parser(metaclass=abc.ABCMeta):
     @staticmethod
     @pytest.fixture(scope='function')
     def parser(columns: typing.Mapping[series.Column, str],
-               sources: typing.Mapping[frame.Source, str]) -> sql.Feed.Reader.Parser:
+               sources: typing.Mapping[frame.Source, str]) -> sql.Parser:
         """Parser fixture.
         """
-        return sql.Feed.Reader.Parser(columns, sources)
+        return sql.Parser(columns, sources)
 
     @classmethod
     @abc.abstractmethod
@@ -91,7 +91,7 @@ class Parser(metaclass=abc.ABCMeta):
         """Case fixture.
         """
 
-    def test_parse(self, parser: sql.Feed.Reader.Parser, case: Case):
+    def test_parse(self, parser: sql.Parser, case: Case):
         """Parsing test.
         """
         case(parser)

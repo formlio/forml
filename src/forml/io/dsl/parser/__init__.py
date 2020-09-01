@@ -168,8 +168,8 @@ class Series(typing.Generic[Symbol], Stackable, series.Visitor, metaclass=abc.AB
         """
         try:
             return self._columns[field]
-        except KeyError:
-            raise error.Mapping(f'Unknown mapping for field {field}')
+        except KeyError as err:
+            raise error.Mapping(f'Unknown mapping for field {field}') from err
 
     @abc.abstractmethod
     def generate_alias(self, column: Symbol, alias: str) -> Symbol:
@@ -240,8 +240,8 @@ class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=
         """
         try:
             return self._sources[table]
-        except KeyError:
-            raise error.Mapping(f'Unknown mapping for table {table}')
+        except KeyError as err:
+            raise error.Mapping(f'Unknown mapping for table {table}') from err
 
     @abc.abstractmethod
     def generate_join(self, left: Symbol, right: Symbol, condition: Symbol, kind: statement.Join.Kind) -> Symbol:

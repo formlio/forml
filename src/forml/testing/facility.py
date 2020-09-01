@@ -28,7 +28,7 @@ from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology
 from forml.io import etl
-from forml.io.dsl import parsing
+from forml.io.dsl import parser
 from forml.io.dsl import statement
 from forml.io.dsl.schema import series, frame, kind
 from forml.io.etl import extract
@@ -55,8 +55,8 @@ class Feed(io.Feed, key='testing'):
         self._scenario: spec.Scenario.Input = scenario
 
     @classmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, parsing.Symbol],
-               columns: typing.Mapping[series.Column, parsing.Symbol],
+    def reader(cls, sources: typing.Mapping[frame.Source, parser.Symbol],
+               columns: typing.Mapping[series.Column, parser.Symbol],
                **kwargs) -> typing.Callable[[statement.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
         def read(query: statement.Query) -> typing.Any:
             """Reader callback.
@@ -70,13 +70,13 @@ class Feed(io.Feed, key='testing'):
         return read
 
     @classmethod
-    def slicer(cls, schema: typing.Sequence['series.Column'],
-               columns: typing.Mapping['series.Column', 'parsing.Symbol']) -> typing.Callable[
+    def slicer(cls, schema: typing.Sequence[series.Column],
+               columns: typing.Mapping[series.Column, parser.Symbol]) -> typing.Callable[
                    [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
         return lambda c, s: c[s][0]
 
     @property
-    def columns(self) -> typing.Mapping[series.Column, parsing.Symbol]:
+    def columns(self) -> typing.Mapping[series.Column, parser.Symbol]:
         return {
             DataSet.label: (self._scenario.train, [self._scenario.label]),
             DataSet.feature: self._scenario.apply
