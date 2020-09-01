@@ -19,6 +19,7 @@
 ETL layer.
 """
 import abc
+import functools
 import typing
 
 from forml import provider
@@ -27,7 +28,7 @@ from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.io.etl import extract
 
-from forml.io.dsl import parsing
+from forml.io.dsl import parser
 
 if typing.TYPE_CHECKING:
     from forml.io import etl as etlmod
@@ -35,7 +36,7 @@ if typing.TYPE_CHECKING:
     from forml.io.dsl.schema import series, frame, kind as kindmod
 
 
-class Feed(provider.Interface, typing.Generic[parsing.Symbol], default=provcfg.Feed.default):
+class Feed(provider.Interface, typing.Generic[parser.Symbol], default=provcfg.Feed.default):
     """ETL feed is the implementation of a specific datasource access layer.
     """
     def __init__(self, **readerkw):
@@ -52,32 +53,59 @@ class Feed(provider.Interface, typing.Generic[parsing.Symbol], default=provcfg.F
 
         Returns: Flow track.
         """
-        def reader(query: 'stmtmod.Query') -> task.Spec:
+        def formatter(provider: typing.Callable[..., extract.Columnar]) -> typing.Callable[..., typing.Any]:
+            """Creating a closure around the provider with the custom formatting to be applied on the provider output.
+
+            Args:
+                provider: Original provider whose output is to be formatted.
+
+            Returns: Wrapper that applies formatting upon calling the provider.
+            """
+            @functools.wraps(provider)
+            def wrapper(*args, **kwargs) -> typing.Any:
+                """Wrapped provider with custom formatting.
+
+                Args:
+                    *args: Original args.
+                    **kwargs: Original kwargs.
+
+                Returns: Formatted data.
+                """
+                return self.format(provider(*args, **kwargs))
+            return wrapper
+
+        def actor(handler: typing.Callable[[...], typing.Any], spec: 'stmtmod.Query') -> task.Spec:
             """Helper for creating the reader actor spec for given query.
 
             Args:
-                query: Data loading statement.
+                handler: Reading handler.
+                spec: Data loading statement.
 
             Returns: Reader actor spec.
             """
-            return extract.Reader.Actor.spec(self.reader(self.sources, self.columns, **self._readerkw),
-                                             extract.Statement.prepare(query, source.extract.ordinal, lower, upper))
+            return extract.Reader.Actor.spec(handler, extract.Statement.prepare(
+                spec, source.extract.ordinal, lower, upper))
 
-        train: 'stmtmod.Query' = source.extract.train
+        reader = self.reader(self.sources, self.columns, **self._readerkw)
+        query: 'stmtmod.Query' = source.extract.train
         label: typing.Optional[task.Spec] = None
-        if source.extract.label:
-            train = train.select(*(*source.extract.train.columns, *source.extract.label))
-            label = extract.Slicer.Actor.spec(self.slicer(train.columns, self.columns), source.extract.train.columns,
-                                              source.extract.label)
-        loader: topology.Composable = extract.Operator(reader(source.extract.apply), reader(train), label)
+        if source.extract.label:  # trainset/label formatting is applied only after label extraction
+            query = query.select(*(*source.extract.train.columns, *source.extract.label))
+            label = extract.Slicer.Actor.spec(formatter(self.slicer(query.columns, self.columns)),
+                                              source.extract.train.columns, source.extract.label)
+        else:  # trainset formatting is applied straight away
+            reader = formatter(reader)
+        train = actor(reader, query)
+        apply = actor(formatter(self.reader(self.sources, self.columns, **self._readerkw)), source.extract.apply)
+        loader: topology.Composable = extract.Operator(apply, train, label)
         if source.transform:
             loader >>= source.transform
         return loader.expand()
 
     @classmethod
     @abc.abstractmethod
-    def reader(cls, sources: typing.Mapping['frame.Source', parsing.Symbol],
-               columns: typing.Mapping['series.Column', parsing.Symbol],
+    def reader(cls, sources: typing.Mapping['frame.Source', parser.Symbol],
+               columns: typing.Mapping['series.Column', parser.Symbol],
                **kwargs: typing.Any) -> typing.Callable[['stmtmod.Query'], extract.Columnar]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
@@ -91,7 +119,7 @@ class Feed(provider.Interface, typing.Generic[parsing.Symbol], default=provcfg.F
 
     @classmethod
     def slicer(cls, schema: typing.Sequence['series.Column'],
-               columns: typing.Mapping['series.Column', parsing.Symbol]) -> typing.Callable[
+               columns: typing.Mapping['series.Column', parser.Symbol]) -> typing.Callable[
                    [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
@@ -105,8 +133,19 @@ class Feed(provider.Interface, typing.Generic[parsing.Symbol], default=provcfg.F
         """
         return extract.Slicer(schema, columns)
 
+    @classmethod
+    def format(cls, data: extract.Columnar) -> typing.Any:
+        """Optional post-formatting to be applied upon obtaining the columnar data from the raw reader.
+
+        Args:
+            data: Input Columnar data to be formatted.
+
+        Returns: Formatted data.
+        """
+        return data
+
     @property
-    def sources(self) -> typing.Mapping['frame.Source', parsing.Symbol]:
+    def sources(self) -> typing.Mapping['frame.Source', parser.Symbol]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
@@ -114,7 +153,7 @@ class Feed(provider.Interface, typing.Generic[parsing.Symbol], default=provcfg.F
         return {}
 
     @property
-    def columns(self) -> typing.Mapping['series.Column', parsing.Symbol]:
+    def columns(self) -> typing.Mapping['series.Column', parser.Symbol]:
         """The explicit columns mapping implemented by this feed to be used by the query parser.
 
         Returns: Columns mapping.

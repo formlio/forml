@@ -24,7 +24,7 @@ import typing
 
 import pytest
 
-from forml.io.dsl import parsing, function
+from forml.io.dsl import parser, function
 from forml.io.dsl import statement as stmtmod
 from forml.io.dsl.schema import series as sermod, frame, kind as kindmod
 
@@ -55,12 +55,12 @@ def columns() -> typing.Mapping[sermod.Column, tuple]:
     return Columns()
 
 
-class Series(parsing.Stack, parsing.Series):
+class Series(parser.Stack, parser.Series):
     """Dummy statement wrapping all terms into tuples.
     """
     def __init__(self, columns: typing.Mapping[sermod.Column, tuple]):
-        parsing.Stack.__init__(self)
-        parsing.Series.__init__(self, columns)
+        parser.Stack.__init__(self)
+        parser.Series.__init__(self, columns)
 
     # pylint: disable=missing-function-docstring
     def generate_literal(self, literal: sermod.Literal) -> tuple:
@@ -75,7 +75,7 @@ class Series(parsing.Stack, parsing.Series):
 
 
 @pytest.fixture(scope='function')
-def series(columns: typing.Mapping[sermod.Column, tuple]) -> parsing.Series:
+def series(columns: typing.Mapping[sermod.Column, tuple]) -> parser.Series:
     """Series fixture.
     """
     return Series(columns)
@@ -83,15 +83,15 @@ def series(columns: typing.Mapping[sermod.Column, tuple]) -> parsing.Series:
 
 @pytest.fixture(scope='function')
 def statement(columns: typing.Mapping[sermod.Column, tuple],
-              sources: typing.Mapping[frame.Source, tuple]) -> parsing.Statement:
+              sources: typing.Mapping[frame.Source, tuple]) -> parser.Statement:
     """Statement fixture.
     """
-    class Statement(Series, parsing.Statement):  # pylint: disable=abstract-method
+    class Statement(Series, parser.Statement):  # pylint: disable=abstract-method
         """Dummy statement wrapping all terms into tuples.
         """
         def __init__(self):
             Series.__init__(self, columns)
-            parsing.Statement.__init__(self, sources)
+            parser.Statement.__init__(self, sources)
 
         # pylint: disable=missing-function-docstring
         def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: stmtmod.Join.Kind) -> tuple:
@@ -122,7 +122,7 @@ def statement(columns: typing.Mapping[sermod.Column, tuple],
 class TestStatement:
     """ tests.
     """
-    def test_target(self, person: frame.Table, student: frame.Table, school: frame.Table, statement: parsing.Statement):
+    def test_target(self, person: frame.Table, student: frame.Table, school: frame.Table, statement: parser.Statement):
         """Target test.
         """
         query = student.join(person, student.surname == person.surname)\
