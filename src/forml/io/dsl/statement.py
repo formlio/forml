@@ -21,6 +21,7 @@ ETL statement types.
 import abc
 import collections
 import enum
+import functools
 import itertools
 import typing
 from collections import abc as colabc
@@ -35,7 +36,7 @@ class Visitor(frame.Visitor, metaclass=abc.ABCMeta):
         """Generic source hook.
 
         Args:
-            source: frame.Source instance to be visited.
+            source: Instance to be visited.
         """
         self.visit_source(source)
 
@@ -43,7 +44,7 @@ class Visitor(frame.Visitor, metaclass=abc.ABCMeta):
         """Generic source hook.
 
         Args:
-            source: frame.Source instance to be visited.
+            source: Instance to be visited.
         """
         self.visit_source(source)
 
@@ -51,7 +52,7 @@ class Visitor(frame.Visitor, metaclass=abc.ABCMeta):
         """Generic source hook.
 
         Args:
-            source: frame.Source instance to be visited.
+            source: Instance to be visited.
         """
         self.visit_source(source)
 
@@ -75,6 +76,7 @@ class Join(collections.namedtuple('Join', 'left, right, condition, kind'), frame
                                cls.Kind(kind) if kind else cls.Kind.LEFT)
 
     @property
+    @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
 
@@ -99,6 +101,7 @@ class Set(collections.namedtuple('Set', 'left, right, kind'), frame.Source):
         return super().__new__(cls, left, right, kind)
 
     @property
+    @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
 
@@ -188,6 +191,7 @@ class Query(collections.namedtuple('Query', 'source, selection, prefilter, group
                                tuple(Ordering.make(ordering or [])), rows)
 
     @property
+    @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.selection if self.selection else self.source.columns
 

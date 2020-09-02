@@ -19,6 +19,7 @@
 ETL schema types.
 """
 import abc
+import functools
 import inspect
 import logging
 import operator
@@ -57,11 +58,35 @@ class Source(metaclass=abc.ABCMeta):
     """
     @property
     @abc.abstractmethod
-    def columns(self) -> typing.Sequence[series.Element]:
+    def columns(self) -> typing.Sequence[series.Column]:
         """Get the list of columns representing this source.
 
         Returns: Sequence of columns.
         """
+
+    @abc.abstractmethod
+    def __hash__(self) -> int:
+        """Custom hash function.
+
+        Returns: Hashcode.
+        """
+
+    @abc.abstractmethod
+    def __eq__(self, other) -> bool:
+        """Custom equal implementation.
+
+        Args:
+            other: Operand to compare to.
+
+        Returns: True if equal.
+        """
+
+    @functools.lru_cache()
+    def __getattr__(self, name: str) -> series.Column:
+        for column in self.columns:
+            if column.name == name:
+                return column
+        raise AttributeError(f'Invalid column {name}')
 
     @abc.abstractmethod
     def accept(self, visitor: Visitor) -> None:
@@ -75,6 +100,16 @@ class Source(metaclass=abc.ABCMeta):
 class Queryable(Source, metaclass=abc.ABCMeta):
     """Base class for queryable sources.
     """
+    # def reference(self, label: typing.Optional[str] = None) -> 'Reference':
+    #     """Use a independent reference to this Source (ie for self-join conditions).
+    #
+    #     Args:
+    #         label: Optional alias to be used for this reference.
+    #
+    #     Returns: New reference to this table.
+    #     """
+    #     return Reference(self, label)
+
     @abc.abstractmethod
     def select(self, *columns: 'series.Column') -> 'statement.Query':
         """Specify the output columns to be provided.
@@ -160,7 +195,14 @@ class Table(Queryable, tuple):
             return getattr(cls, key)
 
         def __iter__(cls) -> typing.Iterator[str]:
-            return iter(k for c in reversed(inspect.getmro(cls))
+            return iter(k for k, _ in cls.items())  # pylint: disable=no-value-for-parameter
+
+        def items(cls) -> typing.Iterator[typing.Tuple[str, 'etl.Field']]:
+            """Get the schema items as pairs of key and Field instance.
+
+            Returns: Iterator of key-Field pairs.
+            """
+            return iter((k, f) for c in reversed(inspect.getmro(cls))
                         for k, f in c.__dict__.items() if isinstance(f, etl.Field))
 
     __schema__: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
@@ -180,13 +222,21 @@ class Table(Queryable, tuple):
     def __hash__(self):
         return hash(self.__schema__)
 
+    def __eq__(self, other):
+        return isinstance(other, Table) and other.__schema__ == self.__schema__
+
+    @functools.lru_cache()
     def __getattr__(self, name: str) -> 'series.Field':
-        field: 'etl.Field' = self.__schema__[name]
+        try:
+            field: 'etl.Field' = self.__schema__[name]
+        except KeyError:
+            return super().__getattr__(name)
         return series.Field(self, field.name or name, field.kind)
 
     @property
+    @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Field]:
-        return tuple(getattr(self, n) for n in self.__schema__)
+        return tuple(series.Field(self, f.name or k, f.kind) for k, f in self.__schema__.items())
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_table(self)

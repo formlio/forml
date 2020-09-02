@@ -22,7 +22,7 @@ import abc
 import functools
 import typing
 
-from forml import provider
+from forml import provider as provmod
 from forml.conf import provider as provcfg
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
@@ -36,7 +36,7 @@ if typing.TYPE_CHECKING:
     from forml.io.dsl.schema import series, frame, kind as kindmod
 
 
-class Feed(provider.Interface, typing.Generic[parser.Symbol], default=provcfg.Feed.default):
+class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Feed.default):
     """ETL feed is the implementation of a specific datasource access layer.
     """
     def __init__(self, **readerkw):

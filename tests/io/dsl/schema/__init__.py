@@ -31,15 +31,6 @@ from forml.io.dsl.schema import series, frame
 class Source(metaclass=abc.ABCMeta):
     """Source tests base class.
     """
-    def test_columns(self, source: frame.Queryable, student: frame.Table):
-        """Test the reported column.
-        """
-        assert student.surname in source.columns
-
-
-class Queryable(Source, metaclass=abc.ABCMeta):
-    """Base class for queryable tests.
-    """
     @staticmethod
     @pytest.fixture(scope='session')
     @abc.abstractmethod
@@ -47,6 +38,22 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Undertest source.
         """
 
+    def test_identity(self, source: frame.Queryable):
+        """Test source identity.
+        """
+        hash(source)
+        assert source != self
+
+    def test_columns(self, source: frame.Queryable, student: frame.Table):
+        """Test the reported column.
+        """
+        assert student.surname in source.columns
+        assert source.surname == student.surname
+
+
+class Queryable(Source, metaclass=abc.ABCMeta):
+    """Base class for queryable tests.
+    """
     def test_select(self, source: frame.Queryable, student: frame.Table, school: frame.Table):
         """Select test.
         """
