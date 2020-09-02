@@ -76,11 +76,7 @@ class Feed(io.Feed[str]):
 
             Returns: Columnar output.
             """
-            if data:
-                nrows = len(data)
-                ncols = len(data[0])
-                data = [[data[r][c] for r in range(nrows)] for c in range(ncols)]
-            return data
+            return extract.transpose(data)
 
         @classmethod
         def read(cls, statement: str, **kwargs) -> typing.Sequence[typing.Sequence[typing.Any]]:

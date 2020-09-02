@@ -118,6 +118,32 @@ class Operator(topology.Operator):
 Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
 
 
+def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequence[typing.Iterator[typing.Any]]:
+    """Helper for transposing between row and column oriented matrices. The output columns are from performance reason
+    just lazy generators.
+
+    Args:
+        data: Input matrix.
+
+    Returns: Transposed output matrix.
+    """
+    def col(idx: int) -> typing.Iterator[typing.Any]:
+        """Create a generator for given column index.
+
+        Args:
+            idx: Index of column to be generated.
+
+        Returns: Generator for given column.
+        """
+        return (data[r][idx] for r in range(nrows))
+
+    if data:
+        nrows = len(data)
+        ncols = len(data[0])
+        data = [col(c) for c in range(ncols)]
+    return data
+
+
 class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
