@@ -26,14 +26,10 @@ from forml import provider as provmod
 from forml.conf import provider as provcfg
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
-from forml.io.etl import extract
-
+from forml.io import etl as etlmod
 from forml.io.dsl import parser
-
-if typing.TYPE_CHECKING:
-    from forml.io import etl as etlmod
-    from forml.io.dsl import statement as stmtmod
-    from forml.io.dsl.schema import series, frame, kind as kindmod
+from forml.io.dsl.schema import series, frame, kind as kindmod
+from forml.io.etl import extract
 
 
 class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Feed.default):
@@ -74,7 +70,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
                 return self.format(provider(*args, **kwargs))
             return wrapper
 
-        def actor(handler: typing.Callable[[...], typing.Any], spec: 'stmtmod.Query') -> task.Spec:
+        def actor(handler: typing.Callable[[...], typing.Any], spec: frame.Query) -> task.Spec:
             """Helper for creating the reader actor spec for given query.
 
             Args:
@@ -87,7 +83,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
                 spec, source.extract.ordinal, lower, upper))
 
         reader = self.reader(self.sources, self.columns, **self._readerkw)
-        query: 'stmtmod.Query' = source.extract.train
+        query: frame.Query = source.extract.train
         label: typing.Optional[task.Spec] = None
         if source.extract.label:  # trainset/label formatting is applied only after label extraction
             query = query.select(*(*source.extract.train.columns, *source.extract.label))
@@ -104,9 +100,9 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
 
     @classmethod
     @abc.abstractmethod
-    def reader(cls, sources: typing.Mapping['frame.Source', parser.Symbol],
-               columns: typing.Mapping['series.Column', parser.Symbol],
-               **kwargs: typing.Any) -> typing.Callable[['stmtmod.Query'], extract.Columnar]:
+    def reader(cls, sources: typing.Mapping[frame.Source, parser.Symbol],
+               columns: typing.Mapping[series.Column, parser.Symbol],
+               **kwargs: typing.Any) -> typing.Callable[[frame.Query], extract.Columnar]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
@@ -118,8 +114,8 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
         """
 
     @classmethod
-    def slicer(cls, schema: typing.Sequence['series.Column'],
-               columns: typing.Mapping['series.Column', parser.Symbol]) -> typing.Callable[
+    def slicer(cls, schema: typing.Sequence[series.Column],
+               columns: typing.Mapping[series.Column, parser.Symbol]) -> typing.Callable[
                    [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
@@ -145,7 +141,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
         return data
 
     @property
-    def sources(self) -> typing.Mapping['frame.Source', parser.Symbol]:
+    def sources(self) -> typing.Mapping[frame.Source, parser.Symbol]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
@@ -153,7 +149,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
         return {}
 
     @property
-    def columns(self) -> typing.Mapping['series.Column', parser.Symbol]:
+    def columns(self) -> typing.Mapping[series.Column, parser.Symbol]:
         """The explicit columns mapping implemented by this feed to be used by the query parser.
 
         Returns: Columns mapping.

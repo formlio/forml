@@ -22,8 +22,8 @@ import logging
 import re
 import typing
 
-from forml.io.dsl import parser as parsmod, statement as stmtmod, function, error
-from forml.io.dsl.schema import series, kind as kindmod
+from forml.io.dsl import parser as parsmod, function, error
+from forml.io.dsl.schema import series, frame, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -99,23 +99,23 @@ class Parser(parsmod.Bundle[str]):
         function.Count: Expression('count({})', lambda c=None: [c if c is not None else '*'])
     }
 
-    JOIN: typing.Mapping[stmtmod.Join.Kind, str] = {
-        stmtmod.Join.Kind.LEFT: 'LEFT',
-        stmtmod.Join.Kind.RIGHT: 'RIGHT',
-        stmtmod.Join.Kind.INNER: 'INNER',
-        stmtmod.Join.Kind.FULL: 'FULL',
-        stmtmod.Join.Kind.CROSS: 'CROSS'
+    JOIN: typing.Mapping[frame.Join.Kind, str] = {
+        frame.Join.Kind.LEFT: 'LEFT',
+        frame.Join.Kind.RIGHT: 'RIGHT',
+        frame.Join.Kind.INNER: 'INNER',
+        frame.Join.Kind.FULL: 'FULL',
+        frame.Join.Kind.CROSS: 'CROSS'
     }
 
-    SET: typing.Mapping[stmtmod.Set.Kind, str] = {
-        stmtmod.Set.Kind.UNION: 'UNION',
-        stmtmod.Set.Kind.INTERSECTION: 'INTERSECT',
-        stmtmod.Set.Kind.DIFFERENCE: 'EXCEPT'
+    SET: typing.Mapping[frame.Set.Kind, str] = {
+        frame.Set.Kind.UNION: 'UNION',
+        frame.Set.Kind.INTERSECTION: 'INTERSECT',
+        frame.Set.Kind.DIFFERENCE: 'EXCEPT'
     }
 
-    ORDER: typing.Mapping[stmtmod.Ordering.Direction, str] = {
-        stmtmod.Ordering.Direction.ASCENDING: 'ASC',
-        stmtmod.Ordering.Direction.DESCENDING: 'DESC'
+    ORDER: typing.Mapping[frame.Ordering.Direction, str] = {
+        frame.Ordering.Direction.ASCENDING: 'ASC',
+        frame.Ordering.Direction.DESCENDING: 'DESC'
     }
 
     DATE = '%Y-%m-%d'
@@ -167,7 +167,7 @@ class Parser(parsmod.Bundle[str]):
         except KeyError as err:
             raise error.Unsupported(f'Unsupported expression: {expression}') from err
 
-    def generate_join(self, left: str, right: str, condition: str, kind: stmtmod.Join.Kind) -> str:
+    def generate_join(self, left: str, right: str, condition: str, kind: frame.Join.Kind) -> str:
         """Generate target code for a join operation using the left/right terms, condition and a join type.
 
         Args:
@@ -180,7 +180,7 @@ class Parser(parsmod.Bundle[str]):
         """
         return f'{left} {self.JOIN[kind]} JOIN {right} ON {condition}'
 
-    def generate_set(self, left: str, right: str, kind: stmtmod.Set.Kind) -> str:
+    def generate_set(self, left: str, right: str, kind: frame.Set.Kind) -> str:
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -195,7 +195,7 @@ class Parser(parsmod.Bundle[str]):
     def generate_query(self, source: str, columns: typing.Sequence[str],  # pylint: disable=no-self-use
                        where: typing.Optional[str],
                        groupby: typing.Sequence[str], having: typing.Optional[str],
-                       orderby: typing.Sequence[str], rows: typing.Optional[stmtmod.Rows]) -> str:
+                       orderby: typing.Sequence[str], rows: typing.Optional[frame.Rows]) -> str:
         """Generate query statement code.
 
         Args:
@@ -226,7 +226,7 @@ class Parser(parsmod.Bundle[str]):
             query += f' {rows.count}'
         return query
 
-    def generate_ordering(self, column: str, direction: stmtmod.Ordering.Direction) -> str:
+    def generate_ordering(self, column: str, direction: frame.Ordering.Direction) -> str:
         """Generate column ordering.
 
         Args:

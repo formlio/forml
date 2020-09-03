@@ -19,7 +19,8 @@
 Aggregation functions.
 """
 
-from forml.io.dsl.schema import series, kind as kindmod
+from forml.io.dsl.schema import kind as kindmod
+from forml.io.dsl.schema import series
 
 
 class Count(series.Univariate):

@@ -22,7 +22,6 @@ import collections
 import typing
 
 from forml.flow.pipeline import topology
-from forml.io.dsl import statement as stmtmod
 from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.project import product
 
@@ -49,16 +48,16 @@ class Source(typing.NamedTuple):
     class Extract(collections.namedtuple('Extract', 'train, apply, label, ordinal')):
         """Combo of select statements for the different modes.
         """
-        def __new__(cls, train: 'stmtmod.Query', apply: 'stmtmod.Query', label: typing.Sequence[series.Column],
+        def __new__(cls, train: frame.Queryable, apply: frame.Queryable, label: typing.Sequence[series.Column],
                     ordinal: typing.Optional[series.Element]):
             if {c.element for c in train.columns}.intersection(c.element for c in label):
                 raise ValueError('Label-feature overlap')
             if ordinal:
-                series.Element.ensure(ordinal)
-            return super().__new__(cls, train, apply, tuple(label), ordinal)
+                ordinal = series.Element.ensure(ordinal)
+            return super().__new__(cls, train.query, apply.query, tuple(label), ordinal)
 
     @classmethod
-    def query(cls, features: 'stmtmod.Query', *label: series.Column, apply: typing.Optional['stmtmod.Query'] = None,
+    def query(cls, features: frame.Queryable, *label: series.Column, apply: typing.Optional[frame.Queryable] = None,
               ordinal: typing.Optional[series.Element] = None) -> 'Source':
         """Create new source with the given extraction.
 
