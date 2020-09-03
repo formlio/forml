@@ -21,6 +21,7 @@ ETL layer.
 import collections
 import typing
 
+from forml import error
 from forml.flow.pipeline import topology
 from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.project import product
@@ -51,7 +52,7 @@ class Source(typing.NamedTuple):
         def __new__(cls, train: frame.Queryable, apply: frame.Queryable, label: typing.Sequence[series.Column],
                     ordinal: typing.Optional[series.Element]):
             if {c.element for c in train.columns}.intersection(c.element for c in label):
-                raise ValueError('Label-feature overlap')
+                raise error.Invalid('Label-feature overlap')
             if ordinal:
                 ordinal = series.Element.ensure(ordinal)
             return super().__new__(cls, train.query, apply.query, tuple(label), ordinal)
