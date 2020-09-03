@@ -76,40 +76,18 @@ class Visitor(metaclass=abc.ABCMeta):
         self.visit_column(expression)
 
 
-def columnize(handler: typing.Callable[['Column'], typing.Any]) -> typing.Callable[[typing.Any], typing.Any]:
-    """Decorator for forcing function arguments to columns.
+def cast(value: typing.Any) -> 'Column':
+    """Attempt to create a literal instance of the value unless already a column.
 
     Args:
-        handler: Callable to be decorated.
+        value: Value to be represented as Element column.
 
-    Returns: Decorated callable.
+    Returns: Element column instance.
     """
-
-    def cast(value: typing.Any) -> 'Column':
-        """Attempt to create a literal instance of the value unless already a column.
-
-        Args:
-            value: Column to be.
-
-        Returns: Column instance.
-        """
-        if not isinstance(value, Column):
-            LOGGER.debug('Converting value of %s to a literal type', value)
-            value = Literal(value)
-        return value
-
-    @functools.wraps(handler)
-    def wrapper(*args: typing.Any) -> typing.Sequence['Column']:
-        """Actual decorator.
-
-        Args:
-            *args: Arguments to be forced to columns.
-
-        Returns: Arguments converted to columns.
-        """
-        return handler(*(cast(a) for a in args))
-
-    return wrapper
+    if not isinstance(value, Column):
+        LOGGER.debug('Converting value of %s to a literal type', value)
+        value = Literal(value)
+    return value
 
 
 class Column(tuple, metaclass=abc.ABCMeta):
@@ -189,9 +167,49 @@ class Column(tuple, metaclass=abc.ABCMeta):
     def ensure(cls, column: 'Column') -> 'Column':
         """Ensure given given column is of our type.
         """
+        column = cast(column)
         if not isinstance(column, cls):
             raise ValueError(f'{column} not a {cls.__name__}')
         return column
+
+    def __hash__(self):
+        return hash(self.__class__) ^ super().__hash__()
+
+
+def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
+    """Decorator for forcing function arguments to element columns.
+
+    Args:
+        handler: Callable to be decorated.
+
+    Returns: Decorated callable.
+    """
+    @functools.wraps(handler)
+    def wrapper(*args: typing.Any) -> typing.Sequence['Element']:
+        """Actual decorator.
+
+        Args:
+            *args: Arguments to be forced to columns.
+
+        Returns: Arguments converted to columns.
+        """
+        return handler(*(cast(a).element for a in args))
+
+    return wrapper
+
+
+class Element(Column, metaclass=abc.ABCMeta):
+    """Base class for any non-aliased columns.
+    """
+    @property
+    def element(self) -> 'Element':
+        return self
+
+    @classmethod
+    def ensure(cls, column: 'Column') -> 'Element':
+        """Ensure given given column is an Element.
+        """
+        return super().ensure(column).element
 
     def alias(self, alias: str) -> 'Aliased':
         """Use an alias for this column.
@@ -203,115 +221,100 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
         return Aliased(self, alias)
 
-    def __hash__(self):
-        return hash(self.__class__) ^ tuple.__hash__(self)
+    __hash__ = Column.__hash__  # otherwise gets overwritten to None due to redefined __eq__
 
     @columnize
-    def __lt__(self, other: 'Column') -> 'Expression':
-        return LessThan(self, other)
-
-    @columnize
-    def __le__(self, other: 'Column') -> 'Expression':
-        return LessEqual(self, other)
-
-    @columnize
-    def __gt__(self, other: 'Column') -> 'Expression':
-        return GreaterThan(self, other)
-
-    @columnize
-    def __ge__(self, other: 'Column') -> 'Expression':
-        return GreaterEqual(self, other)
-
-    @columnize
-    def __eq__(self, other: 'Column') -> 'Expression':
+    def __eq__(self, other: 'Element') -> 'Expression':
         return Equal(self, other)
 
     @columnize
-    def __ne__(self, other: 'Column') -> 'Expression':
+    def __ne__(self, other: 'Element') -> 'Expression':
         return NotEqual(self, other)
 
     @columnize
-    def __and__(self, other: 'Column') -> 'Expression':
+    def __lt__(self, other: 'Element') -> 'Expression':
+        return LessThan(self, other)
+
+    @columnize
+    def __le__(self, other: 'Element') -> 'Expression':
+        return LessEqual(self, other)
+
+    @columnize
+    def __gt__(self, other: 'Element') -> 'Expression':
+        return GreaterThan(self, other)
+
+    @columnize
+    def __ge__(self, other: 'Element') -> 'Expression':
+        return GreaterEqual(self, other)
+
+    @columnize
+    def __and__(self, other: 'Element') -> 'Expression':
         return And(self, other)
 
     @columnize
-    def __rand__(self, other: 'Column') -> 'Expression':
+    def __rand__(self, other: 'Element') -> 'Expression':
         return And(other, self)
 
     @columnize
-    def __or__(self, other: 'Column') -> 'Expression':
+    def __or__(self, other: 'Element') -> 'Expression':
         return Or(self, other)
 
     @columnize
-    def __ror__(self, other: 'Column') -> 'Expression':
+    def __ror__(self, other: 'Element') -> 'Expression':
         return Or(other, self)
 
     def __invert__(self) -> 'Expression':
         return Not(self)
 
     @columnize
-    def __add__(self, other: 'Column') -> 'Expression':
+    def __add__(self, other: 'Element') -> 'Expression':
         return Addition(self, other)
 
     @columnize
-    def __radd__(self, other: 'Column') -> 'Expression':
+    def __radd__(self, other: 'Element') -> 'Expression':
         return Addition(other, self)
 
     @columnize
-    def __sub__(self, other: 'Column') -> 'Expression':
+    def __sub__(self, other: 'Element') -> 'Expression':
         return Subtraction(self, other)
 
     @columnize
-    def __rsub__(self, other: 'Column') -> 'Expression':
+    def __rsub__(self, other: 'Element') -> 'Expression':
         return Subtraction(other, self)
 
     @columnize
-    def __mul__(self, other: 'Column') -> 'Expression':
+    def __mul__(self, other: 'Element') -> 'Expression':
         return Multiplication(self, other)
 
     @columnize
-    def __rmul__(self, other: 'Column') -> 'Expression':
+    def __rmul__(self, other: 'Element') -> 'Expression':
         return Multiplication(other, self)
 
     @columnize
-    def __truediv__(self, other: 'Column') -> 'Expression':
+    def __truediv__(self, other: 'Element') -> 'Expression':
         return Division(self, other)
 
     @columnize
-    def __rtruediv__(self, other: 'Column') -> 'Expression':
+    def __rtruediv__(self, other: 'Element') -> 'Expression':
         return Division(other, self)
 
     @columnize
-    def __mod__(self, other: 'Column') -> 'Expression':
+    def __mod__(self, other: 'Element') -> 'Expression':
         return Modulus(self, other)
 
     @columnize
-    def __rmod__(self, other: 'Column') -> 'Expression':
+    def __rmod__(self, other: 'Element') -> 'Expression':
         return Modulus(other, self)
 
 
 class Aliased(Column):
     """Aliased column representation.
     """
-    column: Column = property(operator.itemgetter(0))
+    element: Element = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
 
     def __new__(cls, column: Column, alias: str):
-        return super().__new__(cls, [column, alias])
-
-    def alias(self, alias: str) -> 'Aliased':
-        """Use an alias for this column.
-
-        Args:
-            alias: new alias value.
-
-        Returns: New column instance with given alias.
-        """
-        return Aliased(self.column, alias)
-
-    @property
-    def element(self) -> 'Element':
-        return self.column.element
+        return super().__new__(cls, [column.element, alias])
 
     @property
     def kind(self) -> kindmod.Any:
@@ -319,7 +322,7 @@ class Aliased(Column):
 
         Returns: Inner column type.
         """
-        return self.column.kind
+        return self.element.kind
 
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
@@ -327,16 +330,8 @@ class Aliased(Column):
         Args:
             visitor: Visitor instance.
         """
-        self.column.accept(visitor)
+        self.element.accept(visitor)
         visitor.visit_aliased(self)
-
-
-class Element(Column, metaclass=abc.ABCMeta):
-    """Base class for any non-aliased columns.
-    """
-    @property
-    def element(self) -> 'Element':
-        return self
 
 
 class Literal(Element):
@@ -387,7 +382,7 @@ class Field(Element):
 class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
-    def __new__(cls, *terms: Column):
+    def __new__(cls, *terms: Element):
         return super().__new__(cls, terms)
 
     @property
@@ -400,7 +395,7 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
 
     def accept(self, visitor: Visitor) -> None:
         for term in self:
-            if isinstance(term, Column):
+            if isinstance(term, Element):
                 term.accept(visitor)
         visitor.visit_expression(self)
 
@@ -408,14 +403,14 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
 class Univariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for functions/operators of just one argument/operand.
     """
-    def __new__(cls, arg: Column):
+    def __new__(cls, arg: Element):
         return super().__new__(cls, arg)
 
 
 class Bivariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for functions/operators of two arguments/operands.
     """
-    def __new__(cls, arg1: Column, arg2: Column):
+    def __new__(cls, arg1: Element, arg2: Element):
         return super().__new__(cls, arg1, arg2)
 
 
@@ -425,7 +420,7 @@ class Logical:
     kind = kindmod.Boolean()
 
     @classmethod
-    def ensure(cls, column: Column) -> Column:
+    def ensure(cls, column: Element) -> Element:
         """Ensure given expression is a logical one.
         """
         if not isinstance(column.kind, cls.kind.__class__):

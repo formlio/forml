@@ -22,13 +22,11 @@ import logging
 import typing
 
 from forml import error
-from forml.io.dsl import parser as parsmod
-from forml.io.dsl import statement as stmtmod
-from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
-
+from forml.io.dsl import parser as parsmod
+from forml.io.dsl.schema import kind as kindmod, series, frame
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,11 +41,11 @@ class Statement(typing.NamedTuple):
     class Prepared(typing.NamedTuple):
         """Statement bound with particular lower/upper parameters.
         """
-        query: stmtmod.Query
+        query: frame.Query
         ordinal: typing.Optional[series.Element]
 
         def __call__(self, lower: typing.Optional[kindmod.Native] = None,
-                     upper: typing.Optional[kindmod.Native] = None) -> stmtmod.Query:
+                     upper: typing.Optional[kindmod.Native] = None) -> frame.Query:
             query = self.query
             if self.ordinal is not None:
                 if lower:
@@ -59,7 +57,7 @@ class Statement(typing.NamedTuple):
             return query
 
     @classmethod
-    def prepare(cls, query: stmtmod.Query, ordinal: typing.Optional[series.Element],
+    def prepare(cls, query: frame.Query, ordinal: typing.Optional[series.Element],
                 lower: typing.Optional[kindmod.Native] = None,
                 upper: typing.Optional[kindmod.Native] = None) -> 'Statement':
         """Bind the particular lower/upper parameters with this prepared statement.
@@ -74,7 +72,7 @@ class Statement(typing.NamedTuple):
         """
         return cls(cls.Prepared(query, ordinal), lower, upper)  # pylint: disable=no-member
 
-    def __call__(self) -> stmtmod.Query:
+    def __call__(self) -> frame.Query:
         """Expand the statement with the provided lower/upper parameters.
 
         Returns: Expanded query transformed using the associated processor.
@@ -150,8 +148,8 @@ class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
     class Actor(task.Actor):
         """Data extraction actor using the provided reader and statement to load the data.
         """
-        def __init__(self, reader: typing.Callable[[stmtmod.Query], Columnar], statement: Statement):
-            self._reader: typing.Callable[[stmtmod.Query], Columnar] = reader
+        def __init__(self, reader: typing.Callable[[frame.Query], Columnar], statement: Statement):
+            self._reader: typing.Callable[[frame.Query], Columnar] = reader
             self._statement: Statement = statement
 
         def apply(self) -> typing.Any:
@@ -164,7 +162,7 @@ class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
         self._columns: typing.Mapping[series.Column, parsmod.Symbol] = columns
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-    def __call__(self, query: stmtmod.Query) -> Columnar:
+    def __call__(self, query: frame.Query) -> Columnar:
         LOGGER.debug('Parsing ETL query')
         parser = self.parser(self._sources, self._columns)
         query.accept(parser)

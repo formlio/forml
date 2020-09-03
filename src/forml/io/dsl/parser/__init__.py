@@ -25,7 +25,6 @@ import types
 import typing
 
 from forml.io.dsl import error
-from forml.io.dsl import statement
 from forml.io.dsl.schema import series, frame
 
 LOGGER = logging.getLogger(__name__)
@@ -224,7 +223,7 @@ class Series(typing.Generic[Symbol], Stackable, series.Visitor, metaclass=abc.AB
         self.push(self.generate_expression(column.__class__, arguments))
 
 
-class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=abc.ABCMeta):
+class Statement(typing.Generic[Symbol], Stackable, frame.Visitor, metaclass=abc.ABCMeta):
     """Mixin implementing a statement parser.
     """
     def __init__(self, sources: typing.Mapping[frame.Source, Symbol]):
@@ -244,7 +243,7 @@ class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=
             raise error.Mapping(f'Unknown mapping for table {table}') from err
 
     @abc.abstractmethod
-    def generate_join(self, left: Symbol, right: Symbol, condition: Symbol, kind: statement.Join.Kind) -> Symbol:
+    def generate_join(self, left: Symbol, right: Symbol, condition: Symbol, kind: frame.Join.Kind) -> Symbol:
         """Generate target code for a join operation using the left/right terms, given condition and a join type.
 
         Args:
@@ -257,7 +256,7 @@ class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=
         """
 
     @abc.abstractmethod
-    def generate_set(self, left: Symbol, right: Symbol, kind: statement.Set.Kind) -> Symbol:
+    def generate_set(self, left: Symbol, right: Symbol, kind: frame.Set.Kind) -> Symbol:
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -272,7 +271,7 @@ class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=
     def generate_query(self, source: Symbol, columns: typing.Sequence[Symbol],
                        where: typing.Optional[Symbol], groupby: typing.Sequence[Symbol],
                        having: typing.Optional[Symbol], orderby: typing.Sequence[Symbol],
-                       rows: typing.Optional[statement.Rows]) -> Symbol:
+                       rows: typing.Optional[frame.Rows]) -> Symbol:
         """Generate query statement code.
 
         Args:
@@ -288,7 +287,7 @@ class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=
         """
 
     @abc.abstractmethod
-    def generate_ordering(self, column: Symbol, direction: statement.Ordering.Direction) -> Symbol:
+    def generate_ordering(self, column: Symbol, direction: frame.Ordering.Direction) -> Symbol:
         """Generate column ordering code.
 
         Args:
@@ -305,20 +304,20 @@ class Statement(typing.Generic[Symbol], Stackable, statement.Visitor, metaclass=
         self.push(self.generate_table(source))
 
     @bypass(generate_table)
-    def visit_join(self, source: statement.Join) -> None:
+    def visit_join(self, source: frame.Join) -> None:
         right = self.pop()
         left = self.pop()
         expression = self.generate_column(source.condition)
         self.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(generate_table)
-    def visit_set(self, source: statement.Set) -> None:
+    def visit_set(self, source: frame.Set) -> None:
         right = self.pop()
         left = self.pop()
         self.push(self.generate_set(left, right, source.kind))
 
     @bypass(generate_table)
-    def visit_query(self, source: statement.Query) -> None:
+    def visit_query(self, source: frame.Query) -> None:
         columns = [self.generate_column(c) for c in source.columns]
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]

@@ -29,7 +29,6 @@ from forml.flow.graph import view
 from forml.flow.pipeline import topology
 from forml.io import etl
 from forml.io.dsl import parser
-from forml.io.dsl import statement
 from forml.io.dsl.schema import series, frame, kind
 from forml.io.etl import extract
 from forml.runtime import process
@@ -57,8 +56,8 @@ class Feed(io.Feed, key='testing'):
     @classmethod
     def reader(cls, sources: typing.Mapping[frame.Source, parser.Symbol],
                columns: typing.Mapping[series.Column, parser.Symbol],
-               **kwargs) -> typing.Callable[[statement.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
-        def read(query: statement.Query) -> typing.Any:
+               **kwargs) -> typing.Callable[[frame.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
+        def read(query: frame.Query) -> typing.Any:
             """Reader callback.
 
             Args:

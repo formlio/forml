@@ -25,7 +25,6 @@ import typing
 import pytest
 
 from forml.io.dsl import parser, function
-from forml.io.dsl import statement as stmtmod
 from forml.io.dsl.schema import series as sermod, frame, kind as kindmod
 
 
@@ -34,7 +33,7 @@ def sources(person: frame.Table, student: frame.Table, school: frame.Table) -> t
     """Sources mapping fixture.
     """
     return types.MappingProxyType({
-        stmtmod.Join(student, person, student.surname == person.surname): tuple(['foo']),
+        frame.Join(student, person, student.surname == person.surname): tuple(['foo']),
         person: tuple([person]),
         student: tuple([student]),
         school: tuple([school])
@@ -94,10 +93,10 @@ def statement(columns: typing.Mapping[sermod.Column, tuple],
             parser.Statement.__init__(self, sources)
 
         # pylint: disable=missing-function-docstring
-        def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: stmtmod.Join.Kind) -> tuple:
+        def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: frame.Join.Kind) -> tuple:
             return left, kind, right, condition
 
-        def generate_set(self, left: tuple, right: tuple, kind: stmtmod.Set.Kind) -> tuple:
+        def generate_set(self, left: tuple, right: tuple, kind: frame.Set.Kind) -> tuple:
             return left, kind, right
 
         def generate_literal(self, literal: sermod.Literal) -> tuple:
@@ -107,13 +106,13 @@ def statement(columns: typing.Mapping[sermod.Column, tuple],
                                 arguments: typing.Sequence[tuple]) -> tuple:
             return expression, *arguments
 
-        def generate_ordering(self, column: tuple, direction: stmtmod.Ordering.Direction) -> tuple:
+        def generate_ordering(self, column: tuple, direction: frame.Ordering.Direction) -> tuple:
             return column, direction
 
         def generate_query(self, source: tuple, columns: typing.Sequence[tuple],
                            where: typing.Optional[tuple],
                            groupby: typing.Sequence[tuple], having: typing.Optional[tuple],
-                           orderby: typing.Sequence[tuple], rows: typing.Optional[stmtmod.Rows]) -> tuple:
+                           orderby: typing.Sequence[tuple], rows: typing.Optional[frame.Rows]) -> tuple:
             return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows
 
     return Statement()

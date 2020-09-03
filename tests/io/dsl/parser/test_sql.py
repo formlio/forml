@@ -26,7 +26,7 @@ import typing
 
 import pytest
 
-from forml.io.dsl import statement, function
+from forml.io.dsl import function
 from forml.io.dsl.schema import series, frame, kind
 from forml.io.dsl.parser import sql
 
@@ -37,7 +37,7 @@ class Parser(metaclass=abc.ABCMeta):
     class Case(typing.NamedTuple):
         """Test case input/output.
         """
-        query: statement.Query
+        query: frame.Query
         expected: str
 
         def __call__(self, parser: sql.Parser):
@@ -148,11 +148,11 @@ class TestJoin(Parser):
     """
     @classmethod
     @pytest.fixture(scope='session', params=(Parser.Case(None, 'LEFT'),
-                                             Parser.Case(statement.Join.Kind.LEFT, 'LEFT'),
-                                             Parser.Case(statement.Join.Kind.RIGHT, 'RIGHT'),
-                                             Parser.Case(statement.Join.Kind.FULL, 'FULL'),
-                                             Parser.Case(statement.Join.Kind.INNER, 'INNER'),
-                                             Parser.Case(statement.Join.Kind.CROSS, 'CROSS')))
+                                             Parser.Case(frame.Join.Kind.LEFT, 'LEFT'),
+                                             Parser.Case(frame.Join.Kind.RIGHT, 'RIGHT'),
+                                             Parser.Case(frame.Join.Kind.FULL, 'FULL'),
+                                             Parser.Case(frame.Join.Kind.INNER, 'INNER'),
+                                             Parser.Case(frame.Join.Kind.CROSS, 'CROSS')))
     def case(cls, request, student: frame.Table, school: frame.Table) -> Parser.Case:
         query = student.join(school, student.school == school.sid, kind=request.param.query)\
             .select(student.surname, school.name)
@@ -166,10 +166,10 @@ class TestOrderBy(Parser):
     """
     @classmethod
     @pytest.fixture(scope='session', params=(Parser.Case(None, 'ASC'),
-                                             Parser.Case(statement.Ordering.Direction.ASCENDING, 'ASC'),
-                                             Parser.Case(statement.Ordering.Direction.DESCENDING, 'DESC')))
+                                             Parser.Case(frame.Ordering.Direction.ASCENDING, 'ASC'),
+                                             Parser.Case(frame.Ordering.Direction.DESCENDING, 'DESC')))
     def case(cls, request, student: frame.Table, school: frame.Table) -> Parser.Case:
-        query = student.select(student.score).orderby(statement.Ordering(student.score, request.param.query))
+        query = student.select(student.score).orderby(frame.Ordering(student.score, request.param.query))
         expected = f'SELECT edu.student.score FROM edu.student ORDER BY edu.student.score {request.param.expected}'
         return cls.Case(query, expected)
 

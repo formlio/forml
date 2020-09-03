@@ -53,14 +53,21 @@ class Column(metaclass=abc.ABCMeta):
         """
         assert len({column, column}) == 1
 
-    def test_alias(self, column: series.Column):
+
+class Element(Column, metaclass=abc.ABCMeta):
+    """Base class for element columns.
+    """
+    def test_element(self, column: series.Element):
+        assert column.element == column
+
+    def test_alias(self, column: series.Element):
         """Field aliasing test.
         """
         aliased = column.alias('foo')
         assert aliased.name == 'foo'
         assert aliased.kind == column.kind
 
-    def test_logical(self, column: series.Column):
+    def test_logical(self, column: series.Element):
         """Logical operators tests.
         """
         # pylint: disable=misplaced-comparison-constant
@@ -82,7 +89,7 @@ class Column(metaclass=abc.ABCMeta):
         assert isinstance(column | True, series.Or)
         assert isinstance(~column, series.Not)
 
-    def test_arithmetic(self, column: series.Column):
+    def test_arithmetic(self, column: series.Element):
         """Arithmetic operators tests.
         """
         assert isinstance(1 + column, series.Addition)
@@ -109,13 +116,6 @@ class TestAliased(Column):
 
     def test_element(self, column: series.Aliased):
         assert isinstance(column.element, series.Element)
-
-
-class Element(Column, metaclass=abc.ABCMeta):
-    """Base class for element columns.
-    """
-    def test_element(self, column: series.Element):
-        assert column.element == column
 
 
 class TestLiteral(Element):
