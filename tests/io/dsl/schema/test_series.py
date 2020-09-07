@@ -25,7 +25,7 @@ import decimal
 
 import pytest
 
-from forml.io.dsl.schema import series, frame
+from forml.io.dsl.schema import series, frame, kind
 
 
 class Column(metaclass=abc.ABCMeta):
@@ -43,15 +43,20 @@ class Column(metaclass=abc.ABCMeta):
         """Test the element getter.
         """
 
-    def test_disect(self, column: series.Column):
-        """Test the column disection.
+    def test_dissect(self, column: series.Column):
+        """Test the column dissection.
         """
-        assert column in type(column).disect(column)
+        assert column in type(column).dissect(column)
 
     def test_identity(self, column: series.Column):
         """Test the identity (hashability + equality).
         """
         assert len({column, column}) == 1
+
+    def test_kind(self, column: series.Column):
+        """Test the column kind.
+        """
+        assert isinstance(column.kind, kind.Any)
 
 
 class Element(Column, metaclass=abc.ABCMeta):
@@ -143,4 +148,4 @@ class TestField(Element):
     def test_table(self, column: series.Field, student: frame.Table):
         """Test the column table reference.
         """
-        assert column.table == student
+        assert column.source == student

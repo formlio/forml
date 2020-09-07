@@ -71,7 +71,7 @@ class Parser(metaclass=abc.ABCMeta):
 
             def __getitem__(self, column: series.Column) -> tuple:
                 if isinstance(column, series.Field):
-                    return f'{sources[column.table]}.{column.name}'
+                    return f'{sources[column.source]}.{column.name}'
                 raise KeyError('Unknown column')
 
         return Columns()
