@@ -26,11 +26,13 @@ import inspect
 import itertools
 import logging
 import operator
+import random
+import string
 import typing
 from collections import abc as colabc
 
 from forml.io import etl
-from forml.io.dsl.schema import series
+from forml.io.dsl.schema import series, visit
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,60 +84,19 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
                 raise ValueError('Expecting pair of column and direction')
 
 
-class Rows(collections.namedtuple('Rows', 'count, offset')):
+class Rows(typing.NamedTuple):
     """Row limit spec.
     """
-    def __new__(cls, count: int, offset: int = 0):
-        return super().__new__(cls, count, offset)
+    count: int
+    offset: int = 0
 
 
-class Visitor(metaclass=abc.ABCMeta):
-    """Schema visitor.
-    """
-    @abc.abstractmethod
-    def visit_source(self, source: 'Source') -> None:
-        """Generic source hook.
-
-        Args:
-            source: Source instance to be visited.
-        """
-
-    def visit_table(self, table: 'Table') -> None:
-        """Generic source hook.
-
-        Args:
-            table: Source instance to be visited.
-        """
-        self.visit_source(table)
-
-    def visit_join(self, source: 'Join') -> None:
-        """Generic source hook.
-
-        Args:
-            source: Instance to be visited.
-        """
-        self.visit_source(source)
-
-    def visit_set(self, source: 'Set') -> None:
-        """Generic source hook.
-
-        Args:
-            source: Instance to be visited.
-        """
-        self.visit_source(source)
-
-    def visit_query(self, source: 'Query') -> None:
-        """Generic source hook.
-
-        Args:
-            source: Instance to be visited.
-        """
-        self.visit_source(source)
-
-
-class Source(metaclass=abc.ABCMeta):
+class Source(tuple, metaclass=abc.ABCMeta):
     """Source base class.
     """
+    def __hash__(self):
+        return hash(self.__class__) ^ super().__hash__()
+
     @property
     @abc.abstractmethod
     def columns(self) -> typing.Sequence[series.Column]:
@@ -144,32 +105,34 @@ class Source(metaclass=abc.ABCMeta):
         Returns: Sequence of columns.
         """
 
-    @abc.abstractmethod
-    def __hash__(self) -> int:
-        """Custom hash function.
+    @property
+    @functools.lru_cache()
+    def schema(self) -> typing.Type['etl.Schema']:
+        """Get the schema type for this source.
 
-        Returns: Hashcode.
+        Returns: Schema type.
         """
+        return Table.Schema(f'{self.__class__.__name__}Schema', (etl.Schema.schema, ), {
+            (c.name or f'_{i}'): etl.Field(c.kind, c.name) for i, c in enumerate(self.columns)})
 
-    @abc.abstractmethod
-    def __eq__(self, other) -> bool:
-        """Custom equal implementation.
-
-        Args:
-            other: Operand to compare to.
-
-        Returns: True if equal.
-        """
+    def __getattr__(self, name: str) -> series.Column:
+        try:
+            return self[name]
+        except KeyError as err:
+            raise AttributeError(f'Invalid column {name}') from err
 
     @functools.lru_cache()
-    def __getattr__(self, name: str) -> series.Column:
-        for column in self.columns:
-            if column.name == name:
-                return column
-        raise AttributeError(f'Invalid column {name}')
+    def __getitem__(self, name: typing.Union[int, str]) -> typing.Any:
+        try:
+            return super().__getitem__(name)
+        except (TypeError, IndexError) as err:
+            for (key, field), column in zip(self.schema.items(), self.columns):
+                if name in {key, field.name}:
+                    return column
+            raise KeyError(f'Invalid column {name}') from err
 
     @abc.abstractmethod
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Source) -> None:
         """Visitor acceptor.
 
         Args:
@@ -177,7 +140,7 @@ class Source(metaclass=abc.ABCMeta):
         """
 
 
-class Join(collections.namedtuple('Join', 'left, right, condition, kind'), Source):
+class Join(Source):
     """Source made of two join-combined subsources.
     """
     @enum.unique
@@ -190,23 +153,28 @@ class Join(collections.namedtuple('Join', 'left, right, condition, kind'), Sourc
         FULL = 'full'
         CROSS = 'cross'
 
-    def __new__(cls, left: Source, right: Source, condition: series.Expression,
+    left: 'Tangible' = property(operator.itemgetter(0))
+    right: 'Tangible' = property(operator.itemgetter(1))
+    condition: series.Expression = property(operator.itemgetter(2))
+    kind: 'Join.Kind' = property(operator.itemgetter(3))
+
+    def __new__(cls, left: 'Tangible', right: 'Tangible', condition: series.Expression,
                 kind: typing.Optional[typing.Union['Join.Kind', str]] = None):
-        return super().__new__(cls, left, right, series.Logical.ensure(series.Element.ensure(condition)),
-                               cls.Kind(kind) if kind else cls.Kind.LEFT)
+        return super().__new__(cls, [left, right, series.Logical.ensure(series.Element.ensure(condition)),
+                               cls.Kind(kind) if kind else cls.Kind.LEFT])
 
     @property
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Source) -> None:
         self.left.accept(visitor)
         self.right.accept(visitor)
         visitor.visit_join(self)
 
 
-class Set(collections.namedtuple('Set', 'left, right, kind'), Source):
+class Set(Source):
     """Source made of two set-combined subsources.
     """
     @enum.unique
@@ -217,15 +185,19 @@ class Set(collections.namedtuple('Set', 'left, right, kind'), Source):
         INTERSECTION = 'intersection'
         DIFFERENCE = 'difference'
 
+    left: Source = property(operator.itemgetter(0))
+    right: Source = property(operator.itemgetter(1))
+    kind: 'Set.Kind' = property(operator.itemgetter(2))
+
     def __new__(cls, left: Source, right: Source, kind: 'Set.Kind'):
-        return super().__new__(cls, left, right, kind)
+        return super().__new__(cls, [left, right, kind])
 
     @property
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Source) -> None:
         self.left.accept(visitor)
         self.right.accept(visitor)
         visitor.visit_set(self)
@@ -234,23 +206,23 @@ class Set(collections.namedtuple('Set', 'left, right, kind'), Source):
 class Queryable(Source, metaclass=abc.ABCMeta):
     """Base class for queryable sources.
     """
-    # def reference(self, label: typing.Optional[str] = None) -> 'Reference':
-    #     """Use a independent reference to this Source (ie for self-join conditions).
-    #
-    #     Args:
-    #         label: Optional alias to be used for this reference.
-    #
-    #     Returns: New reference to this table.
-    #     """
-    #     return Reference(self, label)
-
     @property
-    @abc.abstractmethod
     def query(self) -> 'Query':
         """Return query instance of this queryable.
 
         Returns: Query instance.
         """
+        return Query(self)
+
+    def reference(self, name: typing.Optional[str] = None) -> 'Reference':
+        """Use a independent reference to this Source (ie for self-join conditions).
+
+        Args:
+            name: Optional alias to be used for this reference.
+
+        Returns: New reference to this table.
+        """
+        return Reference(self, name)
 
     def select(self, *columns: series.Column) -> 'Query':
         """Specify the output columns to be provided.
@@ -267,9 +239,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.having(condition)
 
-    def join(self, other: 'Queryable', condition: series.Expression,
+    def join(self, other: 'Tangible', condition: series.Expression,
              kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
-        """Join with other source.
+        """Join with other tangible.
         """
         return self.query.join(other, condition, kind)
 
@@ -305,7 +277,59 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         return self.query.difference(other)
 
 
-class Table(Queryable, tuple):
+class Tangible(Queryable, metaclass=abc.ABCMeta):
+    """Tangible is a queryable that can be referenced by some identifier (rather than just a statement itself).
+
+    It's columns are represented using series.Field.
+    """
+    @property
+    @abc.abstractmethod
+    def columns(self) -> typing.Sequence[series.Field]:
+        """Tangible columns are instances of series.Field.
+
+        Returns: Sequence of series.Field instances.
+        """
+
+
+class Reference(Tangible):
+    """Reference is a wrapper around a queryable that associates it with a (possibly random) name.
+    """
+    _NAMELEN: int = 8
+    instance: Queryable = property(operator.itemgetter(0))
+    name: str = property(operator.itemgetter(1))
+
+    def __new__(cls, instance: Queryable, name: typing.Optional[str] = None):
+        if not name:
+            name = ''.join(random.choice(string.ascii_lowercase) for _ in range(cls._NAMELEN))
+        return super().__new__(cls, [instance, name])
+
+    @property
+    def query(self) -> 'Query':
+        return self.instance.query
+
+    @property
+    @functools.lru_cache()
+    def columns(self) -> typing.Sequence[series.Field]:
+        return tuple(series.Field(self, c.name) for c in self.instance.columns)
+
+    @property
+    def schema(self) -> typing.Type['etl.Schema']:
+        return self.instance.schema
+
+    def reference(self, name: typing.Optional[str] = None) -> 'Reference':
+        return Reference(self.instance, name)
+
+    def accept(self, visitor: visit.Source) -> None:
+        """Visitor acceptor.
+
+        Args:
+            visitor: Visitor instance.
+        """
+        self.instance.accept(visitor)
+        visitor.visit_reference(self)
+
+
+class Table(Tangible):
     """Table based source.
 
     This type can be used either as metaclass or as a base class to inherit from.
@@ -332,8 +356,12 @@ class Table(Queryable, tuple):
         def __eq__(cls, other):
             return hash(cls) == hash(other)
 
-        def __getitem__(cls, key: str) -> 'etl.Field':
-            return getattr(cls, key)
+        @functools.lru_cache()
+        def __getitem__(cls, name: str) -> 'etl.Field':
+            for key, field in cls.items():  # pylint: disable=no-value-for-parameter
+                if name in {key, field.name}:
+                    return field
+            raise AttributeError(f'Unknown field {name}')
 
         def __iter__(cls) -> typing.Iterator[str]:
             return iter(k for k, _ in cls.items())  # pylint: disable=no-value-for-parameter
@@ -346,51 +374,40 @@ class Table(Queryable, tuple):
             return iter((k, f) for c in reversed(inspect.getmro(cls))
                         for k, f in c.__dict__.items() if isinstance(f, etl.Field))
 
-    __schema__: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
+    schema: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
 
     def __new__(mcs, schema: typing.Union[str, typing.Type['etl.Schema']],  # pylint: disable=bad-classmethod-argument
                 bases: typing.Optional[typing.Tuple[typing.Type]] = None,
                 namespace: typing.Optional[typing.Dict[str, typing.Any]] = None):
         if issubclass(mcs, Table):  # used as metaclass
             if bases:
-                bases = (bases[0].__schema__, )
+                bases = (bases[0].schema, )
             schema = mcs.Schema(schema, bases, namespace)
         else:
             if bases or namespace:
                 raise TypeError('Unexpected use of schema table')
         return super().__new__(mcs, [schema])  # used as constructor
 
-    def __hash__(self):
-        return hash(self.__schema__)
-
-    def __eq__(self, other):
-        return isinstance(other, Table) and other.__schema__ == self.__schema__
-
-    @functools.lru_cache()
-    def __getattr__(self, name: str) -> 'series.Field':
-        try:
-            field: 'etl.Field' = self.__schema__[name]
-        except KeyError:
-            return super().__getattr__(name)
-        return series.Field(self, field.name or name, field.kind)
-
-    @property
-    def query(self) -> 'Query':
-        return Query(self)
-
     @property
     @functools.lru_cache()
-    def columns(self) -> typing.Sequence['series.Field']:
-        return tuple(series.Field(self, f.name or k, f.kind) for k, f in self.__schema__.items())
+    def columns(self) -> typing.Sequence[series.Field]:
+        return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Source) -> None:
         visitor.visit_table(self)
 
 
-class Query(collections.namedtuple('Query', 'source, selection, prefilter, grouping, postfilter, ordering, rows'),
-            Queryable):
+class Query(Queryable):
     """Generic source descriptor.
     """
+    source: Source = property(operator.itemgetter(0))
+    selection: typing.Tuple[series.Column] = property(operator.itemgetter(1))
+    prefilter: series.Expression = property(operator.itemgetter(2))
+    grouping: typing.Tuple[series.Element] = property(operator.itemgetter(3))
+    postfilter: series.Expression = property(operator.itemgetter(4))
+    ordering: typing.Tuple[Ordering] = property(operator.itemgetter(5))
+    rows: Rows = property(operator.itemgetter(6))
+
     def __new__(cls, source: Source,
                 selection: typing.Optional[typing.Iterable[series.Column]] = None,
                 prefilter: typing.Optional[series.Expression] = None,
@@ -402,15 +419,15 @@ class Query(collections.namedtuple('Query', 'source, selection, prefilter, group
                                                                            Ordering.Direction, str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
 
-        if selection and series.Field.disect(*selection) - series.Field.disect(*source.columns):
+        if selection and series.Field.dissect(*selection) - series.Field.dissect(*source.columns):
             raise ValueError(f'Selection ({selection}) is not a subset of source columns ({source.columns})')
         if prefilter is not None:
             prefilter = series.Logical.ensure(series.Element.ensure(prefilter))
         if postfilter is not None:
             postfilter = series.Logical.ensure(series.Element.ensure(postfilter))
-        return super().__new__(cls, source, tuple(selection or []), prefilter,
+        return super().__new__(cls, [source, tuple(selection or []), prefilter,
                                tuple(series.Element.ensure(g) for g in grouping or []), postfilter,
-                               tuple(Ordering.make(ordering or [])), rows)
+                               tuple(Ordering.make(ordering or [])), rows])
 
     @property
     def query(self) -> 'Query':
@@ -421,7 +438,7 @@ class Query(collections.namedtuple('Query', 'source, selection, prefilter, group
     def columns(self) -> typing.Sequence[series.Column]:
         return self.selection if self.selection else self.source.columns
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Source) -> None:
         self.source.accept(visitor)
         visitor.visit_query(self)
 

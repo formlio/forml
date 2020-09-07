@@ -24,56 +24,12 @@ import logging
 import operator
 import typing
 
-from forml.io.dsl.schema import kind as kindmod
+from forml.io.dsl.schema import kind as kindmod, visit
 
 if typing.TYPE_CHECKING:
     from forml.io.dsl.schema import frame
 
 LOGGER = logging.getLogger(__name__)
-
-
-class Visitor(metaclass=abc.ABCMeta):
-    """Schema visitor.
-    """
-    @abc.abstractmethod
-    def visit_column(self, column: 'Column') -> None:
-        """Generic column hook.
-
-        Args:
-            column: Column instance to be visited.
-        """
-
-    def visit_aliased(self, aliased: 'Aliased') -> None:
-        """Generic expression hook.
-
-        Args:
-            aliased: Aliased column instance to be visited.
-        """
-        self.visit_column(aliased)
-
-    def visit_field(self, field: 'Field') -> None:
-        """Generic expression hook.
-
-        Args:
-            field: Field instance to be visited.
-        """
-        self.visit_column(field)
-
-    def visit_literal(self, literal: 'Literal') -> None:
-        """Generic literal hook.
-
-        Args:
-            literal: Literal instance to be visited.
-        """
-        self.visit_column(literal)
-
-    def visit_expression(self, expression: 'Expression') -> None:
-        """Generic expression hook.
-
-        Args:
-            expression: Expression instance to be visited.
-        """
-        self.visit_column(expression)
 
 
 def cast(value: typing.Any) -> 'Column':
@@ -93,7 +49,7 @@ def cast(value: typing.Any) -> 'Column':
 class Column(tuple, metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions).
     """
-    class Disect(Visitor):
+    class Dissect(visit.Column):
         """Visitor extracting column elements of given type(s).
         """
         def __init__(self, *types: typing.Type['Column']):
@@ -112,9 +68,12 @@ class Column(tuple, metaclass=abc.ABCMeta):
             if type(column) in self._types:
                 self._terms.add(column)
 
+    def __hash__(self):
+        return hash(self.__class__) ^ super().__hash__()
+
     @property
     @abc.abstractmethod
-    def name(self) -> str:
+    def name(self) -> typing.Optional[str]:
         """Column nme
 
         Returns: name string.
@@ -122,14 +81,14 @@ class Column(tuple, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def kind(self):
+    def kind(self) -> kindmod.Any:
         """Column type.
 
         Returns: type.
         """
 
     @abc.abstractmethod
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Column) -> None:
         """Visitor acceptor.
 
         Args:
@@ -145,22 +104,22 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def disect(cls, *column: 'Column') -> typing.AbstractSet['Column']:
+    def dissect(cls, *column: 'Column') -> typing.AbstractSet['Column']:
         """Return an iterable of instances of this type composing given column(s).
 
         Returns: Set of this type instances used in given column(s).
         """
         def visit(subject: 'Column') -> typing.Iterable['Column']:
-            """Disect a single column.
+            """Dissect a single column.
 
             Args:
-                subject: Column to be disected.
+                subject: Column to be dissected.
 
-            Returns: Disected column instances.
+            Returns: Dissected column instances.
             """
-            disector = cls.Disect(cls)
-            subject.accept(disector)
-            return disector.terms
+            dissector = cls.Dissect(cls)
+            subject.accept(dissector)
+            return dissector.terms
         return {t for c in column for t in visit(c)}
 
     @classmethod
@@ -171,9 +130,6 @@ class Column(tuple, metaclass=abc.ABCMeta):
         if not isinstance(column, cls):
             raise ValueError(f'{column} not a {cls.__name__}')
         return column
-
-    def __hash__(self):
-        return hash(self.__class__) ^ super().__hash__()
 
 
 def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
@@ -324,7 +280,7 @@ class Aliased(Column):
         """
         return self.element.kind
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Column) -> None:
         """Visitor acceptor.
 
         Args:
@@ -351,7 +307,7 @@ class Literal(Element):
         """
         return None
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Column) -> None:
         """Visitor acceptor.
 
         Args:
@@ -363,19 +319,23 @@ class Literal(Element):
 class Field(Element):
     """Schema field class bound to its table schema.
     """
-    table: typing.Type['frame.Table'] = property(operator.itemgetter(0))
+    source: 'frame.Source' = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
-    kind: kindmod.Any = property(operator.itemgetter(2))
 
-    def __new__(cls, table: typing.Type['frame.Table'], name: str, kind: kindmod.Any):
-        return super().__new__(cls, [table, name, kind])
+    def __new__(cls, table: 'frame.Tangible', name: str):
+        return super().__new__(cls, [table, name])
 
-    def accept(self, visitor: Visitor) -> None:
+    @property
+    def kind(self) -> kindmod.Any:
+        return self.source.schema[self.name].kind
+
+    def accept(self, visitor: visit.Column) -> None:
         """Visitor acceptor.
 
         Args:
             visitor: Visitor instance.
         """
+        self.source.accept(visitor)
         visitor.visit_field(self)
 
 
@@ -393,7 +353,7 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
         """
         return None
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: visit.Column) -> None:
         for term in self:
             if isinstance(term, Element):
                 term.accept(visitor)

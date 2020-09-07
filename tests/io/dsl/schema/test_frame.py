@@ -41,17 +41,28 @@ class Source(metaclass=abc.ABCMeta):
         """Undertest source.
         """
 
-    def test_identity(self, source: frame.Queryable):
+    def test_identity(self, source: frame.Source):
         """Test source identity.
         """
-        hash(source)
-        assert source != self
+        assert len({source, source}) == 1
 
-    def test_columns(self, source: frame.Queryable, student: frame.Table):
+    def test_columns(self, source: frame.Source, student: frame.Table):
         """Test the reported column.
         """
         assert student.surname in source.columns
         assert source.surname == student.surname
+        assert source['surname'] == student['surname']
+        assert source.birthday == student.birthday
+        assert source['birthday'] == student['birthday']
+        with pytest.raises(AttributeError):
+            _ = student.xyz
+        with pytest.raises(KeyError):
+            _ = student['xyz']
+
+    def test_schema(self, source: frame.Source):
+        """Test the reported schema.
+        """
+        assert issubclass(source.schema, etl.Schema)
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
@@ -61,6 +72,11 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Test query conversion.
         """
         assert isinstance(source.query, frame.Query)
+
+    def test_reference(self, source: frame.Queryable):
+        """Test the queryable reference.
+        """
+        assert isinstance(source.reference(), frame.Reference)
 
     def test_select(self, source: frame.Queryable, student: frame.Table, school: frame.Table):
         """Select test.
@@ -158,9 +174,23 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert source.limit(1, 1).rows == (1, 1)
 
 
+class Tangible(Queryable, metaclass=abc.ABCMeta):
+    """Base class for tangible frames.
+    """
+    def test_columns(self, source: frame.Tangible, student: frame.Table):
+        assert all(isinstance(c, series.Field) for c in source.columns)
+        assert student.dob.name == 'birthday'
+        assert student.score.name == 'score'
+
+
 class TestSchema:
     """Table schema unit tests.
     """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def schema(student: frame.Table) -> typing.Type['etl.Schema']:
+        return student.schema
+
     def test_empty(self):
         """Test empty schema with no fields.
         """
@@ -170,38 +200,45 @@ class TestSchema:
                 """
             _ = Empty
 
-    def test_colliding(self, student: frame.Table):
+    def test_colliding(self, schema: typing.Type['etl.Schema']):
         """Test schema with colliding field names.
         """
         with pytest.raises(TypeError):
-            class Colliding(student.__schema__):
+            class Colliding(schema):
                 """Schema with colliding field names.
                 """
                 birthday = etl.Field(kind.Integer())
             _ = Colliding
 
-    def test_access(self, student: frame.Table):
+    def test_access(self, schema: typing.Type['etl.Schema']):
         """Test the schema access methods.
         """
-        assert tuple(student.__schema__) == ('surname', 'dob', 'level', 'score', 'school')
-        assert student.dob.name == 'birthday'
+        assert tuple(schema) == ('surname', 'dob', 'level', 'score', 'school')
+        assert schema.dob.name == 'birthday'
+        assert schema['dob'].name == 'birthday'
+        assert schema['birthday'].name == 'birthday'
 
 
-class TestTable(Queryable):
+class TestReference(Tangible):
     """Table unit tests.
     """
-    def test_fields(self, student: frame.Table):
-        """Fields getter tests.
-        """
-        assert student.dob.name == 'birthday'
-        assert student.score.name == 'score'
-        with pytest.raises(AttributeError):
-            _ = student.xyz
-
     @staticmethod
     @pytest.fixture(scope='session')
-    def source(student: frame.Table) -> frame.Queryable:
+    def source(student: frame.Table) -> frame.Reference:
+        return student.reference()
+
+
+class TestTable(Tangible):
+    """Table unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def source(student: frame.Table) -> frame.Table:
         return student
+
+    def test_columns(self, source: frame.Tangible, student: frame.Table):
+        Queryable.test_columns(self, source, student)
+        Tangible.test_columns(self, source, student)
 
 
 class TestQuery(Queryable):
@@ -209,7 +246,7 @@ class TestQuery(Queryable):
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def source(student: frame.Table) -> frame.Source:
+    def source(student: frame.Table) -> frame.Query:
         """Source fixture.
         """
-        return frame.Query(student)
+        return student.query
