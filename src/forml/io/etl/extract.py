@@ -164,15 +164,16 @@ class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
 
     def __call__(self, query: frame.Query) -> Columnar:
         LOGGER.debug('Parsing ETL query')
-        parser = self.parser(self._sources, self._columns)
-        query.accept(parser)
-        LOGGER.debug('Starting ETL read using: %s', parser.result)
-        return self.format(self.read(parser.result, **self._kwargs))
+        with self.parser(self._sources, self._columns) as visitor:
+            query.accept(visitor)
+            result = visitor.pop()
+        LOGGER.debug('Starting ETL read using: %s', result)
+        return self.format(self.read(result, **self._kwargs))
 
     @classmethod
     @abc.abstractmethod
     def parser(cls, sources: typing.Mapping[frame.Source, parsmod.Symbol],
-               columns: typing.Mapping[series.Column, parsmod.Symbol]) -> parsmod.Statement:
+               columns: typing.Mapping[series.Column, parsmod.Symbol]) -> parsmod.Frame:
         """Return the parser instance of this reader.
 
         Args:

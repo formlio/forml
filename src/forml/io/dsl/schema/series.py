@@ -49,7 +49,7 @@ def cast(value: typing.Any) -> 'Column':
 class Column(tuple, metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions).
     """
-    class Dissect(visit.Column):
+    class Dissect(visit.Series):
         """Visitor extracting column elements of given type(s).
         """
         def __init__(self, *types: typing.Type['Column']):
@@ -63,6 +63,10 @@ class Column(tuple, metaclass=abc.ABCMeta):
             Returns: Set of extracted column terms.
             """
             return frozenset(self._terms)
+
+        def visit_source(self, source: 'frame.Source') -> None:
+            """Do nothing for source types.
+            """
 
         def visit_column(self, column: 'Column') -> None:
             if type(column) in self._types:
@@ -88,7 +92,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def accept(self, visitor: visit.Column) -> None:
+    def accept(self, visitor: visit.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -280,7 +284,7 @@ class Aliased(Column):
         """
         return self.element.kind
 
-    def accept(self, visitor: visit.Column) -> None:
+    def accept(self, visitor: visit.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -307,7 +311,7 @@ class Literal(Element):
         """
         return None
 
-    def accept(self, visitor: visit.Column) -> None:
+    def accept(self, visitor: visit.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -329,7 +333,7 @@ class Field(Element):
     def kind(self) -> kindmod.Any:
         return self.source.schema[self.name].kind
 
-    def accept(self, visitor: visit.Column) -> None:
+    def accept(self, visitor: visit.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -353,7 +357,7 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
         """
         return None
 
-    def accept(self, visitor: visit.Column) -> None:
+    def accept(self, visitor: visit.Series) -> None:
         for term in self:
             if isinstance(term, Element):
                 term.accept(visitor)

@@ -132,7 +132,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             raise KeyError(f'Invalid column {name}') from err
 
     @abc.abstractmethod
-    def accept(self, visitor: visit.Source) -> None:
+    def accept(self, visitor: visit.Frame) -> None:
         """Visitor acceptor.
 
         Args:
@@ -168,7 +168,7 @@ class Join(Source):
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
 
-    def accept(self, visitor: visit.Source) -> None:
+    def accept(self, visitor: visit.Frame) -> None:
         self.left.accept(visitor)
         self.right.accept(visitor)
         visitor.visit_join(self)
@@ -197,7 +197,7 @@ class Set(Source):
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
 
-    def accept(self, visitor: visit.Source) -> None:
+    def accept(self, visitor: visit.Frame) -> None:
         self.left.accept(visitor)
         self.right.accept(visitor)
         visitor.visit_set(self)
@@ -304,10 +304,6 @@ class Reference(Tangible):
         return super().__new__(cls, [instance, name])
 
     @property
-    def query(self) -> 'Query':
-        return self.instance.query
-
-    @property
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Field]:
         return tuple(series.Field(self, c.name) for c in self.instance.columns)
@@ -319,7 +315,7 @@ class Reference(Tangible):
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
         return Reference(self.instance, name)
 
-    def accept(self, visitor: visit.Source) -> None:
+    def accept(self, visitor: visit.Frame) -> None:
         """Visitor acceptor.
 
         Args:
@@ -393,7 +389,7 @@ class Table(Tangible):
     def columns(self) -> typing.Sequence[series.Field]:
         return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
 
-    def accept(self, visitor: visit.Source) -> None:
+    def accept(self, visitor: visit.Frame) -> None:
         visitor.visit_table(self)
 
 
@@ -438,7 +434,7 @@ class Query(Queryable):
     def columns(self) -> typing.Sequence[series.Column]:
         return self.selection if self.selection else self.source.columns
 
-    def accept(self, visitor: visit.Source) -> None:
+    def accept(self, visitor: visit.Frame) -> None:
         self.source.accept(visitor)
         visitor.visit_query(self)
 
