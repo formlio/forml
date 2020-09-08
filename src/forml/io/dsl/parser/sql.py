@@ -140,8 +140,7 @@ class Series(Frame, parsmod.Series[str]):
         """
         ASSOCIATIVE = re.compile(r"\s*(?:(\S*\()?\s*[^-+*/%\s]+\s*(?(1).*\))|TIMESTAMP *'.+'|DATE *'.+')\s*")
 
-        def __init__(self, template: str, mapper: typing.Optional[
-                typing.Callable[..., typing.Sequence]] = None):
+        def __init__(self, template: str, mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = None):
             self._template: str = template
             self._mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = mapper
 
