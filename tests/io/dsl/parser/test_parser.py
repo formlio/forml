@@ -24,16 +24,16 @@ import typing
 
 import pytest
 
-from forml.io.dsl import parser, function
-from forml.io.dsl.schema import series as sermod, frame, kind as kindmod
+from forml.io.dsl import parser as parsmod, function
+from forml.io.dsl.schema import series as sermod, frame as framod, kind as kindmod
 
 
 @pytest.fixture(scope='session')
-def sources(person: frame.Table, student: frame.Table, school: frame.Table) -> typing.Mapping[frame.Source, tuple]:
+def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[framod.Source, tuple]:
     """Sources mapping fixture.
     """
     return types.MappingProxyType({
-        frame.Join(student, person, student.surname == person.surname): tuple(['foo']),
+        framod.Join(student, person, student.surname == person.surname): tuple(['foo']),
         person: tuple([person]),
         student: tuple([student]),
         school: tuple([school])
@@ -54,14 +54,36 @@ def columns() -> typing.Mapping[sermod.Column, tuple]:
     return Columns()
 
 
-class Series(parser.Stack, parser.Series):
-    """Dummy statement wrapping all terms into tuples.
+class Frame(parsmod.Frame[tuple]):  # pylint: disable=unsubscriptable-object
+    """Dummy frame parser wrapping all terms into tuples.
     """
-    def __init__(self, columns: typing.Mapping[sermod.Column, tuple]):
-        parser.Stack.__init__(self)
-        parser.Series.__init__(self, columns)
-
     # pylint: disable=missing-function-docstring
+    def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: framod.Join.Kind) -> tuple:
+        return left, kind, right, condition
+
+    def generate_set(self, left: tuple, right: tuple, kind: framod.Set.Kind) -> tuple:
+        return left, kind, right
+
+    def generate_ordering(self, column: tuple, direction: framod.Ordering.Direction) -> tuple:
+        return column, direction
+
+    def generate_query(self, source: tuple, columns: typing.Sequence[tuple],
+                       where: typing.Optional[tuple],
+                       groupby: typing.Sequence[tuple], having: typing.Optional[tuple],
+                       orderby: typing.Sequence[tuple], rows: typing.Optional[framod.Rows]) -> tuple:
+        return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows
+
+    def generate_reference(self, instance: tuple, name: str) -> tuple:
+        return instance, name
+
+
+class Series(Frame, parsmod.Series[tuple]):
+    """Dummy series parser wrapping all terms into tuples.
+    """
+    # pylint: disable=missing-function-docstring
+    def generate_field(self, source: tuple, field: tuple) -> tuple:
+        return source, field
+
     def generate_literal(self, literal: sermod.Literal) -> tuple:
         return tuple([literal])
 
@@ -72,63 +94,31 @@ class Series(parser.Stack, parser.Series):
     def generate_alias(self, column: tuple, alias: str) -> tuple:
         return column, alias
 
-
-@pytest.fixture(scope='function')
-def series(columns: typing.Mapping[sermod.Column, tuple]) -> parser.Series:
-    """Series fixture.
-    """
-    return Series(columns)
+    def generate_reference(self, instance: tuple, name: str) -> tuple:
+        return tuple([name])
 
 
 @pytest.fixture(scope='function')
-def statement(columns: typing.Mapping[sermod.Column, tuple],
-              sources: typing.Mapping[frame.Source, tuple]) -> parser.Statement:
-    """Statement fixture.
+def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mapping[sermod.Column, tuple]) -> Frame:
+    """Parser fixture.
     """
-    class Statement(Series, parser.Statement):  # pylint: disable=abstract-method
-        """Dummy statement wrapping all terms into tuples.
-        """
-        def __init__(self):
-            Series.__init__(self, columns)
-            parser.Statement.__init__(self, sources)
-
-        # pylint: disable=missing-function-docstring
-        def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: frame.Join.Kind) -> tuple:
-            return left, kind, right, condition
-
-        def generate_set(self, left: tuple, right: tuple, kind: frame.Set.Kind) -> tuple:
-            return left, kind, right
-
-        def generate_literal(self, literal: sermod.Literal) -> tuple:
-            return tuple([literal])
-
-        def generate_expression(self, expression: typing.Type[sermod.Expression],
-                                arguments: typing.Sequence[tuple]) -> tuple:
-            return expression, *arguments
-
-        def generate_ordering(self, column: tuple, direction: frame.Ordering.Direction) -> tuple:
-            return column, direction
-
-        def generate_query(self, source: tuple, columns: typing.Sequence[tuple],
-                           where: typing.Optional[tuple],
-                           groupby: typing.Sequence[tuple], having: typing.Optional[tuple],
-                           orderby: typing.Sequence[tuple], rows: typing.Optional[frame.Rows]) -> tuple:
-            return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows
-
-    return Statement()
+    return Frame(sources, Series(sources, columns))
 
 
-class TestStatement:
-    """ tests.
+class TestParser:
+    """Frame parser tests.
     """
-    def test_target(self, person: frame.Table, student: frame.Table, school: frame.Table, statement: parser.Statement):
+    def test_target(self, person: framod.Table, student: framod.Table, school: framod.Table, parser: parsmod.Frame):
         """Target test.
         """
+        school = school.reference('bar')
         query = student.join(person, student.surname == person.surname)\
             .join(school, student.school == school.sid)\
-            .select(student.surname, school.name, function.Cast(student.score, kindmod.String()))\
+            .select(student.surname, school['name'], function.Cast(student.score, kindmod.String()))\
             .where(student.score < 2).orderby(student.level, student.score).limit(10)
-        query.accept(statement)
-        assert statement.result[0][0] == ('foo', )
-        assert statement.result[1] == ((student.surname, ), (school.name, ),
-                                       (function.Cast, (student.score, ), kindmod.String()))
+        with parser:
+            query.accept(parser)
+            result = parser.pop()
+        assert result[0][0] == ('foo',)
+        assert result[1] == (((student,), (student.surname,)), (('bar',), (school['name'],)),
+                             (function.Cast, ((student,), (student.score,)), kindmod.String()))

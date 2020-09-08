@@ -25,7 +25,7 @@ import types
 import typing
 
 from forml.io.dsl import error
-from forml.io.dsl.schema import series, frame
+from forml.io.dsl.schema import series as sermod, frame, visit
 
 LOGGER = logging.getLogger(__name__)
 Symbol = typing.TypeVar('Symbol')
@@ -36,6 +36,19 @@ class Stack(typing.Generic[Symbol]):
     """
     def __init__(self):
         self._values: typing.List[Symbol] = list()
+
+    def _ensure_empty(self) -> None:
+        """Helper method to ensure the stack is empty.
+        """
+        if len(self._values) > 0:
+            raise RuntimeError('Stack not empty')
+
+    def __enter__(self) -> 'Stack':
+        self._ensure_empty()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._ensure_empty()
 
     def push(self, item: Symbol) -> None:
         """Push new parsed item to the stack.
@@ -52,55 +65,9 @@ class Stack(typing.Generic[Symbol]):
         """
         return self._values.pop()
 
-    @property
-    def result(self) -> Symbol:
-        """Return the target code after this visitor instance has been accepted by a statement.
 
-        Returns: Target code of given statement.
-        """
-        assert len(self._values) == 1, 'Unexpected stack state'
-        return self._values[0]
-
-
-class Stackable(metaclass=abc.ABCMeta):
-    """Interface for stackable parsers.
-    """
-    @abc.abstractmethod
-    def push(self, item: Symbol) -> None:
-        """Push new parsed item to the stack.
-
-        Args:
-            item: Item to be added.
-        """
-
-    @abc.abstractmethod
-    def pop(self) -> Symbol:
-        """Remove and return a value from the top of the stack.
-
-        Returns: Item from the stack top.
-        """
-
-    @property
-    @abc.abstractmethod
-    def result(self) -> Symbol:
-        """Return the target code after this visitor instance has been accepted by a statement.
-
-        Returns: Target code of given statement.
-        """
-
-    @abc.abstractmethod
-    def generate_column(self, column: series.Column) -> Symbol:
-        """Generate target code for the generic column type.
-
-        Args:
-            column: Column instance
-
-        Returns: Column in target code.
-        """
-
-
-def bypass(override: typing.Callable[[Stackable, typing.Any], None]) -> typing.Callable:
-    """By pass the (result of) the particular visit_* implementation if the supplied override resolver provides an
+def bypass(override: typing.Callable[[Stack, typing.Any], Symbol]) -> typing.Callable:
+    """Bypass the (result of) the particular visit_* implementation if the supplied override resolver provides an
     alternative value.
 
     Args:
@@ -109,44 +76,46 @@ def bypass(override: typing.Callable[[Stackable, typing.Any], None]) -> typing.C
 
     Returns: Visitor method decorator.
     """
-    def decorator(visit: typing.Callable[[Stackable, typing.Any], None]) -> typing.Callable:
+    def decorator(method: typing.Callable[[Stack, typing.Any], None]) -> typing.Callable:
         """Visitor method decorator with added bypassing capability.
 
         Args:
-            visit: Visitor method to be decorated.
+            method: Visitor method to be decorated.
 
         Returns: Decorated version of the visit_* method.
         """
-        @functools.wraps(visit)
-        def wrapped(self: Stackable, subject: typing.Any) -> None:
+        @functools.wraps(method)
+        def wrapped(self: Stack, subject: typing.Any) -> None:
             """Decorated version of the visit_* method.
 
             Args:
                 self: Visitor instance.
                 subject: Visited subject.
             """
-            visit(self, subject)
+            method(self, subject)
             try:
-                result = override(self, subject)
+                new = override(self, subject)
             except error.Mapping:
                 pass
             else:
-                LOGGER.debug('Overriding result for %s', subject)
-                self.pop()
-                self.push(result)
+                old = self.pop()
+                LOGGER.debug('Overriding result for %s (%s -> %s)', subject, old, new)
+                self.push(new)
 
         return wrapped
     return decorator
 
 
-class Series(typing.Generic[Symbol], Stackable, series.Visitor, metaclass=abc.ABCMeta):
-    """Mixin implementing a series parser.
+class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
+    """Frame source parser.
     """
-    def __init__(self, columns: typing.Mapping[series.Column, Symbol]):
-        self._columns: typing.Mapping[series.Column, Symbol] = types.MappingProxyType(columns)
+    def __init__(self, sources: typing.Mapping[frame.Source, Symbol], series: 'Series'):
+        super().__init__()
+        self._sources: typing.Mapping[frame.Source, Symbol] = types.MappingProxyType(sources)
+        self._series: Series = series
 
     @functools.lru_cache()
-    def generate_column(self, column: series.Column) -> Symbol:
+    def generate_column(self, column: sermod.Column) -> Symbol:
         """Generate target code for the generic column type.
 
         Args:
@@ -154,93 +123,22 @@ class Series(typing.Generic[Symbol], Stackable, series.Visitor, metaclass=abc.AB
 
         Returns: Column in target code.
         """
-        column.accept(self)
-        return self.pop()
+        with self._series as visitor:
+            column.accept(visitor)
+            return visitor.pop()
 
-    def generate_field(self, field: series.Field) -> Symbol:
-        """Generate target code for a field value.
+    def resolve_source(self, source: frame.Source) -> Symbol:
+        """Get a custom target code for a source type.
 
         Args:
-            field: Schema field instance.
+            source: Source instance.
 
-        Returns: Field in target code representation.
+        Returns: Target code for the source instance.
         """
         try:
-            return self._columns[field]
+            return self._sources[source]
         except KeyError as err:
-            raise error.Mapping(f'Unknown mapping for field {field}') from err
-
-    @abc.abstractmethod
-    def generate_alias(self, column: Symbol, alias: str) -> Symbol:
-        """Generate column alias code.
-
-        Args:
-            column: Column value already in target code.
-            alias: Alias to be used for given column.
-
-        Returns: Aliased column in target code.
-        """
-
-    @abc.abstractmethod
-    def generate_literal(self, literal: series.Literal) -> Symbol:
-        """Generate target code for a literal value.
-
-        Args:
-            literal: Literal value instance.
-
-        Returns: Literal in target code representation.
-        """
-
-    @abc.abstractmethod
-    def generate_expression(self, expression: typing.Type[series.Expression],
-                            arguments: typing.Sequence[Symbol]) -> Symbol:
-        """Generate target code for an expression of given arguments.
-
-        Args:
-            expression: Operator or function implementing the expression.
-            arguments: Expression arguments.
-
-        Returns: Expression in target code representation.
-        """
-
-    def visit_column(self, column: series.Column) -> None:
-        raise RuntimeError(f'Unexpected call to {self.__class__.__name__}.visit_column')
-
-    def visit_field(self, column: series.Field) -> None:
-        self.push(self.generate_field(column))
-
-    @bypass(generate_field)
-    def visit_aliased(self, column: series.Aliased) -> None:
-        self.push(self.generate_alias(self.pop(), column.name))
-
-    @bypass(generate_field)
-    def visit_literal(self, column: series.Literal) -> None:
-        self.push(self.generate_literal(column))
-
-    @bypass(generate_field)
-    def visit_expression(self, column: series.Expression) -> None:
-        arguments = tuple(reversed([self.pop() if isinstance(c, series.Column) else c for c in reversed(column)]))
-        self.push(self.generate_expression(column.__class__, arguments))
-
-
-class Statement(typing.Generic[Symbol], Stackable, frame.Visitor, metaclass=abc.ABCMeta):
-    """Mixin implementing a statement parser.
-    """
-    def __init__(self, sources: typing.Mapping[frame.Source, Symbol]):
-        self._sources: typing.Mapping[frame.Source, Symbol] = types.MappingProxyType(sources)
-
-    def generate_table(self, table: frame.Table) -> Symbol:
-        """Generate target code for a table type.
-
-        Args:
-            table: Table instance.
-
-        Returns: Target code for the table instance.
-        """
-        try:
-            return self._sources[table]
-        except KeyError as err:
-            raise error.Mapping(f'Unknown mapping for table {table}') from err
+            raise error.Mapping(f'Unknown mapping for source {source}') from err
 
     @abc.abstractmethod
     def generate_join(self, left: Symbol, right: Symbol, condition: Symbol, kind: frame.Join.Kind) -> Symbol:
@@ -297,26 +195,34 @@ class Statement(typing.Generic[Symbol], Stackable, frame.Visitor, metaclass=abc.
         Returns: Column ordering in target code.
         """
 
-    def visit_source(self, source: frame.Source) -> None:
-        raise RuntimeError(f'Unexpected call to {self.__class__.__name__}.visit_source')
+    @abc.abstractmethod
+    def generate_reference(self, instance: Symbol, name: str) -> Symbol:
+        """Generate reference code.
+
+        Args:
+            instance: Instance value already in target code.
+            name: Reference name.
+
+        Returns: Instance reference in target code.
+        """
 
     def visit_table(self, source: frame.Table) -> None:
-        self.push(self.generate_table(source))
+        self.push(self.resolve_source(source))
 
-    @bypass(generate_table)
+    @bypass(resolve_source)
     def visit_join(self, source: frame.Join) -> None:
         right = self.pop()
         left = self.pop()
         expression = self.generate_column(source.condition)
         self.push(self.generate_join(left, right, expression, source.kind))
 
-    @bypass(generate_table)
+    @bypass(resolve_source)
     def visit_set(self, source: frame.Set) -> None:
         right = self.pop()
         left = self.pop()
         self.push(self.generate_set(left, right, source.kind))
 
-    @bypass(generate_table)
+    @bypass(resolve_source)
     def visit_query(self, source: frame.Query) -> None:
         columns = [self.generate_column(c) for c in source.columns]
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
@@ -325,12 +231,86 @@ class Statement(typing.Generic[Symbol], Stackable, frame.Visitor, metaclass=abc.
         orderby = [self.generate_ordering(self.generate_column(c), o) for c, o in source.ordering]
         self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))
 
+    def visit_reference(self, source: frame.Reference) -> None:
+        self.push(self.generate_reference(self.pop(), source.name))
 
-class Bundle(Stack, Series[Symbol], Statement[Symbol], metaclass=abc.ABCMeta):
-    """Combined series+statement parser.
+
+class Series(Frame[Symbol], visit.Series, metaclass=abc.ABCMeta):
+    """Series column parser.
     """
-    def __init__(self, columns: typing.Mapping[series.Column, Symbol], sources: typing.Mapping[frame.Source, Symbol]):
-        Stack.__init__(self)
-        # pylint: disable=non-parent-init-called (#3505)
-        Series.__init__(self, columns)
-        Statement.__init__(self, sources)
+    def __init__(self, sources: typing.Mapping[frame.Source, Symbol], columns: typing.Mapping[sermod.Column, Symbol]):
+        self._columns: typing.Mapping[sermod.Column, Symbol] = types.MappingProxyType(columns)
+        super().__init__(sources, self)
+
+    def resolve_column(self, column: sermod.Field) -> Symbol:
+        """Get a custom target code for a column value.
+
+        Args:
+            column: Column instance.
+
+        Returns: Column in target code representation.
+        """
+        try:
+            return self._columns[column]
+        except KeyError as err:
+            raise error.Mapping(f'Unknown mapping for column {column}') from err
+
+    @abc.abstractmethod
+    def generate_field(self, source: Symbol, field: Symbol) -> Symbol:
+        """Generate a field code.
+
+        Args:
+            source: Source value already in target code.
+            field: Field symbol to be used for given column.
+
+        Returns: Field in target code.
+        """
+
+    @abc.abstractmethod
+    def generate_alias(self, column: Symbol, alias: str) -> Symbol:
+        """Generate column alias code.
+
+        Args:
+            column: Column value already in target code.
+            alias: Alias to be used for given column.
+
+        Returns: Aliased column in target code.
+        """
+
+    @abc.abstractmethod
+    def generate_literal(self, literal: sermod.Literal) -> Symbol:
+        """Generate target code for a literal value.
+
+        Args:
+            literal: Literal value instance.
+
+        Returns: Literal in target code representation.
+        """
+
+    @abc.abstractmethod
+    def generate_expression(self, expression: typing.Type[sermod.Expression],
+                            arguments: typing.Sequence[Symbol]) -> Symbol:
+        """Generate target code for an expression of given arguments.
+
+        Args:
+            expression: Operator or function implementing the expression.
+            arguments: Expression arguments.
+
+        Returns: Expression in target code representation.
+        """
+
+    def visit_field(self, column: sermod.Field) -> None:
+        self.push(self.generate_field(self.pop(), self.resolve_column(column)))
+
+    @bypass(resolve_column)
+    def visit_aliased(self, column: sermod.Aliased) -> None:
+        self.push(self.generate_alias(self.pop(), column.name))
+
+    @bypass(resolve_column)
+    def visit_literal(self, column: sermod.Literal) -> None:
+        self.push(self.generate_literal(column))
+
+    @bypass(resolve_column)
+    def visit_expression(self, column: sermod.Expression) -> None:
+        arguments = tuple(reversed([self.pop() if isinstance(c, sermod.Column) else c for c in reversed(column)]))
+        self.push(self.generate_expression(column.__class__, arguments))

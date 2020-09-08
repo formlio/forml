@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+"""
+Schema visitor APIs.
+"""
 
 import typing
 
@@ -21,7 +24,7 @@ if typing.TYPE_CHECKING:
     from forml.io.dsl.schema import frame, series
 
 
-class Source:
+class Frame:
     """Frame visitor.
     """
     def visit_source(self, source: 'frame.Source') -> None:
@@ -73,7 +76,7 @@ class Source:
         self.visit_source(source)
 
 
-class Column(Source):
+class Series(Frame):
     """Series visitor.
     """
     def visit_column(self, column: 'series.Column') -> None:

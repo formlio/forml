@@ -189,6 +189,8 @@ class TestSchema:
     @staticmethod
     @pytest.fixture(scope='session')
     def schema(student: frame.Table) -> typing.Type['etl.Schema']:
+        """Schema fixture.
+        """
         return student.schema
 
     def test_empty(self):

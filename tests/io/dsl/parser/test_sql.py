@@ -46,8 +46,10 @@ class Parser(metaclass=abc.ABCMeta):
                 """
                 return ' '.join(value.strip().split())
 
-            self.query.accept(parser)
-            assert strip(parser.result) == strip(self.expected)
+            with parser as visitor:
+                self.query.accept(visitor)
+                result = visitor.pop()
+            assert strip(result) == strip(self.expected)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -61,28 +63,26 @@ class Parser(metaclass=abc.ABCMeta):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def columns(sources: typing.Mapping[frame.Source, str]) -> typing.Mapping[series.Column, str]:
+    def columns() -> typing.Mapping[series.Column, str]:
         """Columns mapping fixture.
         """
 
         class Columns:
             """Columns mapping.
             """
-
-            def __getitem__(self, column: series.Column) -> tuple:
+            def __getitem__(self, column: series.Column) -> str:
                 if isinstance(column, series.Field):
-                    return f'{sources[column.source]}.{column.name}'
+                    return column.name
                 raise KeyError('Unknown column')
 
         return Columns()
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def parser(columns: typing.Mapping[series.Column, str],
-               sources: typing.Mapping[frame.Source, str]) -> sql.Parser:
+    def parser(sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]) -> sql.Parser:
         """Parser fixture.
         """
-        return sql.Parser(columns, sources)
+        return sql.Parser(sources, columns)
 
     @classmethod
     @abc.abstractmethod
@@ -105,6 +105,18 @@ class TestSelect(Parser):
     def case(cls, student: frame.Table, school: frame.Table) -> Parser.Case:
         query = student.select(student.surname.alias('student'), student.score)
         expected = 'SELECT edu.student.surname AS student, edu.student.score FROM edu.student'
+        return cls.Case(query, expected)
+
+
+class TestReference(Parser):
+    """SQL parser reference unit test.
+    """
+    @classmethod
+    @pytest.fixture(scope='session')
+    def case(cls, student: frame.Table, school: frame.Table) -> Parser.Case:
+        student = student.reference('foo')
+        query = student.select(student.surname, student.score)
+        expected = 'SELECT foo.surname, foo.score FROM edu.student AS foo'
         return cls.Case(query, expected)
 
 
