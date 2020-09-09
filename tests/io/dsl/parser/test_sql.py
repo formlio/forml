@@ -108,18 +108,6 @@ class TestSelect(Parser):
         return cls.Case(query, expected)
 
 
-class TestReference(Parser):
-    """SQL parser reference unit test.
-    """
-    @classmethod
-    @pytest.fixture(scope='session')
-    def case(cls, student: frame.Table, school: frame.Table) -> Parser.Case:
-        student = student.reference('foo')
-        query = student.select(student.surname, student.score)
-        expected = 'SELECT foo.surname, foo.score FROM edu.student AS foo'
-        return cls.Case(query, expected)
-
-
 class TestLiteral(Parser):
     """SQL parser literal unit test.
     """
@@ -201,4 +189,30 @@ class TestQuery(Parser):
                    'WHERE edu.student.score < 2 GROUP BY edu.student.surname HAVING count(edu.school.name) > 1 ' \
                    'ORDER BY edu.student.level ASC, edu.student.score DESC ' \
                    'LIMIT 10'
+        return cls.Case(query, expected)
+
+
+class TestSubquery(Parser):
+    """SQL parser subquery unit test.
+    """
+    @classmethod
+    @pytest.fixture(scope='session')
+    def case(cls, student: frame.Table, school: frame.Table) -> Parser.Case:
+        query = frame.Query(student.select(student.surname, student.score)).select(student.surname)
+        expected = 'SELECT edu.student.surname FROM (SELECT edu.student.surname, edu.student.score FROM edu.student)'
+        return cls.Case(query, expected)
+
+
+class TestReference(Parser):
+    """SQL parser reference unit test.
+    """
+    @classmethod
+    @pytest.fixture(scope='session')
+    def case(cls, student: frame.Table, school: frame.Table) -> Parser.Case:
+        student = student.reference('foo')
+        subquery = student.join(school, student.school == school.sid)\
+            .select(student.surname, school.name).reference('bar')
+        query = subquery.select(subquery.surname)
+        expected = 'SELECT bar.surname FROM (SELECT foo.surname, edu.school.name FROM edu.student AS foo ' \
+                   'LEFT JOIN edu.school ON foo.school = edu.school.id) AS bar'
         return cls.Case(query, expected)
