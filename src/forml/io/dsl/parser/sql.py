@@ -50,6 +50,38 @@ class Frame(parsmod.Frame[str]):  # pylint: disable=unsubscriptable-object
         frame.Ordering.Direction.DESCENDING: 'DESC'
     }
 
+    class Wrap:
+        """Helper class for lexical manipulation.
+        """
+        WORD = re.compile(r'\s*(\S*\()?\s*[^\s]+\s*(?(1).*\))')
+        QUERY = re.compile(r'\s*SELECT')
+
+        @classmethod
+        def word(cls, value: str) -> str:
+            """Either a single word or any string within parentheses.
+
+            Args:
+                value: String to be forced to word.
+
+            Returns: Word value of the input string.
+            """
+            if not cls.WORD.fullmatch(value):
+                value = f'({value})'
+            return value
+
+        @classmethod
+        def subquery(cls, value: str) -> str:
+            """If the value is a SELECT statement, it will be wrapped in parentheses.
+
+            Args:
+                value: String to be forced to subquery.
+
+            Returns: Input value wrapped to parentheses if a SELECT statement.
+            """
+            if cls.QUERY.match(value):
+                value = f'({value})'
+            return value
+
     def generate_join(self, left: str, right: str, condition: str, kind: frame.Join.Kind) -> str:
         """Generate target code for a join operation using the left/right terms, condition and a join type.
 
@@ -93,7 +125,7 @@ class Frame(parsmod.Frame[str]):  # pylint: disable=unsubscriptable-object
         Returns: Query.
         """
         assert columns, 'Expecting columns'
-        query = f'SELECT {", ".join(columns)}\nFROM {source}'
+        query = f'SELECT {", ".join(columns)}\nFROM {self.Wrap.subquery(source)}'
         if where:
             query += f'\nWHERE {where}'
         if groupby:
@@ -129,7 +161,7 @@ class Frame(parsmod.Frame[str]):  # pylint: disable=unsubscriptable-object
 
         Returns: Source reference definition.
         """
-        return f'{instance} AS {name}'
+        return f'{self.Wrap.word(instance)} AS {name}'
 
 
 class Series(Frame, parsmod.Series[str]):

@@ -73,6 +73,11 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         assert isinstance(source.query, frame.Query)
 
+    def test_instance(self, source: frame.Source, student: frame.Table):
+        """Test the queryable instance.
+        """
+        assert source.instance.query == student.query
+
     def test_reference(self, source: frame.Queryable):
         """Test the queryable reference.
         """
@@ -81,8 +86,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def test_select(self, source: frame.Queryable, student: frame.Table, school: frame.Table):
         """Select test.
         """
-        assert source.select(student.score).selection[0] == student.score
-        assert source.select(student.score, student.surname).selection == (student.score, student.surname)
+        assert source.instance.select(student.score).selection[0] == student.score
+        assert source.instance.select(student.score, student.surname).selection == (student.score, student.surname)
         with pytest.raises(ValueError):
             source.select(school.name)  # school.name not part of source
 

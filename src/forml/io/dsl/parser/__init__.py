@@ -33,22 +33,23 @@ Symbol = typing.TypeVar('Symbol')
 
 class Stack(typing.Generic[Symbol]):
     """Stack as a base parser structure.
+
+    When used as a context manager the stack structure is exclusive to given context and is checked for total depletion
+    on exit.
     """
     def __init__(self):
         self._values: typing.List[Symbol] = list()
-
-    def _ensure_empty(self) -> None:
-        """Helper method to ensure the stack is empty.
-        """
-        if len(self._values) > 0:
-            raise RuntimeError('Stack not empty')
+        self._context: typing.List[typing.List[Symbol]] = list()
 
     def __enter__(self) -> 'Stack':
-        self._ensure_empty()
+        self._context.append(self._values)
+        self._values = list()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._ensure_empty()
+        if len(self._values) > 0:
+            raise RuntimeError('Stack not depleted')
+        self._values = self._context.pop()
 
     def push(self, item: Symbol) -> None:
         """Push new parsed item to the stack.

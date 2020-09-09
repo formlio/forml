@@ -224,6 +224,14 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return Reference(self, name)
 
+    @property
+    def instance(self) -> 'Source':
+        """Return the source instance - which apart from the Reference type is the source itself.
+
+        Returns: Source instance.
+        """
+        return self
+
     def select(self, *columns: series.Column) -> 'Query':
         """Specify the output columns to be provided.
         """

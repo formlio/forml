@@ -28,6 +28,43 @@ from forml.io.dsl import parser as parsmod, function
 from forml.io.dsl.schema import series as sermod, frame as framod, kind as kindmod
 
 
+class TestStack:
+    """Parser stack unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def stack() -> parsmod.Stack:
+        """Stack fixture.
+        """
+        return parsmod.Stack()
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def value() -> object:
+        """Value fixture.
+        """
+        return object()
+
+    def test_usage(self, stack: parsmod.Stack, value: object):
+        """Basic stack usage test.
+        """
+        stack.push(value)
+        assert stack.pop() == value
+
+    def test_context(self, stack: parsmod.Stack, value):
+        """Test context nesting.
+        """
+        with stack:
+            stack.push(value)
+            with stack:
+                with pytest.raises(IndexError):
+                    stack.pop()
+            assert stack.pop() == value
+        with pytest.raises(RuntimeError):
+            with stack:
+                stack.push(value)
+
+
 @pytest.fixture(scope='session')
 def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[framod.Source, tuple]:
     """Sources mapping fixture.
