@@ -24,7 +24,6 @@ import logging
 import typing
 
 from forml import io
-from forml.io.dsl import parser as parsmod
 from forml.io.dsl.parser import sql as sqlmod
 from forml.io.dsl.schema import series, frame
 from forml.io.etl import extract
@@ -56,7 +55,7 @@ class Feed(io.Feed[str]):
 
         @classmethod
         def parser(cls, sources: typing.Mapping[frame.Source, str],
-                   columns: typing.Mapping[series.Column, str]) -> parsmod.Statement:
+                   columns: typing.Mapping[series.Column, str]) -> 'Feed.Reader.Parser':
             """Return the parser instance of this reader.
 
             Args:
@@ -65,7 +64,7 @@ class Feed(io.Feed[str]):
 
             Returns: Parser instance.
             """
-            return cls.Parser(columns, sources)
+            return cls.Parser(sources, columns)
 
         @classmethod
         def format(cls, data: typing.Sequence[typing.Sequence[typing.Any]]) -> Columnar:

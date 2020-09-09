@@ -89,7 +89,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
             query = query.select(*(*source.extract.train.columns, *source.extract.label))
             label = extract.Slicer.Actor.spec(formatter(self.slicer(query.columns, self.columns)),
                                               source.extract.train.columns, source.extract.label)
-        else:  # trainset formatting is applied straight away
+        else:  # testset formatting is applied straight away
             reader = formatter(reader)
         train = actor(reader, query)
         apply = actor(formatter(self.reader(self.sources, self.columns, **self._readerkw)), source.extract.apply)
