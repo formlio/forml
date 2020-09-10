@@ -28,7 +28,7 @@ from forml.io.dsl.schema import series, frame, kind as kindmod
 LOGGER = logging.getLogger(__name__)
 
 
-class Frame(parsmod.Frame[str]):  # pylint: disable=unsubscriptable-object
+class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
     """Frame DSL parser producing SQL code.
     """
     JOIN: typing.Mapping[frame.Join.Kind, str] = {
@@ -164,7 +164,7 @@ class Frame(parsmod.Frame[str]):  # pylint: disable=unsubscriptable-object
         return f'{self.Wrap.word(instance)} AS {name}'
 
 
-class Series(Frame, parsmod.Series[str]):
+class Series(Frame, parsmod.Series[str, str]):
     """Series DSL parser producing SQL code.
     """
     class Expression:

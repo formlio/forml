@@ -142,7 +142,7 @@ def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequ
     return data
 
 
-class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
+class Reader(typing.Generic[parsmod.Source, parsmod.Column], metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
     class Actor(task.Actor):
@@ -155,11 +155,11 @@ class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
         def apply(self) -> typing.Any:
             return self._reader(self._statement())
 
-    def __init__(self, sources: typing.Mapping[frame.Source, parsmod.Symbol],
-                 columns: typing.Mapping[series.Column, parsmod.Symbol],
+    def __init__(self, sources: typing.Mapping[frame.Source, parsmod.Source],
+                 columns: typing.Mapping[series.Column, parsmod.Column],
                  **kwargs: typing.Any):
-        self._sources: typing.Mapping[frame.Source, parsmod.Symbol] = sources
-        self._columns: typing.Mapping[series.Column, parsmod.Symbol] = columns
+        self._sources: typing.Mapping[frame.Source, parsmod.Source] = sources
+        self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __call__(self, query: frame.Query) -> Columnar:
@@ -172,8 +172,8 @@ class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def parser(cls, sources: typing.Mapping[frame.Source, parsmod.Symbol],
-               columns: typing.Mapping[series.Column, parsmod.Symbol]) -> parsmod.Frame:
+    def parser(cls, sources: typing.Mapping[frame.Source, parsmod.Source],
+               columns: typing.Mapping[series.Column, parsmod.Column]) -> parsmod.Frame:
         """Return the parser instance of this reader.
 
         Args:
@@ -196,7 +196,7 @@ class Reader(typing.Generic[parsmod.Symbol], metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def read(cls, statement: parsmod.Symbol, **kwargs: typing.Any) -> typing.Any:
+    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> typing.Any:
         """Perform the read operation with the given statement.
 
         Args:
@@ -226,9 +226,9 @@ class Slicer:
                                     else self._label + 1), 'Unexpected number of columns for splitting'
             return self._slicer(columns, self._features), self._slicer(columns, self._label)
 
-    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsmod.Symbol]):
+    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsmod.Column]):
         self._schema: typing.Sequence[series.Column] = schema
-        self._columns: typing.Mapping[series.Column, parsmod.Symbol] = columns
+        self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
 
     def __call__(self, source: Columnar, selection: typing.Union[slice, int]) -> Columnar:
         LOGGER.debug('Selecting columns: %s', self._schema[selection])

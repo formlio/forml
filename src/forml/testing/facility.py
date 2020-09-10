@@ -54,8 +54,8 @@ class Feed(io.Feed, key='testing'):
         self._scenario: spec.Scenario.Input = scenario
 
     @classmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, parser.Symbol],
-               columns: typing.Mapping[series.Column, parser.Symbol],
+    def reader(cls, sources: typing.Mapping[frame.Source, parser.Source],
+               columns: typing.Mapping[series.Column, parser.Column],
                **kwargs) -> typing.Callable[[frame.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
         def read(query: frame.Query) -> typing.Any:
             """Reader callback.
@@ -70,12 +70,12 @@ class Feed(io.Feed, key='testing'):
 
     @classmethod
     def slicer(cls, schema: typing.Sequence[series.Column],
-               columns: typing.Mapping[series.Column, parser.Symbol]) -> typing.Callable[
+               columns: typing.Mapping[series.Column, parser.Column]) -> typing.Callable[
                    [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
         return lambda c, s: c[s][0]
 
     @property
-    def columns(self) -> typing.Mapping[series.Column, parser.Symbol]:
+    def columns(self) -> typing.Mapping[series.Column, parser.Column]:
         return {
             DataSet.label: (self._scenario.train, [self._scenario.label]),
             DataSet.feature: self._scenario.apply

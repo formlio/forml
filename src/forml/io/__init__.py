@@ -32,7 +32,7 @@ from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.io.etl import extract
 
 
-class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Feed.default):
+class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column], default=provcfg.Feed.default):
     """ETL feed is the implementation of a specific datasource access layer.
     """
     def __init__(self, **readerkw):
@@ -100,8 +100,8 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
 
     @classmethod
     @abc.abstractmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, parser.Symbol],
-               columns: typing.Mapping[series.Column, parser.Symbol],
+    def reader(cls, sources: typing.Mapping[frame.Source, parser.Source],
+               columns: typing.Mapping[series.Column, parser.Column],
                **kwargs: typing.Any) -> typing.Callable[[frame.Query], extract.Columnar]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
@@ -115,7 +115,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
 
     @classmethod
     def slicer(cls, schema: typing.Sequence[series.Column],
-               columns: typing.Mapping[series.Column, parser.Symbol]) -> typing.Callable[
+               columns: typing.Mapping[series.Column, parser.Column]) -> typing.Callable[
                    [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
@@ -141,7 +141,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
         return data
 
     @property
-    def sources(self) -> typing.Mapping[frame.Source, parser.Symbol]:
+    def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
@@ -149,7 +149,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Symbol], default=provcfg.Fee
         return {}
 
     @property
-    def columns(self) -> typing.Mapping[series.Column, parser.Symbol]:
+    def columns(self) -> typing.Mapping[series.Column, parser.Column]:
         """The explicit columns mapping implemented by this feed to be used by the query parser.
 
         Returns: Columns mapping.

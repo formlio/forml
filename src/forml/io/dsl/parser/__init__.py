@@ -28,6 +28,9 @@ from forml.io.dsl import error
 from forml.io.dsl.schema import series as sermod, frame, visit
 
 LOGGER = logging.getLogger(__name__)
+
+Source = typing.TypeVar('Source')
+Column = typing.TypeVar('Column')
 Symbol = typing.TypeVar('Symbol')
 
 
@@ -67,7 +70,7 @@ class Stack(typing.Generic[Symbol]):
         return self._values.pop()
 
 
-def bypass(override: typing.Callable[[Stack, typing.Any], Symbol]) -> typing.Callable:
+def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Callable:
     """Bypass the (result of) the particular visit_* implementation if the supplied override resolver provides an
     alternative value.
 
@@ -107,16 +110,16 @@ def bypass(override: typing.Callable[[Stack, typing.Any], Symbol]) -> typing.Cal
     return decorator
 
 
-class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
+class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclass=abc.ABCMeta):
     """Frame source parser.
     """
-    def __init__(self, sources: typing.Mapping[frame.Source, Symbol], series: 'Series'):
+    def __init__(self, sources: typing.Mapping[frame.Source, Source], series: 'Series[Source, Column]'):
         super().__init__()
-        self._sources: typing.Mapping[frame.Source, Symbol] = types.MappingProxyType(sources)
+        self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
         self._series: Series = series
 
     @functools.lru_cache()
-    def generate_column(self, column: sermod.Column) -> Symbol:
+    def generate_column(self, column: sermod.Column) -> Source:
         """Generate target code for the generic column type.
 
         Args:
@@ -128,7 +131,7 @@ class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
             column.accept(visitor)
             return visitor.pop()
 
-    def resolve_source(self, source: frame.Source) -> Symbol:
+    def resolve_source(self, source: frame.Source) -> Source:
         """Get a custom target code for a source type.
 
         Args:
@@ -142,7 +145,7 @@ class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
             raise error.Mapping(f'Unknown mapping for source {source}') from err
 
     @abc.abstractmethod
-    def generate_join(self, left: Symbol, right: Symbol, condition: Symbol, kind: frame.Join.Kind) -> Symbol:
+    def generate_join(self, left: Source, right: Source, condition: Source, kind: frame.Join.Kind) -> Source:
         """Generate target code for a join operation using the left/right terms, given condition and a join type.
 
         Args:
@@ -155,7 +158,7 @@ class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def generate_set(self, left: Symbol, right: Symbol, kind: frame.Set.Kind) -> Symbol:
+    def generate_set(self, left: Source, right: Source, kind: frame.Set.Kind) -> Source:
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -167,10 +170,10 @@ class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def generate_query(self, source: Symbol, columns: typing.Sequence[Symbol],
-                       where: typing.Optional[Symbol], groupby: typing.Sequence[Symbol],
-                       having: typing.Optional[Symbol], orderby: typing.Sequence[Symbol],
-                       rows: typing.Optional[frame.Rows]) -> Symbol:
+    def generate_query(self, source: Source, columns: typing.Sequence[Source],
+                       where: typing.Optional[Source], groupby: typing.Sequence[Source],
+                       having: typing.Optional[Source], orderby: typing.Sequence[Source],
+                       rows: typing.Optional[frame.Rows]) -> Source:
         """Generate query statement code.
 
         Args:
@@ -186,7 +189,7 @@ class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def generate_ordering(self, column: Symbol, direction: frame.Ordering.Direction) -> Symbol:
+    def generate_ordering(self, column: Source, direction: frame.Ordering.Direction) -> Source:
         """Generate column ordering code.
 
         Args:
@@ -197,7 +200,7 @@ class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def generate_reference(self, instance: Symbol, name: str) -> Symbol:
+    def generate_reference(self, instance: Source, name: str) -> Source:
         """Generate reference code.
 
         Args:
@@ -225,25 +228,25 @@ class Frame(Stack[Symbol], visit.Frame, metaclass=abc.ABCMeta):
 
     @bypass(resolve_source)
     def visit_query(self, source: frame.Query) -> None:
-        columns = [self.generate_column(c) for c in source.columns]
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
         orderby = [self.generate_ordering(self.generate_column(c), o) for c, o in source.ordering]
+        columns = [self.generate_column(c) for c in source.columns]
         self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))
 
     def visit_reference(self, source: frame.Reference) -> None:
         self.push(self.generate_reference(self.pop(), source.name))
 
 
-class Series(Frame[Symbol], visit.Series, metaclass=abc.ABCMeta):
+class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
     """Series column parser.
     """
-    def __init__(self, sources: typing.Mapping[frame.Source, Symbol], columns: typing.Mapping[sermod.Column, Symbol]):
-        self._columns: typing.Mapping[sermod.Column, Symbol] = types.MappingProxyType(columns)
+    def __init__(self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]):
+        self._columns: typing.Mapping[sermod.Column, Column] = types.MappingProxyType(columns)
         super().__init__(sources, self)
 
-    def resolve_column(self, column: sermod.Field) -> Symbol:
+    def resolve_column(self, column: sermod.Field) -> Column:
         """Get a custom target code for a column value.
 
         Args:
@@ -257,18 +260,18 @@ class Series(Frame[Symbol], visit.Series, metaclass=abc.ABCMeta):
             raise error.Mapping(f'Unknown mapping for column {column}') from err
 
     @abc.abstractmethod
-    def generate_field(self, source: Symbol, field: Symbol) -> Symbol:
+    def generate_field(self, source: Source, field: Column) -> Column:
         """Generate a field code.
 
         Args:
-            source: Source value already in target code.
+            source: Column value already in target code.
             field: Field symbol to be used for given column.
 
         Returns: Field in target code.
         """
 
     @abc.abstractmethod
-    def generate_alias(self, column: Symbol, alias: str) -> Symbol:
+    def generate_alias(self, column: Column, alias: str) -> Column:
         """Generate column alias code.
 
         Args:
@@ -279,7 +282,7 @@ class Series(Frame[Symbol], visit.Series, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def generate_literal(self, literal: sermod.Literal) -> Symbol:
+    def generate_literal(self, literal: sermod.Literal) -> Column:
         """Generate target code for a literal value.
 
         Args:
@@ -290,7 +293,7 @@ class Series(Frame[Symbol], visit.Series, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def generate_expression(self, expression: typing.Type[sermod.Expression],
-                            arguments: typing.Sequence[Symbol]) -> Symbol:
+                            arguments: typing.Sequence[Column]) -> Column:
         """Generate target code for an expression of given arguments.
 
         Args:

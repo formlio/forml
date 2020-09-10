@@ -91,7 +91,7 @@ def columns() -> typing.Mapping[sermod.Column, tuple]:
     return Columns()
 
 
-class Frame(parsmod.Frame[tuple]):  # pylint: disable=unsubscriptable-object
+class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
     """Dummy frame parser wrapping all terms into tuples.
     """
     # pylint: disable=missing-function-docstring
@@ -114,7 +114,7 @@ class Frame(parsmod.Frame[tuple]):  # pylint: disable=unsubscriptable-object
         return instance, name
 
 
-class Series(Frame, parsmod.Series[tuple]):
+class Series(Frame, parsmod.Series[tuple, tuple]):
     """Dummy series parser wrapping all terms into tuples.
     """
     # pylint: disable=missing-function-docstring
