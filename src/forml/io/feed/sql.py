@@ -32,10 +32,10 @@ from forml.io.etl.extract import Columnar
 LOGGER = logging.getLogger(__name__)
 
 
-class Feed(io.Feed[str]):
+class Feed(io.Feed[str, str]):
     """SQL feed with abstract reader.
     """
-    class Reader(extract.Reader[str], metaclass=abc.ABCMeta):
+    class Reader(extract.Reader[str, str], metaclass=abc.ABCMeta):
         """SQL reader base class for PEP249 compliant DB APIs.
         """
         class Parser(sqlmod.Parser):
