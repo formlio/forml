@@ -491,3 +491,8 @@ class Division(Arithmetic, Bivariate):
 class Modulus(Arithmetic, Bivariate):
     """Modulus operator.
     """
+
+
+class Aggregate(Arithmetic, Univariate):
+    """Base class for column aggregation functions.
+    """

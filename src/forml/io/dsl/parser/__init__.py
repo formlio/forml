@@ -145,7 +145,8 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
             raise error.Mapping(f'Unknown mapping for source {source}') from err
 
     @abc.abstractmethod
-    def generate_join(self, left: Source, right: Source, condition: Source, kind: frame.Join.Kind) -> Source:
+    def generate_join(self, left: Source, right: Source, condition: typing.Optional[Column],
+                      kind: frame.Join.Kind) -> Source:
         """Generate target code for a join operation using the left/right terms, given condition and a join type.
 
         Args:
@@ -170,9 +171,9 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         """
 
     @abc.abstractmethod
-    def generate_query(self, source: Source, columns: typing.Sequence[Source],
-                       where: typing.Optional[Source], groupby: typing.Sequence[Source],
-                       having: typing.Optional[Source], orderby: typing.Sequence[Source],
+    def generate_query(self, source: Source, columns: typing.Sequence[Column],
+                       where: typing.Optional[Column], groupby: typing.Sequence[Column],
+                       having: typing.Optional[Column], orderby: typing.Sequence[Column],
                        rows: typing.Optional[frame.Rows]) -> Source:
         """Generate query statement code.
 
@@ -189,7 +190,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         """
 
     @abc.abstractmethod
-    def generate_ordering(self, column: Source, direction: frame.Ordering.Direction) -> Source:
+    def generate_ordering(self, column: Column, direction: frame.Ordering.Direction) -> Source:
         """Generate column ordering code.
 
         Args:
@@ -217,7 +218,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
     def visit_join(self, source: frame.Join) -> None:
         right = self.pop()
         left = self.pop()
-        expression = self.generate_column(source.condition)
+        expression = self.generate_column(source.condition) if source.condition is not None else None
         self.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(resolve_source)

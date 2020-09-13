@@ -82,7 +82,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 value = f'({value})'
             return value
 
-    def generate_join(self, left: str, right: str, condition: str, kind: frame.Join.Kind) -> str:
+    def generate_join(self, left: str, right: str, condition: typing.Optional[str], kind: frame.Join.Kind) -> str:
         """Generate target code for a join operation using the left/right terms, condition and a join type.
 
         Args:
@@ -93,7 +93,10 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
 
         Returns: Join operation.
         """
-        return f'{left} {self.JOIN[kind]} JOIN {right} ON {condition}'
+        join = f'{left} {self.JOIN[kind]} JOIN {right}'
+        if condition:
+            join += f' ON {condition}'
+        return join
 
     def generate_set(self, left: str, right: str, kind: frame.Set.Kind) -> str:
         """Generate target code for a set operation using the left/right terms, given a set type.
@@ -236,6 +239,25 @@ class Series(Frame, parsmod.Series[str, str]):
     DATE = '%Y-%m-%d'
     TIMESTAMP = '%Y-%m-%d %H:%M:%S.%f'
 
+    def __init__(self, sources: typing.Mapping[frame.Source, str],
+                 columns: typing.Optional[typing.Mapping[series.Column, str]] = None):
+        super().__init__(sources, columns or dict())
+
+    def resolve_column(self, column: series.Field) -> str:
+        """Resolver falling back to a field name in case of no explicit mapping.
+
+        Args:
+            column: Column to be resolved.
+
+        Returns: Resolved column.
+        """
+        try:
+            return super().resolve_column(column)
+        except error.Mapping as err:
+            if isinstance(column, series.Field):
+                return column.name
+            raise err
+
     def generate_field(self, source: str, field: str) -> str:  # pylint: disable=no-self-use
         """Generate a field code.
 
@@ -308,5 +330,6 @@ class Series(Frame, parsmod.Series[str, str]):
 class Parser(Frame):
     """Helper combining the parser components.
     """
-    def __init__(self, sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]):
+    def __init__(self, sources: typing.Mapping[frame.Source, str],
+                 columns: typing.Optional[typing.Mapping[series.Column, str]] = None):
         super().__init__(sources, Series(sources, columns))

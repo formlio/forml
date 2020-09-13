@@ -147,9 +147,9 @@ class Join(Source):
     class Kind(enum.Enum):
         """Join type.
         """
+        INNER = 'inner'
         LEFT = 'left'
         RIGHT = 'right'
-        INNER = 'inner'
         FULL = 'full'
         CROSS = 'cross'
 
@@ -158,10 +158,16 @@ class Join(Source):
     condition: series.Expression = property(operator.itemgetter(2))
     kind: 'Join.Kind' = property(operator.itemgetter(3))
 
-    def __new__(cls, left: 'Tangible', right: 'Tangible', condition: series.Expression,
+    def __new__(cls, left: 'Tangible', right: 'Tangible', condition: typing.Optional[series.Expression] = None,
                 kind: typing.Optional[typing.Union['Join.Kind', str]] = None):
-        return super().__new__(cls, [left, right, series.Logical.ensure(series.Element.ensure(condition)),
-                               cls.Kind(kind) if kind else cls.Kind.LEFT])
+        kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
+        if condition is not None:
+            if kind is cls.Kind.CROSS:
+                raise ValueError('Condition not valid for cross-join')
+            if series.Field.dissect(condition) - series.Field.dissect(*left.columns, *right.columns):
+                raise ValueError(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
+            condition = series.Logical.ensure(series.Element.ensure(condition))
+        return super().__new__(cls, [left, right, condition, kind])
 
     @property
     @functools.lru_cache()
@@ -247,7 +253,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.having(condition)
 
-    def join(self, other: 'Tangible', condition: series.Expression,
+    def join(self, other: 'Tangible', condition: typing.Optional[series.Expression] = None,
              kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
         """Join with other tangible.
         """
@@ -423,15 +429,29 @@ class Query(Queryable):
                                                                            Ordering.Direction, str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
 
-        if selection and series.Field.dissect(*selection) - series.Field.dissect(*source.columns):
-            raise ValueError(f'Selection ({selection}) is not a subset of source columns ({source.columns})')
+        def ensure_subset(*columns: series.Column) -> typing.Sequence[series.Column]:
+            """Ensure the provided columns is a valid subset of the available source columns.
+
+            Args:
+                *columns: List of columns to validate.
+
+            Returns: Original list of columns if all subset of the source columns.
+            """
+            if series.Field.dissect(*columns) - superset:
+                raise ValueError(f'({columns}) not a subset of source columns ({source.columns})')
+            return columns
+
+        superset = series.Field.dissect(*source.columns)
         if prefilter is not None:
-            prefilter = series.Logical.ensure(series.Element.ensure(prefilter))
+            prefilter = series.Logical.ensure(series.Element.ensure(ensure_subset(prefilter)[0]))
+        if grouping:
+            for aggregate in {c.element for c in selection or source.columns}.difference(
+                    series.Element.ensure(g) for g in ensure_subset(*grouping)):
+                series.Aggregate.ensure(aggregate)
         if postfilter is not None:
-            postfilter = series.Logical.ensure(series.Element.ensure(postfilter))
-        return super().__new__(cls, [source, tuple(selection or []), prefilter,
-                               tuple(series.Element.ensure(g) for g in grouping or []), postfilter,
-                               tuple(Ordering.make(ordering or [])), rows])
+            postfilter = series.Logical.ensure(series.Element.ensure(ensure_subset(postfilter)[0]))
+        return super().__new__(cls, [source, tuple(ensure_subset(*(selection or []))), prefilter, tuple(grouping or []),
+                                     postfilter, tuple(Ordering.make(ordering or [])), rows])
 
     @property
     def query(self) -> 'Query':
@@ -459,7 +479,7 @@ class Query(Queryable):
             condition &= self.postfilter
         return Query(self.source, self.selection, self.prefilter, self.grouping, condition, self.ordering, self.rows)
 
-    def join(self, other: Queryable, condition: series.Expression,
+    def join(self, other: Queryable, condition: typing.Optional[series.Expression] = None,
              kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
         return Query(Join(self.source, other, condition, kind), self.selection, self.prefilter, self.grouping,
                      self.postfilter, self.ordering, self.rows)
