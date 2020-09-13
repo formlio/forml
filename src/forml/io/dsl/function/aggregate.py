@@ -14,3 +14,21 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+"""
+Aggregation functions.
+"""
+
+from forml.io.dsl.schema import kind as kindmod
+from forml.io.dsl.schema import series
+
+
+class Count(series.Aggregate):
+    """Get the number of input rows.
+    """
+    kind: kindmod.Integer = kindmod.Integer()
+
+
+class Sum(series.Aggregate):
+    """Get the sum of the column values.
+    """
