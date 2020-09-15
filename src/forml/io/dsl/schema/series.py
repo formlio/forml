@@ -31,7 +31,7 @@ from collections import abc as colabc
 from forml.io.dsl.schema import kind as kindmod, visit
 
 if typing.TYPE_CHECKING:
-    from forml.io.dsl.schema import frame
+    from forml.io.dsl.schema import frame as framod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
             """
             return frozenset(self._terms)
 
-        def visit_source(self, source: 'frame.Source') -> None:
+        def visit_source(self, source: 'framod.Source') -> None:
             """Do nothing for source types.
             """
 
@@ -373,10 +373,10 @@ class Literal(Element):
 class Field(Element):
     """Schema field class bound to its table schema.
     """
-    source: 'frame.Source' = property(operator.itemgetter(0))
+    source: 'framod.Source' = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
 
-    def __new__(cls, table: 'frame.Tangible', name: str):
+    def __new__(cls, table: 'framod.Tangible', name: str):
         return super().__new__(cls, [table, name])
 
     @property
@@ -543,7 +543,12 @@ class Modulus(Arithmetic, Bivariate):
     """
 
 
-class Window(Column):
+class Multirow(Expression, metaclass=abc.ABCMeta):
+    """Base class for expressions involving cross-row operations.
+    """
+
+
+class Window(Multirow):
     """Window type column representation.
     """
     function: 'Window.Function' = property(operator.itemgetter(0))
@@ -610,6 +615,6 @@ class Window(Column):
         raise NotImplementedError('TODO')
 
 
-class Aggregate(Arithmetic, Univariate, Window.Function):
+class Aggregate(Arithmetic, Multirow, Window.Function):
     """Base class for column aggregation functions.
     """

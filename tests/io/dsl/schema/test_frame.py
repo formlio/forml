@@ -129,11 +129,14 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Where test.
         """
         self._subcondition(source, lambda s, e: s.where(e), lambda q: q.prefilter)
+        with pytest.raises(ValueError):
+            source.where(function.Count(source.score) > 2)  # aggregation filter
 
     def test_having(self, source: frame.Queryable):
         """Having test.
         """
         self._subcondition(source, lambda s, e: s.having(e), lambda q: q.postfilter)
+        assert source.having(function.Count(source.score) > 2)  # aggregation filtering is valid for having
 
     def test_join(self, source: frame.Queryable, school: frame.Table):
         """Join test.
@@ -144,6 +147,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert joined.source.right == school
         assert joined.source.condition == function.Equal(source.school, school.sid)
         self._condition(source, lambda s, e: s.join(school, e), lambda q: q.source.condition)
+        with pytest.raises(ValueError):
+            source.join(school, function.Count(source.score) > 2)  # aggregation filter
 
     def test_groupby(self, source: frame.Queryable):
         """Groupby test.
@@ -153,6 +158,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             .groupby(source.score, source.surname).grouping == (source.score, source.surname)
         with pytest.raises(ValueError):
             source.select(source.score, source.surname).groupby(source.score)  # surname neither aggregate nor group
+        with pytest.raises(ValueError):
+            source.select(function.Count(source.score)).groupby(function.Count(source.score))  # grouping by aggregation
         assert source.select(source.score, function.Count(source.surname)).groupby(source.score)
         assert source.select(source.score, function.Count(source.surname) + 1).groupby(source.score)
         self._expression(source.select(source.score > 2), lambda s, e: s.groupby(e), lambda q: q.grouping[0])
