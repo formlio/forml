@@ -118,3 +118,11 @@ class Series(Frame):
             column: Expression instance to be visited.
         """
         self.visit_column(column)
+
+    def visit_window(self, column: 'series.Window') -> None:
+        """Generic window hook.
+
+        Args:
+            column: Window instance to be visited.
+        """
+        self.visit_column(column)

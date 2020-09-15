@@ -153,29 +153,31 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             .groupby(source.score, source.surname).grouping == (source.score, source.surname)
         with pytest.raises(ValueError):
             source.select(source.score, source.surname).groupby(source.score)  # surname neither aggregate nor group
+        assert source.select(source.score, function.Count(source.surname)).groupby(source.score)
+        assert source.select(source.score, function.Count(source.surname) + 1).groupby(source.score)
         self._expression(source.select(source.score > 2), lambda s, e: s.groupby(e), lambda q: q.grouping[0])
 
     def test_orderby(self, source: frame.Queryable):
         """Orderby test.
         """
         assert source.orderby(source.score).ordering[0] == (
-            source.score, frame.Ordering.Direction.ASCENDING)
-        assert source.orderby(frame.Ordering(source.score)).ordering[0] == (
-            source.score, frame.Ordering.Direction.ASCENDING)
-        assert source.orderby(frame.Ordering(
-            source.score, frame.Ordering.Direction.DESCENDING)).ordering[0] == (
-                source.score, frame.Ordering.Direction.DESCENDING)
+            source.score, series.Ordering.Direction.ASCENDING)
+        assert source.orderby(series.Ordering(source.score)).ordering[0] == (
+            source.score, series.Ordering.Direction.ASCENDING)
+        assert source.orderby(series.Ordering(
+            source.score, series.Ordering.Direction.DESCENDING)).ordering[0] == (
+                source.score, series.Ordering.Direction.DESCENDING)
         assert source.orderby(source.score, 'descending').ordering[0] == (
-            source.score, frame.Ordering.Direction.DESCENDING)
-        assert source.orderby(source.score, frame.Ordering.Direction.DESCENDING).ordering[0] == (
-            source.score, frame.Ordering.Direction.DESCENDING)
+            source.score, series.Ordering.Direction.DESCENDING)
+        assert source.orderby(source.score, series.Ordering.Direction.DESCENDING).ordering[0] == (
+            source.score, series.Ordering.Direction.DESCENDING)
 
         assert source.orderby(source.score, source.surname, 'descending').ordering == (
-            (source.score, frame.Ordering.Direction.ASCENDING),
-            (source.surname, frame.Ordering.Direction.DESCENDING))
+            (source.score, series.Ordering.Direction.ASCENDING),
+            (source.surname, series.Ordering.Direction.DESCENDING))
         assert source.orderby(source.score, (source.surname, 'descending')).ordering == (
-            (source.score, frame.Ordering.Direction.ASCENDING),
-            (source.surname, frame.Ordering.Direction.DESCENDING))
+            (source.score, series.Ordering.Direction.ASCENDING),
+            (source.surname, series.Ordering.Direction.DESCENDING))
         self._expression(source, lambda s, e: s.orderby(e), lambda q: q.ordering[0].column)
 
     def test_limit(self, source: frame.Queryable):

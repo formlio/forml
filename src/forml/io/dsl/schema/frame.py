@@ -19,69 +19,19 @@
 ETL schema types.
 """
 import abc
-import collections
 import enum
 import functools
 import inspect
-import itertools
 import logging
 import operator
 import random
 import string
 import typing
-from collections import abc as colabc
 
 from forml.io import etl
 from forml.io.dsl.schema import series, visit
 
 LOGGER = logging.getLogger(__name__)
-
-
-class Ordering(collections.namedtuple('Ordering', 'column, direction')):
-    """OrderBy spec.
-    """
-    @enum.unique
-    class Direction(enum.Enum):
-        """Ordering direction.
-        """
-        ASCENDING = 'ascending'
-        DESCENDING = 'descending'
-
-        def __call__(self, column: typing.Union[series.Element, 'Ordering']) -> 'Ordering':
-            if isinstance(column, Ordering):
-                column = column.column
-            return Ordering(column, self)
-
-    def __new__(cls, column: series.Element,
-                direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
-        return super().__new__(cls, series.Element.ensure(column),
-                               cls.Direction(direction) if direction else cls.Direction.ASCENDING)
-
-    @classmethod
-    def make(cls, specs: typing.Sequence[typing.Union[series.Element,
-                                                      typing.Union['Ordering.Direction', str],
-                                                      typing.Tuple[series.Element, typing.Union[
-                                                          'Ordering.Direction', str]]]]) -> typing.Iterable['Ordering']:
-        """Helper to generate orderings from given columns and directions.
-
-        Args:
-            specs: One or many columns or actual ordering instances.
-
-        Returns: Sequence of ordering terms.
-        """
-        specs = itertools.zip_longest(specs, specs[1:])
-        for column, direction in specs:
-            if isinstance(column, series.Element):
-                if isinstance(direction, (Ordering.Direction, str)):
-                    yield Ordering.Direction(direction)(column)
-                    next(specs)  # pylint: disable=stop-iteration-return
-                else:
-                    yield Ordering(column)
-            elif isinstance(column, colabc.Sequence) and len(column) == 2:
-                column, direction = column
-                yield Ordering.Direction(direction)(column)
-            else:
-                raise ValueError('Expecting pair of column and direction')
 
 
 class Rows(typing.NamedTuple):
@@ -265,8 +215,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         return self.query.groupby(*columns)
 
     def orderby(self, *columns: typing.Union[series.Element, typing.Union[
-            Ordering.Direction, str], typing.Tuple[series.Element, typing.Union[Ordering.Direction, str]]]) -> 'Query':
-        """Ordering spec.
+            series.Ordering.Direction, str], typing.Tuple[
+            series.Element, typing.Union[series.Ordering.Direction, str]]]) -> 'Query':
+        """series.Ordering spec.
         """
         return self.query.orderby(*columns)
 
@@ -415,7 +366,7 @@ class Query(Queryable):
     prefilter: series.Expression = property(operator.itemgetter(2))
     grouping: typing.Tuple[series.Element] = property(operator.itemgetter(3))
     postfilter: series.Expression = property(operator.itemgetter(4))
-    ordering: typing.Tuple[Ordering] = property(operator.itemgetter(5))
+    ordering: typing.Tuple[series.Ordering] = property(operator.itemgetter(5))
     rows: Rows = property(operator.itemgetter(6))
 
     def __new__(cls, source: Source,
@@ -424,9 +375,9 @@ class Query(Queryable):
                 grouping: typing.Optional[typing.Iterable[series.Element]] = None,
                 postfilter: typing.Optional[series.Expression] = None,
                 ordering: typing.Optional[typing.Sequence[typing.Union[series.Element,
-                                                                       typing.Union[Ordering.Direction, str],
+                                                                       typing.Union[series.Ordering.Direction, str],
                                                                        typing.Tuple[series.Element, typing.Union[
-                                                                           Ordering.Direction, str]]]]] = None,
+                                                                           series.Ordering.Direction, str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
 
         def ensure_subset(*columns: series.Column) -> typing.Sequence[series.Column]:
@@ -447,11 +398,12 @@ class Query(Queryable):
         if grouping:
             for aggregate in {c.element for c in selection or source.columns}.difference(
                     series.Element.ensure(g) for g in ensure_subset(*grouping)):
-                series.Aggregate.ensure(aggregate)
+                if not series.Aggregate.dissect(aggregate):
+                    raise ValueError(f'Column {aggregate} not an aggregate')
         if postfilter is not None:
             postfilter = series.Logical.ensure(series.Element.ensure(ensure_subset(postfilter)[0]))
         return super().__new__(cls, [source, tuple(ensure_subset(*(selection or []))), prefilter, tuple(grouping or []),
-                                     postfilter, tuple(Ordering.make(ordering or [])), rows])
+                                     postfilter, tuple(series.Ordering.make(ordering or [])), rows])
 
     @property
     def query(self) -> 'Query':
@@ -487,8 +439,8 @@ class Query(Queryable):
     def groupby(self, *columns: series.Element) -> 'Query':
         return Query(self.source, self.selection, self.prefilter, columns, self.postfilter, self.ordering, self.rows)
 
-    def orderby(self, *columns: typing.Union[series.Element, typing.Union['Ordering.Direction', str], typing.Tuple[
-            series.Element, typing.Union['Ordering.Direction', str]]]) -> 'Query':
+    def orderby(self, *columns: typing.Union[series.Element, typing.Union[series.Ordering.Direction, str], typing.Tuple[
+            series.Element, typing.Union[series.Ordering.Direction, str]]]) -> 'Query':
         return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, columns, self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':

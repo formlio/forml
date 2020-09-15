@@ -45,9 +45,9 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         frame.Set.Kind.DIFFERENCE: 'EXCEPT'
     }
 
-    ORDER: typing.Mapping[frame.Ordering.Direction, str] = {
-        frame.Ordering.Direction.ASCENDING: 'ASC',
-        frame.Ordering.Direction.DESCENDING: 'DESC'
+    ORDER: typing.Mapping[series.Ordering.Direction, str] = {
+        series.Ordering.Direction.ASCENDING: 'ASC',
+        series.Ordering.Direction.DESCENDING: 'DESC'
     }
 
     class Wrap:
@@ -144,7 +144,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             query += f' {rows.count}'
         return query
 
-    def generate_ordering(self, column: str, direction: frame.Ordering.Direction) -> str:
+    def generate_ordering(self, column: str, direction: series.Ordering.Direction) -> str:
         """Generate column ordering.
 
         Args:
@@ -233,7 +233,11 @@ class Series(Frame, parsmod.Series[str, str]):
         function.Or: Expression('{} OR {}'),
         function.Not: Expression('NOT {}'),
         function.Cast: Expression('cast({} AS {})', lambda _, k: [_, Series.KIND[k]]),
-        function.Count: Expression('count({})', lambda c=None: [c if c is not None else '*'])
+        function.Avg: Expression('avg({})'),
+        function.Count: Expression('count({})', lambda c=None: [c if c is not None else '*']),
+        function.Min: Expression('min({})'),
+        function.Max: Expression('max({})'),
+        function.Sum: Expression('sum({})')
     }
 
     DATE = '%Y-%m-%d'

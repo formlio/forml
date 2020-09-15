@@ -23,12 +23,27 @@ from forml.io.dsl.schema import kind as kindmod
 from forml.io.dsl.schema import series
 
 
+class Avg(series.Aggregate):
+    """Average of the column values.
+    """
+
+
 class Count(series.Aggregate):
-    """Get the number of input rows.
+    """Number of the input rows.
     """
     kind: kindmod.Integer = kindmod.Integer()
 
 
+class Max(series.Aggregate):
+    """Maximum of the column values.
+    """
+
+
+class Min(series.Aggregate):
+    """Minimum of the column values.
+    """
+
+
 class Sum(series.Aggregate):
-    """Get the sum of the column values.
+    """Sum of the column values.
     """

@@ -19,10 +19,14 @@
 ETL schema types.
 """
 import abc
+import collections
+import enum
 import functools
+import itertools
 import logging
 import operator
 import typing
+from collections import abc as colabc
 
 from forml.io.dsl.schema import kind as kindmod, visit
 
@@ -69,7 +73,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
             """
 
         def visit_column(self, column: 'Column') -> None:
-            if type(column) in self._types:
+            if any(isinstance(column, t) for t in self._types):
                 self._terms.add(column)
 
     def __hash__(self):
@@ -159,7 +163,7 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 
 
 class Element(Column, metaclass=abc.ABCMeta):
-    """Base class for any non-aliased columns.
+    """Base class for columns that can be used in expressions, conditions, grouping and/or ordering definitions.
     """
     @property
     def element(self) -> 'Element':
@@ -265,6 +269,52 @@ class Element(Column, metaclass=abc.ABCMeta):
     @columnize
     def __rmod__(self, other: 'Element') -> 'Expression':
         return Modulus(other, self)
+
+
+class Ordering(collections.namedtuple('Ordering', 'column, direction')):
+    """OrderBy spec.
+    """
+    @enum.unique
+    class Direction(enum.Enum):
+        """Ordering direction.
+        """
+        ASCENDING = 'ascending'
+        DESCENDING = 'descending'
+
+        def __call__(self, column: typing.Union[Element, 'Ordering']) -> 'Ordering':
+            if isinstance(column, Ordering):
+                column = column.column
+            return Ordering(column, self)
+
+    def __new__(cls, column: Element,
+                direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
+        return super().__new__(cls, Element.ensure(column),
+                               cls.Direction(direction) if direction else cls.Direction.ASCENDING)
+
+    @classmethod
+    def make(cls, specs: typing.Sequence[typing.Union[Element, typing.Union[
+        'Ordering.Direction', str], typing.Tuple[Element, typing.Union[
+            'Ordering.Direction', str]]]]) -> typing.Iterable['Ordering']:
+        """Helper to generate orderings from given columns and directions.
+
+        Args:
+            specs: One or many columns or actual ordering instances.
+
+        Returns: Sequence of ordering terms.
+        """
+        specs = itertools.zip_longest(specs, specs[1:])
+        for column, direction in specs:
+            if isinstance(column, Element):
+                if isinstance(direction, (Ordering.Direction, str)):
+                    yield Ordering.Direction(direction)(column)
+                    next(specs)  # pylint: disable=stop-iteration-return
+                else:
+                    yield Ordering(column)
+            elif isinstance(column, colabc.Sequence) and len(column) == 2:
+                column, direction = column
+                yield Ordering.Direction(direction)(column)
+            else:
+                raise ValueError('Expecting pair of column and direction')
 
 
 class Aliased(Column):
@@ -493,6 +543,73 @@ class Modulus(Arithmetic, Bivariate):
     """
 
 
-class Aggregate(Arithmetic, Univariate):
+class Window(Column):
+    """Window type column representation.
+    """
+    function: 'Window.Function' = property(operator.itemgetter(0))
+    partition: typing.Tuple[Element] = property(operator.itemgetter(1))
+    ordering: typing.Tuple[Ordering] = property(operator.itemgetter(2))
+    frame: typing.Optional['Window.Frame'] = property(operator.itemgetter(3))
+
+    class Frame(collections.namedtuple('Frame', 'mode, start, end')):
+        """Sliding window frame spec.
+        """
+        @enum.unique
+        class Mode(enum.Enum):
+            """Frame mode.
+            """
+            ROWS = 'rows'
+            GROUPS = 'groups'
+            RANGE = 'range'
+
+    class Function:
+        """Window function representation.
+        """
+
+        def over(self, partition: typing.Sequence[Element], ordering: typing.Optional[typing.Sequence[typing.Union[
+            Element, typing.Union['Ordering.Direction', str], typing.Tuple[Element, typing.Union[
+                'Ordering.Direction', str]]]]] = None, frame: typing.Optional = None) -> 'Window':
+            """Create a window using this function.
+
+            Args:
+                partition: Window partitioning specifying the rows of query results.
+                ordering: Order in which input rows should be processed.
+                frame: Sliding window specification.
+
+            Returns: Windowed column instance.
+            """
+            return Window(self, partition, ordering, frame)
+
+    def __new__(cls, function: 'Window.Function', partition: typing.Sequence[Column], ordering: typing.Optional[
+        typing.Sequence[typing.Union[Element, typing.Union['Ordering.Direction', str], typing.Tuple[
+            Element, typing.Union['Ordering.Direction', str]]]]] = None, frame: typing.Optional = None):
+        return super().__new__(cls, function, tuple(partition), Ordering.make(ordering or []), frame)
+
+    @property
+    def name(self) -> None:
+        """Window has no name without an explicit aliasing.
+
+        Returns: None.
+        """
+        return None
+
+    @property
+    def kind(self) -> kindmod.Any:
+        return self.function.kind
+
+    def accept(self, visitor: visit.Series) -> None:
+        """Visitor acceptor.
+
+        Args:
+            visitor: Visitor instance.
+        """
+        visitor.visit_window(self)
+
+    @property
+    def element(self) -> 'Element':
+        raise NotImplementedError('TODO')
+
+
+class Aggregate(Arithmetic, Univariate, Window.Function):
     """Base class for column aggregation functions.
     """
