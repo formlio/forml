@@ -35,7 +35,7 @@ class Frame:
         """
         raise NotImplementedError(f'Unexpected call to {self.__class__.__name__}.visit_source')
 
-    def visit_table(self, source: 'frame.Tabulizer') -> None:
+    def visit_table(self, source: 'frame.Table') -> None:
         """Table hook.
 
         Args:
@@ -79,7 +79,7 @@ class Frame:
 class Series(Frame):
     """Series visitor.
     """
-    def visit_column(self, column: 'series.Columnizer') -> None:
+    def visit_column(self, column: 'series.Column') -> None:
         """Generic column hook.
 
         Args:

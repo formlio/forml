@@ -54,7 +54,7 @@ class Source(typing.NamedTuple):
             if {c.element for c in train.columns}.intersection(c.element for c in label):
                 raise error.Invalid('Label-feature overlap')
             if ordinal:
-                ordinal = series.Element.ensure(ordinal)
+                ordinal = series.Element.ensure_is(ordinal)
             return super().__new__(cls, train.query, apply.query, tuple(label), ordinal)
 
     @classmethod

@@ -28,7 +28,7 @@ import operator
 import typing
 from collections import abc as colabc
 
-from forml.io.dsl.schema import kind as kindmod, visit
+from forml.io.dsl.schema import kind as kindmod, visit as vismod
 
 if typing.TYPE_CHECKING:
     from forml.io.dsl.schema import frame as framod
@@ -53,7 +53,7 @@ def cast(value: typing.Any) -> 'Column':
 class Column(tuple, metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions).
     """
-    class Dissect(visit.Series):
+    class Dissect(vismod.Series):
         """Visitor extracting column elements of given type(s).
         """
         def __init__(self, *types: typing.Type['Column']):
@@ -96,7 +96,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def accept(self, visitor: visit.Series) -> None:
+    def accept(self, visitor: vismod.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -131,12 +131,43 @@ class Column(tuple, metaclass=abc.ABCMeta):
         return {t for c in column for t in visit(c)}
 
     @classmethod
-    def ensure(cls, column: 'Column') -> 'Column':
-        """Ensure given given column is of our type.
+    def ensure_is(cls, column: 'Column') -> 'Column':
+        """Ensure given column is of our type.
+
+        Args:
+            column: Column to be verified.
+
+        Returns: Original column if instance of our type or raising ValueError otherwise.
         """
         column = cast(column)
         if not isinstance(column, cls):
             raise ValueError(f'{column} not a {cls.__name__}')
+        return column
+
+    @classmethod
+    def ensure_in(cls, column: 'Column') -> 'Column':
+        """Ensure given column is composed of our type.
+
+        Args:
+            column: Column to be verified.
+
+        Returns: Original column if containing our type or raising ValueError otherwise.
+        """
+        if not cls.dissect(column):
+            raise ValueError(f'No {cls.__name__} instance(s) found in {column}')
+        return column
+
+    @classmethod
+    def ensure_notin(cls, column: 'Column') -> 'Column':
+        """Ensure given column is not composed of our type.
+
+        Args:
+            column: Column to be verified.
+
+        Returns: Original column if not of our type or raising ValueError otherwise.
+        """
+        if cls.dissect(column):
+            raise ValueError(f'{cls.__name__} instance(s) found in {column}')
         return column
 
 
@@ -170,10 +201,10 @@ class Element(Column, metaclass=abc.ABCMeta):
         return self
 
     @classmethod
-    def ensure(cls, column: 'Column') -> 'Element':
+    def ensure_is(cls, column: 'Column') -> 'Element':
         """Ensure given given column is an Element.
         """
-        return super().ensure(column).element
+        return super().ensure_is(column).element
 
     def alias(self, alias: str) -> 'Aliased':
         """Use an alias for this column.
@@ -288,7 +319,7 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
 
     def __new__(cls, column: Element,
                 direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
-        return super().__new__(cls, Element.ensure(column),
+        return super().__new__(cls, Element.ensure_is(column),
                                cls.Direction(direction) if direction else cls.Direction.ASCENDING)
 
     @classmethod
@@ -334,7 +365,7 @@ class Aliased(Column):
         """
         return self.element.kind
 
-    def accept(self, visitor: visit.Series) -> None:
+    def accept(self, visitor: vismod.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -361,7 +392,7 @@ class Literal(Element):
         """
         return None
 
-    def accept(self, visitor: visit.Series) -> None:
+    def accept(self, visitor: vismod.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -383,7 +414,7 @@ class Field(Element):
     def kind(self) -> kindmod.Any:
         return self.source.schema[self.name].kind
 
-    def accept(self, visitor: visit.Series) -> None:
+    def accept(self, visitor: vismod.Series) -> None:
         """Visitor acceptor.
 
         Args:
@@ -407,7 +438,7 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
         """
         return None
 
-    def accept(self, visitor: visit.Series) -> None:
+    def accept(self, visitor: vismod.Series) -> None:
         for term in self:
             if isinstance(term, Element):
                 term.accept(visitor)
@@ -602,17 +633,13 @@ class Window(Multirow):
     def kind(self) -> kindmod.Any:
         return self.function.kind
 
-    def accept(self, visitor: visit.Series) -> None:
+    def accept(self, visitor: vismod.Series) -> None:
         """Visitor acceptor.
 
         Args:
             visitor: Visitor instance.
         """
         visitor.visit_window(self)
-
-    @property
-    def element(self) -> 'Element':
-        raise NotImplementedError('TODO')
 
 
 class Aggregate(Arithmetic, Multirow, Window.Function):

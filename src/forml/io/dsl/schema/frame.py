@@ -116,9 +116,7 @@ class Join(Source):
                 raise ValueError('Condition not valid for cross-join')
             if series.Field.dissect(condition) - series.Field.dissect(*left.columns, *right.columns):
                 raise ValueError(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
-            if series.Multirow.dissect(condition):
-                raise ValueError('Multirow condition definition')
-            condition = series.Logical.ensure(series.Element.ensure(condition))
+            condition = series.Multirow.ensure_notin(series.Logical.ensure(series.Element.ensure_is(condition)))
         return super().__new__(cls, [left, right, condition, kind])
 
     @property
@@ -394,30 +392,21 @@ class Query(Queryable):
                 raise ValueError(f'({columns}) not a subset of source columns ({source.columns})')
             return columns
 
-        def ensure_discrete(*columns: series.Column) -> typing.Sequence[series.Column]:
-            """Ensure the provided columns don't contain aggregations or window functions.
-
-            Args:
-                *columns: List of columns to validate.
-
-            Returns: Original list of columns if valid.
-            """
-            if series.Multirow.dissect(*columns):
-                raise ValueError('Illegal use of multirow function')
-            return columns
-
         superset = series.Field.dissect(*source.columns)
         if prefilter is not None:
-            prefilter = series.Logical.ensure(series.Element.ensure(*ensure_subset(*ensure_discrete(prefilter))))
+            prefilter = series.Multirow.ensure_notin(series.Logical.ensure(
+                series.Element.ensure_is(*ensure_subset(prefilter))))
         if grouping:
             for aggregate in {c.element for c in selection or source.columns}.difference(
-                    series.Element.ensure(g) for g in ensure_subset(*ensure_discrete(*grouping))):
-                if not series.Aggregate.dissect(aggregate):
-                    raise ValueError(f'Column {aggregate} not an aggregate')
+                    series.Multirow.ensure_notin(series.Element.ensure_is(g)) for g in ensure_subset(*grouping)):
+                series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
-            postfilter = series.Logical.ensure(series.Element.ensure(*ensure_subset(postfilter)))
+            postfilter = series.Window.ensure_notin(series.Logical.ensure(
+                series.Element.ensure_is(*ensure_subset(postfilter))))
+        ordering = tuple(series.Ordering.make(ordering or []))
+        ensure_subset(*(o.column for o in ordering))
         return super().__new__(cls, [source, tuple(ensure_subset(*(selection or []))), prefilter, tuple(grouping or []),
-                                     postfilter, tuple(series.Ordering.make(ordering or [])), rows])
+                                     postfilter, ordering, rows])
 
     @property
     def query(self) -> 'Query':
