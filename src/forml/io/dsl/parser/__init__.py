@@ -190,7 +190,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         """
 
     @abc.abstractmethod
-    def generate_ordering(self, column: Column, direction: frame.Ordering.Direction) -> Source:
+    def generate_ordering(self, column: Column, direction: sermod.Ordering.Direction) -> Source:
         """Generate column ordering code.
 
         Args:

@@ -27,8 +27,8 @@ import typing
 import pytest
 
 from forml.io.dsl import function
-from forml.io.dsl.schema import series, frame, kind
 from forml.io.dsl.parser import sql
+from forml.io.dsl.schema import series, frame, kind
 
 
 class Parser(metaclass=abc.ABCMeta):
@@ -161,10 +161,10 @@ class TestOrderBy(Parser):
     """
     @classmethod
     @pytest.fixture(scope='session', params=(Parser.Case(None, 'ASC'),
-                                             Parser.Case(frame.Ordering.Direction.ASCENDING, 'ASC'),
-                                             Parser.Case(frame.Ordering.Direction.DESCENDING, 'DESC')))
+                                             Parser.Case(series.Ordering.Direction.ASCENDING, 'ASC'),
+                                             Parser.Case(series.Ordering.Direction.DESCENDING, 'DESC')))
     def case(cls, request, student: frame.Table, school: frame.Table) -> Parser.Case:
-        query = student.select(student.score).orderby(frame.Ordering(student.score, request.param.query))
+        query = student.select(student.score).orderby(series.Ordering(student.score, request.param.query))
         expected = f'SELECT edu.student.score FROM edu.student ORDER BY edu.student.score {request.param.expected}'
         return cls.Case(query, expected)
 
