@@ -29,6 +29,7 @@ import string
 import typing
 
 from forml.io import etl
+from forml.io.dsl import error
 from forml.io.dsl.schema import series, visit
 
 LOGGER = logging.getLogger(__name__)
@@ -40,12 +41,18 @@ class Rows(typing.NamedTuple):
     count: int
     offset: int = 0
 
+    def __repr__(self):
+        return f'{self.offset}:{self.count}'
+
 
 class Source(tuple, metaclass=abc.ABCMeta):
     """Source base class.
     """
     def __hash__(self):
         return hash(self.__class__) ^ super().__hash__()
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
 
     @property
     @abc.abstractmethod
@@ -113,11 +120,14 @@ class Join(Source):
         kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
         if condition is not None:
             if kind is cls.Kind.CROSS:
-                raise ValueError('Condition not valid for cross-join')
+                raise error.Syntax('Illegal use of condition for cross-join')
             if series.Field.dissect(condition) - series.Field.dissect(*left.columns, *right.columns):
-                raise ValueError(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
-            condition = series.Multirow.ensure_notin(series.Logical.ensure(series.Element.ensure_is(condition)))
+                raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
+            condition = series.Multirow.ensure_notin(series.Logical.ensure_is(series.Element.ensure_is(condition)))
         return super().__new__(cls, [left, right, condition, kind])
+
+    def __repr__(self):
+        return f'{repr(self.left)} {self.kind.value}-join {repr(self.right)}'
 
     @property
     @functools.lru_cache()
@@ -147,6 +157,9 @@ class Set(Source):
 
     def __new__(cls, left: Source, right: Source, kind: 'Set.Kind'):
         return super().__new__(cls, [left, right, kind])
+
+    def __repr__(self):
+        return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
 
     @property
     @functools.lru_cache()
@@ -268,6 +281,9 @@ class Reference(Tangible):
             name = ''.join(random.choice(string.ascii_lowercase) for _ in range(cls._NAMELEN))
         return super().__new__(cls, [instance, name])
 
+    def __repr__(self):
+        return f'{self.name}=[{repr(self.instance)}]'
+
     @property
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Field]:
@@ -305,10 +321,10 @@ class Table(Tangible):
                     continue
                 new = field.name or key
                 if new in existing:
-                    raise TypeError(f'Colliding field name {new} in schema {name}')
+                    raise error.Syntax(f'Colliding field name {new} in schema {name}')
                 existing.add(new)
             if bases and not existing:
-                raise TypeError(f'No fields defined for schema {name}')
+                raise error.Syntax(f'No fields defined for schema {name}')
             return super().__new__(mcs, name, bases, namespace)
 
         def __hash__(cls):
@@ -349,6 +365,9 @@ class Table(Tangible):
                 raise TypeError('Unexpected use of schema table')
         return super().__new__(mcs, [schema])  # used as constructor
 
+    def __repr__(self):
+        return f'{self.schema.__name__}'
+
     @property
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Field]:
@@ -363,11 +382,11 @@ class Query(Queryable):
     """
     source: Source = property(operator.itemgetter(0))
     selection: typing.Tuple[series.Column] = property(operator.itemgetter(1))
-    prefilter: series.Expression = property(operator.itemgetter(2))
+    prefilter: typing.Optional[series.Expression] = property(operator.itemgetter(2))
     grouping: typing.Tuple[series.Element] = property(operator.itemgetter(3))
-    postfilter: series.Expression = property(operator.itemgetter(4))
+    postfilter: typing.Optional[series.Expression] = property(operator.itemgetter(4))
     ordering: typing.Tuple[series.Ordering] = property(operator.itemgetter(5))
-    rows: Rows = property(operator.itemgetter(6))
+    rows: typing.Optional[Rows] = property(operator.itemgetter(6))
 
     def __new__(cls, source: Source,
                 selection: typing.Optional[typing.Iterable[series.Column]] = None,
@@ -389,24 +408,40 @@ class Query(Queryable):
             Returns: Original list of columns if all valid.
             """
             if series.Field.dissect(*columns) - superset:
-                raise ValueError(f'({columns}) not a subset of source columns ({source.columns})')
+                raise error.Syntax(f'{columns} not a subset of source columns: {superset}')
             return columns
 
         superset = series.Field.dissect(*source.columns)
         if prefilter is not None:
-            prefilter = series.Multirow.ensure_notin(series.Logical.ensure(
+            prefilter = series.Multirow.ensure_notin(series.Logical.ensure_is(
                 series.Element.ensure_is(*ensure_subset(prefilter))))
         if grouping:
             for aggregate in {c.element for c in selection or source.columns}.difference(
                     series.Multirow.ensure_notin(series.Element.ensure_is(g)) for g in ensure_subset(*grouping)):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
-            postfilter = series.Window.ensure_notin(series.Logical.ensure(
+            postfilter = series.Window.ensure_notin(series.Logical.ensure_is(
                 series.Element.ensure_is(*ensure_subset(postfilter))))
         ordering = tuple(series.Ordering.make(ordering or []))
         ensure_subset(*(o.column for o in ordering))
         return super().__new__(cls, [source, tuple(ensure_subset(*(selection or []))), prefilter, tuple(grouping or []),
                                      postfilter, ordering, rows])
+
+    def __repr__(self):
+        value = repr(self.source)
+        if self.selection:
+            value += f'[{", ".join(repr(c) for c in self.selection)}]'
+        if self.prefilter:
+            value += f'.where({repr(self.prefilter)})'
+        if self.grouping:
+            value += f'.groupby({", ".join(repr(c) for c in self.grouping)})'
+        if self.postfilter:
+            value += f'.having({repr(self.postfilter)})'
+        if self.ordering:
+            value += f'.orderby({", ".join(repr(c) for c in self.ordering)})'
+        if self.rows:
+            value += f'[{repr(self.rows)}]'
+        return value
 
     @property
     def query(self) -> 'Query':

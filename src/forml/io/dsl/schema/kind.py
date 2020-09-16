@@ -111,7 +111,7 @@ class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
         assert False, 'Expected to be replaced by metaclass'
 
 
-class Numeric(Primitive):  # pylint: disable=abstract-method
+class Numeric(Primitive, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Numeric data type base class.
     """
 
