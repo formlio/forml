@@ -320,9 +320,9 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         def _missing_(cls, value):
             if isinstance(value, str):
                 value = value.lower()
-                if value == 'asc':
+                if value in {'asc', 'ascending'}:
                     return cls.ASCENDING
-                if value == 'desc':
+                if value in {'desc', 'descending'}:
                     return cls.DESCENDING
             return super()._missing_(value)
 

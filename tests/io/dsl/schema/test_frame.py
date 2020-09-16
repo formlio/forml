@@ -167,24 +167,13 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def test_orderby(self, source: frame.Queryable):
         """Orderby test.
         """
-        assert source.orderby(source.score).ordering[0] == (
-            source.score, series.Ordering.Direction.ASCENDING)
-        assert source.orderby(series.Ordering(source.score)).ordering[0] == (
-            source.score, series.Ordering.Direction.ASCENDING)
-        assert source.orderby(series.Ordering(
-            source.score, series.Ordering.Direction.DESCENDING)).ordering[0] == (
-                source.score, series.Ordering.Direction.DESCENDING)
-        assert source.orderby(source.score, 'descending').ordering[0] == (
-            source.score, series.Ordering.Direction.DESCENDING)
-        assert source.orderby(source.score, series.Ordering.Direction.DESCENDING).ordering[0] == (
-            source.score, series.Ordering.Direction.DESCENDING)
-
+        assert source.orderby(source.score).ordering[0] == (source.score, series.Ordering.Direction.ASCENDING)
         assert source.orderby(source.score, source.surname, 'desc').ordering == (
             (source.score, series.Ordering.Direction.ASCENDING),
             (source.surname, series.Ordering.Direction.DESCENDING))
-        assert source.orderby(source.score, (source.surname, 'DESC')).ordering == (
-            (source.score, series.Ordering.Direction.ASCENDING),
-            (source.surname, series.Ordering.Direction.DESCENDING))
+        assert source.orderby(source.score, 'DESC', (source.surname, 'ASCENDING')).ordering == (
+            (source.score, series.Ordering.Direction.DESCENDING),
+            (source.surname, series.Ordering.Direction.ASCENDING))
         self._expression(source, lambda s, e: s.orderby(e), lambda q: q.ordering[0].column)
 
     def test_limit(self, source: frame.Queryable):

@@ -28,6 +28,26 @@ import pytest
 from forml.io.dsl.schema import series, frame, kind
 
 
+class TestOrdering:
+    """Ordering unit tests.
+    """
+    def test_ordering(self, student: frame.Table):
+        """Ordering setup tests.
+        """
+        assert series.Ordering(student.score) == \
+               series.Ordering(student.score, series.Ordering.Direction.ASCENDING) == \
+               series.Ordering.Direction.ASCENDING(student.score) == \
+               tuple(series.Ordering.make([student.score]))[0] == \
+               tuple(series.Ordering.make([student.score, 'ascending']))[0] == \
+               (student.score, series.Ordering.Direction.ASCENDING)
+        assert tuple(series.Ordering.make([student.score, 'asc', student.surname, 'DESC'])) == \
+               tuple(series.Ordering.make([student.score, (student.surname, 'DESCENDING')])) == \
+               tuple(series.Ordering.make([student.score, series.Ordering(student.surname,
+                                                                          series.Ordering.Direction.DESCENDING)])) == \
+               ((student.score, series.Ordering.Direction.ASCENDING),
+                (student.surname, series.Ordering.Direction.DESCENDING))
+
+
 class Column(metaclass=abc.ABCMeta):
     """Base class for column tests.
     """
