@@ -26,7 +26,7 @@ import typing
 import pytest
 
 from forml.io import etl
-from forml.io.dsl import function
+from forml.io.dsl import function, error
 from forml.io.dsl.schema import kind
 from forml.io.dsl.schema import series, frame
 
@@ -88,7 +88,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         assert source.select(source.score).selection[0] == source.score
         assert source.select(source.score, source.surname).selection == (source.score, source.surname)
-        with pytest.raises(ValueError):
+        with pytest.raises(error.Syntax):
             source.select(source.reference().score)  # not subset of source columns
 
     @classmethod
@@ -98,7 +98,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Common element testing routine.
         """
         score = source.query.source.score
-        with pytest.raises(ValueError):
+        with pytest.raises(error.Syntax):
             handler(source, (score > 2).alias('foobar'))  # aliased
         assert target(handler(source, score > 2)) == function.GreaterThan(score, series.Literal(2))
 
@@ -109,9 +109,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Common condition testing routine.
         """
         cls._expression(source, handler, target)
-        with pytest.raises(ValueError):
+        with pytest.raises(error.Syntax):
             handler(source, source.score + 1)  # not logical
-        with pytest.raises(ValueError):  # not subset of source columns
+        with pytest.raises(error.Syntax):  # not subset of source columns
             handler(source, source.reference().score == 'foo')
 
     @classmethod
@@ -129,7 +129,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Where test.
         """
         self._subcondition(source, lambda s, e: s.where(e), lambda q: q.prefilter)
-        with pytest.raises(ValueError):
+        with pytest.raises(error.Syntax):
             source.where(function.Count(source.score) > 2)  # aggregation filter
 
     def test_having(self, source: frame.Queryable):
@@ -147,7 +147,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert joined.source.right == school
         assert joined.source.condition == function.Equal(source.school, school.sid)
         self._condition(source, lambda s, e: s.join(school, e), lambda q: q.source.condition)
-        with pytest.raises(ValueError):
+        with pytest.raises(error.Syntax):
             source.join(school, function.Count(source.score) > 2)  # aggregation filter
 
     def test_groupby(self, source: frame.Queryable):
@@ -156,9 +156,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert source.select(source.score.alias('foo')).groupby(source.score).grouping[0] == source.score
         assert source.select(source.score, source.surname)\
             .groupby(source.score, source.surname).grouping == (source.score, source.surname)
-        with pytest.raises(ValueError):
+        with pytest.raises(error.Syntax):
             source.select(source.score, source.surname).groupby(source.score)  # surname neither aggregate nor group
-        with pytest.raises(ValueError):
+        with pytest.raises(error.Syntax):
             source.select(function.Count(source.score)).groupby(function.Count(source.score))  # grouping by aggregation
         assert source.select(source.score, function.Count(source.surname)).groupby(source.score)
         assert source.select(source.score, function.Count(source.surname) + 1).groupby(source.score)
@@ -179,10 +179,10 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert source.orderby(source.score, series.Ordering.Direction.DESCENDING).ordering[0] == (
             source.score, series.Ordering.Direction.DESCENDING)
 
-        assert source.orderby(source.score, source.surname, 'descending').ordering == (
+        assert source.orderby(source.score, source.surname, 'desc').ordering == (
             (source.score, series.Ordering.Direction.ASCENDING),
             (source.surname, series.Ordering.Direction.DESCENDING))
-        assert source.orderby(source.score, (source.surname, 'descending')).ordering == (
+        assert source.orderby(source.score, (source.surname, 'DESC')).ordering == (
             (source.score, series.Ordering.Direction.ASCENDING),
             (source.surname, series.Ordering.Direction.DESCENDING))
         self._expression(source, lambda s, e: s.orderby(e), lambda q: q.ordering[0].column)
@@ -216,7 +216,7 @@ class TestSchema:
     def test_empty(self):
         """Test empty schema with no fields.
         """
-        with pytest.raises(TypeError):
+        with pytest.raises(error.Syntax):
             class Empty(etl.Schema):
                 """Schema with no fields.
                 """
@@ -225,7 +225,7 @@ class TestSchema:
     def test_colliding(self, schema: typing.Type['etl.Schema']):
         """Test schema with colliding field names.
         """
-        with pytest.raises(TypeError):
+        with pytest.raises(error.Syntax):
             class Colliding(schema):
                 """Schema with colliding field names.
                 """

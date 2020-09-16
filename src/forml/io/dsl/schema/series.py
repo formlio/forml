@@ -28,6 +28,7 @@ import operator
 import typing
 from collections import abc as colabc
 
+from forml.io.dsl import error
 from forml.io.dsl.schema import kind as kindmod, visit as vismod
 
 if typing.TYPE_CHECKING:
@@ -75,6 +76,9 @@ class Column(tuple, metaclass=abc.ABCMeta):
         def visit_column(self, column: 'Column') -> None:
             if any(isinstance(column, t) for t in self._types):
                 self._terms.add(column)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
 
     def __hash__(self):
         return hash(self.__class__) ^ super().__hash__()
@@ -137,11 +141,11 @@ class Column(tuple, metaclass=abc.ABCMeta):
         Args:
             column: Column to be verified.
 
-        Returns: Original column if instance of our type or raising ValueError otherwise.
+        Returns: Original column if instance of our type or raising otherwise.
         """
         column = cast(column)
         if not isinstance(column, cls):
-            raise ValueError(f'{column} not a {cls.__name__}')
+            raise error.Syntax(f'{column} not an instance of a {cls.__name__}')
         return column
 
     @classmethod
@@ -151,10 +155,10 @@ class Column(tuple, metaclass=abc.ABCMeta):
         Args:
             column: Column to be verified.
 
-        Returns: Original column if containing our type or raising ValueError otherwise.
+        Returns: Original column if containing our type or raising otherwise.
         """
         if not cls.dissect(column):
-            raise ValueError(f'No {cls.__name__} instance(s) found in {column}')
+            raise error.Syntax(f'No {cls.__name__} instance(s) found in {column}')
         return column
 
     @classmethod
@@ -164,10 +168,10 @@ class Column(tuple, metaclass=abc.ABCMeta):
         Args:
             column: Column to be verified.
 
-        Returns: Original column if not of our type or raising ValueError otherwise.
+        Returns: Original column if not of our type or raising otherwise.
         """
         if cls.dissect(column):
-            raise ValueError(f'{cls.__name__} instance(s) found in {column}')
+            raise error.Syntax(f'{cls.__name__} instance(s) found in {column}')
         return column
 
 
@@ -219,86 +223,86 @@ class Element(Column, metaclass=abc.ABCMeta):
     __hash__ = Column.__hash__  # otherwise gets overwritten to None due to redefined __eq__
 
     @columnize
-    def __eq__(self, other: 'Element') -> 'Expression':
+    def __eq__(self, other: 'Element') -> 'Equal':
         return Equal(self, other)
 
     @columnize
-    def __ne__(self, other: 'Element') -> 'Expression':
+    def __ne__(self, other: 'Element') -> 'NotEqual':
         return NotEqual(self, other)
 
     @columnize
-    def __lt__(self, other: 'Element') -> 'Expression':
+    def __lt__(self, other: 'Element') -> 'LessThan':
         return LessThan(self, other)
 
     @columnize
-    def __le__(self, other: 'Element') -> 'Expression':
+    def __le__(self, other: 'Element') -> 'LessEqual':
         return LessEqual(self, other)
 
     @columnize
-    def __gt__(self, other: 'Element') -> 'Expression':
+    def __gt__(self, other: 'Element') -> 'GreaterThan':
         return GreaterThan(self, other)
 
     @columnize
-    def __ge__(self, other: 'Element') -> 'Expression':
+    def __ge__(self, other: 'Element') -> 'GreaterEqual':
         return GreaterEqual(self, other)
 
     @columnize
-    def __and__(self, other: 'Element') -> 'Expression':
+    def __and__(self, other: 'Element') -> 'And':
         return And(self, other)
 
     @columnize
-    def __rand__(self, other: 'Element') -> 'Expression':
+    def __rand__(self, other: 'Element') -> 'And':
         return And(other, self)
 
     @columnize
-    def __or__(self, other: 'Element') -> 'Expression':
+    def __or__(self, other: 'Element') -> 'Or':
         return Or(self, other)
 
     @columnize
-    def __ror__(self, other: 'Element') -> 'Expression':
+    def __ror__(self, other: 'Element') -> 'Or':
         return Or(other, self)
 
-    def __invert__(self) -> 'Expression':
+    def __invert__(self) -> 'Not':
         return Not(self)
 
     @columnize
-    def __add__(self, other: 'Element') -> 'Expression':
+    def __add__(self, other: 'Element') -> 'Addition':
         return Addition(self, other)
 
     @columnize
-    def __radd__(self, other: 'Element') -> 'Expression':
+    def __radd__(self, other: 'Element') -> 'Addition':
         return Addition(other, self)
 
     @columnize
-    def __sub__(self, other: 'Element') -> 'Expression':
+    def __sub__(self, other: 'Element') -> 'Subtraction':
         return Subtraction(self, other)
 
     @columnize
-    def __rsub__(self, other: 'Element') -> 'Expression':
+    def __rsub__(self, other: 'Element') -> 'Subtraction':
         return Subtraction(other, self)
 
     @columnize
-    def __mul__(self, other: 'Element') -> 'Expression':
+    def __mul__(self, other: 'Element') -> 'Multiplication':
         return Multiplication(self, other)
 
     @columnize
-    def __rmul__(self, other: 'Element') -> 'Expression':
+    def __rmul__(self, other: 'Element') -> 'Multiplication':
         return Multiplication(other, self)
 
     @columnize
-    def __truediv__(self, other: 'Element') -> 'Expression':
+    def __truediv__(self, other: 'Element') -> 'Division':
         return Division(self, other)
 
     @columnize
-    def __rtruediv__(self, other: 'Element') -> 'Expression':
+    def __rtruediv__(self, other: 'Element') -> 'Division':
         return Division(other, self)
 
     @columnize
-    def __mod__(self, other: 'Element') -> 'Expression':
+    def __mod__(self, other: 'Element') -> 'Modulus':
         return Modulus(self, other)
 
     @columnize
-    def __rmod__(self, other: 'Element') -> 'Expression':
+    def __rmod__(self, other: 'Element') -> 'Modulus':
         return Modulus(other, self)
 
 
@@ -312,6 +316,16 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         ASCENDING = 'ascending'
         DESCENDING = 'descending'
 
+        @classmethod
+        def _missing_(cls, value):
+            if isinstance(value, str):
+                value = value.lower()
+                if value == 'asc':
+                    return cls.ASCENDING
+                if value == 'desc':
+                    return cls.DESCENDING
+            return super()._missing_(value)
+
         def __call__(self, column: typing.Union[Element, 'Ordering']) -> 'Ordering':
             if isinstance(column, Ordering):
                 column = column.column
@@ -321,6 +335,9 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
                 direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
         return super().__new__(cls, Element.ensure_is(column),
                                cls.Direction(direction) if direction else cls.Direction.ASCENDING)
+
+    def __repr__(self):
+        return f'{repr(self.column)}[{self.direction.value}]'
 
     @classmethod
     def make(cls, specs: typing.Sequence[typing.Union[Element, typing.Union[
@@ -335,7 +352,7 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         """
         specs = itertools.zip_longest(specs, specs[1:])
         for column, direction in specs:
-            if isinstance(column, Element):
+            if isinstance(column, Column):
                 if isinstance(direction, (Ordering.Direction, str)):
                     yield Ordering.Direction(direction)(column)
                     next(specs)  # pylint: disable=stop-iteration-return
@@ -345,7 +362,7 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
                 column, direction = column
                 yield Ordering.Direction(direction)(column)
             else:
-                raise ValueError('Expecting pair of column and direction')
+                raise error.Syntax('Expecting pair of column and direction')
 
 
 class Aliased(Column):
@@ -356,6 +373,9 @@ class Aliased(Column):
 
     def __new__(cls, column: Column, alias: str):
         return super().__new__(cls, [column.element, alias])
+
+    def __repr__(self):
+        return f'{self.name}=[{repr(self.element)}]'
 
     @property
     def kind(self) -> kindmod.Any:
@@ -384,6 +404,9 @@ class Literal(Element):
     def __new__(cls, value: typing.Any):
         return super().__new__(cls, [value, kindmod.reflect(value)])
 
+    def __repr__(self):
+        return repr(self.value)
+
     @property
     def name(self) -> None:
         """Literal has no name without an explicit aliasing.
@@ -409,6 +432,9 @@ class Field(Element):
 
     def __new__(cls, table: 'framod.Tangible', name: str):
         return super().__new__(cls, [table, name])
+
+    def __repr__(self):
+        return f'{repr(self.source)}.{self.name}'
 
     @property
     def kind(self) -> kindmod.Any:
@@ -459,43 +485,83 @@ class Bivariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-
         return super().__new__(cls, arg1, arg2)
 
 
+class Operator(metaclass=abc.ABCMeta):
+    """Mixin for an operator expression.
+    """
+
+    @property
+    @abc.abstractmethod
+    def symbol(self) -> str:
+        """Operator symbol.
+
+        Returns: String representation of the symbol.
+        """
+
+
+class Infix(Operator, Bivariate, metaclass=abc.ABCMeta):
+    """Base class for infix operator expressions.
+    """
+    def __repr__(self):
+        return f'{repr(self[0])} {self.symbol} {repr(self[1])}'
+
+
+class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
+    """Base class for postfix operator expressions.
+    """
+    def __repr__(self):
+        return f'{repr(self[0])} {self.symbol}'
+
+
+class Prefix(Operator, Univariate, metaclass=abc.ABCMeta):
+    """Base class for prefix operator expressions.
+    """
+    def __repr__(self):
+        return f'{self.symbol} {repr(self[0])}'
+
+
 class Logical:
     """Mixin for logical functions/operators.
     """
     kind = kindmod.Boolean()
 
     @classmethod
-    def ensure(cls, column: Element) -> Element:
+    def ensure_is(cls, column: Element) -> Element:
         """Ensure given expression is a logical one.
         """
         if not isinstance(column.kind, cls.kind.__class__):
-            raise ValueError(f'{column.kind} not a valid {cls.kind}')
+            raise error.Syntax(f'{column.kind} not a valid {cls.kind}')
         return column
 
 
-class LessThan(Logical, Bivariate):
+class LessThan(Logical, Infix):
     """Less-Than operator.
     """
+    symbol = '<'
 
 
-class LessEqual(Logical, Bivariate):
+class LessEqual(Logical, Infix):
     """Less-Equal operator.
     """
+    symbol = '<='
 
 
-class GreaterThan(Logical, Bivariate):
+class GreaterThan(Logical, Infix):
     """Greater-Than operator.
     """
+    symbol = '>'
 
 
-class GreaterEqual(Logical, Bivariate):
+class GreaterEqual(Logical, Infix):
     """Greater-Equal operator.
     """
+    symbol = '>='
 
 
-class Equal(Logical, Bivariate):
+class Equal(Logical, Infix):
     """Equal operator.
     """
+    symbol = '=='
+
     def __bool__(self):
         """Since this instance is also returned when python internally compares two Column instances for equality, we
         want to evaluate the boolean value for python perspective of the objects (rather than just the ETL perspective
@@ -506,34 +572,40 @@ class Equal(Logical, Bivariate):
         return hash(self[0]) == hash(self[1])
 
 
-class NotEqual(Logical, Bivariate):
+class NotEqual(Logical, Infix):
     """Not-Equal operator.
     """
+    symbol = '!='
 
 
-class IsNull(Logical, Bivariate):
+class IsNull(Logical, Postfix):
     """Is-Null operator.
     """
+    symbol = 'IS NULL'
 
 
-class NotNull(Logical, Bivariate):
+class NotNull(Logical, Postfix):
     """Not-Null operator.
     """
+    symbol = 'NOT NULL'
 
 
-class And(Logical, Bivariate):
+class And(Logical, Infix):
     """And operator.
     """
+    symbol = 'AND'
 
 
-class Or(Logical, Bivariate):
+class Or(Logical, Infix):
     """Or operator.
     """
+    symbol = 'OR'
 
 
-class Not(Logical, Univariate):
+class Not(Logical, Prefix):
     """Not operator.
     """
+    symbol = 'NOT'
 
 
 class Arithmetic:
@@ -549,29 +621,34 @@ class Arithmetic:
                                 (o.kind for o in self))  # pylint: disable=not-an-iterable
 
 
-class Addition(Arithmetic, Bivariate):
+class Addition(Arithmetic, Infix):
     """Plus operator.
     """
+    symbol = '+'
 
 
-class Subtraction(Arithmetic, Bivariate):
+class Subtraction(Arithmetic, Infix):
     """Minus operator.
     """
+    symbol = '-'
 
 
-class Multiplication(Arithmetic, Bivariate):
+class Multiplication(Arithmetic, Infix):
     """Times operator.
     """
+    symbol = '*'
 
 
-class Division(Arithmetic, Bivariate):
+class Division(Arithmetic, Infix):
     """Divide operator.
     """
+    symbol = '/'
 
 
-class Modulus(Arithmetic, Bivariate):
+class Modulus(Arithmetic, Infix):
     """Modulus operator.
     """
+    symbol = '%'
 
 
 class Multirow(Expression, metaclass=abc.ABCMeta):

@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Customized dsl errors.
+Customized DSL errors.
 """
 from forml import error
 
@@ -28,4 +28,9 @@ class Mapping(error.Missing):
 
 class Unsupported(error.Missing):
     """Indicating feature unsupported by certain parser.
+    """
+
+
+class Syntax(error.Invalid):
+    """Indicating syntactical error.
     """
