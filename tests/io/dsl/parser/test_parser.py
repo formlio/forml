@@ -101,13 +101,10 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
     def generate_set(self, left: tuple, right: tuple, kind: framod.Set.Kind) -> tuple:
         return left, kind, right
 
-    def generate_ordering(self, column: tuple, direction: sermod.Ordering.Direction) -> tuple:
-        return column, direction
-
-    def generate_query(self, source: tuple, columns: typing.Sequence[tuple],
-                       where: typing.Optional[tuple],
+    def generate_query(self, source: tuple, columns: typing.Sequence[tuple], where: typing.Optional[tuple],
                        groupby: typing.Sequence[tuple], having: typing.Optional[tuple],
-                       orderby: typing.Sequence[tuple], rows: typing.Optional[framod.Rows]) -> tuple:
+                       orderby: typing.Sequence[typing.Tuple[tuple, sermod.Ordering.Direction]],
+                       rows: typing.Optional[framod.Rows]) -> tuple:
         return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows
 
     def generate_reference(self, instance: tuple, name: str) -> tuple:

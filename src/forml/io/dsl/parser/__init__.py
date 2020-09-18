@@ -171,9 +171,9 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         """
 
     @abc.abstractmethod
-    def generate_query(self, source: Source, columns: typing.Sequence[Column],
-                       where: typing.Optional[Column], groupby: typing.Sequence[Column],
-                       having: typing.Optional[Column], orderby: typing.Sequence[Column],
+    def generate_query(self, source: Source, columns: typing.Sequence[Column], where: typing.Optional[Column],
+                       groupby: typing.Sequence[Column], having: typing.Optional[Column],
+                       orderby: typing.Sequence[typing.Tuple[Column, sermod.Ordering.Direction]],
                        rows: typing.Optional[frame.Rows]) -> Source:
         """Generate query statement code.
 
@@ -183,21 +183,10 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
             where: Where condition in target code.
             groupby: Sequence of grouping specifiers in target code.
             having: Having condition in target code.
-            orderby: Sequence of ordering specifiers in target code.
+            orderby: Ordering specifier in target code.
             rows: Limit spec tuple.
 
         Returns: Query in target code.
-        """
-
-    @abc.abstractmethod
-    def generate_ordering(self, column: Column, direction: sermod.Ordering.Direction) -> Source:
-        """Generate column ordering code.
-
-        Args:
-            column: Column value already in target code.
-            direction: Ordering direction spec.
-
-        Returns: Column ordering in target code.
         """
 
     @abc.abstractmethod
@@ -232,7 +221,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
-        orderby = [self.generate_ordering(self.generate_column(c), o) for c, o in source.ordering]
+        orderby = tuple((self.generate_column(c), o) for c, o in source.ordering)
         columns = [self.generate_column(c) for c in source.columns]
         self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))
 

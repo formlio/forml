@@ -416,8 +416,8 @@ class Query(Queryable):
             prefilter = series.Multirow.ensure_notin(series.Logical.ensure_is(
                 series.Element.ensure_is(*ensure_subset(prefilter))))
         if grouping:
-            for aggregate in {c.element for c in selection or source.columns}.difference(
-                    series.Multirow.ensure_notin(series.Element.ensure_is(g)) for g in ensure_subset(*grouping)):
+            grouping = [series.Multirow.ensure_notin(series.Element.ensure_is(g)) for g in ensure_subset(*grouping)]
+            for aggregate in {c.element for c in selection or source.columns}.difference(grouping):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
             postfilter = series.Window.ensure_notin(series.Logical.ensure_is(
