@@ -111,9 +111,9 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         return f'{left} {self.SET[kind]} {right}'
 
     def generate_query(self, source: str, columns: typing.Sequence[str],  # pylint: disable=no-self-use
-                       where: typing.Optional[str],
-                       groupby: typing.Sequence[str], having: typing.Optional[str],
-                       orderby: typing.Sequence[str], rows: typing.Optional[frame.Rows]) -> str:
+                       where: typing.Optional[str], groupby: str, having: typing.Optional[str],
+                       orderby: typing.Sequence[typing.Tuple[str, series.Ordering.Direction]],
+                       rows: typing.Optional[frame.Rows]) -> str:
         """Generate query statement code.
 
         Args:
@@ -122,7 +122,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             where: Where condition.
             groupby: Sequence of grouping specifiers.
             having: Having condition.
-            orderby: Sequence of ordering specifiers.
+            orderby: Ordering specifier.
             rows: Limit spec tuple.
 
         Returns: Query.
@@ -136,24 +136,14 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         if having:
             query += f'\nHAVING {having}'
         if orderby:
-            query += f'\nORDER BY {", ".join(orderby)}'
+            ordering = ', '.join(f'{c} {self.ORDER[d]}' for c, d in orderby)
+            query += f'\nORDER BY {ordering}'
         if rows:
             query += '\nLIMIT'
             if rows.offset:
                 query += f' {rows.offset},'
             query += f' {rows.count}'
         return query
-
-    def generate_ordering(self, column: str, direction: series.Ordering.Direction) -> str:
-        """Generate column ordering.
-
-        Args:
-            column: Column value.
-            direction: Ordering direction spec.
-
-        Returns: Column ordering.
-        """
-        return f'{column} {self.ORDER[direction]}'
 
     def generate_reference(self, instance: str, name: str) -> str:  # pylint: disable=no-self-use
         """Generate a source reference (alias) definition.
