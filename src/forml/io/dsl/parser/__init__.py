@@ -119,7 +119,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         self._series: Series = series
 
     @functools.lru_cache()
-    def generate_column(self, column: sermod.Column) -> Source:
+    def generate_column(self, column: sermod.Column) -> Column:
         """Generate target code for the generic column type.
 
         Args:
