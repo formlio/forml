@@ -16,7 +16,7 @@
 # under the License.
 
 """
-SQL feed tests.
+SQL parser tests.
 """
 # pylint: disable=no-self-use
 import abc

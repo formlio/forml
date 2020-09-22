@@ -25,7 +25,7 @@ import types
 import typing
 
 from forml.io.dsl import error
-from forml.io.dsl.schema import series as sermod, frame, visit
+from forml.io.dsl.schema import series as sermod, frame, visit, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -236,7 +236,7 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
         self._columns: typing.Mapping[sermod.Column, Column] = types.MappingProxyType(columns)
         super().__init__(sources, self)
 
-    def resolve_column(self, column: sermod.Field) -> Column:
+    def resolve_column(self, column: sermod.Column) -> Column:
         """Get a custom target code for a column value.
 
         Args:
@@ -272,18 +272,19 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def generate_literal(self, literal: sermod.Literal) -> Column:
+    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Column:
         """Generate target code for a literal value.
 
         Args:
-            literal: Literal value instance.
+            value: Literal value instance.
+            kind: Literal value type.
 
         Returns: Literal in target code representation.
         """
 
     @abc.abstractmethod
     def generate_expression(self, expression: typing.Type[sermod.Expression],
-                            arguments: typing.Sequence[Column]) -> Column:
+                            arguments: typing.Sequence[typing.Any]) -> Column:
         """Generate target code for an expression of given arguments.
 
         Args:
@@ -302,7 +303,7 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
 
     @bypass(resolve_column)
     def visit_literal(self, column: sermod.Literal) -> None:
-        self.push(self.generate_literal(column))
+        self.push(self.generate_literal(column.value, column.kind))
 
     @bypass(resolve_column)
     def visit_expression(self, column: sermod.Expression) -> None:

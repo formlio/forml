@@ -326,6 +326,9 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
                     return cls.DESCENDING
             return super()._missing_(value)
 
+        def __repr__(self):
+            return f'<{self.value}>'
+
         def __call__(self, column: typing.Union[Element, 'Ordering']) -> 'Ordering':
             if isinstance(column, Ordering):
                 column = column.column
@@ -337,7 +340,7 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
                                cls.Direction(direction) if direction else cls.Direction.ASCENDING)
 
     def __repr__(self):
-        return f'{repr(self.column)}[{self.direction.value}]'
+        return f'{repr(self.column)}{repr(self.direction)}'
 
     @classmethod
     def make(cls, specs: typing.Sequence[typing.Union[Element, typing.Union[

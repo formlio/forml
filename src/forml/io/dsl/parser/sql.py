@@ -237,7 +237,7 @@ class Series(Frame, parsmod.Series[str, str]):
                  columns: typing.Optional[typing.Mapping[series.Column, str]] = None):
         super().__init__(sources, columns or dict())
 
-    def resolve_column(self, column: series.Field) -> str:
+    def resolve_column(self, column: series.Column) -> str:
         """Resolver falling back to a field name in case of no explicit mapping.
 
         Args:
@@ -274,28 +274,29 @@ class Series(Frame, parsmod.Series[str, str]):
         """
         return f'{column} AS {alias}'
 
-    def generate_literal(self, literal: series.Literal) -> str:
+    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> str:
         """Generate a literal value.
 
         Args:
-            literal: Literal value instance.
+            value: Literal value instance.
+            kind: Literal value type.
 
         Returns: Literal.
         """
-        if isinstance(literal.kind, kindmod.String):
-            return f"'{literal.value}'"
-        if isinstance(literal.kind, kindmod.Numeric):
-            return f'{literal.value}'
-        if isinstance(literal.kind, kindmod.Timestamp):
-            return f"TIMESTAMP '{literal.value.strftime(self.TIMESTAMP)}'"
-        if isinstance(literal.kind, kindmod.Date):
-            return f"DATE '{literal.value.strftime(self.DATE)}'"
-        if isinstance(literal.kind, kindmod.Array):
-            return f"ARRAY[{', '.join(self.generate_literal(v) for v in literal.value)}]"
-        raise error.Unsupported(f'Unsupported literal kind: {literal.kind}')
+        if isinstance(kind, kindmod.String):
+            return f"'{value}'"
+        if isinstance(kind, kindmod.Numeric):
+            return f'{value}'
+        if isinstance(kind, kindmod.Timestamp):
+            return f"TIMESTAMP '{value.strftime(self.TIMESTAMP)}'"
+        if isinstance(kind, kindmod.Date):
+            return f"DATE '{value.strftime(self.DATE)}'"
+        if isinstance(kind, kindmod.Array):
+            return f"ARRAY[{', '.join(self.generate_literal(v, kind.element) for v in value)}]"
+        raise error.Unsupported(f'Unsupported literal kind: {kind}')
 
     def generate_expression(self, expression: typing.Type[series.Expression],
-                            arguments: typing.Sequence[str]) -> str:
+                            arguments: typing.Sequence[typing.Any]) -> str:
         """Expression of given arguments.
 
         Args:
