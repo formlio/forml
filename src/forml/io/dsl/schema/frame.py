@@ -110,6 +110,9 @@ class Join(Source):
         FULL = 'full'
         CROSS = 'cross'
 
+        def __repr__(self):
+            return f'<{self.value}-join>'
+
     left: 'Tangible' = property(operator.itemgetter(0))
     right: 'Tangible' = property(operator.itemgetter(1))
     condition: series.Expression = property(operator.itemgetter(2))
@@ -127,7 +130,7 @@ class Join(Source):
         return super().__new__(cls, [left, right, condition, kind])
 
     def __repr__(self):
-        return f'{repr(self.left)} {self.kind.value}-join {repr(self.right)}'
+        return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
 
     @property
     @functools.lru_cache()

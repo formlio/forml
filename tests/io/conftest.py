@@ -23,6 +23,7 @@ Global ForML unit tests fixtures.
 import pytest
 
 from forml.io import etl
+from forml.io.dsl import function
 from forml.io.dsl.schema import frame, kind
 
 
@@ -67,3 +68,21 @@ def school() -> frame.Table:
         name = etl.Field(kind.String())
 
     return School
+
+
+@pytest.fixture(scope='session')
+def school_ref(school: frame.Table) -> frame.Reference:
+    """School table reference fixture.
+    """
+    return school.reference('bar')
+
+
+@pytest.fixture(scope='session')
+def query(person: frame.Table, student: frame.Table, school_ref: frame.Reference) -> frame.Query:
+    """Query fixture.
+    """
+    query = student.join(person, student.surname == person.surname) \
+        .join(school_ref, student.school == school_ref.sid) \
+        .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, kind.String())) \
+        .where(student.score < 2).orderby(student.level, student.score).limit(10)
+    return query

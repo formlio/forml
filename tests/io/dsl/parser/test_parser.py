@@ -65,32 +65,6 @@ class TestStack:
                 stack.push(value)
 
 
-@pytest.fixture(scope='session')
-def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[framod.Source, tuple]:
-    """Sources mapping fixture.
-    """
-    return types.MappingProxyType({
-        framod.Join(student, person, student.surname == person.surname): tuple(['foo']),
-        person: tuple([person]),
-        student: tuple([student]),
-        school: tuple([school])
-    })
-
-
-@pytest.fixture(scope='session')
-def columns() -> typing.Mapping[sermod.Column, tuple]:
-    """Columns mapping fixture.
-    """
-    class Columns:
-        """Columns mapping.
-        """
-        def __getitem__(self, column: sermod.Column) -> tuple:
-            if isinstance(column, sermod.Field):
-                return tuple([column])
-            raise KeyError('Unknown column')
-    return Columns()
-
-
 class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
     """Dummy frame parser wrapping all terms into tuples.
     """
@@ -118,11 +92,11 @@ class Series(Frame, parsmod.Series[tuple, tuple]):
     def generate_field(self, source: tuple, field: tuple) -> tuple:
         return source, field
 
-    def generate_literal(self, literal: sermod.Literal) -> tuple:
-        return tuple([literal])
+    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
+        return value, kind
 
     def generate_expression(self, expression: typing.Type[sermod.Expression],
-                            arguments: typing.Sequence[tuple]) -> tuple:
+                            arguments: typing.Sequence[typing.Any]) -> tuple:
         return expression, *arguments
 
     def generate_alias(self, column: tuple, alias: str) -> tuple:
@@ -130,6 +104,32 @@ class Series(Frame, parsmod.Series[tuple, tuple]):
 
     def generate_reference(self, instance: tuple, name: str) -> tuple:
         return tuple([name])
+
+
+@pytest.fixture(scope='session')
+def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[framod.Source, tuple]:
+    """Sources mapping fixture.
+    """
+    return types.MappingProxyType({
+        framod.Join(student, person, student.surname == person.surname): tuple(['foo']),
+        person: tuple([person]),
+        student: tuple([student]),
+        school: tuple([school])
+    })
+
+
+@pytest.fixture(scope='session')
+def columns() -> typing.Mapping[sermod.Column, tuple]:
+    """Columns mapping fixture.
+    """
+    class Columns:
+        """Columns mapping.
+        """
+        def __getitem__(self, column: sermod.Column) -> tuple:
+            if isinstance(column, sermod.Field):
+                return tuple([column])
+            raise KeyError('Unknown column')
+    return Columns()
 
 
 @pytest.fixture(scope='function')
@@ -142,17 +142,13 @@ def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mappin
 class TestParser:
     """Frame parser tests.
     """
-    def test_target(self, person: framod.Table, student: framod.Table, school: framod.Table, parser: parsmod.Frame):
-        """Target test.
+    def test_parse(self, query: framod.Query, student: framod.Table, school_ref: framod.Reference,
+                   parser: parsmod.Frame):
+        """Parsing test.
         """
-        school = school.reference('bar')
-        query = student.join(person, student.surname == person.surname)\
-            .join(school, student.school == school.sid)\
-            .select(student.surname, school['name'], function.Cast(student.score, kindmod.String()))\
-            .where(student.score < 2).orderby(student.level, student.score).limit(10)
         with parser:
             query.accept(parser)
             result = parser.pop()
         assert result[0][0] == ('foo',)
-        assert result[1] == (((student,), (student.surname,)), (('bar',), (school['name'],)),
+        assert result[1] == ((((student,), (student.surname,)), 'student'), (('bar',), (school_ref['name'],)),
                              (function.Cast, ((student,), (student.score,)), kindmod.String()))
