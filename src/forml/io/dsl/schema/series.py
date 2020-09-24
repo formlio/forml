@@ -116,7 +116,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def dissect(cls, *column: 'Column') -> typing.AbstractSet['Column']:
+    def dissect(cls, *column: 'Column') -> typing.Set['Column']:
         """Return an iterable of instances of this type composing given column(s).
 
         Returns: Set of this type instances used in given column(s).

@@ -124,7 +124,7 @@ class Join(Source):
         if condition is not None:
             if kind is cls.Kind.CROSS:
                 raise error.Syntax('Illegal use of condition for cross-join')
-            if series.Field.dissect(condition) - series.Field.dissect(*left.columns, *right.columns):
+            if not series.Field.dissect(condition).issubset(series.Field.dissect(*left.columns, *right.columns)):
                 raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
             condition = series.Multirow.ensure_notin(series.Logical.ensure_is(series.Element.ensure_is(condition)))
         return super().__new__(cls, [left, right, condition, kind])
@@ -410,7 +410,7 @@ class Query(Queryable):
 
             Returns: Original list of columns if all valid.
             """
-            if series.Field.dissect(*columns) - superset:
+            if not series.Field.dissect(*columns).issubset(superset):
                 raise error.Syntax(f'{columns} not a subset of source columns: {superset}')
             return columns
 

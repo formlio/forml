@@ -24,8 +24,9 @@ import typing
 
 import pytest
 
-from forml.io.dsl import parser as parsmod, function
+from forml.io.dsl import parser as parsmod
 from forml.io.dsl.schema import series as sermod, frame as framod, kind as kindmod
+from . import TupleParser
 
 
 class TestStack:
@@ -132,23 +133,12 @@ def columns() -> typing.Mapping[sermod.Column, tuple]:
     return Columns()
 
 
-@pytest.fixture(scope='function')
-def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mapping[sermod.Column, tuple]) -> Frame:
-    """Parser fixture.
-    """
-    return Frame(sources, Series(sources, columns))
-
-
-class TestParser:
+class TestParser(TupleParser):
     """Frame parser tests.
     """
-    def test_parse(self, query: framod.Query, student: framod.Table, school_ref: framod.Reference,
-                   parser: parsmod.Frame):
-        """Parsing test.
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mapping[sermod.Column, tuple]) -> Frame:
+        """Parser fixture.
         """
-        with parser:
-            query.accept(parser)
-            result = parser.pop()
-        assert result[0][0] == ('foo',)
-        assert result[1] == ((((student,), (student.surname,)), 'student'), (('bar',), (school_ref['name'],)),
-                             (function.Cast, ((student,), (student.score,)), kindmod.String()))
+        return Frame(sources, Series(sources, columns))
