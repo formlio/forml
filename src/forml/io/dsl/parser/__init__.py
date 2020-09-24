@@ -19,6 +19,7 @@
 ETL DSL parser.
 """
 import abc
+import contextlib
 import functools
 import logging
 import types
@@ -80,7 +81,7 @@ def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Cal
 
     Returns: Visitor method decorator.
     """
-    def decorator(method: typing.Callable[[Stack, typing.Any], None]) -> typing.Callable:
+    def decorator(method: typing.Callable[[Stack, typing.Any], typing.ContextManager[None]]) -> typing.Callable:
         """Visitor method decorator with added bypassing capability.
 
         Args:
@@ -88,15 +89,17 @@ def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Cal
 
         Returns: Decorated version of the visit_* method.
         """
+        @contextlib.contextmanager
         @functools.wraps(method)
-        def wrapped(self: Stack, subject: typing.Any) -> None:
+        def wrapped(self: Stack, subject: typing.Any) -> typing.Iterable[None]:
             """Decorated version of the visit_* method.
 
             Args:
                 self: Visitor instance.
                 subject: Visited subject.
             """
-            method(self, subject)
+            with method(self, subject):
+                yield
             try:
                 new = override(self, subject)
             except error.Mapping:
@@ -200,24 +203,32 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         Returns: Instance reference in target code.
         """
 
-    def visit_table(self, source: frame.Table) -> None:
+    @contextlib.contextmanager
+    def visit_table(self, source: frame.Table) -> typing.Iterable[None]:
+        yield
         self.push(self.resolve_source(source))
 
     @bypass(resolve_source)
-    def visit_join(self, source: frame.Join) -> None:
+    @contextlib.contextmanager
+    def visit_join(self, source: frame.Join) -> typing.Iterable[None]:
+        yield
         right = self.pop()
         left = self.pop()
         expression = self.generate_column(source.condition) if source.condition is not None else None
         self.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(resolve_source)
-    def visit_set(self, source: frame.Set) -> None:
+    @contextlib.contextmanager
+    def visit_set(self, source: frame.Set) -> typing.Iterable[None]:
+        yield
         right = self.pop()
         left = self.pop()
         self.push(self.generate_set(left, right, source.kind))
 
     @bypass(resolve_source)
-    def visit_query(self, source: frame.Query) -> None:
+    @contextlib.contextmanager
+    def visit_query(self, source: frame.Query) -> typing.Iterable[None]:
+        yield
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
@@ -225,7 +236,9 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         columns = [self.generate_column(c) for c in source.columns]
         self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))
 
-    def visit_reference(self, source: frame.Reference) -> None:
+    @contextlib.contextmanager
+    def visit_reference(self, source: frame.Reference) -> typing.Iterable[None]:
+        yield
         self.push(self.generate_reference(self.pop(), source.name))
 
 
@@ -294,18 +307,26 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
         Returns: Expression in target code representation.
         """
 
-    def visit_field(self, column: sermod.Field) -> None:
+    @contextlib.contextmanager
+    def visit_field(self, column: sermod.Field) -> typing.Iterable[None]:
+        yield
         self.push(self.generate_field(self.pop(), self.resolve_column(column)))
 
     @bypass(resolve_column)
-    def visit_aliased(self, column: sermod.Aliased) -> None:
+    @contextlib.contextmanager
+    def visit_aliased(self, column: sermod.Aliased) -> typing.Iterable[None]:
+        yield
         self.push(self.generate_alias(self.pop(), column.name))
 
     @bypass(resolve_column)
-    def visit_literal(self, column: sermod.Literal) -> None:
+    @contextlib.contextmanager
+    def visit_literal(self, column: sermod.Literal) -> typing.Iterable[None]:
+        yield
         self.push(self.generate_literal(column.value, column.kind))
 
     @bypass(resolve_column)
-    def visit_expression(self, column: sermod.Expression) -> None:
+    @contextlib.contextmanager
+    def visit_expression(self, column: sermod.Expression) -> typing.Iterable[None]:
+        yield
         arguments = tuple(reversed([self.pop() if isinstance(c, sermod.Column) else c for c in reversed(column)]))
         self.push(self.generate_expression(column.__class__, arguments))

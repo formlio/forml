@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
 class Frame:
     """Frame visitor.
     """
-    def visit_source(self, source: 'frame.Source') -> None:
+    def visit_source(self, source: 'frame.Source') -> typing.ContextManager[None]:
         """Generic source hook.
 
         Args:
@@ -35,51 +35,51 @@ class Frame:
         """
         raise NotImplementedError(f'Unexpected call to {self.__class__.__name__}.visit_source')
 
-    def visit_table(self, source: 'frame.Table') -> None:
+    def visit_table(self, source: 'frame.Table') -> typing.ContextManager[None]:
         """Table hook.
 
         Args:
             source: Source instance to be visited.
         """
-        self.visit_source(source)
+        return self.visit_source(source)
 
-    def visit_join(self, source: 'frame.Join') -> None:
+    def visit_join(self, source: 'frame.Join') -> typing.ContextManager[None]:
         """Join hook.
 
         Args:
             source: Instance to be visited.
         """
-        self.visit_source(source)
+        return self.visit_source(source)
 
-    def visit_set(self, source: 'frame.Set') -> None:
+    def visit_set(self, source: 'frame.Set') -> typing.ContextManager[None]:
         """Set hook.
 
         Args:
             source: Instance to be visited.
         """
-        self.visit_source(source)
+        return self.visit_source(source)
 
-    def visit_query(self, source: 'frame.Query') -> None:
+    def visit_query(self, source: 'frame.Query') -> typing.ContextManager[None]:
         """Query hook.
 
         Args:
             source: Instance to be visited.
         """
-        self.visit_source(source)
+        return self.visit_source(source)
 
-    def visit_reference(self, source: 'frame.Reference') -> None:
+    def visit_reference(self, source: 'frame.Reference') -> typing.ContextManager[None]:
         """Reference hook.
 
         Args:
             source: Instance to be visited.
         """
-        self.visit_source(source)
+        return self.visit_source(source)
 
 
 class Series(Frame):
     """Series visitor.
     """
-    def visit_column(self, column: 'series.Column') -> None:
+    def visit_column(self, column: 'series.Column') -> typing.ContextManager[None]:
         """Generic column hook.
 
         Args:
@@ -87,42 +87,42 @@ class Series(Frame):
         """
         raise NotImplementedError(f'Unexpected call to {self.__class__.__name__}.visit_column')
 
-    def visit_aliased(self, column: 'series.Aliased') -> None:
+    def visit_aliased(self, column: 'series.Aliased') -> typing.ContextManager[None]:
         """Generic expression hook.
 
         Args:
             column: Aliased column instance to be visited.
         """
-        self.visit_column(column)
+        return self.visit_column(column)
 
-    def visit_field(self, column: 'series.Field') -> None:
+    def visit_field(self, column: 'series.Field') -> typing.ContextManager[None]:
         """Generic expression hook.
 
         Args:
             column: Field instance to be visited.
         """
-        self.visit_column(column)
+        return self.visit_column(column)
 
-    def visit_literal(self, column: 'series.Literal') -> None:
+    def visit_literal(self, column: 'series.Literal') -> typing.ContextManager[None]:
         """Generic literal hook.
 
         Args:
             column: Literal instance to be visited.
         """
-        self.visit_column(column)
+        return self.visit_column(column)
 
-    def visit_expression(self, column: 'series.Expression') -> None:
+    def visit_expression(self, column: 'series.Expression') -> typing.ContextManager[None]:
         """Generic expression hook.
 
         Args:
             column: Expression instance to be visited.
         """
-        self.visit_column(column)
+        return self.visit_column(column)
 
-    def visit_window(self, column: 'series.Window') -> None:
+    def visit_window(self, column: 'series.Window') -> typing.ContextManager[None]:
         """Generic window hook.
 
         Args:
             column: Window instance to be visited.
         """
-        self.visit_column(column)
+        return self.visit_column(column)
