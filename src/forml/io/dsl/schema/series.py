@@ -20,6 +20,7 @@ ETL schema types.
 """
 import abc
 import collections
+import contextlib
 import enum
 import functools
 import itertools
@@ -62,18 +63,22 @@ class Column(tuple, metaclass=abc.ABCMeta):
             self._terms: typing.Set['Column'] = set()
 
         @property
-        def terms(self) -> typing.AbstractSet['Column']:
+        def terms(self) -> typing.FrozenSet['Column']:
             """Extracted terms.
 
             Returns: Set of extracted column terms.
             """
             return frozenset(self._terms)
 
-        def visit_source(self, source: 'framod.Source') -> None:
+        @contextlib.contextmanager
+        def visit_source(self, source: 'framod.Source') -> typing.Iterable[None]:
             """Do nothing for source types.
             """
+            yield
 
-        def visit_column(self, column: 'Column') -> None:
+        @contextlib.contextmanager
+        def visit_column(self, column: 'Column') -> typing.Iterable[None]:
+            yield
             if any(isinstance(column, t) for t in self._types):
                 self._terms.add(column)
 
@@ -116,23 +121,15 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def dissect(cls, *column: 'Column') -> typing.Set['Column']:
+    def dissect(cls, *column: 'Column') -> typing.FrozenSet['Column']:
         """Return an iterable of instances of this type composing given column(s).
 
         Returns: Set of this type instances used in given column(s).
         """
-        def visit(subject: 'Column') -> typing.Iterable['Column']:
-            """Dissect a single column.
-
-            Args:
-                subject: Column to be dissected.
-
-            Returns: Dissected column instances.
-            """
-            dissector = cls.Dissect(cls)
-            subject.accept(dissector)
-            return dissector.terms
-        return {t for c in column for t in visit(c)}
+        visitor = cls.Dissect(cls)
+        for col in column:
+            col.accept(visitor)
+        return visitor.terms
 
     @classmethod
     def ensure_is(cls, column: 'Column') -> 'Column':
@@ -394,8 +391,8 @@ class Aliased(Column):
         Args:
             visitor: Visitor instance.
         """
-        self.element.accept(visitor)
-        visitor.visit_aliased(self)
+        with visitor.visit_aliased(self):
+            self.element.accept(visitor)
 
 
 class Literal(Element):
@@ -424,7 +421,8 @@ class Literal(Element):
         Args:
             visitor: Visitor instance.
         """
-        visitor.visit_literal(self)
+        with visitor.visit_literal(self):
+            pass
 
 
 class Field(Element):
@@ -449,8 +447,8 @@ class Field(Element):
         Args:
             visitor: Visitor instance.
         """
-        self.source.accept(visitor)
-        visitor.visit_field(self)
+        with visitor.visit_field(self):
+            self.source.accept(visitor)
 
 
 class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
@@ -468,10 +466,10 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
         return None
 
     def accept(self, visitor: vismod.Series) -> None:
-        for term in self:
-            if isinstance(term, Element):
-                term.accept(visitor)
-        visitor.visit_expression(self)
+        with visitor.visit_expression(self):
+            for term in self:
+                if isinstance(term, Element):
+                    term.accept(visitor)
 
 
 class Univariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
@@ -719,7 +717,8 @@ class Window(Multirow):
         Args:
             visitor: Visitor instance.
         """
-        visitor.visit_window(self)
+        with visitor.visit_window(self):
+            pass
 
 
 class Aggregate(Arithmetic, Multirow, Window.Function):
