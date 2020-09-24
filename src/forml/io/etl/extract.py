@@ -113,9 +113,6 @@ class Operator(topology.Operator):
         return pipeline.Segment(apply, train, label)
 
 
-Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
-
-
 def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequence[typing.Iterator[typing.Any]]:
     """Helper for transposing between row and column oriented matrices. The output columns are from performance reason
     just lazy generators.
@@ -142,7 +139,11 @@ def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequ
     return data
 
 
-class Reader(typing.Generic[parsmod.Source, parsmod.Column], metaclass=abc.ABCMeta):
+Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
+Native = typing.TypeVar('Native')
+
+
+class Reader(typing.Generic[parsmod.Source, parsmod.Column, Native], metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
     class Actor(task.Actor):
@@ -184,7 +185,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column], metaclass=abc.ABCMe
         """
 
     @classmethod
-    def format(cls, data: typing.Any) -> Columnar:
+    def format(cls, data: Native) -> Columnar:
         """Format the input data into the required Columnar format.
 
         Args:
@@ -196,7 +197,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column], metaclass=abc.ABCMe
 
     @classmethod
     @abc.abstractmethod
-    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> typing.Any:
+    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> Native:
         """Perform the read operation with the given statement.
 
         Args:

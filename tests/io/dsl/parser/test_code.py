@@ -19,15 +19,17 @@
 Code parser tests.
 """
 # pylint: disable=no-self-use
+import collections
 import operator
 import types
 import typing
 
 import pytest
 
-from forml.io.dsl import parser as parsmod, function
 from forml.io.dsl.parser import code
+from forml.io.dsl.parser.code import Columnizer
 from forml.io.dsl.schema import series as sermod, frame as framod, kind as kindmod
+from . import TupleParser
 
 
 class TestClosure:
@@ -80,6 +82,26 @@ class TestClosure:
 class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
     """Dummy frame parser wrapping all terms into tuples.
     """
+    class Result(collections.namedtuple('Result', 'source, columns, where, groupby, having, orderby, rows')):
+        """Query result helper tuple.
+        """
+        NONE = tuple()
+
+        def __new__(cls, source: typing.Optional[tuple] = None, columns: typing.Optional[tuple] = None,
+                    where: typing.Optional[tuple] = None, groupby: typing.Optional[tuple] = None,
+                    having: typing.Optional[tuple] = None, orderby: typing.Optional[tuple] = None,
+                    rows: typing.Optional[tuple] = None):
+            if isinstance(source, cls):
+                columns = columns or source.columns
+                where = where or source.where
+                groupby = groupby or source.groupby
+                having = having or source.having
+                orderby = orderby or source.orderby
+                rows = rows or source.rows
+                source = source.source
+            return super().__new__(cls, source or cls.NONE, columns or cls.NONE, where or cls.NONE, groupby or cls.NONE,
+                                   having or cls.NONE, orderby or cls.NONE, rows or cls.NONE)
+
     # pylint: disable=missing-function-docstring
     def implement_join(self, left: tuple, right: tuple, condition: typing.Optional[code.Columnizer],
                        kind: framod.Join.Kind) -> tuple:
@@ -91,23 +113,27 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
     def implement_apply(self, table: tuple, partition: typing.Optional[typing.Sequence[code.Columnizer]] = None,
                         expression: typing.Optional[typing.Sequence[code.Columnizer]] = None,
                         predicate: typing.Optional[code.Columnizer] = None) -> tuple:
-        if partition:
-            partition = tuple(p(table) for p in partition)
-        if expression:
-            expression = tuple(e(table) for e in expression)
+        where = having = None
         if predicate:
             predicate = predicate(table)
-        return table, partition, expression, predicate
+        if partition:
+            partition = tuple(p(table) for p in partition)
+            having = predicate
+        else:
+            where = predicate
+        if expression:
+            expression = tuple(e(table) for e in expression)
+        return self.Result(table, expression, where, partition, having)
 
     def implement_ordering(self, table: tuple,
                            specs: typing.Sequence[typing.Tuple[code.Columnizer, sermod.Ordering.Direction]]) -> tuple:
-        return table, tuple((s(table), o) for s, o in specs)
+        return self.Result(table, orderby=tuple((s(table), o) for s, o in specs))
 
     def implement_project(self, table: tuple, columns: typing.Sequence[code.Columnizer]) -> tuple:
-        return table, tuple(c(table) for c in columns)
+        return self.Result(table, columns=tuple(c(table) for c in columns))
 
     def implement_limit(self, table: tuple, count: int, offset: int) -> tuple:
-        return table, count, offset
+        return self.Result(table, rows=(count, offset))
 
     def implement_reference(self, table: tuple, name: str) -> tuple:
         return table, name
@@ -116,7 +142,11 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
 class Series(Frame, code.Series[tuple, tuple]):
     """Dummy series parser wrapping all terms into tuples.
     """
+
     # pylint: disable=missing-function-docstring
+    def implement_field(self, data: tuple, column: Columnizer) -> tuple:
+        return data, column(data)
+
     def implement_alias(self, data: tuple, column: code.Columnizer, name: str) -> tuple:
         return column(data), name
 
@@ -125,7 +155,10 @@ class Series(Frame, code.Series[tuple, tuple]):
 
     def implement_expression(self, expression: typing.Type[sermod.Expression],
                              arguments: typing.Sequence[typing.Any]) -> tuple:
-        return expression, arguments
+        return expression, *arguments
+
+    def implement_reference(self, table: tuple, name: str) -> tuple:
+        return tuple([name])
 
 
 @pytest.fixture(scope='session')
@@ -134,6 +167,7 @@ def sources(person: framod.Table, student: framod.Table, school: framod.Table) -
     """Sources mapping fixture.
     """
     return types.MappingProxyType({
+        framod.Join(student, person, student.surname == person.surname): lambda _: tuple(['foo']),
         person: lambda _: tuple([person]),
         student: lambda _: tuple([student]),
         school: lambda _: tuple([school])
@@ -154,23 +188,16 @@ def columns() -> typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]:
     return Columns()
 
 
-@pytest.fixture(scope='function')
-def parser(sources: typing.Mapping[framod.Source, typing.Callable[[tuple], tuple]],
-           columns: typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]) -> Frame:
-    """Parser fixture.
-    """
-    return Frame(sources, Series(sources, columns))
-
-
-class TestParser:
+class TestParser(TupleParser):
     """Code parser tests.
     """
-    def test_parse(self, query: framod.Query, student: framod.Table, school_ref: framod.Reference,
-                   parser: parsmod.Frame):
-        """Parsing test.
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def parser(sources: typing.Mapping[framod.Source, typing.Callable[[tuple], tuple]],
+               columns: typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]) -> Frame:
+        """Parser fixture.
         """
-        with parser:
-            query.accept(parser)
-            result = parser.pop()(None)
-        assert result[0][1] == (((student.surname,), 'student'), (school_ref['name'],),
-                                (function.Cast, ((student.score,), kindmod.String())))
+        return Frame(sources, Series(sources, columns))
+
+    def format(self, result: code.Tabulizer) -> tuple:
+        return result(None)

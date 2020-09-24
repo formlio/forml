@@ -257,6 +257,7 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
 
         Returns: Referenced table.
         """
+
     # pylint: disable=missing-function-docstring
     def generate_join(self, left: Tabulizer, right: Tabulizer, condition: typing.Optional[Columnizer],
                       kind: framod.Join.Kind) -> 'Frame.Join':

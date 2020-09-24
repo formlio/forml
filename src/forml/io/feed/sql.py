@@ -32,10 +32,13 @@ from forml.io.etl.extract import Columnar
 LOGGER = logging.getLogger(__name__)
 
 
+Rows = typing.Sequence[typing.Any]  # Sequence of rows of any type
+
+
 class Feed(io.Feed[str, str]):
     """SQL feed with abstract reader.
     """
-    class Reader(extract.Reader[str, str], metaclass=abc.ABCMeta):
+    class Reader(extract.Reader[str, str, Rows], metaclass=abc.ABCMeta):
         """SQL reader base class for PEP249 compliant DB APIs.
         """
         class Parser(sqlmod.Parser):
@@ -67,7 +70,7 @@ class Feed(io.Feed[str, str]):
             return cls.Parser(sources, columns)
 
         @classmethod
-        def format(cls, data: typing.Sequence[typing.Sequence[typing.Any]]) -> Columnar:
+        def format(cls, data: Rows) -> Columnar:
             """PEP249 assumes row oriented results, we need columnar so let's transpose here.
 
             Args:
@@ -78,7 +81,7 @@ class Feed(io.Feed[str, str]):
             return extract.transpose(data)
 
         @classmethod
-        def read(cls, statement: str, **kwargs) -> typing.Sequence[typing.Sequence[typing.Any]]:
+        def read(cls, statement: str, **kwargs) -> Rows:
             """Perform the read operation with the given statement.
 
             Args:
