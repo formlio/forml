@@ -60,27 +60,31 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
         def __init__(self, *types: typing.Type['Column']):
             self._types: typing.FrozenSet[typing.Type['Column']] = frozenset(types)
-            self._terms: typing.Set['Column'] = set()
+            self._match: typing.Set['Column'] = set()
+            self._seen: typing.Set['Column'] = set()
 
         @property
         def terms(self) -> typing.FrozenSet['Column']:
-            """Extracted terms.
+            """Extracted columns.
 
-            Returns: Set of extracted column terms.
+            Returns: Set of extracted columns.
             """
-            return frozenset(self._terms)
+            return frozenset(self._match)
 
         @contextlib.contextmanager
         def visit_source(self, source: 'framod.Source') -> typing.Iterable[None]:
-            """Do nothing for source types.
-            """
             yield
+            for column in source.columns:
+                if column in self._seen:
+                    continue
+                column.accept(self)
 
         @contextlib.contextmanager
         def visit_column(self, column: 'Column') -> typing.Iterable[None]:
+            self._seen.add(column)
             yield
             if any(isinstance(column, t) for t in self._types):
-                self._terms.add(column)
+                self._match.add(column)
 
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
@@ -426,7 +430,7 @@ class Literal(Element):
 
 
 class Field(Element):
-    """Schema field class bound to its table schema.
+    """Named column of particular source. Most notably this represents the actual schema fields.
     """
     source: 'framod.Source' = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))

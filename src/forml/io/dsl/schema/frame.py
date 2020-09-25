@@ -57,9 +57,18 @@ class Source(tuple, metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def columns(self) -> typing.Sequence[series.Column]:
-        """Get the list of columns representing this source.
+        """Get the list of columns supplied by this source.
 
-        Returns: Sequence of columns.
+        Returns: Sequence of supplied columns.
+        """
+
+    @property
+    @abc.abstractmethod
+    def explicit(self) -> typing.AbstractSet[series.Field]:
+        """Set of schema fields explicitly referred within this source. In a way contrary to the .columns, this is
+        a demand side of the given source.
+
+        Returns: Set of explicit schema fields.
         """
 
     @property
@@ -115,7 +124,7 @@ class Join(Source):
 
     left: 'Tangible' = property(operator.itemgetter(0))
     right: 'Tangible' = property(operator.itemgetter(1))
-    condition: series.Expression = property(operator.itemgetter(2))
+    condition: typing.Optional[series.Expression] = property(operator.itemgetter(2))
     kind: 'Join.Kind' = property(operator.itemgetter(3))
 
     def __new__(cls, left: 'Tangible', right: 'Tangible', condition: typing.Optional[series.Expression] = None,
@@ -136,6 +145,14 @@ class Join(Source):
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
+
+    @property
+    @functools.lru_cache()
+    def explicit(self) -> typing.AbstractSet[series.Field]:
+        fields = self.left.explicit.union(self.right.explicit)
+        if self.condition is not None:
+            fields |= {f for f in series.Field.dissect(self.condition) if isinstance(f.source, Table)}
+        return frozenset(fields)
 
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_join(self):
@@ -168,6 +185,11 @@ class Set(Source):
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.left.columns + self.right.columns
+
+    @property
+    @functools.lru_cache()
+    def explicit(self) -> typing.AbstractSet[series.Field]:
+        return frozenset(self.left.explicit.union(self.right.explicit))
 
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_set(self):
@@ -293,6 +315,10 @@ class Reference(Tangible):
         return tuple(series.Field(self, c.name) for c in self.instance.columns)
 
     @property
+    def explicit(self) -> typing.AbstractSet[series.Field]:
+        return self.instance.explicit
+
+    @property
     def schema(self) -> typing.Type['etl.Schema']:
         return self.instance.schema
 
@@ -376,6 +402,11 @@ class Table(Tangible):
     def columns(self) -> typing.Sequence[series.Field]:
         return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
 
+    @property
+    @functools.lru_cache()
+    def explicit(self) -> typing.AbstractSet[series.Field]:
+        return frozenset()  # no fields are explicit on a bare table
+
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_table(self):
             pass
@@ -455,6 +486,17 @@ class Query(Queryable):
     @functools.lru_cache()
     def columns(self) -> typing.Sequence[series.Column]:
         return self.selection if self.selection else self.source.columns
+
+    @property
+    @functools.lru_cache()
+    def explicit(self) -> typing.AbstractSet[series.Field]:
+        columns = set(self.columns).union(self.grouping).union(o.column for o in self.ordering)
+        if self.prefilter is not None:
+            columns.add(self.prefilter)
+        if self.postfilter is not None:
+            columns.add(self.postfilter)
+        return frozenset(self.source.explicit.union({
+            f for f in series.Field.dissect(*columns) if isinstance(f.source, Table)}))
 
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_query(self):
