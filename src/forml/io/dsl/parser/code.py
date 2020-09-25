@@ -57,8 +57,8 @@ class Closure(typing.Generic[Input, Output], tuple, metaclass=abc.ABCMeta):  # p
         Returns: Sequence of parameters for the closure handler.
         """
 
-    def __call__(self, data: Input) -> Output:
-        return self.handler(*self.__args__(data))
+    def __call__(self, data: Input, **kwargs) -> Output:
+        return self.handler(*self.__args__(data), **kwargs)
 
 
 Tabulizer = Closure[Table, Table]  # pylint: disable=unsubscriptable-object

@@ -117,11 +117,31 @@ def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Cal
 class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclass=abc.ABCMeta):
     """Frame source parser.
     """
+    class Segment(collections.namedtuple('Segment', 'columns, predicates')):
+        """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
+        """
+        columns: typing.Set[sermod.Field]
+        predicates: typing.Set[sermod.Expression]
+
+        def __new__(cls):
+            return super().__new__(cls, set(), set())
+
+        @property
+        def predicate(self) -> typing.Optional[sermod.Expression]:
+            """Helper providing logical sum of all predicates.
+
+            Returns: Combination (sum) of individual predicates.
+            """
+            value = None
+            if self.predicates:
+                value = functools.reduce(sermod.Or, self.predicates)
+            return value
+
     def __init__(self, sources: typing.Mapping[frame.Source, Source], series: 'Series[Source, Column]'):
         super().__init__()
         self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
         self._series: Series = series
-        self._explicit: typing.Dict[frame.Table, typing.Set[sermod.Field]] = collections.defaultdict(set)
+        self._segments: typing.Dict[frame.Table, Frame.Segment] = collections.defaultdict(self.Segment)
 
     @functools.lru_cache()
     def generate_column(self, column: sermod.Column) -> Column:
@@ -150,12 +170,14 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
             raise error.Mapping(f'Unknown mapping for source {source}') from err
 
     def generate_table(self, table: Source,  # pylint: disable=no-self-use
-                       requirements: typing.Sequence[sermod.Field]) -> Source:  # pylint: disable=unused-argument
+                       columns: typing.Iterable[Column],  # pylint: disable=unused-argument
+                       predicate: typing.Optional[Column]) -> Source:  # pylint: disable=unused-argument
         """Generate a target code for a table instance given its actual field requirements.
 
         Args:
             table: Table (already in target code based on the provided mapping) to be generated.
-            requirements: List of fields of this table actually used throughout the query.
+            columns: List of fields to be retrieved from the table (potentially subset of all available).
+            predicate: Row filter to be possibly pushed down when retrieving the data from given table.
 
         Returns: Table target code potentially optimized based on field requirements.
         """
@@ -224,13 +246,17 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
             explicit: Sequence of explicit fields.
         """
         for field in explicit:
-            self._explicit[field.source].add(field)
+            self._segments[field.source].columns.add(field)
 
     @contextlib.contextmanager
     def visit_table(self, source: frame.Table) -> typing.Iterable[None]:
         self._register(source.explicit)  # table has no explicits though
         yield
-        self.push(self.generate_table(self.resolve_source(source), frozenset(self._explicit[source])))
+        predicate = self._segments[source].predicate
+        if predicate is not None:
+            predicate = self.generate_column(predicate)
+        self.push(self.generate_table(self.resolve_source(source),
+                                      {self.generate_column(f) for f in self._segments[source].columns}, predicate))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
