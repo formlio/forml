@@ -182,7 +182,7 @@ def columns() -> typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]:
         """Columns mapping.
         """
         def __getitem__(self, column: sermod.Column) -> typing.Callable[[tuple], tuple]:
-            if isinstance(column, sermod.Field):
+            if isinstance(column, sermod.Element):
                 return lambda _: tuple([column])
             raise KeyError('Unknown column')
     return Columns()

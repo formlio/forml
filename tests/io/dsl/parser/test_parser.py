@@ -90,8 +90,8 @@ class Series(Frame, parsmod.Series[tuple, tuple]):
     """Dummy series parser wrapping all terms into tuples.
     """
     # pylint: disable=missing-function-docstring
-    def generate_field(self, source: tuple, field: tuple) -> tuple:
-        return source, field
+    def generate_element(self, source: tuple, element: tuple) -> tuple:
+        return source, element
 
     def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
         return value, kind
@@ -127,7 +127,7 @@ def columns() -> typing.Mapping[sermod.Column, tuple]:
         """Columns mapping.
         """
         def __getitem__(self, column: sermod.Column) -> tuple:
-            if isinstance(column, sermod.Field):
+            if isinstance(column, sermod.Element):
                 return tuple([column])
             raise KeyError('Unknown column')
     return Columns()

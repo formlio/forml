@@ -155,17 +155,17 @@ class TestLiteral(Operable):
         return series.Literal(request.param)
 
 
-class TestField(Operable):
-    """Field unit tests.
+class TestElement(Operable):
+    """Element unit tests.
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def column(student: frame.Table) -> series.Field:
+    def column(student: frame.Table) -> series.Element:
         """Field fixture.
         """
         return student.surname
 
-    def test_table(self, column: series.Field, student: frame.Table):
+    def test_table(self, column: series.Element, student: frame.Table):
         """Test the column table reference.
         """
         assert column.source == student

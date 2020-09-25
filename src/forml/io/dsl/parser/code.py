@@ -379,8 +379,8 @@ class Series(Frame[Tabulizer, Columnizer], parsmod.Series[Columnizer, Columnizer
         """
 
     # pylint: disable=missing-function-docstring
-    def generate_field(self, source: Tabulizer, field: Columnizer) -> Columnizer:
-        return self.Field(self.implement_field, source, field)
+    def generate_element(self, source: Tabulizer, element: Columnizer) -> Columnizer:
+        return self.Field(self.implement_field, source, element)
 
     def generate_alias(self, column: Columnizer, alias: str) -> Columnizer:
         return self.Alias(self.implement_alias, column, alias)

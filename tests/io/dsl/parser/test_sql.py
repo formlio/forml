@@ -145,8 +145,8 @@ class TestJoin(Parser):
                                              Parser.Case(Join(frame.Join.Kind.CROSS, False), 'CROSS')))
     def case(cls, request, student: frame.Table, school: frame.Table) -> Parser.Case:
         if request.param.query.condition:
-            dsl = student.school == school.sid
-            sql = ' ON edu.student.school = edu.school.id'
+            dsl = school.sid == student.school
+            sql = ' ON edu.school.id = edu.student.school'
         else:
             dsl = None
             sql = ''
@@ -175,12 +175,12 @@ class TestQuery(Parser):
     @classmethod
     @pytest.fixture(scope='session')
     def case(cls, student: frame.Table, school: frame.Table) -> Parser.Case:
-        query = student.join(school, student.school == school.sid)\
+        query = student.join(school, school.sid == student.school)\
             .select(student.surname.alias('student'), function.Count(school.name))\
             .groupby(student.surname).having(function.Count(school.name) > 1)\
             .where(student.score < 2).orderby(student.level, student.score, 'descending').limit(10)
         expected = 'SELECT edu.student.surname AS student, count(edu.school.name) ' \
-                   'FROM edu.student INNER JOIN edu.school ON edu.student.school = edu.school.id ' \
+                   'FROM edu.student INNER JOIN edu.school ON edu.school.id = edu.student.school ' \
                    'WHERE edu.student.score < 2 GROUP BY edu.student.surname HAVING count(edu.school.name) > 1 ' \
                    'ORDER BY edu.student.level ASC, edu.student.score DESC ' \
                    'LIMIT 10'
@@ -205,9 +205,9 @@ class TestReference(Parser):
     @pytest.fixture(scope='session')
     def case(cls, student: frame.Table, school: frame.Table) -> Parser.Case:
         student = student.reference('foo')
-        subquery = student.join(school, student.school == school.sid)\
+        subquery = student.join(school, school.sid == student.school)\
             .select(student.surname, school.name).reference('bar')
         query = subquery.select(subquery.surname)
         expected = 'SELECT bar.surname FROM (SELECT foo.surname, edu.school.name FROM edu.student AS foo ' \
-                   'INNER JOIN edu.school ON foo.school = edu.school.id) AS bar'
+                   'INNER JOIN edu.school ON edu.school.id = foo.school) AS bar'
         return cls.Case(query, expected)

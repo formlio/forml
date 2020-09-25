@@ -95,11 +95,11 @@ class Series(Frame):
         """
         return self.visit_column(column)
 
-    def visit_field(self, column: 'series.Field') -> typing.ContextManager[None]:
+    def visit_element(self, column: 'series.Element') -> typing.ContextManager[None]:
         """Generic expression hook.
 
         Args:
-            column: Field instance to be visited.
+            column: Element instance to be visited.
         """
         return self.visit_column(column)
 

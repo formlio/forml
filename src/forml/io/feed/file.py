@@ -104,7 +104,7 @@ class Feed(io.Feed[code.Tabulizer, code.Columnizer]):
 
             Returns: Data.
             """
-            fields = series.Field.dissect(*query.columns)
+            fields = series.Element.dissect(*query.columns)
             # assertion parser to enforce: single source, no expressions, no aggregations, ...
             assert len({f.table for f in fields}) == 1, 'File supports only single source'
 

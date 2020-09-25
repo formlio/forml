@@ -318,12 +318,12 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
             raise error.Mapping(f'Unknown mapping for column {column}') from err
 
     @abc.abstractmethod
-    def generate_field(self, source: Source, field: Column) -> Column:
+    def generate_element(self, source: Source, element: Column) -> Column:
         """Generate a field code.
 
         Args:
             source: Column value already in target code.
-            field: Field symbol to be used for given column.
+            element: Field symbol to be used for given column.
 
         Returns: Field in target code.
         """
@@ -363,9 +363,9 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
         """
 
     @contextlib.contextmanager
-    def visit_field(self, column: sermod.Field) -> typing.Iterable[None]:
+    def visit_element(self, column: sermod.Element) -> typing.Iterable[None]:
         yield
-        self.push(self.generate_field(self.pop(), self.resolve_column(column)))
+        self.push(self.generate_element(self.pop(), self.resolve_column(column)))
 
     @bypass(resolve_column)
     @contextlib.contextmanager
