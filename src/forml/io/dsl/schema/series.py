@@ -429,8 +429,8 @@ class Literal(Operable):
             pass
 
 
-class Field(Operable):
-    """Named column of particular source. Most notably this represents the actual schema fields.
+class Element(Operable):
+    """Named column of particular source.
     """
     source: 'framod.Source' = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
@@ -451,8 +451,14 @@ class Field(Operable):
         Args:
             visitor: Visitor instance.
         """
-        with visitor.visit_field(self):
+        with visitor.visit_element(self):
             self.source.accept(visitor)
+
+
+class Field(Element):
+    """Special type of element is the schema field type.
+    """
+    source: 'framod.Table' = property(operator.itemgetter(0))
 
 
 class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method

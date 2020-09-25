@@ -62,7 +62,7 @@ class Source(metaclass=abc.ABCMeta):
     def test_explicit(self, source: frame.Source):
         """Test explicit fields.
         """
-        assert all(isinstance(f, series.Field) and isinstance(f.source, frame.Table) for f in source.explicit)
+        assert all(isinstance(f, series.Field) for f in source.explicit)
 
     def test_schema(self, source: frame.Source):
         """Test the reported schema.
@@ -146,11 +146,11 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def test_join(self, source: frame.Queryable, school: frame.Table):
         """Join test.
         """
-        joined = source.join(school, source.school == school.sid)
+        joined = source.join(school, school.sid == source.school)
         assert isinstance(joined.source, frame.Join)
         assert joined.source.kind == frame.Join.Kind.INNER
         assert joined.source.right == school
-        assert joined.source.condition == function.Equal(source.school, school.sid)
+        assert joined.source.condition == function.Equal(school.sid, source.school)
         self._condition(source, lambda s, e: s.join(school, e), lambda q: q.source.condition)
         with pytest.raises(error.Syntax):
             source.join(school, function.Count(source.score) > 2)  # aggregation filter
@@ -192,7 +192,7 @@ class Tangible(Queryable, metaclass=abc.ABCMeta):
     """Base class for tangible frames.
     """
     def test_columns(self, source: frame.Tangible, student: frame.Table):
-        assert all(isinstance(c, series.Field) for c in source.columns)
+        assert all(isinstance(c, series.Element) for c in source.columns)
         assert student.dob.name == 'birthday'
         assert student.score.name == 'score'
 
@@ -271,5 +271,4 @@ class TestQuery(Queryable):
         """Test query fields.
         """
         super().test_explicit(source)
-        assert {f for f in series.Field.dissect(*source.columns)
-                if isinstance(f.source, frame.Table)}.issubset(source.explicit)
+        assert series.Field.dissect(*source.columns).issubset(source.explicit)

@@ -133,7 +133,7 @@ class Join(Source):
         if condition is not None:
             if kind is cls.Kind.CROSS:
                 raise error.Syntax('Illegal use of condition for cross-join')
-            if not series.Field.dissect(condition).issubset(series.Field.dissect(*left.columns, *right.columns)):
+            if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.columns, *right.columns)):
                 raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
             condition = series.Multirow.ensure_notin(series.Logical.ensure_is(series.Operable.ensure_is(condition)))
         return super().__new__(cls, [left, right, condition, kind])
@@ -151,7 +151,7 @@ class Join(Source):
     def explicit(self) -> typing.AbstractSet[series.Field]:
         fields = self.left.explicit.union(self.right.explicit)
         if self.condition is not None:
-            fields |= {f for f in series.Field.dissect(self.condition) if isinstance(f.source, Table)}
+            fields |= series.Field.dissect(self.condition)
         return frozenset(fields)
 
     def accept(self, visitor: visit.Frame) -> None:
@@ -287,8 +287,8 @@ class Tangible(Queryable, metaclass=abc.ABCMeta):
     """
     @property
     @abc.abstractmethod
-    def columns(self) -> typing.Sequence[series.Field]:
-        """Tangible columns are instances of series.Field.
+    def columns(self) -> typing.Sequence[series.Element]:
+        """Tangible columns are instances of series.Element.
 
         Returns: Sequence of series.Field instances.
         """
@@ -311,8 +311,8 @@ class Reference(Tangible):
 
     @property
     @functools.lru_cache()
-    def columns(self) -> typing.Sequence[series.Field]:
-        return tuple(series.Field(self, c.name) for c in self.instance.columns)
+    def columns(self) -> typing.Sequence[series.Element]:
+        return tuple(series.Element(self, c.name) for c in self.instance.columns)
 
     @property
     def explicit(self) -> typing.AbstractSet[series.Field]:
@@ -442,11 +442,11 @@ class Query(Queryable):
 
             Returns: Original list of columns if all valid.
             """
-            if not series.Field.dissect(*columns).issubset(superset):
+            if not series.Element.dissect(*columns).issubset(superset):
                 raise error.Syntax(f'{columns} not a subset of source columns: {superset}')
             return columns
 
-        superset = series.Field.dissect(*source.columns)
+        superset = series.Element.dissect(*source.columns)
         if prefilter is not None:
             prefilter = series.Multirow.ensure_notin(series.Logical.ensure_is(
                 series.Operable.ensure_is(*ensure_subset(prefilter))))
@@ -495,8 +495,7 @@ class Query(Queryable):
             columns.add(self.prefilter)
         if self.postfilter is not None:
             columns.add(self.postfilter)
-        return frozenset(self.source.explicit.union({
-            f for f in series.Field.dissect(*columns) if isinstance(f.source, Table)}))
+        return frozenset(self.source.explicit.union(series.Field.dissect(*columns)))
 
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_query(self):

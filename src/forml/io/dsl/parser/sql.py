@@ -248,20 +248,20 @@ class Series(Frame, parsmod.Series[str, str]):
         try:
             return super().resolve_column(column)
         except error.Mapping as err:
-            if isinstance(column, series.Field):
+            if isinstance(column, series.Element):
                 return column.name
             raise err
 
-    def generate_field(self, source: str, field: str) -> str:  # pylint: disable=no-self-use
+    def generate_element(self, source: str, element: str) -> str:  # pylint: disable=no-self-use
         """Generate a field code.
 
         Args:
             source: Field source value.
-            field: Field symbol.
+            element: Field symbol.
 
         Returns: Field representation.
         """
-        return f'{source}.{field}'
+        return f'{source}.{element}'
 
     def generate_alias(self, column: str, alias: str) -> str:  # pylint: disable=no-self-use
         """Generate column alias code.
