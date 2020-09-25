@@ -59,7 +59,7 @@ class Column(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def test_element(self, column: series.Column):
+    def test_operable(self, column: series.Column):
         """Test the element getter.
         """
 
@@ -79,20 +79,20 @@ class Column(metaclass=abc.ABCMeta):
         assert isinstance(column.kind, kind.Any)
 
 
-class Element(Column, metaclass=abc.ABCMeta):
+class Operable(Column, metaclass=abc.ABCMeta):
     """Base class for element columns.
     """
-    def test_element(self, column: series.Element):
-        assert column.element == column
+    def test_operable(self, column: series.Operable):
+        assert column.operable == column
 
-    def test_alias(self, column: series.Element):
+    def test_alias(self, column: series.Operable):
         """Field aliasing test.
         """
         aliased = column.alias('foo')
         assert aliased.name == 'foo'
         assert aliased.kind == column.kind
 
-    def test_logical(self, column: series.Element):
+    def test_logical(self, column: series.Operable):
         """Logical operators tests.
         """
         # pylint: disable=misplaced-comparison-constant
@@ -114,7 +114,7 @@ class Element(Column, metaclass=abc.ABCMeta):
         assert isinstance(column | True, series.Or)
         assert isinstance(~column, series.Not)
 
-    def test_arithmetic(self, column: series.Element):
+    def test_arithmetic(self, column: series.Operable):
         """Arithmetic operators tests.
         """
         assert isinstance(1 + column, series.Addition)
@@ -139,11 +139,11 @@ class TestAliased(Column):
         """
         return request.param.alias('foobar')
 
-    def test_element(self, column: series.Aliased):
-        assert isinstance(column.element, series.Element)
+    def test_operable(self, column: series.Aliased):
+        assert isinstance(column.operable, series.Operable)
 
 
-class TestLiteral(Element):
+class TestLiteral(Operable):
     """Literal column tests.
     """
     @staticmethod
@@ -155,7 +155,7 @@ class TestLiteral(Element):
         return series.Literal(request.param)
 
 
-class TestField(Element):
+class TestField(Operable):
     """Field unit tests.
     """
     @staticmethod
