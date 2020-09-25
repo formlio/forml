@@ -50,16 +50,16 @@ class Source(typing.NamedTuple):
         """Combo of select statements for the different modes.
         """
         def __new__(cls, train: frame.Queryable, apply: frame.Queryable, label: typing.Sequence[series.Column],
-                    ordinal: typing.Optional[series.Element]):
-            if {c.element for c in train.columns}.intersection(c.element for c in label):
+                    ordinal: typing.Optional[series.Operable]):
+            if {c.operable for c in train.columns}.intersection(c.operable for c in label):
                 raise error.Invalid('Label-feature overlap')
             if ordinal:
-                ordinal = series.Element.ensure_is(ordinal)
+                ordinal = series.Operable.ensure_is(ordinal)
             return super().__new__(cls, train.query, apply.query, tuple(label), ordinal)
 
     @classmethod
     def query(cls, features: frame.Queryable, *label: series.Column, apply: typing.Optional[frame.Queryable] = None,
-              ordinal: typing.Optional[series.Element] = None) -> 'Source':
+              ordinal: typing.Optional[series.Operable] = None) -> 'Source':
         """Create new source with the given extraction.
 
         Args:

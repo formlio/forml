@@ -255,8 +255,9 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         predicate = self._segments[source].predicate
         if predicate is not None:
             predicate = self.generate_column(predicate)
-        self.push(self.generate_table(self.resolve_source(source),
-                                      {self.generate_column(f) for f in self._segments[source].columns}, predicate))
+        # self.push(self.generate_table(self.resolve_source(source),
+        #                               {self.generate_column(f) for f in self._segments[source].columns}, predicate))
+        self.push(self.generate_table(self.resolve_source(source), self._segments[source].columns, predicate))
 
     @bypass(resolve_source)
     @contextlib.contextmanager

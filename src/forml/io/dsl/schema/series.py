@@ -42,9 +42,9 @@ def cast(value: typing.Any) -> 'Column':
     """Attempt to create a literal instance of the value unless already a column.
 
     Args:
-        value: Value to be represented as Element column.
+        value: Value to be represented as Operable column.
 
-    Returns: Element column instance.
+    Returns: Operable column instance.
     """
     if not isinstance(value, Column):
         LOGGER.debug('Converting value of %s to a literal type', value)
@@ -56,7 +56,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions).
     """
     class Dissect(vismod.Series):
-        """Visitor extracting column elements of given type(s).
+        """Visitor extracting column instances of given type(s).
         """
         def __init__(self, *types: typing.Type['Column']):
             self._types: typing.FrozenSet[typing.Type['Column']] = frozenset(types)
@@ -118,10 +118,10 @@ class Column(tuple, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def element(self) -> 'Element':
-        """Return the element of this column (apart from Aliased, element is the column itself).
+    def operable(self) -> 'Operable':
+        """Return the operable of this column (apart from Aliased, operable is the column itself).
 
-        Returns: Column's element.
+        Returns: Column's operable.
         """
 
     @classmethod
@@ -177,7 +177,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
 
 
 def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
-    """Decorator for forcing function arguments to element columns.
+    """Decorator for forcing function arguments to operable columns.
 
     Args:
         handler: Callable to be decorated.
@@ -185,7 +185,7 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
     Returns: Decorated callable.
     """
     @functools.wraps(handler)
-    def wrapper(*args: typing.Any) -> typing.Sequence['Element']:
+    def wrapper(*args: typing.Any) -> typing.Sequence['Operable']:
         """Actual decorator.
 
         Args:
@@ -193,23 +193,23 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 
         Returns: Arguments converted to columns.
         """
-        return handler(*(cast(a).element for a in args))
+        return handler(*(cast(a).operable for a in args))
 
     return wrapper
 
 
-class Element(Column, metaclass=abc.ABCMeta):
+class Operable(Column, metaclass=abc.ABCMeta):
     """Base class for columns that can be used in expressions, conditions, grouping and/or ordering definitions.
     """
     @property
-    def element(self) -> 'Element':
+    def operable(self) -> 'Operable':
         return self
 
     @classmethod
-    def ensure_is(cls, column: 'Column') -> 'Element':
-        """Ensure given given column is an Element.
+    def ensure_is(cls, column: 'Column') -> 'Operable':
+        """Ensure given given column is an Operable.
         """
-        return super().ensure_is(column).element
+        return super().ensure_is(column).operable
 
     def alias(self, alias: str) -> 'Aliased':
         """Use an alias for this column.
@@ -224,86 +224,86 @@ class Element(Column, metaclass=abc.ABCMeta):
     __hash__ = Column.__hash__  # otherwise gets overwritten to None due to redefined __eq__
 
     @columnize
-    def __eq__(self, other: 'Element') -> 'Equal':
+    def __eq__(self, other: 'Operable') -> 'Equal':
         return Equal(self, other)
 
     @columnize
-    def __ne__(self, other: 'Element') -> 'NotEqual':
+    def __ne__(self, other: 'Operable') -> 'NotEqual':
         return NotEqual(self, other)
 
     @columnize
-    def __lt__(self, other: 'Element') -> 'LessThan':
+    def __lt__(self, other: 'Operable') -> 'LessThan':
         return LessThan(self, other)
 
     @columnize
-    def __le__(self, other: 'Element') -> 'LessEqual':
+    def __le__(self, other: 'Operable') -> 'LessEqual':
         return LessEqual(self, other)
 
     @columnize
-    def __gt__(self, other: 'Element') -> 'GreaterThan':
+    def __gt__(self, other: 'Operable') -> 'GreaterThan':
         return GreaterThan(self, other)
 
     @columnize
-    def __ge__(self, other: 'Element') -> 'GreaterEqual':
+    def __ge__(self, other: 'Operable') -> 'GreaterEqual':
         return GreaterEqual(self, other)
 
     @columnize
-    def __and__(self, other: 'Element') -> 'And':
+    def __and__(self, other: 'Operable') -> 'And':
         return And(self, other)
 
     @columnize
-    def __rand__(self, other: 'Element') -> 'And':
+    def __rand__(self, other: 'Operable') -> 'And':
         return And(other, self)
 
     @columnize
-    def __or__(self, other: 'Element') -> 'Or':
+    def __or__(self, other: 'Operable') -> 'Or':
         return Or(self, other)
 
     @columnize
-    def __ror__(self, other: 'Element') -> 'Or':
+    def __ror__(self, other: 'Operable') -> 'Or':
         return Or(other, self)
 
     def __invert__(self) -> 'Not':
         return Not(self)
 
     @columnize
-    def __add__(self, other: 'Element') -> 'Addition':
+    def __add__(self, other: 'Operable') -> 'Addition':
         return Addition(self, other)
 
     @columnize
-    def __radd__(self, other: 'Element') -> 'Addition':
+    def __radd__(self, other: 'Operable') -> 'Addition':
         return Addition(other, self)
 
     @columnize
-    def __sub__(self, other: 'Element') -> 'Subtraction':
+    def __sub__(self, other: 'Operable') -> 'Subtraction':
         return Subtraction(self, other)
 
     @columnize
-    def __rsub__(self, other: 'Element') -> 'Subtraction':
+    def __rsub__(self, other: 'Operable') -> 'Subtraction':
         return Subtraction(other, self)
 
     @columnize
-    def __mul__(self, other: 'Element') -> 'Multiplication':
+    def __mul__(self, other: 'Operable') -> 'Multiplication':
         return Multiplication(self, other)
 
     @columnize
-    def __rmul__(self, other: 'Element') -> 'Multiplication':
+    def __rmul__(self, other: 'Operable') -> 'Multiplication':
         return Multiplication(other, self)
 
     @columnize
-    def __truediv__(self, other: 'Element') -> 'Division':
+    def __truediv__(self, other: 'Operable') -> 'Division':
         return Division(self, other)
 
     @columnize
-    def __rtruediv__(self, other: 'Element') -> 'Division':
+    def __rtruediv__(self, other: 'Operable') -> 'Division':
         return Division(other, self)
 
     @columnize
-    def __mod__(self, other: 'Element') -> 'Modulus':
+    def __mod__(self, other: 'Operable') -> 'Modulus':
         return Modulus(self, other)
 
     @columnize
-    def __rmod__(self, other: 'Element') -> 'Modulus':
+    def __rmod__(self, other: 'Operable') -> 'Modulus':
         return Modulus(other, self)
 
 
@@ -330,22 +330,22 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         def __repr__(self):
             return f'<{self.value}>'
 
-        def __call__(self, column: typing.Union[Element, 'Ordering']) -> 'Ordering':
+        def __call__(self, column: typing.Union[Operable, 'Ordering']) -> 'Ordering':
             if isinstance(column, Ordering):
                 column = column.column
             return Ordering(column, self)
 
-    def __new__(cls, column: Element,
+    def __new__(cls, column: Operable,
                 direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
-        return super().__new__(cls, Element.ensure_is(column),
+        return super().__new__(cls, Operable.ensure_is(column),
                                cls.Direction(direction) if direction else cls.Direction.ASCENDING)
 
     def __repr__(self):
         return f'{repr(self.column)}{repr(self.direction)}'
 
     @classmethod
-    def make(cls, specs: typing.Sequence[typing.Union[Element, typing.Union[
-        'Ordering.Direction', str], typing.Tuple[Element, typing.Union[
+    def make(cls, specs: typing.Sequence[typing.Union[Operable, typing.Union[
+        'Ordering.Direction', str], typing.Tuple[Operable, typing.Union[
             'Ordering.Direction', str]]]]) -> typing.Iterable['Ordering']:
         """Helper to generate orderings from given columns and directions.
 
@@ -372,14 +372,14 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
 class Aliased(Column):
     """Aliased column representation.
     """
-    element: Element = property(operator.itemgetter(0))
+    operable: Operable = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
 
     def __new__(cls, column: Column, alias: str):
-        return super().__new__(cls, [column.element, alias])
+        return super().__new__(cls, [column.operable, alias])
 
     def __repr__(self):
-        return f'{self.name}=[{repr(self.element)}]'
+        return f'{self.name}=[{repr(self.operable)}]'
 
     @property
     def kind(self) -> kindmod.Any:
@@ -387,7 +387,7 @@ class Aliased(Column):
 
         Returns: Inner column type.
         """
-        return self.element.kind
+        return self.operable.kind
 
     def accept(self, visitor: vismod.Series) -> None:
         """Visitor acceptor.
@@ -396,10 +396,10 @@ class Aliased(Column):
             visitor: Visitor instance.
         """
         with visitor.visit_aliased(self):
-            self.element.accept(visitor)
+            self.operable.accept(visitor)
 
 
-class Literal(Element):
+class Literal(Operable):
     """Literal value.
     """
     value: typing.Any = property(operator.itemgetter(0))
@@ -429,7 +429,7 @@ class Literal(Element):
             pass
 
 
-class Field(Element):
+class Field(Operable):
     """Named column of particular source. Most notably this represents the actual schema fields.
     """
     source: 'framod.Source' = property(operator.itemgetter(0))
@@ -455,10 +455,10 @@ class Field(Element):
             self.source.accept(visitor)
 
 
-class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
+class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
-    def __new__(cls, *terms: Element):
+    def __new__(cls, *terms: Operable):
         return super().__new__(cls, terms)
 
     @property
@@ -472,21 +472,21 @@ class Expression(Element, metaclass=abc.ABCMeta):  # pylint: disable=abstract-me
     def accept(self, visitor: vismod.Series) -> None:
         with visitor.visit_expression(self):
             for term in self:
-                if isinstance(term, Element):
+                if isinstance(term, Operable):
                     term.accept(visitor)
 
 
 class Univariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for functions/operators of just one argument/operand.
     """
-    def __new__(cls, arg: Element):
+    def __new__(cls, arg: Operable):
         return super().__new__(cls, arg)
 
 
 class Bivariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for functions/operators of two arguments/operands.
     """
-    def __new__(cls, arg1: Element, arg2: Element):
+    def __new__(cls, arg1: Operable, arg2: Operable):
         return super().__new__(cls, arg1, arg2)
 
 
@@ -530,12 +530,20 @@ class Logical:
     kind = kindmod.Boolean()
 
     @classmethod
-    def ensure_is(cls, column: Element) -> Element:
+    def ensure_is(cls, column: Operable) -> Operable:
         """Ensure given expression is a logical one.
         """
         if not isinstance(column.kind, cls.kind.__class__):
             raise error.Syntax(f'{column.kind} not a valid {cls.kind}')
         return column
+
+    @property
+    def predicates(self) -> typing.FrozenSet['Logical']:
+        """Get subset of primitive predicates - logical expressions involving just a single Field.
+
+        Returns: Set of predicates involved in this expression.
+        """
+        return {c for c in self.dissect(self) if len(Field.dissect(c)) == 1}  # pylint: disable=no-member
 
 
 class LessThan(Logical, Infix):
@@ -665,7 +673,7 @@ class Window(Multirow):
     """Window type column representation.
     """
     function: 'Window.Function' = property(operator.itemgetter(0))
-    partition: typing.Tuple[Element] = property(operator.itemgetter(1))
+    partition: typing.Tuple[Operable] = property(operator.itemgetter(1))
     ordering: typing.Tuple[Ordering] = property(operator.itemgetter(2))
     frame: typing.Optional['Window.Frame'] = property(operator.itemgetter(3))
 
@@ -684,8 +692,8 @@ class Window(Multirow):
         """Window function representation.
         """
 
-        def over(self, partition: typing.Sequence[Element], ordering: typing.Optional[typing.Sequence[typing.Union[
-            Element, typing.Union['Ordering.Direction', str], typing.Tuple[Element, typing.Union[
+        def over(self, partition: typing.Sequence[Operable], ordering: typing.Optional[typing.Sequence[typing.Union[
+            Operable, typing.Union['Ordering.Direction', str], typing.Tuple[Operable, typing.Union[
                 'Ordering.Direction', str]]]]] = None, frame: typing.Optional = None) -> 'Window':
             """Create a window using this function.
 
@@ -699,8 +707,8 @@ class Window(Multirow):
             return Window(self, partition, ordering, frame)
 
     def __new__(cls, function: 'Window.Function', partition: typing.Sequence[Column], ordering: typing.Optional[
-        typing.Sequence[typing.Union[Element, typing.Union['Ordering.Direction', str], typing.Tuple[
-            Element, typing.Union['Ordering.Direction', str]]]]] = None, frame: typing.Optional = None):
+        typing.Sequence[typing.Union[Operable, typing.Union['Ordering.Direction', str], typing.Tuple[
+            Operable, typing.Union['Ordering.Direction', str]]]]] = None, frame: typing.Optional = None):
         return super().__new__(cls, function, tuple(partition), Ordering.make(ordering or []), frame)
 
     @property

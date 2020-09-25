@@ -135,7 +135,7 @@ class Join(Source):
                 raise error.Syntax('Illegal use of condition for cross-join')
             if not series.Field.dissect(condition).issubset(series.Field.dissect(*left.columns, *right.columns)):
                 raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
-            condition = series.Multirow.ensure_notin(series.Logical.ensure_is(series.Element.ensure_is(condition)))
+            condition = series.Multirow.ensure_notin(series.Logical.ensure_is(series.Operable.ensure_is(condition)))
         return super().__new__(cls, [left, right, condition, kind])
 
     def __repr__(self):
@@ -247,14 +247,14 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.join(other, condition, kind)
 
-    def groupby(self, *columns: series.Element) -> 'Query':
+    def groupby(self, *columns: series.Operable) -> 'Query':
         """Aggregating spec.
         """
         return self.query.groupby(*columns)
 
-    def orderby(self, *columns: typing.Union[series.Element, typing.Union[
+    def orderby(self, *columns: typing.Union[series.Operable, typing.Union[
             series.Ordering.Direction, str], typing.Tuple[
-            series.Element, typing.Union[series.Ordering.Direction, str]]]) -> 'Query':
+            series.Operable, typing.Union[series.Ordering.Direction, str]]]) -> 'Query':
         """series.Ordering spec.
         """
         return self.query.orderby(*columns)
@@ -418,7 +418,7 @@ class Query(Queryable):
     source: Source = property(operator.itemgetter(0))
     selection: typing.Tuple[series.Column] = property(operator.itemgetter(1))
     prefilter: typing.Optional[series.Expression] = property(operator.itemgetter(2))
-    grouping: typing.Tuple[series.Element] = property(operator.itemgetter(3))
+    grouping: typing.Tuple[series.Operable] = property(operator.itemgetter(3))
     postfilter: typing.Optional[series.Expression] = property(operator.itemgetter(4))
     ordering: typing.Tuple[series.Ordering] = property(operator.itemgetter(5))
     rows: typing.Optional[Rows] = property(operator.itemgetter(6))
@@ -426,11 +426,11 @@ class Query(Queryable):
     def __new__(cls, source: Source,
                 selection: typing.Optional[typing.Iterable[series.Column]] = None,
                 prefilter: typing.Optional[series.Expression] = None,
-                grouping: typing.Optional[typing.Iterable[series.Element]] = None,
+                grouping: typing.Optional[typing.Iterable[series.Operable]] = None,
                 postfilter: typing.Optional[series.Expression] = None,
-                ordering: typing.Optional[typing.Sequence[typing.Union[series.Element,
+                ordering: typing.Optional[typing.Sequence[typing.Union[series.Operable,
                                                                        typing.Union[series.Ordering.Direction, str],
-                                                                       typing.Tuple[series.Element, typing.Union[
+                                                                       typing.Tuple[series.Operable, typing.Union[
                                                                            series.Ordering.Direction, str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
 
@@ -449,14 +449,14 @@ class Query(Queryable):
         superset = series.Field.dissect(*source.columns)
         if prefilter is not None:
             prefilter = series.Multirow.ensure_notin(series.Logical.ensure_is(
-                series.Element.ensure_is(*ensure_subset(prefilter))))
+                series.Operable.ensure_is(*ensure_subset(prefilter))))
         if grouping:
-            grouping = [series.Multirow.ensure_notin(series.Element.ensure_is(g)) for g in ensure_subset(*grouping)]
-            for aggregate in {c.element for c in selection or source.columns}.difference(grouping):
+            grouping = [series.Multirow.ensure_notin(series.Operable.ensure_is(g)) for g in ensure_subset(*grouping)]
+            for aggregate in {c.operable for c in selection or source.columns}.difference(grouping):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
             postfilter = series.Window.ensure_notin(series.Logical.ensure_is(
-                series.Element.ensure_is(*ensure_subset(postfilter))))
+                series.Operable.ensure_is(*ensure_subset(postfilter))))
         ordering = tuple(series.Ordering.make(ordering or []))
         ensure_subset(*(o.column for o in ordering))
         return super().__new__(cls, [source, tuple(ensure_subset(*(selection or []))), prefilter, tuple(grouping or []),
@@ -520,11 +520,12 @@ class Query(Queryable):
         return Query(Join(self.source, other, condition, kind), self.selection, self.prefilter, self.grouping,
                      self.postfilter, self.ordering, self.rows)
 
-    def groupby(self, *columns: series.Element) -> 'Query':
+    def groupby(self, *columns: series.Operable) -> 'Query':
         return Query(self.source, self.selection, self.prefilter, columns, self.postfilter, self.ordering, self.rows)
 
-    def orderby(self, *columns: typing.Union[series.Element, typing.Union[series.Ordering.Direction, str], typing.Tuple[
-            series.Element, typing.Union[series.Ordering.Direction, str]]]) -> 'Query':
+    def orderby(self, *columns: typing.Union[series.Operable, typing.Union[
+            series.Ordering.Direction, str], typing.Tuple[series.Operable, typing.Union[
+            series.Ordering.Direction, str]]]) -> 'Query':
         return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, columns, self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':

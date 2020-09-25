@@ -42,7 +42,7 @@ class Statement(typing.NamedTuple):
         """Statement bound with particular lower/upper parameters.
         """
         query: frame.Query
-        ordinal: typing.Optional[series.Element]
+        ordinal: typing.Optional[series.Operable]
 
         def __call__(self, lower: typing.Optional[kindmod.Native] = None,
                      upper: typing.Optional[kindmod.Native] = None) -> frame.Query:
@@ -57,7 +57,7 @@ class Statement(typing.NamedTuple):
             return query
 
     @classmethod
-    def prepare(cls, query: frame.Query, ordinal: typing.Optional[series.Element],
+    def prepare(cls, query: frame.Query, ordinal: typing.Optional[series.Operable],
                 lower: typing.Optional[kindmod.Native] = None,
                 upper: typing.Optional[kindmod.Native] = None) -> 'Statement':
         """Bind the particular lower/upper parameters with this prepared statement.
