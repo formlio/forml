@@ -19,6 +19,7 @@
 ETL DSL parser.
 """
 import abc
+import collections
 import contextlib
 import functools
 import logging
@@ -120,6 +121,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         super().__init__()
         self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
         self._series: Series = series
+        self._explicit: typing.Dict[frame.Table, typing.Set[sermod.Field]] = collections.defaultdict(set)
 
     @functools.lru_cache()
     def generate_column(self, column: sermod.Column) -> Column:
@@ -146,6 +148,18 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
             return self._sources[source]
         except KeyError as err:
             raise error.Mapping(f'Unknown mapping for source {source}') from err
+
+    def generate_table(self, table: Source,  # pylint: disable=no-self-use
+                       requirements: typing.Sequence[sermod.Field]) -> Source:  # pylint: disable=unused-argument
+        """Generate a target code for a table instance given its actual field requirements.
+
+        Args:
+            table: Table (already in target code based on the provided mapping) to be generated.
+            requirements: List of fields of this table actually used throughout the query.
+
+        Returns: Table target code potentially optimized based on field requirements.
+        """
+        return table
 
     @abc.abstractmethod
     def generate_join(self, left: Source, right: Source, condition: typing.Optional[Column],
@@ -203,14 +217,25 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         Returns: Instance reference in target code.
         """
 
+    def _register(self, explicit: typing.Sequence[sermod.Field]) -> None:
+        """Helper for registering explicit fields.
+
+        Args:
+            explicit: Sequence of explicit fields.
+        """
+        for field in explicit:
+            self._explicit[field.source].add(field)
+
     @contextlib.contextmanager
     def visit_table(self, source: frame.Table) -> typing.Iterable[None]:
+        self._register(source.explicit)  # table has no explicits though
         yield
-        self.push(self.resolve_source(source))
+        self.push(self.generate_table(self.resolve_source(source), frozenset(self._explicit[source])))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_join(self, source: frame.Join) -> typing.Iterable[None]:
+        self._register(source.explicit)
         yield
         right = self.pop()
         left = self.pop()
@@ -220,6 +245,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_set(self, source: frame.Set) -> typing.Iterable[None]:
+        self._register(source.explicit)
         yield
         right = self.pop()
         left = self.pop()
@@ -228,6 +254,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_query(self, source: frame.Query) -> typing.Iterable[None]:
+        self._register(source.explicit)
         yield
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
@@ -238,6 +265,7 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
 
     @contextlib.contextmanager
     def visit_reference(self, source: frame.Reference) -> typing.Iterable[None]:
+        self._register(source.explicit)
         yield
         self.push(self.generate_reference(self.pop(), source.name))
 
