@@ -56,7 +56,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def columns(self) -> typing.Sequence[series.Column]:
+    def columns(self) -> typing.Sequence['series.Column']:
         """Get the list of columns supplied by this source.
 
         Returns: Sequence of supplied columns.
@@ -64,7 +64,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def explicit(self) -> typing.AbstractSet[series.Field]:
+    def explicit(self) -> typing.AbstractSet['series.Field']:
         """Set of schema fields explicitly referred within this source. In a way contrary to the .columns, this is
         a demand side of the given source.
 
@@ -81,7 +81,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         return Table.Schema(f'{self.__class__.__name__}Schema', (etl.Schema.schema, ), {
             (c.name or f'_{i}'): etl.Field(c.kind, c.name) for i, c in enumerate(self.columns)})
 
-    def __getattr__(self, name: str) -> series.Column:
+    def __getattr__(self, name: str) -> 'series.Column':
         try:
             return self[name]
         except KeyError as err:
@@ -124,10 +124,10 @@ class Join(Source):
 
     left: 'Tangible' = property(operator.itemgetter(0))
     right: 'Tangible' = property(operator.itemgetter(1))
-    condition: typing.Optional[series.Expression] = property(operator.itemgetter(2))
+    condition: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
     kind: 'Join.Kind' = property(operator.itemgetter(3))
 
-    def __new__(cls, left: 'Tangible', right: 'Tangible', condition: typing.Optional[series.Expression] = None,
+    def __new__(cls, left: 'Tangible', right: 'Tangible', condition: typing.Optional['series.Expression'] = None,
                 kind: typing.Optional[typing.Union['Join.Kind', str]] = None):
         kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
         if condition is not None:
@@ -143,12 +143,12 @@ class Join(Source):
 
     @property
     @functools.lru_cache()
-    def columns(self) -> typing.Sequence[series.Column]:
+    def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
     @property
     @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet[series.Field]:
+    def explicit(self) -> typing.AbstractSet['series.Field']:
         fields = self.left.explicit.union(self.right.explicit)
         if self.condition is not None:
             fields |= series.Field.dissect(self.condition)
@@ -183,12 +183,12 @@ class Set(Source):
 
     @property
     @functools.lru_cache()
-    def columns(self) -> typing.Sequence[series.Column]:
+    def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
     @property
     @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet[series.Field]:
+    def explicit(self) -> typing.AbstractSet['series.Field']:
         return frozenset(self.left.explicit.union(self.right.explicit))
 
     def accept(self, visitor: visit.Frame) -> None:
@@ -226,35 +226,35 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self
 
-    def select(self, *columns: series.Column) -> 'Query':
+    def select(self, *columns: 'series.Column') -> 'Query':
         """Specify the output columns to be provided.
         """
         return self.query.select(*columns)
 
-    def where(self, condition: series.Expression) -> 'Query':
+    def where(self, condition: 'series.Expression') -> 'Query':
         """Add a row pre-filtering condition.
         """
         return self.query.where(condition)
 
-    def having(self, condition: series.Expression) -> 'Query':
+    def having(self, condition: 'series.Expression') -> 'Query':
         """Add a row post-filtering condition.
         """
         return self.query.having(condition)
 
-    def join(self, other: 'Tangible', condition: typing.Optional[series.Expression] = None,
+    def join(self, other: 'Tangible', condition: typing.Optional['series.Expression'] = None,
              kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
         """Join with other tangible.
         """
         return self.query.join(other, condition, kind)
 
-    def groupby(self, *columns: series.Operable) -> 'Query':
+    def groupby(self, *columns: 'series.Operable') -> 'Query':
         """Aggregating spec.
         """
         return self.query.groupby(*columns)
 
-    def orderby(self, *columns: typing.Union[series.Operable, typing.Union[
-            series.Ordering.Direction, str], typing.Tuple[
-            series.Operable, typing.Union[series.Ordering.Direction, str]]]) -> 'Query':
+    def orderby(self, *columns: typing.Union['series.Operable', typing.Union[
+            'series.Ordering.Direction', str], typing.Tuple[
+            'series.Operable', typing.Union['series.Ordering.Direction', str]]]) -> 'Query':
         """series.Ordering spec.
         """
         return self.query.orderby(*columns)
@@ -283,11 +283,11 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 class Tangible(Queryable, metaclass=abc.ABCMeta):
     """Tangible is a queryable that can be referenced by some identifier (rather than just a statement itself).
 
-    It's columns are represented using series.Field.
+    It's columns are represented using series.Element.
     """
     @property
     @abc.abstractmethod
-    def columns(self) -> typing.Sequence[series.Element]:
+    def columns(self) -> typing.Sequence['series.Element']:
         """Tangible columns are instances of series.Element.
 
         Returns: Sequence of series.Field instances.
@@ -311,11 +311,11 @@ class Reference(Tangible):
 
     @property
     @functools.lru_cache()
-    def columns(self) -> typing.Sequence[series.Element]:
+    def columns(self) -> typing.Sequence['series.Element']:
         return tuple(series.Element(self, c.name) for c in self.instance.columns)
 
     @property
-    def explicit(self) -> typing.AbstractSet[series.Field]:
+    def explicit(self) -> typing.AbstractSet['series.Field']:
         return self.instance.explicit
 
     @property
@@ -399,12 +399,12 @@ class Table(Tangible):
 
     @property
     @functools.lru_cache()
-    def columns(self) -> typing.Sequence[series.Field]:
+    def columns(self) -> typing.Sequence['series.Field']:
         return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
 
     @property
     @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet[series.Field]:
+    def explicit(self) -> typing.AbstractSet['series.Field']:
         return frozenset()  # no fields are explicit on a bare table
 
     def accept(self, visitor: visit.Frame) -> None:
@@ -416,25 +416,25 @@ class Query(Queryable):
     """Generic source descriptor.
     """
     source: Source = property(operator.itemgetter(0))
-    selection: typing.Tuple[series.Column] = property(operator.itemgetter(1))
-    prefilter: typing.Optional[series.Expression] = property(operator.itemgetter(2))
-    grouping: typing.Tuple[series.Operable] = property(operator.itemgetter(3))
-    postfilter: typing.Optional[series.Expression] = property(operator.itemgetter(4))
-    ordering: typing.Tuple[series.Ordering] = property(operator.itemgetter(5))
+    selection: typing.Tuple['series.Column'] = property(operator.itemgetter(1))
+    prefilter: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
+    grouping: typing.Tuple['series.Operable'] = property(operator.itemgetter(3))
+    postfilter: typing.Optional['series.Expression'] = property(operator.itemgetter(4))
+    ordering: typing.Tuple['series.Ordering'] = property(operator.itemgetter(5))
     rows: typing.Optional[Rows] = property(operator.itemgetter(6))
 
     def __new__(cls, source: Source,
-                selection: typing.Optional[typing.Iterable[series.Column]] = None,
-                prefilter: typing.Optional[series.Expression] = None,
-                grouping: typing.Optional[typing.Iterable[series.Operable]] = None,
-                postfilter: typing.Optional[series.Expression] = None,
-                ordering: typing.Optional[typing.Sequence[typing.Union[series.Operable,
-                                                                       typing.Union[series.Ordering.Direction, str],
-                                                                       typing.Tuple[series.Operable, typing.Union[
-                                                                           series.Ordering.Direction, str]]]]] = None,
+                selection: typing.Optional[typing.Iterable['series.Column']] = None,
+                prefilter: typing.Optional['series.Expression'] = None,
+                grouping: typing.Optional[typing.Iterable['series.Operable']] = None,
+                postfilter: typing.Optional['series.Expression'] = None,
+                ordering: typing.Optional[typing.Sequence[typing.Union['series.Operable',
+                                                                       typing.Union['series.Ordering.Direction', str],
+                                                                       typing.Tuple['series.Operable', typing.Union[
+                                                                           'series.Ordering.Direction', str]]]]] = None,
                 rows: typing.Optional[Rows] = None):
 
-        def ensure_subset(*columns: series.Column) -> typing.Sequence[series.Column]:
+        def ensure_subset(*columns: 'series.Column') -> typing.Sequence['series.Column']:
             """Ensure the provided columns is a valid subset of the available source columns.
 
             Args:
@@ -484,12 +484,12 @@ class Query(Queryable):
 
     @property
     @functools.lru_cache()
-    def columns(self) -> typing.Sequence[series.Column]:
+    def columns(self) -> typing.Sequence['series.Column']:
         return self.selection if self.selection else self.source.columns
 
     @property
     @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet[series.Field]:
+    def explicit(self) -> typing.AbstractSet['series.Field']:
         columns = set(self.columns).union(self.grouping).union(o.column for o in self.ordering)
         if self.prefilter is not None:
             columns.add(self.prefilter)
@@ -501,30 +501,30 @@ class Query(Queryable):
         with visitor.visit_query(self):
             self.source.accept(visitor)
 
-    def select(self, *columns: series.Column) -> 'Query':
+    def select(self, *columns: 'series.Column') -> 'Query':
         return Query(self.source, columns, self.prefilter, self.grouping, self.postfilter, self.ordering, self.rows)
 
-    def where(self, condition: series.Expression) -> 'Query':
+    def where(self, condition: 'series.Expression') -> 'Query':
         if self.prefilter is not None:
             condition &= self.prefilter
         return Query(self.source, self.selection, condition, self.grouping, self.postfilter, self.ordering, self.rows)
 
-    def having(self, condition: series.Expression) -> 'Query':
+    def having(self, condition: 'series.Expression') -> 'Query':
         if self.postfilter is not None:
             condition &= self.postfilter
         return Query(self.source, self.selection, self.prefilter, self.grouping, condition, self.ordering, self.rows)
 
-    def join(self, other: Queryable, condition: typing.Optional[series.Expression] = None,
+    def join(self, other: Queryable, condition: typing.Optional['series.Expression'] = None,
              kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
         return Query(Join(self.source, other, condition, kind), self.selection, self.prefilter, self.grouping,
                      self.postfilter, self.ordering, self.rows)
 
-    def groupby(self, *columns: series.Operable) -> 'Query':
+    def groupby(self, *columns: 'series.Operable') -> 'Query':
         return Query(self.source, self.selection, self.prefilter, columns, self.postfilter, self.ordering, self.rows)
 
-    def orderby(self, *columns: typing.Union[series.Operable, typing.Union[
-            series.Ordering.Direction, str], typing.Tuple[series.Operable, typing.Union[
-            series.Ordering.Direction, str]]]) -> 'Query':
+    def orderby(self, *columns: typing.Union['series.Operable', typing.Union[
+            'series.Ordering.Direction', str], typing.Tuple['series.Operable', typing.Union[
+            'series.Ordering.Direction', str]]]) -> 'Query':
         return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, columns, self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':

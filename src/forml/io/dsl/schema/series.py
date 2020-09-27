@@ -30,10 +30,8 @@ import typing
 from collections import abc as colabc
 
 from forml.io.dsl import error
+from forml.io.dsl.schema import frame as framod
 from forml.io.dsl.schema import kind as kindmod, visit as vismod
-
-if typing.TYPE_CHECKING:
-    from forml.io.dsl.schema import frame as framod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -432,11 +430,13 @@ class Literal(Operable):
 class Element(Operable):
     """Named column of particular source.
     """
-    source: 'framod.Source' = property(operator.itemgetter(0))
+    source: 'framod.Tangible' = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
 
-    def __new__(cls, table: 'framod.Tangible', name: str):
-        return super().__new__(cls, [table, name])
+    def __new__(cls, source: 'framod.Tangible', name: str):
+        if isinstance(source, framod.Table) and not issubclass(cls, Field):
+            return Field(source, name)
+        return super().__new__(cls, [source, name])
 
     def __repr__(self):
         return f'{repr(self.source)}.{self.name}'
@@ -459,6 +459,11 @@ class Field(Element):
     """Special type of element is the schema field type.
     """
     source: 'framod.Table' = property(operator.itemgetter(0))
+
+    def __new__(cls, table: 'framod.Table', name: str):
+        if not isinstance(table, framod.Table):
+            raise ValueError('Invalid field source')
+        return super().__new__(cls, table, name)
 
 
 class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
