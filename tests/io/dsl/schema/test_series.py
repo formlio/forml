@@ -161,6 +161,17 @@ class TestElement(Operable):
     @staticmethod
     @pytest.fixture(scope='session')
     def column(student: frame.Table) -> series.Element:
+        """Element fixture.
+        """
+        return student.reference().surname
+
+
+class TestField(TestElement):
+    """Field unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def column(student: frame.Table) -> series.Field:
         """Field fixture.
         """
         return student.surname
