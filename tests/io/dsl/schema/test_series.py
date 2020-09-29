@@ -180,3 +180,29 @@ class TestField(TestElement):
         """Test the column table reference.
         """
         assert column.source == student
+
+
+class TestLogical:
+    """Logical columns tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session', params=(series.LessThan, series.LessEqual, series.GreaterThan, series.GreaterEqual,
+                                             series.Equal, series.NotEqual, series.And, series.Or, series.IsNull,
+                                             series.NotNull, series.Not))
+    def column(request, student: frame.Table) -> series.Logical:
+        """Logical fixture.
+        """
+        if issubclass(request.param, series.Infix):
+            return request.param(student, 1)
+        if issubclass(request.param, (series.Postfix, series.Prefix)):
+            return request.param(student)
+        raise AssertionError(f'Unexpected operator type: {request.param}')
+
+    def test_predicate(self, column: series.Expression):
+        """Test predicate features.
+        """
+        series.Logical.ensure_is(column)
+        predicates = column.predicates
+        for expression in predicates:
+            series.Logical.ensure_is(expression)
+        assert (column | column).predicates == predicates

@@ -549,12 +549,15 @@ class Logical:
         return column
 
     @property
-    def predicates(self) -> typing.FrozenSet['Logical']:
+    def predicates(self) -> typing.Set['Logical']:
         """Get subset of primitive predicates - logical expressions involving just a single Field.
 
         Returns: Set of predicates involved in this expression.
         """
-        return {c for c in self.dissect(self) if len(Field.dissect(c)) == 1}  # pylint: disable=no-member
+        # pylint: disable=no-member
+        candidates = {e for e in self.dissect(self) if len(Field.dissect(e)) == 1}
+        inners = {b for c in candidates for b in self.dissect(c) if b is not c}
+        return candidates - inners
 
 
 class LessThan(Logical, Infix):
