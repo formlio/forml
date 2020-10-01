@@ -17,11 +17,13 @@
 """
 Schema visitor APIs.
 """
-
+import contextlib
 import typing
 
 if typing.TYPE_CHECKING:
     from forml.io.dsl.schema import frame, series
+
+# pylint: disable=unused-argument, no-self-use
 
 
 class Frame:
@@ -33,7 +35,7 @@ class Frame:
         Args:
             source: Source instance to be visited.
         """
-        raise NotImplementedError(f'Unexpected call to {self.__class__.__name__}.visit_source')
+        return contextlib.nullcontext()
 
     def visit_table(self, source: 'frame.Table') -> typing.ContextManager[None]:
         """Table hook.
@@ -41,7 +43,7 @@ class Frame:
         Args:
             source: Source instance to be visited.
         """
-        return self.visit_source(source)
+        return contextlib.nullcontext()
 
     def visit_join(self, source: 'frame.Join') -> typing.ContextManager[None]:
         """Join hook.
@@ -49,7 +51,7 @@ class Frame:
         Args:
             source: Instance to be visited.
         """
-        return self.visit_source(source)
+        return contextlib.nullcontext()
 
     def visit_set(self, source: 'frame.Set') -> typing.ContextManager[None]:
         """Set hook.
@@ -57,7 +59,7 @@ class Frame:
         Args:
             source: Instance to be visited.
         """
-        return self.visit_source(source)
+        return contextlib.nullcontext()
 
     def visit_query(self, source: 'frame.Query') -> typing.ContextManager[None]:
         """Query hook.
@@ -65,7 +67,7 @@ class Frame:
         Args:
             source: Instance to be visited.
         """
-        return self.visit_source(source)
+        return contextlib.nullcontext()
 
     def visit_reference(self, source: 'frame.Reference') -> typing.ContextManager[None]:
         """Reference hook.
@@ -73,7 +75,7 @@ class Frame:
         Args:
             source: Instance to be visited.
         """
-        return self.visit_source(source)
+        return contextlib.nullcontext()
 
 
 class Series(Frame):
@@ -85,7 +87,7 @@ class Series(Frame):
         Args:
             column: Column instance to be visited.
         """
-        raise NotImplementedError(f'Unexpected call to {self.__class__.__name__}.visit_column')
+        return contextlib.nullcontext()
 
     def visit_aliased(self, column: 'series.Aliased') -> typing.ContextManager[None]:
         """Generic expression hook.
@@ -93,7 +95,7 @@ class Series(Frame):
         Args:
             column: Aliased column instance to be visited.
         """
-        return self.visit_column(column)
+        return contextlib.nullcontext()
 
     def visit_element(self, column: 'series.Element') -> typing.ContextManager[None]:
         """Generic expression hook.
@@ -109,7 +111,7 @@ class Series(Frame):
         Args:
             column: Literal instance to be visited.
         """
-        return self.visit_column(column)
+        return contextlib.nullcontext()
 
     def visit_expression(self, column: 'series.Expression') -> typing.ContextManager[None]:
         """Generic expression hook.
@@ -117,7 +119,7 @@ class Series(Frame):
         Args:
             column: Expression instance to be visited.
         """
-        return self.visit_column(column)
+        return contextlib.nullcontext()
 
     def visit_window(self, column: 'series.Window') -> typing.ContextManager[None]:
         """Generic window hook.
@@ -125,4 +127,4 @@ class Series(Frame):
         Args:
             column: Window instance to be visited.
         """
-        return self.visit_column(column)
+        return contextlib.nullcontext()

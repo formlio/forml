@@ -26,3 +26,5 @@ from forml.io.dsl.function.aggregate import (  # noqa: F401
     Avg, Count, Min, Max, Sum)
 from forml.io.dsl.function.conversion import (  # noqa: F401
     Cast)
+from forml.io.dsl.function.datetime import (  # noqa: F401
+    Year)
