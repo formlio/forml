@@ -48,7 +48,7 @@ class Parser(metaclass=abc.ABCMeta):
 
             with parser as visitor:
                 self.query.accept(visitor)
-                result = visitor.pop()
+                result = visitor.fetch()
             assert strip(result) == strip(self.expected)
 
     @staticmethod
@@ -100,10 +100,10 @@ class TestLiteral(Parser):
                                              Parser.Case('a', "'a'"),
                                              Parser.Case(datetime.date(2020, 7, 9), "DATE '2020-07-09'"),
                                              Parser.Case(datetime.datetime(2020, 7, 9, 7, 38, 21, 123456),
-                                                         "TIMESTAMP '2020-07-09 07:38:21.123456'")))
+                                                         "TIMESTAMP '2020-07-09 07:38:21'")))
     def case(cls, request, student: frame.Table, school: frame.Table) -> Parser.Case:
-        query = student.select(student.score + request.param.query)
-        expected = f'SELECT edu.student.score + {request.param.expected} FROM edu.student'
+        query = student.select(request.param.query)
+        expected = f'SELECT {request.param.expected} FROM edu.student'
         return cls.Case(query, expected)
 
 
@@ -111,15 +111,15 @@ class TestExpression(Parser):
     """SQL parser expression unit test.
     """
     @classmethod
-    @pytest.fixture(scope='session', params=(Parser.Case(function.Cast(series.Literal(1), kind.String()) + 1,
-                                                         'cast(1 AS VARCHAR) + 1'),
+    @pytest.fixture(scope='session', params=(Parser.Case(function.Cast(series.Literal('1'), kind.Integer()) + 1,
+                                                         "cast('1' AS BIGINT) + 1"),
                                              Parser.Case(1 + series.Literal(1) * 2, '1 + (1 * 2)'),
-                                             Parser.Case(series.Literal(1) + datetime.datetime(2020, 7, 9, 16, 58, 32),
-                                                         "1 + TIMESTAMP '2020-07-09 16:58:32.000000'"),
-                                             Parser.Case(series.Literal(1) + datetime.date(2020, 7, 9),
-                                                         "1 + DATE '2020-07-09'"),
-                                             Parser.Case(2 * (datetime.date(2020, 7, 9) + series.Literal(1)),
-                                                         "2 * (DATE '2020-07-09' + 1)")
+                                             Parser.Case(function.Year(datetime.datetime(2020, 7, 9, 16, 58, 32)),
+                                                         "year(TIMESTAMP '2020-07-09 16:58:32')"),
+                                             Parser.Case(function.Year(datetime.date(2020, 7, 9)),
+                                                         "year(DATE '2020-07-09')"),
+                                             Parser.Case(2 * (function.Year(datetime.date(2020, 7, 9)) +
+                                                              series.Literal(1)), "2 * (year(DATE '2020-07-09') + 1)")
                                              ))
     def case(cls, request, student: frame.Table, school: frame.Table) -> Parser.Case:
         query = student.select(request.param.query)

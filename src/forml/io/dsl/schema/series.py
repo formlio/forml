@@ -25,7 +25,8 @@ import enum
 import functools
 import itertools
 import logging
-import operator
+import operator as opermod
+import types
 import typing
 from collections import abc as colabc
 
@@ -56,26 +57,26 @@ class Column(tuple, metaclass=abc.ABCMeta):
     class Dissect(vismod.Series):
         """Visitor extracting column instances of given type(s).
         """
-        def __init__(self, *types: typing.Type['Column']):
-            self._types: typing.FrozenSet[typing.Type['Column']] = frozenset(types)
+        def __init__(self, *types: typing.Type):
+            self._types: typing.FrozenSet[typing.Type] = frozenset(types)
             self._match: typing.Set['Column'] = set()
             self._seen: typing.Set['Column'] = set()
 
-        @property
-        def terms(self) -> typing.FrozenSet['Column']:
-            """Extracted columns.
+        def __call__(self, *column: 'Column') -> typing.FrozenSet['Column']:
+            """Apply this dissector to the given columns.
 
-            Returns: Set of extracted columns.
+            Returns: Set of instances matching the registered types used in given column(s).
             """
+            for col in column:
+                col.accept(self)
             return frozenset(self._match)
 
         @contextlib.contextmanager
         def visit_source(self, source: 'framod.Source') -> typing.Iterable[None]:
             yield
             for column in source.columns:
-                if column in self._seen:
-                    continue
-                column.accept(self)
+                if column not in self._seen:
+                    column.accept(self)
 
         @contextlib.contextmanager
         def visit_column(self, column: 'Column') -> typing.Iterable[None]:
@@ -128,10 +129,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
 
         Returns: Set of this type instances used in given column(s).
         """
-        visitor = cls.Dissect(cls)
-        for col in column:
-            col.accept(visitor)
-        return visitor.terms
+        return cls.Dissect(cls)(*column)
 
     @classmethod
     def ensure_is(cls, column: 'Column') -> 'Column':
@@ -370,8 +368,8 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
 class Aliased(Column):
     """Aliased column representation.
     """
-    operable: Operable = property(operator.itemgetter(0))
-    name: str = property(operator.itemgetter(1))
+    operable: Operable = property(opermod.itemgetter(0))
+    name: str = property(opermod.itemgetter(1))
 
     def __new__(cls, column: Column, alias: str):
         return super().__new__(cls, [column.operable, alias])
@@ -394,14 +392,15 @@ class Aliased(Column):
             visitor: Visitor instance.
         """
         with visitor.visit_aliased(self):
-            self.operable.accept(visitor)
+            with visitor.visit_column(self):
+                self.operable.accept(visitor)
 
 
 class Literal(Operable):
     """Literal value.
     """
-    value: typing.Any = property(operator.itemgetter(0))
-    kind: kindmod.Any = property(operator.itemgetter(1))
+    value: typing.Any = property(opermod.itemgetter(0))
+    kind: kindmod.Any = property(opermod.itemgetter(1))
 
     def __new__(cls, value: typing.Any):
         return super().__new__(cls, [value, kindmod.reflect(value)])
@@ -424,14 +423,15 @@ class Literal(Operable):
             visitor: Visitor instance.
         """
         with visitor.visit_literal(self):
-            pass
+            with visitor.visit_column(self):
+                pass
 
 
 class Element(Operable):
     """Named column of particular source.
     """
-    source: 'framod.Tangible' = property(operator.itemgetter(0))
-    name: str = property(operator.itemgetter(1))
+    source: 'framod.Tangible' = property(opermod.itemgetter(0))
+    name: str = property(opermod.itemgetter(1))
 
     def __new__(cls, source: 'framod.Tangible', name: str):
         if isinstance(source, framod.Table) and not issubclass(cls, Field):
@@ -452,13 +452,14 @@ class Element(Operable):
             visitor: Visitor instance.
         """
         with visitor.visit_element(self):
-            self.source.accept(visitor)
+            with visitor.visit_column(self):
+                self.source.accept(visitor)
 
 
 class Field(Element):
     """Special type of element is the schema field type.
     """
-    source: 'framod.Table' = property(operator.itemgetter(0))
+    source: 'framod.Table' = property(opermod.itemgetter(0))
 
     def __new__(cls, table: 'framod.Table', name: str):
         if not isinstance(table, framod.Table):
@@ -482,23 +483,24 @@ class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
 
     def accept(self, visitor: vismod.Series) -> None:
         with visitor.visit_expression(self):
-            for term in self:
-                if isinstance(term, Operable):
-                    term.accept(visitor)
+            with visitor.visit_column(self):
+                for term in self:
+                    if isinstance(term, Operable):
+                        term.accept(visitor)
 
 
 class Univariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for functions/operators of just one argument/operand.
     """
     def __new__(cls, arg: Operable):
-        return super().__new__(cls, arg)
+        return super().__new__(cls, Operable.ensure_is(arg))
 
 
 class Bivariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for functions/operators of two arguments/operands.
     """
     def __new__(cls, arg1: Operable, arg2: Operable):
-        return super().__new__(cls, arg1, arg2)
+        return super().__new__(cls, Operable.ensure_is(arg1), Operable.ensure_is(arg2))
 
 
 class Operator(metaclass=abc.ABCMeta):
@@ -517,74 +519,191 @@ class Operator(metaclass=abc.ABCMeta):
 class Infix(Operator, Bivariate, metaclass=abc.ABCMeta):
     """Base class for infix operator expressions.
     """
+    left: Operable = property(opermod.itemgetter(0))
+    right: Operable = property(opermod.itemgetter(1))
+
     def __repr__(self):
         return f'{repr(self[0])} {self.symbol} {repr(self[1])}'
-
-
-class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
-    """Base class for postfix operator expressions.
-    """
-    def __repr__(self):
-        return f'{repr(self[0])} {self.symbol}'
 
 
 class Prefix(Operator, Univariate, metaclass=abc.ABCMeta):
     """Base class for prefix operator expressions.
     """
+    operand: Operable = property(opermod.itemgetter(0))
+
     def __repr__(self):
         return f'{self.symbol} {repr(self[0])}'
 
 
-class Logical:
-    """Mixin for logical functions/operators.
+class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
+    """Base class for postfix operator expressions.
     """
+    operand: Operable = property(opermod.itemgetter(0))
+
+    def __new__(cls, arg: Operable):
+        return super().__new__(cls, Operable.ensure_is(arg))
+
+    def __repr__(self):
+        return f'{repr(self[0])} {self.symbol}'
+
+
+class Predicate(metaclass=abc.ABCMeta):
+    """Base class for Logical and Comparison operators.
+    """
+    class Primitive(typing.Mapping[framod.Table, 'Predicate']):
+        """Mapping of primitive predicates to their tables. Primitive is that predicate which is involving exactly one
+        and only table.
+        """
+        def __init__(self, *predicates: 'Predicate'):
+            items = {p: {f.source for f in Field.dissect(p)} for p in predicates}
+            if collections.Counter(len(s) == 1 for s in items.values())[True] != len(predicates):
+                raise ValueError('Repeated or non-primitive predicates')
+            self._items: typing.Mapping[framod.Table, Predicate] = types.MappingProxyType(
+                {s.pop(): p for p, s in items.items()})
+
+        @classmethod
+        def merge(cls, left: 'Predicate.Primitive', right: 'Predicate.Primitive',
+                  operator: typing.Callable[['Predicate', 'Predicate'], 'Predicate']) -> 'Predicate.Primitive':
+            """Merge the two primitive predicates.
+
+            Args:
+                left: Left primitive to be merged.
+                right: Right primitive to be merged.
+                operator: Operator to be used for combining individual predicates.
+
+            Returns: New Primitive instance with individual predicates combined.
+            """
+            return cls(*(operator(left[k], right[k]) if k in left and k in right else left[k] if k in left else right
+                         for k in left.keys() | right.keys()))
+
+        def __and__(self, other: 'Predicate.Primitive') -> 'Predicate.Primitive':
+            return self.merge(self, other, And)
+
+        def __or__(self, other: 'Predicate.Primitive') -> 'Predicate.Primitive':
+            return self.merge(self, other, Or)
+
+        def __getitem__(self, table: framod.Table) -> 'Predicate':
+            return self._items[table]
+
+        def __len__(self) -> int:
+            return len(self._items)
+
+        def __iter__(self) -> typing.Iterator[framod.Table]:
+            return iter(self._items)
+
     kind = kindmod.Boolean()
 
-    @classmethod
-    def ensure_is(cls, column: Operable) -> Operable:
-        """Ensure given expression is a logical one.
+    @property
+    @abc.abstractmethod
+    def predicates(self) -> 'Predicate.Primitive':
+        """Mapping of primitive source predicates - involving just a single Table.
+
+        Returns: Break down of primitives involved in this predicate.
         """
-        if not isinstance(column.kind, cls.kind.__class__):
-            raise error.Syntax(f'{column.kind} not a valid {cls.kind}')
+
+    @classmethod
+    def ensure_is(cls: typing.Type[Operable], column: Operable) -> Operable:
+        """Ensure given column is a predicate. Since this mixin class is supposed to be used as a first base class of
+        its column implementors, this will mask the Column.ensure_is API. Here we add special implementation depending
+        on whether it is used directly on the Predicate class or its bare mixin subclasses or the actual Column
+        implementation using this mixin.
+
+        Args:
+            column: Column instance to be checked for its compliance.
+
+        Returns: Column instance.
+        """
+        column = Operable.ensure_is(column)
+        if cls is Predicate:  # bare Predicate - accept anything of a boolean kind.
+            kindmod.Boolean.ensure(column.kind)
+        elif not issubclass(cls, Column):  # bare Predicate mixin subclasses
+            if not isinstance(column, cls):
+                raise error.Syntax(f'{column} not an instance of a {cls.__name__}')
+        else:  # defer to the column's .ensure_is implementation
+            column = next(b for b in cls.__bases__ if issubclass(b, Column)).ensure_is(column)
         return column
 
+
+class Logical(Predicate, metaclass=abc.ABCMeta):
+    """Mixin for logical operators.
+    """
+    def __init__(self, *operands: Operable):
+        for arg in operands:
+            Predicate.ensure_is(arg)
+
+
+class And(Logical, Infix):
+    """And operator.
+    """
+    symbol = 'AND'
+
     @property
-    def predicates(self) -> typing.Set['Logical']:
-        """Get subset of primitive predicates - logical expressions involving just a single Field.
-
-        Returns: Set of predicates involved in this expression.
-        """
-        # pylint: disable=no-member
-        candidates = {e for e in self.dissect(self) if len(Field.dissect(e)) == 1}
-        inners = {b for c in candidates for b in self.dissect(c) if b is not c}
-        return candidates - inners
+    @functools.lru_cache()
+    def predicates(self: 'And') -> 'Predicate.Primitive':
+        return self.left.predicates & self.right.predicates
 
 
-class LessThan(Logical, Infix):
+class Or(Logical, Infix):
+    """Or operator.
+    """
+    symbol = 'OR'
+
+    @property
+    @functools.lru_cache()
+    def predicates(self: 'Or') -> 'Predicate.Primitive':
+        return self.left.predicates | self.right.predicates
+
+
+class Not(Logical, Prefix):
+    """Not operator.
+    """
+    symbol = 'NOT'
+
+    @property
+    def predicates(self: 'Not') -> 'Predicate.Primitive':
+        return self.operand.predicates
+
+
+class Comparison(Predicate):
+    """Mixin for comparison operators.
+    """
+    def __init__(self, *operands: Operable):
+        operands = [Operable.ensure_is(o) for o in operands]
+        if not (all(kindmod.Numeric.match(o.kind) for o in operands) or
+                all(o.kind == operands[0].kind for o in operands)):
+            raise error.Syntax(f'Invalid operands for {self} comparison')
+
+    @property
+    @functools.lru_cache()
+    def predicates(self: 'Comparison') -> Predicate.Primitive:
+        return Predicate.Primitive(self) if len({f.source for f in Field.dissect(self)}) == 1 else Predicate.Primitive()
+
+
+class LessThan(Comparison, Infix):
     """Less-Than operator.
     """
     symbol = '<'
 
 
-class LessEqual(Logical, Infix):
+class LessEqual(Comparison, Infix):
     """Less-Equal operator.
     """
     symbol = '<='
 
 
-class GreaterThan(Logical, Infix):
+class GreaterThan(Comparison, Infix):
     """Greater-Than operator.
     """
     symbol = '>'
 
 
-class GreaterEqual(Logical, Infix):
+class GreaterEqual(Comparison, Infix):
     """Greater-Equal operator.
     """
     symbol = '>='
 
 
-class Equal(Logical, Infix):
+class Equal(Comparison, Infix):
     """Equal operator.
     """
     symbol = '=='
@@ -599,45 +718,32 @@ class Equal(Logical, Infix):
         return hash(self[0]) == hash(self[1])
 
 
-class NotEqual(Logical, Infix):
+class NotEqual(Comparison, Infix):
     """Not-Equal operator.
     """
     symbol = '!='
 
 
-class IsNull(Logical, Postfix):
+class IsNull(Comparison, Postfix):
     """Is-Null operator.
     """
     symbol = 'IS NULL'
 
 
-class NotNull(Logical, Postfix):
+class NotNull(Comparison, Postfix):
     """Not-Null operator.
     """
     symbol = 'NOT NULL'
 
 
-class And(Logical, Infix):
-    """And operator.
-    """
-    symbol = 'AND'
-
-
-class Or(Logical, Infix):
-    """Or operator.
-    """
-    symbol = 'OR'
-
-
-class Not(Logical, Prefix):
-    """Not operator.
-    """
-    symbol = 'NOT'
-
-
 class Arithmetic:
-    """Mixin for numerical functions/operators.
+    """Mixin for numerical operators.
     """
+    def __init__(self, *operands: Operable):
+        operands = [Operable.ensure_is(o) for o in operands]
+        if not all(kindmod.Numeric.match(o.kind) for o in operands):
+            raise error.Syntax(f'Invalid arithmetic operands for {self}')
+
     @property
     def kind(self) -> kindmod.Numeric:
         """Largest cardinality kind of all operators kinds.
@@ -686,10 +792,10 @@ class Multirow(Expression, metaclass=abc.ABCMeta):
 class Window(Multirow):
     """Window type column representation.
     """
-    function: 'Window.Function' = property(operator.itemgetter(0))
-    partition: typing.Tuple[Operable] = property(operator.itemgetter(1))
-    ordering: typing.Tuple[Ordering] = property(operator.itemgetter(2))
-    frame: typing.Optional['Window.Frame'] = property(operator.itemgetter(3))
+    function: 'Window.Function' = property(opermod.itemgetter(0))
+    partition: typing.Tuple[Operable] = property(opermod.itemgetter(1))
+    ordering: typing.Tuple[Ordering] = property(opermod.itemgetter(2))
+    frame: typing.Optional['Window.Frame'] = property(opermod.itemgetter(3))
 
     class Frame(collections.namedtuple('Frame', 'mode, start, end')):
         """Sliding window frame spec.
@@ -744,9 +850,10 @@ class Window(Multirow):
             visitor: Visitor instance.
         """
         with visitor.visit_window(self):
-            pass
+            with visitor.visit_column(self):
+                pass
 
 
-class Aggregate(Arithmetic, Multirow, Window.Function):
+class Aggregate(Multirow, Window.Function, metaclass=abc.ABCMeta):
     """Base class for column aggregation functions.
     """

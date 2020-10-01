@@ -36,43 +36,76 @@ Column = typing.TypeVar('Column')
 Symbol = typing.TypeVar('Symbol')
 
 
-class Stack(typing.Generic[Symbol]):
-    """Stack as a base parser structure.
+class Container(typing.Generic[Symbol]):
+    """Base parser structure.
 
-    When used as a context manager the stack structure is exclusive to given context and is checked for total depletion
-    on exit.
+    When used as a context manager the internal structure is exclusive to given context and is checked for total
+    depletion on exit.
     """
-    def __init__(self):
-        self._values: typing.List[Symbol] = list()
-        self._context: typing.List[typing.List[Symbol]] = list()
+    class Context:
+        """Storage context.
+        """
+        def __init__(self):
+            self._symbols: typing.List[Symbol] = list()
 
-    def __enter__(self) -> 'Stack':
-        self._context.append(self._values)
-        self._values = list()
+        def __bool__(self):
+            return bool(self._symbols)
+
+        def push(self, item: Symbol) -> None:
+            """Push new parsed item to the stack.
+
+            Args:
+                item: Item to be added.
+            """
+            self._symbols.append(item)
+
+        def pop(self) -> Symbol:
+            """Remove and return a value from the top of the stack.
+
+            Returns: Item from the stack top.
+            """
+            if not self._symbols:
+                raise RuntimeError('Empty context')
+            return self._symbols.pop()
+
+    def __init__(self):
+        self._context: typing.Optional[Container.Context] = None
+        self._stack: typing.List[Container.Context] = list()
+
+    @property
+    def context(self) -> 'Container.Context':
+        """Context accessor.
+        """
+        if self._context is None:
+            raise RuntimeError('Invalid context')
+        return self._context
+
+    def __enter__(self) -> 'Container':
+        self._stack.append(self._context)
+        self._context = self.Context()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if len(self._values) > 0:
-            raise RuntimeError('Stack not depleted')
-        self._values = self._context.pop()
+        if exc_type or exc_val or exc_tb:
+            return
+        if self._context:
+            raise RuntimeError('Context not fetched')
+        self._context = self._stack.pop()
 
-    def push(self, item: Symbol) -> None:
-        """Push new parsed item to the stack.
+    def fetch(self) -> Symbol:
+        """Storage retrieval. Must be called exactly once and at the point where there is exactly one symbol pending
+        in the context. Successful fetch will kill the context.
 
-        Args:
-            item: Item to be added.
+        Returns: Last symbol from the context.
         """
-        self._values.append(item)
-
-    def pop(self) -> Symbol:
-        """Remove and return a value from the top of the stack.
-
-        Returns: Item from the stack top.
-        """
-        return self._values.pop()
+        symbol = self.context.pop()
+        if self.context:
+            raise RuntimeError('Premature fetch')
+        self._context = None
+        return symbol
 
 
-def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Callable:
+def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing.Callable:
     """Bypass the (result of) the particular visit_* implementation if the supplied override resolver provides an
     alternative value.
 
@@ -82,7 +115,7 @@ def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Cal
 
     Returns: Visitor method decorator.
     """
-    def decorator(method: typing.Callable[[Stack, typing.Any], typing.ContextManager[None]]) -> typing.Callable:
+    def decorator(method: typing.Callable[[Container, typing.Any], typing.ContextManager[None]]) -> typing.Callable:
         """Visitor method decorator with added bypassing capability.
 
         Args:
@@ -92,7 +125,7 @@ def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Cal
         """
         @contextlib.contextmanager
         @functools.wraps(method)
-        def wrapped(self: Stack, subject: typing.Any) -> typing.Iterable[None]:
+        def wrapped(self: Container, subject: typing.Any) -> typing.Iterable[None]:
             """Decorated version of the visit_* method.
 
             Args:
@@ -106,42 +139,61 @@ def bypass(override: typing.Callable[[Stack, typing.Any], Source]) -> typing.Cal
             except error.Mapping:
                 pass
             else:
-                old = self.pop()
+                old = self.context.pop()
                 LOGGER.debug('Overriding result for %s (%s -> %s)', subject, old, new)
-                self.push(new)
+                self.context.push(new)
 
         return wrapped
     return decorator
 
 
-class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclass=abc.ABCMeta):
+class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, metaclass=abc.ABCMeta):
     """Frame source parser.
     """
-    class Segment(collections.namedtuple('Segment', 'columns, predicates')):
-        """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
+    class Context(Container.Context):
+        """Extended container context for holding the segments.
         """
-        columns: typing.Set[sermod.Field]
-        predicates: typing.Set[sermod.Expression]
-
-        def __new__(cls):
-            return super().__new__(cls, set(), set())
-
-        @property
-        def predicate(self) -> typing.Optional[sermod.Expression]:
-            """Helper providing logical sum of all predicates.
-
-            Returns: Combination (sum) of individual predicates.
+        class Segment(collections.namedtuple('Segment', 'columns, predicates')):
+            """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
             """
-            value = None
-            if self.predicates:
-                value = functools.reduce(sermod.Or, self.predicates)
-            return value
+            columns: typing.Set[Column]
+            predicates: typing.Set[sermod.Predicate]
+
+            def __new__(cls):
+                return super().__new__(cls, set(), set())
+
+            @property
+            def predicate(self) -> typing.Optional[sermod.Predicate]:
+                """Helper providing logical sum of all predicates.
+
+                Returns: Combination (sum) of individual predicates.
+                """
+                value = None
+                if self.predicates:
+                    value = functools.reduce(sermod.Or, self.predicates)
+                return value
+
+        def __init__(self):
+            super().__init__()
+            self._segments: typing.Dict[frame.Table, Frame.Context.Segment] = collections.defaultdict(self.Segment)
+
+        def __getitem__(self, table: frame.Table) -> 'Frame.Context.Segment':
+            return self._segments[table]
+
+        def update(self, other: 'Frame.Context') -> None:
+            """Update this context with values from the other.
+
+            Args:
+                other: Other context to update from.
+            """
+            for table, segment in other._segments.items():  # pylint: disable=protected-access
+                self._segments[table].columns.update(segment.columns)
+                self._segments[table].predicates.update(segment.predicates)
 
     def __init__(self, sources: typing.Mapping[frame.Source, Source], series: 'Series[Source, Column]'):
         super().__init__()
         self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
         self._series: Series = series
-        self._segments: typing.Dict[frame.Table, Frame.Segment] = collections.defaultdict(self.Segment)
 
     @functools.lru_cache()
     def generate_column(self, column: sermod.Column) -> Column:
@@ -154,7 +206,8 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         """
         with self._series as visitor:
             column.accept(visitor)
-            return visitor.pop()
+            self.context.update(visitor.context)
+            return visitor.fetch()
 
     def resolve_source(self, source: frame.Source) -> Source:
         """Get a custom target code for a source type.
@@ -239,62 +292,51 @@ class Frame(typing.Generic[Source, Column], Stack[Source], visit.Frame, metaclas
         Returns: Instance reference in target code.
         """
 
-    def _register(self, explicit: typing.Sequence[sermod.Field]) -> None:
-        """Helper for registering explicit fields.
-
-        Args:
-            explicit: Sequence of explicit fields.
-        """
-        for field in explicit:
-            self._segments[field.source].columns.add(field)
-
     @contextlib.contextmanager
     def visit_table(self, source: frame.Table) -> typing.Iterable[None]:
-        self._register(source.explicit)  # table has no explicits though
         yield
-        predicate = self._segments[source].predicate
+        predicate = self.context[source].predicate
         if predicate is not None:
             predicate = self.generate_column(predicate)
-        # self.push(self.generate_table(self.resolve_source(source),
-        #                               {self.generate_column(f) for f in self._segments[source].columns}, predicate))
-        self.push(self.generate_table(self.resolve_source(source), self._segments[source].columns, predicate))
+        self.context.push(self.generate_table(self.resolve_source(source),
+                                              frozenset(self.context[source].columns), predicate))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_join(self, source: frame.Join) -> typing.Iterable[None]:
-        self._register(source.explicit)
-        yield
-        right = self.pop()
-        left = self.pop()
+        # source.condition.predicates
         expression = self.generate_column(source.condition) if source.condition is not None else None
-        self.push(self.generate_join(left, right, expression, source.kind))
+        yield
+        right = self.context.pop()
+        left = self.context.pop()
+        self.context.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_set(self, source: frame.Set) -> typing.Iterable[None]:
-        self._register(source.explicit)
         yield
-        right = self.pop()
-        left = self.pop()
-        self.push(self.generate_set(left, right, source.kind))
+        right = self.context.pop()
+        left = self.context.pop()
+        self.context.push(self.generate_set(left, right, source.kind))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_query(self, source: frame.Query) -> typing.Iterable[None]:
-        self._register(source.explicit)
-        yield
+        # source.prefilter.predicates
+        # source.postfilter.predicates
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
         orderby = tuple((self.generate_column(c), o) for c, o in source.ordering)
         columns = [self.generate_column(c) for c in source.columns]
-        self.push(self.generate_query(self.pop(), columns, where, groupby, having, orderby, source.rows))
+        yield
+        self.context.push(self.generate_query(self.context.pop(),
+                                              columns, where, groupby, having, orderby, source.rows))
 
     @contextlib.contextmanager
     def visit_reference(self, source: frame.Reference) -> typing.Iterable[None]:
-        self._register(source.explicit)
         yield
-        self.push(self.generate_reference(self.pop(), source.name))
+        self.context.push(self.generate_reference(self.context.pop(), source.name))
 
 
 class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
@@ -365,23 +407,30 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
     @contextlib.contextmanager
     def visit_element(self, column: sermod.Element) -> typing.Iterable[None]:
         yield
-        self.push(self.generate_element(self.pop(), self.resolve_column(column)))
+        value = self.generate_element(self.context.pop(), self.resolve_column(column))
+        if isinstance(column, sermod.Field):
+            self.context[column.source].columns.add(value)
+        self.context.push(value)
 
     @bypass(resolve_column)
     @contextlib.contextmanager
     def visit_aliased(self, column: sermod.Aliased) -> typing.Iterable[None]:
         yield
-        self.push(self.generate_alias(self.pop(), column.name))
+        self.context.push(self.generate_alias(self.context.pop(), column.name))
 
     @bypass(resolve_column)
     @contextlib.contextmanager
     def visit_literal(self, column: sermod.Literal) -> typing.Iterable[None]:
         yield
-        self.push(self.generate_literal(column.value, column.kind))
+        self.context.push(self.generate_literal(column.value, column.kind))
 
     @bypass(resolve_column)
     @contextlib.contextmanager
     def visit_expression(self, column: sermod.Expression) -> typing.Iterable[None]:
         yield
-        arguments = tuple(reversed([self.pop() if isinstance(c, sermod.Column) else c for c in reversed(column)]))
-        self.push(self.generate_expression(column.__class__, arguments))
+        arguments = tuple(reversed([self.context.pop() if isinstance(c, sermod.Column) else c
+                                    for c in reversed(column)]))
+        self.context.push(self.generate_expression(column.__class__, arguments))
+
+    def visit_window(self, column: sermod.Window) -> typing.ContextManager[None]:
+        raise NotImplementedError('Window functions not yet supported')

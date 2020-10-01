@@ -227,11 +227,12 @@ class Series(Frame, parsmod.Series[str, str]):
         function.Count: Expression('count({})', lambda c=None: [c if c is not None else '*']),
         function.Min: Expression('min({})'),
         function.Max: Expression('max({})'),
-        function.Sum: Expression('sum({})')
+        function.Sum: Expression('sum({})'),
+        function.Year: Expression('year({})'),
     }
 
     DATE = '%Y-%m-%d'
-    TIMESTAMP = '%Y-%m-%d %H:%M:%S.%f'
+    TIMESTAMP = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self, sources: typing.Mapping[frame.Source, str],
                  columns: typing.Optional[typing.Mapping[series.Column, str]] = None):

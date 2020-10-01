@@ -22,9 +22,11 @@ ETL unit tests.
 import abc
 import datetime
 import decimal
+import typing
 
 import pytest
 
+from forml.io.dsl import error
 from forml.io.dsl.schema import series, frame, kind
 
 
@@ -66,7 +68,7 @@ class Column(metaclass=abc.ABCMeta):
     def test_dissect(self, column: series.Column):
         """Test the column dissection.
         """
-        assert column in type(column).dissect(column)
+        assert column in column.dissect(column)
 
     def test_identity(self, column: series.Column):
         """Test the identity (hashability + equality).
@@ -91,42 +93,6 @@ class Operable(Column, metaclass=abc.ABCMeta):
         aliased = column.alias('foo')
         assert aliased.name == 'foo'
         assert aliased.kind == column.kind
-
-    def test_logical(self, column: series.Operable):
-        """Logical operators tests.
-        """
-        # pylint: disable=misplaced-comparison-constant
-        assert isinstance(1 < column, series.GreaterThan)
-        assert isinstance(column > 1, series.GreaterThan)
-        assert isinstance(1 <= column, series.GreaterEqual)
-        assert isinstance(column >= 1, series.GreaterEqual)
-        assert isinstance(1 > column, series.LessThan)
-        assert isinstance(column < 1, series.LessThan)
-        assert isinstance(1 >= column, series.LessEqual)
-        assert isinstance(column <= 1, series.LessEqual)
-        assert isinstance(1 == column, series.Equal)
-        assert isinstance(column == 1, series.Equal)
-        assert isinstance(1 != column, series.NotEqual)
-        assert isinstance(column != 1, series.NotEqual)
-        assert isinstance(True & column, series.And)
-        assert isinstance(column & True, series.And)
-        assert isinstance(True | column, series.Or)
-        assert isinstance(column | True, series.Or)
-        assert isinstance(~column, series.Not)
-
-    def test_arithmetic(self, column: series.Operable):
-        """Arithmetic operators tests.
-        """
-        assert isinstance(1 + column, series.Addition)
-        assert isinstance(column + 1, series.Addition)
-        assert isinstance(1 - column, series.Subtraction)
-        assert isinstance(column - 1, series.Subtraction)
-        assert isinstance(1 / column, series.Division)
-        assert isinstance(column / 1, series.Division)
-        assert isinstance(1 * column, series.Multiplication)
-        assert isinstance(column * 1, series.Multiplication)
-        assert isinstance(1 % column, series.Modulus)
-        assert isinstance(column % 1, series.Modulus)
 
 
 class TestAliased(Column):
@@ -182,27 +148,109 @@ class TestField(TestElement):
         assert column.source == student
 
 
-class TestLogical:
-    """Logical columns tests.
+class Predicate(Operable, metaclass=abc.ABCMeta):
+    """Predicate columns tests.
+    """
+    @pytest.mark.parametrize('operation, operator', [
+        (lambda a, b: a & b, series.And),
+        (lambda a, b: a | b, series.Or),
+        (lambda a, _: ~series.cast(a), series.Not)
+    ])
+    def test_logical(self, operation: typing.Callable[[typing.Any, typing.Any], series.Logical],
+                     operator: typing.Type[series.Predicate], column: series.Predicate):
+        """Logical operators tests.
+        """
+        assert isinstance(operation(column, True), operator)
+        with pytest.raises(error.Syntax):
+            operation(1, column)
+        if isinstance(operation, series.Bivariate):
+            assert isinstance(operation(False, column), operator)
+            assert isinstance(operation(column, column), operator)
+            with pytest.raises(error.Syntax):
+                operation(column, 1)
+
+    def test_predicate(self, column: series.Predicate, student: frame.Table):
+        """Test predicate features.
+        """
+        for table, expression in column.predicates.items():
+            series.Predicate.ensure_is(expression)
+            assert len({f.source for f in series.Field.dissect(expression)}) == 1
+            assert table == student
+
+
+class TestLogical(Predicate):
+    """Logical Operations tests.
     """
     @staticmethod
-    @pytest.fixture(scope='session', params=(series.LessThan, series.LessEqual, series.GreaterThan, series.GreaterEqual,
-                                             series.Equal, series.NotEqual, series.And, series.Or, series.IsNull,
-                                             series.NotNull, series.Not))
+    @pytest.fixture(scope='session', params=(series.And, series.Or, series.Not))
     def column(request, student: frame.Table) -> series.Logical:
         """Logical fixture.
         """
-        if issubclass(request.param, series.Infix):
-            return request.param(student, 1)
-        if issubclass(request.param, (series.Postfix, series.Prefix)):
-            return request.param(student)
-        raise AssertionError(f'Unexpected operator type: {request.param}')
+        if issubclass(request.param, series.Bivariate):
+            return request.param(student.score > 1, student.surname != 'foo')
+        return request.param(student.level > 1)
 
-    def test_predicate(self, column: series.Expression):
-        """Test predicate features.
+
+class TestComparison(Predicate):
+    """Comparison operations tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session', params=(series.LessThan, series.LessEqual, series.GreaterThan, series.GreaterEqual,
+                                             series.Equal, series.NotEqual, series.IsNull, series.NotNull))
+    def column(request, student: frame.Table) -> series.Comparison:
+        """Comparison fixture.
         """
-        series.Logical.ensure_is(column)
-        predicates = column.predicates
-        for expression in predicates:
-            series.Logical.ensure_is(expression)
-        assert (column | column).predicates == predicates
+        if issubclass(request.param, series.Bivariate):
+            return request.param(student.score, 1)
+        return request.param(student.surname)
+
+    @pytest.mark.parametrize('operation, operator', [
+        (lambda c, i: c > i, series.GreaterThan),
+        (lambda c, i: i < c, series.GreaterThan),
+        (lambda c, i: c >= i, series.GreaterEqual),
+        (lambda c, i: i <= c, series.GreaterEqual),
+        (lambda c, i: c < i, series.LessThan),
+        (lambda c, i: i > c, series.LessThan),
+        (lambda c, i: c <= i, series.LessEqual),
+        (lambda c, i: i >= c, series.LessEqual),
+        (lambda c, i: c == i, series.Equal),
+        (lambda c, i: i == c, series.Equal),
+        (lambda c, i: c != i, series.NotEqual),
+        (lambda c, i: i != c, series.NotEqual),
+    ])
+    def test_comparison(self, operation: typing.Callable[[typing.Any, typing.Any], series.Logical],
+                        operator: typing.Type[series.Logical], student: frame.Table):
+        """Comparison operators tests.
+        """
+        assert isinstance(operation(student.score, 1), operator)
+
+
+class TestArithmetic(Operable):
+    """Arithmetic operations tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session', params=(series.Addition, series.Subtraction, series.Division,
+                                             series.Multiplication, series.Modulus))
+    def column(request, student: frame.Table) -> series.Arithmetic:
+        """Arithmetic fixture.
+        """
+        return request.param(student.score, 1)
+
+    @pytest.mark.parametrize('operation, operator', [
+        (lambda a, b: a + b, series.Addition),
+        (lambda a, b: a - b, series.Subtraction),
+        (lambda a, b: a / b, series.Division),
+        (lambda a, b: a * b, series.Multiplication),
+        (lambda a, b: a % b, series.Modulus),
+    ])
+    def test_arithmetic(self, operation: typing.Callable[[typing.Any, typing.Any], series.Arithmetic],
+                        operator: typing.Type[series.Arithmetic], column: series.Operable):
+        """Arithmetic operators tests.
+        """
+        assert isinstance(operation(column, 1), operator)
+        assert isinstance(operation(1, column), operator)
+        assert isinstance(operation(column, column), operator)
+        with pytest.raises(error.Syntax):
+            operation(column, 'foo')
+        with pytest.raises(error.Syntax):
+            operation(True, column)

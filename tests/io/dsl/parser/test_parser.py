@@ -29,15 +29,15 @@ from forml.io.dsl.schema import series as sermod, frame as framod, kind as kindm
 from . import TupleParser
 
 
-class TestStack:
+class TestContainer:
     """Parser stack unit tests.
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def stack() -> parsmod.Stack:
+    def storage() -> parsmod.Container:
         """Stack fixture.
         """
-        return parsmod.Stack()
+        return parsmod.Container()
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -46,24 +46,18 @@ class TestStack:
         """
         return object()
 
-    def test_usage(self, stack: parsmod.Stack, value: object):
-        """Basic stack usage test.
-        """
-        stack.push(value)
-        assert stack.pop() == value
-
-    def test_context(self, stack: parsmod.Stack, value):
+    def test_context(self, storage, value):
         """Test context nesting.
         """
-        with stack:
-            stack.push(value)
-            with stack:
-                with pytest.raises(IndexError):
-                    stack.pop()
-            assert stack.pop() == value
+        with storage:
+            storage.context.push(value)
+            with storage:
+                with pytest.raises(RuntimeError):
+                    storage.context.pop()
+            assert storage.fetch() == value
         with pytest.raises(RuntimeError):
-            with stack:
-                stack.push(value)
+            with storage:
+                storage.context.push(value)
 
 
 class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object

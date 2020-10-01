@@ -63,15 +63,6 @@ class Source(tuple, metaclass=abc.ABCMeta):
         """
 
     @property
-    @abc.abstractmethod
-    def explicit(self) -> typing.AbstractSet['series.Field']:
-        """Set of schema fields explicitly referred within this source. In a way contrary to the .columns, this is
-        a demand side of the given source.
-
-        Returns: Set of explicit schema fields.
-        """
-
-    @property
     @functools.lru_cache()
     def schema(self) -> typing.Type['etl.Schema']:
         """Get the schema type for this source.
@@ -133,9 +124,9 @@ class Join(Source):
         if condition is not None:
             if kind is cls.Kind.CROSS:
                 raise error.Syntax('Illegal use of condition for cross-join')
+            condition = series.Multirow.ensure_notin(series.Predicate.ensure_is(condition))
             if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.columns, *right.columns)):
                 raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
-            condition = series.Multirow.ensure_notin(series.Logical.ensure_is(series.Operable.ensure_is(condition)))
         return super().__new__(cls, [left, right, condition, kind])
 
     def __repr__(self):
@@ -146,18 +137,11 @@ class Join(Source):
     def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
-    @property
-    @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet['series.Field']:
-        fields = self.left.explicit.union(self.right.explicit)
-        if self.condition is not None:
-            fields |= series.Field.dissect(self.condition)
-        return frozenset(fields)
-
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_join(self):
-            self.left.accept(visitor)
-            self.right.accept(visitor)
+            with visitor.visit_source(self):
+                self.left.accept(visitor)
+                self.right.accept(visitor)
 
 
 class Set(Source):
@@ -186,15 +170,11 @@ class Set(Source):
     def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
-    @property
-    @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet['series.Field']:
-        return frozenset(self.left.explicit.union(self.right.explicit))
-
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_set(self):
-            self.left.accept(visitor)
-            self.right.accept(visitor)
+            with visitor.visit_source(self):
+                self.left.accept(visitor)
+                self.right.accept(visitor)
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
@@ -315,10 +295,6 @@ class Reference(Tangible):
         return tuple(series.Element(self, c.name) for c in self.instance.columns)
 
     @property
-    def explicit(self) -> typing.AbstractSet['series.Field']:
-        return self.instance.explicit
-
-    @property
     def schema(self) -> typing.Type['etl.Schema']:
         return self.instance.schema
 
@@ -332,7 +308,8 @@ class Reference(Tangible):
             visitor: Visitor instance.
         """
         with visitor.visit_reference(self):
-            self.instance.accept(visitor)
+            with visitor.visit_source(self):
+                self.instance.accept(visitor)
 
 
 class Table(Tangible):
@@ -361,6 +338,9 @@ class Table(Tangible):
 
         def __eq__(cls, other):
             return hash(cls) == hash(other)
+
+        def __repr__(cls):
+            return f'{cls.__module__}:{cls.__qualname__}'
 
         @functools.lru_cache()
         def __getitem__(cls, name: str) -> 'etl.Field':
@@ -402,14 +382,10 @@ class Table(Tangible):
     def columns(self) -> typing.Sequence['series.Field']:
         return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
 
-    @property
-    @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet['series.Field']:
-        return frozenset()  # no fields are explicit on a bare table
-
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_table(self):
-            pass
+            with visitor.visit_source(self):
+                pass
 
 
 class Query(Queryable):
@@ -447,20 +423,20 @@ class Query(Queryable):
             return columns
 
         superset = series.Element.dissect(*source.columns)
+        selection = tuple(ensure_subset(*(series.Column.ensure_is(c) for c in selection or [])))
         if prefilter is not None:
-            prefilter = series.Multirow.ensure_notin(series.Logical.ensure_is(
+            prefilter = series.Multirow.ensure_notin(series.Predicate.ensure_is(
                 series.Operable.ensure_is(*ensure_subset(prefilter))))
         if grouping:
             grouping = [series.Multirow.ensure_notin(series.Operable.ensure_is(g)) for g in ensure_subset(*grouping)]
             for aggregate in {c.operable for c in selection or source.columns}.difference(grouping):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
-            postfilter = series.Window.ensure_notin(series.Logical.ensure_is(
+            postfilter = series.Window.ensure_notin(series.Predicate.ensure_is(
                 series.Operable.ensure_is(*ensure_subset(postfilter))))
         ordering = tuple(series.Ordering.make(ordering or []))
         ensure_subset(*(o.column for o in ordering))
-        return super().__new__(cls, [source, tuple(ensure_subset(*(selection or []))), prefilter, tuple(grouping or []),
-                                     postfilter, ordering, rows])
+        return super().__new__(cls, [source, selection, prefilter, tuple(grouping or []), postfilter, ordering, rows])
 
     def __repr__(self):
         value = repr(self.source)
@@ -487,19 +463,10 @@ class Query(Queryable):
     def columns(self) -> typing.Sequence['series.Column']:
         return self.selection if self.selection else self.source.columns
 
-    @property
-    @functools.lru_cache()
-    def explicit(self) -> typing.AbstractSet['series.Field']:
-        columns = set(self.columns).union(self.grouping).union(o.column for o in self.ordering)
-        if self.prefilter is not None:
-            columns.add(self.prefilter)
-        if self.postfilter is not None:
-            columns.add(self.postfilter)
-        return frozenset(self.source.explicit.union(series.Field.dissect(*columns)))
-
     def accept(self, visitor: visit.Frame) -> None:
         with visitor.visit_query(self):
-            self.source.accept(visitor)
+            with visitor.visit_source(self):
+                self.source.accept(visitor)
 
     def select(self, *columns: 'series.Column') -> 'Query':
         return Query(self.source, columns, self.prefilter, self.grouping, self.postfilter, self.ordering, self.rows)

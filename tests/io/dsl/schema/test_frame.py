@@ -59,11 +59,6 @@ class Source(metaclass=abc.ABCMeta):
         with pytest.raises(KeyError):
             _ = student['xyz']
 
-    def test_explicit(self, source: frame.Source):
-        """Test explicit fields.
-        """
-        assert all(isinstance(f, series.Field) for f in source.explicit)
-
     def test_schema(self, source: frame.Source):
         """Test the reported schema.
         """
@@ -266,9 +261,3 @@ class TestQuery(Queryable):
         """Source fixture.
         """
         return student.query
-
-    def test_explicit(self, source: frame.Query):
-        """Test query fields.
-        """
-        super().test_explicit(source)
-        assert series.Field.dissect(*source.columns).issubset(source.explicit)

@@ -26,6 +26,8 @@ import operator
 import typing
 from collections import abc as colabc
 
+from forml.io.dsl import error
+
 
 class Meta(abc.ABCMeta):
     """Meta class for all kinds.
@@ -100,6 +102,33 @@ class Any(metaclass=Meta):
 
     def __hash__(self):
         return hash(self.__class__)
+
+    def __repr__(self):
+        return self.__class__.__name__
+
+    @classmethod
+    def match(cls, kind: 'Any') -> bool:
+        """Check given kind is of our type.
+
+        Args:
+            kind: Kind to be verified.
+
+        Returns: True if instance of our type.
+        """
+        return isinstance(kind, cls)
+
+    @classmethod
+    def ensure(cls, kind: 'Any') -> 'Any':
+        """Ensure given kind is of our type.
+
+        Args:
+            kind: Kind to be verified.
+
+        Returns: Original kind if instance of our type or raising otherwise.
+        """
+        if not cls.match(kind):
+            raise error.Syntax(f'{kind} not an instance of a {cls.__name__}')
+        return kind
 
 
 class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method

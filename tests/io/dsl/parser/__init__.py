@@ -48,7 +48,7 @@ class TupleParser(metaclass=abc.ABCMeta):
         """
         with parser:
             query.accept(parser)
-            result = self.format(parser.pop())
+            result = self.format(parser.fetch())
         assert result[0][0] == ('foo',)
         assert result[1] == ((((student,), (student.surname,)), 'student'), (('bar',), (school_ref['name'],)),
                              (function.Cast, ((student,), (student.score,)), kindmod.String()))

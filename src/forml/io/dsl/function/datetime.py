@@ -16,34 +16,20 @@
 # under the License.
 
 """
-Aggregation functions.
+Datetime functions.
 """
+import operator
 
 from forml.io.dsl.schema import kind as kindmod
 from forml.io.dsl.schema import series
 
 
-class Count(series.Aggregate, series.Univariate):
-    """Number of the input rows.
+class Year(series.Univariate):
+    """Extract the year from given date/time.
     """
-    kind: kindmod.Integer = kindmod.Integer()
+    value: series.Operable = property(operator.itemgetter(0))
+    kind: kindmod.Any = kindmod.Integer()
 
-
-class Avg(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Average of the column values.
-    """
-
-
-class Max(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Maximum of the column values.
-    """
-
-
-class Min(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Minimum of the column values.
-    """
-
-
-class Sum(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Sum of the column values.
-    """
+    def __new__(cls, value: series.Operable):
+        kindmod.Date.ensure(series.Operable.ensure_is(value).kind)
+        return super().__new__(cls, value)
