@@ -45,28 +45,42 @@ class Container(typing.Generic[Symbol]):
     class Context:
         """Storage context.
         """
+        class Symbols:
+            """Stack for parsed symbols.
+            """
+            def __init__(self):
+                self._stack: typing.List[Symbol] = list()
+
+            def __bool__(self):
+                return bool(self._stack)
+
+            def push(self, item: Symbol) -> None:
+                """Push new parsed item to the stack.
+
+                Args:
+                    item: Item to be added.
+                """
+                self._stack.append(item)
+
+            def pop(self) -> Symbol:
+                """Remove and return a value from the top of the stack.
+
+                Returns: Item from the stack top.
+                """
+                if not self._stack:
+                    raise RuntimeError('Empty context')
+                return self._stack.pop()
+
         def __init__(self):
-            self._symbols: typing.List[Symbol] = list()
+            self.symbols: Container.Context.Symbols = self.Symbols()
 
-        def __bool__(self):
-            return bool(self._symbols)
+        @property
+        def dirty(self) -> bool:
+            """Check the context is safe to be closed.
 
-        def push(self, item: Symbol) -> None:
-            """Push new parsed item to the stack.
-
-            Args:
-                item: Item to be added.
+            Returns: True if not safe for closing.
             """
-            self._symbols.append(item)
-
-        def pop(self) -> Symbol:
-            """Remove and return a value from the top of the stack.
-
-            Returns: Item from the stack top.
-            """
-            if not self._symbols:
-                raise RuntimeError('Empty context')
-            return self._symbols.pop()
+            return bool(self.symbols)
 
     def __init__(self):
         self._context: typing.Optional[Container.Context] = None
@@ -76,7 +90,7 @@ class Container(typing.Generic[Symbol]):
     def context(self) -> 'Container.Context':
         """Context accessor.
         """
-        if self._context is None:
+        if not self._context:
             raise RuntimeError('Invalid context')
         return self._context
 
@@ -88,7 +102,7 @@ class Container(typing.Generic[Symbol]):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type or exc_val or exc_tb:
             return
-        if self._context:
+        if self._context and self._context.dirty:
             raise RuntimeError('Context not fetched')
         self._context = self._stack.pop()
 
@@ -98,8 +112,8 @@ class Container(typing.Generic[Symbol]):
 
         Returns: Last symbol from the context.
         """
-        symbol = self.context.pop()
-        if self.context:
+        symbol = self.context.symbols.pop()
+        if self.context.dirty:
             raise RuntimeError('Premature fetch')
         self._context = None
         return symbol
@@ -139,9 +153,9 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
             except error.Mapping:
                 pass
             else:
-                old = self.context.pop()
+                old = self.context.symbols.pop()
                 LOGGER.debug('Overriding result for %s (%s -> %s)', subject, old, new)
-                self.context.push(new)
+                self.context.symbols.push(new)
 
         return wrapped
     return decorator
@@ -153,42 +167,53 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
     class Context(Container.Context):
         """Extended container context for holding the segments.
         """
-        class Segment(collections.namedtuple('Segment', 'columns, predicates')):
-            """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
+        class Tables:
+            """Container for segments of all tables.
             """
-            columns: typing.Set[Column]
-            predicates: typing.Set[sermod.Predicate]
-
-            def __new__(cls):
-                return super().__new__(cls, set(), set())
-
-            @property
-            def predicate(self) -> typing.Optional[sermod.Predicate]:
-                """Helper providing logical sum of all predicates.
-
-                Returns: Combination (sum) of individual predicates.
+            class Segment(collections.namedtuple('Segment', 'fields, factors')):
+                """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
                 """
-                value = None
-                if self.predicates:
-                    value = functools.reduce(sermod.Or, self.predicates)
-                return value
+                def __new__(cls):
+                    return super().__new__(cls, set(), set())
+
+                @property
+                def predicate(self) -> sermod.Predicate:
+                    """Combine the factors into single predicate.
+
+                    Returns: Predicate expression.
+                    """
+                    return functools.reduce(sermod.Or, self.factors)
+
+            def __init__(self):
+                self._segments: typing.Dict[
+                    frame.Table, Frame.Context.Tables.Segment] = collections.defaultdict(self.Segment)
+
+            def __getitem__(self, table: frame.Table) -> 'Frame.Context.Tables.Segment':
+                return self._segments[table]
+
+            def select(self, *column: sermod.Column) -> None:
+                """Extract fields from given list of columns and register them into segments of their relevant tables.
+
+                Args:
+                    *column: Columns to be to extracted and registered.
+                """
+                for field in sermod.Field.dissect(*column):
+                    self[field.source].fields.add(field)
+
+            def filter(self, expression: sermod.Predicate) -> None:
+                """Extract predicate factors from given expression and register them into segments of their relevant
+                tables. Also register the whole expression using .select().
+
+                Args:
+                    expression: Expression to be extracted and registered.
+                """
+                self.select(expression)
+                for table, factor in expression.factors.items():
+                    self[table].factors.add(factor)
 
         def __init__(self):
             super().__init__()
-            self._segments: typing.Dict[frame.Table, Frame.Context.Segment] = collections.defaultdict(self.Segment)
-
-        def __getitem__(self, table: frame.Table) -> 'Frame.Context.Segment':
-            return self._segments[table]
-
-        def update(self, other: 'Frame.Context') -> None:
-            """Update this context with values from the other.
-
-            Args:
-                other: Other context to update from.
-            """
-            for table, segment in other._segments.items():  # pylint: disable=protected-access
-                self._segments[table].columns.update(segment.columns)
-                self._segments[table].predicates.update(segment.predicates)
+            self.tables: Frame.Context.Tables = self.Tables()
 
     def __init__(self, sources: typing.Mapping[frame.Source, Source], series: 'Series[Source, Column]'):
         super().__init__()
@@ -206,7 +231,6 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
         """
         with self._series as visitor:
             column.accept(visitor)
-            self.context.update(visitor.context)
             return visitor.fetch()
 
     def resolve_source(self, source: frame.Source) -> Source:
@@ -295,48 +319,52 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
     @contextlib.contextmanager
     def visit_table(self, source: frame.Table) -> typing.Iterable[None]:
         yield
-        predicate = self.context[source].predicate
-        if predicate is not None:
-            predicate = self.generate_column(predicate)
-        self.context.push(self.generate_table(self.resolve_source(source),
-                                              frozenset(self.context[source].columns), predicate))
+        predicate = None
+        self.context.symbols.push(self.generate_table(self.resolve_source(source),
+                                                      frozenset(self.context.tables[source].fields), predicate))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_join(self, source: frame.Join) -> typing.Iterable[None]:
-        # source.condition.predicates
-        expression = self.generate_column(source.condition) if source.condition is not None else None
+        if source.condition:
+            self.context.tables.filter(source.condition)
         yield
-        right = self.context.pop()
-        left = self.context.pop()
-        self.context.push(self.generate_join(left, right, expression, source.kind))
+        right = self.context.symbols.pop()
+        left = self.context.symbols.pop()
+        expression = self.generate_column(source.condition) if source.condition is not None else None
+        self.context.symbols.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_set(self, source: frame.Set) -> typing.Iterable[None]:
         yield
-        right = self.context.pop()
-        left = self.context.pop()
-        self.context.push(self.generate_set(left, right, source.kind))
+        right = self.context.symbols.pop()
+        left = self.context.symbols.pop()
+        self.context.symbols.push(self.generate_set(left, right, source.kind))
 
     @bypass(resolve_source)
     @contextlib.contextmanager
     def visit_query(self, source: frame.Query) -> typing.Iterable[None]:
-        # source.prefilter.predicates
-        # source.postfilter.predicates
+        self.context.tables.select(*source.columns)
+        if source.prefilter is not None:
+            self.context.tables.filter(source.prefilter)
+        if source.postfilter is not None:
+            self.context.tables.select(source.postfilter)
+        self.context.tables.select(*source.grouping)
+        self.context.tables.select(*(c for c, _ in source.ordering))
+        yield
+        columns = [self.generate_column(c) for c in source.columns]
         where = self.generate_column(source.prefilter) if source.prefilter is not None else None
         groupby = [self.generate_column(c) for c in source.grouping]
         having = self.generate_column(source.postfilter) if source.postfilter is not None else None
-        orderby = tuple((self.generate_column(c), o) for c, o in source.ordering)
-        columns = [self.generate_column(c) for c in source.columns]
-        yield
-        self.context.push(self.generate_query(self.context.pop(),
-                                              columns, where, groupby, having, orderby, source.rows))
+        orderby = [(self.generate_column(c), o) for c, o in source.ordering]
+        self.context.symbols.push(self.generate_query(self.context.symbols.pop(),
+                                                      columns, where, groupby, having, orderby, source.rows))
 
     @contextlib.contextmanager
     def visit_reference(self, source: frame.Reference) -> typing.Iterable[None]:
         yield
-        self.context.push(self.generate_reference(self.context.pop(), source.name))
+        self.context.symbols.push(self.generate_reference(self.context.symbols.pop(), source.name))
 
 
 class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
@@ -407,30 +435,27 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
     @contextlib.contextmanager
     def visit_element(self, column: sermod.Element) -> typing.Iterable[None]:
         yield
-        value = self.generate_element(self.context.pop(), self.resolve_column(column))
-        if isinstance(column, sermod.Field):
-            self.context[column.source].columns.add(value)
-        self.context.push(value)
+        self.context.symbols.push(self.generate_element(self.context.symbols.pop(), self.resolve_column(column)))
 
     @bypass(resolve_column)
     @contextlib.contextmanager
     def visit_aliased(self, column: sermod.Aliased) -> typing.Iterable[None]:
         yield
-        self.context.push(self.generate_alias(self.context.pop(), column.name))
+        self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), column.name))
 
     @bypass(resolve_column)
     @contextlib.contextmanager
     def visit_literal(self, column: sermod.Literal) -> typing.Iterable[None]:
         yield
-        self.context.push(self.generate_literal(column.value, column.kind))
+        self.context.symbols.push(self.generate_literal(column.value, column.kind))
 
     @bypass(resolve_column)
     @contextlib.contextmanager
     def visit_expression(self, column: sermod.Expression) -> typing.Iterable[None]:
         yield
-        arguments = tuple(reversed([self.context.pop() if isinstance(c, sermod.Column) else c
+        arguments = tuple(reversed([self.context.symbols.pop() if isinstance(c, sermod.Column) else c
                                     for c in reversed(column)]))
-        self.context.push(self.generate_expression(column.__class__, arguments))
+        self.context.symbols.push(self.generate_expression(column.__class__, arguments))
 
     def visit_window(self, column: sermod.Window) -> typing.ContextManager[None]:
         raise NotImplementedError('Window functions not yet supported')

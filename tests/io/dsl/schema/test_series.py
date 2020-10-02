@@ -172,7 +172,9 @@ class Predicate(Operable, metaclass=abc.ABCMeta):
     def test_predicate(self, column: series.Predicate, student: frame.Table):
         """Test predicate features.
         """
-        for table, expression in column.predicates.items():
+        factors = column.factors
+        assert factors & factors | factors == factors
+        for table, expression in factors.items():
             series.Predicate.ensure_is(expression)
             assert len({f.source for f in series.Field.dissect(expression)}) == 1
             assert table == student

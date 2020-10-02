@@ -50,14 +50,14 @@ class TestContainer:
         """Test context nesting.
         """
         with storage:
-            storage.context.push(value)
+            storage.context.symbols.push(value)
             with storage:
                 with pytest.raises(RuntimeError):
-                    storage.context.pop()
+                    storage.context.symbols.pop()
             assert storage.fetch() == value
         with pytest.raises(RuntimeError):
             with storage:
-                storage.context.push(value)
+                storage.context.symbols.push(value)
 
 
 class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
