@@ -459,9 +459,9 @@ class Element(Operable):
 class Field(Element):
     """Special type of element is the schema field type.
     """
-    source: 'framod.Table' = property(opermod.itemgetter(0))
+    source: 'framod.Segment' = property(opermod.itemgetter(0))
 
-    def __new__(cls, table: 'framod.Table', name: str):
+    def __new__(cls, table: 'framod.Segment', name: str):
         if not isinstance(table, framod.Table):
             raise ValueError('Invalid field source')
         return super().__new__(cls, table, name)
@@ -550,8 +550,8 @@ class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
 class Predicate(metaclass=abc.ABCMeta):
     """Base class for Logical and Comparison operators.
     """
-    class Primitive(typing.Mapping[framod.Table, 'Predicate']):
-        """Mapping of primitive predicates to their tables. Primitive is that predicate which is involving exactly one
+    class Factors(typing.Mapping[framod.Table, 'Factors']):
+        """Mapping of predicate factors to their tables. Factor is pa predicate which is involving exactly one
         and only table.
         """
         def __init__(self, *predicates: 'Predicate'):
@@ -562,8 +562,8 @@ class Predicate(metaclass=abc.ABCMeta):
                 {s.pop(): p for p, s in items.items()})
 
         @classmethod
-        def merge(cls, left: 'Predicate.Primitive', right: 'Predicate.Primitive',
-                  operator: typing.Callable[['Predicate', 'Predicate'], 'Predicate']) -> 'Predicate.Primitive':
+        def merge(cls, left: 'Predicate.Factors', right: 'Predicate.Factors',
+                  operator: typing.Callable[['Predicate', 'Predicate'], 'Predicate']) -> 'Predicate.Factors':
             """Merge the two primitive predicates.
 
             Args:
@@ -573,13 +573,13 @@ class Predicate(metaclass=abc.ABCMeta):
 
             Returns: New Primitive instance with individual predicates combined.
             """
-            return cls(*(operator(left[k], right[k]) if k in left and k in right else left[k] if k in left else right
-                         for k in left.keys() | right.keys()))
+            return cls(*(operator(left[k], right[k]) if k in left and k in right and hash(left[k]) != hash(right[k])
+                         else left[k] if k in left else right for k in left.keys() | right.keys()))
 
-        def __and__(self, other: 'Predicate.Primitive') -> 'Predicate.Primitive':
+        def __and__(self, other: 'Predicate.Factors') -> 'Predicate.Factors':
             return self.merge(self, other, And)
 
-        def __or__(self, other: 'Predicate.Primitive') -> 'Predicate.Primitive':
+        def __or__(self, other: 'Predicate.Factors') -> 'Predicate.Factors':
             return self.merge(self, other, Or)
 
         def __getitem__(self, table: framod.Table) -> 'Predicate':
@@ -595,10 +595,10 @@ class Predicate(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def predicates(self) -> 'Predicate.Primitive':
+    def factors(self) -> 'Predicate.Factors':
         """Mapping of primitive source predicates - involving just a single Table.
 
-        Returns: Break down of primitives involved in this predicate.
+        Returns: Break down of factors involved in this predicate.
         """
 
     @classmethod
@@ -639,8 +639,8 @@ class And(Logical, Infix):
 
     @property
     @functools.lru_cache()
-    def predicates(self: 'And') -> 'Predicate.Primitive':
-        return self.left.predicates & self.right.predicates
+    def factors(self: 'And') -> 'Predicate.Factors':
+        return self.left.factors & self.right.factors
 
 
 class Or(Logical, Infix):
@@ -650,8 +650,8 @@ class Or(Logical, Infix):
 
     @property
     @functools.lru_cache()
-    def predicates(self: 'Or') -> 'Predicate.Primitive':
-        return self.left.predicates | self.right.predicates
+    def factors(self: 'Or') -> 'Predicate.Factors':
+        return self.left.factors | self.right.factors
 
 
 class Not(Logical, Prefix):
@@ -660,8 +660,8 @@ class Not(Logical, Prefix):
     symbol = 'NOT'
 
     @property
-    def predicates(self: 'Not') -> 'Predicate.Primitive':
-        return self.operand.predicates
+    def factors(self: 'Not') -> 'Predicate.Factors':
+        return self.operand.factors
 
 
 class Comparison(Predicate):
@@ -675,8 +675,8 @@ class Comparison(Predicate):
 
     @property
     @functools.lru_cache()
-    def predicates(self: 'Comparison') -> Predicate.Primitive:
-        return Predicate.Primitive(self) if len({f.source for f in Field.dissect(self)}) == 1 else Predicate.Primitive()
+    def factors(self: 'Comparison') -> Predicate.Factors:
+        return Predicate.Factors(self) if len({f.source for f in Field.dissect(self)}) == 1 else Predicate.Factors()
 
 
 class LessThan(Comparison, Infix):
