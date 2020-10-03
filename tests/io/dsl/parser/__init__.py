@@ -24,7 +24,7 @@ import abc
 import pytest
 
 from forml.io.dsl import parser as parsmod, function
-from forml.io.dsl.schema import frame as framod, kind as kindmod
+from forml.io.dsl.schema import frame as framod, kind as kindmod, series as sermod
 
 
 class TupleParser(metaclass=abc.ABCMeta):
@@ -52,3 +52,5 @@ class TupleParser(metaclass=abc.ABCMeta):
         assert result[0][0] == ('foo',)
         assert result[1] == ((((student,), (student.surname,)), 'student'), (('bar',), (school_ref['name'],)),
                              (function.Cast, ((student,), (student.score,)), kindmod.String()))
+        assert result[5] == ((((student,), ('baz',)), sermod.Ordering.Direction.ASCENDING),
+                             (((student,), (student.score,)), sermod.Ordering.Direction.ASCENDING))

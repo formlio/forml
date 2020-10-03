@@ -114,13 +114,15 @@ def sources(person: framod.Table, student: framod.Table, school: framod.Table) -
 
 
 @pytest.fixture(scope='session')
-def columns() -> typing.Mapping[sermod.Column, tuple]:
+def columns(student: framod.Table) -> typing.Mapping[sermod.Column, tuple]:
     """Columns mapping fixture.
     """
     class Columns:
         """Columns mapping.
         """
         def __getitem__(self, column: sermod.Column) -> tuple:
+            if hash(column) == hash(student.level):
+                return tuple(['baz'])
             if isinstance(column, sermod.Element):
                 return tuple([column])
             raise KeyError('Unknown column')
