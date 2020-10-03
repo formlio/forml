@@ -62,11 +62,21 @@ class Parser(metaclass=abc.ABCMeta):
         })
 
     @staticmethod
+    @pytest.fixture(scope='session')
+    def columns(student: frame.Table) -> typing.Mapping[series.Column, str]:
+        """Columns mapping fixture.
+        """
+        return types.MappingProxyType({
+            student.level: 'class'
+        })
+
+    @staticmethod
     @pytest.fixture(scope='function')
-    def parser(sources: typing.Mapping[frame.Source, str]) -> sql.Parser:
+    def parser(sources: typing.Mapping[frame.Source, str],
+               columns: typing.Mapping[series.Column, str]) -> sql.Parser:
         """Parser fixture.
         """
-        return sql.Parser(sources)
+        return sql.Parser(sources, columns)
 
     @classmethod
     @abc.abstractmethod
@@ -182,7 +192,7 @@ class TestQuery(Parser):
         expected = 'SELECT edu.student.surname AS student, count(edu.school.name) ' \
                    'FROM edu.student INNER JOIN edu.school ON edu.school.id = edu.student.school ' \
                    'WHERE edu.student.score < 2 GROUP BY edu.student.surname HAVING count(edu.school.name) > 1 ' \
-                   'ORDER BY edu.student.level ASC, edu.student.score DESC ' \
+                   'ORDER BY edu.student.class ASC, edu.student.score DESC ' \
                    'LIMIT 10'
         return cls.Case(query, expected)
 
