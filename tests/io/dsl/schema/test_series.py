@@ -70,10 +70,10 @@ class Column(metaclass=abc.ABCMeta):
         """
         assert column in column.dissect(column)
 
-    def test_identity(self, column: series.Column):
+    def test_identity(self, column: series.Column, school: frame.Table):
         """Test the identity (hashability + equality).
         """
-        assert len({column, column}) == 1
+        assert len({column, column, school.sid}) == 2
 
     def test_kind(self, column: series.Column):
         """Test the column kind.

@@ -41,10 +41,10 @@ class Source(metaclass=abc.ABCMeta):
         """Undertest source.
         """
 
-    def test_identity(self, source: frame.Source):
+    def test_identity(self, source: frame.Source, school: frame.Table):
         """Test source identity.
         """
-        assert len({source, source}) == 1
+        assert len({source, source, school}) == 2
 
     def test_columns(self, source: frame.Source, student: frame.Table):
         """Test the reported column.
