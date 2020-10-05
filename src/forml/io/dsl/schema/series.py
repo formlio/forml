@@ -221,7 +221,7 @@ class Operable(Column, metaclass=abc.ABCMeta):
 
     @columnize
     def __eq__(self, other: 'Operable') -> 'Equal':
-        return Equal(self, other)
+        return Comparison.Pythonic(Equal, self, other)
 
     @columnize
     def __ne__(self, other: 'Operable') -> 'NotEqual':
@@ -229,7 +229,7 @@ class Operable(Column, metaclass=abc.ABCMeta):
 
     @columnize
     def __lt__(self, other: 'Operable') -> 'LessThan':
-        return LessThan(self, other)
+        return Comparison.Pythonic(LessThan, self, other)
 
     @columnize
     def __le__(self, other: 'Operable') -> 'LessEqual':
@@ -470,7 +470,7 @@ class Field(Element):
 class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
-    def __new__(cls, *terms: Operable):
+    def __new__(cls, *terms: typing.Any):  # other operables or arbitrary args
         return super().__new__(cls, terms)
 
     @property
@@ -551,8 +551,8 @@ class Predicate(metaclass=abc.ABCMeta):
     """Base class for Logical and Comparison operators.
     """
     class Factors(typing.Mapping[framod.Table, 'Factors']):
-        """Mapping of predicate factors to their tables. Factor is pa predicate which is involving exactly one
-        and only table.
+        """Mapping (read-only) of predicate factors to their tables. Factor is pa predicate which is involving exactly
+        one and only table.
         """
         def __init__(self, *predicates: 'Predicate'):
             items = {p: {f.source for f in Field.dissect(p)} for p in predicates}
@@ -667,6 +667,46 @@ class Not(Logical, Prefix):
 class Comparison(Predicate):
     """Mixin for comparison operators.
     """
+    class Pythonic(Operable):
+        """Semi proxy/lazy wrapper allowing native Python features like sorting or equality tests to work transparently
+        without raising the syntax errors implemented in the constructors of the actual Comparison types.
+
+        This instance is expected to be used only internally by Python itself. All code within ForML is supposed to use
+        the extracted .operable instance of the true Comparison type.
+        """
+        operator: typing.Type[Infix] = property(opermod.itemgetter(0))
+        left: Operable = property(opermod.itemgetter(1))
+        right: Operable = property(opermod.itemgetter(2))
+
+        def __new__(cls, operator: typing.Type[Infix], left: Operable, right: Operable):
+            return super().__new__(cls, [operator, left, right])
+
+        def __bool__(self):
+            if self.operator is Equal:
+                return hash(self.left) == hash(self.right)
+            if self.operator is LessThan:
+                return repr(self.left) < repr(self.right)
+            raise RuntimeError(f'Unexpected Pythonic comparison using {self.operator}')
+
+        @property
+        def name(self) -> typing.Optional[str]:
+            raise RuntimeError('Pythonic comparison proxy used as a column')
+
+        @property
+        def kind(self) -> kindmod.Any:
+            raise RuntimeError('Pythonic comparison proxy used as a column')
+
+        def accept(self, visitor: vismod.Series) -> None:
+            raise RuntimeError('Pythonic comparison proxy used as a column')
+
+        @property
+        def operable(self) -> Infix:
+            """Materialize the real Comparison instance represented by this proxy.
+
+            Returns: Comparison instance.
+            """
+            return self.operator(self.left, self.right)
+
     def __init__(self, *operands: Operable):
         operands = [Operable.ensure_is(o) for o in operands]
         if not (all(kindmod.Numeric.match(o.kind) for o in operands) or
@@ -709,13 +749,13 @@ class Equal(Comparison, Infix):
     symbol = '=='
 
     def __bool__(self):
-        """Since this instance is also returned when python internally compares two Column instances for equality, we
-        want to evaluate the boolean value for python perspective of the objects (rather than just the ETL perspective
-        of the data).
+        """Since this instance is also returned when python internally compares two Column instances for equality (ie
+        when the instance is stored within a hash-based container), we want to evaluate the boolean value for python
+        perspective of the objects (rather than just the ETL perspective of the data).
 
         Note this doesn't reflect mathematical commutativity - order of potential sub-expression operands matters.
         """
-        return hash(self[0]) == hash(self[1])
+        return hash(self.left) == hash(self.right)
 
 
 class NotEqual(Comparison, Infix):

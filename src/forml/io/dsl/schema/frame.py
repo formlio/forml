@@ -425,15 +425,15 @@ class Query(Queryable):
         superset = series.Element.dissect(*source.columns)
         selection = tuple(ensure_subset(*(series.Column.ensure_is(c) for c in selection or [])))
         if prefilter is not None:
-            prefilter = series.Multirow.ensure_notin(series.Predicate.ensure_is(
-                series.Operable.ensure_is(*ensure_subset(prefilter))))
+            prefilter = series.Multirow.ensure_notin(series.Predicate.ensure_is(*ensure_subset(
+                series.Operable.ensure_is(prefilter))))
         if grouping:
-            grouping = [series.Multirow.ensure_notin(series.Operable.ensure_is(g)) for g in ensure_subset(*grouping)]
+            grouping = ensure_subset(*(series.Multirow.ensure_notin(series.Operable.ensure_is(g)) for g in grouping))
             for aggregate in {c.operable for c in selection or source.columns}.difference(grouping):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
-            postfilter = series.Window.ensure_notin(series.Predicate.ensure_is(
-                series.Operable.ensure_is(*ensure_subset(postfilter))))
+            postfilter = series.Window.ensure_notin(series.Predicate.ensure_is(*ensure_subset(
+                series.Operable.ensure_is(postfilter))))
         ordering = tuple(series.Ordering.make(ordering or []))
         ensure_subset(*(o.column for o in ordering))
         return super().__new__(cls, [source, selection, prefilter, tuple(grouping or []), postfilter, ordering, rows])
