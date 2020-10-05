@@ -177,12 +177,12 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
                     return super().__new__(cls, set(), set())
 
                 @property
-                def predicate(self) -> sermod.Predicate:
+                def predicate(self) -> typing.Optional[sermod.Predicate]:
                     """Combine the factors into single predicate.
 
                     Returns: Predicate expression.
                     """
-                    return functools.reduce(sermod.Or, self.factors)
+                    return functools.reduce(sermod.Or, sorted(self.factors)) if self.factors else None
 
             def __init__(self):
                 self._segments: typing.Dict[
@@ -318,10 +318,12 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
 
     @contextlib.contextmanager
     def visit_table(self, source: frame.Table) -> typing.Iterable[None]:
+        fields = [self.generate_column(f) for f in sorted(self.context.tables[source].fields)]
+        predicate = self.context.tables[source].predicate
+        if predicate is not None:
+            predicate = self.generate_column(predicate)
         yield
-        predicate = None
-        self.context.symbols.push(self.generate_table(self.resolve_source(source),
-                                                      frozenset(self.context.tables[source].fields), predicate))
+        self.context.symbols.push(self.generate_table(self.resolve_source(source), fields, predicate))
 
     @bypass(resolve_source)
     @contextlib.contextmanager

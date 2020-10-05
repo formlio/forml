@@ -71,9 +71,10 @@ class Column(metaclass=abc.ABCMeta):
         assert column in column.dissect(column)
 
     def test_identity(self, column: series.Column, school: frame.Table):
-        """Test the identity (hashability + equality).
+        """Test the identity (hashability, equality, sorting).
         """
         assert len({column, column, school.sid}) == 2
+        assert sorted((column, school.sid)) == sorted((column, school.sid), key=lambda c: repr(c.operable))
 
     def test_kind(self, column: series.Column):
         """Test the column kind.
@@ -224,7 +225,7 @@ class TestComparison(Predicate):
                         operator: typing.Type[series.Logical], student: frame.Table):
         """Comparison operators tests.
         """
-        assert isinstance(operation(student.score, 1), operator)
+        assert isinstance(operation(student.score, 1).operable, operator)
 
 
 class TestArithmetic(Operable):
