@@ -40,7 +40,7 @@ class Parser(metaclass=abc.ABCMeta):
         query: frame.Query
         expected: str
 
-        def __call__(self, parser: sql.Parser):
+        def __call__(self, parser: sql.Frame):
             def strip(value: str) -> str:
                 """Replace all whitespace with single space.
                 """
@@ -73,10 +73,10 @@ class Parser(metaclass=abc.ABCMeta):
     @staticmethod
     @pytest.fixture(scope='function')
     def parser(sources: typing.Mapping[frame.Source, str],
-               columns: typing.Mapping[series.Column, str]) -> sql.Parser:
+               columns: typing.Mapping[series.Column, str]) -> sql.Frame:
         """Parser fixture.
         """
-        return sql.Parser(sources, columns)
+        return sql.Frame(sources, columns)
 
     @classmethod
     @abc.abstractmethod
@@ -85,7 +85,7 @@ class Parser(metaclass=abc.ABCMeta):
         """Case fixture.
         """
 
-    def test_parse(self, parser: sql.Parser, case: Case):
+    def test_parse(self, parser: sql.Frame, case: Case):
         """Parsing test.
         """
         case(parser)

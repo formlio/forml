@@ -31,6 +31,171 @@ LOGGER = logging.getLogger(__name__)
 class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
     """Frame DSL parser producing SQL code.
     """
+    class Series(parsmod.Frame.Series[str, str]):
+        """Series DSL parser producing SQL code.
+        """
+
+        class Expression:
+            """Expression generator/formatter.
+            """
+            ASSOCIATIVE = re.compile(r"\s*(?:(\S*\()?\s*[^-+*/%\s]+\s*(?(1).*\))|TIMESTAMP *'.+'|DATE *'.+')\s*")
+
+            def __init__(self, template: str, mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = None):
+                self._template: str = template
+                self._mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = mapper
+
+            def __call__(self, *args: typing.Any) -> str:
+                """Actual expression generator.
+
+                Args:
+                    *args: Expression arguments.
+
+                Returns: Generated expression value.
+                """
+
+                def clean(arg: str) -> str:
+                    """Add parentheses if necessary.
+
+                    Args:
+                        arg: Argument to be cleaned.
+
+                    Returns: Clean argument.
+                    """
+                    if not self.ASSOCIATIVE.fullmatch(arg):
+                        arg = f'({arg})'
+                    return arg
+
+                if self._mapper:
+                    args = self._mapper(*args)
+                args = [clean(a) for a in args]
+                return self._template.format(*args)
+
+        KIND: typing.Mapping[kindmod.Any, str] = {
+            kindmod.Boolean(): 'BOOLEAN',
+            kindmod.Integer(): 'BIGINT',
+            kindmod.Float(): 'DOUBLE',
+            kindmod.Decimal(): 'DECIMAL',
+            kindmod.String(): 'VARCHAR',
+            kindmod.Date(): 'DATE',
+            kindmod.Timestamp(): 'TIMESTAMP'
+        }
+
+        EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., str]] = {
+            function.Addition: Expression('{} + {}'),
+            function.Subtraction: Expression('{} - {}'),
+            function.Multiplication: Expression('{} * {}'),
+            function.Division: Expression('{} / {}'),
+            function.Modulus: Expression('{} % {}'),
+            function.LessThan: Expression('{} < {}'),
+            function.LessEqual: Expression('{} <= {}'),
+            function.GreaterThan: Expression('{} > {}'),
+            function.GreaterEqual: Expression('{} >= {}'),
+            function.Equal: Expression('{} = {}'),
+            function.NotEqual: Expression('{} != {}'),
+            function.IsNull: Expression('{} IS NULL'),
+            function.NotNull: Expression('{} IS NOT NULL'),
+            function.And: Expression('{} AND {}'),
+            function.Or: Expression('{} OR {}'),
+            function.Not: Expression('NOT {}'),
+            function.Cast: Expression('cast({} AS {})', lambda _, k: [_, Frame.Series.KIND[k]]),
+            function.Avg: Expression('avg({})'),
+            function.Count: Expression('count({})', lambda c=None: [c if c is not None else '*']),
+            function.Min: Expression('min({})'),
+            function.Max: Expression('max({})'),
+            function.Sum: Expression('sum({})'),
+            function.Year: Expression('year({})'),
+        }
+
+        DATE = '%Y-%m-%d'
+        TIMESTAMP = '%Y-%m-%d %H:%M:%S'
+
+        def __init__(self, sources: typing.Mapping[frame.Source, str],
+                     columns: typing.Optional[typing.Mapping[series.Column, str]] = None):
+            super().__init__(sources, columns or dict())
+
+        def resolve_column(self, column: series.Column) -> str:
+            """Resolver falling back to a field name in case of no explicit mapping.
+
+            Args:
+                column: Column to be resolved.
+
+            Returns: Resolved column.
+            """
+            try:
+                return super().resolve_column(column)
+            except error.Mapping as err:
+                if isinstance(column, series.Element):
+                    return column.name
+                raise err
+
+        def generate_element(self, source: str, element: str) -> str:  # pylint: disable=no-self-use
+            """Generate a field code.
+
+            Args:
+                source: Field source value.
+                element: Field symbol.
+
+            Returns: Field representation.
+            """
+            return f'{source}.{element}'
+
+        def generate_alias(self, column: str, alias: str) -> str:  # pylint: disable=no-self-use
+            """Generate column alias code.
+
+            Args:
+                column: Column value.
+                alias: Alias to be used for given column.
+
+            Returns: Aliased column.
+            """
+            return f'{column} AS {alias}'
+
+        def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> str:
+            """Generate a literal value.
+
+            Args:
+                value: Literal value instance.
+                kind: Literal value type.
+
+            Returns: Literal.
+            """
+            if isinstance(kind, kindmod.String):
+                return f"'{value}'"
+            if isinstance(kind, kindmod.Numeric):
+                return f'{value}'
+            if isinstance(kind, kindmod.Timestamp):
+                return f"TIMESTAMP '{value.strftime(self.TIMESTAMP)}'"
+            if isinstance(kind, kindmod.Date):
+                return f"DATE '{value.strftime(self.DATE)}'"
+            if isinstance(kind, kindmod.Array):
+                return f"ARRAY[{', '.join(self.generate_literal(v, kind.element) for v in value)}]"
+            raise error.Unsupported(f'Unsupported literal kind: {kind}')
+
+        def generate_expression(self, expression: typing.Type[series.Expression],
+                                arguments: typing.Sequence[typing.Any]) -> str:
+            """Expression of given arguments.
+
+            Args:
+                expression: Operator or function implementing the expression.
+                arguments: Expression arguments.
+
+            Returns: Expression.
+            """
+            try:
+                return self.EXPRESSION[expression](*arguments)
+            except KeyError as err:
+                raise error.Unsupported(f'Unsupported expression: {expression}') from err
+
+        def generate_reference(self, name: str) -> str:  # pylint: disable=no-self-use
+            """Generate a source reference (alias) application.
+
+            Args:
+                name: Reference name (alias).
+
+            Returns: Reference application.
+            """
+            return name
+
     JOIN: typing.Mapping[frame.Join.Kind, str] = {
         frame.Join.Kind.LEFT: 'LEFT',
         frame.Join.Kind.RIGHT: 'RIGHT',
@@ -155,177 +320,3 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         Returns: Source reference definition.
         """
         return f'{self.Wrap.word(instance)} AS {name}'
-
-
-class Series(Frame, parsmod.Series[str, str]):
-    """Series DSL parser producing SQL code.
-    """
-    class Expression:
-        """Expression generator/formatter.
-        """
-        ASSOCIATIVE = re.compile(r"\s*(?:(\S*\()?\s*[^-+*/%\s]+\s*(?(1).*\))|TIMESTAMP *'.+'|DATE *'.+')\s*")
-
-        def __init__(self, template: str, mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = None):
-            self._template: str = template
-            self._mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = mapper
-
-        def __call__(self, *args: typing.Any) -> str:
-            """Actual expression generator.
-
-            Args:
-                *args: Expression arguments.
-
-            Returns: Generated expression value.
-            """
-
-            def clean(arg: str) -> str:
-                """Add parentheses if necessary.
-
-                Args:
-                    arg: Argument to be cleaned.
-
-                Returns: Clean argument.
-                """
-                if not self.ASSOCIATIVE.fullmatch(arg):
-                    arg = f'({arg})'
-                return arg
-
-            if self._mapper:
-                args = self._mapper(*args)
-            args = [clean(a) for a in args]
-            return self._template.format(*args)
-
-    KIND: typing.Mapping[kindmod.Any, str] = {
-        kindmod.Boolean(): 'BOOLEAN',
-        kindmod.Integer(): 'BIGINT',
-        kindmod.Float(): 'DOUBLE',
-        kindmod.Decimal(): 'DECIMAL',
-        kindmod.String(): 'VARCHAR',
-        kindmod.Date(): 'DATE',
-        kindmod.Timestamp(): 'TIMESTAMP'
-    }
-
-    EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., str]] = {
-        function.Addition: Expression('{} + {}'),
-        function.Subtraction: Expression('{} - {}'),
-        function.Multiplication: Expression('{} * {}'),
-        function.Division: Expression('{} / {}'),
-        function.Modulus: Expression('{} % {}'),
-        function.LessThan: Expression('{} < {}'),
-        function.LessEqual: Expression('{} <= {}'),
-        function.GreaterThan: Expression('{} > {}'),
-        function.GreaterEqual: Expression('{} >= {}'),
-        function.Equal: Expression('{} = {}'),
-        function.NotEqual: Expression('{} != {}'),
-        function.IsNull: Expression('{} IS NULL'),
-        function.NotNull: Expression('{} IS NOT NULL'),
-        function.And: Expression('{} AND {}'),
-        function.Or: Expression('{} OR {}'),
-        function.Not: Expression('NOT {}'),
-        function.Cast: Expression('cast({} AS {})', lambda _, k: [_, Series.KIND[k]]),
-        function.Avg: Expression('avg({})'),
-        function.Count: Expression('count({})', lambda c=None: [c if c is not None else '*']),
-        function.Min: Expression('min({})'),
-        function.Max: Expression('max({})'),
-        function.Sum: Expression('sum({})'),
-        function.Year: Expression('year({})'),
-    }
-
-    DATE = '%Y-%m-%d'
-    TIMESTAMP = '%Y-%m-%d %H:%M:%S'
-
-    def __init__(self, sources: typing.Mapping[frame.Source, str],
-                 columns: typing.Optional[typing.Mapping[series.Column, str]] = None):
-        super().__init__(sources, columns or dict())
-
-    def resolve_column(self, column: series.Column) -> str:
-        """Resolver falling back to a field name in case of no explicit mapping.
-
-        Args:
-            column: Column to be resolved.
-
-        Returns: Resolved column.
-        """
-        try:
-            return super().resolve_column(column)
-        except error.Mapping as err:
-            if isinstance(column, series.Element):
-                return column.name
-            raise err
-
-    def generate_element(self, source: str, element: str) -> str:  # pylint: disable=no-self-use
-        """Generate a field code.
-
-        Args:
-            source: Field source value.
-            element: Field symbol.
-
-        Returns: Field representation.
-        """
-        return f'{source}.{element}'
-
-    def generate_alias(self, column: str, alias: str) -> str:  # pylint: disable=no-self-use
-        """Generate column alias code.
-
-        Args:
-            column: Column value.
-            alias: Alias to be used for given column.
-
-        Returns: Aliased column.
-        """
-        return f'{column} AS {alias}'
-
-    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> str:
-        """Generate a literal value.
-
-        Args:
-            value: Literal value instance.
-            kind: Literal value type.
-
-        Returns: Literal.
-        """
-        if isinstance(kind, kindmod.String):
-            return f"'{value}'"
-        if isinstance(kind, kindmod.Numeric):
-            return f'{value}'
-        if isinstance(kind, kindmod.Timestamp):
-            return f"TIMESTAMP '{value.strftime(self.TIMESTAMP)}'"
-        if isinstance(kind, kindmod.Date):
-            return f"DATE '{value.strftime(self.DATE)}'"
-        if isinstance(kind, kindmod.Array):
-            return f"ARRAY[{', '.join(self.generate_literal(v, kind.element) for v in value)}]"
-        raise error.Unsupported(f'Unsupported literal kind: {kind}')
-
-    def generate_expression(self, expression: typing.Type[series.Expression],
-                            arguments: typing.Sequence[typing.Any]) -> str:
-        """Expression of given arguments.
-
-        Args:
-            expression: Operator or function implementing the expression.
-            arguments: Expression arguments.
-
-        Returns: Expression.
-        """
-        try:
-            return self.EXPRESSION[expression](*arguments)
-        except KeyError as err:
-            raise error.Unsupported(f'Unsupported expression: {expression}') from err
-
-    def generate_reference(self, instance: str, name: str) -> str:
-        """Generate a source reference (alias) application.
-
-        Args:
-            instance: Referenced instance.
-            name: Reference name (alias).
-
-        Returns: Reference application.
-        """
-        return name
-
-
-class Parser(Frame):
-    """Helper combining the parser components.
-    """
-    def __init__(self, sources: typing.Mapping[frame.Source, str],
-                 columns: typing.Optional[typing.Mapping[series.Column, str]] = None):
-        super().__init__(sources, Series(sources, columns))

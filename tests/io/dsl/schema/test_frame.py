@@ -186,7 +186,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 class Tangible(Queryable, metaclass=abc.ABCMeta):
     """Base class for tangible frames.
     """
-    def test_columns(self, source: frame.Tangible, student: frame.Table):
+    def test_columns(self, source: frame.Origin, student: frame.Table):
         assert all(isinstance(c, series.Element) for c in source.columns)
         assert student.dob.name == 'birthday'
         assert student.score.name == 'score'
@@ -247,7 +247,7 @@ class TestTable(Tangible):
     def source(student: frame.Table) -> frame.Table:
         return student
 
-    def test_columns(self, source: frame.Tangible, student: frame.Table):
+    def test_columns(self, source: frame.Origin, student: frame.Table):
         Queryable.test_columns(self, source, student)
         Tangible.test_columns(self, source, student)
 

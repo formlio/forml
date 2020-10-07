@@ -63,6 +63,26 @@ class TestContainer:
 class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
     """Dummy frame parser wrapping all terms into tuples.
     """
+    class Series(parsmod.Frame.Series[tuple, tuple]):
+        """Dummy series parser wrapping all terms into tuples.
+        """
+        # pylint: disable=missing-function-docstring
+        def generate_element(self, source: tuple, element: tuple) -> tuple:
+            return source, element
+
+        def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
+            return value, kind
+
+        def generate_expression(self, expression: typing.Type[sermod.Expression],
+                                arguments: typing.Sequence[typing.Any]) -> tuple:
+            return expression, *arguments
+
+        def generate_alias(self, column: tuple, alias: str) -> tuple:
+            return column, alias
+
+        def generate_reference(self, name: str) -> tuple:
+            return tuple([name])
+
     # pylint: disable=missing-function-docstring
     def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: framod.Join.Kind) -> tuple:
         return left, kind, right, condition
@@ -80,61 +100,44 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
         return instance, name
 
 
-class Series(Frame, parsmod.Series[tuple, tuple]):
-    """Dummy series parser wrapping all terms into tuples.
-    """
-    # pylint: disable=missing-function-docstring
-    def generate_element(self, source: tuple, element: tuple) -> tuple:
-        return source, element
-
-    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
-        return value, kind
-
-    def generate_expression(self, expression: typing.Type[sermod.Expression],
-                            arguments: typing.Sequence[typing.Any]) -> tuple:
-        return expression, *arguments
-
-    def generate_alias(self, column: tuple, alias: str) -> tuple:
-        return column, alias
-
-    def generate_reference(self, instance: tuple, name: str) -> tuple:
-        return tuple([name])
-
-
-@pytest.fixture(scope='session')
-def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[framod.Source, tuple]:
-    """Sources mapping fixture.
-    """
-    return types.MappingProxyType({
-        framod.Join(student, person, student.surname == person.surname): tuple(['foo']),
-        person: tuple([person]),
-        student: tuple([student]),
-        school: tuple([school])
-    })
-
-
-@pytest.fixture(scope='session')
-def columns(student: framod.Table) -> typing.Mapping[sermod.Column, tuple]:
-    """Columns mapping fixture.
-    """
-    class Columns:
-        """Columns mapping.
-        """
-        def __getitem__(self, column: sermod.Column) -> tuple:
-            if hash(column) == hash(student.level):
-                return tuple(['baz'])
-            if isinstance(column, sermod.Element):
-                return tuple([column])
-            raise KeyError('Unknown column')
-    return Columns()
-
-
 class TestParser(TupleParser):
     """Frame parser tests.
     """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[
+            framod.Source, tuple]:
+        """Sources mapping fixture.
+        """
+        return types.MappingProxyType({
+            framod.Join(student, person, student.surname == person.surname): tuple(['foo']),
+            person: tuple([person]),
+            student: tuple([student]),
+            school: tuple([school])
+        })
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def columns(student: framod.Table) -> typing.Mapping[sermod.Column, tuple]:
+        """Columns mapping fixture.
+        """
+
+        class Columns:
+            """Columns mapping.
+            """
+
+            def __getitem__(self, column: sermod.Column) -> tuple:
+                if hash(column) == hash(student.level):
+                    return tuple(['baz'])
+                if isinstance(column, sermod.Element):
+                    return tuple([column])
+                raise KeyError('Unknown column')
+
+        return Columns()
+
     @staticmethod
     @pytest.fixture(scope='function')
     def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mapping[sermod.Column, tuple]) -> Frame:
         """Parser fixture.
         """
-        return Frame(sources, Series(sources, columns))
+        return Frame(sources, columns)

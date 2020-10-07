@@ -17,6 +17,7 @@
 """
 Schema visitor APIs.
 """
+import abc
 import typing
 
 from forml.io.dsl.schema import series
@@ -25,7 +26,27 @@ if typing.TYPE_CHECKING:
     from forml.io.dsl.schema import frame
 
 
-class Frame:
+class Columnar(metaclass=abc.ABCMeta):
+    """Base class for both Frame and Series visitors.
+    """
+    @abc.abstractmethod
+    def visit_table(self, origin: 'frame.Table') -> None:
+        """Table hook.
+
+        Args:
+            origin: Source instance to be visited.
+        """
+
+    @abc.abstractmethod
+    def visit_reference(self, origin: 'frame.Reference') -> None:
+        """Reference hook.
+
+        Args:
+            origin: Instance to be visited.
+        """
+
+
+class Frame(Columnar):
     """Frame visitor.
     """
     def visit_source(self, source: 'frame.Source') -> None:  # pylint: disable=unused-argument, no-self-use
@@ -35,13 +56,22 @@ class Frame:
             source: Source instance to be visited.
         """
 
-    def visit_table(self, source: 'frame.Table') -> None:
+    def visit_table(self, origin: 'frame.Table') -> None:
         """Table hook.
 
         Args:
-            source: Source instance to be visited.
+            origin: Source instance to be visited.
         """
-        self.visit_source(source)
+        self.visit_source(origin)
+
+    def visit_reference(self, origin: 'frame.Reference') -> None:
+        """Reference hook.
+
+        Args:
+            origin: Instance to be visited.
+        """
+        origin.instance.accept(self)
+        self.visit_source(origin)
 
     def visit_join(self, source: 'frame.Join') -> None:
         """Join hook.
@@ -72,19 +102,33 @@ class Frame:
         source.source.accept(self)
         self.visit_source(source)
 
-    def visit_reference(self, source: 'frame.Reference') -> None:
+
+class Series(Columnar):
+    """Series visitor.
+    """
+    def visit_origin(self, origin: 'frame.Origin') -> None:  # pylint: disable=unused-argument, no-self-use
+        """Tangible source hook.
+
+        Args:
+            origin: Tangible source instance to be visited.
+        """
+
+    def visit_table(self, origin: 'frame.Table') -> None:
+        """Table hook.
+
+        Args:
+            origin: Source instance to be visited.
+        """
+        self.visit_origin(origin)
+
+    def visit_reference(self, origin: 'frame.Reference') -> None:
         """Reference hook.
 
         Args:
-            source: Instance to be visited.
+            origin: Instance to be visited.
         """
-        source.instance.accept(self)
-        self.visit_source(source)
+        self.visit_origin(origin)
 
-
-class Series(Frame):
-    """Series visitor.
-    """
     def visit_column(self, column: 'series.Column') -> None:  # pylint: disable=unused-argument, no-self-use
         """Generic column hook.
 
@@ -107,7 +151,7 @@ class Series(Frame):
         Args:
             column: Element instance to be visited.
         """
-        column.source.accept(self)
+        column.origin.accept(self)
         self.visit_column(column)
 
     def visit_literal(self, column: 'series.Literal') -> None:

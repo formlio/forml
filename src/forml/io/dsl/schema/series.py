@@ -70,7 +70,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
                 col.accept(self)
             return frozenset(self._match)
 
-        def visit_source(self, source: 'framod.Source') -> None:
+        def visit_origin(self, source: 'framod.Source') -> None:
             for column in source.columns:
                 if column not in self._seen:
                     self._seen.add(column)
@@ -421,20 +421,20 @@ class Literal(Operable):
 class Element(Operable):
     """Named column of particular source.
     """
-    source: 'framod.Tangible' = property(opermod.itemgetter(0))
+    origin: 'framod.Origin' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
 
-    def __new__(cls, source: 'framod.Tangible', name: str):
+    def __new__(cls, source: 'framod.Origin', name: str):
         if isinstance(source, framod.Table) and not issubclass(cls, Field):
             return Field(source, name)
         return super().__new__(cls, [source, name])
 
     def __repr__(self):
-        return f'{repr(self.source)}.{self.name}'
+        return f'{repr(self.origin)}.{self.name}'
 
     @property
     def kind(self) -> kindmod.Any:
-        return self.source.schema[self.name].kind
+        return self.origin.schema[self.name].kind
 
     def accept(self, visitor: vismod.Series) -> None:
         """Visitor acceptor.
@@ -448,7 +448,7 @@ class Element(Operable):
 class Field(Element):
     """Special type of element is the schema field type.
     """
-    source: 'framod.Table' = property(opermod.itemgetter(0))
+    origin: 'framod.Table' = property(opermod.itemgetter(0))
 
     def __new__(cls, table: 'framod.Table', name: str):
         if not isinstance(table, framod.Table):
@@ -540,7 +540,7 @@ class Predicate(metaclass=abc.ABCMeta):
         one and only table.
         """
         def __init__(self, *predicates: 'Predicate'):
-            items = {p: {f.source for f in Field.dissect(p)} for p in predicates}
+            items = {p: {f.origin for f in Field.dissect(p)} for p in predicates}
             if collections.Counter(len(s) == 1 for s in items.values())[True] != len(predicates):
                 raise ValueError('Repeated or non-primitive predicates')
             self._items: typing.Mapping[framod.Table, Predicate] = types.MappingProxyType(
@@ -701,7 +701,7 @@ class Comparison(Predicate):
     @property
     @functools.lru_cache()
     def factors(self: 'Comparison') -> Predicate.Factors:
-        return Predicate.Factors(self) if len({f.source for f in Field.dissect(self)}) == 1 else Predicate.Factors()
+        return Predicate.Factors(self) if len({f.origin for f in Field.dissect(self)}) == 1 else Predicate.Factors()
 
 
 class LessThan(Comparison, Infix):

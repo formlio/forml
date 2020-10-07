@@ -41,7 +41,7 @@ class Feed(io.Feed[str, str]):
     class Reader(extract.Reader[str, str, Rows], metaclass=abc.ABCMeta):
         """SQL reader base class for PEP249 compliant DB APIs.
         """
-        class Parser(sqlmod.Parser):
+        class Parser(sqlmod.Frame):
             """Custom parser implementation.
             """
 

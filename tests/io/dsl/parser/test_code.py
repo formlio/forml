@@ -102,6 +102,26 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
             return super().__new__(cls, source or cls.NONE, columns or cls.NONE, where or cls.NONE, groupby or cls.NONE,
                                    having or cls.NONE, orderby or cls.NONE, rows or cls.NONE)
 
+    class Series(code.Frame.Series[tuple, tuple]):
+        """Dummy series parser wrapping all terms into tuples.
+        """
+        # pylint: disable=missing-function-docstring
+        def implement_element(self, data: tuple, column: Columnizer) -> tuple:
+            return data, column(data)
+
+        def implement_alias(self, data: tuple, column: code.Columnizer, name: str) -> tuple:
+            return column(data), name
+
+        def implement_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
+            return value, kind
+
+        def implement_expression(self, expression: typing.Type[sermod.Expression],
+                                 arguments: typing.Sequence[typing.Any]) -> tuple:
+            return expression, *arguments
+
+        def implement_reference(self, name: str) -> tuple:
+            return tuple([name])
+
     # pylint: disable=missing-function-docstring
     def implement_join(self, left: tuple, right: tuple, condition: typing.Optional[code.Columnizer],
                        kind: framod.Join.Kind) -> tuple:
@@ -139,67 +159,48 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
         return table, name
 
 
-class Series(Frame, code.Series[tuple, tuple]):
-    """Dummy series parser wrapping all terms into tuples.
-    """
-
-    # pylint: disable=missing-function-docstring
-    def implement_field(self, data: tuple, column: Columnizer) -> tuple:
-        return data, column(data)
-
-    def implement_alias(self, data: tuple, column: code.Columnizer, name: str) -> tuple:
-        return column(data), name
-
-    def implement_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
-        return value, kind
-
-    def implement_expression(self, expression: typing.Type[sermod.Expression],
-                             arguments: typing.Sequence[typing.Any]) -> tuple:
-        return expression, *arguments
-
-    def implement_reference(self, table: tuple, name: str) -> tuple:
-        return tuple([name])
-
-
-@pytest.fixture(scope='session')
-def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[
-        framod.Source, typing.Callable[[tuple], tuple]]:
-    """Sources mapping fixture.
-    """
-    return types.MappingProxyType({
-        framod.Join(student, person, student.surname == person.surname): lambda _: tuple(['foo']),
-        person: lambda _: tuple([person]),
-        student: lambda _: tuple([student]),
-        school: lambda _: tuple([school])
-    })
-
-
-@pytest.fixture(scope='session')
-def columns(student: framod.Table) -> typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]:
-    """Columns mapping fixture.
-    """
-    class Columns:
-        """Columns mapping.
-        """
-        def __getitem__(self, column: sermod.Column) -> typing.Callable[[tuple], tuple]:
-            if hash(column) == hash(student.level):
-                return lambda _: tuple(['baz'])
-            if isinstance(column, sermod.Element):
-                return lambda _: tuple([column])
-            raise KeyError('Unknown column')
-    return Columns()
-
-
 class TestParser(TupleParser):
     """Code parser tests.
     """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[
+            framod.Source, typing.Callable[[tuple], tuple]]:
+        """Sources mapping fixture.
+        """
+        return types.MappingProxyType({
+            framod.Join(student, person, student.surname == person.surname): lambda _: tuple(['foo']),
+            person: lambda _: tuple([person]),
+            student: lambda _: tuple([student]),
+            school: lambda _: tuple([school])
+        })
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def columns(student: framod.Table) -> typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]:
+        """Columns mapping fixture.
+        """
+
+        class Columns:
+            """Columns mapping.
+            """
+
+            def __getitem__(self, column: sermod.Column) -> typing.Callable[[tuple], tuple]:
+                if hash(column) == hash(student.level):
+                    return lambda _: tuple(['baz'])
+                if isinstance(column, sermod.Element):
+                    return lambda _: tuple([column])
+                raise KeyError('Unknown column')
+
+        return Columns()
+
     @staticmethod
     @pytest.fixture(scope='function')
     def parser(sources: typing.Mapping[framod.Source, typing.Callable[[tuple], tuple]],
                columns: typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]) -> Frame:
         """Parser fixture.
         """
-        return Frame(sources, Series(sources, columns))
+        return Frame(sources, columns)
 
     def format(self, result: code.Tabulizer) -> tuple:
         return result(None)
