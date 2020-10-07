@@ -138,10 +138,7 @@ class Join(Source):
         return self.left.columns + self.right.columns
 
     def accept(self, visitor: visit.Frame) -> None:
-        with visitor.visit_join(self):
-            with visitor.visit_source(self):
-                self.left.accept(visitor)
-                self.right.accept(visitor)
+        visitor.visit_join(self)
 
 
 class Set(Source):
@@ -171,10 +168,7 @@ class Set(Source):
         return self.left.columns + self.right.columns
 
     def accept(self, visitor: visit.Frame) -> None:
-        with visitor.visit_set(self):
-            with visitor.visit_source(self):
-                self.left.accept(visitor)
-                self.right.accept(visitor)
+        visitor.visit_set(self)
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
@@ -307,9 +301,7 @@ class Reference(Tangible):
         Args:
             visitor: Visitor instance.
         """
-        with visitor.visit_reference(self):
-            with visitor.visit_source(self):
-                self.instance.accept(visitor)
+        visitor.visit_reference(self)
 
 
 class Table(Tangible):
@@ -383,9 +375,7 @@ class Table(Tangible):
         return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
 
     def accept(self, visitor: visit.Frame) -> None:
-        with visitor.visit_table(self):
-            with visitor.visit_source(self):
-                pass
+        visitor.visit_table(self)
 
 
 class Query(Queryable):
@@ -464,9 +454,7 @@ class Query(Queryable):
         return self.selection if self.selection else self.source.columns
 
     def accept(self, visitor: visit.Frame) -> None:
-        with visitor.visit_query(self):
-            with visitor.visit_source(self):
-                self.source.accept(visitor)
+        visitor.visit_query(self)
 
     def select(self, *columns: 'series.Column') -> 'Query':
         return Query(self.source, columns, self.prefilter, self.grouping, self.postfilter, self.ordering, self.rows)

@@ -20,7 +20,6 @@ ETL schema types.
 """
 import abc
 import collections
-import contextlib
 import enum
 import functools
 import itertools
@@ -71,17 +70,13 @@ class Column(tuple, metaclass=abc.ABCMeta):
                 col.accept(self)
             return frozenset(self._match)
 
-        @contextlib.contextmanager
-        def visit_source(self, source: 'framod.Source') -> typing.Iterable[None]:
-            yield
+        def visit_source(self, source: 'framod.Source') -> None:
             for column in source.columns:
                 if column not in self._seen:
+                    self._seen.add(column)
                     column.accept(self)
 
-        @contextlib.contextmanager
-        def visit_column(self, column: 'Column') -> typing.Iterable[None]:
-            self._seen.add(column)
-            yield
+        def visit_column(self, column: 'Column') -> None:
             if any(isinstance(column, t) for t in self._types):
                 self._match.add(column)
 
@@ -391,9 +386,7 @@ class Aliased(Column):
         Args:
             visitor: Visitor instance.
         """
-        with visitor.visit_aliased(self):
-            with visitor.visit_column(self):
-                self.operable.accept(visitor)
+        visitor.visit_aliased(self)
 
 
 class Literal(Operable):
@@ -422,9 +415,7 @@ class Literal(Operable):
         Args:
             visitor: Visitor instance.
         """
-        with visitor.visit_literal(self):
-            with visitor.visit_column(self):
-                pass
+        visitor.visit_literal(self)
 
 
 class Element(Operable):
@@ -451,17 +442,15 @@ class Element(Operable):
         Args:
             visitor: Visitor instance.
         """
-        with visitor.visit_element(self):
-            with visitor.visit_column(self):
-                self.source.accept(visitor)
+        visitor.visit_element(self)
 
 
 class Field(Element):
     """Special type of element is the schema field type.
     """
-    source: 'framod.Segment' = property(opermod.itemgetter(0))
+    source: 'framod.Table' = property(opermod.itemgetter(0))
 
-    def __new__(cls, table: 'framod.Segment', name: str):
+    def __new__(cls, table: 'framod.Table', name: str):
         if not isinstance(table, framod.Table):
             raise ValueError('Invalid field source')
         return super().__new__(cls, table, name)
@@ -482,11 +471,7 @@ class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
         return None
 
     def accept(self, visitor: vismod.Series) -> None:
-        with visitor.visit_expression(self):
-            with visitor.visit_column(self):
-                for term in self:
-                    if isinstance(term, Operable):
-                        term.accept(visitor)
+        visitor.visit_expression(self)
 
 
 class Univariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
@@ -889,9 +874,7 @@ class Window(Multirow):
         Args:
             visitor: Visitor instance.
         """
-        with visitor.visit_window(self):
-            with visitor.visit_column(self):
-                pass
+        visitor.visit_window(self)
 
 
 class Aggregate(Multirow, Window.Function, metaclass=abc.ABCMeta):
