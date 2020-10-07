@@ -20,7 +20,6 @@ ETL DSL parser.
 """
 import abc
 import collections
-import contextlib
 import functools
 import logging
 import types
@@ -137,17 +136,15 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
 
         Returns: Decorated version of the visit_* method.
         """
-        @contextlib.contextmanager
         @functools.wraps(method)
-        def wrapped(self: Container, subject: typing.Any) -> typing.Iterable[None]:
+        def wrapped(self: Container, subject: typing.Any) -> None:
             """Decorated version of the visit_* method.
 
             Args:
                 self: Visitor instance.
                 subject: Visited subject.
             """
-            with method(self, subject):
-                yield
+            method(self, subject)
             try:
                 new = override(self, subject)
             except error.Mapping:
@@ -176,6 +173,15 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
                 def __new__(cls):
                     return super().__new__(cls, set(), set())
 
+                def update(self, other: 'Frame.Context.Tables.Segment') -> None:
+                    """Update this segment using the values of the other.
+
+                    Args:
+                        other: Segment to update from.
+                    """
+                    self.fields.update(other.fields)
+                    self.factors.update(other.factors)
+
                 @property
                 def predicate(self) -> typing.Optional[sermod.Predicate]:
                     """Combine the factors into single predicate.
@@ -187,6 +193,22 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
             def __init__(self):
                 self._segments: typing.Dict[
                     frame.Table, Frame.Context.Tables.Segment] = collections.defaultdict(self.Segment)
+
+            def update(self, other: 'Frame.Context.Tables') -> None:
+                """Update this tables using the values of the other.
+
+                Args:
+                    other: Tables to update from.
+                """
+                for table, segment in other.items():
+                    self[table].update(segment)
+
+            def items(self) -> typing.ItemsView[frame.Table, 'Frame.Context.Tables.Segment']:
+                """Get the key-value pairs of this mapping.
+
+                Returns: Key-value mapping items.
+                """
+                return self._segments.items()
 
             def __getitem__(self, table: frame.Table) -> 'Frame.Context.Tables.Segment':
                 return self._segments[table]
@@ -230,6 +252,7 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
         Returns: Column in target code.
         """
         with self._series as visitor:
+            visitor.context.tables.update(self.context.tables)
             column.accept(visitor)
             return visitor.fetch()
 
@@ -316,56 +339,53 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
         Returns: Instance reference in target code.
         """
 
-    @contextlib.contextmanager
-    def visit_table(self, source: frame.Table) -> typing.Iterable[None]:
+    def visit_table(self, source: frame.Table) -> None:
         fields = [self.generate_column(f) for f in sorted(self.context.tables[source].fields)]
         predicate = self.context.tables[source].predicate
         if predicate is not None:
             predicate = self.generate_column(predicate)
-        yield
+        super().visit_table(source)
         self.context.symbols.push(self.generate_table(self.resolve_source(source), fields, predicate))
 
     @bypass(resolve_source)
-    @contextlib.contextmanager
-    def visit_join(self, source: frame.Join) -> typing.Iterable[None]:
+    def visit_join(self, source: frame.Join) -> None:
         if source.condition:
             self.context.tables.filter(source.condition)
-        yield
+        super().visit_join(source)
         right = self.context.symbols.pop()
         left = self.context.symbols.pop()
         expression = self.generate_column(source.condition) if source.condition is not None else None
         self.context.symbols.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(resolve_source)
-    @contextlib.contextmanager
-    def visit_set(self, source: frame.Set) -> typing.Iterable[None]:
-        yield
+    def visit_set(self, source: frame.Set) -> None:
+        super().visit_set(source)
         right = self.context.symbols.pop()
         left = self.context.symbols.pop()
         self.context.symbols.push(self.generate_set(left, right, source.kind))
 
     @bypass(resolve_source)
-    @contextlib.contextmanager
-    def visit_query(self, source: frame.Query) -> typing.Iterable[None]:
-        self.context.tables.select(*source.columns)
-        if source.prefilter is not None:
-            self.context.tables.filter(source.prefilter)
-        if source.postfilter is not None:
-            self.context.tables.select(source.postfilter)
-        self.context.tables.select(*source.grouping)
-        self.context.tables.select(*(c for c, _ in source.ordering))
-        yield
-        columns = [self.generate_column(c) for c in source.columns]
-        where = self.generate_column(source.prefilter) if source.prefilter is not None else None
-        groupby = [self.generate_column(c) for c in source.grouping]
-        having = self.generate_column(source.postfilter) if source.postfilter is not None else None
-        orderby = [(self.generate_column(c), o) for c, o in source.ordering]
-        self.context.symbols.push(self.generate_query(self.context.symbols.pop(),
-                                                      columns, where, groupby, having, orderby, source.rows))
+    def visit_query(self, source: frame.Query) -> None:
+        with self:
+            self.context.tables.select(*source.columns)
+            if source.prefilter is not None:
+                self.context.tables.filter(source.prefilter)
+            if source.postfilter is not None:
+                self.context.tables.select(source.postfilter)
+            self.context.tables.select(*source.grouping)
+            self.context.tables.select(*(c for c, _ in source.ordering))
+            super().visit_query(source)
+            columns = [self.generate_column(c) for c in source.columns]
+            where = self.generate_column(source.prefilter) if source.prefilter is not None else None
+            groupby = [self.generate_column(c) for c in source.grouping]
+            having = self.generate_column(source.postfilter) if source.postfilter is not None else None
+            orderby = [(self.generate_column(c), o) for c, o in source.ordering]
+            query = self.generate_query(self.context.symbols.pop(),
+                                        columns, where, groupby, having, orderby, source.rows)
+        self.context.symbols.push(query)
 
-    @contextlib.contextmanager
-    def visit_reference(self, source: frame.Reference) -> typing.Iterable[None]:
-        yield
+    def visit_reference(self, source: frame.Reference) -> None:
+        super().visit_reference(source)
         self.context.symbols.push(self.generate_reference(self.context.symbols.pop(), source.name))
 
 
@@ -434,27 +454,23 @@ class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
         Returns: Expression in target code representation.
         """
 
-    @contextlib.contextmanager
-    def visit_element(self, column: sermod.Element) -> typing.Iterable[None]:
-        yield
+    def visit_element(self, column: sermod.Element) -> None:
+        super().visit_element(column)
         self.context.symbols.push(self.generate_element(self.context.symbols.pop(), self.resolve_column(column)))
 
     @bypass(resolve_column)
-    @contextlib.contextmanager
-    def visit_aliased(self, column: sermod.Aliased) -> typing.Iterable[None]:
-        yield
+    def visit_aliased(self, column: sermod.Aliased) -> None:
+        super().visit_aliased(column)
         self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), column.name))
 
     @bypass(resolve_column)
-    @contextlib.contextmanager
-    def visit_literal(self, column: sermod.Literal) -> typing.Iterable[None]:
-        yield
+    def visit_literal(self, column: sermod.Literal) -> None:
+        super().visit_literal(column)
         self.context.symbols.push(self.generate_literal(column.value, column.kind))
 
     @bypass(resolve_column)
-    @contextlib.contextmanager
-    def visit_expression(self, column: sermod.Expression) -> typing.Iterable[None]:
-        yield
+    def visit_expression(self, column: sermod.Expression) -> None:
+        super().visit_expression(column)
         arguments = tuple(reversed([self.context.symbols.pop() if isinstance(c, sermod.Column) else c
                                     for c in reversed(column)]))
         self.context.symbols.push(self.generate_expression(column.__class__, arguments))
