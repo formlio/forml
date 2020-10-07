@@ -146,7 +146,7 @@ class TestField(TestElement):
     def test_table(self, column: series.Element, student: frame.Table):
         """Test the column table reference.
         """
-        assert column.source == student
+        assert column.origin == student
 
 
 class Predicate(Operable, metaclass=abc.ABCMeta):
@@ -177,7 +177,7 @@ class Predicate(Operable, metaclass=abc.ABCMeta):
         assert factors & factors | factors == factors
         for table, expression in factors.items():
             series.Predicate.ensure_is(expression)
-            assert len({f.source for f in series.Field.dissect(expression)}) == 1
+            assert len({f.origin for f in series.Field.dissect(expression)}) == 1
             assert table == student
 
 

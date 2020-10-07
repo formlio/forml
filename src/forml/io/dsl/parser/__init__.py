@@ -158,8 +158,9 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
     return decorator
 
 
-class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, metaclass=abc.ABCMeta):
-    """Frame source parser.
+class Columnar(typing.Generic[Source, Column], Container[typing.Union[Source, Column]], visit.Columnar,
+               metaclass=abc.ABCMeta):
+    """Base parser class for both Frame and Series visitors.
     """
     class Context(Container.Context):
         """Extended container context for holding the segments.
@@ -173,7 +174,7 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
                 def __new__(cls):
                     return super().__new__(cls, set(), set())
 
-                def update(self, other: 'Frame.Context.Tables.Segment') -> None:
+                def update(self, other: 'Columnar.Context.Tables.Segment') -> None:
                     """Update this segment using the values of the other.
 
                     Args:
@@ -192,9 +193,9 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
 
             def __init__(self):
                 self._segments: typing.Dict[
-                    frame.Table, Frame.Context.Tables.Segment] = collections.defaultdict(self.Segment)
+                    frame.Table, Columnar.Context.Tables.Segment] = collections.defaultdict(self.Segment)
 
-            def update(self, other: 'Frame.Context.Tables') -> None:
+            def update(self, other: 'Columnar.Context.Tables') -> None:
                 """Update this tables using the values of the other.
 
                 Args:
@@ -203,14 +204,14 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
                 for table, segment in other.items():
                     self[table].update(segment)
 
-            def items(self) -> typing.ItemsView[frame.Table, 'Frame.Context.Tables.Segment']:
+            def items(self) -> typing.ItemsView[frame.Table, 'Columnar.Context.Tables.Segment']:
                 """Get the key-value pairs of this mapping.
 
                 Returns: Key-value mapping items.
                 """
                 return self._segments.items()
 
-            def __getitem__(self, table: frame.Table) -> 'Frame.Context.Tables.Segment':
+            def __getitem__(self, table: frame.Table) -> 'Columnar.Context.Tables.Segment':
                 return self._segments[table]
 
             def select(self, *column: sermod.Column) -> None:
@@ -220,7 +221,7 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
                     *column: Columns to be to extracted and registered.
                 """
                 for field in sermod.Field.dissect(*column):
-                    self[field.source].fields.add(field)
+                    self[field.origin].fields.add(field)
 
             def filter(self, expression: sermod.Predicate) -> None:
                 """Extract predicate factors from given expression and register them into segments of their relevant
@@ -235,14 +236,13 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
 
         def __init__(self):
             super().__init__()
-            self.tables: Frame.Context.Tables = self.Tables()
+            self.tables: Columnar.Context.Tables = self.Tables()
 
-    def __init__(self, sources: typing.Mapping[frame.Source, Source], series: 'Series[Source, Column]'):
+    def __init__(self, sources: typing.Mapping[frame.Source, Source]):
         super().__init__()
         self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
-        self._series: Series = series
 
-    @functools.lru_cache()
+    @abc.abstractmethod
     def generate_column(self, column: sermod.Column) -> Column:
         """Generate target code for the generic column type.
 
@@ -251,10 +251,6 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
 
         Returns: Column in target code.
         """
-        with self._series as visitor:
-            visitor.context.tables.update(self.context.tables)
-            column.accept(visitor)
-            return visitor.fetch()
 
     def resolve_source(self, source: frame.Source) -> Source:
         """Get a custom target code for a source type.
@@ -282,6 +278,165 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
         Returns: Table target code potentially optimized based on field requirements.
         """
         return table
+
+    def visit_table(self, origin: frame.Table) -> None:
+        fields = [self.generate_column(f) for f in sorted(self.context.tables[origin].fields)]
+        predicate = self.context.tables[origin].predicate
+        if predicate is not None:
+            predicate = self.generate_column(predicate)
+        super().visit_table(origin)
+        self.context.symbols.push(self.generate_table(self.resolve_source(origin), fields, predicate))
+
+
+class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Frame, metaclass=abc.ABCMeta):
+    """Frame source parser.
+    """
+    class Series(typing.Generic[Source, Column], Columnar[Source, Column], visit.Series, metaclass=abc.ABCMeta):
+        """Series column parser.
+        """
+        def __init__(self, sources: typing.Mapping[frame.Source, Source],
+                     columns: typing.Mapping[sermod.Column, Column]):
+            super().__init__(sources)
+            self._columns: typing.Mapping[sermod.Column, Column] = types.MappingProxyType(columns)
+
+        def resolve_column(self, column: sermod.Column) -> Column:
+            """Get a custom target code for a column value.
+
+            Args:
+                column: Column instance.
+
+            Returns: Column in target code representation.
+            """
+            try:
+                return self._columns[column]
+            except KeyError as err:
+                raise error.Mapping(f'Unknown mapping for column {column}') from err
+
+        @functools.lru_cache()
+        def generate_column(self, column: sermod.Column) -> Column:
+            """Generate target code for the generic column type.
+
+            Args:
+                column: Column instance
+
+            Returns: Column in target code.
+            """
+            with self as visitor:
+                column.accept(visitor)
+                return visitor.fetch()
+
+        @abc.abstractmethod
+        def generate_reference(self, name: str) -> Column:
+            """Generate reference code.
+
+            Args:
+                name: Reference name.
+
+            Returns: Instance reference in target code.
+            """
+
+        @abc.abstractmethod
+        def generate_element(self, source: Source, element: Column) -> Column:
+            """Generate a field code.
+
+            Args:
+                source: Column value already in target code.
+                element: Field symbol to be used for given column.
+
+            Returns: Field in target code.
+            """
+
+        @abc.abstractmethod
+        def generate_alias(self, column: Column, alias: str) -> Column:
+            """Generate column alias code.
+
+            Args:
+                column: Column value already in target code.
+                alias: Alias to be used for given column.
+
+            Returns: Aliased column in target code.
+            """
+
+        @abc.abstractmethod
+        def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Column:
+            """Generate target code for a literal value.
+
+            Args:
+                value: Literal value instance.
+                kind: Literal value type.
+
+            Returns: Literal in target code representation.
+            """
+
+        @abc.abstractmethod
+        def generate_expression(self, expression: typing.Type[sermod.Expression],
+                                arguments: typing.Sequence[typing.Any]) -> Column:
+            """Generate target code for an expression of given arguments.
+
+            Args:
+                expression: Operator or function implementing the expression.
+                arguments: Expression arguments.
+
+            Returns: Expression in target code representation.
+            """
+
+        def visit_reference(self, origin: frame.Reference) -> None:
+            super().visit_reference(origin)
+            self.context.symbols.push(self.generate_reference(origin.name))
+
+        def visit_element(self, column: sermod.Element) -> None:
+            super().visit_element(column)
+            self.context.symbols.push(self.generate_element(self.context.symbols.pop(), self.resolve_column(column)))
+
+        @bypass(resolve_column)
+        def visit_aliased(self, column: sermod.Aliased) -> None:
+            super().visit_aliased(column)
+            self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), column.name))
+
+        @bypass(resolve_column)
+        def visit_literal(self, column: sermod.Literal) -> None:
+            super().visit_literal(column)
+            self.context.symbols.push(self.generate_literal(column.value, column.kind))
+
+        @bypass(resolve_column)
+        def visit_expression(self, column: sermod.Expression) -> None:
+            super().visit_expression(column)
+            arguments = tuple(reversed([self.context.symbols.pop() if isinstance(c, sermod.Column) else c
+                                        for c in reversed(column)]))
+            self.context.symbols.push(self.generate_expression(column.__class__, arguments))
+
+        @bypass(resolve_column)
+        def visit_window(self, column: sermod.Window) -> typing.ContextManager[None]:
+            raise NotImplementedError('Window functions not yet supported')
+
+    def __init__(self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]):
+        super().__init__(sources)
+        self._series: Frame.Series = self.Series(sources, columns)  # pylint: disable=abstract-class-instantiated
+
+    @functools.lru_cache()
+    def generate_column(self, column: sermod.Column) -> Column:
+        """Generate target code for the generic column type.
+
+        Args:
+            column: Column instance
+
+        Returns: Column in target code.
+        """
+        with self._series as visitor:
+            visitor.context.tables.update(self.context.tables)
+            column.accept(visitor)
+            return visitor.fetch()
+
+    @abc.abstractmethod
+    def generate_reference(self, instance: Source, name: str) -> Source:
+        """Generate reference code.
+
+        Args:
+            instance: Instance value already in target code.
+            name: Reference name.
+
+        Returns: Instance reference in target code.
+        """
 
     @abc.abstractmethod
     def generate_join(self, left: Source, right: Source, condition: typing.Optional[Column],
@@ -328,26 +483,11 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
         Returns: Query in target code.
         """
 
-    @abc.abstractmethod
-    def generate_reference(self, instance: Source, name: str) -> Source:
-        """Generate reference code.
+    def visit_reference(self, origin: frame.Reference) -> None:
+        super().visit_reference(origin)
+        self.context.symbols.push(self.generate_reference(self.context.symbols.pop(), origin.name))
 
-        Args:
-            instance: Instance value already in target code.
-            name: Reference name.
-
-        Returns: Instance reference in target code.
-        """
-
-    def visit_table(self, source: frame.Table) -> None:
-        fields = [self.generate_column(f) for f in sorted(self.context.tables[source].fields)]
-        predicate = self.context.tables[source].predicate
-        if predicate is not None:
-            predicate = self.generate_column(predicate)
-        super().visit_table(source)
-        self.context.symbols.push(self.generate_table(self.resolve_source(source), fields, predicate))
-
-    @bypass(resolve_source)
+    @bypass(Columnar.resolve_source)
     def visit_join(self, source: frame.Join) -> None:
         if source.condition:
             self.context.tables.filter(source.condition)
@@ -357,14 +497,14 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
         expression = self.generate_column(source.condition) if source.condition is not None else None
         self.context.symbols.push(self.generate_join(left, right, expression, source.kind))
 
-    @bypass(resolve_source)
+    @bypass(Columnar.resolve_source)
     def visit_set(self, source: frame.Set) -> None:
         super().visit_set(source)
         right = self.context.symbols.pop()
         left = self.context.symbols.pop()
         self.context.symbols.push(self.generate_set(left, right, source.kind))
 
-    @bypass(resolve_source)
+    @bypass(Columnar.resolve_source)
     def visit_query(self, source: frame.Query) -> None:
         with self:
             self.context.tables.select(*source.columns)
@@ -383,97 +523,3 @@ class Frame(typing.Generic[Source, Column], Container[Source], visit.Frame, meta
             query = self.generate_query(self.context.symbols.pop(),
                                         columns, where, groupby, having, orderby, source.rows)
         self.context.symbols.push(query)
-
-    def visit_reference(self, source: frame.Reference) -> None:
-        super().visit_reference(source)
-        self.context.symbols.push(self.generate_reference(self.context.symbols.pop(), source.name))
-
-
-class Series(Frame[Source, Column], visit.Series, metaclass=abc.ABCMeta):
-    """Series column parser.
-    """
-    def __init__(self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]):
-        self._columns: typing.Mapping[sermod.Column, Column] = types.MappingProxyType(columns)
-        super().__init__(sources, self)
-
-    def resolve_column(self, column: sermod.Column) -> Column:
-        """Get a custom target code for a column value.
-
-        Args:
-            column: Column instance.
-
-        Returns: Column in target code representation.
-        """
-        try:
-            return self._columns[column]
-        except KeyError as err:
-            raise error.Mapping(f'Unknown mapping for column {column}') from err
-
-    @abc.abstractmethod
-    def generate_element(self, source: Source, element: Column) -> Column:
-        """Generate a field code.
-
-        Args:
-            source: Column value already in target code.
-            element: Field symbol to be used for given column.
-
-        Returns: Field in target code.
-        """
-
-    @abc.abstractmethod
-    def generate_alias(self, column: Column, alias: str) -> Column:
-        """Generate column alias code.
-
-        Args:
-            column: Column value already in target code.
-            alias: Alias to be used for given column.
-
-        Returns: Aliased column in target code.
-        """
-
-    @abc.abstractmethod
-    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Column:
-        """Generate target code for a literal value.
-
-        Args:
-            value: Literal value instance.
-            kind: Literal value type.
-
-        Returns: Literal in target code representation.
-        """
-
-    @abc.abstractmethod
-    def generate_expression(self, expression: typing.Type[sermod.Expression],
-                            arguments: typing.Sequence[typing.Any]) -> Column:
-        """Generate target code for an expression of given arguments.
-
-        Args:
-            expression: Operator or function implementing the expression.
-            arguments: Expression arguments.
-
-        Returns: Expression in target code representation.
-        """
-
-    def visit_element(self, column: sermod.Element) -> None:
-        super().visit_element(column)
-        self.context.symbols.push(self.generate_element(self.context.symbols.pop(), self.resolve_column(column)))
-
-    @bypass(resolve_column)
-    def visit_aliased(self, column: sermod.Aliased) -> None:
-        super().visit_aliased(column)
-        self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), column.name))
-
-    @bypass(resolve_column)
-    def visit_literal(self, column: sermod.Literal) -> None:
-        super().visit_literal(column)
-        self.context.symbols.push(self.generate_literal(column.value, column.kind))
-
-    @bypass(resolve_column)
-    def visit_expression(self, column: sermod.Expression) -> None:
-        super().visit_expression(column)
-        arguments = tuple(reversed([self.context.symbols.pop() if isinstance(c, sermod.Column) else c
-                                    for c in reversed(column)]))
-        self.context.symbols.push(self.generate_expression(column.__class__, arguments))
-
-    def visit_window(self, column: sermod.Window) -> typing.ContextManager[None]:
-        raise NotImplementedError('Window functions not yet supported')

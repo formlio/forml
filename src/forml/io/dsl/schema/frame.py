@@ -113,12 +113,12 @@ class Join(Source):
         def __repr__(self):
             return f'<{self.value}-join>'
 
-    left: 'Tangible' = property(operator.itemgetter(0))
-    right: 'Tangible' = property(operator.itemgetter(1))
+    left: 'Origin' = property(operator.itemgetter(0))
+    right: 'Origin' = property(operator.itemgetter(1))
     condition: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
     kind: 'Join.Kind' = property(operator.itemgetter(3))
 
-    def __new__(cls, left: 'Tangible', right: 'Tangible', condition: typing.Optional['series.Expression'] = None,
+    def __new__(cls, left: 'Origin', right: 'Origin', condition: typing.Optional['series.Expression'] = None,
                 kind: typing.Optional[typing.Union['Join.Kind', str]] = None):
         kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
         if condition is not None:
@@ -215,7 +215,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.having(condition)
 
-    def join(self, other: 'Tangible', condition: typing.Optional['series.Expression'] = None,
+    def join(self, other: 'Origin', condition: typing.Optional['series.Expression'] = None,
              kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
         """Join with other tangible.
         """
@@ -254,8 +254,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         return self.query.difference(other)
 
 
-class Tangible(Queryable, metaclass=abc.ABCMeta):
-    """Tangible is a queryable that can be referenced by some identifier (rather than just a statement itself).
+class Origin(Queryable, metaclass=abc.ABCMeta):
+    """Origin is a queryable that can be referenced by some identifier (rather than just a statement itself).
 
     It's columns are represented using series.Element.
     """
@@ -268,7 +268,7 @@ class Tangible(Queryable, metaclass=abc.ABCMeta):
         """
 
 
-class Reference(Tangible):
+class Reference(Origin):
     """Reference is a wrapper around a queryable that associates it with a (possibly random) name.
     """
     _NAMELEN: int = 8
@@ -295,7 +295,7 @@ class Reference(Tangible):
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
         return Reference(self.instance, name)
 
-    def accept(self, visitor: visit.Frame) -> None:
+    def accept(self, visitor: visit.Columnar) -> None:
         """Visitor acceptor.
 
         Args:
@@ -304,7 +304,7 @@ class Reference(Tangible):
         visitor.visit_reference(self)
 
 
-class Table(Tangible):
+class Table(Origin):
     """Table based source.
 
     This type can be used either as metaclass or as a base class to inherit from.
@@ -374,7 +374,7 @@ class Table(Tangible):
     def columns(self) -> typing.Sequence['series.Field']:
         return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
 
-    def accept(self, visitor: visit.Frame) -> None:
+    def accept(self, visitor: visit.Columnar) -> None:
         visitor.visit_table(self)
 
 
