@@ -21,7 +21,7 @@ Wrapped actor unit tests.
 # pylint: disable=no-self-use
 import pytest
 from forml.flow import task
-from forml.stdlib.actor import wrapped
+from forml.lib.flow.actor import wrapped
 
 
 class TestFunction:

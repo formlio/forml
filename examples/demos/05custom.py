@@ -23,7 +23,7 @@ import pandas as pd
 
 import demos
 from forml.flow import task
-from forml.stdlib.operator import simple
+from forml.lib.operator import simple
 
 
 @simple.Mapper.operator

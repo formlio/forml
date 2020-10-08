@@ -19,15 +19,18 @@
 Global ForML unit tests fixtures.
 """
 # pylint: disable=no-self-use
+import collections
+import datetime
 import pathlib
 import typing
+import uuid
 
 import pytest
 
 from forml.flow import task
+from forml.lib.flow.actor import wrapped
 from forml.project import distribution, product
-from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
-from forml.stdlib.actor import wrapped
+from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
 
 
 class WrappedActor:
@@ -162,3 +165,33 @@ def project_lineage(project_package: distribution.Package) -> lngmod.Level.Key:
     """Test project lineage fixture.
     """
     return project_package.manifest.version
+
+
+@pytest.fixture(scope='session')
+def valid_generation() -> genmod.Level.Key:
+    """Generation fixture.
+    """
+    return genmod.Level.Key(1)
+
+
+@pytest.fixture(scope='function')
+def nodes() -> typing.Sequence[uuid.UUID]:
+    """Persistent nodes GID fixture.
+    """
+    return uuid.UUID(bytes=b'\x00' * 16), uuid.UUID(bytes=b'\x01' * 16), uuid.UUID(bytes=b'\x02' * 16)
+
+
+@pytest.fixture(scope='function')
+def states(nodes) -> typing.Mapping[uuid.UUID, bytes]:
+    """State IDs to state values mapping fixture.
+    """
+    return collections.OrderedDict((n, n.bytes) for n in nodes)
+
+
+@pytest.fixture(scope='function')
+def tag(states: typing.Mapping[uuid.UUID, bytes]) -> genmod.Tag:
+    """Tag fixture.
+    """
+    return genmod.Tag(training=genmod.Tag.Training(datetime.datetime(2019, 4, 1), 123),
+                      tuning=genmod.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
+                      states=states.keys())

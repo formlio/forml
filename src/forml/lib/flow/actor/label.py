@@ -24,7 +24,7 @@ import typing
 import pandas
 
 from forml.flow import task
-from forml.stdlib.actor import frame
+from forml.lib.flow.actor import frame
 
 LOGGER = logging.getLogger(__name__)
 

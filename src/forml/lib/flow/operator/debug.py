@@ -28,7 +28,7 @@ import pandas
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
-from forml.stdlib.actor import label as labelmod, frame
+from forml.lib.flow.actor import label as labelmod, frame
 
 
 class Return(topology.Operator):

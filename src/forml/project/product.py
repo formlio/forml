@@ -33,7 +33,7 @@ from forml.project import component as compmod, distribution, importer
 from forml.runtime import process
 from forml.runtime.asset import access, persistent
 from forml.runtime.asset.directory import root
-from forml.runtime.asset.persistent.registry import virtual
+from forml.lib.registry import virtual
 
 LOGGER = logging.getLogger(__name__)
 

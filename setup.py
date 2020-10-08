@@ -26,7 +26,7 @@ import setuptools
 sys.path.insert(0, 'src')
 import forml  # noqa: E402
 
-EXTRAS_STDLIB = {
+EXTRAS_FLOW = {
     'pandas',
     'scikit-learn'
 }
@@ -50,7 +50,7 @@ EXTRAS_DEV = {
     'mypy'
 }
 
-EXTRAS_ALL = EXTRAS_STDLIB | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC
+EXTRAS_ALL = EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC
 
 setuptools.setup(name='forml',
                  version=forml.__version__,
@@ -69,11 +69,11 @@ setuptools.setup(name='forml',
                  install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0'],
                  extras_require={
                      'all': EXTRAS_ALL,
+                     'dask': EXTRAS_DASK,
                      'dev': EXTRAS_DEV,
                      'doc': EXTRAS_DOC,
-                     'stdlib': EXTRAS_STDLIB,
+                     'flow': EXTRAS_FLOW,
                      'graphviz': EXTRAS_GRAPHVIZ,
-                     'dask': EXTRAS_DASK
                  },
                  entry_points={'console_scripts': [
                      'forml = forml.cli.forml:Parser',

@@ -19,8 +19,6 @@
 Runtime unit tests fixtures.
 """
 # pylint: disable=no-self-use
-import collections
-import datetime
 import typing
 import uuid
 
@@ -29,29 +27,6 @@ import pytest
 from forml.project import distribution
 from forml.runtime.asset import persistent, directory as dirmod, access
 from forml.runtime.asset.directory import root as rootmod, project as prjmod, lineage as lngmod, generation as genmod
-
-
-@pytest.fixture(scope='function')
-def nodes() -> typing.Sequence[uuid.UUID]:
-    """Persistent nodes GID fixture.
-    """
-    return uuid.UUID(bytes=b'\x00' * 16), uuid.UUID(bytes=b'\x01' * 16), uuid.UUID(bytes=b'\x02' * 16)
-
-
-@pytest.fixture(scope='function')
-def states(nodes) -> typing.Mapping[uuid.UUID, bytes]:
-    """State IDs to state values mapping fixture.
-    """
-    return collections.OrderedDict((n, n.bytes) for n in nodes)
-
-
-@pytest.fixture(scope='function')
-def tag(states: typing.Mapping[uuid.UUID, bytes]) -> genmod.Tag:
-    """Tag fixture.
-    """
-    return genmod.Tag(training=genmod.Tag.Training(datetime.datetime(2019, 4, 1), 123),
-                      tuning=genmod.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
-                      states=states.keys())
 
 
 @pytest.fixture(scope='session')
@@ -73,13 +48,6 @@ def last_lineage(empty_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
     """Lineage fixture.
     """
     return empty_lineage
-
-
-@pytest.fixture(scope='session')
-def valid_generation() -> genmod.Level.Key:
-    """Generation fixture.
-    """
-    return genmod.Level.Key(1)
 
 
 @pytest.fixture(scope='session')
@@ -113,8 +81,8 @@ def registry(project_name: prjmod.Level.Key, populated_lineage: lngmod.Level.Key
                         lineage: lngmod.Level.Key) -> typing.Iterable[genmod.Level.Key]:
             try:
                 return content[project][lineage][1].keys()
-            except KeyError:
-                raise dirmod.Level.Invalid(f'Invalid lineage ({lineage})')
+            except KeyError as err:
+                raise dirmod.Level.Invalid(f'Invalid lineage ({lineage})') from err
 
         def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> distribution.Package:
             return content[project][lineage][0]
@@ -136,8 +104,8 @@ def registry(project_name: prjmod.Level.Key, populated_lineage: lngmod.Level.Key
                  generation: genmod.Level.Key) -> genmod.Tag:
             try:
                 return content[project][lineage][1][generation][0]
-            except KeyError:
-                raise dirmod.Level.Invalid(f'Invalid generation ({lineage}.{generation})')
+            except KeyError as err:
+                raise dirmod.Level.Invalid(f'Invalid generation ({lineage}.{generation})') from err
 
         def close(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key,
                   tag: genmod.Tag) -> None:

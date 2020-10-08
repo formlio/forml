@@ -232,8 +232,8 @@ class Registry(persistent.Registry, key='filesystem'):
         """
         try:
             return [matcher.constructor(p.name) for p in path.iterdir() if matcher.valid(p)]
-        except NotADirectoryError:
-            raise directory.Level.Invalid(f'Path {path} is not a valid registry component')
+        except NotADirectoryError as err:
+            raise directory.Level.Invalid(f'Path {path} is not a valid registry component') from err
         except FileNotFoundError:
             return tuple()
 
@@ -285,8 +285,8 @@ class Registry(persistent.Registry, key='filesystem'):
         try:
             with path.open('rb') as tagfile:
                 return genmod.Tag.loads(tagfile.read())
-        except FileNotFoundError:
-            raise directory.Level.Listing.Empty(f'No tag under {path}')
+        except FileNotFoundError as err:
+            raise directory.Level.Listing.Empty(f'No tag under {path}') from err
 
     def close(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key,
               tag: 'genmod.Tag') -> None:

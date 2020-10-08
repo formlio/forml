@@ -16,22 +16,29 @@
 # under the License.
 
 """
-ForML persistent unit tests.
+Simple operator unit tests.
 """
 # pylint: disable=no-self-use
 import typing
 
 import pytest
 
-from forml.runtime.asset import persistent
-from forml.runtime.asset.persistent.registry import virtual
-from . import Registry
+from forml.flow import task
+from forml.flow.pipeline import topology
+from forml.lib.flow.operator import simple
 
 
-class TestRegistry(Registry):
-    """Registry unit tests.
+class TestMapper:
+    """Simple mapper unit tests.
     """
     @staticmethod
     @pytest.fixture(scope='function')
-    def constructor() -> typing.Callable[[], persistent.Registry]:
-        return virtual.Registry
+    def operator(actor: typing.Type[task.Actor]):
+        """Operator fixture.
+        """
+        return simple.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
+
+    def test_compose(self, operator: topology.Operator):
+        """Operator composition test.
+        """
+        operator.compose(topology.Origin())
