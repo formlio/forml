@@ -162,82 +162,6 @@ class Columnar(typing.Generic[Source, Column], Container[typing.Union[Source, Co
                metaclass=abc.ABCMeta):
     """Base parser class for both Frame and Series visitors.
     """
-    class Context(Container.Context):
-        """Extended container context for holding the segments.
-        """
-        class Tables:
-            """Container for segments of all tables.
-            """
-            class Segment(collections.namedtuple('Segment', 'fields, factors')):
-                """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
-                """
-                def __new__(cls):
-                    return super().__new__(cls, set(), set())
-
-                def update(self, other: 'Columnar.Context.Tables.Segment') -> None:
-                    """Update this segment using the values of the other.
-
-                    Args:
-                        other: Segment to update from.
-                    """
-                    self.fields.update(other.fields)
-                    self.factors.update(other.factors)
-
-                @property
-                def predicate(self) -> typing.Optional[sermod.Predicate]:
-                    """Combine the factors into single predicate.
-
-                    Returns: Predicate expression.
-                    """
-                    return functools.reduce(sermod.Or, sorted(self.factors)) if self.factors else None
-
-            def __init__(self):
-                self._segments: typing.Dict[
-                    frame.Table, Columnar.Context.Tables.Segment] = collections.defaultdict(self.Segment)
-
-            def update(self, other: 'Columnar.Context.Tables') -> None:
-                """Update this tables using the values of the other.
-
-                Args:
-                    other: Tables to update from.
-                """
-                for table, segment in other.items():
-                    self[table].update(segment)
-
-            def items(self) -> typing.ItemsView[frame.Table, 'Columnar.Context.Tables.Segment']:
-                """Get the key-value pairs of this mapping.
-
-                Returns: Key-value mapping items.
-                """
-                return self._segments.items()
-
-            def __getitem__(self, table: frame.Table) -> 'Columnar.Context.Tables.Segment':
-                return self._segments[table]
-
-            def select(self, *column: sermod.Column) -> None:
-                """Extract fields from given list of columns and register them into segments of their relevant tables.
-
-                Args:
-                    *column: Columns to be to extracted and registered.
-                """
-                for field in sermod.Field.dissect(*column):
-                    self[field.origin].fields.add(field)
-
-            def filter(self, expression: sermod.Predicate) -> None:
-                """Extract predicate factors from given expression and register them into segments of their relevant
-                tables. Also register the whole expression using .select().
-
-                Args:
-                    expression: Expression to be extracted and registered.
-                """
-                self.select(expression)
-                for table, factor in expression.factors.items():
-                    self[table].factors.add(factor)
-
-        def __init__(self):
-            super().__init__()
-            self.tables: Columnar.Context.Tables = self.Tables()
-
     def __init__(self, sources: typing.Mapping[frame.Source, Source]):
         super().__init__()
         self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
@@ -264,28 +188,6 @@ class Columnar(typing.Generic[Source, Column], Container[typing.Union[Source, Co
             return self._sources[source]
         except KeyError as err:
             raise error.Mapping(f'Unknown mapping for source {source}') from err
-
-    def generate_table(self, table: Source,  # pylint: disable=no-self-use
-                       columns: typing.Iterable[Column],  # pylint: disable=unused-argument
-                       predicate: typing.Optional[Column]) -> Source:  # pylint: disable=unused-argument
-        """Generate a target code for a table instance given its actual field requirements.
-
-        Args:
-            table: Table (already in target code based on the provided mapping) to be generated.
-            columns: List of fields to be retrieved from the table (potentially subset of all available).
-            predicate: Row filter to be possibly pushed down when retrieving the data from given table.
-
-        Returns: Table target code potentially optimized based on field requirements.
-        """
-        return table
-
-    def visit_table(self, origin: frame.Table) -> None:
-        fields = [self.generate_column(f) for f in sorted(self.context.tables[origin].fields)]
-        predicate = self.context.tables[origin].predicate
-        if predicate is not None:
-            predicate = self.generate_column(predicate)
-        super().visit_table(origin)
-        self.context.symbols.push(self.generate_table(self.resolve_source(origin), fields, predicate))
 
 
 class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Frame, metaclass=abc.ABCMeta):
@@ -336,11 +238,11 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             """
 
         @abc.abstractmethod
-        def generate_element(self, source: Source, element: Column) -> Column:
+        def generate_element(self, origin: Source, element: Column) -> Column:
             """Generate a field code.
 
             Args:
-                source: Column value already in target code.
+                origin: Column value already in target code.
                 element: Field symbol to be used for given column.
 
             Returns: Field in target code.
@@ -380,23 +282,35 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             Returns: Expression in target code representation.
             """
 
+        def generate_table(self, table: Source) -> Source:  # pylint: disable=no-self-use
+            """Generate a target code for a table instance given its actual field requirements.
+
+            Args:
+                table: Table (already in target code based on the provided mapping) to be generated.
+
+            Returns: Table target code potentially optimized based on field requirements.
+            """
+            return table
+
+        def visit_table(self, origin: frame.Table) -> None:
+            super().visit_table(origin)
+            self.context.symbols.push(self.generate_table(self.resolve_source(origin)))
+
         def visit_reference(self, origin: frame.Reference) -> None:
             super().visit_reference(origin)
             self.context.symbols.push(self.generate_reference(origin.name))
 
-        def visit_element(self, column: sermod.Element) -> None:
-            super().visit_element(column)
-            self.context.symbols.push(self.generate_element(self.context.symbols.pop(), self.resolve_column(column)))
-
-        @bypass(resolve_column)
         def visit_aliased(self, column: sermod.Aliased) -> None:
             super().visit_aliased(column)
             self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), column.name))
 
-        @bypass(resolve_column)
         def visit_literal(self, column: sermod.Literal) -> None:
             super().visit_literal(column)
             self.context.symbols.push(self.generate_literal(column.value, column.kind))
+
+        def visit_element(self, column: sermod.Element) -> None:
+            super().visit_element(column)
+            self.context.symbols.push(self.generate_element(self.context.symbols.pop(), self.resolve_column(column)))
 
         @bypass(resolve_column)
         def visit_expression(self, column: sermod.Expression) -> None:
@@ -408,6 +322,64 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         @bypass(resolve_column)
         def visit_window(self, column: sermod.Window) -> typing.ContextManager[None]:
             raise NotImplementedError('Window functions not yet supported')
+
+    class Context(Container.Context):
+        """Extended container context for holding the segments.
+        """
+        class Tables:
+            """Container for segments of all tables.
+            """
+            class Segment(collections.namedtuple('Segment', 'fields, factors')):
+                """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
+                """
+                def __new__(cls):
+                    return super().__new__(cls, set(), set())
+
+                @property
+                def predicate(self) -> typing.Optional[sermod.Predicate]:
+                    """Combine the factors into single predicate.
+
+                    Returns: Predicate expression.
+                    """
+                    return functools.reduce(sermod.Or, sorted(self.factors)) if self.factors else None
+
+            def __init__(self):
+                self._segments: typing.Dict[
+                    frame.Table, Frame.Context.Tables.Segment] = collections.defaultdict(self.Segment)
+
+            def items(self) -> typing.ItemsView[frame.Table, 'Frame.Context.Tables.Segment']:
+                """Get the key-value pairs of this mapping.
+
+                Returns: Key-value mapping items.
+                """
+                return self._segments.items()
+
+            def __getitem__(self, table: frame.Table) -> 'Frame.Context.Tables.Segment':
+                return self._segments[table]
+
+            def select(self, *column: sermod.Column) -> None:
+                """Extract fields from given list of columns and register them into segments of their relevant tables.
+
+                Args:
+                    *column: Columns to be to extracted and registered.
+                """
+                for field in sermod.Field.dissect(*column):
+                    self[field.origin].fields.add(field)
+
+            def filter(self, expression: sermod.Predicate) -> None:
+                """Extract predicate factors from given expression and register them into segments of their relevant
+                tables. Also register the whole expression using .select().
+
+                Args:
+                    expression: Expression to be extracted and registered.
+                """
+                self.select(expression)
+                for table, factor in expression.factors.items():
+                    self[table].factors.add(factor)
+
+        def __init__(self):
+            super().__init__()
+            self.tables: Frame.Context.Tables = self.Tables()
 
     def __init__(self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]):
         super().__init__(sources)
@@ -423,7 +395,6 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         Returns: Column in target code.
         """
         with self._series as visitor:
-            visitor.context.tables.update(self.context.tables)
             column.accept(visitor)
             return visitor.fetch()
 
@@ -482,6 +453,28 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
 
         Returns: Query in target code.
         """
+
+    def generate_table(self, table: Source,  # pylint: disable=no-self-use
+                       columns: typing.Iterable[Column],  # pylint: disable=unused-argument
+                       predicate: typing.Optional[Column]) -> Source:  # pylint: disable=unused-argument
+        """Generate a target code for a table instance given its actual field requirements.
+
+        Args:
+            table: Table (already in target code based on the provided mapping) to be generated.
+            columns: List of fields to be retrieved from the table (potentially subset of all available).
+            predicate: Row filter to be possibly pushed down when retrieving the data from given table.
+
+        Returns: Table target code potentially optimized based on field requirements.
+        """
+        return table
+
+    def visit_table(self, origin: frame.Table) -> None:
+        fields = [self.generate_column(f) for f in sorted(self.context.tables[origin].fields)]
+        predicate = self.context.tables[origin].predicate
+        if predicate is not None:
+            predicate = self.generate_column(predicate)
+        super().visit_table(origin)
+        self.context.symbols.push(self.generate_table(self.resolve_source(origin), fields, predicate))
 
     def visit_reference(self, origin: frame.Reference) -> None:
         super().visit_reference(origin)

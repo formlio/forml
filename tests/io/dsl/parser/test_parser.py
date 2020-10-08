@@ -67,8 +67,8 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
         """Dummy series parser wrapping all terms into tuples.
         """
         # pylint: disable=missing-function-docstring
-        def generate_element(self, source: tuple, element: tuple) -> tuple:
-            return source, element
+        def generate_element(self, origin: tuple, element: tuple) -> tuple:
+            return origin, element
 
         def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
             return value, kind
@@ -127,7 +127,7 @@ class TestParser(TupleParser):
             """
 
             def __getitem__(self, column: sermod.Column) -> tuple:
-                if hash(column) == hash(student.level):
+                if column == student.level:
                     return tuple(['baz'])
                 if isinstance(column, sermod.Element):
                     return tuple([column])
