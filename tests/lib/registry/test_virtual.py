@@ -16,11 +16,22 @@
 # under the License.
 
 """
-Dummy project evaluation.
+ForML persistent unit tests.
 """
-from forml.flow import task
-from forml.project import component
-from forml.lib.flow.operator import simple
+# pylint: disable=no-self-use
+import typing
 
-INSTANCE = simple.Consumer(task.Spec('Estimator'))
-component.setup(INSTANCE)
+import pytest
+
+from forml.runtime.asset import persistent
+from forml.lib.registry import virtual
+from . import Registry
+
+
+class TestRegistry(Registry):
+    """Registry unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def constructor() -> typing.Callable[[], persistent.Registry]:
+        return virtual.Registry

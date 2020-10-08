@@ -26,7 +26,7 @@ import typing
 import uuid
 
 from forml import provider, conf
-from forml.conf import provider as provcfg
+from forml.conf import provider as provcfg  # pylint: disable=unused-import
 
 if typing.TYPE_CHECKING:
     from forml.project import distribution, product

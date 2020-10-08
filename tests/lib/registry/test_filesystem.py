@@ -26,7 +26,7 @@ import typing
 import pytest
 
 from forml.runtime.asset import persistent
-from forml.runtime.asset.persistent.registry import filesystem
+from forml.lib.registry import filesystem
 from . import Registry
 
 

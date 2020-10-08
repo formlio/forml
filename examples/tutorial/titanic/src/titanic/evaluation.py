@@ -25,7 +25,7 @@ the forml loader.
 from sklearn import model_selection, metrics
 
 from forml.project import component
-from forml.stdlib.operator.folding import evaluation
+from forml.lib.operator.folding import evaluation
 
 # Typical method of providing component implementation using `component.setup()`. Choosing the `MergingScorer` operator
 # to implement classical crossvalidated metric scoring

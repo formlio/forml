@@ -26,8 +26,8 @@ from sklearn import model_selection
 
 from forml.flow import task, pipeline
 from forml.flow.graph import node, port
-from forml.stdlib.actor import wrapped
-from forml.stdlib.operator import folding
+from forml.lib.flow.actor import wrapped
+from forml.lib.flow.operator import folding
 
 
 class MergingScorer(folding.Crossvalidated):

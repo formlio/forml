@@ -24,7 +24,7 @@ import tempfile
 import typing
 
 from forml.runtime.asset import persistent
-from forml.runtime.asset.persistent.registry import filesystem
+from forml.lib.registry import filesystem
 
 if typing.TYPE_CHECKING:
     from forml.project import product, distribution  # pylint: disable=unused-import

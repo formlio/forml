@@ -29,10 +29,10 @@ created just for structuring the project code base splitting it into these parti
 from sklearn import model_selection
 
 from forml.project import component
-from forml.stdlib.operator.folding import ensemble
+from forml.lib.operator.folding import ensemble
 from titanic.pipeline import preprocessing, model
 
-# Stack of models implemented based on the forml stdlib ensembler supplied with standard sklearn Random Forest and
+# Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
 STACK = ensemble.FullStacker(bases=(model.RFC(n_estimators=10, random_state=42),
                                     model.GBC(random_state=42)),

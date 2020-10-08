@@ -28,8 +28,8 @@ from sklearn import model_selection
 from forml.flow import pipeline
 from forml.flow.graph import node
 from forml.flow.pipeline import topology
-from forml.stdlib.actor import frame
-from forml.stdlib.operator import folding
+from forml.lib.flow.actor import frame
+from forml.lib.flow.operator import folding
 
 
 class FullStacker(folding.Crossvalidated):

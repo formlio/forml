@@ -26,7 +26,7 @@ import typing
 import pandas as pd
 
 from forml.flow import task
-from forml.stdlib.operator import simple
+from forml.lib.operator import simple
 
 
 @simple.Labeler.operator

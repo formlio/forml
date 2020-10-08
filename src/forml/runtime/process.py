@@ -22,9 +22,9 @@ import abc
 import typing
 
 from forml import provider, error, io
-from forml.conf import provider as provcfg
+from forml.conf import provider as provcfg  # pylint: disable=unused-import
 from forml.flow import pipeline
-from forml.io.dsl.schema import kind
+from forml.io.dsl.schema import kind  # pylint: disable=unused-import
 from forml.runtime import code
 from forml.runtime.asset import access
 from forml.runtime.code import compiler
