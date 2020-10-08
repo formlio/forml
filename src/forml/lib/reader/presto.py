@@ -16,6 +16,19 @@
 # under the License.
 
 """
-Feed providers.
+Presto reader implementation.
 """
-__all__ = ['devio']
+import typing
+
+from pyhive import presto
+
+from forml.io.reader import sql
+
+
+class Reader(sql.Reader):
+    """Presto reader.
+    """
+    @classmethod
+    def connection(cls, host: str, port: str = '8080', username: typing.Optional[str] = None,
+                   password: typing.Optional[str] = None) -> presto.Connection:
+        return presto.connect(host=host, port=port, username=username, password=password)

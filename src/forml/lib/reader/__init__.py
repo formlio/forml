@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Registry implementations.
+Reader implementations.
 """
 
-__all__ = ['virtual', 'filesystem']
+__all__ = ['presto']

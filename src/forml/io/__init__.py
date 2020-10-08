@@ -35,6 +35,10 @@ from forml.io.etl import extract
 class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column], default=provcfg.Feed.default):
     """ETL feed is the implementation of a specific datasource access layer.
     """
+    class Reader(extract.Reader[parser.Source, parser.Column, extract.Native], metaclass=abc.ABCMeta):
+        """Abstract reader of the feed.
+        """
+
     def __init__(self, **readerkw):
         self._readerkw: typing.Dict[str, typing.Any] = readerkw
 
@@ -99,7 +103,6 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column], defa
         return loader.expand()
 
     @classmethod
-    @abc.abstractmethod
     def reader(cls, sources: typing.Mapping[frame.Source, parser.Source],
                columns: typing.Mapping[series.Column, parser.Column],
                **kwargs: typing.Any) -> typing.Callable[[frame.Query], extract.Columnar]:
@@ -112,6 +115,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column], defa
 
         Returns: Reader instance.
         """
+        return cls.Reader(sources, columns, **kwargs)  # pylint: disable=abstract-class-instantiated
 
     @classmethod
     def slicer(cls, schema: typing.Sequence[series.Column],
