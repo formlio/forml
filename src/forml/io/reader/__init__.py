@@ -16,7 +16,5 @@
 # under the License.
 
 """
-Registry implementations.
+Feed reader base classes.
 """
-
-__all__ = ['virtual', 'filesystem']

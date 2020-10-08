@@ -16,7 +16,5 @@
 # under the License.
 
 """
-Registry implementations.
+Schema catalogue.
 """
-
-__all__ = ['virtual', 'filesystem']

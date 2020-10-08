@@ -16,7 +16,5 @@
 # under the License.
 
 """
-Registry implementations.
+Kaggle datasets schema.
 """
-
-__all__ = ['virtual', 'filesystem']
