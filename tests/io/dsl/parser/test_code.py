@@ -186,7 +186,7 @@ class TestParser(TupleParser):
             """
 
             def __getitem__(self, column: sermod.Column) -> typing.Callable[[tuple], tuple]:
-                if hash(column) == hash(student.level):
+                if column == student.level:
                     return lambda _: tuple(['baz'])
                 if isinstance(column, sermod.Element):
                     return lambda _: tuple([column])

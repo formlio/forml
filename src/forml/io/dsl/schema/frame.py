@@ -124,7 +124,7 @@ class Join(Source):
         if condition is not None:
             if kind is cls.Kind.CROSS:
                 raise error.Syntax('Illegal use of condition for cross-join')
-            condition = series.Multirow.ensure_notin(series.Predicate.ensure_is(condition))
+            condition = series.Cumulative.ensure_notin(series.Predicate.ensure_is(condition))
             if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.columns, *right.columns)):
                 raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
         return super().__new__(cls, [left, right, condition, kind])
@@ -415,10 +415,10 @@ class Query(Queryable):
         superset = series.Element.dissect(*source.columns)
         selection = tuple(ensure_subset(*(series.Column.ensure_is(c) for c in selection or [])))
         if prefilter is not None:
-            prefilter = series.Multirow.ensure_notin(series.Predicate.ensure_is(*ensure_subset(
+            prefilter = series.Cumulative.ensure_notin(series.Predicate.ensure_is(*ensure_subset(
                 series.Operable.ensure_is(prefilter))))
         if grouping:
-            grouping = ensure_subset(*(series.Multirow.ensure_notin(series.Operable.ensure_is(g)) for g in grouping))
+            grouping = ensure_subset(*(series.Cumulative.ensure_notin(series.Operable.ensure_is(g)) for g in grouping))
             for aggregate in {c.operable for c in selection or source.columns}.difference(grouping):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:

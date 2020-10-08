@@ -809,12 +809,12 @@ class Modulus(Arithmetic, Infix):
     symbol = '%'
 
 
-class Multirow(Expression, metaclass=abc.ABCMeta):
+class Cumulative(Expression, metaclass=abc.ABCMeta):
     """Base class for expressions involving cross-row operations.
     """
 
 
-class Window(Multirow):
+class Window(Cumulative):
     """Window type column representation.
     """
     function: 'Window.Function' = property(opermod.itemgetter(0))
@@ -877,6 +877,6 @@ class Window(Multirow):
         visitor.visit_window(self)
 
 
-class Aggregate(Multirow, Window.Function, metaclass=abc.ABCMeta):
+class Aggregate(Cumulative, Window.Function, metaclass=abc.ABCMeta):
     """Base class for column aggregation functions.
     """
