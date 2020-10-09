@@ -51,13 +51,14 @@ TMPDIR = pathlib.Path(tempfile.gettempdir())
 APPCFG = 'config.ini'
 
 SECTION_DEFAULT = 'DEFAULT'
+SECTION_PLATFORM = 'PLATFORM'
 SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
 SECTION_RUNNER = 'RUNNER'
-SECTION_STAGING = 'STAGING'
 SECTION_TESTING = 'TESTING'
 OPT_LOGCFG = 'logcfg'
 OPT_PROVIDER = 'provider'
+OPT_PRIORITY = 'priority'
 OPT_REGISTRY = 'registry'
 OPT_FEED = 'feed'
 OPT_RUNNER = 'runner'
@@ -67,6 +68,7 @@ DEFAULT_OPTIONS = {
     OPT_FEED: 'devio',
     OPT_REGISTRY: 'virtual',
     OPT_RUNNER: 'dask',
+    OPT_PRIORITY: '0'
 }
 
 
@@ -88,5 +90,5 @@ def get(key: str, section: str = SECTION_DEFAULT, **kwargs) -> str:
 
 
 # check if all section exist and add them if not so that config.get doesn't fail
-for _section in (SECTION_STAGING, SECTION_TESTING):
+for _section in (SECTION_PLATFORM, SECTION_TESTING):
     secmod.ensure(PARSER, _section)

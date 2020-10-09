@@ -56,6 +56,7 @@ class Registry(collections.namedtuple('Registry', 'stage, provider')):
             except ModuleNotFoundError as err:
                 if self.strict:
                     raise error.Failed(f'Explicit preload ({self.path}) failed ({err})')
+                return
             if not getattr(sys.modules[self.path], '__all__', []):
                 LOGGER.warning('Package %s does not list any provider modules under __all__', self.path)
 
@@ -123,8 +124,9 @@ class Meta(abc.ABCMeta):
             return cls.__class_getitem__(key)
         try:
             return _REGISTRY[cls].get(key)
-        except KeyError:
-            raise error.Missing(f'No {cls.__name__} provider registered as {key} (known providers: {", ".join(cls)})')
+        except KeyError as err:
+            raise error.Missing(
+                f'No {cls.__name__} provider registered as {key} (known providers: {", ".join(cls)})') from err
 
     def __iter__(cls):
         return iter(_REGISTRY[cls].provider)

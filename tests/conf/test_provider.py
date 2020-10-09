@@ -28,7 +28,7 @@ import pytest
 from forml.conf import provider as provcfg
 
 
-class Section(metaclass=abc.ABCMeta):
+class Single(metaclass=abc.ABCMeta):
     """Section test base class.
     """
     @staticmethod
@@ -38,15 +38,21 @@ class Section(metaclass=abc.ABCMeta):
         """Provider type.
         """
 
-    def test_default(self, conf: types.ModuleType, provider: typing.Type[provcfg.Section]):
+    @staticmethod
+    @abc.abstractmethod
+    @pytest.fixture(scope='session')
+    def default() -> typing.Any:
+        """Provider type.
+        """
+
+    def test_default(self, provider: typing.Type[provcfg.Section], default: typing.Any,
+                     conf: types.ModuleType):  # pylint: disable=unused-argument
         """Default provider config test.
         """
-        key = conf.get(provider.SUBJECT, provider.SELECTOR)
-        name = conf.get(conf.OPT_PROVIDER, f'{provider.SUBJECT.upper()}:{key}')
-        assert provider.parse(key).name == name
+        assert tuple(provider.parse()) == default
 
 
-class TestRegistry(Section):
+class TestRegistry(Single):
     """Conf unit tests.
     """
     @staticmethod
@@ -56,8 +62,33 @@ class TestRegistry(Section):
         """
         return provcfg.Registry
 
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def default() -> typing.Any:
+        """Default values.
+        """
+        return 'virtual', types.MappingProxyType({})
 
-class TestFeed(Section):
+
+class TestRunner(Single):
+    """Conf unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def provider() -> typing.Type[provcfg.Runner]:
+        """Provider type.
+        """
+        return provcfg.Runner
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def default() -> typing.Any:
+        """Default values.
+        """
+        return 'dask', types.MappingProxyType({})
+
+
+class TestFeed(Single):
     """Conf unit tests.
     """
     @staticmethod
@@ -67,13 +98,9 @@ class TestFeed(Section):
         """
         return provcfg.Feed
 
-
-class TestRunner(Section):
-    """Conf unit tests.
-    """
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Runner]:
+    def default() -> typing.Any:
         """Provider type.
         """
-        return provcfg.Runner
+        return 'devio', types.MappingProxyType({})
