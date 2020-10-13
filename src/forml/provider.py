@@ -95,37 +95,38 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         Returns: Registered provider.
         """
         LOGGER.debug('Getting provider of %s (%d search paths)', key, len(self.paths))
-        while key not in self.provider and self.paths:
-            path = self.paths.pop()
-            path.load()
-            if not path.value.endswith(f'.{key}'):
-                self.paths.add(path / key)
-        try:
-            return self.provider[key]
-        except KeyError as err:
-            raise error.Missing(f'Unknown provider `{key}`') from err
+        if key not in self.provider:
+            pending = list(self.paths)
+            for path in self.paths:
+                pending.append(path / key)
+            path = key
+            while '.' in path:
+                path, _ = path.rsplit('.', 1)
+                pending.append(Registry.Path(path))
+            while key not in self.provider and pending:
+                pending.pop().load()
+        return self.provider[key]
 
 
 REGISTRY: typing.Dict[typing.Type['Interface'], Registry] = collections.defaultdict(Registry)
+DEFAULTS: typing.Dict[typing.Type['Interface'], typing.Tuple[str, typing.Mapping[str, typing.Any]]] = dict()
 
 
 class Meta(abc.ABCMeta):
     """Provider metaclass.
     """
-    DEFAULTS: typing.Dict[typing.Type['Interface'], typing.Tuple[str, typing.Mapping[str, typing.Any]]] = dict()
-
     def __new__(mcs, name, bases, namespace,
                 default: typing.Optional[typing.Tuple[str, typing.Mapping[str, typing.Any]]] = None, **kwargs):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         if default:
             if not inspect.isabstract(cls):
                 raise error.Unexpected('Defaults provided but class not abstract')
-            Meta.DEFAULTS[cls] = default
+            DEFAULTS[cls] = default
         return cls
 
     def __call__(cls, *args, **kwargs) -> 'Interface':
-        if cls in Meta.DEFAULTS:
-            key, params = Meta.DEFAULTS[cls]
+        if cls in DEFAULTS:
+            key, params = DEFAULTS[cls]
             return cls[key](*args, **{**params, **kwargs})  # pylint: disable=unsubscriptable-object
         return super().__call__(*args, **kwargs)
 
@@ -169,8 +170,6 @@ class Interface(metaclass=Meta):
         super().__init_subclass__()
         if inspect.isabstract(cls) and alias:
             raise error.Unexpected(f'Provider key ({alias}) illegal on abstract class')
-        path = {Registry.Path(p if '.' not in p else f'{cls.__module__}.{p}', explicit=True) for p in path or []}
-        if not path:
-            path = {Registry.Path(f'{cls.__module__}.{cls.__name__.lower()}', explicit=False)}
+        path = {Registry.Path(p, explicit=True) for p in path or []}
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):
             REGISTRY[parent].add(cls, alias, path)
