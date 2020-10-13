@@ -39,15 +39,15 @@ class TestInterface:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def default(subkey: str,
+    def default(alias: str,
                 params: typing.Mapping[str, typing.Any]) -> typing.Tuple[str, typing.Mapping[str, typing.Any]]:
         """Default provider spec fixture.
         """
-        return subkey, params
+        return alias, params
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def genprovider(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
+    def interface(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
             str, typing.Any]]) -> typing.Type[provmod.Interface]:
         """Provider fixture.
         """
@@ -71,18 +71,18 @@ class TestInterface:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def subkey() -> str:
+    def alias() -> str:
         """Provider key.
         """
-        return 'subkey'
+        return 'foobar'
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def subprovider(genprovider: typing.Type[provmod.Interface],
-                    subkey: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
+    def provider(interface: typing.Type[provmod.Interface],
+                 alias: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
         """Provider fixture.
         """
-        class SubProvider(genprovider[set], alias=subkey):
+        class SubProvider(interface[set], alias=alias):
             """Provider implementation.
             """
             def provide(self) -> None:
@@ -91,22 +91,22 @@ class TestInterface:
 
         return SubProvider
 
-    def test_get(self, genprovider: typing.Type[provmod.Interface], subprovider: typing.Type[provmod.Interface],
-                 subkey: str, params: typing.Mapping[str, typing.Any]):
+    def test_get(self, interface: typing.Type[provmod.Interface], provider: typing.Type[provmod.Interface],
+                 alias: str, params: typing.Mapping[str, typing.Any]):
         """Test the provider lookup.
         """
-        assert genprovider[subkey] is subprovider
-        assert subprovider[subkey] is subprovider
-        assert genprovider(val=100) == subprovider(val=100, **params)
+        assert interface[alias] is provider
+        assert provider[alias] is provider
+        assert interface(val=100) == provider(val=100, **params)
         with pytest.raises(error.Missing):
-            assert subprovider['miss']
+            assert provider['miss']
 
-    def test_collision(self, subprovider: typing.Type[provmod.Interface],
-                       subkey: str):  # pylint: disable=unused-argument
+    def test_collision(self, provider: typing.Type[provmod.Interface],
+                       alias: str):  # pylint: disable=unused-argument
         """Test a colliding provider key.
         """
         with pytest.raises(error.Unexpected):
-            class Colliding(subprovider, alias=subkey):
+            class Colliding(provider, alias=alias):
                 """colliding implementation.
                 """
             assert Colliding
@@ -115,8 +115,9 @@ class TestInterface:
 class TestProvider:
     """Testing provider implementation.
     """
-    def test_staged(self):
-        """Test the staged imports loading.
+    def test_path(self):
+        """Test the search path based loading.
         """
-        from tests.provider import service  # pylint: disable=import-outside-toplevel
+        from . import service  # pylint: disable=import-outside-toplevel
         assert issubclass(service.Provider['dummy'], service.Provider)
+        assert service.Provider['tests.provider.service.provider.dummy.Provider']().serve() == 'dummy'

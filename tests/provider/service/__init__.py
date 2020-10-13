@@ -20,10 +20,11 @@ Service provider interface.
 """
 import abc
 
-from forml import provider
+from forml import provider as provmod
+from . import provider
 
 
-class Provider(provider.Interface):
+class Provider(provmod.Interface, path=[provider.__name__]):
     """Service interface.
     """
     @abc.abstractmethod
