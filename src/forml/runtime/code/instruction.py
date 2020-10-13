@@ -72,8 +72,8 @@ class Getter(code.Instruction):
     def __init__(self, index: int):
         self._index: int = index
 
-    def __str__(self):
-        return super().__str__() + f'#{self._index}'
+    def __repr__(self):
+        return super().__repr__() + f'#{self._index}'
 
     def execute(self, sequence: typing.Sequence[typing.Any]) -> typing.Any:  # pylint: disable=arguments-differ
         """Instruction functionality.
@@ -155,8 +155,8 @@ class Functor(code.Instruction):
     def __reduce__(self):
         return Functor, (self._spec, self._objective)
 
-    def __str__(self):
-        return str(self._spec)
+    def __repr__(self):
+        return repr(self._spec)
 
     def shiftby(self, consumer: typing.Callable[[task.Actor, typing.Any], None]) -> 'Functor':
         """Create new functor with its objective prepended by an extra consumer.

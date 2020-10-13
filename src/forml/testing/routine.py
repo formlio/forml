@@ -36,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 class Suite(unittest.TestCase, metaclass=abc.ABCMeta):
     """Abstract base class of operator testing suite.
     """
-    def __str__(self):
+    def __repr__(self):
         return self.__class__.__name__
 
     @property

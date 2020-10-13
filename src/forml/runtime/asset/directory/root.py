@@ -41,8 +41,8 @@ class Level(directory.Level):
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.registry == self.registry
 
-    def __str__(self):
-        return str(self._registry)
+    def __repr__(self):
+        return repr(self._registry)
 
     @property
     def registry(self) -> 'persistent.Registry':

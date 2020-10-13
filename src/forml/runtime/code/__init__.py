@@ -42,7 +42,7 @@ class Instruction(metaclass=abc.ABCMeta):
         Returns: Instruction result.
         """
 
-    def __str__(self):
+    def __repr__(self):
         return self.__class__.__name__
 
     def __call__(self, *args: typing.Any) -> typing.Any:
@@ -68,5 +68,5 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
             raise error.Missing('All arguments required')
         return super().__new__(cls, instruction, tuple(arguments))
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self.instruction}{self.arguments}'

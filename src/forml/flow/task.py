@@ -51,7 +51,7 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
 
         Returns: Extracted name.
         """
-        return obj.__name__ if hasattr(obj, '__name__') else str(obj)
+        return obj.__name__ if hasattr(obj, '__name__') else repr(obj)
 
     value = extract(actor)
     params = [extract(a) for a in args] + [f'{k}={extract(v)}' for k, v in kwargs.items()]
@@ -147,7 +147,7 @@ class Actor(metaclass=abc.ABCMeta):
             self.__dict__.update(joblib.load(bio))
         self.set_params(**params)  # restore the original hyper-params
 
-    def __str__(self):
+    def __repr__(self):
         return name(self.__class__, **self.get_params())
 
 
@@ -157,7 +157,7 @@ class Spec(collections.namedtuple('Spec', 'actor, args, kwargs')):
     def __new__(cls, actor: typing.Type[Actor], *args: typing.Any, **kwargs: typing.Any):
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 
-    def __str__(self):
+    def __repr__(self):
         return name(self.actor, *self.args, **self.kwargs)
 
     def __hash__(self):

@@ -57,7 +57,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default):
             staging = mkdtemp(prefix=f'{self}-staging-')
         self._staging: pathlib.Path = pathlib.Path(staging)
 
-    def __str__(self):
+    def __repr__(self):
         name = self.__class__.__module__.rsplit('.', 1)[-1].capitalize()
         return f'{name}-registry'
 

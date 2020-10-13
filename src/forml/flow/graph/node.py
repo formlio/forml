@@ -79,7 +79,7 @@ class Atomic(metaclass=abc.ABCMeta):
         self.uid: uuid.UUID = uuid.uuid4()
         self._output: typing.Tuple[Port] = tuple(Port() for _ in range(szout))
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self.__class__.__name__}[uid={self.uid}]'
 
     def __getitem__(self, index) -> port.PubSub:
@@ -180,7 +180,7 @@ class Worker(Atomic):
             self.spec: task.Spec = spec
             self.uid: uuid.UUID = uuid.uuid4()
 
-        def __str__(self):
+        def __repr__(self):
             return f'{self.spec}[uid={self.uid}]'
 
     def __init__(self, meta: typing.Union[task.Spec, Group], szin: int, szout: int):
@@ -188,8 +188,8 @@ class Worker(Atomic):
         self._group: Worker.Group = meta if isinstance(meta, Worker.Group) else self.Group(meta)
         self._group.add(self)
 
-    def __str__(self):
-        return str(self._group)
+    def __repr__(self):
+        return repr(self._group)
 
     @property
     def spec(self) -> task.Spec:

@@ -42,7 +42,7 @@ class Wrapping(metaclass=abc.ABCMeta):
         # pylint: disable=protected-access
         return isinstance(other, self.__class__) and self._actor == other._actor and self._params == other._params
 
-    def __str__(self):
+    def __repr__(self):
         return task.name(self._actor, **self._params)
 
     @abc.abstractmethod
@@ -102,7 +102,7 @@ class Class(Mapping):
     def __call__(self, *args, **kwargs) -> task.Actor:
         return self.Actor(self._actor(*args, **kwargs), self._params)  # pylint: disable=abstract-class-instantiated
 
-    def __str__(self):
+    def __repr__(self):
         return task.name(self._actor)
 
     @staticmethod
@@ -160,7 +160,7 @@ class Function(Wrapping):
             self._args: typing.Sequence[typing.Any] = args
             self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-        def __str__(self):
+        def __repr__(self):
             return task.name(self._function, *self._args, **self._kwargs)
 
         def apply(self, *features: typing.Any) -> typing.Union[typing.Any, typing.Sequence[typing.Any]]:

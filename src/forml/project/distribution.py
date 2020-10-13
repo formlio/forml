@@ -163,7 +163,7 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
     def __getnewargs_ex__(self):
         return (self.name, self.version, self.package), dict(self.modules)
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self.name}-{self.version}'
 
     @classmethod
