@@ -81,8 +81,8 @@ class Runner(process.Runner, key='dask'):
                 self.output = leaves.pop()
             super().__init__(tasks)
 
-        def __str__(self):
-            return str({k: (str(i), *a) for k, (i, *a) in self.items()})
+        def __repr__(self):
+            return repr({k: (repr(i), *a) for k, (i, *a) in self.items()})
 
     SCHEDULER = 'multiprocessing'
 

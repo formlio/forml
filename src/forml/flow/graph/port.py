@@ -28,7 +28,7 @@ from forml.flow.graph import node as grnode  # pylint: disable=unused-import
 class Type(int):
     """Input port base class.
     """
-    def __str__(self):
+    def __repr__(self):
         return f'{self.__class__.__name__}[{int(self)}]'
 
     def __hash__(self):
@@ -92,7 +92,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self.node}@{self.port}'
 
     def __hash__(self):

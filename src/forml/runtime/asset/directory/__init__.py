@@ -79,7 +79,7 @@ class Level(metaclass=abc.ABCMeta):
         self._key: typing.Optional['Level.Key'] = key
         self._parent: typing.Optional[Level] = parent
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self._parent}-{self.key}'
 
     def __hash__(self):
@@ -135,8 +135,8 @@ class Cache:
     def __init__(self, method: typing.Callable):
         self._method: str = method.__name__
 
-    def __str__(self):
-        return str(self.info)
+    def __repr__(self):
+        return repr(self.info)
 
     @functools.lru_cache()
     def __call__(self, registry: 'persistent.Registry', *args, **kwargs):

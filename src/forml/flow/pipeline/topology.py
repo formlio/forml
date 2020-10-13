@@ -39,7 +39,7 @@ class Composable(metaclass=abc.ABCMeta):
         """
         return Compound(right, self)
 
-    def __str__(self):
+    def __repr__(self):
         return self.__class__.__name__
 
     @abc.abstractmethod
@@ -100,7 +100,7 @@ class Compound(Composable):
         self._right: Composable = right
         self._left: Composable = left
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self._left} >> {self._right}'
 
     def expand(self) -> pipeline.Segment:

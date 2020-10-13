@@ -131,7 +131,7 @@ class Meta(abc.ABCMeta):
     def __iter__(cls):
         return iter(_REGISTRY[cls].provider)
 
-    def __str__(cls):
+    def __repr__(cls):
         return f'{cls.__module__}.{cls.__name__}[{", ".join(cls)}]'
 
     def __eq__(cls, other):
