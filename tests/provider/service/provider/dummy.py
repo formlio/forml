@@ -21,7 +21,7 @@ Dummy provider implementation.
 from tests.provider import service
 
 
-class Provider(service.Provider, key='dummy'):
+class Provider(service.Provider, alias='dummy'):
     """Provider implementation.
     """
     def serve(self) -> str:

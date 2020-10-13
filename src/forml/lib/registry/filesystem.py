@@ -211,7 +211,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.generation(project, lineage, generation) / self.TAGFILE
 
 
-class Registry(persistent.Registry, key='filesystem'):
+class Registry(persistent.Registry, alias='filesystem'):
     """Filesystem registry is a locally-accessible file based hierarchy.
     """
     def __init__(self, path: typing.Union[str, pathlib.Path] = conf.USRDIR / 'registry',

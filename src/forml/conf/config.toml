@@ -7,8 +7,9 @@ registry = "homedir"
 
 [FEED.presto]
 provider = "presto"
-port = 8080
+priority = 100
 host = "localhost"
+port = 8080
 
 [RUNNER.dask]
 provider = "dask"

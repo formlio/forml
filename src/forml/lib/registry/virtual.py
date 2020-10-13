@@ -33,7 +33,7 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Registry(filesystem.Registry, key='virtual'):
+class Registry(filesystem.Registry, alias='virtual'):
     """Virtual registry implementation provided as a non-distributed global registry persistent only during its
     lifetime.
     """

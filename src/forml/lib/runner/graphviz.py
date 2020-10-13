@@ -35,7 +35,7 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(process.Runner, key='graphviz'):
+class Runner(process.Runner, alias='graphviz'):
     """Graphviz based runner implementation.
     """
     FILEPATH = f'{conf.APPNAME}.dot'

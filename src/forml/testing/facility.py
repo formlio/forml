@@ -46,7 +46,7 @@ class DataSet(etl.Schema):
     label: etl.Field = etl.Field(kind.Float())
 
 
-class Feed(io.Feed, key='testing'):
+class Feed(io.Feed, alias='testing'):
     """Special feed to feed the test cases.
     """
     def __init__(self, scenario: spec.Scenario.Input, **kwargs):

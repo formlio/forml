@@ -22,7 +22,6 @@ import abc
 import collections
 import inspect
 import logging
-import sys
 import typing
 
 from forml import error
@@ -30,73 +29,84 @@ from forml import error
 LOGGER = logging.getLogger(__name__)
 
 
-class Registry(collections.namedtuple('Registry', 'stage, provider')):
-    """Registry of providers of certain interface. It is a tuple of staged (not-yet-loaded) packages and already
-    imported modules.
+class Registry(collections.namedtuple('Registry', 'provider, paths')):
+    """Registry of providers of certain interface. It is a tuple of (not-yet-imported) search paths and already
+    imported providers.
     """
-    class Package(typing.NamedTuple):
-        """Provider package to be staged for loading. If flagged as strict loading such a package would fail in case of
-        the package or its modules are not found.
+    class Path(typing.NamedTuple):
+        """Search paths for loading. If flagged as explicit, loading such a path would fail if not found.
         """
-        path: str
-        strict: bool = True  # whether to fail on import errors
+        value: str
+        explicit: bool = False  # whether to fail on import errors
 
         def __hash__(self):
-            return hash(self.path)
+            return hash(self.value)
 
         def __eq__(self, other):
-            return other.__class__ is self.__class__ and other.path == self.path
+            return other.__class__ is self.__class__ and other.value == self.value
+
+        def __truediv__(self, suffix: str) -> 'Registry.Path':
+            return Registry.Path(f'{self.value}.{suffix}', explicit=False)
 
         def load(self) -> None:
             """Load the package modules.
             """
-            LOGGER.debug('Attempting to load package %s', self.path)
+            LOGGER.debug('Attempting to import %s', self.value)
             try:
-                __import__(self.path, fromlist=['*'])
+                __import__(self.value, fromlist=['*'])
             except ModuleNotFoundError as err:
-                if self.strict:
-                    raise error.Failed(f'Explicit preload ({self.path}) failed ({err})')
+                if self.explicit:
+                    raise error.Failed(f'Explicit preload ({self.value}) failed ({err})') from err
                 return
-            if not getattr(sys.modules[self.path], '__all__', []):
-                LOGGER.warning('Package %s does not list any provider modules under __all__', self.path)
 
     def __new__(cls):
-        return super().__new__(cls, set(), dict())
+        return super().__new__(cls, dict(), set())
 
-    def add(self, key: str, provider: typing.Type['Interface'], packages: typing.Set[Package]):
+    def add(self, provider: typing.Type['Interface'], alias: typing.Optional[str], paths: typing.Set[Path]):
         """Push package to lazy loading stack.
 
         Args:
-            key: provider key
             provider: implementation class
-            packages: package paths to put on stage
+            alias: provider alias
+            paths: search paths to be explored when attempting to load
         """
-        if key in self.provider:
-            if provider == self.provider[key]:
-                return
-            raise error.Unexpected(f'Provider key collision ({key})')
-        self.stage.update(packages)
+        references = {repr(provider)}
+        if alias:
+            references.add(alias)
+        for key in references:
+            if key in self.provider:
+                if provider == self.provider[key]:
+                    continue
+                raise error.Unexpected(f'Provider key collision ({key})')
+        self.paths.update(paths)
         if inspect.isabstract(provider):
             return
-        LOGGER.debug('Registering provider %s as "%s" with %d more packages staged %s',
-                     provider.__name__, key, len(packages), packages)
-        self.provider[key] = provider
+        LOGGER.debug('Registering provider %s as `%s` with %d more search paths %s',
+                     provider.__name__, key, len(paths), paths)
+        for key in references:
+            self.provider[key] = provider
 
     def get(self, key: str) -> typing.Type['Interface']:
-        """Get the registered provider or attempt to load all pre-staged packages that might be containing it.
+        """Get the registered provider or attempt to load all search paths packages that might be containing it.
 
         Args:
             key: provider key
 
         Returns: Registered provider.
         """
-        LOGGER.debug('Getting provider of %s (%d staged)', key, len(self.stage))
-        while key not in self.provider and self.stage:
-            self.stage.pop().load()
-        return self.provider[key]
+        LOGGER.debug('Getting provider of %s (%d search paths)', key, len(self.paths))
+        while key not in self.provider and self.paths:
+            path = self.paths.pop()
+            path.load()
+            if not path.value.endswith(f'.{key}'):
+                self.paths.add(path / key)
+        try:
+            return self.provider[key]
+        except KeyError as err:
+            raise error.Missing(f'Unknown provider `{key}`') from err
 
 
-_REGISTRY: typing.Dict[typing.Type['Interface'], Registry] = collections.defaultdict(Registry)
+REGISTRY: typing.Dict[typing.Type['Interface'], Registry] = collections.defaultdict(Registry)
 
 
 class Meta(abc.ABCMeta):
@@ -123,16 +133,19 @@ class Meta(abc.ABCMeta):
         if not isinstance(key, str) and issubclass(cls, typing.Generic):
             return cls.__class_getitem__(key)
         try:
-            return _REGISTRY[cls].get(key)
+            return REGISTRY[cls].get(key)
         except KeyError as err:
             raise error.Missing(
                 f'No {cls.__name__} provider registered as {key} (known providers: {", ".join(cls)})') from err
 
     def __iter__(cls):
-        return iter(_REGISTRY[cls].provider)
+        return iter(REGISTRY[cls].provider)
 
     def __repr__(cls):
-        return f'{cls.__module__}.{cls.__name__}[{", ".join(cls)}]'
+        return f'{cls.__module__}.{cls.__qualname__}'
+
+    def __str__(cls):
+        return f'{repr(cls)}[{", ".join(cls)}]'
 
     def __eq__(cls, other):
         return other.__module__ is cls.__module__ and other.__qualname__ is cls.__qualname__
@@ -144,23 +157,20 @@ class Meta(abc.ABCMeta):
 class Interface(metaclass=Meta):
     """Base class for service providers.
     """
-    def __init_subclass__(cls, key: typing.Optional[str] = None,
-                          packages: typing.Optional[typing.Iterable[str]] = None):
+    def __init_subclass__(cls, alias: typing.Optional[str] = None, path: typing.Optional[typing.Iterable[str]] = None):
         """Register the provider based on its optional key.
 
         Normally would be implemented using the Meta.__init__ but it needs the Interface class to exist.
 
         Args:
-            key: Optional key to register the provider as.
-            packages: Additional packages to be imported when registering.
+            alias: Optional key to register the provider as (in addition to its qualified name).
+            path: Optional search path for additional packages to get imported when attempting to load.
         """
         super().__init_subclass__()
-        if inspect.isabstract(cls) and key:
-            raise error.Unexpected(f'Provider key ({key}) illegal on abstract class')
-        if not key:
-            key = cls.__name__
-        packages = {Registry.Package(p if '.' not in p else f'{cls.__module__}.{p}') for p in packages or []}
-        if not packages:
-            packages = {Registry.Package(f'{cls.__module__}.{cls.__name__.lower()}', strict=False)}
+        if inspect.isabstract(cls) and alias:
+            raise error.Unexpected(f'Provider key ({alias}) illegal on abstract class')
+        path = {Registry.Path(p if '.' not in p else f'{cls.__module__}.{p}', explicit=True) for p in path or []}
+        if not path:
+            path = {Registry.Path(f'{cls.__module__}.{cls.__name__.lower()}', explicit=False)}
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):
-            _REGISTRY[parent].add(key, cls, packages)
+            REGISTRY[parent].add(cls, alias, path)
