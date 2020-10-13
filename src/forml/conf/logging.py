@@ -37,11 +37,15 @@ def setup(*path: pathlib.Path, **defaults: typing.Any):
     """Setup logger according to the params.
     """
     parser = configparser.ConfigParser({**DEFAULTS, **defaults})
-    name = conf.get(conf.OPT_LOGCFG)
     tried = set()
-    used = parser.read((p for p in ((b / name).resolve() for b in itertools.chain(conf.PATH, path))
+    used = parser.read((p for p in ((b / conf.logcfg).resolve() for b in itertools.chain(conf.PATH, path))
                         if not (p in tried or tried.add(p))))
     config.fileConfig(parser, disable_existing_loggers=True)
     logging.captureWarnings(capture=True)
-    LOGGER.debug('Application configs: %s', ', '.join(conf.SRC) or 'none')
     LOGGER.debug('Logging configs: %s', ', '.join(used) or 'none')
+    LOGGER.debug('Application configs: %s', ', '.join(str(s) for s in conf.PARSER.sources) or 'none')
+    for src, err in conf.PARSER.errors.items():
+        LOGGER.warning('Error parsing config %s: %s', src, err)
+
+
+conf.PARSER.subscribe(setup)  # reload logging config upon main config change to reflect potential new values

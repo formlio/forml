@@ -203,8 +203,8 @@ class Level(directory.Level):
         def __new__(cls, key: typing.Optional[typing.Union[str, int, 'Level.Key']] = MIN):
             try:
                 instance = super().__new__(cls, str(key))
-            except ValueError:
-                raise cls.Invalid(f'Invalid key {key} (not an integer)')
+            except ValueError as err:
+                raise cls.Invalid(f'Invalid key {key} (not an integer)') from err
             if instance < cls.MIN:
                 raise cls.Invalid(f'Invalid key {key} (not natural)')
             return instance

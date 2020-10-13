@@ -70,8 +70,8 @@ class Level(metaclass=abc.ABCMeta):
             """
             try:
                 return self[-1]
-            except IndexError:
-                raise self.Empty('Empty listing')
+            except IndexError as err:
+                raise self.Empty('Empty listing') from err
 
     def __init__(self, key: typing.Any = None, parent: typing.Optional['Level'] = None):
         if key is not None:

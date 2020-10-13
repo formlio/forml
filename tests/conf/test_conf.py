@@ -21,6 +21,11 @@ ForML config unit tests.
 # pylint: disable=protected-access,no-self-use
 import pathlib
 import types
+import typing
+
+import pytest
+
+from forml import conf
 
 
 def test_exists(cfg_file: pathlib.Path):
@@ -29,13 +34,46 @@ def test_exists(cfg_file: pathlib.Path):
     assert cfg_file.is_file()
 
 
-def test_src(conf: types.ModuleType, cfg_file: pathlib.Path):
+def test_src(cfg_file: pathlib.Path):
     """Test the registry config field.
     """
-    assert set(conf.SRC) == {str(cfg_file)}
+    assert cfg_file in conf.PARSER.sources
 
 
-def test_get(conf: types.ModuleType):
-    """Test the get value matches the test config.ini
+def test_get():
+    """Test the get value matches the test config.toml
     """
-    assert conf.get('foobar') == 'baz'
+    assert getattr(conf, 'foobar') == conf.foobar == 'baz'
+
+
+class TestParser:
+    """Parser unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def defaults() -> typing.Mapping[str, typing.Any]:
+        """Default values fixtures.
+        """
+        return types.MappingProxyType({'foo': 'bar', 'baz': {'inner': 1}})
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def parser(defaults: typing.Mapping[str, typing.Any]) -> conf.Parser:
+        """Parser fixture.
+        """
+        return conf.Parser(defaults)
+
+    def test_update(self, parser: conf.Parser):
+        """Parser update tests.
+        """
+        parser.update(baz={'outer': 2})
+        assert parser['baz']['inner'] == 1
+        parser.update({'baz': {'inner': 3}})
+        assert parser['baz']['inner'] == 3
+        assert parser['baz']['outer'] == 2
+
+    def test_read(self, parser: conf.Parser, cfg_file: pathlib.Path):
+        """Test parser file reading.
+        """
+        parser.read(cfg_file)
+        assert cfg_file in parser.sources

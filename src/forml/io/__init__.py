@@ -32,7 +32,7 @@ from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.io.etl import extract
 
 
-class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column], default=provcfg.Feed.default):
+class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column], default=provcfg.Feed.default[-1]):
     """ETL feed is the implementation of a specific datasource access layer.
     """
     class Reader(extract.Reader[parser.Source, parser.Column, extract.Native], metaclass=abc.ABCMeta):
@@ -103,6 +103,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column], defa
         return loader.expand()
 
     @classmethod
+    @abc.abstractmethod
     def reader(cls, sources: typing.Mapping[frame.Source, parser.Source],
                columns: typing.Mapping[series.Column, parser.Column],
                **kwargs: typing.Any) -> typing.Callable[[frame.Query], extract.Columnar]:

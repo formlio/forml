@@ -27,7 +27,6 @@ import sys
 import typing
 
 from forml import conf, error
-from forml.conf import logging as logmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,8 +37,7 @@ COMMON = PARSER.parse_known_args()[0]
 
 CLICFG = getattr(COMMON.config, 'name', None)
 if CLICFG:
-    conf.SRC.extend(conf.PARSER.read(CLICFG))
-    logmod.setup()  # reload logging to reflect new config
+    conf.PARSER.read(CLICFG)
 
 
 class Handler:

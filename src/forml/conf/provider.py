@@ -35,13 +35,16 @@ class Section(secmod.Parsed):
     def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
         kwargs = dict(super().extract(reference)[0])
         provider = kwargs.pop(conf.OPT_PROVIDER, reference)
-        return provider, types.MappingProxyType(kwargs)
+        return str(provider), types.MappingProxyType(kwargs)
 
     def __hash__(self):
-        return hash(self.name)  # pylint: disable=no-member
+        return hash(self.__class__) ^ hash(self.name)  # pylint: disable=no-member
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Section'):
         return isinstance(other, self.__class__) and other.name == self.name  # pylint: disable=no-member
+
+    def __lt__(self, other: 'Section') -> bool:
+        return self.name < other.name  # pylint: disable=no-member
 
 
 class Registry(secmod.Single, Section):
@@ -50,10 +53,22 @@ class Registry(secmod.Single, Section):
     SELECTOR = conf.OPT_REGISTRY
 
 
-class Feed(secmod.Single, Section):
+class Feed(Section):
     """Feed providers.
     """
     SELECTOR = conf.OPT_FEED
+    FIELDS: typing.Tuple[str] = ('name', 'priority', 'kwargs')
+
+    @classmethod
+    def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
+        name, kwargs = super().extract(reference)
+        kwargs = dict(kwargs)
+        priority = kwargs.pop(conf.OPT_PRIORITY, 0)
+        return name, float(priority), types.MappingProxyType(kwargs)
+
+    def __lt__(self, other: 'Feed') -> bool:
+        # pylint: disable=no-member
+        return super().__lt__(other) if self.priority == other.priority else self.priority < other.priority
 
 
 class Runner(secmod.Single, Section):

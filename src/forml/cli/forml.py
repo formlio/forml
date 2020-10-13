@@ -84,7 +84,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
 
         registry = root.Level(persistent.Registry[regcfg.name](**regcfg.kwargs))
         assets = access.Assets(project, lineage, generation, registry)
-        feed = io.Feed[engcfg.name](**engcfg.kwargs)
+        feed = io.Feed[engcfg.name](**engcfg.kwargs)  # pylint: disable=no-member
         return process.Runner[runcfg.name](assets, feed, **runcfg.kwargs)
 
     @cli.Command(help='tune the given project lineage producing new generation', description='Tune mode execution')

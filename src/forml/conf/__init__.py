@@ -17,78 +17,128 @@
 
 """ForML configuration
 """
-import configparser
-import contextlib
 import os
 import pathlib
 import re
 import sys
 import tempfile
+import types
 import typing
 
-from forml.conf import section as secmod
+import toml
 
 
-@contextlib.contextmanager
-def use_default(option: str, value: str) -> typing.Generator:
-    """Context manager for temporally setting default option value.
+class Parser(dict):
+    """Config parser implementation.
     """
-    original = PARSER.get(configparser.DEFAULTSECT, option, fallback=None)
-    PARSER.set(configparser.DEFAULTSECT, option, value)
-    yield
-    if original is None:
-        PARSER.remove_option(configparser.DEFAULTSECT, option)
-    else:
-        PARSER.set(configparser.DEFAULTSECT, option, original)
+    def __init__(self, defaults: typing.Mapping[str, typing.Any], *paths: pathlib.Path):
+        super().__init__(defaults)
+        self._sources: typing.List[pathlib.Path] = list()
+        self._errors: typing.Dict[pathlib.Path, Exception] = dict()
+        self._notifiers: typing.List[typing.Callable[[], None]] = list()
+        for src in paths:
+            self.read(src)
+
+    def subscribe(self, notifier: typing.Callable[[], None]) -> None:
+        """Register a callback to be called upon configuration updates.
+
+        Args:
+            notifier: Simple callable to be executed when config gets updated.
+        """
+        self._notifiers.append(notifier)
+
+    def update(self, other: typing.Optional[typing.Mapping[str, typing.Any]] = None, **kwargs) -> None:
+        """Parser config gets updated by recursive merge with right (new) scalar values overwriting left (old) ones.
+
+        Args:
+            other: Another mapping with config values to be merged with our config.
+            **kwargs: Other values provided as keword arguments.
+        """
+        def merge(left: typing.Mapping, right: typing.Mapping) -> typing.Mapping[str, typing.Any]:
+            """Recursive merge of two dictionaries with right-to-left precedence. Any non-scalar, non-dictionary objects
+            are copied by reference.
+
+            Args:
+                left: Left dictionary to be merged.
+                right: Right dictionary to be merged.
+
+            Returns: Merged dictionary.
+            """
+            # pylint: disable=isinstance-second-argument-not-valid-type
+            common = set(left).intersection(right)
+            return {k: merge(left[k], right[k]) if k in common and
+                    isinstance(left[k], typing.Mapping) and isinstance(right[k], typing.Mapping) else
+                    right[k] if k in right else left[k] for k in set(left).union(right)}
+        super().update(merge(merge(self, other or {}), kwargs))
+        for notifier in self._notifiers:
+            notifier()
+
+    @property
+    def sources(self) -> typing.Iterable[pathlib.Path]:
+        """Get the sources files used by this parser.
+
+        Returns: Source files.
+        """
+        return tuple(self._sources)
+
+    @property
+    def errors(self) -> typing.Mapping[pathlib.Path, Exception]:
+        """Errors captured during parsing.
+
+        Returns: Mapping between files and the captured errors.
+        """
+        return types.MappingProxyType(self._errors)
+
+    def read(self, path: pathlib.Path) -> None:
+        """Read and merge config from given file.
+
+        Args:
+            path: Path to file to parse.
+        """
+        try:
+            self.update(toml.load(path))
+        except IOError as err:
+            self._errors[path] = err
+        else:
+            self._sources.append(path)
 
 
-APPNAME = 'forml'
-PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
-SYSDIR = pathlib.Path('/etc') / APPNAME
-USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() / f'.{APPNAME}'))
-PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
-TMPDIR = pathlib.Path(tempfile.gettempdir())
-APPCFG = 'config.ini'
-
-SECTION_DEFAULT = 'DEFAULT'
 SECTION_PLATFORM = 'PLATFORM'
 SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
 SECTION_RUNNER = 'RUNNER'
 SECTION_TESTING = 'TESTING'
 OPT_LOGCFG = 'logcfg'
+OPT_TMPDIR = 'tmpdir'
 OPT_PROVIDER = 'provider'
 OPT_PRIORITY = 'priority'
 OPT_REGISTRY = 'registry'
 OPT_FEED = 'feed'
 OPT_RUNNER = 'runner'
 
-DEFAULT_OPTIONS = {
+DEFAULTS = {
     OPT_LOGCFG: 'logging.ini',
-    OPT_FEED: 'devio',
-    OPT_REGISTRY: 'virtual',
-    OPT_RUNNER: 'dask',
-    OPT_PRIORITY: '0'
+    OPT_TMPDIR: tempfile.gettempdir(),
+    SECTION_PLATFORM: {
+        OPT_FEED: 'blabol',
+        OPT_REGISTRY: 'virtual',
+        OPT_RUNNER: 'dask',
+    }
 }
 
-
-PARSER = configparser.ConfigParser(DEFAULT_OPTIONS)
-PARSER.optionxform = str   # we need case sensitivity
-SRC = PARSER.read(p / APPCFG for p in PATH)
-
-
-def get(key: str, section: str = SECTION_DEFAULT, **kwargs) -> str:
-    """Get the config value.
-
-    Args:
-        section: Config file section.
-        key: Option key.
-
-    Returns: Config value
-    """
-    return PARSER.get(section, key, **kwargs)
+APPNAME = 'forml'
+SYSDIR = pathlib.Path('/etc') / APPNAME
+USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() / f'.{APPNAME}'))
+PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
+APPCFG = 'config.toml'
+PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
 
 
-# check if all section exist and add them if not so that config.get doesn't fail
-for _section in (SECTION_PLATFORM, SECTION_TESTING):
-    secmod.ensure(PARSER, _section)
+PARSER = Parser(DEFAULTS, *(p / APPCFG for p in PATH))
+
+
+def __getattr__(key: str):
+    try:
+        return PARSER[key]
+    except KeyError as err:
+        raise AttributeError(err) from err

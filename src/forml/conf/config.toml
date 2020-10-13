@@ -1,0 +1,29 @@
+logcfg = "logging.ini"
+
+[PLATFORM]
+feed = "presto"
+runner = "dask"
+registry = "homedir"
+
+[FEED.presto]
+provider = "presto"
+port = 8080
+host = "localhost"
+
+[RUNNER.dask]
+provider = "dask"
+scheduler = "multiprocessing"
+
+[RUNNER.graphviz]
+provider = "graphviz"
+format = "png"
+
+[REGISTRY.virtual]
+provider = "virtual"
+
+[REGISTRY.homedir]
+provider = "filesystem"
+#path = ~/.forml/registry
+
+[TESTING]
+runner = "dask"

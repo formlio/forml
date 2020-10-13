@@ -20,27 +20,11 @@ Config section helpers.
 """
 import abc
 import collections
-import configparser
-import functools
 import operator
 import re
-import types
 import typing
 
 from forml import error, conf
-
-
-def ensure(parser: configparser.ConfigParser, section: str) -> None:
-    """Add given section if missing.
-
-    Args:
-        parser: instance to ensure the section on
-        section: name of the section to be added.
-    """
-    try:
-        parser.add_section(section)
-    except configparser.DuplicateSectionError:
-        pass
 
 
 class Meta(abc.ABCMeta):
@@ -53,7 +37,6 @@ class Meta(abc.ABCMeta):
         return super().__new__(mcs, name, bases, namespace)
 
     @property
-    @functools.lru_cache()
     def default(cls) -> 'Parsed':
         """Default parsing.
 
@@ -97,14 +80,7 @@ class Parsed(tuple, metaclass=Meta):
 
         Returns: Options extracted from the referred section.
         """
-        section = f'{cls.SELECTOR.upper()}:{reference}'  # pylint: disable=no-member
-        ensure(conf.PARSER, section)
-        kwargs = dict()
-        for option, value in conf.PARSER.items(section):
-            if conf.PARSER.remove_option(section, option):  # take only non-default options
-                conf.PARSER.set(section, option, value)
-                kwargs[option] = value
-        return tuple([types.MappingProxyType(kwargs)])
+        return tuple([conf.PARSER.get(cls.SELECTOR.upper(), {}).get(reference, {})])  # pylint: disable=no-member
 
     @classmethod
     def parse(cls, references: typing.Optional[str] = None) -> typing.Tuple['Parsed']:
@@ -113,7 +89,7 @@ class Parsed(tuple, metaclass=Meta):
         Non-repeatability depends on particular implementations of the __hash__/__eq__ methods.
         """
         if not references:
-            references = conf.get(cls.SELECTOR, cls.REFEREE)
+            references = conf.PARSER[cls.REFEREE][cls.SELECTOR]
         result: collections.OrderedDict = collections.OrderedDict()
         while references:
             match = cls.PATTERN.match(references)
@@ -124,13 +100,23 @@ class Parsed(tuple, metaclass=Meta):
                 raise error.Unexpected('Repeated value (%s): "%s"' % (cls.__name__, references))
             result[value] = value
             references = references[match.end():]
-        return tuple(result)
+        return tuple(sorted(result))
 
     def __hash__(self):
-        return hash(tuple(sorted(self.kwargs.items())))  # pylint: disable=no-member
+        return hash(self.__class__) ^ hash(tuple(sorted(self.kwargs)))  # pylint: disable=no-member
+
+    @abc.abstractmethod
+    def __lt__(self, other: 'Parsed') -> bool:
+        """Instances need to be comparable to allow for sorting.
+
+        Args:
+            other: Right side of the comparison.
+
+        Returns: True if left is less then right.
+        """
 
 
-class Single(Parsed):
+class Single(Parsed):  # pylint: disable=abstract-method
     """Parsed section supporting only single instance.
     """
     PATTERN = re.compile(r'\s*(\w+)\s*$')

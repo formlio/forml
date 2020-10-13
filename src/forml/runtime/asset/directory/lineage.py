@@ -46,8 +46,8 @@ class Level(directory.Level):
         def __init__(self, key: typing.Union[str, 'Level.Key'] = MIN):
             try:
                 super().__init__(str(key))
-            except vermod.InvalidVersion:
-                raise self.Invalid(f'Invalid version {key} (not PEP 440 compliant)')
+            except vermod.InvalidVersion as err:
+                raise self.Invalid(f'Invalid version {key} (not PEP 440 compliant)') from err
 
     def __init__(self, project: 'prjmod.Level', key: typing.Optional[typing.Union[str, 'Level.Key']] = None):
         super().__init__(key, parent=project)
