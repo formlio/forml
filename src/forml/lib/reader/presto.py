@@ -29,6 +29,6 @@ class Reader(sql.Reader):
     """Presto reader.
     """
     @classmethod
-    def connection(cls, host: str, port: str = '8080', username: typing.Optional[str] = None,
+    def connection(cls, host: str, port: int = 8080, username: typing.Optional[str] = None,
                    password: typing.Optional[str] = None) -> presto.Connection:
-        return presto.connect(host=host, port=port, username=username, password=password)
+        return presto.connect(host=host, port=str(port), username=username, password=password)

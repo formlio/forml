@@ -1,0 +1,32 @@
+foobar = "baz"
+logcfg = "logging.ini"
+
+[PARSED]
+simple = "bar"
+complex = "foo[bar, baz],bar"
+
+[SIMPLE.bar]
+foo = "baz"
+
+[COMPLEX.bar]
+foo = "baz"
+
+[COMPLEX.foo]
+baz = "foo"
+
+[PLATFORM]
+feed = "presto"
+runner = "dask"
+registry = "virtual"
+
+[FEED.presto]
+provider = "presto"
+
+[RUNNER.dask]
+provider = "dask"
+
+[RUNNER.graphviz]
+provider = "graphviz"
+
+[REGISTRY.virtual]
+provider = "virtual"

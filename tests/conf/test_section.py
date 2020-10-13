@@ -18,57 +18,95 @@
 """
 ForML section config unit tests.
 """
-# pylint: disable=protected-access,no-self-use
+# pylint: disable=no-self-use
+import abc
 import re
-import types
 import typing
 
 import pytest
 
 from forml import error
-from forml.conf import section as secmod  # pylint: disable=unused-import
+from forml.conf import section as secmod
 
 
-class Parsed(secmod.Parsed):
-    """Base class for parsed fixtures.
+class Parsed(metaclass=abc.ABCMeta):
+    """Base class for parsed section tests using the test config from the config.toml.
     """
-    REFEREE = 'FOOBAR'
+    class Section(secmod.Parsed):
+        """Base class for parsed section fixtures.
+        """
+        REFEREE = 'PARSED'  # referring to the section [PARSED] in the config.toml
+
+        def __lt__(self, other: 'Parsed.Section') -> bool:
+            # pylint: disable=no-member
+            return sorted(set(self.kwargs).difference(other.kwargs)) < sorted(set(other.kwargs).difference(self.kwargs))
+
+    @pytest.fixture(scope='session')
+    def section(self) -> typing.Type['Parsed.Section']:
+        """Section fixture.
+        """
+        return self.Section
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    @abc.abstractmethod
+    def invalid() -> str:
+        """Invalid reference.
+        """
+
+    def test_invalid(self, section: typing.Type['Parsed.Section'], invalid: str):
+        """Test the invalid parsing references.
+        """
+        with pytest.raises(error.Unexpected):
+            section.parse(invalid)
+
+    def test_kwargs(self, section: typing.Type['Parsed.Section']):
+        """Test the kwargs parsing.
+        """
+        assert section.parse('bar')[0].kwargs == {'foo': 'baz'}
 
 
-class TestParsed:
+class TestSimple(Parsed):
+    """Simple parser tests.
+    """
+    class Section(Parsed.Section):
+        """CSV specified field list.
+        """
+        SELECTOR = 'simple'
+
+    @staticmethod
+    @pytest.fixture(scope='session', params=(',bar', 'bar, bar'))
+    def invalid(request) -> str:
+        """Invalid reference.
+        """
+        return request.param
+
+
+class TestComplex(Parsed):
     """SectionMeta unit tests.
     """
-    def test_simple(self, conf: types.ModuleType):  # pylint: disable=unused-argument
-        """Test with default pattern.
+    class Section(Parsed.Section):
+        """CSV specified field list.
         """
-        class Simple(Parsed):
-            """CSV specified field list.
+        PATTERN = re.compile(r'\s*(\w+)(?:\[(.*?)\])?\s*(?:,|$)')
+        FIELDS = 'arg', 'kwargs'
+        SELECTOR = 'complex'
+
+        @classmethod
+        def extract(cls, reference: str, arg, *_) -> typing.Tuple[typing.Any]:
+            """Custom argument extraction to allow for the arg parameter.
             """
-            SELECTOR = 'foo'
+            return arg, *super().extract(reference)
 
-        # pylint: disable=no-member
-        assert Simple.parse('bar')[0].kwargs['bar'] == 'foo'
-        with pytest.raises(error.Unexpected):
-            Simple.parse(',bar')
-        with pytest.raises(error.Unexpected):
-            Simple.parse('bar, bar')
-
-    def test_complex(self, conf: types.ModuleType):  # pylint: disable=unused-argument
-        """Test with complex patter, custom fields and extract method.
+    @staticmethod
+    @pytest.fixture(scope='session', params=(',baz[a, b]', 'bar]'))
+    def invalid(request) -> str:
+        """Invalid reference.
         """
-        class Complex(Parsed):
-            """Complex specified field list.
-            """
-            PATTERN = re.compile(r'\s*(\w+)(?:\[(.*?)\])?\s*(?:,|$)')
-            FIELDS = 'foo', 'kwargs'
-            SELECTOR = 'bar'
+        return request.param
 
-            @classmethod
-            def extract(cls, reference: str, arg, *_) -> typing.Tuple[typing.Any]:
-                return arg, *super().extract(reference)
-
-        # pylint: disable=no-member
-        assert Complex.parse('bar') == ((None, {'bar': 'bar'}), )
-        assert Complex.parse('foo[bar, baz], bar') == (('bar, baz', {'foo': 'bar'}), (None, {'bar': 'bar'}))
-        with pytest.raises(error.Unexpected):
-            Complex.parse(',baz[a, b]')
+    def test_arg(self, section: typing.Type['Parsed.Section']):
+        """Test the arg parsing.
+        """
+        assert section.parse('bar')[0].arg is None
+        assert [p.arg for p in section.parse('foo[bar, baz], bar')] == ['bar, baz', None]

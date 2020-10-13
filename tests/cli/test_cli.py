@@ -27,12 +27,14 @@ from unittest import mock
 
 import pytest
 
+from forml import conf
+
 
 @pytest.fixture(scope='session')
 def cfg_file() -> pathlib.Path:
     """Fixture for the test config file.
     """
-    return pathlib.Path(__file__).parent / 'config.ini'
+    return pathlib.Path(__file__).parent / conf.APPCFG
 
 
 def test_parse(cfg_file: pathlib.Path):
@@ -45,5 +47,4 @@ def test_parse(cfg_file: pathlib.Path):
         importlib.reload(cli)
 
     del sys.modules[cli.__name__]
-    from forml import conf
-    assert str(cfg_file) in conf.SRC
+    assert str(cfg_file) in conf.PARSER.sources

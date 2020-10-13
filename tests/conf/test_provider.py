@@ -20,7 +20,6 @@ ForML config unit tests.
 """
 # pylint: disable=no-self-use
 import abc
-import types
 import typing
 
 import pytest
@@ -41,15 +40,14 @@ class Single(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def default() -> typing.Any:
-        """Provider type.
+    def default() -> str:
+        """Default provider name fixture.
         """
 
-    def test_default(self, provider: typing.Type[provcfg.Section], default: typing.Any,
-                     conf: types.ModuleType):  # pylint: disable=unused-argument
+    def test_default(self, provider: typing.Type[provcfg.Section], default: str):
         """Default provider config test.
         """
-        assert tuple(provider.parse()) == default
+        assert provider.default.name == default
 
 
 class TestRegistry(Single):
@@ -64,10 +62,10 @@ class TestRegistry(Single):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def default() -> typing.Any:
+    def default() -> str:
         """Default values.
         """
-        return 'virtual', types.MappingProxyType({})
+        return 'virtual'
 
 
 class TestRunner(Single):
@@ -82,10 +80,10 @@ class TestRunner(Single):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def default() -> typing.Any:
+    def default() -> str:
         """Default values.
         """
-        return 'dask', types.MappingProxyType({})
+        return 'dask'
 
 
 class TestFeed(Single):
@@ -103,4 +101,9 @@ class TestFeed(Single):
     def default() -> typing.Any:
         """Provider type.
         """
-        return 'devio', types.MappingProxyType({})
+        return 'presto'
+
+    def test_default(self, provider: typing.Type[provcfg.Section], default: str):
+        """Default provider config test.
+        """
+        assert default in {p.name for p in provider.default}

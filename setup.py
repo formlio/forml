@@ -66,7 +66,7 @@ setuptools.setup(name='forml',
                  package_data={'forml.conf': ['*.ini']},
                  setup_requires=['pytest-runner', 'pytest-pylint', 'pytest-flake8'],
                  tests_require=['pytest-cov', 'pylint', 'pytest'],
-                 install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0'],
+                 install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml'],
                  extras_require={
                      'all': EXTRAS_ALL,
                      'dask': EXTRAS_DASK,
