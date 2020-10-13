@@ -27,15 +27,18 @@ import typing
 
 import toml
 
+from forml.lib import registry, runner
+
 
 class Parser(dict):
     """Config parser implementation.
     """
     def __init__(self, defaults: typing.Mapping[str, typing.Any], *paths: pathlib.Path):
-        super().__init__(defaults)
+        super().__init__()
         self._sources: typing.List[pathlib.Path] = list()
         self._errors: typing.Dict[pathlib.Path, Exception] = dict()
         self._notifiers: typing.List[typing.Callable[[], None]] = list()
+        self.update(defaults)
         for src in paths:
             self.read(src)
 
@@ -65,10 +68,20 @@ class Parser(dict):
             Returns: Merged dictionary.
             """
             # pylint: disable=isinstance-second-argument-not-valid-type
+            result = dict()
             common = set(left).intersection(right)
-            return {k: merge(left[k], right[k]) if k in common and
-                    isinstance(left[k], typing.Mapping) and isinstance(right[k], typing.Mapping) else
-                    right[k] if k in right else left[k] for k in set(left).union(right)}
+            for key in set(left).union(right):
+                if key in common and isinstance(left[key], typing.Mapping) and isinstance(right[key], typing.Mapping):
+                    value = merge(left[key], right[key])
+                elif key in common and isinstance(left[key], (list, tuple)) and isinstance(right[key], (list, tuple)):
+                    value = *right[key], *(v for v in left[key] if v not in right[key])
+                elif key in right:
+                    value = right[key]
+                else:
+                    value = left[key]
+                result[key] = value
+            return types.MappingProxyType(result)
+
         super().update(merge(merge(self, other or {}), kwargs))
         for notifier in self._notifiers:
             notifier()
@@ -115,14 +128,24 @@ OPT_PRIORITY = 'priority'
 OPT_REGISTRY = 'registry'
 OPT_FEED = 'feed'
 OPT_RUNNER = 'runner'
+OPT_PATH = 'path'
 
 DEFAULTS = {
     OPT_LOGCFG: 'logging.ini',
     OPT_TMPDIR: tempfile.gettempdir(),
     SECTION_PLATFORM: {
-        OPT_FEED: 'blabol',
-        OPT_REGISTRY: 'virtual',
+        OPT_FEED: 'presto',
+        OPT_REGISTRY: 'homedir',
         OPT_RUNNER: 'dask',
+    },
+    SECTION_REGISTRY: {
+        OPT_PATH: [registry.__name__]
+    },
+    SECTION_RUNNER: {
+        OPT_PATH: [runner.__name__]
+    },
+    SECTION_FEED: {
+        OPT_PATH: []
     }
 }
 

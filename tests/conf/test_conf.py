@@ -54,7 +54,7 @@ class TestParser:
     def defaults() -> typing.Mapping[str, typing.Any]:
         """Default values fixtures.
         """
-        return types.MappingProxyType({'foo': 'bar', 'baz': {'inner': 1}})
+        return types.MappingProxyType({'foo': 'bar', 'baz': {'scalar': 1, 'seq': [10, 3, 'asd']}})
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -66,11 +66,13 @@ class TestParser:
     def test_update(self, parser: conf.Parser):
         """Parser update tests.
         """
-        parser.update(baz={'outer': 2})
-        assert parser['baz']['inner'] == 1
-        parser.update({'baz': {'inner': 3}})
-        assert parser['baz']['inner'] == 3
-        assert parser['baz']['outer'] == 2
+        parser.update(baz={'another': 2})
+        assert parser['baz']['scalar'] == 1
+        parser.update({'baz': {'scalar': 3}})
+        assert parser['baz']['scalar'] == 3
+        assert parser['baz']['another'] == 2
+        parser.update({'baz': {'seq': [3, 'qwe', 'asd']}})
+        assert parser['baz']['seq'] == (3, 'qwe', 'asd', 10)
 
     def test_read(self, parser: conf.Parser, cfg_file: pathlib.Path):
         """Test parser file reading.

@@ -49,6 +49,11 @@ class Single(metaclass=abc.ABCMeta):
         """
         assert provider.default.name == default
 
+    def test_path(self, provider: typing.Type[provcfg.Section]):
+        """Path getter test.
+        """
+        assert isinstance(provider.path, (tuple, list))
+
 
 class TestRegistry(Single):
     """Conf unit tests.

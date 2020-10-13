@@ -18,6 +18,7 @@
 """
 ForML provider configs.
 """
+import abc
 import types
 import typing
 
@@ -25,11 +26,24 @@ from forml import conf
 from forml.conf import section as secmod
 
 
-class Section(secmod.Parsed):
+class Meta(secmod.Meta):
+    """Customized metaclass for providing the `path` property.
+    """
+    @property
+    def path(cls) -> typing.Iterable[str]:
+        """Getter for the configured search path of given provider.
+
+        Returns: Sequence of search paths.
+        """
+        return conf.PARSER[cls.ROOT][conf.OPT_PATH]
+
+
+class Section(secmod.Parsed, metaclass=Meta):
     """Special sections of forml providers config options.
     """
     FIELDS: typing.Tuple[str] = ('name', 'kwargs')
     REFEREE: str = conf.SECTION_PLATFORM
+    ROOT: str = abc.abstractmethod
 
     @classmethod
     def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
@@ -51,12 +65,14 @@ class Registry(secmod.Single, Section):
     """Registry provider.
     """
     SELECTOR = conf.OPT_REGISTRY
+    ROOT: str = conf.SECTION_REGISTRY
 
 
 class Feed(Section):
     """Feed providers.
     """
     SELECTOR = conf.OPT_FEED
+    ROOT: str = conf.SECTION_FEED
     FIELDS: typing.Tuple[str] = ('name', 'priority', 'kwargs')
 
     @classmethod
@@ -75,13 +91,13 @@ class Runner(secmod.Single, Section):
     """Runner provider.
     """
     SELECTOR = conf.OPT_RUNNER
+    ROOT: str = conf.SECTION_RUNNER
 
 
 class Testing:
     """Providers specific to testing.
     """
-    class Runner(secmod.Single, Section):
+    class Runner(Runner):
         """Runner provider.
         """
         REFEREE = conf.SECTION_TESTING
-        SELECTOR = conf.OPT_RUNNER

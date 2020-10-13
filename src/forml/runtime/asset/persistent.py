@@ -48,7 +48,7 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
     return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR.name))
 
 
-class Registry(provider.Interface, default=provcfg.Registry.default):
+class Registry(provider.Interface, default=provcfg.Registry.default, path=provcfg.Registry.path):
     """Top-level persistent registry abstraction.
     """
     def __init__(self, staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):

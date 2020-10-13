@@ -35,7 +35,7 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(process.Runner, key='dask'):
+class Runner(process.Runner, alias='dask'):
     """Dask based runner implementation.
     """
     class Dag(dict):

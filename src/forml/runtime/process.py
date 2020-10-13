@@ -30,7 +30,7 @@ from forml.runtime.asset import access
 from forml.runtime.code import compiler
 
 
-class Runner(provider.Interface, default=provcfg.Runner.default):
+class Runner(provider.Interface, default=provcfg.Runner.default, path=provcfg.Runner.path):
     """Abstract base runtime class to be extended by particular runtime implementations.
     """
     def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None):

@@ -82,7 +82,7 @@ class TestInterface:
                     subkey: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
         """Provider fixture.
         """
-        class SubProvider(genprovider[set], key=subkey):
+        class SubProvider(genprovider[set], alias=subkey):
             """Provider implementation.
             """
             def provide(self) -> None:
@@ -106,7 +106,7 @@ class TestInterface:
         """Test a colliding provider key.
         """
         with pytest.raises(error.Unexpected):
-            class Colliding(subprovider, key=subkey):
+            class Colliding(subprovider, alias=subkey):
                 """colliding implementation.
                 """
             assert Colliding
