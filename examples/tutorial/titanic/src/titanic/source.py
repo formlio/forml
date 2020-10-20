@@ -16,32 +16,30 @@
 # under the License.
 
 """
-ETL tests.
+Titanic data source.
+
+This is one of the main _formal_ forml components (along with `pipeline` and `evaluation`) that's being looked up by
+the forml loader. In this case it is implemented as a python module but it could be as well a package
+`source/__init__.py` (to potentially split it into additional informal submodules).
 """
-# pylint: disable=no-self-use
-import pytest
 
-from forml import error
 from forml.io import etl
-from forml.io.dsl.schema import frame
+from forml.project import component
+from forml.lib.schema.kaggle import titanic as schema
 
+FEATURES = schema.Data.select(
+    schema.Data.PassengerId,
+    schema.Data.Pclass,
+    schema.Data.Name,
+    schema.Data.Sex,
+    schema.Data.Age,
+    schema.Data.SibSp,
+    schema.Data.Parch,
+    schema.Data.Ticket,
+    schema.Data.Fare,
+    schema.Data.Cabin,
+    schema.Data.Embarked
+)
 
-class TestField:
-    """Field unit tests.
-    """
-    def test_renamed(self, student: frame.Table):
-        """Test the field renaming.
-        """
-        assert student.schema.dob.renamed('foo').name == 'foo'
-
-
-class TestSource:
-    """Source unit tests.
-    """
-    def test_query(self, student: frame.Table):
-        """Test the query setup.
-        """
-        with pytest.raises(error.Invalid):
-            etl.Source.query(student, student.score)
-        query = etl.Source.query(student)
-        assert isinstance(query.extract.train, frame.Query)
+ETL = etl.Source.query(FEATURES, schema.Data.Survived)
+component.setup(ETL)

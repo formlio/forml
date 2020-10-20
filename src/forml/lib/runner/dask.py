@@ -25,17 +25,17 @@ import typing
 
 import dask
 
-from forml.runtime import code, process
+from forml import runtime
+from forml.runtime import code
 from forml.runtime.asset import access
 
 if typing.TYPE_CHECKING:
     from forml import io
 
-
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(process.Runner, alias='dask'):
+class Runner(runtime.Runner, alias='dask'):
     """Dask based runner implementation.
     """
     class Dag(dict):

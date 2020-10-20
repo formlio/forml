@@ -34,7 +34,7 @@ class Meta(abc.ABCMeta):
         if 'FIELDS' in namespace:
             for index, field in enumerate(namespace.pop('FIELDS')):
                 namespace[field] = property(operator.itemgetter(index))
-        return super().__new__(mcs, name, bases, namespace)
+        return super().__new__(mcs, name, (*bases, tuple), namespace)
 
     @property
     def default(cls) -> 'Parsed':
@@ -45,28 +45,29 @@ class Meta(abc.ABCMeta):
         return cls.parse()
 
 
-class Parsed(tuple, metaclass=Meta):
+class Parsed(metaclass=Meta):
     """Parsed config base class.
 
     Implements parser for configs referenced based on following concept:
 
-        [REFEREE]
-        selector = reference1, reference2
+    [INDEX]
+    SELECTOR = reference1, reference2
 
-        [SELECTOR:reference1]
-        <kwargs>
-        [SELECTOR:reference2]
-        <kwargs>
+    [GROUP:reference1]
+    <params>
+    [GROUP:reference2]
+    <params>
     """
     # list of parsed config field names
-    FIELDS: typing.Tuple[str] = ('kwargs', )
+    FIELDS: typing.Tuple[str] = ('params', )
     # config reference(s) pattern
     PATTERN: typing.Pattern = re.compile(r'\s*(\w+)\s*(?:,|$)')
     # master section containing the references to the particular config sections
-    REFEREE: str = abc.abstractmethod
-    # name of option in master section containing reference(s) to the particular
-    # config sections as well as their name prefix
+    INDEX: str = abc.abstractmethod
+    # name of option in INDEX section containing reference(s) to the particular GROUP section
     SELECTOR: str = abc.abstractmethod
+    # common name (prefix) of sections referred by SELECTOR
+    GROUP: str = abc.abstractmethod
 
     def __new__(cls, reference: str, *args):
         return super().__new__(cls, cls.extract(reference, *args))
@@ -80,7 +81,10 @@ class Parsed(tuple, metaclass=Meta):
 
         Returns: Options extracted from the referred section.
         """
-        return tuple([conf.PARSER.get(cls.SELECTOR.upper(), {}).get(reference, {})])  # pylint: disable=no-member
+        try:
+            return tuple([conf.PARSER[cls.GROUP][reference]])  # pylint: disable=no-member
+        except KeyError as err:
+            raise error.Missing(f'Config section not found: [{cls.GROUP}.{reference}]') from err
 
     @classmethod
     def parse(cls, references: typing.Optional[str] = None) -> typing.Tuple['Parsed']:
@@ -89,7 +93,7 @@ class Parsed(tuple, metaclass=Meta):
         Non-repeatability depends on particular implementations of the __hash__/__eq__ methods.
         """
         if not references:
-            references = conf.PARSER[cls.REFEREE][cls.SELECTOR]
+            references = conf.PARSER[cls.INDEX][cls.SELECTOR]
         result: collections.OrderedDict = collections.OrderedDict()
         while references:
             match = cls.PATTERN.match(references)
@@ -103,7 +107,7 @@ class Parsed(tuple, metaclass=Meta):
         return tuple(sorted(result))
 
     def __hash__(self):
-        return hash(self.__class__) ^ hash(tuple(sorted(self.kwargs)))  # pylint: disable=no-member
+        return hash(self.__class__) ^ hash(tuple(sorted(self.params)))  # pylint: disable=no-member
 
     @abc.abstractmethod
     def __lt__(self, other: 'Parsed') -> bool:

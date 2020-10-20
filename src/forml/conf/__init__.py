@@ -26,8 +26,9 @@ import types
 import typing
 
 import toml
+from forml import error
 
-from forml.lib import registry, runner
+from forml.lib import registry, runner, sink
 
 
 class Parser(dict):
@@ -110,8 +111,12 @@ class Parser(dict):
         """
         try:
             self.update(toml.load(path))
-        except IOError as err:
+        except FileNotFoundError:  # not an error (ignore)
+            pass
+        except PermissionError as err:  # soft error (warn)
             self._errors[path] = err
+        except ValueError as err:  # hard error (abort)
+            raise error.Invalid(f'Invalid config file {path}: {err}') from err
         else:
             self._sources.append(path)
 
@@ -119,6 +124,7 @@ class Parser(dict):
 SECTION_PLATFORM = 'PLATFORM'
 SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
+SECTION_SINK = 'SINK'
 SECTION_RUNNER = 'RUNNER'
 SECTION_TESTING = 'TESTING'
 OPT_LOGCFG = 'logcfg'
@@ -127,17 +133,17 @@ OPT_PROVIDER = 'provider'
 OPT_PRIORITY = 'priority'
 OPT_REGISTRY = 'registry'
 OPT_FEED = 'feed'
+OPT_SINK = 'sink'
 OPT_RUNNER = 'runner'
+OPT_DEFAULT = 'default'
 OPT_PATH = 'path'
+OPT_TRAIN = 'train'
+OPT_APPLY = 'apply'
+OPT_EVAL = 'eval'
 
 DEFAULTS = {
-    OPT_LOGCFG: 'logging.ini',
+    # all static defaults should go rather to the ./config.toml (in this package)
     OPT_TMPDIR: tempfile.gettempdir(),
-    SECTION_PLATFORM: {
-        OPT_FEED: 'presto',
-        OPT_REGISTRY: 'homedir',
-        OPT_RUNNER: 'dask',
-    },
     SECTION_REGISTRY: {
         OPT_PATH: [registry.__name__]
     },
@@ -146,6 +152,9 @@ DEFAULTS = {
     },
     SECTION_FEED: {
         OPT_PATH: []
+    },
+    SECTION_SINK: {
+        OPT_PATH: [sink.__name__]
     }
 }
 

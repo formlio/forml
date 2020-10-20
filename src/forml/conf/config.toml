@@ -1,15 +1,7 @@
 logcfg = "logging.ini"
 
-[PLATFORM]
-feed = "presto"
-runner = "dask"
-registry = "homedir"
-
-[FEED.presto]
-provider = "presto"
-priority = 100
-host = "localhost"
-port = 8080
+[RUNNER]
+default = "dask"
 
 [RUNNER.dask]
 provider = "dask"
@@ -19,12 +11,37 @@ scheduler = "multiprocessing"
 provider = "graphviz"
 format = "png"
 
+
+[REGISTRY]
+default = "homedir"
+
 [REGISTRY.virtual]
 provider = "virtual"
 
 [REGISTRY.homedir]
 provider = "filesystem"
 #path = ~/.forml/registry
+
+
+[FEED]
+default = "presto"
+
+[FEED.presto]
+provider = "presto"
+priority = 100
+host = "localhost"
+port = 8080
+
+
+[SINK]
+default = "stdout"
+train = "stdout"
+apply = "stdout"
+eval = "stdout"
+
+[SINK.stdout]
+provider = "stdout"
+
 
 [TESTING]
 runner = "dask"

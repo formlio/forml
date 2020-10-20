@@ -70,42 +70,42 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             alias: provider alias
             paths: search paths to be explored when attempting to load
         """
-        references = {repr(provider)}
+        providers = {repr(provider)}
         if alias:
-            references.add(alias)
-        for key in references:
-            if key in self.provider:
-                if provider == self.provider[key]:
+            providers.add(alias)
+        for reference in providers:
+            if reference in self.provider:
+                if provider == self.provider[reference]:
                     continue
-                raise error.Unexpected(f'Provider key collision ({key})')
+                raise error.Unexpected(f'Provider reference collision ({reference})')
         self.paths.update(paths)
         if inspect.isabstract(provider):
             return
-        LOGGER.debug('Registering provider %s as `%s` with %d more search paths %s',
-                     provider.__name__, key, len(paths), paths)
-        for key in references:
-            self.provider[key] = provider
+        for reference in providers:
+            LOGGER.debug('Registering provider %s as `%s` with %d more search paths %s',
+                         provider.__name__, reference, len(paths), paths)
+            self.provider[reference] = provider
 
-    def get(self, key: str) -> typing.Type['Interface']:
+    def get(self, reference: str) -> typing.Type['Interface']:
         """Get the registered provider or attempt to load all search paths packages that might be containing it.
 
         Args:
-            key: provider key
+            reference: provider reference
 
         Returns: Registered provider.
         """
-        LOGGER.debug('Getting provider of %s (%d search paths)', key, len(self.paths))
-        if key not in self.provider:
-            pending = list(self.paths)
-            for path in self.paths:
-                pending.append(path / key)
-            path = key
-            while '.' in path:
-                path, _ = path.rsplit('.', 1)
-                pending.append(Registry.Path(path))
-            while key not in self.provider and pending:
-                pending.pop().load()
-        return self.provider[key]
+        LOGGER.debug('Getting provider of %s (%d search paths)', reference, len(self.paths))
+        if reference not in self.provider:
+            paths = list(self.paths)
+            if ':' in reference:  # reference is qualified spec of <module>:<qualname>
+                module, _ = reference.split(':', 1)
+                paths.append(Registry.Path(module))
+            else:  # reference is a plain alias - attempt to find a module with same name under the search paths
+                for package in self.paths:
+                    paths.append(package / reference)
+            while reference not in self.provider and paths:
+                paths.pop().load()
+        return self.provider[reference]
 
 
 REGISTRY: typing.Dict[typing.Type['Interface'], Registry] = collections.defaultdict(Registry)
@@ -126,24 +126,24 @@ class Meta(abc.ABCMeta):
 
     def __call__(cls, *args, **kwargs) -> 'Interface':
         if cls in DEFAULTS:
-            key, params = DEFAULTS[cls]
-            return cls[key](*args, **{**params, **kwargs})  # pylint: disable=unsubscriptable-object
+            reference, params = DEFAULTS[cls]
+            return cls[reference](*args, **{**params, **kwargs})  # pylint: disable=unsubscriptable-object
         return super().__call__(*args, **kwargs)
 
-    def __getitem__(cls, key: typing.Any) -> typing.Type['Interface']:
-        if not isinstance(key, str) and issubclass(cls, typing.Generic):
-            return cls.__class_getitem__(key)
+    def __getitem__(cls, reference: typing.Any) -> typing.Type['Interface']:
+        if not isinstance(reference, str) and issubclass(cls, typing.Generic):
+            return cls.__class_getitem__(reference)
         try:
-            return REGISTRY[cls].get(key)
+            return REGISTRY[cls].get(reference)
         except KeyError as err:
             raise error.Missing(
-                f'No {cls.__name__} provider registered as {key} (known providers: {", ".join(cls)})') from err
+                f'No {cls.__name__} provider registered as {reference} (known providers: {", ".join(cls)})') from err
 
     def __iter__(cls):
         return iter(REGISTRY[cls].provider)
 
     def __repr__(cls):
-        return f'{cls.__module__}.{cls.__qualname__}'
+        return f'{cls.__module__}:{cls.__qualname__}'
 
     def __str__(cls):
         return f'{repr(cls)}[{", ".join(cls)}]'
@@ -159,17 +159,17 @@ class Interface(metaclass=Meta):
     """Base class for service providers.
     """
     def __init_subclass__(cls, alias: typing.Optional[str] = None, path: typing.Optional[typing.Iterable[str]] = None):
-        """Register the provider based on its optional key.
+        """Register the provider based on its optional reference.
 
         Normally would be implemented using the Meta.__init__ but it needs the Interface class to exist.
 
         Args:
-            alias: Optional key to register the provider as (in addition to its qualified name).
+            alias: Optional reference to register the provider as (in addition to its qualified name).
             path: Optional search path for additional packages to get imported when attempting to load.
         """
         super().__init_subclass__()
         if inspect.isabstract(cls) and alias:
-            raise error.Unexpected(f'Provider key ({alias}) illegal on abstract class')
+            raise error.Unexpected(f'Provider reference ({alias}) illegal on abstract class')
         path = {Registry.Path(p, explicit=True) for p in path or []}
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):
             REGISTRY[parent].add(cls, alias, path)

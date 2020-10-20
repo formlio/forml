@@ -23,8 +23,8 @@ import typing
 
 import graphviz as grviz
 
-from forml import conf
-from forml.runtime import code, process
+from forml import conf, runtime
+from forml.runtime import code
 from forml.runtime.asset import access
 from forml.runtime.code import instruction
 
@@ -35,7 +35,7 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(process.Runner, alias='graphviz'):
+class Runner(runtime.Runner, alias='graphviz'):
     """Graphviz based runner implementation.
     """
     FILEPATH = f'{conf.APPNAME}.dot'

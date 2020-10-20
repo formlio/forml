@@ -25,15 +25,14 @@ import types
 import typing
 from collections import abc
 
-from forml import conf, error, io
+from forml import conf, error, runtime, io
 from forml.conf import provider as provcfg
 from forml.flow.pipeline import topology
 from forml.io import etl
-from forml.project import component as compmod, distribution, importer
-from forml.runtime import process
-from forml.runtime.asset import access, persistent
-from forml.runtime.asset.directory import root
 from forml.lib.registry import virtual
+from forml.project import component as compmod, distribution, importer
+from forml.runtime.asset import persistent
+from forml.runtime.asset.directory import root
 
 LOGGER = logging.getLogger(__name__)
 
@@ -124,30 +123,21 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     class Launcher:
         """Runner proxy class with preconfigured assets to launch given artifact.
         """
-        def __init__(self, assets: access.Assets):
-            self._assets: access.Assets = assets
+        def __init__(self, registry: persistent.Registry, project: str):
+            self._registry: persistent.Registry = registry
+            self._project: str = project
 
-        @property
-        def _feed(self) -> 'io.Feed':
-            """Default feed instance.
+        def __call__(self, runner: typing.Optional[provcfg.Runner] = None,
+                     feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, io.Feed]]] = None,
+                     sinks: typing.Optional[typing.Union[
+                         provcfg.Sink.Mode, io.Sink]] = None) -> 'runtime.Platform.Runner':
+            return runtime.Platform(runner, self._registry, feeds, sinks).runner(self._project)
 
-            Returns: Feed instance.
-            """
-            config = provcfg.Feed.default
-            return io.Feed[config.name](**config.kwargs)   # pylint: disable=no-member
-
-        def __call__(self, runner: typing.Type['process.Runner'],
-                     feed: typing.Optional['io.Feed'] = None, **kwargs: typing.Any) -> 'process.Runner':
-            return runner(self._assets, feed, **kwargs)
-
-        def __getitem__(self, runner: str) -> 'process.Runner':
-            config = provcfg.Runner.parse(runner)
-            return process.Runner[config.name](self._assets, self._feed, **config.kwargs)
+        def __getitem__(self, runner: str) -> 'runtime.Platform.Runner':
+            return self(provcfg.Runner.parse(runner))
 
         def __getattr__(self, mode: str) -> typing.Callable:
-            config = provcfg.Runner.default
-            # pylint: disable=no-member
-            return getattr(process.Runner[config.name](self._assets, self._feed, **config.kwargs), mode)
+            return getattr(self(), mode)
 
     def __new__(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
                 package: typing.Optional[str] = None, **modules: typing.Any):
@@ -196,6 +186,6 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         with importer.context(Manifest()):
             # dummy package forced to load our fake manifest
             package = distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-'))
-        registry = root.Level(virtual.Registry())
-        registry.get(project).put(package)
-        return self.Launcher(access.Assets(Manifest.NAME, registry=registry))
+        registry = virtual.Registry()
+        root.Level(registry).get(project).put(package)
+        return self.Launcher(registry, project)

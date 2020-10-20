@@ -25,9 +25,9 @@ import string
 import typing
 import unittest
 
+from forml import runtime
 from forml.conf import provider as provcfg
 from forml.flow.pipeline import topology
-from forml.runtime import process
 from forml.testing import spec, facility
 
 LOGGER = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class Test:
             with self.raises(suite):
                 self.matches(suite, self.test(runner))
 
-    def init(self, suite: Suite) -> process.Runner:
+    def init(self, suite: Suite) -> runtime.Runner:
         """Test init phase.
 
         Args:
@@ -98,7 +98,7 @@ class Test:
             value: Tested value..
         """
 
-    def test(self, runner: process.Runner) -> typing.Any:
+    def test(self, runner: runtime.Runner) -> typing.Any:
         """Test subject logic.
 
         Args:
@@ -151,7 +151,7 @@ class ReturnableTest(Test):
 class TestInitRaises(RaisableTest, Test):
     """Test composite.
     """
-    def init(self, suite: Suite) -> process.Runner:
+    def init(self, suite: Suite) -> runtime.Runner:
         with self.raises(suite):
             return super().init(suite)
 
@@ -159,7 +159,7 @@ class TestInitRaises(RaisableTest, Test):
 class PlainApplyTest(Test):
     """Testcase logic.
     """
-    def test(self, runner: process.Runner) -> typing.Any:
+    def test(self, runner: runtime.Runner) -> typing.Any:
         return runner.apply()
 
 
@@ -176,7 +176,7 @@ class TestPlainApplyRaises(RaisableTest, PlainApplyTest):
 class StateTrainTest(Test):
     """Testcase logic.
     """
-    def test(self, runner: process.Runner) -> typing.Any:
+    def test(self, runner: runtime.Runner) -> typing.Any:
         return runner.train()
 
 
@@ -193,12 +193,12 @@ class TestStateTrainRaises(RaisableTest, StateTrainTest):
 class StateApplyTest(Test):
     """Testcase logic.
     """
-    def init(self, suite: Suite) -> process.Runner:
+    def init(self, suite: Suite) -> runtime.Runner:
         runner = super().init(suite)
         runner.train()
         return runner
 
-    def test(self, runner: process.Runner) -> typing.Any:
+    def test(self, runner: runtime.Runner) -> typing.Any:
         return runner.apply()
 
 
@@ -215,13 +215,13 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine.
     """
-    def __init__(self, name: str, scenario: spec.Scenario, runner: provcfg.Runner = provcfg.Testing.Runner.default):
+    def __init__(self, name: str, scenario: spec.Scenario, runner: provcfg.Runner = provcfg.Runner.default):
         self._name: str = name
         runner = facility.Runner(scenario.params, scenario.input, runner)
         self._test: Test = self.select(scenario, runner)
 
     @staticmethod
-    def select(scenario: spec.Scenario, runner: process.Runner) -> Test:
+    def select(scenario: spec.Scenario, runner: runtime.Runner) -> Test:
         """Selecting and setting up the test implementation for given scenario.
 
         Args:

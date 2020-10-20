@@ -34,8 +34,8 @@ import numpy as np
 import pandas as pd
 
 from forml.flow import task
-from forml.lib.actor import wrapped
-from forml.lib.operator import simple
+from forml.lib.flow.actor import wrapped
+from forml.lib.flow.operator import simple
 
 
 @simple.Mapper.operator

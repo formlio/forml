@@ -27,11 +27,21 @@ from forml.io.dsl.schema import series, frame, kind as kindmod
 from forml.project import product
 
 
-class Field(collections.namedtuple('Field', 'kind, name')):
+class Field(typing.NamedTuple):
     """Schema field class.
     """
-    def __new__(cls, kind: kindmod.Any, name: typing.Optional[str] = None):
-        return super().__new__(cls, kind, name)
+    kind: kindmod.Any
+    name: typing.Optional[str] = None
+
+    def renamed(self, name: typing.Optional[str]) -> 'Field':
+        """Return copy of the field with the new name.
+
+        Args:
+            name: New name to be used.
+
+        Returns: New Field instance.
+        """
+        return self if name == self.name else Field(self.kind, name)
 
 
 class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
@@ -49,13 +59,22 @@ class Source(typing.NamedTuple):
     class Extract(collections.namedtuple('Extract', 'train, apply, label, ordinal')):
         """Combo of select statements for the different modes.
         """
+        train: frame.Query
+        apply: frame.Query
+        label: typing.Tuple[series.Column]
+        ordinal: typing.Optional[series.Operable]
+
         def __new__(cls, train: frame.Queryable, apply: frame.Queryable, label: typing.Sequence[series.Column],
                     ordinal: typing.Optional[series.Operable]):
+            train = train.query
+            apply = apply.query
             if {c.operable for c in train.columns}.intersection(c.operable for c in label):
                 raise error.Invalid('Label-feature overlap')
+            if train.schema != apply.schema:
+                raise error.Invalid('Train-apply schema mismatch')
             if ordinal:
                 ordinal = series.Operable.ensure_is(ordinal)
-            return super().__new__(cls, train.query, apply.query, tuple(label), ordinal)
+            return super().__new__(cls, train, apply, tuple(label), ordinal)
 
     @classmethod
     def query(cls, features: frame.Queryable, *label: series.Column, apply: typing.Optional[frame.Queryable] = None,

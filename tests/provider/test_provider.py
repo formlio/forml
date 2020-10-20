@@ -119,5 +119,6 @@ class TestProvider:
         """Test the search path based loading.
         """
         from . import service  # pylint: disable=import-outside-toplevel
-        assert issubclass(service.Provider['dummy'], service.Provider)
-        assert service.Provider['tests.provider.service.provider.dummy.Provider']().serve() == 'dummy'
+        dummy = service.Provider['dummy']
+        assert issubclass(dummy, service.Provider)
+        assert service.Provider[f'{dummy.__module__}:{dummy.__qualname__}']().serve() == 'dummy'

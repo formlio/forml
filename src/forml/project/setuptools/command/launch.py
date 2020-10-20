@@ -25,10 +25,9 @@ import typing
 
 from setuptools.command import test
 
-from forml import io
+from forml import runtime
 from forml.conf import provider
 from forml.project import product
-from forml.runtime import process
 
 LOGGER = logging.getLogger(__name__)
 
@@ -74,21 +73,17 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         return product.Artifact(self.distribution.package_dir.get('', '.'), package=package, **modules)
 
     def run_tests(self) -> None:
-        """This is the original test command entry point - lets override it with our actions.
+        """This is the original test command entry point - let's override it with our actions.
         """
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        feed = provider.Feed.parse(self.feed)
-        runner = provider.Runner.parse(self.runner)
-        # pylint: disable=no-member
-        launcher = self.artifact.launcher(process.Runner[runner.name], io.Feed[feed.name](**feed.kwargs),
-                                          **runner.kwargs)
+        launcher = self.artifact.launcher(provider.Runner.parse(self.runner), provider.Feed.parse(self.feed))
         result = self.launch(launcher, lower=self.lower, upper=self.upper)
         if result is not None:
             print(result)
 
     @staticmethod
     @abc.abstractmethod
-    def launch(runner: process.Runner, *args, **kwargs) -> typing.Any:
+    def launch(runner: runtime.Runner, *args, **kwargs) -> typing.Any:
         """Executing the particular runner target.
 
         Args:
@@ -104,7 +99,7 @@ class Train(Mode):
     """Development train mode.
     """
     description = 'trigger the development train mode'
-    launch = staticmethod(process.Runner.train)
+    launch = staticmethod(runtime.Runner.train)
 
 
 class Tune(Mode):
@@ -113,7 +108,7 @@ class Tune(Mode):
     description = 'trigger the development tune mode'
 
     @staticmethod
-    def launch(runner: process.Runner, *args, **kwargs) -> typing.Any:
+    def launch(runner: runtime.Runner, *args, **kwargs) -> typing.Any:
         raise NotImplementedError('Tune mode is not yet supported')
 
 
@@ -121,4 +116,4 @@ class Score(Mode):
     """Development score mode.
     """
     description = 'trigger the development score mode'
-    launch = staticmethod(process.Runner.cvscore)
+    launch = staticmethod(runtime.Runner.cvscore)

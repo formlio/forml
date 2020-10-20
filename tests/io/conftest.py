@@ -20,10 +20,13 @@ Global ForML unit tests fixtures.
 """
 # pylint: disable=no-self-use
 
+import typing
+
 import pytest
 
+from forml import io
 from forml.io import etl
-from forml.io.dsl import function
+from forml.io.dsl import function, parser
 from forml.io.dsl.schema import frame, kind
 
 
@@ -86,3 +89,35 @@ def query(person: frame.Table, student: frame.Table, school_ref: frame.Reference
         .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, kind.String())) \
         .where(student.score < 2).orderby(student.level, student.score).limit(10)
     return query
+
+
+@pytest.fixture(scope='session')
+def reference() -> str:
+    """Dummy feed reference fixture"""
+    return 'dummy'
+
+
+@pytest.fixture(scope='session')
+def feed(reference: str,  # pylint: disable=unused-argument
+         person: frame.Table, student: frame.Table, school: frame.Table) -> typing.Type[io.Feed]:
+    """Dummy feed fixture.
+    """
+    class Dummy(io.Feed, alias=reference):
+        """Dummy feed for unit-testing purposes.
+        """
+
+        def __init__(self, identity: str, **readerkw):
+            super().__init__(**readerkw)
+            self.identity: str = identity
+
+        @property
+        def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
+            """Abstract method implementation.
+            """
+            return {
+                student.join(person, student.surname == person.surname).source: None,
+                student: None,
+                school: None
+            }
+
+    return Dummy

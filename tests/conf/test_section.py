@@ -35,11 +35,11 @@ class Parsed(metaclass=abc.ABCMeta):
     class Section(secmod.Parsed):
         """Base class for parsed section fixtures.
         """
-        REFEREE = 'PARSED'  # referring to the section [PARSED] in the config.toml
+        INDEX = 'PARSED'  # referring to the section [PARSED] in the config.toml
 
         def __lt__(self, other: 'Parsed.Section') -> bool:
             # pylint: disable=no-member
-            return sorted(set(self.kwargs).difference(other.kwargs)) < sorted(set(other.kwargs).difference(self.kwargs))
+            return sorted(set(self.params).difference(other.params)) < sorted(set(other.params).difference(self.params))
 
     @pytest.fixture(scope='session')
     def section(self) -> typing.Type['Parsed.Section']:
@@ -57,13 +57,13 @@ class Parsed(metaclass=abc.ABCMeta):
     def test_invalid(self, section: typing.Type['Parsed.Section'], invalid: str):
         """Test the invalid parsing references.
         """
-        with pytest.raises(error.Unexpected):
+        with pytest.raises((error.Unexpected, error.Missing)):
             section.parse(invalid)
 
-    def test_kwargs(self, section: typing.Type['Parsed.Section']):
-        """Test the kwargs parsing.
+    def test_params(self, section: typing.Type['Parsed.Section']):
+        """Test the params parsing.
         """
-        assert section.parse('bar')[0].kwargs == {'foo': 'baz'}
+        assert section.parse('bar')[0].params == {'foo': 'baz'}
 
 
 class TestSimple(Parsed):
@@ -73,9 +73,10 @@ class TestSimple(Parsed):
         """CSV specified field list.
         """
         SELECTOR = 'simple'
+        GROUP = 'SIMPLE'
 
     @staticmethod
-    @pytest.fixture(scope='session', params=(',bar', 'bar, bar'))
+    @pytest.fixture(scope='session', params=(',bar', 'bar, bar', 'blah'))
     def invalid(request) -> str:
         """Invalid reference.
         """
@@ -89,8 +90,9 @@ class TestComplex(Parsed):
         """CSV specified field list.
         """
         PATTERN = re.compile(r'\s*(\w+)(?:\[(.*?)\])?\s*(?:,|$)')
-        FIELDS = 'arg', 'kwargs'
+        FIELDS = 'arg', 'params'
         SELECTOR = 'complex'
+        GROUP = 'COMPLEX'
 
         @classmethod
         def extract(cls, reference: str, arg, *_) -> typing.Tuple[typing.Any]:
@@ -99,7 +101,7 @@ class TestComplex(Parsed):
             return arg, *super().extract(reference)
 
     @staticmethod
-    @pytest.fixture(scope='session', params=(',baz[a, b]', 'bar]'))
+    @pytest.fixture(scope='session', params=(',baz[a, b]', 'bar]', 'blah'))
     def invalid(request) -> str:
         """Invalid reference.
         """

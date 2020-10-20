@@ -47,30 +47,12 @@ class Single(metaclass=abc.ABCMeta):
     def test_default(self, provider: typing.Type[provcfg.Section], default: str):
         """Default provider config test.
         """
-        assert provider.default.name == default
+        assert provider.default.reference == default
 
     def test_path(self, provider: typing.Type[provcfg.Section]):
         """Path getter test.
         """
         assert isinstance(provider.path, (tuple, list))
-
-
-class TestRegistry(Single):
-    """Conf unit tests.
-    """
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Registry]:
-        """Provider type.
-        """
-        return provcfg.Registry
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def default() -> str:
-        """Default values.
-        """
-        return 'virtual'
 
 
 class TestRunner(Single):
@@ -89,6 +71,24 @@ class TestRunner(Single):
         """Default values.
         """
         return 'dask'
+
+
+class TestRegistry(Single):
+    """Conf unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def provider() -> typing.Type[provcfg.Registry]:
+        """Provider type.
+        """
+        return provcfg.Registry
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def default() -> str:
+        """Default values.
+        """
+        return 'filesystem'
 
 
 class TestFeed(Single):
@@ -111,4 +111,43 @@ class TestFeed(Single):
     def test_default(self, provider: typing.Type[provcfg.Section], default: str):
         """Default provider config test.
         """
-        assert default in {p.name for p in provider.default}
+        assert default in {p.reference for p in provider.default}
+
+
+class TestSink(Single):
+    """Conf unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def provider() -> typing.Type[provcfg.Sink]:
+        """Provider type.
+        """
+        return provcfg.Sink
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def default() -> str:
+        """Default values.
+        """
+        return 'stdout'
+
+
+class TestSinkMode:
+    """Sink modes unit tests.
+    """
+    def test_default(self):
+        """Default modes parsing.
+        """
+        mode = provcfg.Sink.Mode.default
+        assert mode.train.reference == 'stdout'
+        assert mode.apply.reference == 'foo'
+        assert mode.eval.reference == 'stdout'
+
+    def test_explicit(self):
+        """Explicit modes parsing.
+        """
+        mode = provcfg.Sink.Mode.parse('foo')
+        # pylint: disable=no-member
+        assert mode.train.reference == 'foo'
+        assert mode.apply.reference == 'foo'
+        assert mode.eval.reference == 'foo'
