@@ -22,8 +22,8 @@ from sklearn import ensemble, linear_model, impute, preprocessing, feature_extra
 
 from forml.io import etl
 from forml.flow import task
-from forml.lib.actor import wrapped
-from forml.lib.operator import simple
+from forml.lib.flow.actor import wrapped
+from forml.lib.flow.operator import simple
 
 SimpleImputer = simple.Mapper.operator(wrapped.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
 

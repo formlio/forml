@@ -22,7 +22,7 @@ import logging
 import typing
 import uuid
 
-from forml import io
+from forml import io, runtime
 from forml.conf import provider as provcfg
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
@@ -31,7 +31,6 @@ from forml.io import etl
 from forml.io.dsl import parser
 from forml.io.dsl.schema import series, frame, kind
 from forml.io.etl import extract
-from forml.runtime import process
 from forml.testing import spec
 
 LOGGER = logging.getLogger(__name__)
@@ -75,6 +74,10 @@ class Feed(io.Feed, alias='testing'):
         return lambda c, s: c[s][0]
 
     @property
+    def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
+        return {DataSet: None}
+
+    @property
     def columns(self) -> typing.Mapping[series.Column, parser.Column]:
         return {
             DataSet.label: (self._scenario.train, [self._scenario.label]),
@@ -102,12 +105,11 @@ class Runner:
         self._feed: io.Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
-    def __call__(self, operator: typing.Type[topology.Operator]) -> process.Runner:
+    def __call__(self, operator: typing.Type[topology.Operator]) -> runtime.Runner:
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
         segment = instance.expand()
         segment.apply.accept(initializer)
         segment.train.accept(initializer)
         segment.label.accept(initializer)
-        return self._source.bind(instance).launcher(process.Runner[self._runner.name], self._feed,
-                                                    **self._runner.kwargs)
+        return self._source.bind(instance).launcher(self._runner, [self._feed])

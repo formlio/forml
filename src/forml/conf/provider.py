@@ -18,11 +18,10 @@
 """
 ForML provider configs.
 """
-import abc
 import types
 import typing
 
-from forml import conf
+from forml import conf, error
 from forml.conf import section as secmod
 
 
@@ -35,69 +34,103 @@ class Meta(secmod.Meta):
 
         Returns: Sequence of search paths.
         """
-        return conf.PARSER[cls.ROOT][conf.OPT_PATH]
+        return conf.PARSER.get(cls.GROUP, {}).get(conf.OPT_PATH, [])
 
 
 class Section(secmod.Parsed, metaclass=Meta):
     """Special sections of forml providers config options.
     """
-    FIELDS: typing.Tuple[str] = ('name', 'kwargs')
-    REFEREE: str = conf.SECTION_PLATFORM
-    ROOT: str = abc.abstractmethod
+    FIELDS: typing.Tuple[str] = 'reference', 'params'
+    SELECTOR = conf.OPT_DEFAULT
 
     @classmethod
     def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
-        kwargs = dict(super().extract(reference)[0])
-        provider = kwargs.pop(conf.OPT_PROVIDER, reference)
-        return str(provider), types.MappingProxyType(kwargs)
+        params = dict(super().extract(reference)[0])
+        provider = params.pop(conf.OPT_PROVIDER, reference)
+        return str(provider), types.MappingProxyType(params)
 
     def __hash__(self):
-        return hash(self.__class__) ^ hash(self.name)  # pylint: disable=no-member
+        return hash(self.__class__) ^ hash(self.reference)  # pylint: disable=no-member
 
     def __eq__(self, other: 'Section'):
-        return isinstance(other, self.__class__) and other.name == self.name  # pylint: disable=no-member
+        return isinstance(other, self.__class__) and other.reference == self.reference  # pylint: disable=no-member
 
     def __lt__(self, other: 'Section') -> bool:
-        return self.name < other.name  # pylint: disable=no-member
+        return self.reference < other.reference  # pylint: disable=no-member
+
+
+class Runner(secmod.Single, Section):
+    """Runner provider.
+    """
+    INDEX: str = conf.SECTION_RUNNER
+    GROUP: str = conf.SECTION_RUNNER
 
 
 class Registry(secmod.Single, Section):
     """Registry provider.
     """
-    SELECTOR = conf.OPT_REGISTRY
-    ROOT: str = conf.SECTION_REGISTRY
+    INDEX: str = conf.SECTION_REGISTRY
+    GROUP: str = conf.SECTION_REGISTRY
 
 
 class Feed(Section):
     """Feed providers.
     """
-    SELECTOR = conf.OPT_FEED
-    ROOT: str = conf.SECTION_FEED
-    FIELDS: typing.Tuple[str] = ('name', 'priority', 'kwargs')
+    INDEX: str = conf.SECTION_FEED
+    GROUP: str = conf.SECTION_FEED
+    FIELDS: typing.Tuple[str] = 'reference', 'priority', 'params'
 
     @classmethod
     def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
-        name, kwargs = super().extract(reference)
-        kwargs = dict(kwargs)
-        priority = kwargs.pop(conf.OPT_PRIORITY, 0)
-        return name, float(priority), types.MappingProxyType(kwargs)
+        name, params = super().extract(reference)
+        params = dict(params)
+        priority = params.pop(conf.OPT_PRIORITY, 0)
+        return name, float(priority), types.MappingProxyType(params)
 
     def __lt__(self, other: 'Feed') -> bool:
         # pylint: disable=no-member
         return super().__lt__(other) if self.priority == other.priority else self.priority < other.priority
 
 
-class Runner(secmod.Single, Section):
-    """Runner provider.
+class Sink(secmod.Single, Section):
+    """Registry provider.
     """
-    SELECTOR = conf.OPT_RUNNER
-    ROOT: str = conf.SECTION_RUNNER
+    INDEX: str = conf.SECTION_SINK
+    GROUP: str = conf.SECTION_SINK
 
+    class Mode(metaclass=Meta):
+        """Sink mode is a tuple of potentially different sinks selected for specific pipeline modes. It allows the
+        [SINK] index section to provide alternative sink references for each modes as follows:
 
-class Testing:
-    """Providers specific to testing.
-    """
-    class Runner(Runner):
-        """Runner provider.
+        [SINK]
+        default = <default-sink-reference>
+        train = <train-sink-reference>
+        apply = <apply-sink-reference>
+        eval = <eval-sink-reference>
         """
-        REFEREE = conf.SECTION_TESTING
+        FIELDS: typing.Tuple[str] = 'train', 'apply', 'eval'
+        INDEX: str = conf.SECTION_SINK
+        GROUP: str = conf.SECTION_SINK
+
+        @classmethod
+        def parse(cls, reference: typing.Optional[str] = None) -> 'Sink.Mode':
+            """Parse the SINK section returning the tuple of sink configs for the particular modes.
+
+            Args:
+                reference: Optional sync reference - if provided, its used for all modes.
+
+            Returns: Sink.Mode tuple with selected Sink config instances for the particular modes.
+            """
+            if not reference:
+                try:
+                    default = conf.PARSER[cls.INDEX].get(conf.OPT_DEFAULT)
+                    train = conf.PARSER[cls.INDEX].get(conf.OPT_TRAIN, default)
+                    apply = conf.PARSER[cls.INDEX].get(conf.OPT_APPLY, default)
+                    evaluate = conf.PARSER[cls.INDEX].get(conf.OPT_EVAL, default)
+                except KeyError as err:
+                    raise error.Missing(f'Index section not found: [{cls.INDEX}]') from err
+                if not train or not apply or not evaluate:
+                    raise error.Missing(f'Missing default or explicit train/apply/eval sink references: [{cls.INDEX}]')
+            else:
+                train = apply = evaluate = reference
+            return cls([Sink.parse(train), Sink.parse(apply), Sink.parse(evaluate)])

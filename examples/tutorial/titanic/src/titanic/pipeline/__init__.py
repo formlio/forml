@@ -29,7 +29,7 @@ created just for structuring the project code base splitting it into these parti
 from sklearn import model_selection
 
 from forml.project import component
-from forml.lib.operator.folding import ensemble
+from forml.lib.flow.operator.folding import ensemble
 from titanic.pipeline import preprocessing, model
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and

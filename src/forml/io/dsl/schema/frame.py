@@ -83,8 +83,8 @@ class Source(tuple, metaclass=abc.ABCMeta):
         try:
             return super().__getitem__(name)
         except (TypeError, IndexError) as err:
-            for (key, field), column in zip(self.schema.items(), self.columns):
-                if name in {key, field.name}:
+            for key, column in zip(self.schema, self.columns):
+                if name in {key, self.schema[key].name}:
                     return column
             raise KeyError(f'Invalid column {name}') from err
 
@@ -321,35 +321,35 @@ class Table(Origin):
                 if new in existing:
                     raise error.Syntax(f'Colliding field name {new} in schema {name}')
                 existing.add(new)
+                if not field.name:
+                    namespace[key] = field.renamed(key)  # to normalize so that hash/eq is consistent
             if bases and not existing:
                 raise error.Syntax(f'No fields defined for schema {name}')
             return super().__new__(mcs, name, bases, namespace)
 
         def __hash__(cls):
-            return hash(cls.__module__) ^ hash(cls.__qualname__)
+            # pylint: disable=not-an-iterable
+            return functools.reduce(operator.xor, (hash(getattr(cls, k)) for k in cls), 0)
 
-        def __eq__(cls, other):
-            return hash(cls) == hash(other)
+        def __eq__(cls, other: typing.Type['etl.Schema']):
+            return len(cls) == len(other) and all(getattr(cls, c) == getattr(other, o) for c, o in zip(cls, other))
+
+        def __len__(cls):
+            return sum(1 for _ in cls)  # pylint: disable=not-an-iterable
 
         def __repr__(cls):
             return f'{cls.__module__}:{cls.__qualname__}'
 
         @functools.lru_cache()
         def __getitem__(cls, name: str) -> 'etl.Field':
-            for key, field in cls.items():  # pylint: disable=no-value-for-parameter
+            for key in cls:  # pylint: disable=not-an-iterable
+                field = getattr(cls, key)
                 if name in {key, field.name}:
                     return field
             raise AttributeError(f'Unknown field {name}')
 
         def __iter__(cls) -> typing.Iterator[str]:
-            return iter(k for k, _ in cls.items())  # pylint: disable=no-value-for-parameter
-
-        def items(cls) -> typing.Iterator[typing.Tuple[str, 'etl.Field']]:
-            """Get the schema items as pairs of key and Field instance.
-
-            Returns: Iterator of key-Field pairs.
-            """
-            return iter((k, f) for c in reversed(inspect.getmro(cls))
+            return iter(k for c in reversed(inspect.getmro(cls))
                         for k, f in c.__dict__.items() if isinstance(f, etl.Field))
 
     schema: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
@@ -367,12 +367,12 @@ class Table(Origin):
         return super().__new__(mcs, [schema])  # used as constructor
 
     def __repr__(self):
-        return f'{self.schema.__name__}'
+        return self.schema.__name__
 
     @property
     @functools.lru_cache()
     def columns(self) -> typing.Sequence['series.Field']:
-        return tuple(series.Field(self, f.name or k) for k, f in self.schema.items())
+        return tuple(series.Field(self, self.schema[k].name or k) for k in self.schema)
 
     def accept(self, visitor: visit.Columnar) -> None:
         visitor.visit_table(self)

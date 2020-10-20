@@ -202,6 +202,13 @@ class TestSchema:
         """
         return student.schema
 
+    def test_identity(self, schema: typing.Type['etl.Schema'], student: frame.Table):
+        """Schema identity tests.
+        """
+        other = student.query.schema
+        assert schema is not other
+        assert len({schema, other}) == 1
+
     def test_empty(self):
         """Test empty schema with no fields.
         """

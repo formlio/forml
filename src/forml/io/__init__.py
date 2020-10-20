@@ -34,7 +34,7 @@ from forml.io.etl import extract
 
 class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
            default=provcfg.Feed.default[-1], path=provcfg.Feed.path):
-    """ETL feed is the implementation of a specific datasource access layer.
+    """Feed is the implementation of a specific datasource provider.
     """
     class Reader(extract.Reader[parser.Source, parser.Column, extract.Native], metaclass=abc.ABCMeta):
         """Abstract reader of the feed.
@@ -104,7 +104,6 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
         return loader.expand()
 
     @classmethod
-    @abc.abstractmethod
     def reader(cls, sources: typing.Mapping[frame.Source, parser.Source],
                columns: typing.Mapping[series.Column, parser.Column],
                **kwargs: typing.Any) -> typing.Callable[[frame.Query], extract.Columnar]:
@@ -147,12 +146,12 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
         return data
 
     @property
+    @abc.abstractmethod
     def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
         """
-        return {}
 
     @property
     def columns(self) -> typing.Mapping[series.Column, parser.Column]:
@@ -161,3 +160,13 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
         Returns: Columns mapping.
         """
         return {}
+
+
+class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.path):
+    """Sink is an implementation of a specific data consumer.
+    """
+    @abc.abstractmethod
+    def apply(self) -> None:
+        """Placeholder.
+        """
+        print(self)

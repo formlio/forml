@@ -27,3 +27,4 @@ class Provider(service.Provider, alias='dummy'):
     def serve(self) -> str:
         """No op.
         """
+        return 'dummy'

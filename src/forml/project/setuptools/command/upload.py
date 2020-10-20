@@ -22,12 +22,10 @@ import typing
 
 import setuptools
 
-from forml import error
+from forml import error, runtime
 from forml.conf import provider as provcfg
 from forml.project import distribution
 from forml.project.setuptools.command import bdist
-from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import root
 
 
 class Registry(setuptools.Command):
@@ -36,7 +34,7 @@ class Registry(setuptools.Command):
     description = 'publish a ForML distribution'
 
     user_options = [
-        ('registry=', None, 'persistent registry to deploy to'),
+        ('registry=', 'P', 'persistent registry to deploy to'),
     ]
 
     def initialize_options(self) -> None:
@@ -56,7 +54,6 @@ class Registry(setuptools.Command):
             raise error.Invalid('Must create and upload files in one command '
                                 f'(e.g. setup.py {bdist.Package.COMMAND} upload)')
         project = self.distribution.get_name()
-        registry = provcfg.Registry.parse(self.registry)
+        platform = runtime.Platform(registry=provcfg.Registry.parse(self.registry))
         for pkg in packages:
-            # pylint: disable=no-member
-            root.Level(persistent.Registry[registry.name](**registry.kwargs)).get(project).put(pkg)
+            platform.registry.publish(project, pkg)
