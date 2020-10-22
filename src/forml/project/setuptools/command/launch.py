@@ -54,6 +54,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     def finalize_options(self) -> None:
         """Fini options.
         """
+        self.ensure_string_list('feed')
 
     @property
     def artifact(self) -> product.Artifact:
@@ -76,7 +77,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """This is the original test command entry point - let's override it with our actions.
         """
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        launcher = self.artifact.launcher(provider.Runner.parse(self.runner), provider.Feed.parse(self.feed))
+        launcher = self.artifact.launcher(provider.Runner.resolve(self.runner), provider.Feed.resolve(self.feed))
         result = self.launch(launcher, lower=self.lower, upper=self.upper)
         if result is not None:
             print(result)

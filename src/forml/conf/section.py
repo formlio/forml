@@ -19,9 +19,7 @@
 Config section helpers.
 """
 import abc
-import collections
 import operator
-import re
 import typing
 
 from forml import error, conf
@@ -37,43 +35,39 @@ class Meta(abc.ABCMeta):
         return super().__new__(mcs, name, (*bases, tuple), namespace)
 
     @property
-    def default(cls) -> 'Parsed':
+    def default(cls) -> 'Resolved':
         """Default parsing.
 
-        Returns: Default parsed config.
+        Returns: Default resolved config.
         """
-        return cls.parse()
+        return cls.resolve()
 
 
-class Parsed(metaclass=Meta):
-    """Parsed config base class.
+class Resolved(metaclass=Meta):
+    """Resolved config base class.
 
-    Implements parser for configs referenced based on following concept:
+    Implements parser for config referenced based on following concept:
 
     [INDEX]
-    SELECTOR = reference1, reference2
+    SELECTOR = reference
 
-    [GROUP:reference1]
-    <params>
-    [GROUP:reference2]
+    [GROUP.reference]
     <params>
     """
     # list of parsed config field names
     FIELDS: typing.Tuple[str] = ('params', )
-    # config reference(s) pattern
-    PATTERN: typing.Pattern = re.compile(r'\s*(\w+)\s*(?:,|$)')
-    # master section containing the references to the particular config sections
+    # master section containing the references to the particular GROUP sections
     INDEX: str = abc.abstractmethod
     # name of option in INDEX section containing reference(s) to the particular GROUP section
     SELECTOR: str = abc.abstractmethod
     # common name (prefix) of sections referred by SELECTOR
     GROUP: str = abc.abstractmethod
 
-    def __new__(cls, reference: str, *args):
-        return super().__new__(cls, cls.extract(reference, *args))
+    def __new__(cls, reference: str):
+        return super().__new__(cls, cls._extract(reference))
 
     @classmethod
-    def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
+    def _extract(cls, reference: str) -> typing.Tuple[typing.Any]:
         """Extract the config options given their section reference.
 
         Args:
@@ -87,30 +81,35 @@ class Parsed(metaclass=Meta):
             raise error.Missing(f'Config section not found: [{cls.GROUP}.{reference}]') from err
 
     @classmethod
-    def parse(cls, references: typing.Optional[str] = None) -> typing.Tuple['Parsed']:
+    def _lookup(cls, reference: str) -> 'Resolved':
+        """Create the config instance based on given reference.
+
+        Args:
+            reference: Config reference.
+
+        Returns: Config instance.
+        """
+        return cls(reference)
+
+    @classmethod
+    def resolve(cls, reference: typing.Optional[str] = None) -> 'Resolved':
         """Get config list for pattern based non-repeated option tokens.
 
-        Non-repeatability depends on particular implementations of the __hash__/__eq__ methods.
+        Args:
+            reference: Config reference.
+
+        Returns: Config instance.
         """
-        if not references:
-            references = conf.PARSER[cls.INDEX][cls.SELECTOR]
-        result: collections.OrderedDict = collections.OrderedDict()
-        while references:
-            match = cls.PATTERN.match(references)
-            if not match:
-                raise error.Unexpected('Invalid token (%s): "%s"' % (cls.__name__, references))
-            value = cls(*(match.groups() or (match.group(),)))
-            if value in result:
-                raise error.Unexpected('Repeated value (%s): "%s"' % (cls.__name__, references))
-            result[value] = value
-            references = references[match.end():]
-        return tuple(sorted(result))
+        reference = reference or conf.PARSER.get(cls.INDEX, {}).get(cls.SELECTOR)
+        if not reference:
+            raise error.Missing(f'No default reference [{cls.INDEX}].{cls.SELECTOR}')
+        return cls._lookup(reference)
 
     def __hash__(self):
         return hash(self.__class__) ^ hash(tuple(sorted(self.params)))  # pylint: disable=no-member
 
     @abc.abstractmethod
-    def __lt__(self, other: 'Parsed') -> bool:
+    def __lt__(self, other: 'Resolved') -> bool:
         """Instances need to be comparable to allow for sorting.
 
         Args:
@@ -120,18 +119,26 @@ class Parsed(metaclass=Meta):
         """
 
 
-class Single(Parsed):  # pylint: disable=abstract-method
-    """Parsed section supporting only single instance.
-    """
-    PATTERN = re.compile(r'\s*(\w+)\s*$')
+class Multi(Resolved):  # pylint: disable=abstract-method
+    """Resolved section supporting multiple instances.
 
+    [INDEX]
+    SELECTOR = [reference1, reference2]
+
+    [GROUP.reference1]
+    <params>
+    [GROUP.reference2]
+    <params>
+    """
     @classmethod
-    def parse(cls, reference: typing.Optional[str] = None) -> 'Single':
-        """Resolve the referenced config.
+    def _lookup(cls, references: typing.Iterable[str]) -> typing.Sequence[Resolved]:
+        """Create a sequence of config instances based on given references.
 
         Args:
-            reference: Config reference.
+            references: Config references.
 
-        Returns: Config instance.
+        Returns: Config instances.
         """
-        return super().parse(reference)[0]
+        if isinstance(references, str):
+            references = [references]
+        return tuple(sorted(cls(r) for r in references))

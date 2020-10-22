@@ -26,17 +26,18 @@ from forml import provider as provmod
 from forml.conf import provider as provcfg
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
-from forml.io import etl as etlmod
+from forml.io import etl as etlmod, payload
 from forml.io.dsl import parser
 from forml.io.dsl.schema import series, frame, kind as kindmod
-from forml.io.etl import extract
+from forml.io.feed import extract
+from forml.io.sink import publish
 
 
 class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
            default=provcfg.Feed.default[-1], path=provcfg.Feed.path):
     """Feed is the implementation of a specific datasource provider.
     """
-    class Reader(extract.Reader[parser.Source, parser.Column, extract.Native], metaclass=abc.ABCMeta):
+    class Reader(extract.Reader[parser.Source, parser.Column, payload.Native], metaclass=abc.ABCMeta):
         """Abstract reader of the feed.
         """
 
@@ -45,16 +46,16 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
 
     def load(self, source: 'etlmod.Source', lower: typing.Optional['kindmod.Native'] = None,
              upper: typing.Optional['kindmod.Native'] = None) -> pipeline.Segment:
-        """Provide a flow track implementing the etl actions.
+        """Provide a pipeline composable segment implementing the etl actions.
 
         Args:
             source: Independent datasource descriptor.
             lower: Optional ordinal lower bound.
             upper: Optional ordinal upper bound.
 
-        Returns: Flow track.
+        Returns: Pipeline segment.
         """
-        def formatter(provider: typing.Callable[..., extract.Columnar]) -> typing.Callable[..., typing.Any]:
+        def formatter(provider: typing.Callable[..., payload.Columnar]) -> typing.Callable[..., typing.Any]:
             """Creating a closure around the provider with the custom formatting to be applied on the provider output.
 
             Args:
@@ -106,7 +107,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
     @classmethod
     def reader(cls, sources: typing.Mapping[frame.Source, parser.Source],
                columns: typing.Mapping[series.Column, parser.Column],
-               **kwargs: typing.Any) -> typing.Callable[[frame.Query], extract.Columnar]:
+               **kwargs: typing.Any) -> typing.Callable[[frame.Query], payload.Columnar]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
@@ -121,7 +122,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
     @classmethod
     def slicer(cls, schema: typing.Sequence[series.Column],
                columns: typing.Mapping[series.Column, parser.Column]) -> typing.Callable[
-                   [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
+                   [payload.Columnar, typing.Union[slice, int]], payload.Columnar]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
         This default slicer is plain positional sequence slicer.
@@ -135,7 +136,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
         return extract.Slicer(schema, columns)
 
     @classmethod
-    def format(cls, data: extract.Columnar) -> typing.Any:
+    def format(cls, data: payload.Columnar) -> typing.Any:
         """Optional post-formatting to be applied upon obtaining the columnar data from the raw reader.
 
         Args:
@@ -146,12 +147,12 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
         return data
 
     @property
-    @abc.abstractmethod
     def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
         """
+        return {}
 
     @property
     def columns(self) -> typing.Mapping[series.Column, parser.Column]:
@@ -165,8 +166,28 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
 class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.path):
     """Sink is an implementation of a specific data consumer.
     """
-    @abc.abstractmethod
-    def apply(self) -> None:
-        """Placeholder.
+    class Writer(publish.Writer, metaclass=abc.ABCMeta):
+        """Abstract sink writer.
         """
-        print(self)
+
+    def __init__(self, **writerkw):
+        self._writerkw: typing.Dict[str, typing.Any] = writerkw
+
+    def publish(self) -> pipeline.Segment:
+        """Provide a pipeline composable segment implementing the publish action.
+
+        Returns: Pipeline segment.
+        """
+        publisher: topology.Composable = publish.Operator(publish.Writer.Actor.spec(self.writer(**self._writerkw)))
+        return publisher.expand()
+
+    @classmethod
+    def writer(cls, **kwargs: typing.Any) -> typing.Callable[[payload.Columnar], None]:
+        """Return the reader instance of this feed (any callable, presumably extract.Reader).
+
+        Args:
+            kwargs: Optional writer keyword arguments.
+
+        Returns: Writer instance.
+        """
+        return cls.Writer(**kwargs)  # pylint: disable=abstract-class-instantiated

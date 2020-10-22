@@ -29,6 +29,17 @@ from forml import error
 LOGGER = logging.getLogger(__name__)
 
 
+def isabstract(cls: typing.Type['Interface']) -> bool:
+    """Extended version of inspect.isabstract that also considers any inner classes.
+
+    Args:
+        cls: Class to be inspected.
+
+    Returns: True if class is abstract or has an abstract inner class.
+    """
+    return inspect.isabstract(cls) or any(inspect.isabstract(i) for i in cls.__dict__.values())
+
+
 class Registry(collections.namedtuple('Registry', 'provider, paths')):
     """Registry of providers of certain interface. It is a tuple of (not-yet-imported) search paths and already
     imported providers.
@@ -79,7 +90,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
                     continue
                 raise error.Unexpected(f'Provider reference collision ({reference})')
         self.paths.update(paths)
-        if inspect.isabstract(provider):
+        if isabstract(provider):
             return
         for reference in providers:
             LOGGER.debug('Registering provider %s as `%s` with %d more search paths %s',
@@ -119,7 +130,7 @@ class Meta(abc.ABCMeta):
                 default: typing.Optional[typing.Tuple[str, typing.Mapping[str, typing.Any]]] = None, **kwargs):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         if default:
-            if not inspect.isabstract(cls):
+            if not isabstract(cls):
                 raise error.Unexpected('Defaults provided but class not abstract')
             DEFAULTS[cls] = default
         return cls
@@ -168,7 +179,7 @@ class Interface(metaclass=Meta):
             path: Optional search path for additional packages to get imported when attempting to load.
         """
         super().__init_subclass__()
-        if inspect.isabstract(cls) and alias:
+        if isabstract(cls) and alias:
             raise error.Unexpected(f'Provider reference ({alias}) illegal on abstract class')
         path = {Registry.Path(p, explicit=True) for p in path or []}
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):

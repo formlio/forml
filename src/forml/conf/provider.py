@@ -37,15 +37,15 @@ class Meta(secmod.Meta):
         return conf.PARSER.get(cls.GROUP, {}).get(conf.OPT_PATH, [])
 
 
-class Section(secmod.Parsed, metaclass=Meta):
+class Section(secmod.Resolved, metaclass=Meta):
     """Special sections of forml providers config options.
     """
     FIELDS: typing.Tuple[str] = 'reference', 'params'
     SELECTOR = conf.OPT_DEFAULT
 
     @classmethod
-    def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
-        params = dict(super().extract(reference)[0])
+    def _extract(cls, reference: str) -> typing.Tuple[typing.Any]:
+        params = dict(super()._extract(reference)[0])
         provider = params.pop(conf.OPT_PROVIDER, reference)
         return str(provider), types.MappingProxyType(params)
 
@@ -59,21 +59,21 @@ class Section(secmod.Parsed, metaclass=Meta):
         return self.reference < other.reference  # pylint: disable=no-member
 
 
-class Runner(secmod.Single, Section):
+class Runner(Section):
     """Runner provider.
     """
     INDEX: str = conf.SECTION_RUNNER
     GROUP: str = conf.SECTION_RUNNER
 
 
-class Registry(secmod.Single, Section):
+class Registry(Section):
     """Registry provider.
     """
     INDEX: str = conf.SECTION_REGISTRY
     GROUP: str = conf.SECTION_REGISTRY
 
 
-class Feed(Section):
+class Feed(secmod.Multi, Section):
     """Feed providers.
     """
     INDEX: str = conf.SECTION_FEED
@@ -81,8 +81,8 @@ class Feed(Section):
     FIELDS: typing.Tuple[str] = 'reference', 'priority', 'params'
 
     @classmethod
-    def extract(cls, reference: str, *_) -> typing.Tuple[typing.Any]:
-        name, params = super().extract(reference)
+    def _extract(cls, reference: str) -> typing.Tuple[typing.Any]:
+        name, params = super()._extract(reference)
         params = dict(params)
         priority = params.pop(conf.OPT_PRIORITY, 0)
         return name, float(priority), types.MappingProxyType(params)
@@ -92,7 +92,7 @@ class Feed(Section):
         return super().__lt__(other) if self.priority == other.priority else self.priority < other.priority
 
 
-class Sink(secmod.Single, Section):
+class Sink(Section):
     """Registry provider.
     """
     INDEX: str = conf.SECTION_SINK
@@ -113,7 +113,7 @@ class Sink(secmod.Single, Section):
         GROUP: str = conf.SECTION_SINK
 
         @classmethod
-        def parse(cls, reference: typing.Optional[str] = None) -> 'Sink.Mode':
+        def resolve(cls, reference: typing.Optional[str] = None) -> 'Sink.Mode':
             """Parse the SINK section returning the tuple of sink configs for the particular modes.
 
             Args:
@@ -133,4 +133,4 @@ class Sink(secmod.Single, Section):
                     raise error.Missing(f'Missing default or explicit train/apply/eval sink references: [{cls.INDEX}]')
             else:
                 train = apply = evaluate = reference
-            return cls([Sink.parse(train), Sink.parse(apply), Sink.parse(evaluate)])
+            return cls([Sink.resolve(train), Sink.resolve(apply), Sink.resolve(evaluate)])

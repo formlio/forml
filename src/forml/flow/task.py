@@ -77,7 +77,7 @@ class Actor(metaclass=abc.ABCMeta):
 
     @classmethod
     def is_stateful(cls) -> bool:
-        """Check whether this actor is stateful (determined based on existence user-overridden train method).
+        """Check whether this actor is stateful (determined based on existence of user-overridden train method).
 
         Returns: True if stateful.
         """
