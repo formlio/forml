@@ -34,7 +34,9 @@ class Pool:
     class Slot:
         """Representation of a single feed provided either explicitly s an instance or lazily as a descriptor.
         """
-        def __init__(self, feed: typing.Union[conf.Feed, io.Feed]):
+        def __init__(self, feed: typing.Union[conf.Feed, str, 'io.Feed']):
+            if isinstance(feed, str):
+                feed = conf.Feed.resolve(feed)
             descriptor, instance = (feed, None) if isinstance(feed, conf.Feed) else (None, feed)
             self._descriptor: typing.Optional[conf.Feed] = descriptor
             self._instance: typing.Optional[io.Feed] = instance
@@ -51,7 +53,7 @@ class Pool:
             return self._descriptor.priority if self._descriptor else float('inf')
 
         @property
-        def instance(self) -> io.Feed:
+        def instance(self) -> 'io.Feed':
             """Return the feed instance possibly creating it on the fly if lazy.
 
             Returns: Feed instance.
@@ -93,14 +95,14 @@ class Pool:
             if source not in self._sources:
                 self._matches = False
 
-    def __init__(self, *feeds: typing.Union[conf.Feed, io.Feed]):
+    def __init__(self, *feeds: typing.Union[conf.Feed, str, 'io.Feed']):
         self._feeds: typing.Tuple[Pool.Slot] = tuple(sorted((self.Slot(f) for f in feeds), reverse=True))
 
-    def __iter__(self) -> typing.Iterable[io.Feed]:
+    def __iter__(self) -> typing.Iterable['io.Feed']:
         for feed in self._feeds:
             yield feed.instance
 
-    def match(self, source: frame.Source) -> io.Feed:
+    def match(self, source: frame.Source) -> 'io.Feed':
         """Select a feed that can provide for (be used to construct) the given source.
 
         Args:

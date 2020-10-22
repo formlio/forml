@@ -1,17 +1,16 @@
 foobar = "baz"
-logcfg = "logging.ini"
 
-[PARSED]
-simple = "bar"
-complex = "foo[bar, baz],bar"
+[RESOLVED]
+single = "bar"
+multi = ["foo", "bar"]
 
-[SIMPLE.bar]
+[SINGLE.bar]
 foo = "baz"
 
-[COMPLEX.bar]
+[MULTI.bar]
 foo = "baz"
 
-[COMPLEX.foo]
+[MULTI.foo]
 baz = "foo"
 
 

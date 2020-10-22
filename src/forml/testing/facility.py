@@ -27,10 +27,9 @@ from forml.conf import provider as provcfg
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology
-from forml.io import etl
+from forml.io import etl, payload
 from forml.io.dsl import parser
 from forml.io.dsl.schema import series, frame, kind
-from forml.io.etl import extract
 from forml.testing import spec
 
 LOGGER = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ class DataSet(etl.Schema):
 
 
 class Feed(io.Feed, alias='testing'):
-    """Special feed to feed the test cases.
+    """Special feed to input the test cases.
     """
     def __init__(self, scenario: spec.Scenario.Input, **kwargs):
         super().__init__(**kwargs)
@@ -70,12 +69,8 @@ class Feed(io.Feed, alias='testing'):
     @classmethod
     def slicer(cls, schema: typing.Sequence[series.Column],
                columns: typing.Mapping[series.Column, parser.Column]) -> typing.Callable[
-                   [extract.Columnar, typing.Union[slice, int]], extract.Columnar]:
+                   [payload.Columnar, typing.Union[slice, int]], payload.Columnar]:
         return lambda c, s: c[s][0]
-
-    @property
-    def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
-        return {DataSet: None}
 
     @property
     def columns(self) -> typing.Mapping[series.Column, parser.Column]:
@@ -83,6 +78,17 @@ class Feed(io.Feed, alias='testing'):
             DataSet.label: (self._scenario.train, [self._scenario.label]),
             DataSet.feature: self._scenario.apply
         }
+
+
+class Sink(io.Sink):
+    """Special sink to output the test cases.
+    """
+    class Writer(io.Sink.Writer):
+        """Sink writer.
+        """
+        @classmethod
+        def write(cls, data: payload.Native, **kwargs: typing.Any) -> None:
+            pass
 
 
 class Runner:
@@ -102,14 +108,15 @@ class Runner:
     def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: provcfg.Runner):
         self._params: spec.Scenario.Params = params
         self._source: etl.Source = etl.Source.query(DataSet.select(DataSet.feature), DataSet.label)
-        self._feed: io.Feed = Feed(scenario)
+        self._feed: Feed = Feed(scenario)
+        self._sink: Sink = Sink()
         self._runner: provcfg.Runner = runner
 
-    def __call__(self, operator: typing.Type[topology.Operator]) -> runtime.Runner:
+    def __call__(self, operator: typing.Type[topology.Operator]) -> runtime.Platform.Runner:
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
         segment = instance.expand()
         segment.apply.accept(initializer)
         segment.train.accept(initializer)
         segment.label.accept(initializer)
-        return self._source.bind(instance).launcher(self._runner, [self._feed])
+        return self._source.bind(instance).launcher(self._runner, [self._feed], self._sink)

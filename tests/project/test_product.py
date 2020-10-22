@@ -128,9 +128,9 @@ class TestDescriptor:
         with pytest.raises(error.Invalid):
             product.Descriptor.load('foo')
         descriptor = product.Descriptor.load(project_package.manifest.package, project_package.path)
-        assert descriptor.pipeline.__dict__ == pipeline.__dict__
-        assert descriptor.source == source
-        assert descriptor.evaluation.__dict__ == evaluation.__dict__
+        assert repr(descriptor.pipeline) == repr(pipeline)
+        assert repr(descriptor.source) == repr(source)
+        assert repr(descriptor.evaluation) == repr(evaluation)
 
 
 class TestArtifact:
@@ -140,9 +140,9 @@ class TestArtifact:
                         evaluation: topology.Composable):
         """Testing descriptor access.
         """
-        assert project_artifact.descriptor.pipeline.__dict__ == pipeline.__dict__
-        assert project_artifact.descriptor.source == source
-        assert project_artifact.descriptor.evaluation.__dict__ == evaluation.__dict__
+        assert repr(project_artifact.descriptor.pipeline) == repr(pipeline)
+        assert repr(project_artifact.descriptor.source) == repr(source)
+        assert repr(project_artifact.descriptor.evaluation) == repr(evaluation)
 
     def test_launcher(self, project_artifact: product.Artifact):
         """Testing launcher access.

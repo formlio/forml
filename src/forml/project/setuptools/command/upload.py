@@ -54,6 +54,6 @@ class Registry(setuptools.Command):
             raise error.Invalid('Must create and upload files in one command '
                                 f'(e.g. setup.py {bdist.Package.COMMAND} upload)')
         project = self.distribution.get_name()
-        platform = runtime.Platform(registry=provcfg.Registry.parse(self.registry))
+        platform = runtime.Platform(registry=provcfg.Registry.resolve(self.registry))
         for pkg in packages:
             platform.registry.publish(project, pkg)

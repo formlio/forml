@@ -18,9 +18,17 @@
 """
 Dummy project pipeline.
 """
-from forml.flow import task
-from forml.project import component
+from forml.lib.flow.actor import wrapped
 from forml.lib.flow.operator import simple
+from forml.project import component
 
-INSTANCE = simple.Consumer(task.Spec('Estimator'))
+
+@simple.Mapper.operator
+@wrapped.Function.actor
+def noop():
+    """Dummy transformer.
+    """
+
+
+INSTANCE = noop()
 component.setup(INSTANCE)

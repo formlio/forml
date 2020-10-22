@@ -25,7 +25,7 @@ from forml import io
 from forml import provider as provmod, error
 from forml.conf import provider as provcfg
 from forml.flow import pipeline
-from forml.io import feed as feedmod
+from forml.io import feed as feedmod, sink as sinkmod
 from forml.io.dsl.schema import frame, kind
 from forml.project import distribution
 from forml.runtime import code
@@ -69,7 +69,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         composition = self._build(lower, upper, self._assets.project.pipeline)
         return self._exec(composition.apply, self._assets.state(composition.shared))
 
-    def cvscore(self, lower: typing.Optional['kind.Native'] = None,  # TODO rename to evaluate
+    def cvscore(self, lower: typing.Optional['kind.Native'] = None,
                 upper: typing.Optional['kind.Native'] = None) -> typing.Any:
         """Run the crossvalidating evaluation.
 
@@ -107,8 +107,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         Returns: Assembled flow pipeline.
         """
         return pipeline.Composition(self._feed.load(self._assets.project.source, lower, upper),
-                                    *(b.expand() for b in blocks),
-                                    self._sink)  # TODO
+                                    *(b.expand() for b in blocks), self._sink.publish())
 
     def _exec(self, path: pipeline.Segment, assets: typing.Optional[access.State] = None) -> typing.Any:
         """Execute the given path and assets.
@@ -122,7 +121,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         return self._run(compiler.generate(path, assets))
 
     @abc.abstractmethod
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:  # TODO: returns None (output handled by sink)
+    def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:
@@ -139,11 +138,11 @@ class Platform:
         """Runner handle.
         """
         def __init__(self, provider: provcfg.Runner, assets: access.Assets,
-                     feeds: 'Platform.Feeds', sinks: provcfg.Sink.Mode):
+                     feeds: 'Platform.Feeds', sink: sinkmod.Handle):
             self._provider: provcfg.Runner = provider
             self._assets: access.Assets = assets
             self._feeds: Platform.Feeds = feeds
-            self._sinks: provcfg.Sink.Mode = sinks
+            self._sink: sinkmod.Handle = sink
 
         @property
         def train(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
@@ -151,7 +150,7 @@ class Platform:
 
             Returns: Train runner.
             """
-            return self(self._feeds.match(self._assets.project.source.extract.train), self._sinks.train).train
+            return self(self._feeds.match(self._assets.project.source.extract.train), self._sink.train).train
 
         @property
         def apply(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
@@ -159,10 +158,9 @@ class Platform:
 
             Returns: Train handler.
             """
-            return self(self._feeds.match(self._assets.project.source.extract.apply), self._sinks.apply).apply
+            return self(self._feeds.match(self._assets.project.source.extract.apply), self._sink.apply).apply
 
-        def __call__(self, feed: io.Feed, sink: provcfg.Sink) -> Runner:
-            sink = io.Sink[sink.reference](**sink.params)
+        def __call__(self, feed: io.Feed, sink: io.Sink) -> Runner:
             return Runner[self._provider.reference](self._assets, feed, sink, **self._provider.params)
 
     class Registry:
@@ -226,14 +224,21 @@ class Platform:
             """
             return self._pool.match(query)
 
+        def list(self):
+            """List the sources provided by given feed.
+
+            Returns:
+            """
+            raise NotImplementedError()
+
     def __init__(self, runner: typing.Optional[provcfg.Runner] = None,
                  registry: typing.Optional[provcfg.Registry] = None,
-                 feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, io.Feed]]] = None,
-                 sinks: typing.Optional[typing.Union[provcfg.Sink.Mode, io.Sink]] = None):
+                 feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
+                 sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, io.Sink]] = None):
         self._runner: provcfg.Runner = runner or provcfg.Runner.default
         self._registry: Platform.Registry = self.Registry(registry or provcfg.Registry.default)
         self._feeds: Platform.Feeds = self.Feeds(*(feeds or provcfg.Feed.default))
-        self._sinks: provcfg.Sink.Mode = sinks or provcfg.Sink.Mode.default
+        self._sink: sinkmod.Handle = sinkmod.Handle(sink or provcfg.Sink.Mode.default)
 
     def runner(self, project: typing.Optional[str], lineage: typing.Optional[str] = None,
                generation: typing.Optional[str] = None) -> 'Platform.Runner':
@@ -246,7 +251,7 @@ class Platform:
 
         Returns: Runner handle.
         """
-        return self.Runner(self._runner, self._registry.assets(project, lineage, generation), self._feeds, self._sinks)
+        return self.Runner(self._runner, self._registry.assets(project, lineage, generation), self._feeds, self._sink)
 
     @property
     def registry(self) -> 'Platform.Registry':

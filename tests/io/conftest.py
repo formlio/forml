@@ -93,7 +93,7 @@ def query(person: frame.Table, student: frame.Table, school_ref: frame.Reference
 
 @pytest.fixture(scope='session')
 def reference() -> str:
-    """Dummy feed reference fixture"""
+    """Dummy feed/sink reference fixture"""
     return 'dummy'
 
 
@@ -119,5 +119,20 @@ def feed(reference: str,  # pylint: disable=unused-argument
                 student: None,
                 school: None
             }
+
+    return Dummy
+
+
+@pytest.fixture(scope='session')
+def sink(reference: str) -> typing.Type[io.Sink]:  # pylint: disable=unused-argument
+    """Dummy sink fixture.
+    """
+    class Dummy(io.Sink, alias=reference):
+        """Dummy sink for unit-testing purposes.
+        """
+
+        def __init__(self, identity: str, **readerkw):
+            super().__init__(**readerkw)
+            self.identity: str = identity
 
     return Dummy

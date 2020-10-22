@@ -15,7 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Extract utilities.
+"""
+Extract utilities.
 """
 import abc
 import logging
@@ -25,6 +26,7 @@ from forml import error
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
+from forml.io import payload
 from forml.io.dsl import parser as parsmod
 from forml.io.dsl.schema import kind as kindmod, series, frame
 
@@ -87,6 +89,8 @@ class Operator(topology.Operator):
     """
     def __init__(self, apply: task.Spec, train: typing.Optional[task.Spec] = None,
                  label: typing.Optional[task.Spec] = None):
+        if apply.actor.is_stateful() or (train and train.actor.is_stateful()) or (label and label.actor.is_stateful()):
+            raise error.Invalid('Stateful actor invalid for an extractor')
         self._apply: task.Spec = apply
         self._train: task.Spec = train or apply
         self._label: typing.Optional[task.Spec] = label
@@ -97,7 +101,7 @@ class Operator(topology.Operator):
         Returns: Source segment track.
         """
         if not isinstance(left, topology.Origin):
-            raise error.Invalid('Source not origin')
+            raise error.Unexpected('Source not origin')
         apply: view.Path = view.Path(node.Worker(self._apply, 0, 1))
         train: view.Path = view.Path(node.Worker(self._train, 0, 1))
         label: typing.Optional[view.Path] = None
@@ -113,44 +117,14 @@ class Operator(topology.Operator):
         return pipeline.Segment(apply, train, label)
 
 
-def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequence[typing.Iterator[typing.Any]]:
-    """Helper for transposing between row and column oriented matrices. The output columns are from performance reason
-    just lazy generators.
-
-    Args:
-        data: Input matrix.
-
-    Returns: Transposed output matrix.
-    """
-    def col(idx: int) -> typing.Iterator[typing.Any]:
-        """Create a generator for given column index.
-
-        Args:
-            idx: Index of column to be generated.
-
-        Returns: Generator for given column.
-        """
-        return (data[r][idx] for r in range(nrows))
-
-    if data:
-        nrows = len(data)
-        ncols = len(data[0])
-        data = [col(c) for c in range(ncols)]
-    return data
-
-
-Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
-Native = typing.TypeVar('Native')
-
-
-class Reader(typing.Generic[parsmod.Source, parsmod.Column, Native], metaclass=abc.ABCMeta):
+class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], metaclass=abc.ABCMeta):
     """Base class for reader implementation.
     """
     class Actor(task.Actor):
         """Data extraction actor using the provided reader and statement to load the data.
         """
-        def __init__(self, reader: typing.Callable[[frame.Query], Columnar], statement: Statement):
-            self._reader: typing.Callable[[frame.Query], Columnar] = reader
+        def __init__(self, reader: typing.Callable[[frame.Query], payload.Columnar], statement: Statement):
+            self._reader: typing.Callable[[frame.Query], payload.Columnar] = reader
             self._statement: Statement = statement
 
         def apply(self) -> typing.Any:
@@ -163,7 +137,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, Native], metaclass=a
         self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-    def __call__(self, query: frame.Query) -> Columnar:
+    def __call__(self, query: frame.Query) -> payload.Columnar:
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._columns) as visitor:
             query.accept(visitor)
@@ -185,19 +159,19 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, Native], metaclass=a
         """
 
     @classmethod
-    def format(cls, data: Native) -> Columnar:
-        """Format the input data into the required Columnar format.
+    def format(cls, data: payload.Native) -> payload.Columnar:
+        """Format the input data into the required payload.Columnar format.
 
         Args:
             data: Input data.
 
-        Returns: Data formatted into Columnar format.
+        Returns: Data formatted into payload.Columnar format.
         """
         return data
 
     @classmethod
     @abc.abstractmethod
-    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> Native:
+    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> payload.Native:
         """Perform the read operation with the given statement.
 
         Args:
@@ -214,15 +188,15 @@ class Slicer:
     class Actor(task.Actor):
         """Column extraction actor using the provided slicer to separate features from labels.
         """
-        def __init__(self, slicer: typing.Callable[[Columnar, typing.Union[slice, int]], Columnar],
+        def __init__(self, slicer: typing.Callable[[payload.Columnar, typing.Union[slice, int]], payload.Columnar],
                      features: typing.Sequence[series.Column], labels: typing.Sequence[series.Column]):
-            self._slicer: typing.Callable[[Columnar, typing.Union[slice, int]], Columnar] = slicer
+            self._slicer: typing.Callable[[payload.Columnar, typing.Union[slice, int]], payload.Columnar] = slicer
             fstop = len(features)
             lcount = len(labels)
             self._features: slice = slice(fstop)
             self._label: typing.Union[slice, int] = slice(fstop, fstop + lcount) if lcount > 1 else fstop
 
-        def apply(self, columns: Columnar) -> typing.Tuple[typing.Any, typing.Any]:
+        def apply(self, columns: payload.Columnar) -> typing.Tuple[typing.Any, typing.Any]:
             assert len(columns) == (self._label.stop if isinstance(self._label, slice)
                                     else self._label + 1), 'Unexpected number of columns for splitting'
             return self._slicer(columns, self._features), self._slicer(columns, self._label)
@@ -231,6 +205,6 @@ class Slicer:
         self._schema: typing.Sequence[series.Column] = schema
         self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
 
-    def __call__(self, source: Columnar, selection: typing.Union[slice, int]) -> Columnar:
+    def __call__(self, source: payload.Columnar, selection: typing.Union[slice, int]) -> payload.Columnar:
         LOGGER.debug('Selecting columns: %s', self._schema[selection])
         return source[selection]

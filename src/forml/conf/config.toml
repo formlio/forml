@@ -24,7 +24,7 @@ provider = "filesystem"
 
 
 [FEED]
-default = "presto"
+default = ["presto"]
 
 [FEED.presto]
 provider = "presto"
@@ -41,7 +41,3 @@ eval = "stdout"
 
 [SINK.stdout]
 provider = "stdout"
-
-
-[TESTING]
-runner = "dask"

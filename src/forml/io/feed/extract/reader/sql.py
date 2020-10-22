@@ -23,10 +23,10 @@ import contextlib
 import logging
 import typing
 
+from forml.io import payload
 from forml.io.dsl.parser import sql as sqlmod
 from forml.io.dsl.schema import series, frame
-from forml.io.etl import extract
-from forml.io.etl.extract import Columnar
+from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class Reader(extract.Reader[str, str, Rows], metaclass=abc.ABCMeta):
         return cls.Parser(sources, columns)
 
     @classmethod
-    def format(cls, data: Rows) -> Columnar:
+    def format(cls, data: Rows) -> payload.Columnar:
         """PEP249 assumes row oriented results, we need columnar so let's transpose here.
 
         Args:
@@ -74,7 +74,7 @@ class Reader(extract.Reader[str, str, Rows], metaclass=abc.ABCMeta):
 
         Returns: Columnar output.
         """
-        return extract.transpose(data)
+        return payload.transpose(data)
 
     @classmethod
     def read(cls, statement: str, **kwargs) -> Rows:

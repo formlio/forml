@@ -43,11 +43,11 @@ class TestPool:
     def test_iter(self, feed: typing.Type[io.Feed], reference: str):
         """Test the pool iterator.
         """
-        lazy10 = self.Conf(reference, 10, 'lazy10')
-        lazy1000 = self.Conf(reference, 1000, 'lazy1000')
-        direct = feed(identity='direct')
-        pool = feedmod.Pool(lazy10, direct, lazy1000)
-        assert tuple(f.identity for f in pool) == ('direct', 'lazy1000', 'lazy10')
+        conf10 = self.Conf(reference, 10, 'conf10')
+        conf1000 = self.Conf(reference, 1000, 'conf1000')
+        instant = feed(identity='instant')
+        pool = feedmod.Pool(conf10, instant, conf1000)
+        assert tuple(f.identity for f in pool) == ('instant', 'conf1000', 'conf10')
 
     def test_match(self, feed: typing.Type[io.Feed], query: frame.Query, person: frame.Table):
         """Feed matching test.

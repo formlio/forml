@@ -27,70 +27,80 @@ import pytest
 from forml import provider as provmod, error
 
 
+@pytest.fixture(scope='session')
+def alias() -> str:
+    """Provider key.
+    """
+    return 'foobar'
+
+
+@pytest.fixture(scope='session')
+def params() -> typing.Mapping[str, typing.Any]:
+    """Default provider kwargs fixture.
+    """
+    return {'foo': 'bar', 'baz': 10}
+
+
+@pytest.fixture(scope='session')
+def default(alias: str,
+            params: typing.Mapping[str, typing.Any]) -> typing.Tuple[str, typing.Mapping[str, typing.Any]]:
+    """Default provider spec fixture.
+    """
+    return alias, params
+
+
+@pytest.fixture(scope='session')
+def interface(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
+              str, typing.Any]]) -> typing.Type[provmod.Interface]:
+    """Provider fixture.
+    """
+    _T = typing.TypeVar('_T')
+
+    class Provider(provmod.Interface, typing.Generic[_T], default=default):
+        """Provider implementation.
+        """
+
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def __eq__(self, other):
+            return isinstance(other, self.__class__) and other.kwargs == self.kwargs
+
+        @abc.abstractmethod
+        def provide(self) -> None:
+            """Method required to make provider abstract.
+            """
+
+    return Provider
+
+
+@pytest.fixture(scope='session')
+def provider(interface: typing.Type[provmod.Interface],
+             alias: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
+    """Provider fixture.
+    """
+
+    class SubProvider(interface[set], alias=alias):
+        """Provider implementation.
+        """
+
+        def provide(self) -> None:
+            """This provider must not be abstract.
+            """
+
+    return SubProvider
+
+
+def test_isabstract(interface: typing.Type[provmod.Interface], provider: typing.Type[provmod.Interface]):
+    """Isabstract inspection unit test.
+    """
+    assert provmod.isabstract(interface)
+    assert not provmod.isabstract(provider)
+
+
 class TestInterface:
     """Provider interface tests.
     """
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def params() -> typing.Mapping[str, typing.Any]:
-        """Default provider kwargs fixture.
-        """
-        return {'foo': 'bar', 'baz': 10}
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def default(alias: str,
-                params: typing.Mapping[str, typing.Any]) -> typing.Tuple[str, typing.Mapping[str, typing.Any]]:
-        """Default provider spec fixture.
-        """
-        return alias, params
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def interface(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
-            str, typing.Any]]) -> typing.Type[provmod.Interface]:
-        """Provider fixture.
-        """
-        _T = typing.TypeVar('_T')
-
-        class Provider(provmod.Interface, typing.Generic[_T], default=default):
-            """Provider implementation.
-            """
-            def __init__(self, **kwargs):
-                self.kwargs = kwargs
-
-            def __eq__(self, other):
-                return isinstance(other, self.__class__) and other.kwargs == self.kwargs
-
-            @abc.abstractmethod
-            def provide(self) -> None:
-                """Method required to make provider abstract.
-                """
-
-        return Provider
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def alias() -> str:
-        """Provider key.
-        """
-        return 'foobar'
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def provider(interface: typing.Type[provmod.Interface],
-                 alias: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
-        """Provider fixture.
-        """
-        class SubProvider(interface[set], alias=alias):
-            """Provider implementation.
-            """
-            def provide(self) -> None:
-                """This provider must not be abstract.
-                """
-
-        return SubProvider
-
     def test_get(self, interface: typing.Type[provmod.Interface], provider: typing.Type[provmod.Interface],
                  alias: str, params: typing.Mapping[str, typing.Any]):
         """Test the provider lookup.

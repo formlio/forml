@@ -70,7 +70,7 @@ class Test:
             with self.raises(suite):
                 self.matches(suite, self.test(runner))
 
-    def init(self, suite: Suite) -> runtime.Runner:
+    def init(self, suite: Suite) -> runtime.Platform.Runner:
         """Test init phase.
 
         Args:
@@ -98,7 +98,7 @@ class Test:
             value: Tested value..
         """
 
-    def test(self, runner: runtime.Runner) -> typing.Any:
+    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
         """Test subject logic.
 
         Args:
@@ -151,7 +151,7 @@ class ReturnableTest(Test):
 class TestInitRaises(RaisableTest, Test):
     """Test composite.
     """
-    def init(self, suite: Suite) -> runtime.Runner:
+    def init(self, suite: Suite) -> runtime.Platform.Runner:
         with self.raises(suite):
             return super().init(suite)
 
@@ -159,7 +159,7 @@ class TestInitRaises(RaisableTest, Test):
 class PlainApplyTest(Test):
     """Testcase logic.
     """
-    def test(self, runner: runtime.Runner) -> typing.Any:
+    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
         return runner.apply()
 
 
@@ -176,7 +176,7 @@ class TestPlainApplyRaises(RaisableTest, PlainApplyTest):
 class StateTrainTest(Test):
     """Testcase logic.
     """
-    def test(self, runner: runtime.Runner) -> typing.Any:
+    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
         return runner.train()
 
 
@@ -193,12 +193,12 @@ class TestStateTrainRaises(RaisableTest, StateTrainTest):
 class StateApplyTest(Test):
     """Testcase logic.
     """
-    def init(self, suite: Suite) -> runtime.Runner:
+    def init(self, suite: Suite) -> runtime.Platform.Runner:
         runner = super().init(suite)
         runner.train()
         return runner
 
-    def test(self, runner: runtime.Runner) -> typing.Any:
+    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
         return runner.apply()
 
 
@@ -221,7 +221,7 @@ class Case:
         self._test: Test = self.select(scenario, runner)
 
     @staticmethod
-    def select(scenario: spec.Scenario, runner: runtime.Runner) -> Test:
+    def select(scenario: spec.Scenario, runner: facility.Runner) -> Test:
         """Selecting and setting up the test implementation for given scenario.
 
         Args:

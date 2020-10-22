@@ -55,19 +55,20 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
 
     @classmethod
     def _platform(cls, runner: typing.Optional[str] = None, registry: typing.Optional[str] = None,
-                  feed: typing.Optional[str] = None, sink: typing.Optional[str] = None) -> runtime.Platform:
+                  feed: typing.Optional[typing.Sequence[str]] = None,
+                  sink: typing.Optional[str] = None) -> runtime.Platform:
         """Common helper for train/apply methods.
 
         Args:
             runner: Optional runner reference.
             registry: Optional registry reference.
-            feed: Optional feed reference.
+            feed: Optional feed references.
             sink: Optional sink reference.
 
         Returns: Platform instance.
         """
-        return runtime.Platform(provcfg.Runner.parse(runner), provcfg.Registry.parse(registry),
-                                provcfg.Feed.parse(feed), provcfg.Sink.Mode.parse(sink))
+        return runtime.Platform(provcfg.Runner.resolve(runner), provcfg.Registry.resolve(registry),
+                                provcfg.Feed.resolve(feed), provcfg.Sink.Mode.resolve(sink))
 
     @cli.Command(help='tune the given project lineage producing new generation', description='Tune mode execution')
     @cli.Param('project', help='project to be tuned')
@@ -75,12 +76,12 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('generation', nargs='?', help='generation to be tuned')
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
-    @cli.Param('-I', '--feed', type=str, help='input feed reference')
+    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
     @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower tuneset ordinal')
     @cli.Param('--upper', help='upper tuneset ordinal')
     def tune(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-             runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[str],
+             runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[typing.Sequence[str]],
              sink: typing.Optional[str], lower: typing.Optional[kind.Native],
              upper: typing.Optional[kind.Native]) -> None:
         """Tune mode execution.
@@ -91,7 +92,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             generation: Generation index to be tuned.
             runner: Optional runner reference.
             registry: Optional registry reference.
-            feed: Optional feed reference.
+            feed: Optional feed references.
             sink: Optional sink reference.
             lower: Lower ordinal.
             upper: Upper ordinal.
@@ -104,12 +105,12 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('generation', nargs='?', help='generation to be trained')
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
-    @cli.Param('-I', '--feed', type=str, help='input feed reference')
+    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
     @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower trainset ordinal')
     @cli.Param('--upper', help='upper trainset ordinal')
     def train(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-              runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[str],
+              runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[typing.Sequence[str]],
               sink: typing.Optional[str], lower: typing.Optional[kind.Native],
               upper: typing.Optional[kind.Native]) -> None:
         """Train mode execution.
@@ -120,7 +121,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             generation: Generation index to be tuned.
             runner: Optional runner reference.
             registry: Optional registry reference.
-            feed: Optional feed reference.
+            feed: Optional feed references.
             sink: Optional sink reference.
             lower: Lower ordinal.
             upper: Upper ordinal.
@@ -135,12 +136,12 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('generation', nargs='?', help='generation to be applied')
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
-    @cli.Param('-I', '--feed', type=str, help='input feed reference')
+    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
     @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower testset ordinal')
     @cli.Param('--upper', help='upper testset ordinal')
     def apply(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-              runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[str],
+              runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[typing.Sequence[str]],
               sink: typing.Optional[str], lower: typing.Optional[kind.Native],
               upper: typing.Optional[kind.Native]) -> None:
         """Apply mode execution.
@@ -151,7 +152,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             generation: Generation index to be tuned.
             runner: Optional runner reference.
             registry: Optional registry reference.
-            feed: Optional feed reference.
+            feed: Optional feed references.
             sink: Optional sink reference.
             lower: Lower ordinal.
             upper: Upper ordinal.

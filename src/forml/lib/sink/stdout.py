@@ -16,19 +16,20 @@
 # under the License.
 
 """
-Presto reader implementation.
+Stdout writer sink implementation.
 """
 import typing
 
-from pyhive import presto
+from forml import io
+from forml.io import payload
 
-from forml.io.feed.extract.reader import sql
 
-
-class Reader(sql.Reader):
-    """Presto reader.
+class Sink(io.Sink, alias='stdout'):
+    """Stdout sink.
     """
-    @classmethod
-    def connection(cls, host: str, port: int = 8080, username: typing.Optional[str] = None,
-                   password: typing.Optional[str] = None) -> presto.Connection:
-        return presto.connect(host=host, port=str(port), username=username, password=password)
+    class Writer(io.Sink.Writer):
+        """Sink writer implementation.
+        """
+        @classmethod
+        def write(cls, data: payload.Native, **kwargs: typing.Any) -> None:
+            print(data)

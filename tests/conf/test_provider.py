@@ -27,7 +27,7 @@ import pytest
 from forml.conf import provider as provcfg
 
 
-class Single(metaclass=abc.ABCMeta):
+class Section(metaclass=abc.ABCMeta):
     """Section test base class.
     """
     @staticmethod
@@ -55,7 +55,7 @@ class Single(metaclass=abc.ABCMeta):
         assert isinstance(provider.path, (tuple, list))
 
 
-class TestRunner(Single):
+class TestRunner(Section):
     """Conf unit tests.
     """
     @staticmethod
@@ -73,7 +73,7 @@ class TestRunner(Single):
         return 'dask'
 
 
-class TestRegistry(Single):
+class TestRegistry(Section):
     """Conf unit tests.
     """
     @staticmethod
@@ -91,7 +91,7 @@ class TestRegistry(Single):
         return 'filesystem'
 
 
-class TestFeed(Single):
+class TestFeed(Section):
     """Conf unit tests.
     """
     @staticmethod
@@ -114,7 +114,7 @@ class TestFeed(Single):
         assert default in {p.reference for p in provider.default}
 
 
-class TestSink(Single):
+class TestSink(Section):
     """Conf unit tests.
     """
     @staticmethod
@@ -146,7 +146,7 @@ class TestSinkMode:
     def test_explicit(self):
         """Explicit modes parsing.
         """
-        mode = provcfg.Sink.Mode.parse('foo')
+        mode = provcfg.Sink.Mode.resolve('foo')
         # pylint: disable=no-member
         assert mode.train.reference == 'foo'
         assert mode.apply.reference == 'foo'

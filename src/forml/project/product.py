@@ -128,13 +128,13 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             self._project: str = project
 
         def __call__(self, runner: typing.Optional[provcfg.Runner] = None,
-                     feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, io.Feed]]] = None,
-                     sinks: typing.Optional[typing.Union[
-                         provcfg.Sink.Mode, io.Sink]] = None) -> 'runtime.Platform.Runner':
-            return runtime.Platform(runner, self._registry, feeds, sinks).runner(self._project)
+                     feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
+                     sink: typing.Optional[typing.Union[
+                         provcfg.Sink.Mode, str, io.Sink]] = None) -> 'runtime.Platform.Runner':
+            return runtime.Platform(runner, self._registry, feeds, sink).runner(self._project)
 
         def __getitem__(self, runner: str) -> 'runtime.Platform.Runner':
-            return self(provcfg.Runner.parse(runner))
+            return self(provcfg.Runner.resolve(runner))
 
         def __getattr__(self, mode: str) -> typing.Callable:
             return getattr(self(), mode)

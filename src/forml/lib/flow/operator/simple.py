@@ -112,6 +112,12 @@ class Mapper(Simple):
 class Consumer(Simple):
     """Basic operator with one input and one output port in apply mode and no output in train mode.
     """
+
+    def __init__(self, spec: task.Spec):
+        if not spec.actor.is_stateful():
+            raise error.Invalid('Stateless actor invalid for a consumer')
+        super().__init__(spec)
+
     def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
         """Consumer composition implementation.
 
@@ -121,8 +127,6 @@ class Consumer(Simple):
 
         Returns: Composed segment track.
         """
-        if not self.spec.actor.is_stateful():
-            raise error.Invalid('Stateless actor invalid for a consumer')
         trainer: node.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
         return left.extend(view.Path(applier))
