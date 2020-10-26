@@ -17,6 +17,7 @@
 
 """Special runtime launchers.
 """
+import logging
 import multiprocessing
 import typing
 
@@ -28,6 +29,8 @@ from forml.lib.registry import virtual
 from forml.project import distribution
 from forml.runtime.asset import persistent
 from forml.runtime.asset.directory import root
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Virtual:
@@ -62,7 +65,8 @@ class Virtual:
                     with multiprocessing.Manager() as manager:
                         output = manager.Queue()
                         self._mode.fget(self._builder(self.Sink(queue=output)))(lower, upper)
-                        return output.get(block=False)  # TODO: inspect whether sink was engaged
+                        LOGGER.debug('Waiting for pipeline to populate the sink queue')
+                        return output.get(block=True)
 
             def __init__(self, getter: property):
                 self._getter: property = getter
