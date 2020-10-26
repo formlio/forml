@@ -25,14 +25,12 @@ import types
 import typing
 from collections import abc
 
-from forml import conf, error, runtime, io
-from forml.conf import provider as provcfg
+from forml import conf, error
 from forml.flow.pipeline import topology
 from forml.io import etl
-from forml.lib.registry import virtual
 from forml.project import component as compmod, distribution, importer
+from forml.runtime import launcher
 from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import root
 
 LOGGER = logging.getLogger(__name__)
 
@@ -120,25 +118,6 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
 class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     """Project artifact handle.
     """
-    class Launcher:
-        """Runner proxy class with preconfigured assets to launch given artifact.
-        """
-        def __init__(self, registry: persistent.Registry, project: str):
-            self._registry: persistent.Registry = registry
-            self._project: str = project
-
-        def __call__(self, runner: typing.Optional[provcfg.Runner] = None,
-                     feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
-                     sink: typing.Optional[typing.Union[
-                         provcfg.Sink.Mode, str, io.Sink]] = None) -> 'runtime.Platform.Runner':
-            return runtime.Platform(runner, self._registry, feeds, sink).runner(self._project)
-
-        def __getitem__(self, runner: str) -> 'runtime.Platform.Runner':
-            return self(provcfg.Runner.resolve(runner))
-
-        def __getattr__(self, mode: str) -> typing.Callable:
-            return getattr(self(), mode)
-
     def __new__(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
                 package: typing.Optional[str] = None, **modules: typing.Any):
         if path:
@@ -165,7 +144,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
     @property
     @functools.lru_cache()
-    def launcher(self) -> 'Artifact.Launcher':
+    def launcher(self) -> 'launcher.Virtual':
         """Return the launcher configured with a virtual registry preloaded with this artifact.
 
         Returns: Launcher instance.
@@ -185,7 +164,4 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
         with importer.context(Manifest()):
             # dummy package forced to load our fake manifest
-            package = distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-'))
-        registry = virtual.Registry()
-        root.Level(registry).get(project).put(package)
-        return self.Launcher(registry, project)
+            return launcher.Virtual(distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-')))

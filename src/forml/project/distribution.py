@@ -42,6 +42,9 @@ LOGGER = logging.getLogger(__name__)
 class Package(collections.namedtuple('Package', 'path, manifest')):
     """Distribution package.
     """
+    path: pathlib.Path
+    manifest: 'Manifest'
+
     FORMAT = '4ml'
     COMPRESSION = zipfile.ZIP_DEFLATED
     PYSFX = re.compile(r'\.py[co]?$')
@@ -148,6 +151,11 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
     """Distribution manifest implementation.
     """
+    name: prjmod.Level.Key
+    version: lngmod.Level.Key
+    package: str
+    modules: typing.Mapping[str, str]
+
     MODULE = f'__{Package.FORMAT}__'
     TEMPLATE = string.Template(
         'NAME = "$name"\n'

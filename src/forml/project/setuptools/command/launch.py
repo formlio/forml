@@ -25,9 +25,9 @@ import typing
 
 from setuptools.command import test
 
-from forml import runtime
 from forml.conf import provider
 from forml.project import product
+from forml.runtime import launcher as launchmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,11 +84,11 @@ class Mode(test.test, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def launch(runner: runtime.Runner, *args, **kwargs) -> typing.Any:
+    def launch(launcher: launchmod.Virtual.Builder, *args, **kwargs) -> typing.Any:
         """Executing the particular runner target.
 
         Args:
-            runner: Runner instance.
+            launcher: Runner instance.
             *args: Optional args.
             **kwargs: Optional kwargs.
 
@@ -100,7 +100,7 @@ class Train(Mode):
     """Development train mode.
     """
     description = 'trigger the development train mode'
-    launch = staticmethod(runtime.Runner.train)
+    launch = staticmethod(launchmod.Virtual.Builder.train)
 
 
 class Tune(Mode):
@@ -109,12 +109,12 @@ class Tune(Mode):
     description = 'trigger the development tune mode'
 
     @staticmethod
-    def launch(runner: runtime.Runner, *args, **kwargs) -> typing.Any:
+    def launch(launcher: launchmod.Virtual.Builder, *args, **kwargs) -> typing.Any:
         raise NotImplementedError('Tune mode is not yet supported')
 
 
-class Score(Mode):
-    """Development score mode.
+class Eval(Mode):
+    """Development eval mode.
     """
-    description = 'trigger the development score mode'
-    launch = staticmethod(runtime.Runner.cvscore)
+    description = 'trigger the model evaluation mode'
+    launch = staticmethod(launchmod.Virtual.Builder.eval)
