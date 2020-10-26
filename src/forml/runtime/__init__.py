@@ -41,10 +41,9 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
                  sink: typing.Optional['io.Sink'] = None, **_):
         self._assets: access.Assets = assets or access.Assets()
         self._feed: io.Feed = feed or io.Feed()
-        self._sink: io.Sink = sink or io.Sink()
+        self._sink: typing.Optional[io.Sink] = sink
 
-    def train(self, lower: typing.Optional['kind.Native'] = None,
-              upper: typing.Optional['kind.Native'] = None) -> typing.Any:
+    def train(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
         """Run the training code.
 
         Args:
@@ -53,33 +52,35 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         """
         composition = self._build(lower or self._assets.tag.training.ordinal, upper,
                                   self._assets.project.pipeline)
-        return self._exec(composition.train,
-                          self._assets.state(composition.shared, self._assets.tag.training.trigger()))
+        self._exec(composition.train, self._assets.state(composition.shared, self._assets.tag.training.trigger()))
 
-    def apply(self, lower: typing.Optional['kind.Native'] = None,
-              upper: typing.Optional['kind.Native'] = None) -> typing.Any:
+    def apply(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
         """Run the applying code.
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
-
-        Returns: Applying code.
         """
         composition = self._build(lower, upper, self._assets.project.pipeline)
-        return self._exec(composition.apply, self._assets.state(composition.shared))
+        self._exec(composition.apply, self._assets.state(composition.shared))
 
-    def cvscore(self, lower: typing.Optional['kind.Native'] = None,
-                upper: typing.Optional['kind.Native'] = None) -> typing.Any:
-        """Run the crossvalidating evaluation.
+    def tune(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
+        """Run the tune mode.
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
-            upper:  Ordinal value as the upper bound for the ETL cycle.
-
-        Returns: Crossvalidate evaluation score.
+            upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        return self._exec(self._evaluation(lower, upper).train)
+        raise NotImplementedError()
+
+    def eval(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
+        """Run the development model evaluation.
+
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper: Ordinal value as the upper bound for the ETL cycle.
+        """
+        self._exec(self._evaluation(lower, upper).train)
 
     def _evaluation(self, lower: typing.Optional['kind.Native'] = None,
                     upper: typing.Optional['kind.Native'] = None) -> pipeline.Segment:
@@ -106,10 +107,11 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
 
         Returns: Assembled flow pipeline.
         """
+        # TODO: stateful feed/sink might pollute the assets
         return pipeline.Composition(self._feed.load(self._assets.project.source, lower, upper),
-                                    *(b.expand() for b in blocks), self._sink.publish())
+                                    *(b.expand() for b in blocks), self._sink.publish())  # TODO: sink optional
 
-    def _exec(self, path: pipeline.Segment, assets: typing.Optional[access.State] = None) -> typing.Any:
+    def _exec(self, path: pipeline.Segment, assets: typing.Optional[access.State] = None) -> None:
         """Execute the given path and assets.
 
         Args:
@@ -121,7 +123,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         return self._run(compiler.generate(path, assets))
 
     @abc.abstractmethod
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:
+    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:
@@ -134,7 +136,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
 class Platform:
     """Handle to the runtime functions representing a ForML platform.
     """
-    class Runner:
+    class Launcher:
         """Runner handle.
         """
         def __init__(self, provider: provcfg.Runner, assets: access.Assets,
@@ -150,7 +152,7 @@ class Platform:
 
             Returns: Train runner.
             """
-            return self(self._feeds.match(self._assets.project.source.extract.train), self._sink.train).train
+            return self(self._assets.project.source.extract.train, self._sink.train).train
 
         @property
         def apply(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
@@ -158,10 +160,27 @@ class Platform:
 
             Returns: Train handler.
             """
-            return self(self._feeds.match(self._assets.project.source.extract.apply), self._sink.apply).apply
+            return self(self._assets.project.source.extract.apply, self._sink.apply).apply
 
-        def __call__(self, feed: io.Feed, sink: io.Sink) -> Runner:
-            return Runner[self._provider.reference](self._assets, feed, sink, **self._provider.params)
+        @property
+        def eval(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
+            """Return the eval handler.
+
+            Returns: Eval runner.
+            """
+            return self(self._assets.project.source.extract.train, self._sink.eval).eval
+
+        @property
+        def tune(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
+            """Return the tune handler.
+
+            Returns: Tune handler
+            """
+            raise NotImplementedError()
+
+        def __call__(self, query: frame.Query, sink: io.Sink) -> Runner:
+            return Runner[self._provider.reference](self._assets, self._feeds.match(query), sink,
+                                                    **self._provider.params)
 
     class Registry:
         """Registry util handle.
@@ -182,7 +201,7 @@ class Platform:
             """
             return access.Assets(project, lineage, generation, self._root)
 
-        def publish(self, project: str, package: distribution.Package) -> None:
+        def publish(self, project: str, package: 'distribution.Package') -> None:
             """Publish new package into the registry.
 
             Args:
@@ -240,8 +259,8 @@ class Platform:
         self._feeds: Platform.Feeds = self.Feeds(*(feeds or provcfg.Feed.default))
         self._sink: sinkmod.Handle = sinkmod.Handle(sink or provcfg.Sink.Mode.default)
 
-    def runner(self, project: typing.Optional[str], lineage: typing.Optional[str] = None,
-               generation: typing.Optional[str] = None) -> 'Platform.Runner':
+    def launcher(self, project: typing.Optional[str], lineage: typing.Optional[str] = None,
+                 generation: typing.Optional[str] = None) -> 'Platform.Launcher':
         """Get a runner handle for given project/lineage/generation.
 
         Args:
@@ -251,7 +270,7 @@ class Platform:
 
         Returns: Runner handle.
         """
-        return self.Runner(self._runner, self._registry.assets(project, lineage, generation), self._feeds, self._sink)
+        return self.Launcher(self._runner, self._registry.assets(project, lineage, generation), self._feeds, self._sink)
 
     @property
     def registry(self) -> 'Platform.Registry':

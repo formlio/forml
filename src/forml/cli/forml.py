@@ -126,7 +126,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        result = cls._platform(runner, registry, feed, sink).runner(project, lineage, generation).train(lower, upper)
+        result = cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).train(lower, upper)
         if result is not None:
             print(result)
 
@@ -157,4 +157,4 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        print(cls._platform(runner, registry, feed, sink).runner(project, lineage, generation).apply(lower, upper))
+        print(cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).apply(lower, upper))

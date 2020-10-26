@@ -25,10 +25,10 @@ import string
 import typing
 import unittest
 
-from forml import runtime
 from forml.conf import provider as provcfg
 from forml.flow.pipeline import topology
 from forml.testing import spec, facility
+from forml.runtime import launcher as launchmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,24 +61,24 @@ class Meta(abc.ABCMeta):
 class Test:
     """Base class for test implementations.
     """
-    def __init__(self, runner: facility.Runner):
-        self._runner: facility.Runner = runner
+    def __init__(self, launcher: facility.Launcher):
+        self._launcher: facility.Launcher = launcher
 
     def __call__(self, suite: Suite) -> None:
-        runner = self.init(suite)
-        if runner:
+        launcher: typing.Optional[launchmod.Virtual.Builder] = self.init(suite)
+        if launcher:
             with self.raises(suite):
-                self.matches(suite, self.test(runner))
+                self.matches(suite, self.test(launcher))
 
-    def init(self, suite: Suite) -> runtime.Platform.Runner:
+    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
         """Test init phase.
 
         Args:
             suite: Testing suite.
 
-        Returns: Runner instance.
+        Returns: Runner launcher instance.
         """
-        return self._runner(suite.__operator__)
+        return self._launcher(suite.__operator__)
 
     def raises(self, suite: Suite) -> typing.ContextManager:  # pylint: disable=unused-argument, no-self-use
         """Context manager for wrapping raising assertions.
@@ -98,11 +98,11 @@ class Test:
             value: Tested value..
         """
 
-    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
+    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
         """Test subject logic.
 
         Args:
-            runner: Runner instance.
+            launcher: Launcher instance.
 
         Returns: Produced value.
         """
@@ -111,8 +111,8 @@ class Test:
 class RaisableTest(Test):
     """Base test class for raising test cases.
     """
-    def __init__(self, runner: facility.Runner, exception: spec.Scenario.Exception):
-        super().__init__(runner)
+    def __init__(self, launcher: facility.Launcher, exception: spec.Scenario.Exception):
+        super().__init__(launcher)
         self._exception: spec.Scenario.Exception = exception
 
     def raises(self, suite: Suite) -> typing.ContextManager:
@@ -131,8 +131,8 @@ class RaisableTest(Test):
 class ReturnableTest(Test):
     """Base test class for returning test cases.
     """
-    def __init__(self, runner: facility.Runner, output: spec.Scenario.Output):
-        super().__init__(runner)
+    def __init__(self, launcher: facility.Launcher, output: spec.Scenario.Output):
+        super().__init__(launcher)
         self._output: spec.Scenario.Output = output
 
     def matches(self, suite: Suite, value: typing.Any) -> None:
@@ -151,7 +151,7 @@ class ReturnableTest(Test):
 class TestInitRaises(RaisableTest, Test):
     """Test composite.
     """
-    def init(self, suite: Suite) -> runtime.Platform.Runner:
+    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
         with self.raises(suite):
             return super().init(suite)
 
@@ -159,8 +159,8 @@ class TestInitRaises(RaisableTest, Test):
 class PlainApplyTest(Test):
     """Testcase logic.
     """
-    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
-        return runner.apply()
+    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+        return launcher.apply()
 
 
 class TestPlainApplyReturns(ReturnableTest, PlainApplyTest):
@@ -176,8 +176,8 @@ class TestPlainApplyRaises(RaisableTest, PlainApplyTest):
 class StateTrainTest(Test):
     """Testcase logic.
     """
-    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
-        return runner.train()
+    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+        return launcher.train()
 
 
 class TestStateTrainReturns(ReturnableTest, StateTrainTest):
@@ -193,13 +193,13 @@ class TestStateTrainRaises(RaisableTest, StateTrainTest):
 class StateApplyTest(Test):
     """Testcase logic.
     """
-    def init(self, suite: Suite) -> runtime.Platform.Runner:
-        runner = super().init(suite)
-        runner.train()
-        return runner
+    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
+        launcher = super().init(suite)
+        launcher.train()
+        return launcher
 
-    def test(self, runner: runtime.Platform.Runner) -> typing.Any:
-        return runner.apply()
+    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+        return launcher.apply()
 
 
 class TestStateApplyReturns(ReturnableTest, StateApplyTest):
@@ -215,35 +215,35 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine.
     """
-    def __init__(self, name: str, scenario: spec.Scenario, runner: provcfg.Runner = provcfg.Runner.default):
+    def __init__(self, name: str, scenario: spec.Scenario, launcher: provcfg.Runner = provcfg.Runner.default):
         self._name: str = name
-        runner = facility.Runner(scenario.params, scenario.input, runner)
-        self._test: Test = self.select(scenario, runner)
+        launcher = facility.Launcher(scenario.params, scenario.input, launcher)
+        self._test: Test = self.select(scenario, launcher)
 
     @staticmethod
-    def select(scenario: spec.Scenario, runner: facility.Runner) -> Test:
+    def select(scenario: spec.Scenario, launcher: facility.Launcher) -> Test:
         """Selecting and setting up the test implementation for given scenario.
 
         Args:
             scenario: Testing scenario specification.
-            runner: Test runner with given operator.
+            launcher: Test launcher with given operator.
 
         Returns: Test case instance.
         """
         if scenario.outcome is spec.Scenario.Outcome.INIT_RAISES:
-            return TestInitRaises(runner, scenario.exception)
+            return TestInitRaises(launcher, scenario.exception)
         if scenario.outcome is spec.Scenario.Outcome.PLAINAPPLY_RAISES:
-            return TestPlainApplyRaises(runner, scenario.exception)
+            return TestPlainApplyRaises(launcher, scenario.exception)
         if scenario.outcome is spec.Scenario.Outcome.STATETRAIN_RAISES:
-            return TestStateTrainRaises(runner, scenario.exception)
+            return TestStateTrainRaises(launcher, scenario.exception)
         if scenario.outcome is spec.Scenario.Outcome.STATEAPPLY_RAISES:
-            return TestStateApplyRaises(runner, scenario.exception)
+            return TestStateApplyRaises(launcher, scenario.exception)
         if scenario.outcome is spec.Scenario.Outcome.PLAINAPPLY_RETURNS:
-            return TestPlainApplyReturns(runner, scenario.output)
+            return TestPlainApplyReturns(launcher, scenario.output)
         if scenario.outcome is spec.Scenario.Outcome.STATETRAIN_RETURNS:
-            return TestStateTrainReturns(runner, scenario.output)
+            return TestStateTrainReturns(launcher, scenario.output)
         if scenario.outcome is spec.Scenario.Outcome.STATEAPPLY_RETURNS:
-            return TestStateApplyReturns(runner, scenario.output)
+            return TestStateApplyReturns(launcher, scenario.output)
         raise RuntimeError('Unexpected scenario outcome')
 
     def __get__(self, suite: Suite, cls):

@@ -43,7 +43,7 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
 COMMANDS: typing.Mapping[str, typing.Type[launch.Mode]] = {
     'train': launch.Train,
     'tune': launch.Tune,
-    'score': launch.Score,
+    'eval': launch.Eval,
     bdist.Package.COMMAND: bdist.Package,
     'upload': upload.Registry
 }

@@ -32,21 +32,25 @@ class Handle:
     class Mode:
         """Handle mode getter descriptor.
         """
-        def __init__(self, target: str):
-            self._target: str = target
+        def __init__(self, getter: property):
+            self._getter: property = getter
 
-        def __get__(self, handle: 'Handle', _):
-            if isinstance(handle._sink, io.Sink):  # already Sink instance
-                return handle._sink
-            assert isinstance(handle._sink, conf.Sink.Mode)
-            descriptor: conf.Sink = getattr(handle._sink, self._target)
-            return io.Sink[descriptor.reference](**descriptor.params)
+        def __get__(self, handle: 'Handle', _) -> 'io.Sink':
+            return handle(self._getter)
 
     def __init__(self, sink: typing.Union[conf.Sink.Mode, str, 'io.Sink']):
         if isinstance(sink, str):
             sink = conf.Sink.Mode.resolve(sink)
         self._sink: typing.Union[conf.Sink.Mode, io.Sink] = sink
 
-    train = Mode('train')
-    apply = Mode('apply')
-    eval = Mode('eval')
+    def __call__(self, getter: property) -> 'io.Sink':
+        if isinstance(self._sink, io.Sink):  # already a Sink instance
+            return self._sink
+        assert isinstance(self._sink, conf.Sink.Mode)
+        descriptor: conf.Sink = getter.fget(self._sink)
+        return io.Sink[descriptor.reference](**descriptor.params)
+
+    # pylint: disable=no-member
+    train = Mode(conf.Sink.Mode.train)
+    apply = Mode(conf.Sink.Mode.apply)
+    eval = Mode(conf.Sink.Mode.eval)
