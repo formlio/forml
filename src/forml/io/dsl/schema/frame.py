@@ -48,6 +48,12 @@ class Rows(typing.NamedTuple):
 class Source(tuple, metaclass=abc.ABCMeta):
     """Source base class.
     """
+    def __new__(cls, *args):
+        return super().__new__(cls, args)
+
+    def __getnewargs__(self):
+        return tuple(self)
+
     def __hash__(self):
         return hash(self.__class__) ^ super().__hash__()
 
@@ -127,7 +133,7 @@ class Join(Source):
             condition = series.Cumulative.ensure_notin(series.Predicate.ensure_is(condition))
             if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.columns, *right.columns)):
                 raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
-        return super().__new__(cls, [left, right, condition, kind])
+        return super().__new__(cls, left, right, condition, kind)
 
     def __repr__(self):
         return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
@@ -157,7 +163,7 @@ class Set(Source):
     kind: 'Set.Kind' = property(operator.itemgetter(2))
 
     def __new__(cls, left: Source, right: Source, kind: 'Set.Kind'):
-        return super().__new__(cls, [left, right, kind])
+        return super().__new__(cls, left, right, kind)
 
     def __repr__(self):
         return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
@@ -278,7 +284,7 @@ class Reference(Origin):
     def __new__(cls, instance: Queryable, name: typing.Optional[str] = None):
         if not name:
             name = ''.join(random.choice(string.ascii_lowercase) for _ in range(cls._NAMELEN))
-        return super().__new__(cls, [instance, name])
+        return super().__new__(cls, instance, name)
 
     def __repr__(self):
         return f'{self.name}=[{repr(self.instance)}]'
@@ -362,10 +368,7 @@ class Table(Origin):
         else:
             if bases or namespace:
                 raise TypeError('Unexpected use of schema table')
-        return super().__new__(mcs, [schema])  # used as constructor
-
-    def __getnewargs__(self):
-        return tuple([self.schema])
+        return super().__new__(mcs, schema)  # used as constructor
 
     def __repr__(self):
         return self.schema.__name__
@@ -427,7 +430,7 @@ class Query(Queryable):
                 series.Operable.ensure_is(postfilter))))
         ordering = tuple(series.Ordering.make(ordering or []))
         ensure_subset(*(o.column for o in ordering))
-        return super().__new__(cls, [source, selection, prefilter, tuple(grouping or []), postfilter, ordering, rows])
+        return super().__new__(cls, source, selection, prefilter, tuple(grouping or []), postfilter, ordering, rows)
 
     def __repr__(self):
         value = repr(self.source)

@@ -24,6 +24,7 @@ import abc
 import typing
 
 import pytest
+import cloudpickle
 
 from forml.io import etl
 from forml.io.dsl import function, error
@@ -45,6 +46,11 @@ class Source(metaclass=abc.ABCMeta):
         """Test source identity.
         """
         assert len({source, source, school}) == 2
+
+    def test_serilizable(self, source: frame.Source):
+        """Test source serializability.
+        """
+        assert cloudpickle.loads(cloudpickle.dumps(source)) == source
 
     def test_columns(self, source: frame.Source, student: frame.Table):
         """Test the reported column.

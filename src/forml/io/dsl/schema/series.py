@@ -80,6 +80,12 @@ class Column(tuple, metaclass=abc.ABCMeta):
             if any(isinstance(column, t) for t in self._types):
                 self._match.add(column)
 
+    def __new__(cls, *args):
+        return super().__new__(cls, args)
+
+    def __getnewargs__(self):
+        return tuple(self)
+
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
 
@@ -367,7 +373,7 @@ class Aliased(Column):
     name: str = property(opermod.itemgetter(1))
 
     def __new__(cls, column: Column, alias: str):
-        return super().__new__(cls, [column.operable, alias])
+        return super().__new__(cls, column.operable, alias)
 
     def __repr__(self):
         return f'{self.name}=[{repr(self.operable)}]'
@@ -396,7 +402,10 @@ class Literal(Operable):
     kind: kindmod.Any = property(opermod.itemgetter(1))
 
     def __new__(cls, value: typing.Any):
-        return super().__new__(cls, [value, kindmod.reflect(value)])
+        return super().__new__(cls, value, kindmod.reflect(value))
+
+    def __getnewargs__(self):
+        return tuple([self.value])
 
     def __repr__(self):
         return repr(self.value)
@@ -427,7 +436,7 @@ class Element(Operable):
     def __new__(cls, source: 'framod.Origin', name: str):
         if isinstance(source, framod.Table) and not issubclass(cls, Field):
             return Field(source, name)
-        return super().__new__(cls, [source, name])
+        return super().__new__(cls, source, name)
 
     def __repr__(self):
         return f'{repr(self.origin)}.{self.name}'
@@ -459,9 +468,6 @@ class Field(Element):
 class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions.
     """
-    def __new__(cls, *terms: typing.Any):  # other operables or arbitrary args
-        return super().__new__(cls, terms)
-
     @property
     def name(self) -> None:
         """Expression has no name without an explicit aliasing.
@@ -664,7 +670,7 @@ class Comparison(Predicate):
         right: Operable = property(opermod.itemgetter(2))
 
         def __new__(cls, operator: typing.Type[Infix], left: Operable, right: Operable):
-            return super().__new__(cls, [operator, left, right])
+            return super().__new__(cls, operator, left, right)
 
         def __bool__(self):
             if self.operator is Equal:
