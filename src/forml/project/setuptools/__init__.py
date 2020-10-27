@@ -18,6 +18,7 @@
 """
 Customized setuptools.
 """
+import inspect
 import logging
 import typing
 
@@ -54,7 +55,7 @@ OPTIONS = {
 }
 
 
-def setup(**kwargs) -> dist.Distribution:  # pylint: disable=function-redefined
+def setup(**kwargs) -> typing.Optional[dist.Distribution]:  # pylint: disable=function-redefined
     """Setuptools wrapper for defining user projects using setup.py.
 
     Args:
@@ -62,4 +63,9 @@ def setup(**kwargs) -> dist.Distribution:  # pylint: disable=function-redefined
 
     Returns: setuptools distribution object.
     """
-    return setuptools.setup(**{**kwargs, **OPTIONS})
+    distribution = None
+    # To avoid infinite loops launching the setup.py when multiprocessing is involved in one of the commands (ie Dask
+    # with multiprocessing scheduler is used as runner) we inspect the caller space to check the __name__ == '__main__'
+    if inspect.currentframe().f_back.f_globals.get('__name__') == '__main__':
+        distribution = setuptools.setup(**{**kwargs, **OPTIONS})
+    return distribution
