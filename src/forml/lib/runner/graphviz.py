@@ -41,8 +41,8 @@ class Runner(runtime.Runner, alias='graphviz'):
     FILEPATH = f'{conf.APPNAME}.dot'
 
     def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None,
-                 filepath: typing.Optional[str] = None, **gvkw: typing.Any):
-        super().__init__(assets, feed)
+                 sink: typing.Optional['io.Sink'] = None, filepath: typing.Optional[str] = None, **gvkw: typing.Any):
+        super().__init__(assets, feed, sink)
         self._filepath: str = filepath or self.FILEPATH
         self._gvkw: typing.Mapping[str, typing.Any] = gvkw
 

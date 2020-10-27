@@ -76,7 +76,7 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
                 return self.format(provider(*args, **kwargs))
             return wrapper
 
-        def actor(handler: typing.Callable[[...], typing.Any], spec: frame.Query) -> task.Spec:
+        def actor(handler: typing.Callable[..., typing.Any], spec: frame.Query) -> task.Spec:
             """Helper for creating the reader actor spec for given query.
 
             Args:
@@ -147,12 +147,12 @@ class Feed(provmod.Interface, typing.Generic[parser.Source, parser.Column],
         return data
 
     @property
+    @abc.abstractmethod
     def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns: Sources mapping.
         """
-        return {}
 
     @property
     def columns(self) -> typing.Mapping[series.Column, parser.Column]:
