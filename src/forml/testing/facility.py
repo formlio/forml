@@ -74,6 +74,10 @@ class Feed(io.Feed, alias='testing'):
         return lambda c, s: c[s][0]
 
     @property
+    def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
+        return {DataSet: None}
+
+    @property
     def columns(self) -> typing.Mapping[series.Column, parser.Column]:
         return {
             DataSet.label: (self._scenario.train, [self._scenario.label]),

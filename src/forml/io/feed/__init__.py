@@ -116,5 +116,5 @@ class Pool:
             if matcher:
                 break
         else:
-            raise error.Missing('None of the available feeds provide all of the required sources')
+            raise error.Missing(f'None of the {len(self._feeds)} available feeds provide all of the required sources')
         return feed  # pylint: disable=undefined-loop-variable

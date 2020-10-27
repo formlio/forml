@@ -185,8 +185,10 @@ class Platform:
     class Registry:
         """Registry util handle.
         """
-        def __init__(self, registry: provcfg.Registry):
-            self._root: root.Level = root.Level(persistent.Registry[registry.reference](**registry.params))
+        def __init__(self, registry: typing.Union[provcfg.Registry, persistent.Registry]):
+            if isinstance(registry, provcfg.Registry):
+                registry = persistent.Registry[registry.reference](**registry.params)
+            self._root: root.Level = root.Level(registry)
 
         def assets(self, project: typing.Optional[str], lineage: typing.Optional[str],
                    generation: typing.Optional[str]) -> access.Assets:
@@ -251,7 +253,7 @@ class Platform:
             raise NotImplementedError()
 
     def __init__(self, runner: typing.Optional[provcfg.Runner] = None,
-                 registry: typing.Optional[provcfg.Registry] = None,
+                 registry: typing.Optional[typing.Union[provcfg.Registry, persistent.Registry]] = None,
                  feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
                  sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, io.Sink]] = None):
         self._runner: provcfg.Runner = runner or provcfg.Runner.default

@@ -87,8 +87,8 @@ class Runner(runtime.Runner, alias='dask'):
     SCHEDULER = 'multiprocessing'
 
     def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None,
-                 scheduler: typing.Optional[str] = None):
-        super().__init__(assets, feed)
+                 sink: typing.Optional['io.Sink'] = None, scheduler: typing.Optional[str] = None):
+        super().__init__(assets, feed, sink)
         self._scheduler: str = scheduler or self.SCHEDULER
 
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:
