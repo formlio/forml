@@ -323,8 +323,6 @@ class Table(Origin):
                 existing.add(new)
                 if not field.name:
                     namespace[key] = field.renamed(key)  # to normalize so that hash/eq is consistent
-            if bases and not existing:
-                raise error.Syntax(f'No fields defined for schema {name}')
             return super().__new__(mcs, name, bases, namespace)
 
         def __hash__(cls):
@@ -357,7 +355,7 @@ class Table(Origin):
     def __new__(mcs, schema: typing.Union[str, typing.Type['etl.Schema']],  # pylint: disable=bad-classmethod-argument
                 bases: typing.Optional[typing.Tuple[typing.Type]] = None,
                 namespace: typing.Optional[typing.Dict[str, typing.Any]] = None):
-        if issubclass(mcs, Table):  # used as metaclass
+        if isinstance(schema, str):  # used as metaclass
             if bases:
                 bases = (bases[0].schema, )
             schema = mcs.Schema(schema, bases, namespace)
@@ -365,6 +363,9 @@ class Table(Origin):
             if bases or namespace:
                 raise TypeError('Unexpected use of schema table')
         return super().__new__(mcs, [schema])  # used as constructor
+
+    def __getnewargs__(self):
+        return tuple([self.schema])
 
     def __repr__(self):
         return self.schema.__name__

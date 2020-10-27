@@ -19,6 +19,8 @@
 ETL tests.
 """
 # pylint: disable=no-self-use
+import cloudpickle
+
 import pytest
 
 from forml import error
@@ -33,6 +35,16 @@ class TestField:
         """Test the field renaming.
         """
         assert student.schema.dob.renamed('foo').name == 'foo'
+
+
+class TestSchema:
+    """Schema unit tests.
+    """
+    def test_serilizable(self, student: frame.Table):
+        """Test schema serializability.
+        """
+        assert cloudpickle.loads(cloudpickle.dumps(student.schema)) == student.schema
+        assert cloudpickle.loads(cloudpickle.dumps(student)) == student
 
 
 class TestSource:

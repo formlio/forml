@@ -65,7 +65,7 @@ setuptools.setup(name='forml',
                  package_dir={'': 'src'},
                  package_data={'forml.conf': ['config.toml', 'logging.ini']},
                  setup_requires=['pytest-runner', 'pytest-pylint', 'pytest-flake8'],
-                 tests_require=['pytest-cov', 'pylint', 'pytest'],
+                 tests_require=['pytest-cov', 'pylint', 'pytest', 'cloudpickle'],
                  install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml'],
                  extras_require={
                      'all': EXTRAS_ALL,
