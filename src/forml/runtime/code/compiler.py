@@ -93,15 +93,15 @@ class Table(view.Visitor, abc.Iterable):
                 node: Worker node (representing its actual functor) as an positional argument of its subscribers.
                 getter: Callback for creating a Getter instruction for given positional index and returning its key.
             """
-            if node.szout > 1:
+            if node.szout == 1:
+                for subscriber in node.output[0]:
+                    self.insert(subscriber.node.uid, node.uid, subscriber.port)
+            else:
                 for index, output in enumerate(node.output):
                     source = getter(index)
                     self.insert(source, node.uid)
                     for subscriber in output:
                         self.insert(subscriber.node.uid, source, subscriber.port)
-            else:
-                for subscriber in node.output[0]:
-                    self.insert(subscriber.node.uid, node.uid, subscriber.port)
 
         def prepend(self, instruction: uuid.UUID, argument: uuid.UUID) -> None:
             """In contrast to the absolute positional arguments we can potentially prepend these with various system

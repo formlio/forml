@@ -209,15 +209,6 @@ class TestSchema:
         assert schema is not other
         assert len({schema, other}) == 1
 
-    def test_empty(self):
-        """Test empty schema with no fields.
-        """
-        with pytest.raises(error.Syntax):
-            class Empty(etl.Schema):
-                """Schema with no fields.
-                """
-            _ = Empty
-
     def test_colliding(self, schema: typing.Type['etl.Schema']):
         """Test schema with colliding field names.
         """
