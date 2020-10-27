@@ -24,6 +24,7 @@ import datetime
 import decimal
 import typing
 
+import cloudpickle
 import pytest
 
 from forml.io.dsl import error
@@ -75,6 +76,11 @@ class Column(metaclass=abc.ABCMeta):
         """
         assert len({column, column, school.sid}) == 2
         assert sorted((column, school.sid)) == sorted((column, school.sid), key=lambda c: repr(c.operable))
+
+    def test_serilizable(self, column: series.Column):
+        """Test source serializability.
+        """
+        assert cloudpickle.loads(cloudpickle.dumps(column)) == column
 
     def test_kind(self, column: series.Column):
         """Test the column kind.
