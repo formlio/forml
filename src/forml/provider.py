@@ -40,6 +40,56 @@ def isabstract(cls: typing.Type['Interface']) -> bool:
     return inspect.isabstract(cls) or any(inspect.isabstract(i) for i in cls.__dict__.values())
 
 
+class Reference:
+    """Provider reference base class/dispatcher.
+    """
+    def __new__(cls, value: typing.Union[typing.Type['Interface'], str]):
+        if isinstance(value, str):
+            if Qualifier.DELIMITER not in value:
+                return Alias(value)
+            module, qualname = value.split(Qualifier.DELIMITER, 1)
+        else:
+            module = value.__module__
+            qualname = value.__qualname__
+        return Qualifier(module, qualname)
+
+    @abc.abstractmethod
+    def paths(self, base: typing.Optional[typing.Iterable['Registry.Path']] = None) -> typing.Iterable['Registry.Path']:
+        """Return potential search paths for importing this referenced provider.
+
+        Args:
+            base: Optional base paths of the reference.
+
+        Returns: Registry path instances.
+        """
+
+
+class Qualifier(typing.NamedTuple, Reference):
+    """Reference determining the provider class within its module.
+    """
+    module: str
+    qualname: str
+    DELIMITER = ':'
+
+    def __repr__(self):
+        return f'{self.module}{self.DELIMITER}{self.qualname}'
+
+    def paths(self, base: typing.Optional[typing.Iterable['Registry.Path']] = None) -> typing.Iterable['Registry.Path']:
+        return tuple([Registry.Path(self.module, explicit=False)])
+
+
+class Alias(str, Reference):
+    """Reference as a plain string associated with the provider by its author.
+    """
+    def __new__(cls, value: str):
+        if Qualifier.DELIMITER in value:
+            raise ValueError(f'Invalid alias: {value}')
+        return super().__new__(cls, value)
+
+    def paths(self, base: typing.Optional[typing.Iterable['Registry.Path']] = None) -> typing.Iterable['Registry.Path']:
+        return tuple(b / self for b in base or [])
+
+
 class Registry(collections.namedtuple('Registry', 'provider, paths')):
     """Registry of providers of certain interface. It is a tuple of (not-yet-imported) search paths and already
     imported providers.
@@ -73,7 +123,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
     def __new__(cls):
         return super().__new__(cls, dict(), set())
 
-    def add(self, provider: typing.Type['Interface'], alias: typing.Optional[str], paths: typing.Set[Path]):
+    def add(self, provider: typing.Type['Interface'], alias: typing.Optional[Alias], paths: typing.Set[Path]):
         """Push package to lazy loading stack.
 
         Args:
@@ -81,23 +131,23 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             alias: provider alias
             paths: search paths to be explored when attempting to load
         """
-        providers = {repr(provider)}
+        references = {Reference(provider)}
         if alias:
-            providers.add(alias)
-        for reference in providers:
-            if reference in self.provider:
-                if provider == self.provider[reference]:
+            references.add(alias)
+        for ref in references:
+            if ref in self.provider:
+                if provider == self.provider[ref]:
                     continue
-                raise error.Unexpected(f'Provider reference collision ({reference})')
+                raise error.Unexpected(f'Provider reference collision ({ref})')
         self.paths.update(paths)
         if isabstract(provider):
             return
-        for reference in providers:
+        for ref in references:
             LOGGER.debug('Registering provider %s as `%s` with %d more search paths %s',
-                         provider.__name__, reference, len(paths), paths)
-            self.provider[reference] = provider
+                         provider.__name__, ref, len(paths), paths)
+            self.provider[ref] = provider
 
-    def get(self, reference: str) -> typing.Type['Interface']:
+    def get(self, reference: Reference) -> typing.Type['Interface']:
         """Get the registered provider or attempt to load all search paths packages that might be containing it.
 
         Args:
@@ -107,13 +157,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         """
         LOGGER.debug('Getting provider of %s (%d search paths)', reference, len(self.paths))
         if reference not in self.provider:
-            paths = list(self.paths)
-            if ':' in reference:  # reference is qualified spec of <module>:<qualname>
-                module, _ = reference.split(':', 1)
-                paths.append(Registry.Path(module))
-            else:  # reference is a plain alias - attempt to find a module with same name under the search paths
-                for package in self.paths:
-                    paths.append(package / reference)
+            paths = [*self.paths, *reference.paths(self.paths)]
             while reference not in self.provider and paths:
                 paths.pop().load()
         return self.provider[reference]
@@ -145,19 +189,20 @@ class Meta(abc.ABCMeta):
         if not isinstance(reference, str) and issubclass(cls, typing.Generic):
             return cls.__class_getitem__(reference)
         try:
-            return REGISTRY[cls].get(reference)
+            return REGISTRY[cls].get(Reference(reference))
         except KeyError as err:
+            known = ', '.join(str(c) for c in cls)  # pylint: disable=not-an-iterable
             raise error.Missing(
-                f'No {cls.__name__} provider registered as {reference} (known providers: {", ".join(cls)})') from err
+                f'No {cls.__name__} provider registered as {reference} (known providers: {known})') from err
 
     def __iter__(cls):
         return iter(REGISTRY[cls].provider)
 
     def __repr__(cls):
-        return f'{cls.__module__}:{cls.__qualname__}'
+        return repr(Reference(cls))
 
     def __str__(cls):
-        return f'{repr(cls)}[{", ".join(cls)}]'
+        return f'{repr(cls)}[{", ".join(str(c) for c in cls)}]'  # pylint: disable=not-an-iterable
 
     def __eq__(cls, other):
         return other.__module__ is cls.__module__ and other.__qualname__ is cls.__qualname__
@@ -179,8 +224,10 @@ class Interface(metaclass=Meta):
             path: Optional search path for additional packages to get imported when attempting to load.
         """
         super().__init_subclass__()
-        if isabstract(cls) and alias:
-            raise error.Unexpected(f'Provider reference ({alias}) illegal on abstract class')
+        if alias:
+            if isabstract(cls):
+                raise error.Unexpected(f'Provider reference ({alias}) illegal on abstract class')
+            alias = Alias(alias)
         path = {Registry.Path(p, explicit=True) for p in path or []}
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):
             REGISTRY[parent].add(cls, alias, path)
