@@ -20,6 +20,7 @@ Config section helpers.
 """
 import abc
 import operator
+import types
 import typing
 
 from forml import error, conf
@@ -35,7 +36,7 @@ class Meta(abc.ABCMeta):
         return super().__new__(mcs, name, (*bases, tuple), namespace)
 
     @property
-    def default(cls) -> 'Resolved':
+    def default(cls) -> 'Section':
         """Default parsing.
 
         Returns: Default resolved config.
@@ -43,7 +44,7 @@ class Meta(abc.ABCMeta):
         return cls.resolve()
 
 
-class Resolved(metaclass=Meta):
+class Section(metaclass=Meta):
     """Resolved config base class.
 
     Implements parser for config referenced based on following concept:
@@ -52,7 +53,9 @@ class Resolved(metaclass=Meta):
     SELECTOR = reference
 
     [GROUP.reference]
-    <params>
+    <semantic_param> = <value>  # explicit params consumed by the config parser
+    <generic_param> = <value>   # generic params not known to the config parser (ie downstream library config)
+    params = { <generic_param> = <value> }  # alternative way of providing generic params to avoid collisions
     """
     # list of parsed config field names
     FIELDS: typing.Tuple[str] = ('params', )
@@ -64,24 +67,31 @@ class Resolved(metaclass=Meta):
     GROUP: str = abc.abstractmethod
 
     def __new__(cls, reference: str):
-        return super().__new__(cls, cls._extract(reference))
-
-    @classmethod
-    def _extract(cls, reference: str) -> typing.Tuple[typing.Any]:
-        """Extract the config options given their section reference.
-
-        Args:
-            reference: Config section reference.
-
-        Returns: Options extracted from the referred section.
-        """
         try:
-            return tuple([conf.PARSER[cls.GROUP][reference]])  # pylint: disable=no-member
+            kwargs = conf.PARSER[cls.GROUP][reference]  # pylint: disable=no-member
         except KeyError as err:
             raise error.Missing(f'Config section not found: [{cls.GROUP}.{reference}]') from err
+        args, kwargs = cls._extract(reference, kwargs)
+        return super().__new__(cls, [*args, types.MappingProxyType(dict(kwargs))])
 
     @classmethod
-    def _lookup(cls, reference: str) -> 'Resolved':
+    def _extract(cls, reference: str,  # pylint: disable=unused-argument
+                 kwargs: typing.Mapping[str, typing.Any]) -> typing.Tuple[typing.Sequence[typing.Any],
+                                                                          typing.Mapping[str, typing.Any]]:
+        """Extract the config values as a sequence of "known" semantic arguments and mapping of "generic" options.
+
+        Args:
+            reference: Config reference.
+            kwargs: Common mapping of values mixing the "known" and "generic".
+
+        Returns: Tuple of known plus generic arguments.
+        """
+        kwargs = dict(kwargs)
+        kwargs.update(kwargs.pop(conf.OPT_PARAMS, {}))
+        return [], kwargs
+
+    @classmethod
+    def _lookup(cls, reference: str) -> 'Section':
         """Create the config instance based on given reference.
 
         Args:
@@ -92,7 +102,7 @@ class Resolved(metaclass=Meta):
         return cls(reference)
 
     @classmethod
-    def resolve(cls, reference: typing.Optional[str] = None) -> 'Resolved':
+    def resolve(cls, reference: typing.Optional[str] = None) -> 'Section':
         """Get config list for pattern based non-repeated option tokens.
 
         Args:
@@ -109,7 +119,7 @@ class Resolved(metaclass=Meta):
         return hash(self.__class__) ^ hash(tuple(sorted(self.params)))  # pylint: disable=no-member
 
     @abc.abstractmethod
-    def __lt__(self, other: 'Resolved') -> bool:
+    def __lt__(self, other: 'Section') -> bool:
         """Instances need to be comparable to allow for sorting.
 
         Args:
@@ -119,7 +129,7 @@ class Resolved(metaclass=Meta):
         """
 
 
-class Multi(Resolved):  # pylint: disable=abstract-method
+class Multi(Section):  # pylint: disable=abstract-method
     """Resolved section supporting multiple instances.
 
     [INDEX]
@@ -131,7 +141,7 @@ class Multi(Resolved):  # pylint: disable=abstract-method
     <params>
     """
     @classmethod
-    def _lookup(cls, references: typing.Iterable[str]) -> typing.Sequence[Resolved]:
+    def _lookup(cls, references: typing.Iterable[str]) -> typing.Sequence[Section]:
         """Create a sequence of config instances based on given references.
 
         Args:

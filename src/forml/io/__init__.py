@@ -23,7 +23,7 @@ import functools
 import typing
 
 from forml import provider as provmod
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.io import etl as etlmod, payload

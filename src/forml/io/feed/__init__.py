@@ -22,7 +22,7 @@ import logging
 import typing
 
 from forml import io, error
-from forml.conf import provider as conf
+from forml.conf.parsed import provider as conf
 from forml.io.dsl.schema import frame, visit
 
 LOGGER = logging.getLogger(__name__)

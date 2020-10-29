@@ -18,14 +18,13 @@
 """
 ForML provider configs.
 """
-import types
 import typing
 
 from forml import conf, error
-from forml.conf import section as secmod
+from forml.conf import parsed as parsmod
 
 
-class Meta(secmod.Meta):
+class Meta(parsmod.Meta):
     """Customized metaclass for providing the `path` property.
     """
     @property
@@ -37,17 +36,20 @@ class Meta(secmod.Meta):
         return conf.PARSER.get(cls.GROUP, {}).get(conf.OPT_PATH, [])
 
 
-class Section(secmod.Resolved, metaclass=Meta):
+class Section(parsmod.Section, metaclass=Meta):
     """Special sections of forml providers config options.
     """
     FIELDS: typing.Tuple[str] = 'reference', 'params'
     SELECTOR = conf.OPT_DEFAULT
 
     @classmethod
-    def _extract(cls, reference: str) -> typing.Tuple[typing.Any]:
-        params = dict(super()._extract(reference)[0])
-        provider = params.pop(conf.OPT_PROVIDER, reference)
-        return str(provider), types.MappingProxyType(params)
+    def _extract(cls, reference: str,
+                 kwargs: typing.Mapping[str, typing.Any]) -> typing.Tuple[typing.Sequence[typing.Any],
+                                                                          typing.Mapping[str, typing.Any]]:
+        kwargs = dict(kwargs)
+        provider = kwargs.pop(conf.OPT_PROVIDER, reference)
+        _, kwargs = super()._extract(reference, kwargs)
+        return [str(provider)], kwargs
 
     def __hash__(self):
         return hash(self.__class__) ^ hash(self.reference)  # pylint: disable=no-member
@@ -73,7 +75,7 @@ class Registry(Section):
     GROUP: str = conf.SECTION_REGISTRY
 
 
-class Feed(secmod.Multi, Section):
+class Feed(parsmod.Multi, Section):
     """Feed providers.
     """
     INDEX: str = conf.SECTION_FEED
@@ -81,11 +83,13 @@ class Feed(secmod.Multi, Section):
     FIELDS: typing.Tuple[str] = 'reference', 'priority', 'params'
 
     @classmethod
-    def _extract(cls, reference: str) -> typing.Tuple[typing.Any]:
-        name, params = super()._extract(reference)
-        params = dict(params)
-        priority = params.pop(conf.OPT_PRIORITY, 0)
-        return name, float(priority), types.MappingProxyType(params)
+    def _extract(cls, reference: str,
+                 kwargs: typing.Mapping[str, typing.Any]) -> typing.Tuple[typing.Sequence[typing.Any],
+                                                                          typing.Mapping[str, typing.Any]]:
+        kwargs = dict(kwargs)
+        priority = kwargs.pop(conf.OPT_PRIORITY, 0)
+        [reference], kwargs = super()._extract(reference, kwargs)
+        return [reference, float(priority)], kwargs
 
     def __lt__(self, other: 'Feed') -> bool:
         # pylint: disable=no-member

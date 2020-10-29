@@ -25,10 +25,10 @@ import string
 import typing
 import unittest
 
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 from forml.flow.pipeline import topology
-from forml.testing import spec, facility
 from forml.runtime import launcher as launchmod
+from forml.testing import spec, facility
 
 LOGGER = logging.getLogger(__name__)
 

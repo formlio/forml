@@ -23,7 +23,7 @@ import typing
 import uuid
 
 from forml import io
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology

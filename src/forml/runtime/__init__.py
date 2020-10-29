@@ -23,7 +23,7 @@ import typing
 
 from forml import io
 from forml import provider as provmod, error
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 from forml.flow import pipeline
 from forml.io import feed as feedmod, sink as sinkmod
 from forml.io.dsl.schema import frame, kind
