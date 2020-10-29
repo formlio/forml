@@ -23,7 +23,7 @@ import typing
 import setuptools
 
 from forml import error, runtime
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 from forml.project import distribution
 from forml.project.setuptools.command import bdist
 

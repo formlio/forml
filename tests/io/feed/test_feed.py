@@ -24,11 +24,10 @@ import typing
 
 import pytest
 
-from forml.io.dsl.schema import frame
-
 from forml import io, error
-from forml.conf import provider as conf
+from forml.conf.parsed import provider as conf
 from forml.io import feed as feedmod
+from forml.io.dsl.schema import frame
 
 
 class TestPool:

@@ -36,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
-    """Dummy component setup (merely for the sake of IDE sanity). In real usecase this functions represents
+    """Dummy component setup (merely for the sake of IDE sanity). In real usecase this function represents
     the Module.setup method.
 
     Args:

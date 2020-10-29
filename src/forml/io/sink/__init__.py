@@ -22,7 +22,7 @@ IO sink utils.
 import typing
 
 from forml import io
-from forml.conf import provider as conf
+from forml.conf.parsed import provider as conf
 
 
 class Handle:

@@ -16,11 +16,26 @@
 # under the License.
 
 """
-ForML top level.
+System configuration.
 """
-from forml.conf.system import logging
 
-__version__ = '0.2.dev0'
+import contextlib
+import pathlib
+import sys
+import typing
 
 
-logging.setup()
+@contextlib.contextmanager
+def path(*directories: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
+    """Context manager for putting given paths on python module search path but only for the duration of the context.
+
+    Args:
+        *directories: Paths to be inserted to sys.path when in the context.
+
+    Returns: Context manager.
+    """
+    original = list(sys.path)
+    for item in directories:
+        sys.path.insert(0, str(pathlib.Path(item).resolve()))
+    yield
+    sys.path = original

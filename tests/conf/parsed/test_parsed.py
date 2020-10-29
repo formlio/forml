@@ -25,16 +25,25 @@ import typing
 import pytest
 
 from forml import error
-from forml.conf import section as secmod
+from forml.conf import parsed as parsmod
 
 
 class Resolved(metaclass=abc.ABCMeta):
     """Base class for parsed section tests using the test config from the config.toml.
     """
-    class Section(secmod.Resolved):
+    class Section(parsmod.Section):
         """Base class for parsed section fixtures.
         """
-        INDEX = 'RESOLVED'  # referring to the section [RESOLVED] in the config.toml
+        FIELDS: typing.Tuple[str] = ('blah', 'params')
+        INDEX: str = 'RESOLVED'  # referring to the section [RESOLVED] in the config.toml
+
+        @classmethod
+        def _extract(cls, reference: str, kwargs: typing.Mapping[str, typing.Any]) -> typing.Tuple[
+                typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+            kwargs = dict(kwargs)
+            blah = kwargs.pop('blah', None)
+            _, kwargs = super()._extract(reference, kwargs)
+            return [blah], kwargs
 
         def __lt__(self, other: 'Resolved.Section') -> bool:
             # pylint: disable=no-member
@@ -84,13 +93,15 @@ class TestSingle(Resolved):
     def test_params(self, section: typing.Type['Resolved.Section']):
         """Test the params parsing.
         """
-        assert section.resolve('bar').params == {'foo': 'baz'}
+        parsed = section.resolve('bar')
+        assert parsed.blah == 'single'
+        assert parsed.params == {'foo': 'baz', 'blah': 'bar', 'bar': 'blah'}
 
 
 class TestMulti(Resolved):
     """SectionMeta unit tests.
     """
-    class Section(secmod.Multi, Resolved.Section):
+    class Section(parsmod.Multi, Resolved.Section):
         """Field list.
         """
         SELECTOR = 'multi'

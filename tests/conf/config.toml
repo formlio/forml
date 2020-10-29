@@ -5,7 +5,9 @@ single = "bar"
 multi = ["foo", "bar"]
 
 [SINGLE.bar]
+blah = "single"
 foo = "baz"
+params = {blah = "bar", bar = "blah"}
 
 [MULTI.bar]
 foo = "baz"

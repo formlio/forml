@@ -25,7 +25,7 @@ import typing
 
 from setuptools.command import test
 
-from forml.conf import provider
+from forml.conf.parsed import provider
 from forml.project import product
 from forml.runtime import launcher as launchmod
 

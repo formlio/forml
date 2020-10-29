@@ -24,7 +24,7 @@ import typing
 
 import pytest
 
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 
 
 class Section(metaclass=abc.ABCMeta):

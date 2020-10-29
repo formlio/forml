@@ -22,7 +22,7 @@ import multiprocessing
 import typing
 
 from forml import runtime, io
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 from forml.io import payload
 from forml.io.dsl.schema import kind
 from forml.lib.registry import virtual

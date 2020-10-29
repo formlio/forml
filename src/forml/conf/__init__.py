@@ -26,8 +26,9 @@ import types
 import typing
 
 import toml
-from forml import error
 
+from forml import error
+from forml.conf import system
 from forml.lib import registry, runner, sink
 
 
@@ -121,6 +122,35 @@ class Parser(dict):
             self._sources.append(path)
 
 
+class Path(typing.Iterable[pathlib.Path]):
+    """Configuration search path - list of directories where to look for config.
+    """
+    def __init__(self, *directories: pathlib.Path):
+        self._directories: typing.Tuple[pathlib.Path] = directories
+
+    def __iter__(self) -> typing.Iterator[pathlib.Path]:
+        return iter(self._directories)
+
+    @property
+    def searchable(self) -> typing.ContextManager[None]:
+        """Return a context manager which puts the config path also on python search path form module importing.
+
+        Returns: Context manager having the config directories also placed on sys.path.
+        """
+        return system.path(*reversed(self._directories))
+
+    def parser(self, defaults: typing.Mapping[str, typing.Any], appcfg: str) -> Parser:
+        """Return a config parser observing this path.
+
+        Args:
+            defaults: Parser default options.
+            appcfg: Name of config file to look for.
+
+        Returns: Parser instance.
+        """
+        return Parser(defaults, *(p / appcfg for p in self))
+
+
 SECTION_PLATFORM = 'PLATFORM'
 SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
@@ -132,6 +162,7 @@ OPT_TMPDIR = 'tmpdir'
 OPT_PROVIDER = 'provider'
 OPT_PRIORITY = 'priority'
 OPT_REGISTRY = 'registry'
+OPT_PARAMS = 'params'
 OPT_FEED = 'feed'
 OPT_SINK = 'sink'
 OPT_RUNNER = 'runner'
@@ -161,12 +192,11 @@ DEFAULTS = {
 APPNAME = 'forml'
 SYSDIR = pathlib.Path('/etc') / APPNAME
 USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() / f'.{APPNAME}'))
-PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
+PATH = Path(pathlib.Path(__file__).parent, SYSDIR, USRDIR)
 APPCFG = 'config.toml'
 PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
 
-
-PARSER = Parser(DEFAULTS, *(p / APPCFG for p in PATH))
+PARSER = PATH.parser(DEFAULTS, APPCFG)
 
 
 def __getattr__(key: str):

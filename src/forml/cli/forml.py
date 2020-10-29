@@ -22,7 +22,7 @@ Main cli frontend.
 import typing
 
 from forml import cli, error, runtime
-from forml.conf import provider as provcfg
+from forml.conf.parsed import provider as provcfg
 from forml.io.dsl.schema import kind
 
 

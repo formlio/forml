@@ -25,7 +25,7 @@ import typing
 import pytest
 
 from forml import io
-from forml.conf import provider as conf
+from forml.conf.parsed import provider as conf
 from forml.io import sink as sinkmod
 
 
