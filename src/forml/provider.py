@@ -24,7 +24,7 @@ import inspect
 import logging
 import typing
 
-from forml import error, conf
+from forml import error
 
 LOGGER = logging.getLogger(__name__)
 
@@ -158,9 +158,8 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         LOGGER.debug('Getting provider of %s (%d search paths)', reference, len(self.paths))
         if reference not in self.provider:
             paths = [*self.paths, *reference.paths(self.paths)]
-            with conf.PATH.searchable:  # this also allows importing any modules placed in the config directories
-                while reference not in self.provider and paths:
-                    paths.pop().load()
+            while reference not in self.provider and paths:
+                paths.pop().load()
         return self.provider[reference]
 
 
