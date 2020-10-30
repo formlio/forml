@@ -18,8 +18,9 @@
 """
 Data casting operators.
 """
-from pandas.core import generic as pdtype
 import typing
+
+from pandas.core import generic as pdtype
 
 from forml.lib.flow.actor import wrapped, ndframe as ndfmod
 from forml.lib.flow.operator import simple
