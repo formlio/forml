@@ -70,7 +70,7 @@ class TestRunner(Section):
     def default() -> str:
         """Default values.
         """
-        return 'dask'
+        return 'bar'
 
 
 class TestRegistry(Section):
@@ -88,7 +88,7 @@ class TestRegistry(Section):
     def default() -> str:
         """Default values.
         """
-        return 'filesystem'
+        return 'bar'
 
 
 class TestFeed(Section):
@@ -106,7 +106,7 @@ class TestFeed(Section):
     def default() -> typing.Any:
         """Provider type.
         """
-        return 'presto'
+        return 'bar'
 
     def test_default(self, provider: typing.Type[provcfg.Section], default: str):
         """Default provider config test.
@@ -129,7 +129,7 @@ class TestSink(Section):
     def default() -> str:
         """Default values.
         """
-        return 'stdout'
+        return 'bar'
 
 
 class TestSinkMode:
@@ -139,9 +139,9 @@ class TestSinkMode:
         """Default modes parsing.
         """
         mode = provcfg.Sink.Mode.default
-        assert mode.train.reference == 'stdout'
-        assert mode.apply.reference == 'foo'
-        assert mode.eval.reference == 'stdout'
+        assert mode.train.reference == 'foo'
+        assert mode.apply.reference == 'bar'
+        assert mode.eval.reference == 'baz'
 
     def test_explicit(self):
         """Explicit modes parsing.

@@ -28,8 +28,6 @@ import types
 import typing
 from importlib import abc, machinery
 
-from forml.conf import system
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -138,6 +136,22 @@ def context(module: types.ModuleType) -> typing.Iterable[None]:
     unload()
 
 
+@contextlib.contextmanager
+def searched(*directories: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
+    """Context manager for putting given paths on python module search path but only for the duration of the context.
+
+    Args:
+        *directories: Paths to be inserted to sys.path when in the context.
+
+    Returns: Context manager.
+    """
+    original = list(sys.path)
+    for item in directories:
+        sys.path.insert(0, str(pathlib.Path(item).resolve()))
+    yield
+    sys.path = original
+
+
 def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> types.ModuleType:
     """Import module of given name either under path from isolated environment or virtual.
 
@@ -147,7 +161,7 @@ def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] =
 
     Returns: Imported module.
     """
-    with system.path(*([path] if path else [])):
+    with searched(*([path] if path else [])):
         if name in sys.modules:
             del sys.modules[name]
         importlib.invalidate_caches()

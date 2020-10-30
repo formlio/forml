@@ -16,8 +16,42 @@ foo = "baz"
 baz = "foo"
 
 
+
+
+[RUNNER]
+default = "bar"
+
+[RUNNER.bar]
+provider = "bar"
+
+
+[REGISTRY]
+default = "bar"
+
+[REGISTRY.bar]
+provider = "bar"
+
+
+[FEED]
+default = ["bar"]
+
+[FEED.bar]
+provider = "bar"
+priority = 100
+
+
 [SINK]
-apply = "foo"
+default = "bar"
+train = "foo"
+apply = "bar"
+eval = "baz"
+
 
 [SINK.foo]
 provider = "foo"
+
+[SINK.bar]
+provider = "bar"
+
+[SINK.baz]
+provider = "baz"

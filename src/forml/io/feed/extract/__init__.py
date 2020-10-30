@@ -141,7 +141,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._columns) as visitor:
             query.accept(visitor)
-            result = visitor.pop()
+            result = visitor.fetch()
         LOGGER.debug('Starting ETL read using: %s', result)
         return self.format(self.read(result, **self._kwargs))
 

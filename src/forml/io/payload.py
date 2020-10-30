@@ -25,8 +25,7 @@ Native = typing.TypeVar('Native')
 
 
 def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequence[typing.Iterator[typing.Any]]:
-    """Helper for transposing between row and column oriented matrices. The output columns are from performance reason
-    just lazy generators.
+    """Helper for transposing between row and column oriented matrices.
 
     Args:
         data: Input matrix.
@@ -34,14 +33,14 @@ def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequ
     Returns: Transposed output matrix.
     """
     def col(idx: int) -> typing.Iterator[typing.Any]:
-        """Create a generator for given column index.
+        """Create a vector for given column index.
 
         Args:
             idx: Index of column to be generated.
 
-        Returns: Generator for given column.
+        Returns: Vector for given column.
         """
-        return (data[r][idx] for r in range(nrows))
+        return [data[r][idx] for r in range(nrows)]
 
     if data:
         nrows = len(data)

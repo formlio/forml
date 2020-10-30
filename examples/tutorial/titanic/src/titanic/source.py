@@ -27,19 +27,18 @@ from forml.io import etl
 from forml.project import component
 from forml.lib.schema.kaggle import titanic as schema
 
-FEATURES = schema.Data.select(
-    schema.Data.PassengerId,
-    schema.Data.Pclass,
-    schema.Data.Name,
-    schema.Data.Sex,
-    schema.Data.Age,
-    schema.Data.SibSp,
-    schema.Data.Parch,
-    schema.Data.Ticket,
-    schema.Data.Fare,
-    schema.Data.Cabin,
-    schema.Data.Embarked
+FEATURES = schema.Passenger.select(
+    schema.Passenger.Pclass,
+    schema.Passenger.Name,
+    schema.Passenger.Sex,
+    schema.Passenger.Age,
+    schema.Passenger.SibSp,
+    schema.Passenger.Parch,
+    schema.Passenger.Ticket,
+    schema.Passenger.Fare,
+    schema.Passenger.Cabin,
+    schema.Passenger.Embarked
 )
 
-ETL = etl.Source.query(FEATURES, schema.Data.Survived)
+ETL = etl.Source.query(FEATURES, schema.Passenger.Survived)
 component.setup(ETL)

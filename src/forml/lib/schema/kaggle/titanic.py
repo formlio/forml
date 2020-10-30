@@ -22,7 +22,7 @@ from forml.io import etl
 from forml.io.dsl.schema import kind
 
 
-class Data(etl.Schema):
+class Passenger(etl.Schema):
     """Titanic: Machine Learning from Disaster.
 
     Variable Notes:

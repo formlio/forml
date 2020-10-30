@@ -100,7 +100,10 @@ class Train(Mode):
     """Development train mode.
     """
     description = 'trigger the development train mode'
-    launch = staticmethod(launchmod.Virtual.Builder.train)
+
+    @staticmethod
+    def launch(launcher: launchmod.Virtual.Builder, *args, **kwargs) -> typing.Any:
+        return launcher.train(*args, **kwargs)
 
 
 class Tune(Mode):
@@ -117,4 +120,7 @@ class Eval(Mode):
     """Development eval mode.
     """
     description = 'trigger the model evaluation mode'
-    launch = staticmethod(launchmod.Virtual.Builder.eval)
+
+    @staticmethod
+    def launch(launcher: launchmod.Virtual.Builder, *args, **kwargs) -> typing.Any:
+        return launcher.eval(*args, **kwargs)
