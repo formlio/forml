@@ -25,7 +25,7 @@ from sklearn import model_selection
 from forml.flow import task, pipeline
 from forml.flow.graph import node
 from forml.flow.pipeline import topology
-from forml.lib.flow.actor import frame
+from forml.lib.flow.actor import ndframe
 
 
 class Crossvalidated(topology.Operator, metaclass=abc.ABCMeta):
@@ -43,7 +43,7 @@ class Crossvalidated(topology.Operator, metaclass=abc.ABCMeta):
             """
 
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
-        self.splitter: task.Spec = frame.TrainTestSplit.spec(crossvalidator=crossvalidator)
+        self.splitter: task.Spec = ndframe.TrainTestSplit.spec(crossvalidator=crossvalidator)
 
     @property
     def nsplits(self) -> int:

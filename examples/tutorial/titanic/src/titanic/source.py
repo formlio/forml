@@ -24,8 +24,9 @@ the forml loader. In this case it is implemented as a python module but it could
 """
 
 from forml.io import etl
-from forml.project import component
+from forml.lib.flow.operator.folding import cast
 from forml.lib.schema.kaggle import titanic as schema
+from forml.project import component
 
 FEATURES = schema.Passenger.select(
     schema.Passenger.Pclass,
@@ -40,5 +41,5 @@ FEATURES = schema.Passenger.select(
     schema.Passenger.Embarked
 )
 
-ETL = etl.Source.query(FEATURES, schema.Passenger.Survived)
+ETL = etl.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe(FEATURES.schema)
 component.setup(ETL)

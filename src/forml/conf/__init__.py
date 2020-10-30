@@ -168,6 +168,10 @@ PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
 
 PARSER = Parser(DEFAULTS, *(p / APPCFG for p in PATH))
 
+for _path in (USRDIR, SYSDIR):
+    if _path not in sys.path:
+        sys.path.append(str(_path))
+
 
 def __getattr__(key: str):
     try:
