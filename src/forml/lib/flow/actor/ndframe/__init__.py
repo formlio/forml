@@ -21,6 +21,7 @@ Dataframe manipulation actors.
 The implementation is not enforcing any consistency (in terms of number of inputs or their shapes etc).
 """
 import functools
+import itertools
 import logging
 import typing
 
@@ -34,8 +35,30 @@ from forml.flow import task
 LOGGER = logging.getLogger(__name__)
 
 
-def ndframed(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
-                                      typing.Any]) -> typing.Callable[[task.Actor, typing.Any], typing.Any]:
+def cast(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None) -> pdtype.NDFrame:
+    """Conversion logic.
+
+    Args:
+        data: Argument to be converted.
+        columns: Optional column names.
+
+    Returns: Converted pandas object.
+    """
+    if isinstance(data, pdtype.NDFrame):
+        return data
+    if isinstance(data, numpy.ndarray):
+        return pandas.Series(data) if data.ndim == 1 else pandas.DataFrame(data, columns=columns)
+    if isinstance(data, (tuple, list)):
+        if data and not isinstance(data[0], (tuple, list)):
+            return pandas.Series(data)
+        return pandas.concat(
+            (pandas.Series(d, name=n) for d, n in itertools.zip_longest(data, columns or [])), axis='columns')
+    LOGGER.warning('Unknown NDFrame conversion strategy for %s: %.1024s', type(data), data)
+    return data
+
+
+def auto(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
+                                  typing.Any]) -> typing.Callable[[task.Actor, typing.Any], typing.Any]:
     """Decorator for converting input parameters and return value to pandas.
 
     Args:
@@ -43,21 +66,6 @@ def ndframed(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
 
     Returns: Decorated method.
     """
-    def convert(arg: typing.Any) -> pdtype.NDFrame:
-        """Conversion logic.
-
-        Args:
-            arg: Argument to be converted.
-
-        Returns: Converted pandas object.
-        """
-        if isinstance(arg, pdtype.NDFrame):
-            return arg
-        if isinstance(arg, numpy.ndarray):
-            return pandas.Series(arg) if arg.ndim == 1 else pandas.DataFrame(arg)
-        LOGGER.warning('Unknown NDFrame conversion strategy for %s: %.1024s', type(arg), arg)
-        return arg
-
     @functools.wraps(wrapped)
     def wrapper(self: task.Actor, *args: typing.Any) -> typing.Any:
         """Decorating wrapper.
@@ -68,7 +76,7 @@ def ndframed(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
 
         Returns: Original output.
         """
-        return wrapped(self, *(convert(a) for a in args))
+        return wrapped(self, *(cast(a) for a in args))
     return wrapper
 
 
@@ -90,7 +98,7 @@ class TrainTestSplit(task.Actor):
         """
         self._indices = tuple(self.crossvalidator.split(features, label))  # tuple it so it can be pickled
 
-    @ndframed
+    @auto
     def apply(self, source: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
 
@@ -127,7 +135,7 @@ class Concat(task.Actor):
     def __init__(self, axis: str = 'index'):
         self.axis: str = axis
 
-    @ndframed
+    @auto
     def apply(self, *source: pdtype.NDFrame) -> pandas.DataFrame:
         """Concat the individual objects into one dataframe.
 
@@ -145,7 +153,7 @@ class Apply(task.Actor):
     def __init__(self, function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame]):
         self.function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame] = function
 
-    @ndframed
+    @auto
     def apply(self, *source: pdtype.NDFrame) -> pdtype.NDFrame:  # pylint: disable=arguments-differ
         """Execute the provided method with the given sources.
 

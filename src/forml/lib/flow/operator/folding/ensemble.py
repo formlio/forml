@@ -28,7 +28,7 @@ from sklearn import model_selection
 from forml.flow import pipeline
 from forml.flow.graph import node
 from forml.flow.pipeline import topology
-from forml.lib.flow.actor import frame
+from forml.lib.flow.actor import ndframe
 from forml.lib.flow.operator import folding
 
 
@@ -88,11 +88,11 @@ class FullStacker(folding.Crossvalidated):
 
         Returns: Builder instance.
         """
-        trained: node.Worker = node.Worker(frame.Concat.spec(axis='columns'), len(self.bases), 1)
+        trained: node.Worker = node.Worker(ndframe.Concat.spec(axis='columns'), len(self.bases), 1)
         applied: node.Worker = trained.fork()
-        stack_forks: typing.Iterable[node.Worker] = node.Worker.fgen(frame.Concat.spec(axis='index'), self.nsplits, 1)
+        stack_forks: typing.Iterable[node.Worker] = node.Worker.fgen(ndframe.Concat.spec(axis='index'), self.nsplits, 1)
         merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(
-            frame.Apply.spec(function=self._merge), self.nsplits, 1)
+            ndframe.Apply.spec(function=self._merge), self.nsplits, 1)
         stackers: typing.Dict[topology.Composable, node.Worker] = dict()
         mergers: typing.Dict[topology.Composable, node.Worker] = dict()
         for index, (base, stack, merge) in enumerate(zip(self.bases, stack_forks, merge_forks)):

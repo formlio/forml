@@ -24,7 +24,7 @@ import typing
 import pandas
 
 from forml.flow import task
-from forml.lib.flow.actor import frame
+from forml.lib.flow.actor import ndframe
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class ColumnExtractor(task.Actor):
     def __init__(self, column: str = 'label'):
         self.column: str = column
 
-    @frame.ndframed
+    @ndframe.auto
     def apply(self, features: pandas.DataFrame) -> typing.Tuple[  # pylint: disable=arguments-differ
             pandas.DataFrame, pandas.Series]:
         """Transforming the input feature set into two outputs separating the label column into the second one.
@@ -78,7 +78,7 @@ class ColumnInserter(task.Actor):
         """
         self._label = label
 
-    @frame.ndframed
+    @ndframe.auto
     def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
 

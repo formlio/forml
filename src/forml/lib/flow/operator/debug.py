@@ -23,12 +23,11 @@ import os
 import secrets
 import typing
 
-import pandas
-
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
-from forml.lib.flow.actor import label as labelmod, frame
+from forml.lib.flow.actor import ndframe
+from forml.lib.flow.actor.ndframe import label as labelmod
 
 
 class Return(topology.Operator):
@@ -77,8 +76,7 @@ class Dumper(task.Actor, metaclass=abc.ABCMeta):  # pylint: disable=abstract-met
 class ApplyDumper(Dumper):
     """Pass-through transformer that dumps the input datasets during apply phase to CSV files.
     """
-    @frame.ndframed
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
+    def apply(self, features: typing.Any) -> typing.Any:  # pylint: disable=arguments-differ
         """Dump the features.
 
         Args:
@@ -86,7 +84,7 @@ class ApplyDumper(Dumper):
 
         Returns: Original unchanged frames.
         """
-        features.to_csv(self.path, index=False)
+        ndframe.cast(features).to_csv(self.path, index=False)
         return features
 
 
@@ -98,7 +96,7 @@ class TrainDumper(Dumper):
         super().__init__(path)
         self.label: str = label
 
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
+    def apply(self, features: typing.Any) -> typing.Any:  # pylint: disable=arguments-differ
         """No-op transformation.
 
         Args:
@@ -108,13 +106,15 @@ class TrainDumper(Dumper):
         """
         return features
 
-    def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
+    def train(self, features: typing.Any, label: typing.Any) -> None:
         """Dump the features along with labels.
 
         Args:
             features: X table.
             label: Y series.
         """
+        features = ndframe.cast(features)
+        label = ndframe.cast(label)
         features.set_index(label.rename(self.label)).reset_index().to_csv(self.path, index=False)
 
     def get_state(self) -> bytes:
