@@ -20,8 +20,7 @@ Conversion functions.
 """
 import operator
 
-from forml.io.dsl.schema import kind as kindmod
-from forml.io.dsl.schema import series
+from forml.io.dsl.struct import series, kind as kindmod
 
 
 class Cast(series.Expression):

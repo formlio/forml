@@ -24,7 +24,7 @@ import pytest
 
 from forml.flow import pipeline
 from forml.flow import task
-from forml.flow.graph import node, view
+from forml.flow.graph import node
 from forml.flow.pipeline import topology
 
 
@@ -43,7 +43,7 @@ def operator(spec: task.Spec) -> topology.Operator:
             applier = trainer.fork()
             extractor = node.Worker(spec, 1, 1)
             trainer.train(track.train.publisher, extractor[0])
-            return track.use(label=track.train.extend(view.Path(extractor))).extend(view.Path(applier))
+            return track.use(label=track.train.extend(extractor)).extend(applier)
 
     return Operator()
 
@@ -60,6 +60,6 @@ def origin(spec: task.Spec) -> topology.Operator:
             """
             trainer = node.Worker(spec, 1, 1)
             applier = trainer.fork()
-            return pipeline.Segment(view.Path(applier), view.Path(trainer))
+            return pipeline.Segment(applier, trainer)
 
     return Operator()

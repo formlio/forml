@@ -27,7 +27,7 @@ from sklearn import ensemble as estimator
 from sklearn import linear_model
 
 from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator import simple
+from forml.lib.flow.operator.generic import simple
 
 # Defining a forml operator by wrapping the standard sklearn classifier
 RFC = simple.Consumer.operator(wrapped.Class.actor(

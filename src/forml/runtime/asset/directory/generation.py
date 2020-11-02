@@ -26,7 +26,7 @@ import types
 import typing
 import uuid
 
-from forml.io.dsl.schema import kind
+from forml.io.dsl.struct import kind
 from forml.runtime.asset import directory, persistent
 
 if typing.TYPE_CHECKING:

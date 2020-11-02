@@ -18,11 +18,11 @@
 """
 Kaggle's Titanic dataset schema.
 """
-from forml.io import etl
-from forml.io.dsl.schema import kind
+from forml.io.dsl import struct
+from forml.io.dsl.struct import kind
 
 
-class Passenger(etl.Schema):
+class Passenger(struct.Schema):
     """Titanic: Machine Learning from Disaster.
 
     Variable Notes:
@@ -43,15 +43,15 @@ class Passenger(etl.Schema):
 
             Some children travelled only with a nanny, therefore parch=0 for them.
     """
-    PassengerId = etl.Field(kind.Integer())  # Passenger ID
-    Survived = etl.Field(kind.Integer())  # Survival (0 = No, 1 = Yes)
-    Pclass = etl.Field(kind.Integer())  # Ticket class (1 = 1st, 2 = 2nd, 3 = 3rd)
-    Name = etl.Field(kind.String())  # Passenger name
-    Sex = etl.Field(kind.String())  # Sex
-    Age = etl.Field(kind.Integer())  # Age in years
-    SibSp = etl.Field(kind.Integer())  # # of siblings / spouses aboard the Titanic
-    Parch = etl.Field(kind.Integer())  # # of parents / children aboard the Titanic
-    Ticket = etl.Field(kind.Integer())  # Ticket number
-    Fare = etl.Field(kind.Float())  # Passenger fare
-    Cabin = etl.Field(kind.String())  # Cabin number
-    Embarked = etl.Field(kind.String())  # Port of Embarkation (C = Cherbourg, Q = Queenstown, S = Southampton)
+    PassengerId = struct.Field(kind.Integer())  # Passenger ID
+    Survived = struct.Field(kind.Integer())  # Survival (0 = No, 1 = Yes)
+    Pclass = struct.Field(kind.Integer())  # Ticket class (1 = 1st, 2 = 2nd, 3 = 3rd)
+    Name = struct.Field(kind.String())  # Passenger name
+    Sex = struct.Field(kind.String())  # Sex
+    Age = struct.Field(kind.Integer())  # Age in years
+    SibSp = struct.Field(kind.Integer())  # # of siblings / spouses aboard the Titanic
+    Parch = struct.Field(kind.Integer())  # # of parents / children aboard the Titanic
+    Ticket = struct.Field(kind.Integer())  # Ticket number
+    Fare = struct.Field(kind.Float())  # Passenger fare
+    Cabin = struct.Field(kind.String())  # Cabin number
+    Embarked = struct.Field(kind.String())  # Port of Embarkation (C = Cherbourg, Q = Queenstown, S = Southampton)

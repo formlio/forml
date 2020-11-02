@@ -21,27 +21,28 @@ Runtime layer.
 import abc
 import typing
 
-from forml import io
 from forml import provider as provmod, error
 from forml.conf.parsed import provider as provcfg
 from forml.flow import pipeline
 from forml.io import feed as feedmod, sink as sinkmod
-from forml.io.dsl.schema import frame, kind
-from forml.project import distribution
+from forml.io.dsl.struct import frame, kind
 from forml.runtime import code
 from forml.runtime.asset import persistent, access, directory
 from forml.runtime.asset.directory import root
 from forml.runtime.code import compiler
 
+if typing.TYPE_CHECKING:
+    from forml.project import distribution
+
 
 class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Runner.path):
     """Abstract base runner class to be extended by particular runner implementations.
     """
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None,
-                 sink: typing.Optional['io.Sink'] = None, **_):
+    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['feedmod.Provider'] = None,
+                 sink: typing.Optional['sinkmod.Provider'] = None, **_):
         self._assets: access.Assets = assets or access.Assets()
-        self._feed: io.Feed = feed or io.Feed()
-        self._sink: typing.Optional[io.Sink] = sink
+        self._feed: feedmod.Provider = feed or feedmod.Provider()
+        self._sink: typing.Optional[sinkmod.Provider] = sink
 
     def train(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
         """Run the training code.
@@ -178,7 +179,7 @@ class Platform:
             """
             raise NotImplementedError()
 
-        def __call__(self, query: frame.Query, sink: io.Sink) -> Runner:
+        def __call__(self, query: 'frame.Query', sink: 'sinkmod.Provider') -> Runner:
             return Runner[self._provider.reference](self._assets, self._feeds.match(query), sink,
                                                     **self._provider.params)
 
@@ -232,10 +233,10 @@ class Platform:
     class Feeds:
         """Feed pool and util handle.
         """
-        def __init__(self, *configs: typing.Union[provcfg.Feed, io.Feed]):
+        def __init__(self, *configs: typing.Union[provcfg.Feed, 'feedmod.Provider']):
             self._pool: feedmod.Pool = feedmod.Pool(*configs)
 
-        def match(self, query: frame.Query) -> io.Feed:
+        def match(self, query: 'frame.Query') -> 'feedmod.Provider':
             """Select the feed that can provide for given query.
 
             Args:
@@ -254,8 +255,8 @@ class Platform:
 
     def __init__(self, runner: typing.Optional[provcfg.Runner] = None,
                  registry: typing.Optional[typing.Union[provcfg.Registry, persistent.Registry]] = None,
-                 feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
-                 sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, io.Sink]] = None):
+                 feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = None,
+                 sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, sinkmod.Provider]] = None):
         self._runner: provcfg.Runner = runner or provcfg.Runner.default
         self._registry: Platform.Registry = self.Registry(registry or provcfg.Registry.default)
         self._feeds: Platform.Feeds = self.Feeds(*(feeds or provcfg.Feed.default))

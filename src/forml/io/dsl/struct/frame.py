@@ -28,9 +28,8 @@ import random
 import string
 import typing
 
-from forml.io import etl
-from forml.io.dsl import error
-from forml.io.dsl.schema import series, visit
+from forml.io.dsl import error, struct
+from forml.io.dsl.struct import series, visit
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,13 +69,13 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
     @property
     @functools.lru_cache()
-    def schema(self) -> typing.Type['etl.Schema']:
+    def schema(self) -> typing.Type['struct.Schema']:
         """Get the schema type for this source.
 
         Returns: Schema type.
         """
-        return Table.Schema(f'{self.__class__.__name__}Schema', (etl.Schema.schema, ), {
-            (c.name or f'_{i}'): etl.Field(c.kind, c.name) for i, c in enumerate(self.columns)})
+        return Table.Schema(f'{self.__class__.__name__}Schema', (struct.Schema.schema, ), {
+            (c.name or f'_{i}'): struct.Field(c.kind, c.name) for i, c in enumerate(self.columns)})
 
     def __getattr__(self, name: str) -> 'series.Column':
         try:
@@ -295,7 +294,7 @@ class Reference(Origin):
         return tuple(series.Element(self, c.name) for c in self.instance.columns)
 
     @property
-    def schema(self) -> typing.Type['etl.Schema']:
+    def schema(self) -> typing.Type['struct.Schema']:
         return self.instance.schema
 
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
@@ -321,7 +320,7 @@ class Table(Origin):
         def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any]):
             existing = {s[k].name or k for s in bases if isinstance(s, Table.Schema) for k in s}
             for key, field in namespace.items():
-                if not isinstance(field, etl.Field):
+                if not isinstance(field, struct.Field):
                     continue
                 new = field.name or key
                 if new in existing:
@@ -335,7 +334,7 @@ class Table(Origin):
             # pylint: disable=not-an-iterable
             return functools.reduce(operator.xor, (hash(getattr(cls, k)) for k in cls), 0)
 
-        def __eq__(cls, other: typing.Type['etl.Schema']):
+        def __eq__(cls, other: typing.Type['struct.Schema']):
             return len(cls) == len(other) and all(getattr(cls, c) == getattr(other, o) for c, o in zip(cls, other))
 
         def __len__(cls):
@@ -345,7 +344,7 @@ class Table(Origin):
             return f'{cls.__module__}:{cls.__qualname__}'
 
         @functools.lru_cache()
-        def __getitem__(cls, name: str) -> 'etl.Field':
+        def __getitem__(cls, name: str) -> 'struct.Field':
             for key in cls:  # pylint: disable=not-an-iterable
                 field = getattr(cls, key)
                 if name in {key, field.name}:
@@ -354,11 +353,12 @@ class Table(Origin):
 
         def __iter__(cls) -> typing.Iterator[str]:
             return iter(k for c in reversed(inspect.getmro(cls))
-                        for k, f in c.__dict__.items() if isinstance(f, etl.Field))
+                        for k, f in c.__dict__.items() if isinstance(f, struct.Field))
 
-    schema: typing.Type['etl.Schema'] = property(operator.itemgetter(0))
+    schema: typing.Type['struct.Schema'] = property(operator.itemgetter(0))
 
-    def __new__(mcs, schema: typing.Union[str, typing.Type['etl.Schema']],  # pylint: disable=bad-classmethod-argument
+    def __new__(mcs,  # pylint: disable=bad-classmethod-argument
+                schema: typing.Union[str, typing.Type['struct.Schema']],
                 bases: typing.Optional[typing.Tuple[typing.Type]] = None,
                 namespace: typing.Optional[typing.Dict[str, typing.Any]] = None):
         if isinstance(schema, str):  # used as metaclass

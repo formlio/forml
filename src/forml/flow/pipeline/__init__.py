@@ -29,14 +29,27 @@ from forml.flow.graph import view, clean, node as nodemod
 class Segment(collections.namedtuple('Segment', 'apply, train, label')):
     """Structure for holding related flow parts of different modes.
     """
-    def __new__(cls, apply: typing.Optional[view.Path] = None, train: typing.Optional[view.Path] = None,
-                label: typing.Optional[view.Path] = None):
-        return super().__new__(cls, apply or view.Path(nodemod.Future()), train or view.Path(nodemod.Future()),
-                               label or view.Path(nodemod.Future()))
+    def __new__(cls, apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+                train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+                label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None):
+        def init(mode: typing.Optional[typing.Union[view.Path, nodemod.Atomic]]) -> view.Path:
+            """Apply default cleaning to the mode segment.
 
-    def extend(self, apply: typing.Optional[view.Path] = None,
-               train: typing.Optional[view.Path] = None,
-               label: typing.Optional[view.Path] = None) -> 'Segment':
+            Args:
+                mode: Mode segment provided either as a path or just a node.
+
+            Returns: Cleaned mode path.
+            """
+            if not mode:
+                mode = nodemod.Future()
+            if isinstance(mode, nodemod.Atomic):
+                mode = view.Path(mode)
+            return mode
+        return super().__new__(cls, init(apply), init(train), init(label))
+
+    def extend(self, apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+               train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+               label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None) -> 'Segment':
         """Helper for creating new Track with specified paths extended by provided values.
 
         Args:
@@ -50,9 +63,9 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
                               self.train.extend(train) if train else self.train,
                               self.label.extend(label) if label else self.label)
 
-    def use(self, apply: typing.Optional[view.Path] = None,
-            train: typing.Optional[view.Path] = None,
-            label: typing.Optional[view.Path] = None) -> 'Segment':
+    def use(self, apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+            train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+            label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None) -> 'Segment':
         """Helper for creating new Track with specified paths replaced by provided values.
 
         Args:

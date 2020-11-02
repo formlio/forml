@@ -22,10 +22,9 @@ import abc
 import logging
 import typing
 
-from forml import io
-from forml.io import payload
+from forml.io import payload, feed
 from forml.io.dsl.parser import code
-from forml.io.dsl.schema import series, frame
+from forml.io.dsl.struct import series, frame
 from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)
@@ -74,7 +73,7 @@ class Set(typing.NamedTuple):
         return source.read(columns, predicate)
 
 
-class Feed(io.Feed[code.Tabulizer, code.Columnizer]):
+class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
     """Abstract file based feed.
     """
     class Reader(extract.Reader[code.Tabulizer, code.Columnizer, code.Table], metaclass=abc.ABCMeta):

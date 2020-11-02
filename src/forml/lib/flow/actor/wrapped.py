@@ -52,15 +52,16 @@ class Wrapping(metaclass=abc.ABCMeta):
         Returns: True if the wrapped actor is stateful (has a train method).
         """
 
-    def spec(self, **params) -> task.Spec:
+    def spec(self, *args, **kwargs) -> task.Spec:
         """Shortcut for creating a spec of this actor.
 
         Args:
-            **params: Params to be used for the spec.
+            *args: Args to be used for the spec.
+            **kwargs: Keywords to be used for the spec.
 
         Returns: Actor spec instance.
         """
-        return task.Spec(self, **params)
+        return task.Spec(self, *args, **kwargs)
 
 
 class Mapping(Wrapping):
@@ -106,7 +107,7 @@ class Class(Mapping):
         return task.name(self._actor)
 
     @staticmethod
-    def actor(cls: typing.Optional[typing.Type] = None,  # pylint: disable=bad-staticmethod-argument
+    def actor(cls: typing.Optional[typing.Type] = None, /,  # pylint: disable=bad-staticmethod-argument
               **mapping: str) -> typing.Type[task.Actor]:
         """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
         optionally with mapping of Actor methods to decorated user class implementation.
@@ -192,6 +193,8 @@ class Function(Wrapping):
                 self._kwargs = kwargs
 
     def __init__(self, function: typing.Callable[[typing.Any], typing.Any], **params: typing.Any):
+        if not inspect.isfunction(function):
+            raise ValueError(f'Invalid actor function {function}')
         super().__init__(function, params)
 
     def __call__(self, *args, **kwargs) -> 'Function.Actor':
@@ -205,7 +208,7 @@ class Function(Wrapping):
         return False
 
     @staticmethod
-    def actor(function: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+    def actor(function: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None, /,
               **params: typing.Any) -> typing.Type[task.Actor]:
         """Decorator for turning an user function to a valid actor. This can be used either as parameterless decorator
         or optionally with addition kwargs that will be passed to the function.
@@ -220,8 +223,6 @@ class Function(Wrapping):
         def decorator(function) -> typing.Type[task.Actor]:
             """Decorating function.
             """
-            if not inspect.isfunction(function):
-                raise ValueError(f'Invalid actor function {function}')
             return Function(function, **params)
 
         if function:

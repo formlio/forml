@@ -23,13 +23,11 @@ ETL unit tests.
 import abc
 import typing
 
-import pytest
 import cloudpickle
+import pytest
 
-from forml.io import etl
-from forml.io.dsl import function, error
-from forml.io.dsl.schema import kind
-from forml.io.dsl.schema import series, frame
+from forml.io.dsl import function, error, struct
+from forml.io.dsl.struct import series, frame, kind
 
 
 class Source(metaclass=abc.ABCMeta):
@@ -68,7 +66,7 @@ class Source(metaclass=abc.ABCMeta):
     def test_schema(self, source: frame.Source):
         """Test the reported schema.
         """
-        assert issubclass(source.schema, etl.Schema)
+        assert issubclass(source.schema, struct.Schema)
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
@@ -203,29 +201,29 @@ class TestSchema:
     """
     @staticmethod
     @pytest.fixture(scope='session')
-    def schema(student: frame.Table) -> typing.Type['etl.Schema']:
+    def schema(student: frame.Table) -> typing.Type['struct.Schema']:
         """Schema fixture.
         """
         return student.schema
 
-    def test_identity(self, schema: typing.Type['etl.Schema'], student: frame.Table):
+    def test_identity(self, schema: typing.Type['struct.Schema'], student: frame.Table):
         """Schema identity tests.
         """
         other = student.query.schema
         assert schema is not other
         assert len({schema, other}) == 1
 
-    def test_colliding(self, schema: typing.Type['etl.Schema']):
+    def test_colliding(self, schema: typing.Type['struct.Schema']):
         """Test schema with colliding field names.
         """
         with pytest.raises(error.Syntax):
             class Colliding(schema):
                 """Schema with colliding field names.
                 """
-                birthday = etl.Field(kind.Integer())
+                birthday = struct.Field(kind.Integer())
             _ = Colliding
 
-    def test_access(self, schema: typing.Type['etl.Schema']):
+    def test_access(self, schema: typing.Type['struct.Schema']):
         """Test the schema access methods.
         """
         assert tuple(schema) == ('surname', 'dob', 'level', 'score', 'school')

@@ -22,30 +22,29 @@ import logging
 import typing
 import uuid
 
-from forml import io
 from forml.conf.parsed import provider as provcfg
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology
-from forml.io import etl, payload
-from forml.io.dsl import parser
-from forml.io.dsl.schema import series, frame, kind
+from forml.io import etl, payload, feed
+from forml.io.dsl import parser, struct
+from forml.io.dsl.struct import series, frame, kind
 from forml.runtime import launcher
 from forml.testing import spec
 
 LOGGER = logging.getLogger(__name__)
 
 
-class DataSet(etl.Schema):
+class DataSet(struct.Schema):
     """Testing schema.
 
     The actual fields are irrelevant.
     """
-    feature: etl.Field = etl.Field(kind.Integer())
-    label: etl.Field = etl.Field(kind.Float())
+    feature: struct.Field = struct.Field(kind.Integer())
+    label: struct.Field = struct.Field(kind.Float())
 
 
-class Feed(io.Feed, alias='testing'):
+class Feed(feed.Provider, alias='testing'):
     """Special feed to input the test cases.
     """
     def __init__(self, scenario: spec.Scenario.Input, **kwargs):

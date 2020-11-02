@@ -26,7 +26,7 @@ from forml import error
 from forml.io import etl
 from forml.flow.pipeline import topology
 from forml.project import product, distribution, importer
-from forml.lib.flow.operator import simple
+from forml.lib.flow.operator.generic import simple
 
 
 class TestBuilder:

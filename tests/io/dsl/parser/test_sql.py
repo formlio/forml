@@ -28,7 +28,7 @@ import pytest
 
 from forml.io.dsl import function
 from forml.io.dsl.parser import sql
-from forml.io.dsl.schema import series, frame, kind
+from forml.io.dsl.struct import series, frame, kind
 
 
 class Parser(metaclass=abc.ABCMeta):

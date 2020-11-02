@@ -20,9 +20,19 @@ Flow segment unit tests.
 """
 # pylint: disable=no-self-use
 import pytest
+from forml.flow.graph import view, node
 
 from forml.flow import pipeline, error
 from forml.flow.pipeline import topology
+
+
+class TestSegment:
+    """Segment unit tests.
+    """
+    def test_new(self):
+        """Test segment setup.
+        """
+        assert all(isinstance(m, view.Path) for m in pipeline.Segment(view.Path(node.Future()), node.Future(), None))
 
 
 class TestComposition:

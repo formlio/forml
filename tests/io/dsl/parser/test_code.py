@@ -28,7 +28,7 @@ import pytest
 
 from forml.io.dsl.parser import code
 from forml.io.dsl.parser.code import Columnizer
-from forml.io.dsl.schema import series as sermod, frame as framod, kind as kindmod
+from forml.io.dsl.struct import series as sermod, frame as framod, kind as kindmod
 from . import TupleParser
 
 

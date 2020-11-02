@@ -23,34 +23,11 @@ import typing
 
 from forml import error
 from forml.flow.pipeline import topology
-from forml.io.dsl.schema import series, frame, kind as kindmod
+from forml.io.dsl.struct import series, frame
 from forml.project import product
 
 
-class Field(typing.NamedTuple):
-    """Schema field class.
-    """
-    kind: kindmod.Any
-    name: typing.Optional[str] = None
-
-    def renamed(self, name: typing.Optional[str]) -> 'Field':
-        """Return copy of the field with the new name.
-
-        Args:
-            name: New name to be used.
-
-        Returns: New Field instance.
-        """
-        return self if name == self.name else Field(self.kind, name)
-
-
-class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
-    """Base class for table schema definitions. Note the meta class is actually going to turn it into an instance
-    of frame.Table.
-    """
-
-
-class Source(typing.NamedTuple):
+class Source(typing.NamedTuple):  # TODO: move to component
     """Feed independent data provider description.
     """
     extract: 'Source.Extract'

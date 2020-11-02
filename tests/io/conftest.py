@@ -24,10 +24,9 @@ import typing
 
 import pytest
 
-from forml import io
-from forml.io import etl
-from forml.io.dsl import function, parser
-from forml.io.dsl.schema import frame, kind
+from forml.io import feed as feedmod, sink as sinkmod
+from forml.io.dsl import function, parser, struct
+from forml.io.dsl.struct import frame, kind
 
 
 @pytest.fixture(scope='session')
@@ -35,11 +34,11 @@ def person() -> frame.Table:
     """Base table fixture.
     """
 
-    class Person(etl.Schema):
+    class Person(struct.Schema):
         """Base table.
         """
-        surname = etl.Field(kind.String())
-        dob = etl.Field(kind.Date(), 'birthday')
+        surname = struct.Field(kind.String())
+        dob = struct.Field(kind.Date(), 'birthday')
 
     return Person
 
@@ -52,9 +51,9 @@ def student(person: frame.Table) -> frame.Table:
     class Student(person):
         """Extended table.
         """
-        level = etl.Field(kind.Integer())
-        score = etl.Field(kind.Float())
-        school = etl.Field(kind.Integer())
+        level = struct.Field(kind.Integer())
+        score = struct.Field(kind.Float())
+        school = struct.Field(kind.Integer())
 
     return Student
 
@@ -64,11 +63,11 @@ def school() -> frame.Table:
     """School table fixture.
     """
 
-    class School(etl.Schema):
+    class School(struct.Schema):
         """School table.
         """
-        sid = etl.Field(kind.Integer(), 'id')
-        name = etl.Field(kind.String())
+        sid = struct.Field(kind.Integer(), 'id')
+        name = struct.Field(kind.String())
 
     return School
 
@@ -99,10 +98,10 @@ def reference() -> str:
 
 @pytest.fixture(scope='session')
 def feed(reference: str,  # pylint: disable=unused-argument
-         person: frame.Table, student: frame.Table, school: frame.Table) -> typing.Type[io.Feed]:
+         person: frame.Table, student: frame.Table, school: frame.Table) -> typing.Type[feedmod.Provider]:
     """Dummy feed fixture.
     """
-    class Dummy(io.Feed, alias=reference):
+    class Dummy(feedmod.Provider, alias=reference):
         """Dummy feed for unit-testing purposes.
         """
 
@@ -124,10 +123,10 @@ def feed(reference: str,  # pylint: disable=unused-argument
 
 
 @pytest.fixture(scope='session')
-def sink(reference: str) -> typing.Type[io.Sink]:  # pylint: disable=unused-argument
+def sink(reference: str) -> typing.Type[sinkmod.Provider]:  # pylint: disable=unused-argument
     """Dummy sink fixture.
     """
-    class Dummy(io.Sink, alias=reference):
+    class Dummy(sinkmod.Provider, alias=reference):
         """Dummy sink for unit-testing purposes.
         """
 

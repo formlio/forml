@@ -20,10 +20,10 @@ Schema visitor APIs.
 import abc
 import typing
 
-from forml.io.dsl.schema import series
+from forml.io.dsl.struct import series
 
 if typing.TYPE_CHECKING:
-    from forml.io.dsl.schema import frame
+    from forml.io.dsl.struct import frame
 
 
 class Columnar(metaclass=abc.ABCMeta):

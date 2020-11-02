@@ -14,3 +14,31 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+"""
+Simple operator unit tests.
+"""
+# pylint: disable=no-self-use
+import typing
+
+import pytest
+
+from forml.flow import task
+from forml.flow.pipeline import topology
+from forml.lib.flow.operator.generic import simple
+
+
+class TestMapper:
+    """Simple mapper unit tests.
+    """
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def operator(actor: typing.Type[task.Actor]):
+        """Operator fixture.
+        """
+        return simple.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
+
+    def test_compose(self, operator: topology.Operator):
+        """Operator composition test.
+        """
+        operator.compose(topology.Origin())

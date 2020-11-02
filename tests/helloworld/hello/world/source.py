@@ -18,16 +18,16 @@
 """
 Dummy project source.
 """
-from forml.io.dsl.schema import kind
-
 from forml.io import etl
+from forml.io.dsl import struct
+from forml.io.dsl.struct import kind
 from forml.project import component
 
 
-class HelloWorld(etl.Schema):
+class HelloWorld(struct.Schema):
     """Base table.
     """
-    name = etl.Field(kind.String())
+    name = struct.Field(kind.String())
 
 
 INSTANCE = etl.Source.query(HelloWorld.select(HelloWorld.name))

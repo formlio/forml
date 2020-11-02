@@ -26,11 +26,9 @@ import typing
 import dask
 
 from forml import runtime
+from forml.io import feed as feedmod, sink as sinkmod
 from forml.runtime import code
 from forml.runtime.asset import access
-
-if typing.TYPE_CHECKING:
-    from forml import io
 
 LOGGER = logging.getLogger(__name__)
 
@@ -86,12 +84,12 @@ class Runner(runtime.Runner, alias='dask'):
 
     SCHEDULER = 'multiprocessing'
 
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None,
-                 sink: typing.Optional['io.Sink'] = None, scheduler: typing.Optional[str] = None):
+    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional[feedmod.Provider] = None,
+                 sink: typing.Optional[sinkmod.Provider] = None, scheduler: typing.Optional[str] = None):
         super().__init__(assets, feed, sink)
         self._scheduler: str = scheduler or self.SCHEDULER
 
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> typing.Any:
+    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:
@@ -99,4 +97,4 @@ class Runner(runtime.Runner, alias='dask'):
         """
         dag = self.Dag(symbols)
         LOGGER.debug('Dask DAG: %s', dag)
-        return importlib.import_module(f'{dask.__name__}.{self._scheduler}').get(dag, dag.output)
+        importlib.import_module(f'{dask.__name__}.{self._scheduler}').get(dag, dag.output)

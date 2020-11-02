@@ -23,13 +23,16 @@ import typing
 from pandas.core import generic as pdtype
 
 from forml.lib.flow.actor import wrapped, ndframe as ndfmod
-from forml.lib.flow.operator import simple
+from forml.lib.flow.operator import generic
 
 
-@simple.Mapper.operator
+@generic.Adapter.apply
+@generic.Adapter.train
+@generic.Adapter.label
 @wrapped.Function.actor
 def ndframe(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None) -> pdtype.NDFrame:
-    """Simple operator that attempts to convert the data to pandas dataframe/series.
+    """Simple 1:1 operator that attempts to convert the data on each of apply/train/label path to pandas
+    dataframe/series.
 
     Args:
         data: Input data.

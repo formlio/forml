@@ -19,7 +19,7 @@
 Dummy project pipeline.
 """
 from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator import simple
+from forml.lib.flow.operator.generic import simple
 from forml.project import component
 
 

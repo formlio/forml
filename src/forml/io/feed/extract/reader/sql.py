@@ -25,7 +25,7 @@ import typing
 
 from forml.io import payload
 from forml.io.dsl.parser import sql as sqlmod
-from forml.io.dsl.schema import series, frame
+from forml.io.dsl.struct import series, frame
 from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)

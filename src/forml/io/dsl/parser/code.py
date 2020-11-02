@@ -25,7 +25,7 @@ import operator
 import typing
 
 from forml.io.dsl import parser as parsmod
-from forml.io.dsl.schema import frame as framod, series as sermod, kind as kindmod
+from forml.io.dsl.struct import frame as framod, series as sermod, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 

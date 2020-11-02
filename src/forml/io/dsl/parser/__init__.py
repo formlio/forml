@@ -26,7 +26,7 @@ import types
 import typing
 
 from forml.io.dsl import error
-from forml.io.dsl.schema import series as sermod, frame, visit, kind as kindmod
+from forml.io.dsl.struct import series as sermod, frame, visit, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 

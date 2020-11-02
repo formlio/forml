@@ -16,19 +16,28 @@
 # under the License.
 
 """
-Dummy project evaluation.
+Struct tests.
 """
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
-from forml.project import component
+# pylint: disable=no-self-use
+import cloudpickle
+
+from forml.io.dsl.struct import frame
 
 
-@simple.Mapper.operator
-@wrapped.Function.actor
-def evaluate():
-    """Dummy evaluator.
+class TestField:
+    """Field unit tests.
     """
+    def test_renamed(self, student: frame.Table):
+        """Test the field renaming.
+        """
+        assert student.schema.dob.renamed('foo').name == 'foo'
 
 
-INSTANCE = evaluate()
-component.setup(INSTANCE)
+class TestSchema:
+    """Schema unit tests.
+    """
+    def test_serilizable(self, student: frame.Table):
+        """Test schema serializability.
+        """
+        assert cloudpickle.loads(cloudpickle.dumps(student.schema)) == student.schema
+        assert cloudpickle.loads(cloudpickle.dumps(student)) == student

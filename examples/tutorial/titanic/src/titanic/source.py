@@ -24,7 +24,7 @@ the forml loader. In this case it is implemented as a python module but it could
 """
 
 from forml.io import etl
-from forml.lib.flow.operator.folding import cast
+from forml.lib.flow.operator import cast
 from forml.lib.schema.kaggle import titanic as schema
 from forml.project import component
 

@@ -14,31 +14,33 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+"""
+DSL structures.
+"""
 
-"""
-Simple operator unit tests.
-"""
-# pylint: disable=no-self-use
 import typing
 
-import pytest
-
-from forml.flow import task
-from forml.flow.pipeline import topology
-from forml.lib.flow.operator import simple
+from forml.io.dsl.struct import frame, kind as kindmod
 
 
-class TestMapper:
-    """Simple mapper unit tests.
+class Field(typing.NamedTuple):
+    """Schema field class.
     """
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def operator(actor: typing.Type[task.Actor]):
-        """Operator fixture.
-        """
-        return simple.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
+    kind: kindmod.Any
+    name: typing.Optional[str] = None
 
-    def test_compose(self, operator: topology.Operator):
-        """Operator composition test.
+    def renamed(self, name: typing.Optional[str]) -> 'Field':
+        """Return copy of the field with the new name.
+
+        Args:
+            name: New name to be used.
+
+        Returns: New Field instance.
         """
-        operator.compose(topology.Origin())
+        return self if name == self.name else Field(self.kind, name)
+
+
+class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
+    """Base class for table schema definitions. Note the meta class is actually going to turn it into an instance
+    of frame.Table.
+    """
