@@ -203,7 +203,8 @@ class Path(tuple):
         Traversal(self._head).each(self._tail, visitor.visit_node)
         visitor.visit_path(self)
 
-    def extend(self, right: typing.Optional['Path'] = None, tail: typing.Optional[grnode.Atomic] = None) -> 'Path':
+    def extend(self, right: typing.Optional[typing.Union['Path', grnode.Atomic]] = None,
+               tail: typing.Optional[grnode.Atomic] = None) -> 'Path':
         """Create new path by appending right head to our tail or retracing this path up to its physical or specified
         tail.
 
@@ -215,6 +216,8 @@ class Path(tuple):
         """
         # pylint: disable=protected-access
         if right:
+            if isinstance(right, grnode.Atomic):
+                right = Path(right)
             right.subscribe(self.publisher)
             if not tail:
                 tail = right._tail

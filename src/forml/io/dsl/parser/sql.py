@@ -23,7 +23,7 @@ import re
 import typing
 
 from forml.io.dsl import parser as parsmod, function, error
-from forml.io.dsl.schema import series, frame, kind as kindmod
+from forml.io.dsl.struct import series, frame, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 

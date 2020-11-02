@@ -70,6 +70,7 @@ class ColumnInserter(task.Actor):
         self.column: str = column
         self._label: typing.Optional[pandas.Series] = None
 
+    @ndframe.auto
     def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
         """Train the inserter by remembering the labels.
         Args:

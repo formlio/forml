@@ -28,7 +28,7 @@ import cloudpickle
 import pytest
 
 from forml.io.dsl import error
-from forml.io.dsl.schema import series, frame, kind
+from forml.io.dsl.struct import series, frame, kind
 
 
 class TestOrdering:

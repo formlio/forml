@@ -23,9 +23,8 @@ import logging
 import typing
 
 from forml import error
-
 from forml.flow import task, pipeline
-from forml.flow.graph import node, view
+from forml.flow.graph import node
 from forml.flow.pipeline import topology
 from forml.io import payload
 
@@ -47,7 +46,7 @@ class Operator(topology.Operator):
         """
         apply: node.Worker = node.Worker(self._writer, 1, 0)
         train: node.Worker = apply.fork()
-        return left.expand().extend(view.Path(apply), view.Path(train))
+        return left.expand().extend(apply, train)
 
 
 class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):

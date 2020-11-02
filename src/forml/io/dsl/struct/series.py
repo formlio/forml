@@ -30,8 +30,7 @@ import typing
 from collections import abc as colabc
 
 from forml.io.dsl import error
-from forml.io.dsl.schema import frame as framod
-from forml.io.dsl.schema import kind as kindmod, visit as vismod
+from forml.io.dsl.struct import frame as framod, kind as kindmod, visit as vismod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -541,7 +540,7 @@ class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
 class Predicate(metaclass=abc.ABCMeta):
     """Base class for Logical and Comparison operators.
     """
-    class Factors(typing.Mapping[framod.Table, 'Factors']):
+    class Factors(typing.Mapping['framod.Table', 'Factors']):
         """Mapping (read-only) of predicate factors to their tables. Factor is pa predicate which is involving exactly
         one and only table.
         """
@@ -573,13 +572,13 @@ class Predicate(metaclass=abc.ABCMeta):
         def __or__(self, other: 'Predicate.Factors') -> 'Predicate.Factors':
             return self.merge(self, other, Or)
 
-        def __getitem__(self, table: framod.Table) -> 'Predicate':
+        def __getitem__(self, table: 'framod.Table') -> 'Predicate':
             return self._items[table]
 
         def __len__(self) -> int:
             return len(self._items)
 
-        def __iter__(self) -> typing.Iterator[framod.Table]:
+        def __iter__(self) -> typing.Iterator['framod.Table']:
             return iter(self._items)
 
     kind = kindmod.Boolean()

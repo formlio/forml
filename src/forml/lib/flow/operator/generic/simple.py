@@ -23,15 +23,15 @@ import typing
 
 from forml import error
 from forml.flow import task, pipeline
-from forml.flow.graph import node, view
+from forml.flow.graph import node
 from forml.flow.pipeline import topology
 
 
-class Simple(topology.Operator, metaclass=abc.ABCMeta):
+class Base(topology.Operator, metaclass=abc.ABCMeta):
     """Simple is a generic single actor operator.
     """
-    _SZIN = 1
-    _SZOUT = 1
+    SZIN = 1
+    SZOUT = 1
 
     def __init__(self, spec: task.Spec):
         self.spec: task.Spec = spec
@@ -40,7 +40,8 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
         return f'{self.__class__.__name__}[{repr(self.spec)}]'
 
     @classmethod
-    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, **params) -> typing.Type['Simple']:
+    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, /,
+                 **params) -> typing.Callable[..., 'Base']:
         """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
         call.
 
@@ -50,10 +51,10 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
 
         Returns: Curried operator.
         """
-        def decorator(actor: typing.Type[task.Actor]) -> typing.Type[Simple]:
+        def decorator(actor: typing.Type[task.Actor]) -> typing.Callable[..., Base]:
             """Decorating function.
             """
-            def wrapper(*args, **kwargs) -> Simple:
+            def simple(*args, **kwargs) -> Base:
                 """Curried operator.
 
                 Args:
@@ -61,8 +62,8 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
 
                 Returns: Operator instance.
                 """
-                return cls(task.Spec(actor, *args, **kwargs), **params)
-            return wrapper
+                return cls(task.Spec(actor, *args, **{**params, **kwargs}))
+            return simple
 
         if actor:
             decorator = decorator(actor)
@@ -76,7 +77,7 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
 
         Returns: Composed track.
         """
-        return self.apply(node.Worker(self.spec, self._SZIN, self._SZOUT), left.expand())
+        return self.apply(node.Worker(self.spec, self.SZIN, self.SZOUT), left.expand())
 
     @abc.abstractmethod
     def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
@@ -90,7 +91,7 @@ class Simple(topology.Operator, metaclass=abc.ABCMeta):
         """
 
 
-class Mapper(Simple):
+class Mapper(Base):
     """Basic transformation operator with one input and one output port for each mode.
     """
     def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
@@ -106,10 +107,10 @@ class Mapper(Simple):
         if self.spec.actor.is_stateful():
             train_trainer: node.Worker = applier.fork()
             train_trainer.train(left.train.publisher, left.label.publisher)
-        return left.extend(view.Path(applier), view.Path(train_applier))
+        return left.extend(applier, train_applier)
 
 
-class Consumer(Simple):
+class Consumer(Base):
     """Basic operator with one input and one output port in apply mode and no output in train mode.
     """
 
@@ -129,15 +130,15 @@ class Consumer(Simple):
         """
         trainer: node.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
-        return left.extend(view.Path(applier))
+        return left.extend(applier)
 
 
-class Labeler(Simple):
+class Labeler(Base):
     """Basic label extraction operator.
 
     Provider actor is expected to have shape of (1, 2) where first output port is a train and second is label.
     """
-    _SZOUT = 2
+    SZOUT = 2
 
     def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
         """Labeler composition implementation.

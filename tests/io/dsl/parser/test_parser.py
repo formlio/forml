@@ -25,7 +25,7 @@ import typing
 import pytest
 
 from forml.io.dsl import parser as parsmod
-from forml.io.dsl.schema import series as sermod, frame as framod, kind as kindmod
+from forml.io.dsl.struct import series as sermod, frame as framod, kind as kindmod
 from . import TupleParser
 
 

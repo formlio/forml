@@ -20,14 +20,13 @@ Stdout writer sink implementation.
 """
 import typing
 
-from forml import io
-from forml.io import payload
+from forml.io import payload, sink
 
 
-class Sink(io.Sink, alias='stdout'):
+class Sink(sink.Provider, alias='stdout'):
     """Stdout sink.
     """
-    class Writer(io.Sink.Writer):
+    class Writer(sink.Provider.Writer):
         """Sink writer implementation.
         """
         @classmethod

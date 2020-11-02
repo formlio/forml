@@ -24,7 +24,6 @@ import typing
 
 import pytest
 
-from forml import io
 from forml.conf.parsed import provider as conf
 from forml.io import sink as sinkmod
 
@@ -48,7 +47,7 @@ class TestHandle:
         return sinkmod.Handle(conf.Sink.Mode([train, apply, eval_]))
 
     @pytest.fixture(scope='session')
-    def instant(self, sink: typing.Type[io.Sink]) -> sinkmod.Handle:
+    def instant(self, sink: typing.Type[sinkmod.Provider]) -> sinkmod.Handle:
         """Instant based handle fixture.
         """
         return sinkmod.Handle(sink(identity='instant'))

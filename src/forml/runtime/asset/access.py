@@ -22,11 +22,11 @@ import typing
 import uuid
 
 from forml import conf, error
-from forml.project import product  # pylint: disable=unused-import
 from forml.runtime.asset import persistent
 from forml.runtime.asset.directory import root
 
 if typing.TYPE_CHECKING:
+    from forml.project import product  # pylint: disable=unused-import
     from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)

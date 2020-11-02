@@ -18,11 +18,45 @@
 """
 IO sink utils.
 """
-
+import abc
 import typing
 
-from forml import io
-from forml.conf.parsed import provider as conf
+from forml import provider as provmod
+from forml.conf.parsed import provider as provcfg
+from forml.flow import pipeline
+from forml.flow.pipeline import topology
+from forml.io import payload
+from forml.io.sink import publish
+
+
+class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.path):
+    """Sink is an implementation of a specific data consumer.
+    """
+    class Writer(publish.Writer, metaclass=abc.ABCMeta):
+        """Abstract sink writer.
+        """
+
+    def __init__(self, **writerkw):
+        self._writerkw: typing.Dict[str, typing.Any] = writerkw
+
+    def publish(self) -> pipeline.Segment:
+        """Provide a pipeline composable segment implementing the publish action.
+
+        Returns: Pipeline segment.
+        """
+        publisher: topology.Composable = publish.Operator(publish.Writer.Actor.spec(self.writer(**self._writerkw)))
+        return publisher.expand()
+
+    @classmethod
+    def writer(cls, **kwargs: typing.Any) -> typing.Callable[[payload.Columnar], None]:
+        """Return the reader instance of this feed (any callable, presumably extract.Reader).
+
+        Args:
+            kwargs: Optional writer keyword arguments.
+
+        Returns: Writer instance.
+        """
+        return cls.Writer(**kwargs)  # pylint: disable=abstract-class-instantiated
 
 
 class Handle:
@@ -35,22 +69,22 @@ class Handle:
         def __init__(self, getter: property):
             self._getter: property = getter
 
-        def __get__(self, handle: 'Handle', _) -> 'io.Sink':
+        def __get__(self, handle: 'Handle', _) -> Provider:
             return handle(self._getter)
 
-    def __init__(self, sink: typing.Union[conf.Sink.Mode, str, 'io.Sink']):
+    def __init__(self, sink: typing.Union[provcfg.Sink.Mode, str, Provider]):
         if isinstance(sink, str):
-            sink = conf.Sink.Mode.resolve(sink)
-        self._sink: typing.Union[conf.Sink.Mode, io.Sink] = sink
+            sink = provcfg.Sink.Mode.resolve(sink)
+        self._sink: typing.Union[provcfg.Sink.Mode, Provider] = sink
 
-    def __call__(self, getter: property) -> 'io.Sink':
-        if isinstance(self._sink, io.Sink):  # already a Sink instance
+    def __call__(self, getter: property) -> 'Provider':
+        if isinstance(self._sink, Provider):  # already a Sink instance
             return self._sink
-        assert isinstance(self._sink, conf.Sink.Mode)
-        descriptor: conf.Sink = getter.fget(self._sink)
-        return io.Sink[descriptor.reference](**descriptor.params)
+        assert isinstance(self._sink, provcfg.Sink.Mode)
+        descriptor: provcfg.Sink = getter.fget(self._sink)
+        return Provider[descriptor.reference](**descriptor.params)
 
     # pylint: disable=no-member
-    train = Mode(conf.Sink.Mode.train)
-    apply = Mode(conf.Sink.Mode.apply)
-    eval = Mode(conf.Sink.Mode.eval)
+    train = Mode(provcfg.Sink.Mode.train)
+    apply = Mode(provcfg.Sink.Mode.apply)
+    eval = Mode(provcfg.Sink.Mode.eval)

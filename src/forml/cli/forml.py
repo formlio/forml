@@ -23,7 +23,7 @@ import typing
 
 from forml import cli, error, runtime
 from forml.conf.parsed import provider as provcfg
-from forml.io.dsl.schema import kind
+from forml.io.dsl.struct import kind
 
 
 class Parser(cli.Parser, description='Lifecycle Management for Datascience Projects'):

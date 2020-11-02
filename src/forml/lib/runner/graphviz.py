@@ -24,13 +24,10 @@ import typing
 import graphviz as grviz
 
 from forml import conf, runtime
+from forml.io import feed as feedmod, sink as sinkmod
 from forml.runtime import code
 from forml.runtime.asset import access
 from forml.runtime.code import instruction
-
-if typing.TYPE_CHECKING:
-    from forml import io
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,20 +37,20 @@ class Runner(runtime.Runner, alias='graphviz'):
     """
     FILEPATH = f'{conf.APPNAME}.dot'
 
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['io.Feed'] = None,
-                 sink: typing.Optional['io.Sink'] = None, filepath: typing.Optional[str] = None, **gvkw: typing.Any):
+    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional[feedmod.Provider] = None,
+                 sink: typing.Optional[sinkmod.Provider] = None, filepath: typing.Optional[str] = None,
+                 **gvkw: typing.Any):
         super().__init__(assets, feed, sink)
         self._filepath: str = filepath or self.FILEPATH
         self._gvkw: typing.Mapping[str, typing.Any] = gvkw
 
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> grviz.Digraph:
+    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         dot: grviz.Digraph = grviz.Digraph(**self._gvkw)
         for sym in symbols:
             attrs = dict(shape='ellipse', style='rounded')
             if isinstance(sym.instruction, instruction.Functor):
                 attrs.update(shape='box')
-            dot.node(str(id(sym.instruction)), str(sym.instruction), **attrs)
+            dot.node(repr(id(sym.instruction)), repr(sym.instruction), **attrs)
             for idx, arg in enumerate(sym.arguments):
-                dot.edge(str(id(arg)), str(id(sym.instruction)), label=str(idx))
+                dot.edge(repr(id(arg)), repr(id(sym.instruction)), label=repr(idx))
         dot.render(self._filepath, view=True)
-        return dot

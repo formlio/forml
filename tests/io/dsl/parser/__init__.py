@@ -24,7 +24,7 @@ import abc
 import pytest
 
 from forml.io.dsl import parser as parsmod, function
-from forml.io.dsl.schema import frame as framod, kind as kindmod, series as sermod
+from forml.io.dsl.struct import frame as framod, kind as kindmod, series as sermod
 
 
 class TupleParser(metaclass=abc.ABCMeta):

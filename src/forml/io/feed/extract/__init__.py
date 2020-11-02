@@ -28,7 +28,7 @@ from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
 from forml.io import payload
 from forml.io.dsl import parser as parsmod
-from forml.io.dsl.schema import kind as kindmod, series, frame
+from forml.io.dsl.struct import kind as kindmod, series, frame
 
 LOGGER = logging.getLogger(__name__)
 
