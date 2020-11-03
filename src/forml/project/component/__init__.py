@@ -18,6 +18,7 @@
 """
 Project component management.
 """
+import collections
 import importlib
 import inspect
 import logging
@@ -28,21 +29,78 @@ import types
 import typing
 
 from forml import error
-
+from forml.flow.pipeline import topology
+from forml.io.dsl.struct import series, frame
 from forml.project import importer
+from forml.project import product
 from forml.project.component import virtual
 
 LOGGER = logging.getLogger(__name__)
 
 
 def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
-    """Dummy component setup (merely for the sake of IDE sanity). In real usecase this function represents
-    the Module.setup method.
+    """Dummy component setup representing the API signature of the fake module injected by load.Component.setup.
 
     Args:
         instance: Component instance to be registered.
     """
     LOGGER.warning('Setup accessed outside of a Context')
+
+
+class Source(typing.NamedTuple):
+    """Feed independent data provider description.
+    """
+    extract: 'Source.Extract'
+    transform: typing.Optional[topology.Composable] = None
+
+    class Extract(collections.namedtuple('Extract', 'train, apply, label, ordinal')):
+        """Combo of select statements for the different modes.
+        """
+        train: frame.Query
+        apply: frame.Query
+        label: typing.Tuple[series.Column]
+        ordinal: typing.Optional[series.Operable]
+
+        def __new__(cls, train: frame.Queryable, apply: frame.Queryable, label: typing.Sequence[series.Column],
+                    ordinal: typing.Optional[series.Operable]):
+            train = train.query
+            apply = apply.query
+            if {c.operable for c in train.columns}.intersection(c.operable for c in label):
+                raise error.Invalid('Label-feature overlap')
+            if train.schema != apply.schema:
+                raise error.Invalid('Train-apply schema mismatch')
+            if ordinal:
+                ordinal = series.Operable.ensure_is(ordinal)
+            return super().__new__(cls, train, apply, tuple(label), ordinal)
+
+    @classmethod
+    def query(cls, features: frame.Queryable, *label: series.Column, apply: typing.Optional[frame.Queryable] = None,
+              ordinal: typing.Optional[series.Operable] = None) -> 'Source':
+        """Create new source with the given extraction.
+
+        Args:
+            features: Query defining the train (and possibly apply) features.
+            label: List of training label columns.
+            apply: Optional query defining the apply features (if different from train ones).
+            ordinal: Optional specification of an ordinal column.
+
+        Returns: New source instance.
+        """
+        return cls(cls.Extract(features, apply or features, label, ordinal))  # pylint: disable=no-member
+
+    def __rshift__(self, transform: topology.Composable) -> 'Source':
+        return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
+
+    def bind(self, pipeline: typing.Union[str, topology.Composable], **modules: typing.Any) -> 'product.Artifact':
+        """Create an artifact from this source and given pipeline.
+
+        Args:
+            pipeline: Pipeline to create the artifact with.
+            **modules: Other optional artifact modules.
+
+        Returns: Project artifact instance.
+        """
+        return product.Artifact(source=self, pipeline=pipeline, **modules)
 
 
 class Virtual:
@@ -82,6 +140,8 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
     class Component(types.ModuleType):
         """Fake component module.
         """
+        Source = Source
+
         def __init__(self):
             super().__init__(__name__)
 

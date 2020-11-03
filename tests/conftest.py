@@ -28,6 +28,8 @@ import uuid
 import pytest
 
 from forml.flow import task
+from forml.io.dsl import struct
+from forml.io.dsl.struct import frame, kind
 from forml.lib.flow.actor import wrapped
 from forml.project import distribution, product
 from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
@@ -195,3 +197,15 @@ def tag(states: typing.Mapping[uuid.UUID, bytes]) -> genmod.Tag:
     return genmod.Tag(training=genmod.Tag.Training(datetime.datetime(2019, 4, 1), 123),
                       tuning=genmod.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
                       states=states.keys())
+
+
+@pytest.fixture(scope='session')
+def schema() -> frame.Table:
+    """Schema fixture.
+    """
+    class Human(struct.Schema):
+        """Human schema representation.
+        """
+        name = struct.Field(kind.String())
+        age = struct.Field(kind.Integer())
+    return Human
