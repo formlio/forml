@@ -23,7 +23,7 @@ import pandas as pd
 
 import demos
 from forml.flow import task
-from forml.lib.flow.operator import simple
+from forml.lib.flow.operator.generic import simple
 
 
 @simple.Mapper.operator
@@ -57,4 +57,5 @@ PIPELINE = NaNImputer() >> demos.LR(max_iter=3, solver='lbfgs')
 
 PROJECT = demos.SOURCE.bind(PIPELINE)
 
-PROJECT.launcher['graphviz'].train()
+if __name__ == '__main__':
+    PROJECT.launcher('graphviz', [demos.FEED]).train()

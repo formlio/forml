@@ -18,12 +18,18 @@
 import typing
 
 import pandas as pd
+from forml.lib.flow.operator import cast
+
+from forml.io.dsl import struct
+from forml.io.dsl.struct import kind
+from forml.lib.feed import static
+
+from forml.project import component
 from sklearn import ensemble, linear_model, impute, preprocessing, feature_extraction, naive_bayes
 
-from forml.io import etl
 from forml.flow import task
 from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator import simple
+from forml.lib.flow.operator.generic import simple
 
 SimpleImputer = simple.Mapper.operator(wrapped.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
 
@@ -70,14 +76,22 @@ def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna()
 
 
-def trainset(**_) -> pd.DataFrame:
-    return pd.DataFrame({'Survived': [1, 1, 1, 0, 0, 0], 'Age': [10, 11, 12, 13, 14, 15]})
+class Demo(struct.Schema):
+    """Demo schema representation.
+    """
+    Label = struct.Field(kind.Integer())
+    Age = struct.Field(kind.Integer())
 
 
-def testset(**_) -> pd.DataFrame:
-    return pd.DataFrame({'Age': [10, 11, 12, 13, 14, 15]})
+DATA = [[1, 1, 1, 0, 0, 0], [10, 11, 12, 13, 14, 15]]
 
 
-TRAIN = etl.Select(trainset)
-TEST = etl.Select(trainset)
-SOURCE = etl.Extract(TRAIN, TEST) >> cleaner() >> Extractor(column='Survived')
+class Feed(static.Feed):
+    """Demo feed.
+    """
+    def __init__(self):
+        super().__init__({Demo: DATA})
+
+
+FEED = Feed()
+SOURCE = component.Source.query(Demo.select(Demo.Age), Demo.Label) >> cast.ndframe(columns=['Age'])

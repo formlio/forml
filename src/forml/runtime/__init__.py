@@ -253,10 +253,12 @@ class Platform:
             """
             raise NotImplementedError()
 
-    def __init__(self, runner: typing.Optional[provcfg.Runner] = None,
+    def __init__(self, runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
                  registry: typing.Optional[typing.Union[provcfg.Registry, persistent.Registry]] = None,
                  feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = None,
                  sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, sinkmod.Provider]] = None):
+        if isinstance(runner, str):
+            runner = provcfg.Runner.resolve(runner)
         self._runner: provcfg.Runner = runner or provcfg.Runner.default
         self._registry: Platform.Registry = self.Registry(registry or provcfg.Registry.default)
         self._feeds: Platform.Feeds = self.Feeds(*(feeds or provcfg.Feed.default))

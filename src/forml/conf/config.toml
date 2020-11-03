@@ -23,16 +23,6 @@ provider = "filesystem"
 #path = ~/.forml/registry
 
 
-#[FEED]
-#default = ["presto"]
-#
-#[FEED.presto]
-#provider = "presto"
-#priority = 100
-#host = "localhost"
-#port = 8080
-
-
 [SINK]
 default = "stdout"
 train = "stdout"
