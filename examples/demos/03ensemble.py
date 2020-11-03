@@ -27,4 +27,5 @@ PIPELINE = demos.SimpleImputer(strategy='mean') >> STACK >> demos.LR(max_iter=3,
 
 PROJECT = demos.SOURCE.bind(PIPELINE)
 
-PROJECT.launcher['graphviz'].train()
+if __name__ == '__main__':
+    PROJECT.launcher('graphviz', [demos.FEED]).train()

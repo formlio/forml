@@ -127,6 +127,9 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
             self._reader: typing.Callable[[frame.Query], payload.ColumnMajor] = reader
             self._statement: Statement = statement
 
+        def __repr__(self):
+            return f'{repr(self._reader)}({repr(self._statement)})'
+
         def apply(self) -> typing.Any:
             return self._reader(self._statement())
 
@@ -136,6 +139,9 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
         self._sources: typing.Mapping[frame.Source, parsmod.Source] = sources
         self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
+
+    def __repr__(self):
+        return task.name(self.__class__, **self._kwargs)
 
     def __call__(self, query: frame.Query) -> payload.ColumnMajor:
         LOGGER.debug('Parsing ETL query')

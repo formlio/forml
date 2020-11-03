@@ -91,11 +91,11 @@ class Virtual:
         self._registry: persistent.Registry = virtual.Registry()
         root.Level(self._registry).get(self._project).put(package)
 
-    def __call__(self, runner: typing.Optional[provcfg.Runner] = None, feeds: typing.Optional[
+    def __call__(self, runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None, feeds: typing.Optional[
             typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = None) -> 'Virtual.Builder':
         return self.Builder(runner, self._registry, feeds, self._project)
 
-    def __getitem__(self, runner: str) -> 'Virtual.Builder':
+    def __getitem__(self, runner: typing.Union[provcfg.Runner, str]) -> 'Virtual.Builder':
         """Convenient shortcut for selecting a specific runner using the `launcher[name]` syntax.
 
         Args:
@@ -103,7 +103,7 @@ class Virtual:
 
         Returns: Launcher builder.
         """
-        return self(provcfg.Runner.resolve(runner))
+        return self(runner)
 
     def __getattr__(self, mode: str) -> 'Virtual.Builder.Mode.Handler':
         """Convenient shortcut for accessing the particular launcher mode using the `launcher.train()` syntax.

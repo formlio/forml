@@ -21,4 +21,5 @@ PIPELINE = demos.RFC(max_depth=3)
 
 PROJECT = demos.SOURCE.bind(PIPELINE)
 
-PROJECT.launcher['graphviz'].train()
+if __name__ == '__main__':
+    PROJECT.launcher('graphviz', [demos.FEED]).train()

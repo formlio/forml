@@ -63,15 +63,6 @@ class Handle:
     """Sink handle is a lazy wrapper around alternative sink specifiers providing a particular Sink instance upon
     request.
     """
-    class Mode:
-        """Handle mode getter descriptor.
-        """
-        def __init__(self, getter: property):
-            self._getter: property = getter
-
-        def __get__(self, handle: 'Handle', _) -> Provider:
-            return handle(self._getter)
-
     def __init__(self, sink: typing.Union[provcfg.Sink.Mode, str, Provider]):
         if isinstance(sink, str):
             sink = provcfg.Sink.Mode.resolve(sink)
@@ -85,6 +76,6 @@ class Handle:
         return Provider[descriptor.reference](**descriptor.params)
 
     # pylint: disable=no-member
-    train = Mode(provcfg.Sink.Mode.train)
-    apply = Mode(provcfg.Sink.Mode.apply)
-    eval = Mode(provcfg.Sink.Mode.eval)
+    train = property(lambda self: self(provcfg.Sink.Mode.train))
+    apply = property(lambda self: self(provcfg.Sink.Mode.apply))
+    eval = property(lambda self: self(provcfg.Sink.Mode.eval))

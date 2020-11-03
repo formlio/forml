@@ -58,11 +58,17 @@ class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
         def __init__(self, writer: typing.Callable[[payload.ColumnMajor], None]):
             self._writer: typing.Callable[[payload.ColumnMajor], None] = writer
 
+        def __repr__(self):
+            return repr(self._writer)
+
         def apply(self, data: payload.ColumnMajor) -> None:
             self._writer(data)
 
     def __init__(self, **kwargs: typing.Any):
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
+
+    def __repr__(self):
+        return task.name(self.__class__, **self._kwargs)
 
     def __call__(self, data: payload.ColumnMajor) -> None:
         LOGGER.debug('Starting to publish')
