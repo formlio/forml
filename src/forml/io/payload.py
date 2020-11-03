@@ -20,19 +20,23 @@ Payload utilities.
 """
 import typing
 
-Columnar = typing.Sequence[typing.Any]  # Sequence of columns of any type
+Vector = typing.Sequence[typing.Any]  # Sequence of generic items
+ColumnMajor = typing.Sequence[typing.Any]  # Sequence of columns of any type (columnar, column-wise semantic)
+RowMajor = typing.Sequence[typing.Any]  # Sequence of rows of any type (row-wise semantic)
 Native = typing.TypeVar('Native')
 
 
-def transpose(data: typing.Sequence[typing.Sequence[typing.Any]]) -> typing.Sequence[typing.Iterator[typing.Any]]:
-    """Helper for transposing between row and column oriented matrices.
+def transpose(data: typing.Sequence[Vector]) -> typing.Sequence[Vector]:
+    """Primitive helper for transposing between row and column oriented generic matrices.
+
+    Note this performs badly compared to implementations available on specific data formats like numpy ndarray.
 
     Args:
         data: Input matrix.
 
     Returns: Transposed output matrix.
     """
-    def col(idx: int) -> typing.Iterator[typing.Any]:
+    def col(idx: int) -> Vector:
         """Create a vector for given column index.
 
         Args:

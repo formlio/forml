@@ -43,7 +43,7 @@ class Handle(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def read(self, columns: typing.Sequence[str],
-             predicate: typing.Optional[series.Expression] = None) -> payload.Columnar:
+             predicate: typing.Optional[series.Expression] = None) -> payload.ColumnMajor:
         """Read the file columns.
 
         Args:
@@ -61,7 +61,7 @@ class Set(typing.NamedTuple):
     apply: Handle
 
     def read(self, columns: typing.Sequence[str],
-             predicate: typing.Optional[series.Expression] = None) -> payload.Columnar:
+             predicate: typing.Optional[series.Expression] = None) -> payload.ColumnMajor:
         """Read the dataset.
         """
         if set(self.apply.header).issuperset(columns):
@@ -84,7 +84,7 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
             """
 
         @classmethod
-        def format(cls, data: code.Table) -> payload.Columnar:
+        def format(cls, data: code.Table) -> payload.ColumnMajor:
             """Format the input data into the required payload.Columnar format.
 
             Args:
@@ -122,7 +122,7 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
     @classmethod
     def reader(cls, sources: typing.Mapping[frame.Source, code.Tabulizer],
                columns: typing.Mapping[series.Column, code.Columnizer],
-               **kwargs) -> typing.Callable[[frame.Query], payload.Columnar]:
+               **kwargs) -> typing.Callable[[frame.Query], payload.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

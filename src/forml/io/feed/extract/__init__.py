@@ -123,8 +123,8 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
     class Actor(task.Actor):
         """Data extraction actor using the provided reader and statement to load the data.
         """
-        def __init__(self, reader: typing.Callable[[frame.Query], payload.Columnar], statement: Statement):
-            self._reader: typing.Callable[[frame.Query], payload.Columnar] = reader
+        def __init__(self, reader: typing.Callable[[frame.Query], payload.ColumnMajor], statement: Statement):
+            self._reader: typing.Callable[[frame.Query], payload.ColumnMajor] = reader
             self._statement: Statement = statement
 
         def apply(self) -> typing.Any:
@@ -137,7 +137,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
         self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-    def __call__(self, query: frame.Query) -> payload.Columnar:
+    def __call__(self, query: frame.Query) -> payload.ColumnMajor:
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._columns) as visitor:
             query.accept(visitor)
@@ -159,8 +159,8 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
         """
 
     @classmethod
-    def format(cls, data: payload.Native) -> payload.Columnar:
-        """Format the input data into the required payload.Columnar format.
+    def format(cls, data: payload.Native) -> payload.ColumnMajor:
+        """Format the input data into the required payload.ColumnMajor format.
 
         Args:
             data: Input data.
@@ -188,15 +188,16 @@ class Slicer:
     class Actor(task.Actor):
         """Column extraction actor using the provided slicer to separate features from labels.
         """
-        def __init__(self, slicer: typing.Callable[[payload.Columnar, typing.Union[slice, int]], payload.Columnar],
+        def __init__(self, slicer: typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]],
+                                                   payload.ColumnMajor],
                      features: typing.Sequence[series.Column], labels: typing.Sequence[series.Column]):
-            self._slicer: typing.Callable[[payload.Columnar, typing.Union[slice, int]], payload.Columnar] = slicer
+            self._slicer: typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor] = slicer
             fstop = len(features)
             lcount = len(labels)
             self._features: slice = slice(fstop)
             self._label: typing.Union[slice, int] = slice(fstop, fstop + lcount) if lcount > 1 else fstop
 
-        def apply(self, columns: payload.Columnar) -> typing.Tuple[typing.Any, typing.Any]:
+        def apply(self, columns: payload.ColumnMajor) -> typing.Tuple[typing.Any, typing.Any]:
             assert len(columns) == (self._label.stop if isinstance(self._label, slice)
                                     else self._label + 1), 'Unexpected number of columns for splitting'
             return self._slicer(columns, self._features), self._slicer(columns, self._label)
@@ -205,6 +206,6 @@ class Slicer:
         self._schema: typing.Sequence[series.Column] = schema
         self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
 
-    def __call__(self, source: payload.Columnar, selection: typing.Union[slice, int]) -> payload.Columnar:
+    def __call__(self, source: payload.ColumnMajor, selection: typing.Union[slice, int]) -> payload.ColumnMajor:
         LOGGER.debug('Selecting columns: %s', self._schema[selection])
         return source[selection]

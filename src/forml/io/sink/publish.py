@@ -55,21 +55,21 @@ class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
     class Actor(task.Actor):
         """Data publishing actor using the provided writer to store the data.
         """
-        def __init__(self, writer: typing.Callable[[payload.Columnar], None]):
-            self._writer: typing.Callable[[payload.Columnar], None] = writer
+        def __init__(self, writer: typing.Callable[[payload.ColumnMajor], None]):
+            self._writer: typing.Callable[[payload.ColumnMajor], None] = writer
 
-        def apply(self, data: payload.Columnar) -> None:
+        def apply(self, data: payload.ColumnMajor) -> None:
             self._writer(data)
 
     def __init__(self, **kwargs: typing.Any):
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-    def __call__(self, data: payload.Columnar) -> None:
+    def __call__(self, data: payload.ColumnMajor) -> None:
         LOGGER.debug('Starting to publish')
         return self.write(self.format(data), **self._kwargs)
 
     @classmethod
-    def format(cls, data: payload.Columnar) -> payload.Native:
+    def format(cls, data: payload.ColumnMajor) -> payload.Native:
         """Format the output data into the required payload.Native format.
 
         Args:

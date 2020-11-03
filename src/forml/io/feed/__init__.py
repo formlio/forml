@@ -63,7 +63,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column],
 
         Returns: Pipeline segment.
         """
-        def formatter(provider: typing.Callable[..., payload.Columnar]) -> typing.Callable[..., typing.Any]:
+        def formatter(provider: typing.Callable[..., payload.ColumnMajor]) -> typing.Callable[..., typing.Any]:
             """Creating a closure around the provider with the custom formatting to be applied on the provider output.
 
             Args:
@@ -115,7 +115,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column],
     @classmethod
     def reader(cls, sources: typing.Mapping['frame.Source', parser.Source],
                columns: typing.Mapping['series.Column', parser.Column],
-               **kwargs: typing.Any) -> typing.Callable[['frame.Query'], payload.Columnar]:
+               **kwargs: typing.Any) -> typing.Callable[['frame.Query'], payload.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
@@ -130,7 +130,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column],
     @classmethod
     def slicer(cls, schema: typing.Sequence['series.Column'],
                columns: typing.Mapping['series.Column', parser.Column]) -> typing.Callable[
-                   [payload.Columnar, typing.Union[slice, int]], payload.Columnar]:
+                   [payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
         This default slicer is plain positional sequence slicer.
@@ -144,7 +144,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column],
         return extract.Slicer(schema, columns)
 
     @classmethod
-    def format(cls, data: payload.Columnar) -> typing.Any:
+    def format(cls, data: payload.ColumnMajor) -> typing.Any:
         """Optional post-formatting to be applied upon obtaining the columnar data from the raw reader.
 
         Args:
@@ -172,7 +172,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column],
 
 
 class Pool:
-    """Pool of (possibly) lazily instantiated feeds.
+    """Pool of (possibly) lazily instantiated feeds. If configured without any explicit feeds, all of the feeds
+    registered in the provider cache are added.
     """
     class Slot:
         """Representation of a single feed provided either explicitly s an instance or lazily as a descriptor.
@@ -239,7 +240,7 @@ class Pool:
                 self._matches = False
 
     def __init__(self, *feeds: typing.Union[provcfg.Feed, str, Provider]):
-        self._feeds: typing.Tuple[Pool.Slot] = tuple(sorted((self.Slot(f) for f in feeds), reverse=True))
+        self._feeds: typing.Tuple[Pool.Slot] = tuple(sorted((self.Slot(f) for f in feeds or Provider), reverse=True))
 
     def __iter__(self) -> typing.Iterable[Provider]:
         for feed in self._feeds:
