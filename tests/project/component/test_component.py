@@ -26,6 +26,8 @@ import typing
 
 import pytest
 
+from forml import error
+from forml.io.dsl.struct import frame
 from forml.project import component as compmod, importer
 
 
@@ -88,3 +90,15 @@ def test_load():
     provided = compmod.load('component', pathlib.Path(__file__).parent)
     import component  # pylint: disable=import-outside-toplevel
     assert provided is component.INSTANCE
+
+
+class TestSource:
+    """Source unit tests.
+    """
+    def test_query(self, schema: frame.Table):
+        """Test the query setup.
+        """
+        with pytest.raises(error.Invalid):
+            compmod.Source.query(schema, schema.age)
+        query = compmod.Source.query(schema)
+        assert isinstance(query.extract.train, frame.Query)

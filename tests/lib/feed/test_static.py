@@ -24,8 +24,8 @@ import typing
 import pytest
 
 from forml.io import payload
-from forml.io.dsl import struct, error
-from forml.io.dsl.struct import frame, kind
+from forml.io.dsl import error
+from forml.io.dsl.struct import frame
 from forml.lib.feed import static
 
 
@@ -33,37 +33,25 @@ class TestFeed:
     """Feed unit tests.
     """
     @staticmethod
-    @pytest.fixture(scope='session')
-    def schema() -> frame.Table:
-        """Schema fixture.
-        """
-        class Data(struct.Schema):
-            """Foo schema representation.
-            """
-            strcol = struct.Field(kind=kind.String())
-            numcol = struct.Field(kind=kind.Integer())
-        return Data
-
-    @staticmethod
     @pytest.fixture(scope='function')
-    def strcol() -> payload.Vector:
+    def name() -> payload.Vector:
         """Feed column fixture.
         """
         return ['a', 'b', 'c']
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def numcol() -> payload.Vector:
+    def age() -> payload.Vector:
         """Feed column fixture.
         """
         return [1, 2, 3]
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def data(strcol: payload.Vector, numcol: payload.Vector) -> payload.ColumnMajor:
+    def data(name: payload.Vector, age: payload.Vector) -> payload.ColumnMajor:
         """Data fixture.
         """
-        return [strcol, numcol]
+        return [name, age]
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -80,21 +68,21 @@ class TestFeed:
         return feed.reader(feed.sources, feed.columns)
 
     def test_query(self, reader: typing.Callable[[frame.Query], payload.ColumnMajor],
-                   schema: frame.Table, strcol: payload.Vector, numcol: payload.Vector):
+                   schema: frame.Table, name: payload.Vector, age: payload.Vector):
         """Test feed query.
         """
-        assert reader(schema.select(schema.numcol, schema.strcol)) == [numcol, strcol]
+        assert reader(schema.select(schema.age, schema.name)) == [age, name]
 
     def test_unsupported(self, reader: typing.Callable[[frame.Query], payload.ColumnMajor], schema: frame.Table):
         """Test unsuported operations.
         """
         with pytest.raises(error.Unsupported):
-            reader(schema.where(schema.numcol > 1))
+            reader(schema.where(schema.age > 1))
         with pytest.raises(error.Unsupported):
-            reader(schema.having(schema.numcol > 1))
+            reader(schema.having(schema.age > 1))
         with pytest.raises(error.Unsupported):
-            reader(schema.orderby(schema.strcol))
+            reader(schema.orderby(schema.name))
         with pytest.raises(error.Unsupported):
             reader(schema.limit(1))
         with pytest.raises(error.Unsupported):
-            reader(schema.select(schema.numcol + 1))
+            reader(schema.select(schema.age + 1))

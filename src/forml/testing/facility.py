@@ -26,9 +26,10 @@ from forml.conf.parsed import provider as provcfg
 from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology
-from forml.io import etl, payload, feed
+from forml.io import payload, feed
 from forml.io.dsl import struct
 from forml.io.dsl.struct import series, frame, kind
+from forml.project import component
 from forml.runtime import launcher
 from forml.testing import spec
 
@@ -109,7 +110,7 @@ class Launcher:
 
     def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: provcfg.Runner):
         self._params: spec.Scenario.Params = params
-        self._source: etl.Source = etl.Source.query(DataSet.select(DataSet.feature), DataSet.label)
+        self._source: component.Source = component.Source.query(DataSet.select(DataSet.feature), DataSet.label)
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 

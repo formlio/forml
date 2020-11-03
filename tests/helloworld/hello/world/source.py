@@ -18,7 +18,6 @@
 """
 Dummy project source.
 """
-from forml.io import etl
 from forml.io.dsl import struct
 from forml.io.dsl.struct import kind
 from forml.project import component
@@ -30,5 +29,5 @@ class HelloWorld(struct.Schema):
     name = struct.Field(kind.String())
 
 
-INSTANCE = etl.Source.query(HelloWorld.select(HelloWorld.name))
+INSTANCE = component.Source.query(HelloWorld.select(HelloWorld.name))
 component.setup(INSTANCE)

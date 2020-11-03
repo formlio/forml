@@ -23,9 +23,8 @@ Project tests.
 import pytest
 
 from forml import error
-from forml.io import etl
 from forml.flow.pipeline import topology
-from forml.project import product, distribution, importer
+from forml.project import product, distribution, importer, component as compmod
 from forml.lib.flow.operator.generic import simple
 
 
@@ -48,10 +47,10 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def source() -> etl.Source:
+    def source() -> compmod.Source:
         """Source fixture.
         """
-        return etl.Source(None)
+        return compmod.Source(None)
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -66,7 +65,7 @@ class TestBuilder:
         assert len(builder) == len(product.Descriptor._fields)
         assert all(f in builder for f in product.Descriptor._fields)
 
-    def test_build(self, builder: product.Descriptor.Builder, source: etl.Source, pipeline: topology.Composable,
+    def test_build(self, builder: product.Descriptor.Builder, source: compmod.Source, pipeline: topology.Composable,
                    evaluation: topology.Composable):
         """Testing build.
         """
@@ -120,7 +119,7 @@ class TestDescriptor:
             product.Descriptor('foo', 'bar', 'baz')
 
     def test_load(self, project_package: distribution.Package,
-                  source: etl.Source, pipeline: topology.Composable, evaluation: topology.Composable):
+                  source: compmod.Source, pipeline: topology.Composable, evaluation: topology.Composable):
         """Testing the descriptor loader.
         """
         with pytest.raises(error.Unexpected):
@@ -136,7 +135,7 @@ class TestDescriptor:
 class TestArtifact:
     """Artifact unit tests.
     """
-    def test_descriptor(self, project_artifact, source: etl.Source, pipeline: topology.Composable,
+    def test_descriptor(self, project_artifact, source: compmod.Source, pipeline: topology.Composable,
                         evaluation: topology.Composable):
         """Testing descriptor access.
         """

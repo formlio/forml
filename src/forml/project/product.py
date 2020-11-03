@@ -27,7 +27,6 @@ from collections import abc
 
 from forml import conf, error
 from forml.flow.pipeline import topology
-from forml.io import etl
 from forml.project import component as compmod, distribution, importer
 from forml.runtime import launcher
 from forml.runtime.asset import persistent
@@ -76,11 +75,11 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
                 LOGGER.warning('Incomplete builder (missing %s)', ', '.join(c for c, h in self if not h))
             return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
 
-    def __new__(cls, source: 'etl.Source', pipeline: topology.Composable,
+    def __new__(cls, source: 'compmod.Source', pipeline: topology.Composable,
                 evaluation: typing.Optional[topology.Operator] = None):
         if not isinstance(pipeline, topology.Composable):
             raise error.Invalid('Invalid pipeline')
-        if not isinstance(source, etl.Source):
+        if not isinstance(source, compmod.Source):
             raise error.Invalid('Invalid source')
         if evaluation and not isinstance(evaluation, topology.Operator):
             raise error.Invalid('Invalid evaluation')
