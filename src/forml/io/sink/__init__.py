@@ -48,7 +48,7 @@ class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sin
         return publisher.expand()
 
     @classmethod
-    def writer(cls, **kwargs: typing.Any) -> typing.Callable[[payload.Columnar], None]:
+    def writer(cls, **kwargs: typing.Any) -> typing.Callable[[payload.ColumnMajor], None]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

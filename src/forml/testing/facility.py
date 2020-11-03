@@ -27,7 +27,7 @@ from forml.flow.graph import node as nodemod
 from forml.flow.graph import view
 from forml.flow.pipeline import topology
 from forml.io import etl, payload, feed
-from forml.io.dsl import parser, struct
+from forml.io.dsl import struct
 from forml.io.dsl.struct import series, frame, kind
 from forml.runtime import launcher
 from forml.testing import spec
@@ -44,17 +44,20 @@ class DataSet(struct.Schema):
     label: struct.Field = struct.Field(kind.Float())
 
 
-class Feed(feed.Provider, alias='testing'):
+class Feed(feed.Provider[None, typing.Any], alias='testing'):
     """Special feed to input the test cases.
     """
     def __init__(self, scenario: spec.Scenario.Input, **kwargs):
         super().__init__(**kwargs)
         self._scenario: spec.Scenario.Input = scenario
 
+    # pylint: disable=unused-argument
     @classmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, parser.Source],
-               columns: typing.Mapping[series.Column, parser.Column],
+    def reader(cls, sources: typing.Mapping[frame.Source, None],
+               columns: typing.Mapping[series.Column, typing.Any],
                **kwargs) -> typing.Callable[[frame.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
+        """Return the reader instance of this feed (any callable, presumably extract.Reader).
+        """
         def read(query: frame.Query) -> typing.Any:
             """Reader callback.
 
@@ -68,16 +71,22 @@ class Feed(feed.Provider, alias='testing'):
 
     @classmethod
     def slicer(cls, schema: typing.Sequence[series.Column],
-               columns: typing.Mapping[series.Column, parser.Column]) -> typing.Callable[
-                   [payload.Columnar, typing.Union[slice, int]], payload.Columnar]:
+               columns: typing.Mapping[series.Column, typing.Any]) -> typing.Callable[
+                   [payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
+        """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
+        """
         return lambda c, s: c[s][0]
 
     @property
-    def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
+    def sources(self) -> typing.Mapping[frame.Source, None]:
+        """The explicit sources mapping implemented by this feed to be used by the query parser.
+        """
         return {DataSet: None}
 
     @property
-    def columns(self) -> typing.Mapping[series.Column, parser.Column]:
+    def columns(self) -> typing.Mapping[series.Column, typing.Any]:
+        """The explicit columns mapping implemented by this feed to be used by the query parser.
+        """
         return {
             DataSet.label: (self._scenario.train, [self._scenario.label]),
             DataSet.feature: self._scenario.apply

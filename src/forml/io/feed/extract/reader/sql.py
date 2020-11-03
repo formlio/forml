@@ -31,10 +31,7 @@ from forml.io.feed import extract
 LOGGER = logging.getLogger(__name__)
 
 
-Rows = typing.Sequence[typing.Any]  # Sequence of rows of any type
-
-
-class Reader(extract.Reader[str, str, Rows], metaclass=abc.ABCMeta):
+class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
     """SQL reader base class for PEP249 compliant DB APIs.
     """
     class Parser(sqlmod.Frame):
@@ -66,7 +63,7 @@ class Reader(extract.Reader[str, str, Rows], metaclass=abc.ABCMeta):
         return cls.Parser(sources, columns)
 
     @classmethod
-    def format(cls, data: Rows) -> payload.Columnar:
+    def format(cls, data: payload.RowMajor) -> payload.ColumnMajor:
         """PEP249 assumes row oriented results, we need columnar so let's transpose here.
 
         Args:
@@ -77,7 +74,7 @@ class Reader(extract.Reader[str, str, Rows], metaclass=abc.ABCMeta):
         return payload.transpose(data)
 
     @classmethod
-    def read(cls, statement: str, **kwargs) -> Rows:
+    def read(cls, statement: str, **kwargs) -> payload.RowMajor:
         """Perform the read operation with the given statement.
 
         Args:
