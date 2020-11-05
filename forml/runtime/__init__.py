@@ -69,14 +69,16 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         composition = self._build(lower, upper, self._assets.project.pipeline)
         self._exec(composition.apply, self._assets.state(composition.shared))
 
-    def tune(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
+    def tune(  # pylint: disable=no-self-use
+        self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None
+    ) -> None:
         """Run the tune mode.
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        raise NotImplementedError()
+        raise error.Missing('Not yet supported')
 
     def eval(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
         """Run the development model evaluation.
