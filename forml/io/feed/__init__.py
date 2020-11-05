@@ -41,8 +41,7 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column],
-               default=provcfg.Feed.default[-1], path=provcfg.Feed.path):
+class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], path=provcfg.Feed.path):
     """Feed is the implementation of a specific datasource provider.
     """
     class Reader(extract.Reader[parser.Source, parser.Column, payload.Native], metaclass=abc.ABCMeta):
