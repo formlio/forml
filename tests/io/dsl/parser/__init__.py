@@ -28,29 +28,32 @@ from forml.io.dsl.struct import frame as framod, kind as kindmod, series as serm
 
 
 class TupleParser(metaclass=abc.ABCMeta):
-    """Base class for testing a special parser implementations producing a tuples of parsed symbols.
-    """
+    """Base class for testing a special parser implementations producing a tuples of parsed symbols."""
+
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='function')
     def parser() -> parsmod.Frame:
-        """Parser fixture.
-        """
+        """Parser fixture."""
 
     def format(self, result: parsmod.Source) -> tuple:
-        """Post-format the parser output.
-        """
+        """Post-format the parser output."""
         return result
 
-    def test_parsing(self, query: framod.Query, student: framod.Table, school_ref: framod.Reference,
-                     parser: parsmod.Frame):
-        """Parsing test.
-        """
+    def test_parsing(
+        self, query: framod.Query, student: framod.Table, school_ref: framod.Reference, parser: parsmod.Frame
+    ):
+        """Parsing test."""
         with parser:
             query.accept(parser)
             result = self.format(parser.fetch())
         assert result[0][0] == ('foo',)
-        assert result[1] == ((((student,), (student.surname,)), 'student'), (('bar',), (school_ref['name'],)),
-                             (function.Cast, ((student,), (student.score,)), kindmod.String()))
-        assert result[5] == ((((student,), ('baz',)), sermod.Ordering.Direction.ASCENDING),
-                             (((student,), (student.score,)), sermod.Ordering.Direction.ASCENDING))
+        assert result[1] == (
+            (((student,), (student.surname,)), 'student'),
+            (('bar',), (school_ref['name'],)),
+            (function.Cast, ((student,), (student.score,)), kindmod.String()),
+        )
+        assert result[5] == (
+            (((student,), ('baz',)), sermod.Ordering.Direction.ASCENDING),
+            (((student,), (student.score,)), sermod.Ordering.Direction.ASCENDING),
+        )

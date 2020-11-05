@@ -35,8 +35,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Rows(typing.NamedTuple):
-    """Row limit spec.
-    """
+    """Row limit spec."""
+
     count: int
     offset: int = 0
 
@@ -45,8 +45,8 @@ class Rows(typing.NamedTuple):
 
 
 class Source(tuple, metaclass=abc.ABCMeta):
-    """Source base class.
-    """
+    """Source base class."""
+
     def __new__(cls, *args):
         return super().__new__(cls, args)
 
@@ -74,8 +74,11 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
         Returns: Schema type.
         """
-        return Table.Schema(f'{self.__class__.__name__}Schema', (struct.Schema.schema, ), {
-            (c.name or f'_{i}'): struct.Field(c.kind, c.name) for i, c in enumerate(self.columns)})
+        return Table.Schema(
+            f'{self.__class__.__name__}Schema',
+            (struct.Schema.schema,),
+            {(c.name or f'_{i}'): struct.Field(c.kind, c.name) for i, c in enumerate(self.columns)},
+        )
 
     def __getattr__(self, name: str) -> 'series.Column':
         try:
@@ -103,12 +106,12 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
 
 class Join(Source):
-    """Source made of two join-combined subsources.
-    """
+    """Source made of two join-combined subsources."""
+
     @enum.unique
     class Kind(enum.Enum):
-        """Join type.
-        """
+        """Join type."""
+
         INNER = 'inner'
         LEFT = 'left'
         RIGHT = 'right'
@@ -123,8 +126,13 @@ class Join(Source):
     condition: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
     kind: 'Join.Kind' = property(operator.itemgetter(3))
 
-    def __new__(cls, left: 'Origin', right: 'Origin', condition: typing.Optional['series.Expression'] = None,
-                kind: typing.Optional[typing.Union['Join.Kind', str]] = None):
+    def __new__(
+        cls,
+        left: 'Origin',
+        right: 'Origin',
+        condition: typing.Optional['series.Expression'] = None,
+        kind: typing.Optional[typing.Union['Join.Kind', str]] = None,
+    ):
         kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
         if condition is not None:
             if kind is cls.Kind.CROSS:
@@ -147,12 +155,12 @@ class Join(Source):
 
 
 class Set(Source):
-    """Source made of two set-combined subsources.
-    """
+    """Source made of two set-combined subsources."""
+
     @enum.unique
     class Kind(enum.Enum):
-        """Set type.
-        """
+        """Set type."""
+
         UNION = 'union'
         INTERSECTION = 'intersection'
         DIFFERENCE = 'difference'
@@ -177,8 +185,8 @@ class Set(Source):
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
-    """Base class for queryable sources.
-    """
+    """Base class for queryable sources."""
+
     @property
     def query(self) -> 'Query':
         """Return query instance of this queryable.
@@ -206,56 +214,55 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         return self
 
     def select(self, *columns: 'series.Column') -> 'Query':
-        """Specify the output columns to be provided.
-        """
+        """Specify the output columns to be provided."""
         return self.query.select(*columns)
 
     def where(self, condition: 'series.Expression') -> 'Query':
-        """Add a row pre-filtering condition.
-        """
+        """Add a row pre-filtering condition."""
         return self.query.where(condition)
 
     def having(self, condition: 'series.Expression') -> 'Query':
-        """Add a row post-filtering condition.
-        """
+        """Add a row post-filtering condition."""
         return self.query.having(condition)
 
-    def join(self, other: 'Origin', condition: typing.Optional['series.Expression'] = None,
-             kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
-        """Join with other tangible.
-        """
+    def join(
+        self,
+        other: 'Origin',
+        condition: typing.Optional['series.Expression'] = None,
+        kind: typing.Optional[typing.Union[Join.Kind, str]] = None,
+    ) -> 'Query':
+        """Join with other tangible."""
         return self.query.join(other, condition, kind)
 
     def groupby(self, *columns: 'series.Operable') -> 'Query':
-        """Aggregating spec.
-        """
+        """Aggregating spec."""
         return self.query.groupby(*columns)
 
-    def orderby(self, *columns: typing.Union['series.Operable', typing.Union[
-            'series.Ordering.Direction', str], typing.Tuple[
-            'series.Operable', typing.Union['series.Ordering.Direction', str]]]) -> 'Query':
-        """series.Ordering spec.
-        """
+    def orderby(
+        self,
+        *columns: typing.Union[
+            'series.Operable',
+            typing.Union['series.Ordering.Direction', str],
+            typing.Tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+        ],
+    ) -> 'Query':
+        """series.Ordering spec."""
         return self.query.orderby(*columns)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':
-        """Restrict the result rows by its max count with an optional offset.
-        """
+        """Restrict the result rows by its max count with an optional offset."""
         return self.query.limit(count, offset)
 
     def union(self, other: 'Queryable') -> 'Query':
-        """Set union with the other source.
-        """
+        """Set union with the other source."""
         return self.query.union(other)
 
     def intersection(self, other: 'Queryable') -> 'Query':
-        """Set intersection with the other source.
-        """
+        """Set intersection with the other source."""
         return self.query.intersection(other)
 
     def difference(self, other: 'Queryable') -> 'Query':
-        """Set difference with the other source.
-        """
+        """Set difference with the other source."""
         return self.query.difference(other)
 
 
@@ -264,6 +271,7 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
 
     It's columns are represented using series.Element.
     """
+
     @property
     @abc.abstractmethod
     def columns(self) -> typing.Sequence['series.Element']:
@@ -274,8 +282,8 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
 
 
 class Reference(Origin):
-    """Reference is a wrapper around a queryable that associates it with a (possibly random) name.
-    """
+    """Reference is a wrapper around a queryable that associates it with a (possibly random) name."""
+
     _NAMELEN: int = 8
     instance: Queryable = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
@@ -314,9 +322,10 @@ class Table(Origin):
 
     This type can be used either as metaclass or as a base class to inherit from.
     """
+
     class Schema(type):
-        """Meta class for schema type ensuring consistent hashing.
-        """
+        """Meta class for schema type ensuring consistent hashing."""
+
         def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any]):
             existing = {s[k].name or k for s in bases if isinstance(s, Table.Schema) for k in s}
             for key, field in namespace.items():
@@ -352,18 +361,21 @@ class Table(Origin):
             raise AttributeError(f'Unknown field {name}')
 
         def __iter__(cls) -> typing.Iterator[str]:
-            return iter(k for c in reversed(inspect.getmro(cls))
-                        for k, f in c.__dict__.items() if isinstance(f, struct.Field))
+            return iter(
+                k for c in reversed(inspect.getmro(cls)) for k, f in c.__dict__.items() if isinstance(f, struct.Field)
+            )
 
     schema: typing.Type['struct.Schema'] = property(operator.itemgetter(0))
 
-    def __new__(mcs,  # pylint: disable=bad-classmethod-argument
-                schema: typing.Union[str, typing.Type['struct.Schema']],
-                bases: typing.Optional[typing.Tuple[typing.Type]] = None,
-                namespace: typing.Optional[typing.Dict[str, typing.Any]] = None):
+    def __new__(  # pylint: disable=bad-classmethod-argument
+        mcs,
+        schema: typing.Union[str, typing.Type['struct.Schema']],
+        bases: typing.Optional[typing.Tuple[typing.Type]] = None,
+        namespace: typing.Optional[typing.Dict[str, typing.Any]] = None,
+    ):
         if isinstance(schema, str):  # used as metaclass
             if bases:
-                bases = (bases[0].schema, )
+                bases = (bases[0].schema,)
             schema = mcs.Schema(schema, bases, namespace)
         else:
             if bases or namespace:
@@ -383,8 +395,8 @@ class Table(Origin):
 
 
 class Query(Queryable):
-    """Generic source descriptor.
-    """
+    """Generic source descriptor."""
+
     source: Source = property(operator.itemgetter(0))
     selection: typing.Tuple['series.Column'] = property(operator.itemgetter(1))
     prefilter: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
@@ -393,17 +405,24 @@ class Query(Queryable):
     ordering: typing.Tuple['series.Ordering'] = property(operator.itemgetter(5))
     rows: typing.Optional[Rows] = property(operator.itemgetter(6))
 
-    def __new__(cls, source: Source,
-                selection: typing.Optional[typing.Iterable['series.Column']] = None,
-                prefilter: typing.Optional['series.Expression'] = None,
-                grouping: typing.Optional[typing.Iterable['series.Operable']] = None,
-                postfilter: typing.Optional['series.Expression'] = None,
-                ordering: typing.Optional[typing.Sequence[typing.Union['series.Operable',
-                                                                       typing.Union['series.Ordering.Direction', str],
-                                                                       typing.Tuple['series.Operable', typing.Union[
-                                                                           'series.Ordering.Direction', str]]]]] = None,
-                rows: typing.Optional[Rows] = None):
-
+    def __new__(
+        cls,
+        source: Source,
+        selection: typing.Optional[typing.Iterable['series.Column']] = None,
+        prefilter: typing.Optional['series.Expression'] = None,
+        grouping: typing.Optional[typing.Iterable['series.Operable']] = None,
+        postfilter: typing.Optional['series.Expression'] = None,
+        ordering: typing.Optional[
+            typing.Sequence[
+                typing.Union[
+                    'series.Operable',
+                    typing.Union['series.Ordering.Direction', str],
+                    typing.Tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+                ]
+            ]
+        ] = None,
+        rows: typing.Optional[Rows] = None,
+    ):
         def ensure_subset(*columns: 'series.Column') -> typing.Sequence['series.Column']:
             """Ensure the provided columns is a valid subset of the available source columns.
 
@@ -419,15 +438,17 @@ class Query(Queryable):
         superset = series.Element.dissect(*source.columns)
         selection = tuple(ensure_subset(*(series.Column.ensure_is(c) for c in selection or [])))
         if prefilter is not None:
-            prefilter = series.Cumulative.ensure_notin(series.Predicate.ensure_is(*ensure_subset(
-                series.Operable.ensure_is(prefilter))))
+            prefilter = series.Cumulative.ensure_notin(
+                series.Predicate.ensure_is(*ensure_subset(series.Operable.ensure_is(prefilter)))
+            )
         if grouping:
             grouping = ensure_subset(*(series.Cumulative.ensure_notin(series.Operable.ensure_is(g)) for g in grouping))
             for aggregate in {c.operable for c in selection or source.columns}.difference(grouping):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
-            postfilter = series.Window.ensure_notin(series.Predicate.ensure_is(*ensure_subset(
-                series.Operable.ensure_is(postfilter))))
+            postfilter = series.Window.ensure_notin(
+                series.Predicate.ensure_is(*ensure_subset(series.Operable.ensure_is(postfilter)))
+            )
         ordering = tuple(series.Ordering.make(ordering or []))
         ensure_subset(*(o.column for o in ordering))
         return super().__new__(cls, source, selection, prefilter, tuple(grouping or []), postfilter, ordering, rows)
@@ -473,19 +494,42 @@ class Query(Queryable):
             condition &= self.postfilter
         return Query(self.source, self.selection, self.prefilter, self.grouping, condition, self.ordering, self.rows)
 
-    def join(self, other: Queryable, condition: typing.Optional['series.Expression'] = None,
-             kind: typing.Optional[typing.Union[Join.Kind, str]] = None) -> 'Query':
-        return Query(Join(self.source, other, condition, kind), self.selection, self.prefilter, self.grouping,
-                     self.postfilter, self.ordering, self.rows)
+    def join(
+        self,
+        other: Queryable,
+        condition: typing.Optional['series.Expression'] = None,
+        kind: typing.Optional[typing.Union[Join.Kind, str]] = None,
+    ) -> 'Query':
+        return Query(
+            Join(self.source, other, condition, kind),
+            self.selection,
+            self.prefilter,
+            self.grouping,
+            self.postfilter,
+            self.ordering,
+            self.rows,
+        )
 
     def groupby(self, *columns: 'series.Operable') -> 'Query':
         return Query(self.source, self.selection, self.prefilter, columns, self.postfilter, self.ordering, self.rows)
 
-    def orderby(self, *columns: typing.Union['series.Operable', typing.Union[
-            'series.Ordering.Direction', str], typing.Tuple['series.Operable', typing.Union[
-            'series.Ordering.Direction', str]]]) -> 'Query':
+    def orderby(
+        self,
+        *columns: typing.Union[
+            'series.Operable',
+            typing.Union['series.Ordering.Direction', str],
+            typing.Tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+        ],
+    ) -> 'Query':
         return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, columns, self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':
-        return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, self.ordering,
-                     Rows(count, offset))
+        return Query(
+            self.source,
+            self.selection,
+            self.prefilter,
+            self.grouping,
+            self.postfilter,
+            self.ordering,
+            Rows(count, offset),
+        )

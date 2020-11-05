@@ -27,33 +27,29 @@ from forml.flow.pipeline import topology
 
 
 class TestSegment:
-    """Segment unit tests.
-    """
+    """Segment unit tests."""
+
     def test_new(self):
-        """Test segment setup.
-        """
+        """Test segment setup."""
         assert all(isinstance(m, view.Path) for m in pipeline.Segment(view.Path(node.Future()), node.Future(), None))
 
 
 class TestComposition:
-    """Composition unit tests.
-    """
+    """Composition unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='function')
     def composition(origin: topology.Operator, operator: topology.Operator) -> pipeline.Composition:
-        """Composition fixture.
-        """
+        """Composition fixture."""
         return pipeline.Composition((origin >> operator).expand())
 
     def test_composition(self, origin: topology.Operator, operator: topology.Operator):
-        """Test the pipeline.
-        """
+        """Test the pipeline."""
         with pytest.raises(error.Topology):  # contains Future node
             pipeline.Composition(operator.expand())
 
         pipeline.Composition((origin >> operator).expand())
 
     def test_shared(self, composition: pipeline.Composition):
-        """Test the composition shared nodes.
-        """
+        """Test the composition shared nodes."""
         assert any(composition.shared)

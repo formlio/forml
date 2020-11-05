@@ -32,11 +32,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
-    """SQL reader base class for PEP249 compliant DB APIs.
-    """
+    """SQL reader base class for PEP249 compliant DB APIs."""
+
     class Parser(sqlmod.Frame):
-        """Custom parser implementation.
-        """
+        """Custom parser implementation."""
 
     @classmethod
     @abc.abstractmethod
@@ -50,8 +49,9 @@ class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def parser(cls, sources: typing.Mapping[frame.Source, str],
-               columns: typing.Mapping[series.Column, str]) -> 'Reader.Parser':
+    def parser(
+        cls, sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]
+    ) -> 'Reader.Parser':
         """Return the parser instance of this reader.
 
         Args:

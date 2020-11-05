@@ -41,12 +41,13 @@ class Container(typing.Generic[Symbol]):
     When used as a context manager the internal structure is exclusive to given context and is checked for total
     depletion on exit.
     """
+
     class Context:
-        """Storage context.
-        """
+        """Storage context."""
+
         class Symbols:
-            """Stack for parsed symbols.
-            """
+            """Stack for parsed symbols."""
+
             def __init__(self):
                 self._stack: typing.List[Symbol] = list()
 
@@ -87,8 +88,7 @@ class Container(typing.Generic[Symbol]):
 
     @property
     def context(self) -> 'Container.Context':
-        """Context accessor.
-        """
+        """Context accessor."""
         if not self._context:
             raise RuntimeError('Invalid context')
         return self._context
@@ -128,6 +128,7 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
 
     Returns: Visitor method decorator.
     """
+
     def decorator(method: typing.Callable[[Container, typing.Any], typing.ContextManager[None]]) -> typing.Callable:
         """Visitor method decorator with added bypassing capability.
 
@@ -136,6 +137,7 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
 
         Returns: Decorated version of the visit_* method.
         """
+
         @functools.wraps(method)
         def wrapped(self: Container, subject: typing.Any) -> None:
             """Decorated version of the visit_* method.
@@ -155,13 +157,15 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
                 self.context.symbols.push(new)
 
         return wrapped
+
     return decorator
 
 
-class Columnar(typing.Generic[Source, Column], Container[typing.Union[Source, Column]], visit.Columnar,
-               metaclass=abc.ABCMeta):
-    """Base parser class for both Frame and Series visitors.
-    """
+class Columnar(
+    typing.Generic[Source, Column], Container[typing.Union[Source, Column]], visit.Columnar, metaclass=abc.ABCMeta
+):
+    """Base parser class for both Frame and Series visitors."""
+
     def __init__(self, sources: typing.Mapping[frame.Source, Source]):
         super().__init__()
         self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
@@ -191,13 +195,14 @@ class Columnar(typing.Generic[Source, Column], Container[typing.Union[Source, Co
 
 
 class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Frame, metaclass=abc.ABCMeta):
-    """Frame source parser.
-    """
+    """Frame source parser."""
+
     class Series(typing.Generic[Source, Column], Columnar[Source, Column], visit.Series, metaclass=abc.ABCMeta):
-        """Series column parser.
-        """
-        def __init__(self, sources: typing.Mapping[frame.Source, Source],
-                     columns: typing.Mapping[sermod.Column, Column]):
+        """Series column parser."""
+
+        def __init__(
+            self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]
+        ):
             super().__init__(sources)
             self._columns: typing.Mapping[sermod.Column, Column] = types.MappingProxyType(columns)
 
@@ -271,8 +276,9 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             """
 
         @abc.abstractmethod
-        def generate_expression(self, expression: typing.Type[sermod.Expression],
-                                arguments: typing.Sequence[typing.Any]) -> Column:
+        def generate_expression(
+            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        ) -> Column:
             """Generate target code for an expression of given arguments.
 
             Args:
@@ -315,8 +321,9 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         @bypass(resolve_column)
         def visit_expression(self, column: sermod.Expression) -> None:
             super().visit_expression(column)
-            arguments = tuple(reversed([self.context.symbols.pop() if isinstance(c, sermod.Column) else c
-                                        for c in reversed(column)]))
+            arguments = tuple(
+                reversed([self.context.symbols.pop() if isinstance(c, sermod.Column) else c for c in reversed(column)])
+            )
             self.context.symbols.push(self.generate_expression(column.__class__, arguments))
 
         @bypass(resolve_column)
@@ -324,14 +331,14 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             raise NotImplementedError('Window functions not yet supported')
 
     class Context(Container.Context):
-        """Extended container context for holding the segments.
-        """
+        """Extended container context for holding the segments."""
+
         class Tables:
-            """Container for segments of all tables.
-            """
+            """Container for segments of all tables."""
+
             class Segment(collections.namedtuple('Segment', 'fields, factors')):
-                """Frame segment specification as a list of columns (vertical) and row predicates (horizontal).
-                """
+                """Frame segment specification as a list of columns (vertical) and row predicates (horizontal)."""
+
                 def __new__(cls):
                     return super().__new__(cls, set(), set())
 
@@ -344,8 +351,9 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                     return functools.reduce(sermod.Or, sorted(self.factors)) if self.factors else None
 
             def __init__(self):
-                self._segments: typing.Dict[
-                    frame.Table, Frame.Context.Tables.Segment] = collections.defaultdict(self.Segment)
+                self._segments: typing.Dict[frame.Table, Frame.Context.Tables.Segment] = collections.defaultdict(
+                    self.Segment
+                )
 
             def items(self) -> typing.ItemsView[frame.Table, 'Frame.Context.Tables.Segment']:
                 """Get the key-value pairs of this mapping.
@@ -410,8 +418,9 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         """
 
     @abc.abstractmethod
-    def generate_join(self, left: Source, right: Source, condition: typing.Optional[Column],
-                      kind: frame.Join.Kind) -> Source:
+    def generate_join(
+        self, left: Source, right: Source, condition: typing.Optional[Column], kind: frame.Join.Kind
+    ) -> Source:
         """Generate target code for a join operation using the left/right terms, given condition and a join type.
 
         Args:
@@ -436,10 +445,16 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         """
 
     @abc.abstractmethod
-    def generate_query(self, source: Source, columns: typing.Sequence[Column], where: typing.Optional[Column],
-                       groupby: typing.Sequence[Column], having: typing.Optional[Column],
-                       orderby: typing.Sequence[typing.Tuple[Column, sermod.Ordering.Direction]],
-                       rows: typing.Optional[frame.Rows]) -> Source:
+    def generate_query(
+        self,
+        source: Source,
+        columns: typing.Sequence[Column],
+        where: typing.Optional[Column],
+        groupby: typing.Sequence[Column],
+        having: typing.Optional[Column],
+        orderby: typing.Sequence[typing.Tuple[Column, sermod.Ordering.Direction]],
+        rows: typing.Optional[frame.Rows],
+    ) -> Source:
         """Generate query statement code.
 
         Args:
@@ -454,9 +469,12 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         Returns: Query in target code.
         """
 
-    def generate_table(self, table: Source,  # pylint: disable=no-self-use
-                       columns: typing.Iterable[Column],  # pylint: disable=unused-argument
-                       predicate: typing.Optional[Column]) -> Source:  # pylint: disable=unused-argument
+    def generate_table(  # pylint: disable=no-self-use
+        self,
+        table: Source,
+        columns: typing.Iterable[Column],  # pylint: disable=unused-argument
+        predicate: typing.Optional[Column],  # pylint: disable=unused-argument
+    ) -> Source:  # pylint: disable=unused-argument
         """Generate a target code for a table instance given its actual field requirements.
 
         Args:
@@ -513,6 +531,7 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             groupby = [self.generate_column(c) for c in source.grouping]
             having = self.generate_column(source.postfilter) if source.postfilter is not None else None
             orderby = [(self.generate_column(c), o) for c, o in source.ordering]
-            query = self.generate_query(self.context.symbols.pop(),
-                                        columns, where, groupby, having, orderby, source.rows)
+            query = self.generate_query(
+                self.context.symbols.pop(), columns, where, groupby, having, orderby, source.rows
+            )
         self.context.symbols.push(query)

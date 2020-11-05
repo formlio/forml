@@ -29,8 +29,8 @@ from forml.flow.graph import node as grnode, port
 
 
 class Visitor(grnode.Visitor):
-    """Path visitor interface.
-    """
+    """Path visitor interface."""
+
     def visit_path(self, path: 'Path') -> None:
         """Path visit.
 
@@ -40,17 +40,17 @@ class Visitor(grnode.Visitor):
 
 
 class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
-    """Graph traversal helper.
-    """
+    """Graph traversal helper."""
+
     class Cyclic(error.Topology):
-        """Cyclic graph error.
-        """
+        """Cyclic graph error."""
 
     def __new__(cls, current: grnode.Atomic, predecessors: typing.AbstractSet[grnode.Atomic] = frozenset()):
         return super().__new__(cls, current, frozenset(predecessors | {current}))
 
-    def directs(self, *extras: grnode.Atomic, mask: typing.Optional[
-            typing.Callable[[grnode.Atomic], bool]] = None) -> typing.Iterator['Traversal']:
+    def directs(
+        self, *extras: grnode.Atomic, mask: typing.Optional[typing.Callable[[grnode.Atomic], bool]] = None
+    ) -> typing.Iterator['Traversal']:
         """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
         subscribed directly).
 
@@ -61,8 +61,9 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         Returns: Iterable of new Traversals.
         """
         seen = set()
-        for node in itertools.chain((s.node for p in self.current.output for s in p),
-                                    (e for e in extras if e and e.subscribed(self.current))):
+        for node in itertools.chain(
+            (s.node for p in self.current.output for s in p), (e for e in extras if e and e.subscribed(self.current))
+        ):
             if node in seen or mask and not mask(node):
                 continue
             if node in self.predecessors:
@@ -112,6 +113,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             tail: Optional traversion breakpoint.
             acceptor: Acceptor to call for each unique node.
         """
+
         def unseen(node: grnode.Atomic) -> bool:
             """Test for node recurrence.
 
@@ -162,10 +164,12 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             if traversal.current == tail:
                 for orig in traversal.predecessors:
                     pub = copies.get(orig) or copies.setdefault(orig, orig.fork())
-                    for index, subscription in ((i, s) for i, p in enumerate(orig.output)
-                                                for s in p if s.node in traversal.predecessors):
+                    for index, subscription in (
+                        (i, s) for i, p in enumerate(orig.output) for s in p if s.node in traversal.predecessors
+                    ):
                         sub = copies.get(subscription.node) or copies.setdefault(
-                            subscription.node, subscription.node.fork())
+                            subscription.node, subscription.node.fork()
+                        )
                         sub[subscription.port].subscribe(pub[index])
             else:
                 for node in traversal.mappers(tail):
@@ -203,8 +207,11 @@ class Path(tuple):
         Traversal(self._head).each(self._tail, visitor.visit_node)
         visitor.visit_path(self)
 
-    def extend(self, right: typing.Optional[typing.Union['Path', grnode.Atomic]] = None,
-               tail: typing.Optional[grnode.Atomic] = None) -> 'Path':
+    def extend(
+        self,
+        right: typing.Optional[typing.Union['Path', grnode.Atomic]] = None,
+        tail: typing.Optional[grnode.Atomic] = None,
+    ) -> 'Path':
         """Create new path by appending right head to our tail or retracing this path up to its physical or specified
         tail.
 
@@ -226,8 +233,7 @@ class Path(tuple):
         return Path(self._head, tail)
 
     def subscribe(self, publisher: port.Publishable) -> None:
-        """Subscribe head node to given publisher.
-        """
+        """Subscribe head node to given publisher."""
         self._head[0].subscribe(publisher)
 
     @property

@@ -52,13 +52,15 @@ def cast(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None
         if data and not isinstance(data[0], (tuple, list)):
             return pandas.Series(data)
         return pandas.concat(
-            (pandas.Series(d, name=n) for d, n in itertools.zip_longest(data, columns or [])), axis='columns')
+            (pandas.Series(d, name=n) for d, n in itertools.zip_longest(data, columns or [])), axis='columns'
+        )
     LOGGER.warning('Unknown NDFrame conversion strategy for %s: %.1024s', type(data), data)
     return data
 
 
-def auto(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
-                                  typing.Any]) -> typing.Callable[[task.Actor, typing.Any], typing.Any]:
+def auto(
+    wrapped: typing.Callable[[task.Actor, pdtype.NDFrame], typing.Any]
+) -> typing.Callable[[task.Actor, typing.Any], typing.Any]:
     """Decorator for converting input parameters and return value to pandas.
 
     Args:
@@ -66,6 +68,7 @@ def auto(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
 
     Returns: Decorated method.
     """
+
     @functools.wraps(wrapped)
     def wrapper(self: task.Actor, *args: typing.Any) -> typing.Any:
         """Decorating wrapper.
@@ -77,6 +80,7 @@ def auto(wrapped: typing.Callable[[task.Actor, pdtype.NDFrame],
         Returns: Original output.
         """
         return wrapped(self, *(cast(a) for a in args))
+
     return wrapper
 
 
@@ -86,6 +90,7 @@ class TrainTestSplit(task.Actor):
     The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to
     split data and labels independently.
     """
+
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
         self.crossvalidator: model_selection.BaseCrossValidator = crossvalidator
         self._indices: typing.Optional[typing.Tuple[typing.Tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
@@ -119,8 +124,9 @@ class TrainTestSplit(task.Actor):
         """
         return {'crossvalidator': self.crossvalidator}
 
-    def set_params(self,  # pylint: disable=arguments-differ
-                   crossvalidator: model_selection.BaseCrossValidator) -> None:
+    def set_params(
+        self, crossvalidator: model_selection.BaseCrossValidator  # pylint: disable=arguments-differ
+    ) -> None:
         """Standard params setter.
 
         Args:
@@ -130,8 +136,8 @@ class TrainTestSplit(task.Actor):
 
 
 class Concat(task.Actor):
-    """Concatenate objects received on the input ports into single dataframe.
-    """
+    """Concatenate objects received on the input ports into single dataframe."""
+
     def __init__(self, axis: str = 'index'):
         self.axis: str = axis
 
@@ -148,8 +154,8 @@ class Concat(task.Actor):
 
 
 class Apply(task.Actor):
-    """Generic source apply actor.
-    """
+    """Generic source apply actor."""
+
     def __init__(self, function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame]):
         self.function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame] = function
 

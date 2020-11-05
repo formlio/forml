@@ -34,15 +34,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Runner(runtime.Runner, alias='dask'):
-    """Dask based runner implementation.
-    """
+    """Dask based runner implementation."""
+
     class Dag(dict):
-        """Dask DAG builder.
-        """
+        """Dask DAG builder."""
+
         class Output(code.Instruction):
             """Utility instruction for collecting multiple DAG leaves of which at most one is expected to return
             non-null value and passing that value through.
             """
+
             def execute(self, *leaves: typing.Any) -> typing.Any:
                 """Instruction functionality.
 
@@ -51,6 +52,7 @@ class Runner(runtime.Runner, alias='dask'):
 
                 Return: Value of the one non-null output (if any).
                 """
+
                 def nonnull(value: typing.Any, element: typing.Any) -> typing.Any:
                     """Non-null reducer.
 
@@ -62,11 +64,13 @@ class Runner(runtime.Runner, alias='dask'):
                     """
                     assert value is None or element is None, f'Multiple non-null outputs ({value}, {element})'
                     return element if value is None else value
+
                 return functools.reduce(nonnull, leaves, None)
 
         def __init__(self, symbols: typing.Sequence[code.Symbol]):
             tasks: typing.Dict[int, typing.Tuple[code.Instruction, int]] = {
-                id(i): (i, *(id(p) for p in a)) for i, a in symbols}
+                id(i): (i, *(id(p) for p in a)) for i, a in symbols
+            }
             assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'
@@ -84,8 +88,13 @@ class Runner(runtime.Runner, alias='dask'):
 
     SCHEDULER = 'multiprocessing'
 
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional[feedmod.Provider] = None,
-                 sink: typing.Optional[sinkmod.Provider] = None, scheduler: typing.Optional[str] = None):
+    def __init__(
+        self,
+        assets: typing.Optional[access.Assets] = None,
+        feed: typing.Optional[feedmod.Provider] = None,
+        sink: typing.Optional[sinkmod.Provider] = None,
+        scheduler: typing.Optional[str] = None,
+    ):
         super().__init__(assets, feed, sink)
         self._scheduler: str = scheduler or self.SCHEDULER
 

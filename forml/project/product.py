@@ -35,14 +35,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluation')):
-    """Top level ForML project descriptor holding the implementations of individual project components.
-    """
+    """Top level ForML project descriptor holding the implementations of individual project components."""
+
     class Builder(abc.Set):
-        """Descriptor builder allowing to setup attributes one by one.
-        """
+        """Descriptor builder allowing to setup attributes one by one."""
+
         class Handler:
-            """Simple callable that persists the provided value.
-            """
+            """Simple callable that persists the provided value."""
+
             def __init__(self):
                 self.value = None
 
@@ -54,7 +54,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
 
         def __init__(self):
             self._handlers: typing.Mapping[str, Descriptor.Builder.Handler] = {
-                c: self.Handler() for c in Descriptor._fields}
+                c: self.Handler() for c in Descriptor._fields
+            }
 
         def __iter__(self) -> typing.Iterator[typing.Tuple[str, typing.Callable[[typing.Any], None]]]:
             for component, handler in self._handlers.items():
@@ -75,8 +76,12 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
                 LOGGER.warning('Incomplete builder (missing %s)', ', '.join(c for c, h in self if not h))
             return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
 
-    def __new__(cls, source: 'compmod.Source', pipeline: topology.Composable,
-                evaluation: typing.Optional[topology.Operator] = None):
+    def __new__(
+        cls,
+        source: 'compmod.Source',
+        pipeline: topology.Composable,
+        evaluation: typing.Optional[topology.Operator] = None,
+    ):
         if not isinstance(pipeline, topology.Composable):
             raise error.Invalid('Invalid pipeline')
         if not isinstance(source, compmod.Source):
@@ -86,8 +91,12 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         return super().__new__(cls, source, pipeline, evaluation)
 
     @classmethod
-    def load(cls, package: typing.Optional[str] = None,
-             path: typing.Optional[typing.Union[str, pathlib.Path]] = None, **modules) -> 'Descriptor':
+    def load(
+        cls,
+        package: typing.Optional[str] = None,
+        path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+        **modules,
+    ) -> 'Descriptor':
         """Setup the descriptor based on provider package and/or individual modules.
 
             Either package is provided and all individual modules without dot in their names are considered as
@@ -115,10 +124,14 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
 
 
 class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
-    """Project artifact handle.
-    """
-    def __new__(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
-                package: typing.Optional[str] = None, **modules: typing.Any):
+    """Project artifact handle."""
+
+    def __new__(
+        cls,
+        path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+        package: typing.Optional[str] = None,
+        **modules: typing.Any,
+    ):
         if path:
             path = pathlib.Path(path).resolve()
         prefix = package or conf.PRJNAME
@@ -151,8 +164,8 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         project = (self.package or conf.PRJNAME).replace('.', '-')
 
         class Manifest(types.ModuleType):
-            """Fake manifest module.
-            """
+            """Fake manifest module."""
+
             NAME = project
             VERSION = '0'
             PACKAGE = self.package

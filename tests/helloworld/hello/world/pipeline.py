@@ -26,8 +26,7 @@ from forml.project import component
 @simple.Mapper.operator
 @wrapped.Function.actor
 def noop():
-    """Dummy transformer.
-    """
+    """Dummy transformer."""
 
 
 INSTANCE = noop()

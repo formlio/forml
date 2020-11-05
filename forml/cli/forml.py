@@ -27,8 +27,8 @@ from forml.io.dsl.struct import kind
 
 
 class Parser(cli.Parser, description='Lifecycle Management for Datascience Projects'):
-    """ForML command parser.
-    """
+    """ForML command parser."""
+
     @cli.Command(help='create skeleton for a new project', description='New project setup')
     @cli.Param('name', help='name of a project to be created')
     def init(cls, name: str) -> None:
@@ -54,9 +54,13 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         cli.lprint(cls._platform(registry=registry).registry.list(project, lineage))
 
     @classmethod
-    def _platform(cls, runner: typing.Optional[str] = None, registry: typing.Optional[str] = None,
-                  feed: typing.Optional[typing.Sequence[str]] = None,
-                  sink: typing.Optional[str] = None) -> runtime.Platform:
+    def _platform(
+        cls,
+        runner: typing.Optional[str] = None,
+        registry: typing.Optional[str] = None,
+        feed: typing.Optional[typing.Sequence[str]] = None,
+        sink: typing.Optional[str] = None,
+    ) -> runtime.Platform:
         """Common helper for train/apply methods.
 
         Args:
@@ -67,8 +71,12 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
 
         Returns: Platform instance.
         """
-        return runtime.Platform(provcfg.Runner.resolve(runner), provcfg.Registry.resolve(registry),
-                                provcfg.Feed.resolve(feed), provcfg.Sink.Mode.resolve(sink))
+        return runtime.Platform(
+            provcfg.Runner.resolve(runner),
+            provcfg.Registry.resolve(registry),
+            provcfg.Feed.resolve(feed),
+            provcfg.Sink.Mode.resolve(sink),
+        )
 
     @cli.Command(help='tune the given project lineage producing new generation', description='Tune mode execution')
     @cli.Param('project', help='project to be tuned')
@@ -80,10 +88,18 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower tuneset ordinal')
     @cli.Param('--upper', help='upper tuneset ordinal')
-    def tune(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-             runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[typing.Sequence[str]],
-             sink: typing.Optional[str], lower: typing.Optional[kind.Native],
-             upper: typing.Optional[kind.Native]) -> None:
+    def tune(
+        cls,
+        project: typing.Optional[str],
+        lineage: typing.Optional[str],
+        generation: typing.Optional[str],
+        runner: typing.Optional[str],
+        registry: typing.Optional[str],
+        feed: typing.Optional[typing.Sequence[str]],
+        sink: typing.Optional[str],
+        lower: typing.Optional[kind.Native],
+        upper: typing.Optional[kind.Native],
+    ) -> None:
         """Tune mode execution.
 
         Args:
@@ -109,10 +125,18 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower trainset ordinal')
     @cli.Param('--upper', help='upper trainset ordinal')
-    def train(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-              runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[typing.Sequence[str]],
-              sink: typing.Optional[str], lower: typing.Optional[kind.Native],
-              upper: typing.Optional[kind.Native]) -> None:
+    def train(
+        cls,
+        project: typing.Optional[str],
+        lineage: typing.Optional[str],
+        generation: typing.Optional[str],
+        runner: typing.Optional[str],
+        registry: typing.Optional[str],
+        feed: typing.Optional[typing.Sequence[str]],
+        sink: typing.Optional[str],
+        lower: typing.Optional[kind.Native],
+        upper: typing.Optional[kind.Native],
+    ) -> None:
         """Train mode execution.
 
         Args:
@@ -140,10 +164,18 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower testset ordinal')
     @cli.Param('--upper', help='upper testset ordinal')
-    def apply(cls, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str],
-              runner: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[typing.Sequence[str]],
-              sink: typing.Optional[str], lower: typing.Optional[kind.Native],
-              upper: typing.Optional[kind.Native]) -> None:
+    def apply(
+        cls,
+        project: typing.Optional[str],
+        lineage: typing.Optional[str],
+        generation: typing.Optional[str],
+        runner: typing.Optional[str],
+        registry: typing.Optional[str],
+        feed: typing.Optional[typing.Sequence[str]],
+        sink: typing.Optional[str],
+        lower: typing.Optional[kind.Native],
+        upper: typing.Optional[kind.Native],
+    ) -> None:
         """Apply mode execution.
 
         Args:

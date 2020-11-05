@@ -24,24 +24,22 @@ from forml.lib.flow.operator import generic
 
 
 class TestAdapter:
-    """Adapter unit tests.
-    """
+    """Adapter unit tests."""
+
     # pylint: disable=protected-access
     def test_noparams(self):
-        """Test adapter setup using non-parametrized decorators.
-        """
+        """Test adapter setup using non-parametrized decorators."""
+
         @generic.Adapter.train
         @wrapped.Function.actor
         def func(_, **kw):
-            """Dummy actor.
-            """
+            """Dummy actor."""
             return 'foo', kw
 
         @func.label
         @wrapped.Function.actor
         def func(_, **kw):
-            """Dummy actor.
-            """
+            """Dummy actor."""
             return 'bar', kw
 
         assert not func._apply.spec()
@@ -49,20 +47,18 @@ class TestAdapter:
         assert func._label.spec()().apply(None) == ('bar', {})
 
     def test_params(self):
-        """Test adapter setup using parametrized decorators.
-        """
+        """Test adapter setup using parametrized decorators."""
+
         @generic.Adapter.train(foo='foo', bar='foo')
         @wrapped.Function.actor
         def func(_, **kw):
-            """Dummy actor.
-            """
+            """Dummy actor."""
             return 'foo', kw
 
         @func.label
         @wrapped.Function.actor(bar='bar', baz='bar')
         def func(_, **kw):
-            """Dummy actor.
-            """
+            """Dummy actor."""
             return 'bar', kw
 
         assert not func._apply.spec()
@@ -70,15 +66,14 @@ class TestAdapter:
         assert func._label.spec(baz='baz')().apply(None) == ('bar', {'bar': 'bar', 'baz': 'baz'})
 
     def test_multi(self):
-        """Test adapter setup using multiple decorators.
-        """
+        """Test adapter setup using multiple decorators."""
+
         @generic.Adapter.train(foo='foo')
         @generic.Adapter.apply(bar='foo')
         @generic.Adapter.label
         @wrapped.Function.actor
         def funcfoo(_, **kw):
-            """Dummy actor.
-            """
+            """Dummy actor."""
             return 'foo', kw
 
         assert funcfoo._train.spec()().apply(None) == ('foo', {'foo': 'foo'})
@@ -88,8 +83,7 @@ class TestAdapter:
         @funcfoo.apply(bar='bar')
         @wrapped.Function.actor
         def funcbar(_, **kw):
-            """Dummy actor.
-            """
+            """Dummy actor."""
             return 'bar', kw
 
         assert funcbar._train.spec()().apply(None) == ('foo', {'foo': 'foo'})
@@ -97,19 +91,19 @@ class TestAdapter:
         assert funcbar._label.spec()().apply(None) == ('foo', {})
 
     def test_setup(self):
-        """Test the operator instantiation.
-        """
+        """Test the operator instantiation."""
+
         @generic.Adapter.train(foo='foo', bar='bar')
         @generic.Adapter.apply(foo='foo', bar='bar')
         @generic.Adapter.label(foo='foo', bar='bar')
         @wrapped.Function.actor
         def func(_, *args, **kwargs):
-            """Dummy actor.
-            """
+            """Dummy actor."""
             return 'foo', args, kwargs
 
         operator = func('foo', bar='baz')
         # pylint: disable=no-member
-        assert operator._apply.args == operator._train.args == operator._label.args == ('foo', )
-        assert operator._apply.kwargs == operator._train.kwargs == operator._label.kwargs == {'foo': 'foo',
-                                                                                              'bar': 'baz'}
+        assert operator._apply.args == operator._train.args == operator._label.args == ('foo',)
+        assert (
+            operator._apply.kwargs == operator._train.kwargs == operator._label.kwargs == {'foo': 'foo', 'bar': 'baz'}
+        )

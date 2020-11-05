@@ -23,7 +23,6 @@ from forml.io import payload
 
 
 def test_transpose():
-    """Transposition unit test.
-    """
+    """Transposition unit test."""
     assert payload.transpose([]) == []
     assert payload.transpose([[1, 2, 3], [4, 5, 6]]) == [[1, 4], [2, 5], [3, 6]]

@@ -43,6 +43,7 @@ class Passenger(struct.Schema):
 
             Some children travelled only with a nanny, therefore parch=0 for them.
     """
+
     PassengerId = struct.Field(kind.Integer())  # Passenger ID
     Survived = struct.Field(kind.Integer())  # Survival (0 = No, 1 = Yes)
     Pclass = struct.Field(kind.Integer())  # Ticket class (1 = 1st, 2 = 2nd, 3 = 3rd)

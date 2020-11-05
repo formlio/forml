@@ -23,26 +23,22 @@ from forml.io.dsl.struct import series, kind as kindmod
 
 
 class Count(series.Aggregate, series.Univariate):
-    """Number of the input rows.
-    """
+    """Number of the input rows."""
+
     kind: kindmod.Integer = kindmod.Integer()
 
 
 class Avg(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Average of the column values.
-    """
+    """Average of the column values."""
 
 
 class Max(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Maximum of the column values.
-    """
+    """Maximum of the column values."""
 
 
 class Min(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Minimum of the column values.
-    """
+    """Minimum of the column values."""
 
 
 class Sum(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Sum of the column values.
-    """
+    """Sum of the column values."""

@@ -28,13 +28,17 @@ from forml.testing import spec, routine as routinemod
 
 
 class Runner:
-    """Runner mock.
-    """
+    """Runner mock."""
+
     class Outcome:
-        """Runner outcome mock
-        """
-        def __init__(self, init: typing.Optional[spec.Scenario.Exception] = None,
-                     apply: typing.Any = None, train: typing.Any = None):
+        """Runner outcome mock"""
+
+        def __init__(
+            self,
+            init: typing.Optional[spec.Scenario.Exception] = None,
+            apply: typing.Any = None,
+            train: typing.Any = None,
+        ):
             if init is not None:
                 self._raise(init)
             self._apply: typing.Any = apply
@@ -42,20 +46,17 @@ class Runner:
 
         @staticmethod
         def _raise(exception: spec.Scenario.Exception):
-            """Helper for raising exception.
-            """
+            """Helper for raising exception."""
             raise exception.kind(exception.message)
 
         def train(self):
-            """Runner train mode mock.
-            """
+            """Runner train mode mock."""
             if isinstance(self._train, spec.Scenario.Exception):
                 self._raise(self._train)
             return self._train
 
         def apply(self):
-            """Runner apply mode mock.
-            """
+            """Runner apply mode mock."""
             if isinstance(self._apply, spec.Scenario.Exception):
                 self._raise(self._apply)
             return self._apply
@@ -66,11 +67,12 @@ class Runner:
     def __call__(self, _) -> 'Runner.Outcome':
         if self._scenario.outcome is spec.Scenario.Outcome.INIT_RAISES:
             return self.Outcome(init=self._scenario.exception)
-        if self._scenario.outcome in {spec.Scenario.Outcome.PLAINAPPLY_RAISES,
-                                      spec.Scenario.Outcome.STATEAPPLY_RAISES}:
+        if self._scenario.outcome in {spec.Scenario.Outcome.PLAINAPPLY_RAISES, spec.Scenario.Outcome.STATEAPPLY_RAISES}:
             return self.Outcome(apply=self._scenario.exception)
-        if self._scenario.outcome in {spec.Scenario.Outcome.PLAINAPPLY_RETURNS,
-                                      spec.Scenario.Outcome.STATEAPPLY_RETURNS}:
+        if self._scenario.outcome in {
+            spec.Scenario.Outcome.PLAINAPPLY_RETURNS,
+            spec.Scenario.Outcome.STATEAPPLY_RETURNS,
+        }:
             return self.Outcome(apply=self._scenario.output.apply)
         if self._scenario.outcome is spec.Scenario.Outcome.STATETRAIN_RAISES:
             return self.Outcome(train=self._scenario.exception)
@@ -81,41 +83,38 @@ class Runner:
 
 @pytest.fixture(scope='session')
 def suite() -> routinemod.Suite:
-    """Suite fixture.
-    """
+    """Suite fixture."""
+
     class Suite(routinemod.Suite):
-        """Suite mock.
-        """
+        """Suite mock."""
+
         __operator__ = None
 
     return Suite()
 
 
 class Routine(metaclass=abc.ABCMeta):
-    """Routine test base class.
-    """
+    """Routine test base class."""
+
     @staticmethod
     @abc.abstractmethod
     def scenario(scenario: spec.Scenario) -> spec.Scenario:
-        """Abstract scenario fixture.
-        """
+        """Abstract scenario fixture."""
 
     @staticmethod
     @pytest.fixture(scope='session')
     def routine(scenario: spec.Scenario) -> routinemod.Test:
-        """Routine fixture.
-        """
+        """Routine fixture."""
         return routinemod.Case.select(scenario, Runner(scenario))
 
     def test_routine(self, routine: routinemod.Test, suite: routinemod.Suite):
-        """Routine test case.
-        """
+        """Routine test case."""
         routine(suite)
 
 
 class TestInitRaises(Routine):
-    """Routine test.
-    """
+    """Routine test."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def scenario(init_raises: spec.Scenario) -> spec.Scenario:
@@ -123,8 +122,8 @@ class TestInitRaises(Routine):
 
 
 class TestPlainApplyRaises(Routine):
-    """Routine test.
-    """
+    """Routine test."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def scenario(plainapply_raises: spec.Scenario) -> spec.Scenario:
@@ -132,8 +131,8 @@ class TestPlainApplyRaises(Routine):
 
 
 class TestPlainApplyReturns(Routine):
-    """Routine test.
-    """
+    """Routine test."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def scenario(plainapply_returns: spec.Scenario) -> spec.Scenario:
@@ -141,8 +140,8 @@ class TestPlainApplyReturns(Routine):
 
 
 class TestStateTrainRaises(Routine):
-    """Routine test.
-    """
+    """Routine test."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def scenario(statetrain_raises: spec.Scenario) -> spec.Scenario:
@@ -150,8 +149,8 @@ class TestStateTrainRaises(Routine):
 
 
 class TestStateTrainReturns(Routine):
-    """Routine test.
-    """
+    """Routine test."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def scenario(statetrain_returns: spec.Scenario) -> spec.Scenario:
@@ -159,8 +158,8 @@ class TestStateTrainReturns(Routine):
 
 
 class TestStateApplyRaises(Routine):
-    """Routine test.
-    """
+    """Routine test."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def scenario(stateapply_raises: spec.Scenario) -> spec.Scenario:
@@ -168,8 +167,8 @@ class TestStateApplyRaises(Routine):
 
 
 class TestStateApplyReturns(Routine):
-    """Routine test.
-    """
+    """Routine test."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def scenario(stateapply_returns: spec.Scenario) -> spec.Scenario:

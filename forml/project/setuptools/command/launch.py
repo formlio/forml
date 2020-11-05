@@ -33,8 +33,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Mode(test.test, metaclass=abc.ABCMeta):
-    """Development mode extra commands (based on the standard test mode).
-    """
+    """Development mode extra commands (based on the standard test mode)."""
+
     user_options = [
         ('runner=', 'R', 'runtime runner'),
         ('feed=', 'I', 'etl feed'),
@@ -43,8 +43,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     ]
 
     def initialize_options(self) -> None:
-        """Init options.
-        """
+        """Init options."""
         super().initialize_options()
         self.runner: typing.Optional[str] = None
         self.feed: typing.Optional[str] = None
@@ -52,8 +51,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         self.upper: typing.Optional[str] = None
 
     def finalize_options(self) -> None:
-        """Fini options.
-        """
+        """Fini options."""
         self.ensure_string_list('feed')
 
     @property
@@ -74,8 +72,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         return product.Artifact(self.distribution.package_dir.get('', '.'), package=package, **modules)
 
     def run_tests(self) -> None:
-        """This is the original test command entry point - let's override it with our actions.
-        """
+        """This is the original test command entry point - let's override it with our actions."""
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
         launcher = self.artifact.launcher(provider.Runner.resolve(self.runner), provider.Feed.resolve(self.feed))
         result = self.launch(launcher, lower=self.lower, upper=self.upper)
@@ -97,8 +94,8 @@ class Mode(test.test, metaclass=abc.ABCMeta):
 
 
 class Train(Mode):
-    """Development train mode.
-    """
+    """Development train mode."""
+
     description = 'trigger the development train mode'
 
     @staticmethod
@@ -107,8 +104,8 @@ class Train(Mode):
 
 
 class Tune(Mode):
-    """Development tune mode.
-    """
+    """Development tune mode."""
+
     description = 'trigger the development tune mode'
 
     @staticmethod
@@ -117,8 +114,8 @@ class Tune(Mode):
 
 
 class Eval(Mode):
-    """Development eval mode.
-    """
+    """Development eval mode."""
+
     description = 'trigger the model evaluation mode'
 
     @staticmethod

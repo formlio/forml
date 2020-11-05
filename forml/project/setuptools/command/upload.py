@@ -29,8 +29,8 @@ from forml.project.setuptools.command import bdist
 
 
 class Registry(setuptools.Command):
-    """ForML publish package.
-    """
+    """ForML publish package."""
+
     description = 'publish a ForML distribution'
 
     user_options = [
@@ -38,21 +38,19 @@ class Registry(setuptools.Command):
     ]
 
     def initialize_options(self) -> None:
-        """Init options.
-        """
+        """Init options."""
         self.registry: typing.Optional[str] = None
 
     def finalize_options(self) -> None:
-        """Fini options.
-        """
+        """Fini options."""
 
     def run(self) -> None:
-        """Trigger the deployment process.
-        """
+        """Trigger the deployment process."""
         packages = [distribution.Package(f) for c, _, f in self.distribution.dist_files if c == bdist.Package.COMMAND]
         if not packages:
-            raise error.Invalid('Must create and upload files in one command '
-                                f'(e.g. setup.py {bdist.Package.COMMAND} upload)')
+            raise error.Invalid(
+                'Must create and upload files in one command ' f'(e.g. setup.py {bdist.Package.COMMAND} upload)'
+            )
         project = self.distribution.get_name()
         platform = runtime.Platform(registry=provcfg.Registry.resolve(self.registry))
         for pkg in packages:

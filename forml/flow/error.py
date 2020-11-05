@@ -22,5 +22,4 @@ from forml import error
 
 
 class Topology(error.Invalid):
-    """Flow topology exception.
-    """
+    """Flow topology exception."""

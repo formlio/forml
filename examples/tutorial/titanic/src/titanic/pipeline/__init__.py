@@ -33,17 +33,20 @@ from titanic.pipeline import preprocessing, model
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
-STACK = ensemble.FullStacker(bases=(model.RFC(n_estimators=10, random_state=42),
-                                    model.GBC(random_state=42)),
-                             crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42))
+STACK = ensemble.FullStacker(
+    bases=(model.RFC(n_estimators=10, random_state=42), model.GBC(random_state=42)),
+    crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
+)
 
 
 # This is the main pipeline composition:
-INSTANCE = preprocessing.NaNImputer() >> \
-    preprocessing.parse_title(source='Name', target='Title') >> \
-    preprocessing.ENCODER(cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title']) >> \
-    STACK >> \
-    model.LR(random_state=42, solver='lbfgs')
+INSTANCE = (
+    preprocessing.NaNImputer()
+    >> preprocessing.parse_title(source='Name', target='Title')
+    >> preprocessing.ENCODER(cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title'])
+    >> STACK
+    >> model.LR(random_state=42, solver='lbfgs')
+)
 
 # And the final step is registering the pipeline instance as the forml component:
 component.setup(INSTANCE)

@@ -33,15 +33,19 @@ from forml.lib.flow.operator import folding
 
 
 class FullStacker(folding.Crossvalidated):
-    """Stacked ensembling with all individual models kept for serving.
-    """
+    """Stacked ensembling with all individual models kept for serving."""
+
     class Builder(folding.Crossvalidated.Builder):
-        """Crossvalidation builder used as a folding context.
-        """
-        def __init__(self, head: pipeline.Segment,
-                     stackers: typing.Dict[topology.Composable, node.Worker],
-                     mergers: typing.Dict[topology.Composable, node.Worker],
-                     trained: node.Worker, applied: node.Worker):
+        """Crossvalidation builder used as a folding context."""
+
+        def __init__(
+            self,
+            head: pipeline.Segment,
+            stackers: typing.Dict[topology.Composable, node.Worker],
+            mergers: typing.Dict[topology.Composable, node.Worker],
+            trained: node.Worker,
+            applied: node.Worker,
+        ):
             self.head: pipeline.Segment = head
             self.stackers: typing.Dict[topology.Composable, node.Worker] = stackers
             self.mergers: typing.Dict[topology.Composable, node.Worker] = mergers
@@ -53,8 +57,9 @@ class FullStacker(folding.Crossvalidated):
 
             Returns: Crossvalidation pipeline segment.
             """
-            return self.head.use(apply=self.head.apply.extend(tail=self.applied),
-                                 train=self.head.train.extend(tail=self.trained))
+            return self.head.use(
+                apply=self.head.apply.extend(tail=self.applied), train=self.head.train.extend(tail=self.trained)
+            )
 
     def __init__(self, bases: typing.Sequence[topology.Composable], crossvalidator: model_selection.BaseCrossValidator):
         super().__init__(crossvalidator)
@@ -74,10 +79,14 @@ class FullStacker(folding.Crossvalidated):
         """
         if not (folds and all(f.shape == folds[0].shape for f in folds)):
             raise ValueError('Folds must have same shape')
-        folds = [([f.name for f in folds], folds)] if folds[0].ndim == 1 else (
-            zip(*i) for i in zip(*(f.iteritems() for f in folds)))
-        return pandas.concat((
-            pandas.concat(s, axis='columns').mean(axis='columns').rename(n[0]) for n, s in folds), axis='columns')
+        folds = (
+            [([f.name for f in folds], folds)]
+            if folds[0].ndim == 1
+            else (zip(*i) for i in zip(*(f.iteritems() for f in folds)))
+        )
+        return pandas.concat(
+            (pandas.concat(s, axis='columns').mean(axis='columns').rename(n[0]) for n, s in folds), axis='columns'
+        )
 
     def builder(self, head: pipeline.Segment, inner: pipeline.Segment) -> 'FullStacker.Builder':
         """Create a builder (folding context).
@@ -92,7 +101,8 @@ class FullStacker(folding.Crossvalidated):
         applied: node.Worker = trained.fork()
         stack_forks: typing.Iterable[node.Worker] = node.Worker.fgen(ndframe.Concat.spec(axis='index'), self.nsplits, 1)
         merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(
-            ndframe.Apply.spec(function=self._merge), self.nsplits, 1)
+            ndframe.Apply.spec(function=self._merge), self.nsplits, 1
+        )
         stackers: typing.Dict[topology.Composable, node.Worker] = dict()
         mergers: typing.Dict[topology.Composable, node.Worker] = dict()
         for index, (base, stack, merge) in enumerate(zip(self.bases, stack_forks, merge_forks)):
@@ -103,8 +113,14 @@ class FullStacker(folding.Crossvalidated):
 
         return self.Builder(head, stackers, mergers, trained, applied)
 
-    def fold(self, fold: int, builder: 'FullStacker.Builder',  # pylint: disable=arguments-differ
-             pretrack: pipeline.Segment, features: node.Worker, labels: node.Worker) -> None:
+    def fold(
+        self,
+        fold: int,
+        builder: 'FullStacker.Builder',  # pylint: disable=arguments-differ
+        pretrack: pipeline.Segment,
+        features: node.Worker,
+        labels: node.Worker,
+    ) -> None:
         """Implement single fold ensembling.
 
         Args:

@@ -20,11 +20,23 @@ ETL expression language.
 """
 
 from forml.io.dsl.struct.series import (  # noqa: F401
-    Addition, Subtraction, Multiplication, Division, Modulus,
-    LessThan, LessEqual, GreaterThan, GreaterEqual, Equal, NotEqual, IsNull, NotNull, And, Or, Not)
-from forml.io.dsl.function.aggregate import (  # noqa: F401
-    Avg, Count, Min, Max, Sum)
-from forml.io.dsl.function.conversion import (  # noqa: F401
-    Cast)
-from forml.io.dsl.function.datetime import (  # noqa: F401
-    Year)
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Modulus,
+    LessThan,
+    LessEqual,
+    GreaterThan,
+    GreaterEqual,
+    Equal,
+    NotEqual,
+    IsNull,
+    NotNull,
+    And,
+    Or,
+    Not,
+)
+from forml.io.dsl.function.aggregate import Avg, Count, Min, Max, Sum  # noqa: F401
+from forml.io.dsl.function.conversion import Cast  # noqa: F401
+from forml.io.dsl.function.datetime import Year  # noqa: F401

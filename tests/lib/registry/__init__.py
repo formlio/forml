@@ -31,29 +31,32 @@ from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, 
 
 
 class Registry(metaclass=abc.ABCMeta):
-    """Base class for registry unit tests.
-    """
+    """Base class for registry unit tests."""
+
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='function')
     def constructor() -> typing.Callable[[], persistent.Registry]:
-        """Registry fixture.
-        """
+        """Registry fixture."""
 
     @staticmethod
     @pytest.fixture(scope='function')
     def empty(constructor: typing.Callable[[], persistent.Registry]) -> persistent.Registry:
-        """Empty registry fixture.
-        """
+        """Empty registry fixture."""
         return constructor()
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def populated(constructor: typing.Callable[[], persistent.Registry], project_package: distribution.Package,
-                  project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key,
-                  states: typing.Mapping[uuid.UUID, bytes], tag: genmod.Tag) -> persistent.Registry:
-        """Populated registry fixture.
-        """
+    def populated(
+        constructor: typing.Callable[[], persistent.Registry],
+        project_package: distribution.Package,
+        project_name: prjmod.Level.Key,
+        project_lineage: lngmod.Level.Key,
+        valid_generation: genmod.Level.Key,
+        states: typing.Mapping[uuid.UUID, bytes],
+        tag: genmod.Tag,
+    ) -> persistent.Registry:
+        """Populated registry fixture."""
         registry = constructor()
         registry.push(project_package)
         for sid, value in states.items():
@@ -61,50 +64,67 @@ class Registry(metaclass=abc.ABCMeta):
         registry.close(project_name, project_lineage, valid_generation, tag)
         return registry
 
-    def test_projects(self, empty: persistent.Registry, populated: persistent.Registry,
-                      project_name: prjmod.Level.Key):
-        """Registry projects unit test.
-        """
+    def test_projects(self, empty: persistent.Registry, populated: persistent.Registry, project_name: prjmod.Level.Key):
+        """Registry projects unit test."""
         assert not any(empty.projects())
         assert list(populated.projects()) == [project_name]
 
-    def test_lineages(self, empty: persistent.Registry, populated: persistent.Registry,
-                      project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key):
-        """Registry lineages unit test.
-        """
+    def test_lineages(
+        self,
+        empty: persistent.Registry,
+        populated: persistent.Registry,
+        project_name: prjmod.Level.Key,
+        project_lineage: lngmod.Level.Key,
+    ):
+        """Registry lineages unit test."""
         assert not any(empty.lineages(project_name))
         assert list(populated.lineages(project_name)) == [project_lineage]
 
-    def test_generations(self, empty: persistent.Registry, populated: persistent.Registry,
-                         project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key,
-                         valid_generation: genmod.Level.Key):
-        """Registry generations unit test.
-        """
+    def test_generations(
+        self,
+        empty: persistent.Registry,
+        populated: persistent.Registry,
+        project_name: prjmod.Level.Key,
+        project_lineage: lngmod.Level.Key,
+        valid_generation: genmod.Level.Key,
+    ):
+        """Registry generations unit test."""
         assert not any(empty.lineages(project_name))
         assert list(populated.generations(project_name, project_lineage)) == [valid_generation]
 
     def test_push(self, empty: persistent.Registry, project_package: distribution.Package):
-        """Registry put unit test.
-        """
+        """Registry put unit test."""
         empty.push(project_package)
 
-    def test_mount(self, populated: persistent.Registry,
-                   project_name: prjmod.Level.Key, project_lineage: lngmod.Level.Key,
-                   project_package: distribution.Package):
-        """Registry take unit test.
-        """
+    def test_mount(
+        self,
+        populated: persistent.Registry,
+        project_name: prjmod.Level.Key,
+        project_lineage: lngmod.Level.Key,
+        project_package: distribution.Package,
+    ):
+        """Registry take unit test."""
         assert populated.mount(project_name, project_lineage).package == project_package.manifest.package
 
-    def test_read(self, populated: persistent.Registry, project_name: prjmod.Level.Key,
-                  project_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key,
-                  states: typing.Mapping[uuid.UUID, bytes]):
-        """Registry load unit test.
-        """
+    def test_read(
+        self,
+        populated: persistent.Registry,
+        project_name: prjmod.Level.Key,
+        project_lineage: lngmod.Level.Key,
+        valid_generation: genmod.Level.Key,
+        states: typing.Mapping[uuid.UUID, bytes],
+    ):
+        """Registry load unit test."""
         for sid, value in states.items():
             assert populated.read(project_name, project_lineage, valid_generation, sid) == value
 
-    def test_open(self, populated: persistent.Registry, project_name: prjmod.Level.Key,
-                  project_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key, tag: genmod.Tag):
-        """Registry checkout unit test.
-        """
+    def test_open(
+        self,
+        populated: persistent.Registry,
+        project_name: prjmod.Level.Key,
+        project_lineage: lngmod.Level.Key,
+        valid_generation: genmod.Level.Key,
+        tag: genmod.Tag,
+    ):
+        """Registry checkout unit test."""
         assert populated.open(project_name, project_lineage, valid_generation) == tag

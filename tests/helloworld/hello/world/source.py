@@ -24,8 +24,8 @@ from forml.project import component
 
 
 class HelloWorld(struct.Schema):
-    """Base table.
-    """
+    """Base table."""
+
     name = struct.Field(kind.String())
 
 

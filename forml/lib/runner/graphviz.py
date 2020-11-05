@@ -33,13 +33,18 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Runner(runtime.Runner, alias='graphviz'):
-    """Graphviz based runner implementation.
-    """
+    """Graphviz based runner implementation."""
+
     FILEPATH = f'{conf.APPNAME}.dot'
 
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional[feedmod.Provider] = None,
-                 sink: typing.Optional[sinkmod.Provider] = None, filepath: typing.Optional[str] = None,
-                 **gvkw: typing.Any):
+    def __init__(
+        self,
+        assets: typing.Optional[access.Assets] = None,
+        feed: typing.Optional[feedmod.Provider] = None,
+        sink: typing.Optional[sinkmod.Provider] = None,
+        filepath: typing.Optional[str] = None,
+        **gvkw: typing.Any,
+    ):
         super().__init__(assets, feed, sink)
         self._filepath: str = filepath or self.FILEPATH
         self._gvkw: typing.Mapping[str, typing.Any] = gvkw

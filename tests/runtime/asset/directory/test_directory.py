@@ -26,21 +26,26 @@ from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, 
 
 
 class TestCache:
-    """Directory cache tests.
-    """
+    """Directory cache tests."""
+
     @staticmethod
     @pytest.fixture(scope='function')
     def cache() -> directory.Cache:
-        """Cache fixture.
-        """
+        """Cache fixture."""
         instance = directory.Cache(persistent.Registry.open)
         instance.clear()
         return instance
 
-    def test_cycle(self, cache: directory.Cache, registry: persistent.Registry, project_name: prjmod.Level.Key,
-                   populated_lineage: lngmod.Level.Key, valid_generation: genmod.Level.Key, tag: genmod.Tag):
-        """Test the cache lifecycle.
-        """
+    def test_cycle(
+        self,
+        cache: directory.Cache,
+        registry: persistent.Registry,
+        project_name: prjmod.Level.Key,
+        populated_lineage: lngmod.Level.Key,
+        valid_generation: genmod.Level.Key,
+        tag: genmod.Tag,
+    ):
+        """Test the cache lifecycle."""
         assert cache.info.currsize == 0
         assert cache(registry, project_name, populated_lineage, valid_generation) == tag
         assert cache.info.misses == 1

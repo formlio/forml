@@ -30,25 +30,22 @@ from . import TupleParser
 
 
 class TestContainer:
-    """Parser stack unit tests.
-    """
+    """Parser stack unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='function')
     def storage() -> parsmod.Container:
-        """Stack fixture.
-        """
+        """Stack fixture."""
         return parsmod.Container()
 
     @staticmethod
     @pytest.fixture(scope='function')
     def value() -> object:
-        """Value fixture.
-        """
+        """Value fixture."""
         return object()
 
     def test_context(self, storage, value):
-        """Test context nesting.
-        """
+        """Test context nesting."""
         with storage:
             storage.context.symbols.push(value)
             with storage:
@@ -61,11 +58,11 @@ class TestContainer:
 
 
 class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
-    """Dummy frame parser wrapping all terms into tuples.
-    """
+    """Dummy frame parser wrapping all terms into tuples."""
+
     class Series(parsmod.Frame.Series[tuple, tuple]):
-        """Dummy series parser wrapping all terms into tuples.
-        """
+        """Dummy series parser wrapping all terms into tuples."""
+
         # pylint: disable=missing-function-docstring
         def generate_element(self, origin: tuple, element: tuple) -> tuple:
             return origin, element
@@ -73,8 +70,9 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
         def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
             return value, kind
 
-        def generate_expression(self, expression: typing.Type[sermod.Expression],
-                                arguments: typing.Sequence[typing.Any]) -> tuple:
+        def generate_expression(
+            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        ) -> tuple:
             return expression, *arguments
 
         def generate_alias(self, column: tuple, alias: str) -> tuple:
@@ -90,10 +88,16 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
     def generate_set(self, left: tuple, right: tuple, kind: framod.Set.Kind) -> tuple:
         return left, kind, right
 
-    def generate_query(self, source: tuple, columns: typing.Sequence[tuple], where: typing.Optional[tuple],
-                       groupby: typing.Sequence[tuple], having: typing.Optional[tuple],
-                       orderby: typing.Sequence[typing.Tuple[tuple, sermod.Ordering.Direction]],
-                       rows: typing.Optional[framod.Rows]) -> tuple:
+    def generate_query(
+        self,
+        source: tuple,
+        columns: typing.Sequence[tuple],
+        where: typing.Optional[tuple],
+        groupby: typing.Sequence[tuple],
+        having: typing.Optional[tuple],
+        orderby: typing.Sequence[typing.Tuple[tuple, sermod.Ordering.Direction]],
+        rows: typing.Optional[framod.Rows],
+    ) -> tuple:
         return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows
 
     def generate_reference(self, instance: tuple, name: str) -> tuple:
@@ -101,30 +105,30 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
 
 
 class TestParser(TupleParser):
-    """Frame parser tests.
-    """
+    """Frame parser tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
-    def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[
-            framod.Source, tuple]:
-        """Sources mapping fixture.
-        """
-        return types.MappingProxyType({
-            framod.Join(student, person, student.surname == person.surname): tuple(['foo']),
-            person: tuple([person]),
-            student: tuple([student]),
-            school: tuple([school])
-        })
+    def sources(
+        person: framod.Table, student: framod.Table, school: framod.Table
+    ) -> typing.Mapping[framod.Source, tuple]:
+        """Sources mapping fixture."""
+        return types.MappingProxyType(
+            {
+                framod.Join(student, person, student.surname == person.surname): tuple(['foo']),
+                person: tuple([person]),
+                student: tuple([student]),
+                school: tuple([school]),
+            }
+        )
 
     @staticmethod
     @pytest.fixture(scope='session')
     def columns(student: framod.Table) -> typing.Mapping[sermod.Column, tuple]:
-        """Columns mapping fixture.
-        """
+        """Columns mapping fixture."""
 
         class Columns:
-            """Columns mapping.
-            """
+            """Columns mapping."""
 
             def __getitem__(self, column: sermod.Column) -> tuple:
                 if column == student.level:
@@ -138,6 +142,5 @@ class TestParser(TupleParser):
     @staticmethod
     @pytest.fixture(scope='function')
     def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mapping[sermod.Column, tuple]) -> Frame:
-        """Parser fixture.
-        """
+        """Parser fixture."""
         return Frame(sources, columns)

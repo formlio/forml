@@ -29,43 +29,37 @@ from forml import conf
 
 
 def test_exists(cfg_file: pathlib.Path):
-    """Test the config file exists.
-    """
+    """Test the config file exists."""
     assert cfg_file.is_file()
 
 
 def test_src(cfg_file: pathlib.Path):
-    """Test the registry config field.
-    """
+    """Test the registry config field."""
     assert cfg_file in conf.PARSER.sources
 
 
 def test_get():
-    """Test the get value matches the test config.toml
-    """
+    """Test the get value matches the test config.toml"""
     assert getattr(conf, 'foobar') == conf.foobar == 'baz'
 
 
 class TestParser:
-    """Parser unit tests.
-    """
+    """Parser unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def defaults() -> typing.Mapping[str, typing.Any]:
-        """Default values fixtures.
-        """
+        """Default values fixtures."""
         return types.MappingProxyType({'foo': 'bar', 'baz': {'scalar': 1, 'seq': [10, 3, 'asd']}})
 
     @staticmethod
     @pytest.fixture(scope='function')
     def parser(defaults: typing.Mapping[str, typing.Any]) -> conf.Parser:
-        """Parser fixture.
-        """
+        """Parser fixture."""
         return conf.Parser(defaults)
 
     def test_update(self, parser: conf.Parser):
-        """Parser update tests.
-        """
+        """Parser update tests."""
         parser.update(baz={'another': 2})
         assert parser['baz']['scalar'] == 1
         parser.update({'baz': {'scalar': 3}})
@@ -75,7 +69,6 @@ class TestParser:
         assert parser['baz']['seq'] == (3, 'qwe', 'asd', 10)
 
     def test_read(self, parser: conf.Parser, cfg_file: pathlib.Path):
-        """Test parser file reading.
-        """
+        """Test parser file reading."""
         parser.read(cfg_file)
         assert cfg_file in parser.sources

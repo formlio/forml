@@ -24,8 +24,8 @@ from forml.io.dsl.struct import frame, kind as kindmod
 
 
 class Field(typing.NamedTuple):
-    """Schema field class.
-    """
+    """Schema field class."""
+
     kind: kindmod.Any
     name: typing.Optional[str] = None
 

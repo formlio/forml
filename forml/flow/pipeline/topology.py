@@ -25,8 +25,8 @@ from forml.flow import pipeline, error
 
 
 class Composable(metaclass=abc.ABCMeta):
-    """Common base for operators and expressions.
-    """
+    """Common base for operators and expressions."""
+
     @abc.abstractmethod
     def expand(self) -> pipeline.Segment:
         """Compose and return a segment track.
@@ -35,8 +35,7 @@ class Composable(metaclass=abc.ABCMeta):
         """
 
     def __rshift__(self, right: 'Composable') -> 'Compound':
-        """Semantical composition construct.
-        """
+        """Semantical composition construct."""
         return Compound(right, self)
 
     def __repr__(self):
@@ -54,8 +53,8 @@ class Composable(metaclass=abc.ABCMeta):
 
 
 class Origin(Composable):
-    """Initial builder without a predecessor.
-    """
+    """Initial builder without a predecessor."""
+
     def expand(self) -> pipeline.Segment:
         """Track of future nodes.
 
@@ -75,8 +74,8 @@ class Origin(Composable):
 
 
 class Operator(Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
-    """Base pipeline entity.
-    """
+    """Base pipeline entity."""
+
     def expand(self) -> pipeline.Segment:
         """Create dummy composition of this operator on a future origin nodes.
 
@@ -86,8 +85,8 @@ class Operator(Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
 
 
 class Compound(Composable):
-    """Operator chaining descriptor.
-    """
+    """Operator chaining descriptor."""
+
     _TERMS = weakref.WeakValueDictionary()
 
     def __init__(self, right: Composable, left: Composable):

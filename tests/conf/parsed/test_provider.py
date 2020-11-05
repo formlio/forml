@@ -28,124 +28,109 @@ from forml.conf.parsed import provider as provcfg
 
 
 class Section(metaclass=abc.ABCMeta):
-    """Section test base class.
-    """
+    """Section test base class."""
+
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
     def provider() -> typing.Type[provcfg.Section]:
-        """Provider type.
-        """
+        """Provider type."""
 
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
     def default() -> str:
-        """Default provider name fixture.
-        """
+        """Default provider name fixture."""
 
     def test_default(self, provider: typing.Type[provcfg.Section], default: str):
-        """Default provider config test.
-        """
+        """Default provider config test."""
         assert provider.default.reference == default
 
     def test_path(self, provider: typing.Type[provcfg.Section]):
-        """Path getter test.
-        """
+        """Path getter test."""
         assert isinstance(provider.path, (tuple, list))
 
 
 class TestRunner(Section):
-    """Conf unit tests.
-    """
+    """Conf unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def provider() -> typing.Type[provcfg.Runner]:
-        """Provider type.
-        """
+        """Provider type."""
         return provcfg.Runner
 
     @staticmethod
     @pytest.fixture(scope='session')
     def default() -> str:
-        """Default values.
-        """
+        """Default values."""
         return 'bar'
 
 
 class TestRegistry(Section):
-    """Conf unit tests.
-    """
+    """Conf unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def provider() -> typing.Type[provcfg.Registry]:
-        """Provider type.
-        """
+        """Provider type."""
         return provcfg.Registry
 
     @staticmethod
     @pytest.fixture(scope='session')
     def default() -> str:
-        """Default values.
-        """
+        """Default values."""
         return 'bar'
 
 
 class TestFeed(Section):
-    """Conf unit tests.
-    """
+    """Conf unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def provider() -> typing.Type[provcfg.Feed]:
-        """Provider type.
-        """
+        """Provider type."""
         return provcfg.Feed
 
     @staticmethod
     @pytest.fixture(scope='session')
     def default() -> typing.Any:
-        """Provider type.
-        """
+        """Provider type."""
         return 'bar'
 
     def test_default(self, provider: typing.Type[provcfg.Section], default: str):
-        """Default provider config test.
-        """
+        """Default provider config test."""
         assert default in {p.reference for p in provider.default}
 
 
 class TestSink(Section):
-    """Conf unit tests.
-    """
+    """Conf unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def provider() -> typing.Type[provcfg.Sink]:
-        """Provider type.
-        """
+        """Provider type."""
         return provcfg.Sink
 
     @staticmethod
     @pytest.fixture(scope='session')
     def default() -> str:
-        """Default values.
-        """
+        """Default values."""
         return 'bar'
 
 
 class TestSinkMode:
-    """Sink modes unit tests.
-    """
+    """Sink modes unit tests."""
+
     def test_default(self):
-        """Default modes parsing.
-        """
+        """Default modes parsing."""
         mode = provcfg.Sink.Mode.default
         assert mode.train.reference == 'foo'
         assert mode.apply.reference == 'bar'
         assert mode.eval.reference == 'baz'
 
     def test_explicit(self):
-        """Explicit modes parsing.
-        """
+        """Explicit modes parsing."""
         mode = provcfg.Sink.Mode.resolve('foo')
         # pylint: disable=no-member
         assert mode.train.reference == 'foo'

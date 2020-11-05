@@ -26,8 +26,8 @@ from forml.flow.graph import node as grnode  # pylint: disable=unused-import
 
 
 class Type(int):
-    """Input port base class.
-    """
+    """Input port base class."""
+
     def __repr__(self):
         return f'{self.__class__.__name__}[{int(self)}]'
 
@@ -39,51 +39,51 @@ class Type(int):
 
 
 class Meta(type):
-    """Metaclass for singleton types.
-    """
+    """Metaclass for singleton types."""
+
     def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
         value = namespace.pop('VALUE')
         instance = None
 
         def new(cls):
-            """Injected class new method ensuring singletons with static value are only created.
-            """
+            """Injected class new method ensuring singletons with static value are only created."""
             nonlocal instance
             if instance is None:
                 instance = bases[0].__new__(cls, value)
             return instance
+
         namespace['__new__'] = new
         return super().__new__(mcs, name, bases, namespace)
 
 
 class Train(Type, metaclass=Meta):
-    """Train input port.
-    """
+    """Train input port."""
+
     VALUE = 0
 
 
 class Label(Type, metaclass=Meta):
-    """Label input port.
-    """
+    """Label input port."""
+
     VALUE = 1
 
 
 class Apply(Type):
-    """Apply input/output port at given index.
-    """
+    """Apply input/output port at given index."""
 
 
 class Subscription(collections.namedtuple('Subscription', 'node, port')):
-    """Descriptor representing subscription node input port of given type.
-    """
+    """Descriptor representing subscription node input port of given type."""
+
     # registry of ports subscribed on given node
     _PORTS: typing.Dict['grnode.Atomic', typing.Set[Type]] = collections.defaultdict(set)
 
     def __new__(cls, subscriber: 'grnode.Atomic', port: Type):
         if port in cls._PORTS[subscriber]:
             raise error.Topology('Double subscription')
-        if cls._PORTS[subscriber] and (isinstance(port, Apply) ^ any(
-                isinstance(s, Apply) for s in cls._PORTS[subscriber])):
+        if cls._PORTS[subscriber] and (
+            isinstance(port, Apply) ^ any(isinstance(s, Apply) for s in cls._PORTS[subscriber])
+        ):
             raise error.Topology('Apply/Train collision')
         if isinstance(port, (Train, Label)) and any(subscriber.output):
             raise error.Topology('Publishing node trained')
@@ -117,16 +117,16 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 
 
 class Applicable:
-    """Base for publisher/subscriber proxies.
-    """
+    """Base for publisher/subscriber proxies."""
+
     def __init__(self, node: 'grnode.Atomic', index: int):
         self._node: 'grnode.Atomic' = node
         self._index: int = index
 
 
 class Publishable(Applicable):
-    """Output apply port reference that can be used just for publishing.
-    """
+    """Output apply port reference that can be used just for publishing."""
+
     @property
     def szout(self) -> int:
         """Size of publisher node output.
@@ -159,8 +159,8 @@ class Publishable(Applicable):
 
 
 class Subscriptable(Applicable):
-    """Input apply port reference that can be used just for subscribing.
-    """
+    """Input apply port reference that can be used just for subscribing."""
+
     @property
     def szin(self) -> int:
         """Size of publisher node input.
@@ -179,8 +179,8 @@ class Subscriptable(Applicable):
 
 
 class PubSub(Publishable, Subscriptable):
-    """Input or output apply port reference that can be used for both subscribing and publishing.
-    """
+    """Input or output apply port reference that can be used for both subscribing and publishing."""
+
     @property
     def publisher(self) -> Publishable:
         """Return just a publishable representation.

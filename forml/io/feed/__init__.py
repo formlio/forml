@@ -42,17 +42,20 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], path=provcfg.Feed.path):
-    """Feed is the implementation of a specific datasource provider.
-    """
+    """Feed is the implementation of a specific datasource provider."""
+
     class Reader(extract.Reader[parser.Source, parser.Column, payload.Native], metaclass=abc.ABCMeta):
-        """Abstract reader of the feed.
-        """
+        """Abstract reader of the feed."""
 
     def __init__(self, **readerkw):
         self._readerkw: typing.Dict[str, typing.Any] = readerkw
 
-    def load(self, source: 'component.Source', lower: typing.Optional['kindmod.Native'] = None,
-             upper: typing.Optional['kindmod.Native'] = None) -> pipeline.Segment:
+    def load(
+        self,
+        source: 'component.Source',
+        lower: typing.Optional['kindmod.Native'] = None,
+        upper: typing.Optional['kindmod.Native'] = None,
+    ) -> pipeline.Segment:
         """Provide a pipeline composable segment implementing the etl actions.
 
         Args:
@@ -62,6 +65,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
 
         Returns: Pipeline segment.
         """
+
         def formatter(provider: typing.Callable[..., payload.ColumnMajor]) -> typing.Callable[..., typing.Any]:
             """Creating a closure around the provider with the custom formatting to be applied on the provider output.
 
@@ -70,6 +74,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
 
             Returns: Wrapper that applies formatting upon calling the provider.
             """
+
             @functools.wraps(provider)
             def wrapper(*args, **kwargs) -> typing.Any:
                 """Wrapped provider with custom formatting.
@@ -81,6 +86,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
                 Returns: Formatted data.
                 """
                 return self.format(provider(*args, **kwargs))
+
             return wrapper
 
         def actor(handler: typing.Callable[..., typing.Any], spec: 'frame.Query') -> task.Spec:
@@ -92,16 +98,18 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
 
             Returns: Reader actor spec.
             """
-            return extract.Reader.Actor.spec(handler, extract.Statement.prepare(
-                spec, source.extract.ordinal, lower, upper))
+            return extract.Reader.Actor.spec(
+                handler, extract.Statement.prepare(spec, source.extract.ordinal, lower, upper)
+            )
 
         reader = self.reader(self.sources, self.columns, **self._readerkw)
         query: 'frame.Query' = source.extract.train
         label: typing.Optional[task.Spec] = None
         if source.extract.label:  # trainset/label formatting is applied only after label extraction
             query = query.select(*(*source.extract.train.columns, *source.extract.label))
-            label = extract.Slicer.Actor.spec(formatter(self.slicer(query.columns, self.columns)),
-                                              source.extract.train.columns, source.extract.label)
+            label = extract.Slicer.Actor.spec(
+                formatter(self.slicer(query.columns, self.columns)), source.extract.train.columns, source.extract.label
+            )
         else:  # testset formatting is applied straight away
             reader = formatter(reader)
         train = actor(reader, query)
@@ -112,9 +120,12 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
         return loader.expand()
 
     @classmethod
-    def reader(cls, sources: typing.Mapping['frame.Source', parser.Source],
-               columns: typing.Mapping['series.Column', parser.Column],
-               **kwargs: typing.Any) -> typing.Callable[['frame.Query'], payload.ColumnMajor]:
+    def reader(
+        cls,
+        sources: typing.Mapping['frame.Source', parser.Source],
+        columns: typing.Mapping['series.Column', parser.Column],
+        **kwargs: typing.Any,
+    ) -> typing.Callable[['frame.Query'], payload.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
@@ -127,9 +138,9 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
         return cls.Reader(sources, columns, **kwargs)  # pylint: disable=abstract-class-instantiated
 
     @classmethod
-    def slicer(cls, schema: typing.Sequence['series.Column'],
-               columns: typing.Mapping['series.Column', parser.Column]) -> typing.Callable[
-                   [payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
+    def slicer(
+        cls, schema: typing.Sequence['series.Column'], columns: typing.Mapping['series.Column', parser.Column]
+    ) -> typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
 
         This default slicer is plain positional sequence slicer.
@@ -174,9 +185,10 @@ class Pool:
     """Pool of (possibly) lazily instantiated feeds. If configured without any explicit feeds, all of the feeds
     registered in the provider cache are added.
     """
+
     class Slot:
-        """Representation of a single feed provided either explicitly s an instance or lazily as a descriptor.
-        """
+        """Representation of a single feed provided either explicitly s an instance or lazily as a descriptor."""
+
         def __init__(self, feed: typing.Union[provcfg.Feed, str, Provider]):
             if isinstance(feed, str):
                 feed = provcfg.Feed.resolve(feed)
@@ -211,6 +223,7 @@ class Pool:
         sources. The logic is based on traversing the Frame tree and if hitting a Table (tree leaf) that's not among the
         defined sources it resolves as not matching.
         """
+
         def __init__(self, sources: typing.Iterable['frame.Source']):
             self._sources: typing.FrozenSet['frame.Source'] = frozenset(sources)
             self._matches: bool = True

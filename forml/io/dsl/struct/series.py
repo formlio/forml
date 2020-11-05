@@ -50,11 +50,11 @@ def cast(value: typing.Any) -> 'Column':
 
 
 class Column(tuple, metaclass=abc.ABCMeta):
-    """Base class for column types (ie fields or select expressions).
-    """
+    """Base class for column types (ie fields or select expressions)."""
+
     class Dissect(vismod.Series):
-        """Visitor extracting column instances of given type(s).
-        """
+        """Visitor extracting column instances of given type(s)."""
+
         def __init__(self, *types: typing.Type):
             self._types: typing.FrozenSet[typing.Type] = frozenset(types)
             self._match: typing.Set['Column'] = set()
@@ -180,6 +180,7 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 
     Returns: Decorated callable.
     """
+
     @functools.wraps(handler)
     def wrapper(*args: typing.Any) -> typing.Sequence['Operable']:
         """Actual decorator.
@@ -195,16 +196,15 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 
 
 class Operable(Column, metaclass=abc.ABCMeta):
-    """Base class for columns that can be used in expressions, conditions, grouping and/or ordering definitions.
-    """
+    """Base class for columns that can be used in expressions, conditions, grouping and/or ordering definitions."""
+
     @property
     def operable(self) -> 'Operable':
         return self
 
     @classmethod
     def ensure_is(cls, column: 'Column') -> 'Operable':
-        """Ensure given given column is an Operable.
-        """
+        """Ensure given given column is an Operable."""
         return super().ensure_is(column).operable
 
     def alias(self, alias: str) -> 'Aliased':
@@ -304,12 +304,12 @@ class Operable(Column, metaclass=abc.ABCMeta):
 
 
 class Ordering(collections.namedtuple('Ordering', 'column, direction')):
-    """OrderBy spec.
-    """
+    """OrderBy spec."""
+
     @enum.unique
     class Direction(enum.Enum):
-        """Ordering direction.
-        """
+        """Ordering direction."""
+
         ASCENDING = 'ascending'
         DESCENDING = 'descending'
 
@@ -331,18 +331,25 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
                 column = column.column
             return Ordering(column, self)
 
-    def __new__(cls, column: Operable,
-                direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
-        return super().__new__(cls, Operable.ensure_is(column),
-                               cls.Direction(direction) if direction else cls.Direction.ASCENDING)
+    def __new__(cls, column: Operable, direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
+        return super().__new__(
+            cls, Operable.ensure_is(column), cls.Direction(direction) if direction else cls.Direction.ASCENDING
+        )
 
     def __repr__(self):
         return f'{repr(self.column)}{repr(self.direction)}'
 
     @classmethod
-    def make(cls, specs: typing.Sequence[typing.Union[Operable, typing.Union[
-        'Ordering.Direction', str], typing.Tuple[Operable, typing.Union[
-            'Ordering.Direction', str]]]]) -> typing.Iterable['Ordering']:
+    def make(
+        cls,
+        specs: typing.Sequence[
+            typing.Union[
+                Operable,
+                typing.Union['Ordering.Direction', str],
+                typing.Tuple[Operable, typing.Union['Ordering.Direction', str]],
+            ]
+        ],
+    ) -> typing.Iterable['Ordering']:
         """Helper to generate orderings from given columns and directions.
 
         Args:
@@ -366,8 +373,8 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
 
 
 class Aliased(Column):
-    """Aliased column representation.
-    """
+    """Aliased column representation."""
+
     operable: Operable = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
 
@@ -395,8 +402,8 @@ class Aliased(Column):
 
 
 class Literal(Operable):
-    """Literal value.
-    """
+    """Literal value."""
+
     value: typing.Any = property(opermod.itemgetter(0))
     kind: kindmod.Any = property(opermod.itemgetter(1))
 
@@ -427,8 +434,8 @@ class Literal(Operable):
 
 
 class Element(Operable):
-    """Named column of particular source.
-    """
+    """Named column of particular source."""
+
     origin: 'framod.Origin' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
 
@@ -454,8 +461,8 @@ class Element(Operable):
 
 
 class Field(Element):
-    """Special type of element is the schema field type.
-    """
+    """Special type of element is the schema field type."""
+
     origin: 'framod.Table' = property(opermod.itemgetter(0))
 
     def __new__(cls, table: 'framod.Table', name: str):
@@ -465,8 +472,8 @@ class Field(Element):
 
 
 class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
-    """Base class for expressions.
-    """
+    """Base class for expressions."""
+
     @property
     def name(self) -> None:
         """Expression has no name without an explicit aliasing.
@@ -480,22 +487,21 @@ class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
 
 
 class Univariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
-    """Base class for functions/operators of just one argument/operand.
-    """
+    """Base class for functions/operators of just one argument/operand."""
+
     def __new__(cls, arg: Operable):
         return super().__new__(cls, Operable.ensure_is(arg))
 
 
 class Bivariate(Expression, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
-    """Base class for functions/operators of two arguments/operands.
-    """
+    """Base class for functions/operators of two arguments/operands."""
+
     def __new__(cls, arg1: Operable, arg2: Operable):
         return super().__new__(cls, Operable.ensure_is(arg1), Operable.ensure_is(arg2))
 
 
 class Operator(metaclass=abc.ABCMeta):
-    """Mixin for an operator expression.
-    """
+    """Mixin for an operator expression."""
 
     @property
     @abc.abstractmethod
@@ -507,8 +513,8 @@ class Operator(metaclass=abc.ABCMeta):
 
 
 class Infix(Operator, Bivariate, metaclass=abc.ABCMeta):
-    """Base class for infix operator expressions.
-    """
+    """Base class for infix operator expressions."""
+
     left: Operable = property(opermod.itemgetter(0))
     right: Operable = property(opermod.itemgetter(1))
 
@@ -517,8 +523,8 @@ class Infix(Operator, Bivariate, metaclass=abc.ABCMeta):
 
 
 class Prefix(Operator, Univariate, metaclass=abc.ABCMeta):
-    """Base class for prefix operator expressions.
-    """
+    """Base class for prefix operator expressions."""
+
     operand: Operable = property(opermod.itemgetter(0))
 
     def __repr__(self):
@@ -526,8 +532,8 @@ class Prefix(Operator, Univariate, metaclass=abc.ABCMeta):
 
 
 class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
-    """Base class for postfix operator expressions.
-    """
+    """Base class for postfix operator expressions."""
+
     operand: Operable = property(opermod.itemgetter(0))
 
     def __new__(cls, arg: Operable):
@@ -538,22 +544,28 @@ class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
 
 
 class Predicate(metaclass=abc.ABCMeta):
-    """Base class for Logical and Comparison operators.
-    """
+    """Base class for Logical and Comparison operators."""
+
     class Factors(typing.Mapping['framod.Table', 'Factors']):
         """Mapping (read-only) of predicate factors to their tables. Factor is pa predicate which is involving exactly
         one and only table.
         """
+
         def __init__(self, *predicates: 'Predicate'):
             items = {p: {f.origin for f in Field.dissect(p)} for p in predicates}
             if collections.Counter(len(s) == 1 for s in items.values())[True] != len(predicates):
                 raise ValueError('Repeated or non-primitive predicates')
             self._items: typing.Mapping[framod.Table, Predicate] = types.MappingProxyType(
-                {s.pop(): p for p, s in items.items()})
+                {s.pop(): p for p, s in items.items()}
+            )
 
         @classmethod
-        def merge(cls, left: 'Predicate.Factors', right: 'Predicate.Factors',
-                  operator: typing.Callable[['Predicate', 'Predicate'], 'Predicate']) -> 'Predicate.Factors':
+        def merge(
+            cls,
+            left: 'Predicate.Factors',
+            right: 'Predicate.Factors',
+            operator: typing.Callable[['Predicate', 'Predicate'], 'Predicate'],
+        ) -> 'Predicate.Factors':
             """Merge the two primitive predicates.
 
             Args:
@@ -563,8 +575,16 @@ class Predicate(metaclass=abc.ABCMeta):
 
             Returns: New Primitive instance with individual predicates combined.
             """
-            return cls(*(operator(left[k], right[k]) if k in left and k in right and hash(left[k]) != hash(right[k])
-                         else left[k] if k in left else right for k in left.keys() | right.keys()))
+            return cls(
+                *(
+                    operator(left[k], right[k])
+                    if k in left and k in right and hash(left[k]) != hash(right[k])
+                    else left[k]
+                    if k in left
+                    else right
+                    for k in left.keys() | right.keys()
+                )
+            )
 
         def __and__(self, other: 'Predicate.Factors') -> 'Predicate.Factors':
             return self.merge(self, other, And)
@@ -615,16 +635,16 @@ class Predicate(metaclass=abc.ABCMeta):
 
 
 class Logical(Predicate, metaclass=abc.ABCMeta):
-    """Mixin for logical operators.
-    """
+    """Mixin for logical operators."""
+
     def __init__(self, *operands: Operable):
         for arg in operands:
             Predicate.ensure_is(arg)
 
 
 class And(Logical, Infix):
-    """And operator.
-    """
+    """And operator."""
+
     symbol = 'AND'
 
     @property
@@ -634,8 +654,8 @@ class And(Logical, Infix):
 
 
 class Or(Logical, Infix):
-    """Or operator.
-    """
+    """Or operator."""
+
     symbol = 'OR'
 
     @property
@@ -645,8 +665,8 @@ class Or(Logical, Infix):
 
 
 class Not(Logical, Prefix):
-    """Not operator.
-    """
+    """Not operator."""
+
     symbol = 'NOT'
 
     @property
@@ -655,8 +675,8 @@ class Not(Logical, Prefix):
 
 
 class Comparison(Predicate):
-    """Mixin for comparison operators.
-    """
+    """Mixin for comparison operators."""
+
     class Pythonic(Operable):
         """Semi proxy/lazy wrapper allowing native Python features like sorting or equality tests to work transparently
         without raising the syntax errors implemented in the constructors of the actual Comparison types.
@@ -664,6 +684,7 @@ class Comparison(Predicate):
         This instance is expected to be used only internally by Python itself. All code within ForML is supposed to use
         the extracted .operable instance of the true Comparison type.
         """
+
         operator: typing.Type[Infix] = property(opermod.itemgetter(0))
         left: Operable = property(opermod.itemgetter(1))
         right: Operable = property(opermod.itemgetter(2))
@@ -699,8 +720,9 @@ class Comparison(Predicate):
 
     def __init__(self, *operands: Operable):
         operands = [Operable.ensure_is(o) for o in operands]
-        if not (all(kindmod.Numeric.match(o.kind) for o in operands) or
-                all(o.kind == operands[0].kind for o in operands)):
+        if not (
+            all(kindmod.Numeric.match(o.kind) for o in operands) or all(o.kind == operands[0].kind for o in operands)
+        ):
             raise error.Syntax(f'Invalid operands for {self} comparison')
 
     @property
@@ -710,32 +732,32 @@ class Comparison(Predicate):
 
 
 class LessThan(Comparison, Infix):
-    """Less-Than operator.
-    """
+    """Less-Than operator."""
+
     symbol = '<'
 
 
 class LessEqual(Comparison, Infix):
-    """Less-Equal operator.
-    """
+    """Less-Equal operator."""
+
     symbol = '<='
 
 
 class GreaterThan(Comparison, Infix):
-    """Greater-Than operator.
-    """
+    """Greater-Than operator."""
+
     symbol = '>'
 
 
 class GreaterEqual(Comparison, Infix):
-    """Greater-Equal operator.
-    """
+    """Greater-Equal operator."""
+
     symbol = '>='
 
 
 class Equal(Comparison, Infix):
-    """Equal operator.
-    """
+    """Equal operator."""
+
     symbol = '=='
 
     def __bool__(self):
@@ -749,26 +771,26 @@ class Equal(Comparison, Infix):
 
 
 class NotEqual(Comparison, Infix):
-    """Not-Equal operator.
-    """
+    """Not-Equal operator."""
+
     symbol = '!='
 
 
 class IsNull(Comparison, Postfix):
-    """Is-Null operator.
-    """
+    """Is-Null operator."""
+
     symbol = 'IS NULL'
 
 
 class NotNull(Comparison, Postfix):
-    """Not-Null operator.
-    """
+    """Not-Null operator."""
+
     symbol = 'NOT NULL'
 
 
 class Arithmetic:
-    """Mixin for numerical operators.
-    """
+    """Mixin for numerical operators."""
+
     def __init__(self, *operands: Operable):
         operands = [Operable.ensure_is(o) for o in operands]
         if not all(kindmod.Numeric.match(o.kind) for o in operands):
@@ -780,71 +802,82 @@ class Arithmetic:
 
         Returns: Numeric kind.
         """
-        return functools.reduce(functools.partial(max, key=lambda k: k.__cardinality__),
-                                (o.kind for o in self))  # pylint: disable=not-an-iterable
+        return functools.reduce(
+            functools.partial(max, key=lambda k: k.__cardinality__),
+            (o.kind for o in self),  # pylint: disable=not-an-iterable
+        )
 
 
 class Addition(Arithmetic, Infix):
-    """Plus operator.
-    """
+    """Plus operator."""
+
     symbol = '+'
 
 
 class Subtraction(Arithmetic, Infix):
-    """Minus operator.
-    """
+    """Minus operator."""
+
     symbol = '-'
 
 
 class Multiplication(Arithmetic, Infix):
-    """Times operator.
-    """
+    """Times operator."""
+
     symbol = '*'
 
 
 class Division(Arithmetic, Infix):
-    """Divide operator.
-    """
+    """Divide operator."""
+
     symbol = '/'
 
 
 class Modulus(Arithmetic, Infix):
-    """Modulus operator.
-    """
+    """Modulus operator."""
+
     symbol = '%'
 
 
 class Cumulative(Expression, metaclass=abc.ABCMeta):
-    """Base class for expressions involving cross-row operations.
-    """
+    """Base class for expressions involving cross-row operations."""
 
 
 class Window(Cumulative):
-    """Window type column representation.
-    """
+    """Window type column representation."""
+
     function: 'Window.Function' = property(opermod.itemgetter(0))
     partition: typing.Tuple[Operable] = property(opermod.itemgetter(1))
     ordering: typing.Tuple[Ordering] = property(opermod.itemgetter(2))
     frame: typing.Optional['Window.Frame'] = property(opermod.itemgetter(3))
 
     class Frame(collections.namedtuple('Frame', 'mode, start, end')):
-        """Sliding window frame spec.
-        """
+        """Sliding window frame spec."""
+
         @enum.unique
         class Mode(enum.Enum):
-            """Frame mode.
-            """
+            """Frame mode."""
+
             ROWS = 'rows'
             GROUPS = 'groups'
             RANGE = 'range'
 
     class Function:
-        """Window function representation.
-        """
+        """Window function representation."""
 
-        def over(self, partition: typing.Sequence[Operable], ordering: typing.Optional[typing.Sequence[typing.Union[
-            Operable, typing.Union['Ordering.Direction', str], typing.Tuple[Operable, typing.Union[
-                'Ordering.Direction', str]]]]] = None, frame: typing.Optional = None) -> 'Window':
+        def over(
+            self,
+            partition: typing.Sequence[Operable],
+            ordering: typing.Optional[
+                typing.Sequence[
+                    typing.Union[
+                        Operable,
+                        typing.Union['Ordering.Direction', str],
+                        typing.Tuple[Operable, typing.Union['Ordering.Direction', str]],
+                    ]
+                ]
+            ] = None,
+            frame: typing.Optional = None,
+        ) -> 'Window':
             """Create a window using this function.
 
             Args:
@@ -856,9 +889,21 @@ class Window(Cumulative):
             """
             return Window(self, partition, ordering, frame)
 
-    def __new__(cls, function: 'Window.Function', partition: typing.Sequence[Column], ordering: typing.Optional[
-        typing.Sequence[typing.Union[Operable, typing.Union['Ordering.Direction', str], typing.Tuple[
-            Operable, typing.Union['Ordering.Direction', str]]]]] = None, frame: typing.Optional = None):
+    def __new__(
+        cls,
+        function: 'Window.Function',
+        partition: typing.Sequence[Column],
+        ordering: typing.Optional[
+            typing.Sequence[
+                typing.Union[
+                    Operable,
+                    typing.Union['Ordering.Direction', str],
+                    typing.Tuple[Operable, typing.Union['Ordering.Direction', str]],
+                ]
+            ]
+        ] = None,
+        frame: typing.Optional = None,
+    ):
         return super().__new__(cls, function, tuple(partition), Ordering.make(ordering or []), frame)
 
     @property
@@ -883,5 +928,4 @@ class Window(Cumulative):
 
 
 class Aggregate(Cumulative, Window.Function, metaclass=abc.ABCMeta):
-    """Base class for column aggregation functions.
-    """
+    """Base class for column aggregation functions."""

@@ -37,13 +37,15 @@ OneHotEncoder = simple.Mapper.operator(wrapped.Class.actor(preprocessing.OneHotE
 
 Binarizer = simple.Mapper.operator(wrapped.Class.actor(preprocessing.Binarizer, train='fit', apply='transform'))
 
-FeatureHasher = simple.Mapper.operator(wrapped.Class.actor(
-    feature_extraction.FeatureHasher, train='fit', apply='transform'))
+FeatureHasher = simple.Mapper.operator(
+    wrapped.Class.actor(feature_extraction.FeatureHasher, train='fit', apply='transform')
+)
 
 RFC = simple.Consumer.operator(wrapped.Class.actor(ensemble.RandomForestClassifier, train='fit', apply='predict_proba'))
 
-GBC = simple.Consumer.operator(wrapped.Class.actor(
-    ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba'))
+GBC = simple.Consumer.operator(
+    wrapped.Class.actor(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba')
+)
 
 LR = simple.Consumer.operator(wrapped.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba'))
 
@@ -55,6 +57,7 @@ class Extractor(task.Actor):
     """Here we just create a custom actor that simply expects the label to be a specific column in the input dataset and
     returns two objects - a dataframe without the label column and a series with just the labels.
     """
+
     def __init__(self, column: str = 'label'):
         self._column: str = column
 
@@ -71,14 +74,13 @@ class Extractor(task.Actor):
 @simple.Mapper.operator
 @wrapped.Function.actor
 def cleaner(df: pd.DataFrame) -> pd.DataFrame:
-    """Simple stateless transformer create from a plain function.
-    """
+    """Simple stateless transformer create from a plain function."""
     return df.dropna()
 
 
 class Demo(struct.Schema):
-    """Demo schema representation.
-    """
+    """Demo schema representation."""
+
     Label = struct.Field(kind.Integer())
     Age = struct.Field(kind.Integer())
 
@@ -87,8 +89,8 @@ DATA = [[1, 1, 1, 0, 0, 0], [10, 11, 12, 13, 14, 15]]
 
 
 class Feed(static.Feed):
-    """Demo feed.
-    """
+    """Demo feed."""
+
     def __init__(self):
         super().__init__({Demo: DATA})
 

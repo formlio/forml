@@ -41,24 +41,25 @@ class DataSet(struct.Schema):
 
     The actual fields are irrelevant.
     """
+
     feature: struct.Field = struct.Field(kind.Integer())
     label: struct.Field = struct.Field(kind.Float())
 
 
 class Feed(feed.Provider[None, typing.Any], alias='testing'):
-    """Special feed to input the test cases.
-    """
+    """Special feed to input the test cases."""
+
     def __init__(self, scenario: spec.Scenario.Input, **kwargs):
         super().__init__(**kwargs)
         self._scenario: spec.Scenario.Input = scenario
 
     # pylint: disable=unused-argument
     @classmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, None],
-               columns: typing.Mapping[series.Column, typing.Any],
-               **kwargs) -> typing.Callable[[frame.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
-        """Return the reader instance of this feed (any callable, presumably extract.Reader).
-        """
+    def reader(
+        cls, sources: typing.Mapping[frame.Source, None], columns: typing.Mapping[series.Column, typing.Any], **kwargs
+    ) -> typing.Callable[[frame.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
+        """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
+
         def read(query: frame.Query) -> typing.Any:
             """Reader callback.
 
@@ -68,38 +69,33 @@ class Feed(feed.Provider[None, typing.Any], alias='testing'):
             Returns: Data.
             """
             return columns[DataSet.label] if DataSet.label in query.columns else columns[DataSet.feature]
+
         return read
 
     @classmethod
-    def slicer(cls, schema: typing.Sequence[series.Column],
-               columns: typing.Mapping[series.Column, typing.Any]) -> typing.Callable[
-                   [payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
-        """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
-        """
+    def slicer(
+        cls, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, typing.Any]
+    ) -> typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
+        """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise."""
         return lambda c, s: c[s][0]
 
     @property
     def sources(self) -> typing.Mapping[frame.Source, None]:
-        """The explicit sources mapping implemented by this feed to be used by the query parser.
-        """
+        """The explicit sources mapping implemented by this feed to be used by the query parser."""
         return {DataSet: None}
 
     @property
     def columns(self) -> typing.Mapping[series.Column, typing.Any]:
-        """The explicit columns mapping implemented by this feed to be used by the query parser.
-        """
-        return {
-            DataSet.label: (self._scenario.train, [self._scenario.label]),
-            DataSet.feature: self._scenario.apply
-        }
+        """The explicit columns mapping implemented by this feed to be used by the query parser."""
+        return {DataSet.label: (self._scenario.train, [self._scenario.label]), DataSet.feature: self._scenario.apply}
 
 
 class Launcher:
-    """Test runner is a minimal forml pipeline wrapping the tested operator.
-    """
+    """Test runner is a minimal forml pipeline wrapping the tested operator."""
+
     class Initializer(view.Visitor):
-        """Visitor that tries to instantiate each node in attempt to validate it.
-        """
+        """Visitor that tries to instantiate each node in attempt to validate it."""
+
         def __init__(self):
             self._gids: typing.Set[uuid.UUID] = set()
 

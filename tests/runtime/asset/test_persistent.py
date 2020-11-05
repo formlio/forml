@@ -24,12 +24,11 @@ from forml.runtime.asset.directory import root as rootmod, project as prjmod, li
 
 
 class TestRegistry:
-    """Registry unit tests.
-    """
+    """Registry unit tests."""
 
-    def test_get(self, registry: persistent.Registry, project_name: prjmod.Level.Key,
-                 populated_lineage: lngmod.Level.Key):
-        """Test lineage get.
-        """
+    def test_get(
+        self, registry: persistent.Registry, project_name: prjmod.Level.Key, populated_lineage: lngmod.Level.Key
+    ):
+        """Test lineage get."""
         lineage = rootmod.Level(registry).get(project_name).get(populated_lineage)
         assert lineage.key == populated_lineage

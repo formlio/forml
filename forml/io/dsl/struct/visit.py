@@ -27,8 +27,8 @@ if typing.TYPE_CHECKING:
 
 
 class Columnar(metaclass=abc.ABCMeta):
-    """Base class for both Frame and Series visitors.
-    """
+    """Base class for both Frame and Series visitors."""
+
     @abc.abstractmethod
     def visit_table(self, origin: 'frame.Table') -> None:
         """Table hook.
@@ -47,8 +47,8 @@ class Columnar(metaclass=abc.ABCMeta):
 
 
 class Frame(Columnar):
-    """Frame visitor.
-    """
+    """Frame visitor."""
+
     def visit_source(self, source: 'frame.Source') -> None:  # pylint: disable=unused-argument, no-self-use
         """Generic source hook.
 
@@ -104,8 +104,8 @@ class Frame(Columnar):
 
 
 class Series(Columnar):
-    """Series visitor.
-    """
+    """Series visitor."""
+
     def visit_origin(self, origin: 'frame.Origin') -> None:  # pylint: disable=unused-argument, no-self-use
         """Tangible source hook.
 

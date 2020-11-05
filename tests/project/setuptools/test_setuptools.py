@@ -24,6 +24,5 @@ from forml.project import setuptools
 
 
 def test_upstream():
-    """Test our setuptools imports all upstream features.
-    """
+    """Test our setuptools imports all upstream features."""
     assert setuptools.find_packages

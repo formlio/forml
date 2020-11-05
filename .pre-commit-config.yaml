@@ -33,6 +33,11 @@ repos:
   - id: end-of-file-fixer
   - id: mixed-line-ending
   - id: trailing-whitespace
+- repo: https://github.com/psf/black
+  rev: 20.8b1
+  hooks:
+  - id: black
+    args: [--config=./pyproject.toml]
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.1.9
   hooks:
@@ -51,11 +56,11 @@ repos:
     name: Add license for all rst files
     exclude: ^\.github/.*$
     args:
-      - --comment-style
-      - "||"
-      - --license-filepath
-      - licenses/templates/LICENSE.rst
-      - --fuzzy-match-generates-todo
+    - --comment-style
+    - "||"
+    - --license-filepath
+    - licenses/templates/LICENSE.rst
+    - --fuzzy-match-generates-todo
     files: \.rst$
   - id: insert-license
     name: Add license for all yaml files
@@ -63,30 +68,30 @@ repos:
     types: [yaml]
     files: \.yml$|\.yaml$
     args:
-      - --comment-style
-      - "|#|"
-      - --license-filepath
-      - licenses/templates/LICENSE.txt
-      - --fuzzy-match-generates-todo
+    - --comment-style
+    - "|#|"
+    - --license-filepath
+    - licenses/templates/LICENSE.txt
+    - --fuzzy-match-generates-todo
   - id: insert-license
     name: Add license for all md files
     files: \.md$
     exclude: ^\.github/.*$
     args:
-      - --comment-style
-      - "<!--|| -->"
-      - --license-filepath
-      - licenses/templates/LICENSE.txt
-      - --fuzzy-match-generates-todo
+    - --comment-style
+    - "<!--|| -->"
+    - --license-filepath
+    - licenses/templates/LICENSE.txt
+    - --fuzzy-match-generates-todo
   - id: insert-license
     name: Add license for all other files
     exclude: ^\.github/.*$
     args:
-      - --comment-style
-      - "|#|"
-      - --license-filepath
-      - licenses/templates/LICENSE.txt
-      - --fuzzy-match-generates-todo
+    - --comment-style
+    - "|#|"
+    - --license-filepath
+    - licenses/templates/LICENSE.txt
+    - --fuzzy-match-generates-todo
     files: >
       \.toml$|\.ini$|\.readthedocs$
 - repo: local

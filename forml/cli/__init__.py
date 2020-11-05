@@ -41,8 +41,8 @@ if CLICFG:
 
 
 class Handler:
-    """Final wrapper of a command implementation and its arguments.
-    """
+    """Final wrapper of a command implementation and its arguments."""
+
     def __init__(self, handler: typing.Callable, params: typing.Sequence[str]):
         self._handler: typing.Callable = handler
         self._params: typing.Tuple[str] = tuple(params)
@@ -60,12 +60,13 @@ class Handler:
                 self._handler(parser, **params)
             except error.Error as err:
                 print(err, file=sys.stderr)
+
         return call
 
 
 class Builder:
-    """Command builder context passed between spec decorators.
-    """
+    """Command builder context passed between spec decorators."""
+
     def __init__(self, handler: typing.Callable):
         self._handler: typing.Callable = handler
         self._params: typing.List['Param'] = list()
@@ -98,8 +99,8 @@ class Builder:
 
 
 class Spec(metaclass=abc.ABCMeta):
-    """Base class for command decorators.
-    """
+    """Base class for command decorators."""
+
     @abc.abstractmethod
     def accept(self, context: 'Builder') -> None:
         """Builder context visitor.
@@ -115,8 +116,8 @@ class Spec(metaclass=abc.ABCMeta):
 
 
 class Param(Spec):
-    """Decorator for specifying a parameter.
-    """
+    """Decorator for specifying a parameter."""
+
     def accept(self, context: 'Builder') -> None:
         context.add(self)
 
@@ -126,8 +127,8 @@ class Param(Spec):
 
 
 class Command(Spec):
-    """Decorator for specifying a command.
-    """
+    """Decorator for specifying a command."""
+
     def __init__(self, name: typing.Optional[str] = None, **kwargs):
         self.name: typing.Optional[str] = name
         self.kwargs: typing.Dict[str, typing.Any] = dict(kwargs)
@@ -137,14 +138,15 @@ class Command(Spec):
 
 
 class Meta(type):
-    """Parser metaclass.
-    """
+    """Parser metaclass."""
+
     CMDKEY = 'command'
 
     def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any], **kwargs):
         parser = argparse.ArgumentParser(parents=[PARSER], add_help=True, **kwargs)
-        subparsers = parser.add_subparsers(dest=mcs.CMDKEY, help='program subcommands (-h for individual description)',
-                                           required=True)
+        subparsers = parser.add_subparsers(
+            dest=mcs.CMDKEY, help='program subcommands (-h for individual description)', required=True
+        )
 
         for key, builder in namespace.items():
             if isinstance(builder, Builder):
@@ -160,8 +162,7 @@ class Meta(type):
 
 
 class Parser(metaclass=Meta):
-    """Base class for parsers.
-    """
+    """Base class for parsers."""
 
 
 def lprint(listing: typing.Iterable[typing.Any]) -> None:

@@ -33,30 +33,28 @@ from . import TupleParser
 
 
 class TestClosure:
-    """Closure unit tests.
-    """
+    """Closure unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def handler() -> typing.Callable[[tuple, tuple], typing.Tuple[tuple, tuple]]:
-        """Handler fixture.
-        """
+        """Handler fixture."""
         return lambda a, b: (a, b)
 
     @staticmethod
     @pytest.fixture(scope='session')
     def arg() -> tuple:
-        """Arg fixture.
-        """
+        """Arg fixture."""
         return 'foo', 'bar'
 
     @staticmethod
     @pytest.fixture(scope='session')
     def closure(handler: typing.Callable[[tuple, tuple], typing.Tuple[tuple, tuple]], arg: tuple):
-        """Closure fixture.
-        """
+        """Closure fixture."""
+
         class Closure(code.Closure[tuple, tuple]):  # pylint: disable=unsubscriptable-object
-            """Test closure implementation.
-            """
+            """Test closure implementation."""
+
             arg: tuple = property(operator.itemgetter(1))
 
             def __new__(cls, handler_: typing.Callable[[tuple, tuple], typing.Tuple[tuple, tuple]], arg_: tuple):
@@ -67,30 +65,38 @@ class TestClosure:
 
         return Closure(handler, arg)
 
-    def test_call(self, closure: code.Closure[tuple, tuple],  # pylint: disable=unsubscriptable-object
-                  handler: typing.Callable[[tuple, tuple], typing.Tuple[tuple, tuple]], arg: tuple):
-        """Closure call test.
-        """
+    def test_call(
+        self,
+        closure: code.Closure[tuple, tuple],  # pylint: disable=unsubscriptable-object
+        handler: typing.Callable[[tuple, tuple], typing.Tuple[tuple, tuple]],
+        arg: tuple,
+    ):
+        """Closure call test."""
         assert closure(('b', 'a')) == handler(('b', 'a'), arg)
 
     def test_identity(self, closure):
-        """Test the identity (hashability + equality).
-        """
+        """Test the identity (hashability + equality)."""
         assert len({closure, closure}) == 1
 
 
 class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
-    """Dummy frame parser wrapping all terms into tuples.
-    """
+    """Dummy frame parser wrapping all terms into tuples."""
+
     class Result(collections.namedtuple('Result', 'source, columns, where, groupby, having, orderby, rows')):
-        """Query result helper tuple.
-        """
+        """Query result helper tuple."""
+
         NONE = tuple()
 
-        def __new__(cls, source: typing.Optional[tuple] = None, columns: typing.Optional[tuple] = None,
-                    where: typing.Optional[tuple] = None, groupby: typing.Optional[tuple] = None,
-                    having: typing.Optional[tuple] = None, orderby: typing.Optional[tuple] = None,
-                    rows: typing.Optional[tuple] = None):
+        def __new__(
+            cls,
+            source: typing.Optional[tuple] = None,
+            columns: typing.Optional[tuple] = None,
+            where: typing.Optional[tuple] = None,
+            groupby: typing.Optional[tuple] = None,
+            having: typing.Optional[tuple] = None,
+            orderby: typing.Optional[tuple] = None,
+            rows: typing.Optional[tuple] = None,
+        ):
             if isinstance(source, cls):
                 columns = columns or source.columns
                 where = where or source.where
@@ -99,12 +105,20 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
                 orderby = orderby or source.orderby
                 rows = rows or source.rows
                 source = source.source
-            return super().__new__(cls, source or cls.NONE, columns or cls.NONE, where or cls.NONE, groupby or cls.NONE,
-                                   having or cls.NONE, orderby or cls.NONE, rows or cls.NONE)
+            return super().__new__(
+                cls,
+                source or cls.NONE,
+                columns or cls.NONE,
+                where or cls.NONE,
+                groupby or cls.NONE,
+                having or cls.NONE,
+                orderby or cls.NONE,
+                rows or cls.NONE,
+            )
 
     class Series(code.Frame.Series[tuple, tuple]):
-        """Dummy series parser wrapping all terms into tuples.
-        """
+        """Dummy series parser wrapping all terms into tuples."""
+
         # pylint: disable=missing-function-docstring
         def implement_element(self, data: tuple, column: Columnizer) -> tuple:
             return data, column(data)
@@ -115,24 +129,30 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
         def implement_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
             return value, kind
 
-        def implement_expression(self, expression: typing.Type[sermod.Expression],
-                                 arguments: typing.Sequence[typing.Any]) -> tuple:
+        def implement_expression(
+            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        ) -> tuple:
             return expression, *arguments
 
         def implement_reference(self, name: str) -> tuple:
             return tuple([name])
 
     # pylint: disable=missing-function-docstring
-    def implement_join(self, left: tuple, right: tuple, condition: typing.Optional[code.Columnizer],
-                       kind: framod.Join.Kind) -> tuple:
+    def implement_join(
+        self, left: tuple, right: tuple, condition: typing.Optional[code.Columnizer], kind: framod.Join.Kind
+    ) -> tuple:
         return left, kind, right, condition(left)
 
     def implement_set(self, left: tuple, right: tuple, kind: framod.Set.Kind) -> tuple:
         return left, kind, right
 
-    def implement_apply(self, table: tuple, partition: typing.Optional[typing.Sequence[code.Columnizer]] = None,
-                        expression: typing.Optional[typing.Sequence[code.Columnizer]] = None,
-                        predicate: typing.Optional[code.Columnizer] = None) -> tuple:
+    def implement_apply(
+        self,
+        table: tuple,
+        partition: typing.Optional[typing.Sequence[code.Columnizer]] = None,
+        expression: typing.Optional[typing.Sequence[code.Columnizer]] = None,
+        predicate: typing.Optional[code.Columnizer] = None,
+    ) -> tuple:
         where = having = None
         if predicate:
             predicate = predicate(table)
@@ -145,8 +165,9 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
             expression = tuple(e(table) for e in expression)
         return self.Result(table, expression, where, partition, having)
 
-    def implement_ordering(self, table: tuple,
-                           specs: typing.Sequence[typing.Tuple[code.Columnizer, sermod.Ordering.Direction]]) -> tuple:
+    def implement_ordering(
+        self, table: tuple, specs: typing.Sequence[typing.Tuple[code.Columnizer, sermod.Ordering.Direction]]
+    ) -> tuple:
         return self.Result(table, orderby=tuple((s(table), o) for s, o in specs))
 
     def implement_project(self, table: tuple, columns: typing.Sequence[code.Columnizer]) -> tuple:
@@ -160,30 +181,30 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
 
 
 class TestParser(TupleParser):
-    """Code parser tests.
-    """
+    """Code parser tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
-    def sources(person: framod.Table, student: framod.Table, school: framod.Table) -> typing.Mapping[
-            framod.Source, typing.Callable[[tuple], tuple]]:
-        """Sources mapping fixture.
-        """
-        return types.MappingProxyType({
-            framod.Join(student, person, student.surname == person.surname): lambda _: tuple(['foo']),
-            person: lambda _: tuple([person]),
-            student: lambda _: tuple([student]),
-            school: lambda _: tuple([school])
-        })
+    def sources(
+        person: framod.Table, student: framod.Table, school: framod.Table
+    ) -> typing.Mapping[framod.Source, typing.Callable[[tuple], tuple]]:
+        """Sources mapping fixture."""
+        return types.MappingProxyType(
+            {
+                framod.Join(student, person, student.surname == person.surname): lambda _: tuple(['foo']),
+                person: lambda _: tuple([person]),
+                student: lambda _: tuple([student]),
+                school: lambda _: tuple([school]),
+            }
+        )
 
     @staticmethod
     @pytest.fixture(scope='session')
     def columns(student: framod.Table) -> typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]:
-        """Columns mapping fixture.
-        """
+        """Columns mapping fixture."""
 
         class Columns:
-            """Columns mapping.
-            """
+            """Columns mapping."""
 
             def __getitem__(self, column: sermod.Column) -> typing.Callable[[tuple], tuple]:
                 if column == student.level:
@@ -196,10 +217,11 @@ class TestParser(TupleParser):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def parser(sources: typing.Mapping[framod.Source, typing.Callable[[tuple], tuple]],
-               columns: typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]]) -> Frame:
-        """Parser fixture.
-        """
+    def parser(
+        sources: typing.Mapping[framod.Source, typing.Callable[[tuple], tuple]],
+        columns: typing.Mapping[sermod.Column, typing.Callable[[tuple], tuple]],
+    ) -> Frame:
+        """Parser fixture."""
         return Frame(sources, columns)
 
     def format(self, result: code.Tabulizer) -> tuple:

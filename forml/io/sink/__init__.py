@@ -30,11 +30,10 @@ from forml.io.sink import publish
 
 
 class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.path):
-    """Sink is an implementation of a specific data consumer.
-    """
+    """Sink is an implementation of a specific data consumer."""
+
     class Writer(publish.Writer, metaclass=abc.ABCMeta):
-        """Abstract sink writer.
-        """
+        """Abstract sink writer."""
 
     def __init__(self, **writerkw):
         self._writerkw: typing.Dict[str, typing.Any] = writerkw
@@ -63,6 +62,7 @@ class Handle:
     """Sink handle is a lazy wrapper around alternative sink specifiers providing a particular Sink instance upon
     request.
     """
+
     def __init__(self, sink: typing.Union[provcfg.Sink.Mode, str, Provider]):
         if isinstance(sink, str):
             sink = provcfg.Sink.Mode.resolve(sink)

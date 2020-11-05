@@ -31,12 +31,11 @@ from forml.lib.flow.operator import folding
 
 
 class MergingScorer(folding.Crossvalidated):
-    """Evaluation scorer based on merging partial crossvalidation scoring results.
-    """
+    """Evaluation scorer based on merging partial crossvalidation scoring results."""
 
     class Builder(folding.Crossvalidated.Builder):
-        """Crossvalidation builder used as a folding context.
-        """
+        """Crossvalidation builder used as a folding context."""
+
         def __init__(self, outer: pipeline.Segment, merger: node.Worker):
             self.outer: pipeline.Segment = outer
             self.merger: node.Worker = merger
@@ -48,9 +47,12 @@ class MergingScorer(folding.Crossvalidated):
             """
             return self.outer.use(train=self.outer.train.extend(tail=self.merger))
 
-    def __init__(self, crossvalidator: model_selection.BaseCrossValidator,
-                 metric: typing.Callable[[pandas.Series, pandas.Series], float],
-                 merger: typing.Callable[[float], float] = lambda *m: statistics.mean(m)):
+    def __init__(
+        self,
+        crossvalidator: model_selection.BaseCrossValidator,
+        metric: typing.Callable[[pandas.Series, pandas.Series], float],
+        merger: typing.Callable[[float], float] = lambda *m: statistics.mean(m),
+    ):
         super().__init__(crossvalidator)
         self.metric: task.Spec = wrapped.Function.Actor.spec(function=metric)
         self.merger: task.Spec = wrapped.Function.Actor.spec(function=merger)
@@ -85,8 +87,14 @@ class MergingScorer(folding.Crossvalidated):
         # return self.Builder(head.use(apply=head.train.extend(tail=scorer)), merger)
         return self.Builder(head, merger)
 
-    def fold(self, fold: int, builder: 'MergingScorer.Builder', inner: pipeline.Segment,
-             features: node.Worker, labels: node.Worker) -> None:
+    def fold(
+        self,
+        fold: int,
+        builder: 'MergingScorer.Builder',
+        inner: pipeline.Segment,
+        features: node.Worker,
+        labels: node.Worker,
+    ) -> None:
         """Implement single fold ensembling.
 
         Args:

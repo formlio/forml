@@ -36,6 +36,7 @@ def transpose(data: typing.Sequence[Vector]) -> typing.Sequence[Vector]:
 
     Returns: Transposed output matrix.
     """
+
     def col(idx: int) -> Vector:
         """Create a vector for given column index.
 

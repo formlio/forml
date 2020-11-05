@@ -29,17 +29,18 @@ from forml.conf import parsed as parsmod
 
 
 class Resolved(metaclass=abc.ABCMeta):
-    """Base class for parsed section tests using the test config from the config.toml.
-    """
+    """Base class for parsed section tests using the test config from the config.toml."""
+
     class Section(parsmod.Section):
-        """Base class for parsed section fixtures.
-        """
+        """Base class for parsed section fixtures."""
+
         FIELDS: typing.Tuple[str] = ('blah', 'params')
         INDEX: str = 'RESOLVED'  # referring to the section [RESOLVED] in the config.toml
 
         @classmethod
-        def _extract(cls, reference: str, kwargs: typing.Mapping[str, typing.Any]) -> typing.Tuple[
-                typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+        def _extract(
+            cls, reference: str, kwargs: typing.Mapping[str, typing.Any]
+        ) -> typing.Tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
             kwargs = dict(kwargs)
             blah = kwargs.pop('blah', None)
             _, kwargs = super()._extract(reference, kwargs)
@@ -51,71 +52,63 @@ class Resolved(metaclass=abc.ABCMeta):
 
     @pytest.fixture(scope='session')
     def section(self) -> typing.Type['Resolved.Section']:
-        """Section fixture.
-        """
+        """Section fixture."""
         return self.Section
 
     @staticmethod
     @pytest.fixture(scope='session')
     @abc.abstractmethod
     def invalid() -> str:
-        """Invalid reference.
-        """
+        """Invalid reference."""
 
     def test_invalid(self, section: typing.Type['Resolved.Section'], invalid: str):
-        """Test the invalid parsing references.
-        """
+        """Test the invalid parsing references."""
         with pytest.raises(error.Invalid):
             section.resolve(invalid)
 
     def test_default(self, section: typing.Type['Resolved.Section']):
-        """Test the default resolving.
-        """
+        """Test the default resolving."""
         assert section.default
 
 
 class TestSingle(Resolved):
-    """Single parser tests.
-    """
+    """Single parser tests."""
+
     class Section(Resolved.Section):
-        """Single field value.
-        """
+        """Single field value."""
+
         SELECTOR = 'single'
         GROUP = 'SINGLE'
 
     @staticmethod
-    @pytest.fixture(scope='session', params=('baz', ))
+    @pytest.fixture(scope='session', params=('baz',))
     def invalid(request) -> str:
-        """Invalid reference.
-        """
+        """Invalid reference."""
         return request.param
 
     def test_params(self, section: typing.Type['Resolved.Section']):
-        """Test the params parsing.
-        """
+        """Test the params parsing."""
         parsed = section.resolve('bar')
         assert parsed.blah == 'single'
         assert parsed.params == {'foo': 'baz', 'blah': 'bar', 'bar': 'blah'}
 
 
 class TestMulti(Resolved):
-    """SectionMeta unit tests.
-    """
+    """SectionMeta unit tests."""
+
     class Section(parsmod.Multi, Resolved.Section):
-        """Field list.
-        """
+        """Field list."""
+
         SELECTOR = 'multi'
         GROUP = 'MULTI'
 
     @staticmethod
     @pytest.fixture(scope='session', params=('blah', ['blah'], ['blah', 'baz']))
     def invalid(request) -> str:
-        """Invalid reference.
-        """
+        """Invalid reference."""
         return request.param
 
     def test_params(self, section: typing.Type['Resolved.Section']):
-        """Test the arg parsing.
-        """
+        """Test the arg parsing."""
         assert section.resolve('bar')[0].params == {'foo': 'baz'}
         assert [r.params for r in section.resolve(['bar', 'foo'])] == [{'baz': 'foo'}, {'foo': 'baz'}]

@@ -23,65 +23,55 @@ Setuptools script for ForML package.
 import setuptools
 
 
-EXTRAS_FLOW = {
-    'pandas',
-    'scikit-learn'
-}
+EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
-EXTRAS_GRAPHVIZ = {
-    'graphviz'
-}
+EXTRAS_GRAPHVIZ = {'graphviz'}
 
-EXTRAS_DASK = {
-    'dask',
-    'cloudpickle'
-}
+EXTRAS_DASK = {'dask', 'cloudpickle'}
 
-EXTRAS_DOC = {
-    'sphinx'
-}
+EXTRAS_DOC = {'sphinx'}
 
-EXTRAS_DEV = {
-    'pre-commit',
-    'flake8',
-    'mypy'
-}
+EXTRAS_DEV = {'pre-commit', 'flake8', 'mypy', 'black'}
 
 EXTRAS_ALL = EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC
 
-setuptools.setup(name='forml',
-                 description='Lifecycle management framework for Data science projects',
-                 long_description=open('README.md', 'r').read(),
-                 long_description_content_type='text/markdown',
-                 url='https://github.com/formlio/forml',
-                 maintainer='ForML Development Team',
-                 maintainer_email='noreply@forml.io',
-                 license='Apache License 2.0',
-                 packages=setuptools.find_packages(include=['forml*']),
-                 package_data={'forml.conf': ['config.toml', 'logging.ini']},
-                 setup_requires=['wheel', 'pytest-runner', 'pytest-xdist', 'pytest-pylint', 'pytest-flake8'],
-                 tests_require=['pytest-cov', 'pylint', 'pytest', 'cloudpickle'],
-                 install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml'],
-                 extras_require={
-                     'all': EXTRAS_ALL,
-                     'dask': EXTRAS_DASK,
-                     'dev': EXTRAS_DEV,
-                     'doc': EXTRAS_DOC,
-                     'flow': EXTRAS_FLOW,
-                     'graphviz': EXTRAS_GRAPHVIZ,
-                 },
-                 entry_points={'console_scripts': [
-                     'forml = forml.cli.forml:Parser',
-                 ]},
-                 python_requires='>=3.8',
-                 classifiers=[
-                     'Development Status :: 2 - Pre-Alpha',
-                     'Environment :: Console',
-                     'Intended Audience :: Developers',
-                     'Intended Audience :: Science/Research',
-                     'License :: OSI Approved :: Apache Software License',
-                     'Programming Language :: Python :: 3',
-                     'Topic :: Scientific/Engineering :: Artificial Intelligence',
-                     'Topic :: System :: Distributed Computing'
-                 ],
-                 zip_safe=False)
+setuptools.setup(
+    name='forml',
+    description='Lifecycle management framework for Data science projects',
+    long_description=open('README.md', 'r').read(),
+    long_description_content_type='text/markdown',
+    url='https://github.com/formlio/forml',
+    maintainer='ForML Development Team',
+    maintainer_email='noreply@forml.io',
+    license='Apache License 2.0',
+    packages=setuptools.find_packages(include=['forml*']),
+    package_data={'forml.conf': ['config.toml', 'logging.ini']},
+    setup_requires=['wheel', 'pytest-runner', 'pytest-xdist', 'pytest-pylint', 'pytest-flake8'],
+    tests_require=['pytest-cov', 'pylint', 'pytest', 'cloudpickle'],
+    install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml'],
+    extras_require={
+        'all': EXTRAS_ALL,
+        'dask': EXTRAS_DASK,
+        'dev': EXTRAS_DEV,
+        'doc': EXTRAS_DOC,
+        'flow': EXTRAS_FLOW,
+        'graphviz': EXTRAS_GRAPHVIZ,
+    },
+    entry_points={
+        'console_scripts': [
+            'forml = forml.cli.forml:Parser',
+        ]
+    },
+    python_requires='>=3.8',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'Topic :: System :: Distributed Computing',
+    ],
+    zip_safe=False,
+)

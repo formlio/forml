@@ -37,11 +37,14 @@ class Registry(filesystem.Registry, alias='virtual'):
     """Virtual registry implementation provided as a non-distributed global registry persistent only during its
     lifetime.
     """
+
     def __init__(self):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(
-            prefix='registry-virtual-', dir=persistent.TMPDIR.name)
-        self._artifacts: typing.Dict['prjmod.Level.Key', typing.Dict[
-            'lngmod.Level.Key', 'product.Artifact']] = collections.defaultdict(dict)
+            prefix='registry-virtual-', dir=persistent.TMPDIR.name
+        )
+        self._artifacts: typing.Dict[
+            'prjmod.Level.Key', typing.Dict['lngmod.Level.Key', 'product.Artifact']
+        ] = collections.defaultdict(dict)
         super().__init__(self._storage.name)
 
     def projects(self) -> typing.Iterable['prjmod.Level.Key']:

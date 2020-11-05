@@ -41,8 +41,8 @@ from forml.flow.graph import port
 
 
 class Visitor:
-    """View visitor interface.
-    """
+    """View visitor interface."""
+
     def visit_node(self, node: 'Atomic') -> None:
         """Node visit.
 
@@ -52,8 +52,8 @@ class Visitor:
 
 
 class Port(colabc.Iterable):
-    """Output port subscriptions as an ordered set.
-    """
+    """Output port subscriptions as an ordered set."""
+
     def __init__(self):
         self._subscriptions: typing.Dict[port.Subscription, None] = collections.OrderedDict()
 
@@ -70,8 +70,8 @@ class Port(colabc.Iterable):
 
 
 class Atomic(metaclass=abc.ABCMeta):
-    """Abstract primitive task graph node.
-    """
+    """Abstract primitive task graph node."""
+
     def __init__(self, szin: int, szout: int):
         if min(szin, szout) < 0 or szin == szout == 0:
             raise ValueError('Invalid node shape')
@@ -102,8 +102,11 @@ class Atomic(metaclass=abc.ABCMeta):
         Returns: True if equal.
         """
         if isinstance(other, Atomic) and other.__class__ is not self.__class__:
-            return self.szout == other.szout and any(self._output) and all(
-                s == o for s, o in zip(self.output, other.output))
+            return (
+                self.szout == other.szout
+                and any(self._output)
+                and all(s == o for s, o in zip(self.output, other.output))
+            )
         return id(self) == id(other)
 
     def __hash__(self) -> int:
@@ -170,11 +173,11 @@ class Atomic(metaclass=abc.ABCMeta):
 
 
 class Worker(Atomic):
-    """Main primitive node type.
-    """
+    """Main primitive node type."""
+
     class Group(set):
-        """Container for holding all forked workers.
-        """
+        """Container for holding all forked workers."""
+
         def __init__(self, spec: task.Spec):
             super().__init__()
             self.spec: task.Spec = spec
@@ -306,12 +309,17 @@ class Future(Atomic):
     """Fake transparent apply port node that can be used as a lazy publisher/subscriber that disappears
     from the chain once it gets connected to another apply node(s).
     """
+
     class PubSub(port.PubSub):
-        """Overridden implementation that does the proxied publishing/subscription.
-        """
-        def __init__(self, node: 'Future', index: int,
-                     register: typing.Callable[[port.Publishable], None],
-                     sync: typing.Callable[[], None]):
+        """Overridden implementation that does the proxied publishing/subscription."""
+
+        def __init__(
+            self,
+            node: 'Future',
+            index: int,
+            register: typing.Callable[[port.Publishable], None],
+            sync: typing.Callable[[], None],
+        ):
             super().__init__(node, index)
             self._register: typing.Callable[[port.Publishable], None] = register
             self._sync: typing.Callable[[], None] = sync
@@ -353,8 +361,7 @@ class Future(Atomic):
         return any(p._node.subscribed(publisher) for p in self._proxy)  # pylint: disable=protected-access
 
     def _sync(self) -> None:
-        """Callback for interconnecting proxied registrations.
-        """
+        """Callback for interconnecting proxied registrations."""
         for publisher, subscription in ((p, s) for p, i in self._proxy.items() for s in self._output[i]):
             publisher.republish(subscription)
 

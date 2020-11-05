@@ -41,8 +41,8 @@ def isabstract(cls: typing.Type['Interface']) -> bool:
 
 
 class Reference:
-    """Provider reference base class/dispatcher.
-    """
+    """Provider reference base class/dispatcher."""
+
     def __new__(cls, value: typing.Union[typing.Type['Interface'], str]):
         if isinstance(value, str):
             if Qualifier.DELIMITER not in value:
@@ -65,8 +65,8 @@ class Reference:
 
 
 class Qualifier(typing.NamedTuple, Reference):
-    """Reference determining the provider class within its module.
-    """
+    """Reference determining the provider class within its module."""
+
     module: str
     qualname: str
     DELIMITER = ':'
@@ -79,8 +79,8 @@ class Qualifier(typing.NamedTuple, Reference):
 
 
 class Alias(str, Reference):
-    """Reference as a plain string associated with the provider by its author.
-    """
+    """Reference as a plain string associated with the provider by its author."""
+
     def __new__(cls, value: str):
         if Qualifier.DELIMITER in value:
             raise ValueError(f'Invalid alias: {value}')
@@ -94,9 +94,10 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
     """Registry of providers of certain interface. It is a tuple of (not-yet-imported) search paths and already
     imported providers.
     """
+
     class Path(typing.NamedTuple):
-        """Search paths for loading. If flagged as explicit, loading such a path would fail if not found.
-        """
+        """Search paths for loading. If flagged as explicit, loading such a path would fail if not found."""
+
         value: str
         explicit: bool = False  # whether to fail on import errors
 
@@ -110,8 +111,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             return Registry.Path(f'{self.value}.{suffix}', explicit=False)
 
         def load(self) -> None:
-            """Load the package modules.
-            """
+            """Load the package modules."""
             LOGGER.debug('Attempting to import %s', self.value)
             try:
                 __import__(self.value, fromlist=['*'])
@@ -143,8 +143,13 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         if isabstract(provider):
             return
         for ref in references:
-            LOGGER.debug('Registering provider %s as `%s` with %d more search paths %s',
-                         provider.__name__, ref, len(paths), paths)
+            LOGGER.debug(
+                'Registering provider %s as `%s` with %d more search paths %s',
+                provider.__name__,
+                ref,
+                len(paths),
+                paths,
+            )
             self.provider[ref] = provider
 
     def get(self, reference: Reference) -> typing.Type['Interface']:
@@ -168,10 +173,16 @@ DEFAULTS: typing.Dict[typing.Type['Interface'], typing.Tuple[str, typing.Mapping
 
 
 class Meta(abc.ABCMeta):
-    """Provider metaclass.
-    """
-    def __new__(mcs, name, bases, namespace,
-                default: typing.Optional[typing.Tuple[str, typing.Mapping[str, typing.Any]]] = None, **kwargs):
+    """Provider metaclass."""
+
+    def __new__(
+        mcs,
+        name,
+        bases,
+        namespace,
+        default: typing.Optional[typing.Tuple[str, typing.Mapping[str, typing.Any]]] = None,
+        **kwargs,
+    ):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         if default:
             if not isabstract(cls):
@@ -193,7 +204,8 @@ class Meta(abc.ABCMeta):
         except KeyError as err:
             known = ', '.join(str(c) for c in cls)  # pylint: disable=not-an-iterable
             raise error.Missing(
-                f'No {cls.__name__} provider registered as {reference} (known providers: {known})') from err
+                f'No {cls.__name__} provider registered as {reference} (known providers: {known})'
+            ) from err
 
     def __iter__(cls):
         return iter(REGISTRY[cls].provider)
@@ -212,8 +224,8 @@ class Meta(abc.ABCMeta):
 
 
 class Interface(metaclass=Meta):
-    """Base class for service providers.
-    """
+    """Base class for service providers."""
+
     def __init_subclass__(cls, alias: typing.Optional[str] = None, path: typing.Optional[typing.Iterable[str]] = None):
         """Register the provider based on its optional reference.
 

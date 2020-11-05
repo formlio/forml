@@ -23,8 +23,11 @@ import typing
 from forml.project import product
 
 
-def open(path: typing.Optional[typing.Union[str, pathlib.Path]] = None,  # pylint: disable=redefined-builtin
-         package: typing.Optional[str] = None, **modules: typing.Any) -> product.Artifact:
+def open(  # pylint: disable=redefined-builtin
+    path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+    package: typing.Optional[str] = None,
+    **modules: typing.Any,
+) -> product.Artifact:
     """Shortcut for getting a product artifact.
 
     Args:

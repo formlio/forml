@@ -44,6 +44,7 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
 
     Returns: String name representation.
     """
+
     def extract(obj: typing.Any) -> str:
         """Extract the name of given object
         Args:
@@ -61,8 +62,8 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
 
 
 class Actor(metaclass=abc.ABCMeta):
-    """Abstract interface of an actor.
-    """
+    """Abstract interface of an actor."""
+
     @classmethod
     def spec(cls, *args, **kwargs: typing.Any) -> 'Spec':
         """Shortcut for creating a spec of this actor.
@@ -152,8 +153,8 @@ class Actor(metaclass=abc.ABCMeta):
 
 
 class Spec(collections.namedtuple('Spec', 'actor, args, kwargs')):
-    """Wrapper of actor class and init params.
-    """
+    """Wrapper of actor class and init params."""
+
     def __new__(cls, actor: typing.Type[Actor], *args: typing.Any, **kwargs: typing.Any):
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 

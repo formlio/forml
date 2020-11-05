@@ -25,19 +25,17 @@ from forml.io.dsl.struct import frame
 
 
 class TestField:
-    """Field unit tests.
-    """
+    """Field unit tests."""
+
     def test_renamed(self, student: frame.Table):
-        """Test the field renaming.
-        """
+        """Test the field renaming."""
         assert student.schema.dob.renamed('foo').name == 'foo'
 
 
 class TestSchema:
-    """Schema unit tests.
-    """
+    """Schema unit tests."""
+
     def test_serilizable(self, student: frame.Table):
-        """Test schema serializability.
-        """
+        """Test schema serializability."""
         assert cloudpickle.loads(cloudpickle.dumps(student.schema)) == student.schema
         assert cloudpickle.loads(cloudpickle.dumps(student)) == student

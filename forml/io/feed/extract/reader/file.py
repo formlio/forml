@@ -31,8 +31,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Handle(metaclass=abc.ABCMeta):
-    """Abstract file handle.
-    """
+    """Abstract file handle."""
+
     @property
     @abc.abstractmethod
     def header(self) -> typing.Sequence[str]:
@@ -42,8 +42,9 @@ class Handle(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def read(self, columns: typing.Sequence[str],
-             predicate: typing.Optional[series.Expression] = None) -> payload.ColumnMajor:
+    def read(
+        self, columns: typing.Sequence[str], predicate: typing.Optional[series.Expression] = None
+    ) -> payload.ColumnMajor:
         """Read the file columns.
 
         Args:
@@ -55,15 +56,15 @@ class Handle(metaclass=abc.ABCMeta):
 
 
 class Set(typing.NamedTuple):
-    """File based train/apply set.
-    """
+    """File based train/apply set."""
+
     train: Handle
     apply: Handle
 
-    def read(self, columns: typing.Sequence[str],
-             predicate: typing.Optional[series.Expression] = None) -> payload.ColumnMajor:
-        """Read the dataset.
-        """
+    def read(
+        self, columns: typing.Sequence[str], predicate: typing.Optional[series.Expression] = None
+    ) -> payload.ColumnMajor:
+        """Read the dataset."""
         if set(self.apply.header).issuperset(columns):
             source = self.apply
         elif not set(self.train.header).issuperset(columns):
@@ -74,14 +75,13 @@ class Set(typing.NamedTuple):
 
 
 class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
-    """Abstract file based feed.
-    """
+    """Abstract file based feed."""
+
     class Reader(extract.Reader[code.Tabulizer, code.Columnizer, code.Table], metaclass=abc.ABCMeta):
-        """File based reader.
-        """
+        """File based reader."""
+
         class Parser(code.Frame, metaclass=abc.ABCMeta):
-            """Parser producing code that implements the actual ETL.
-            """
+            """Parser producing code that implements the actual ETL."""
 
         @classmethod
         def format(cls, data: code.Table) -> payload.ColumnMajor:
@@ -107,8 +107,11 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
             return statement(None)
 
         @classmethod
-        def parser(cls, sources: typing.Mapping[frame.Source, code.Tabulizer],
-                   columns: typing.Mapping[series.Column, code.Columnizer]) -> 'Feed.Reader.Parser':
+        def parser(
+            cls,
+            sources: typing.Mapping[frame.Source, code.Tabulizer],
+            columns: typing.Mapping[series.Column, code.Columnizer],
+        ) -> 'Feed.Reader.Parser':
             """Return the parser instance of this reader.
 
             Args:
@@ -120,9 +123,12 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
             return cls.Parser(columns, sources)  # pylint: disable=abstract-class-instantiated
 
     @classmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, code.Tabulizer],
-               columns: typing.Mapping[series.Column, code.Columnizer],
-               **kwargs) -> typing.Callable[[frame.Query], payload.ColumnMajor]:
+    def reader(
+        cls,
+        sources: typing.Mapping[frame.Source, code.Tabulizer],
+        columns: typing.Mapping[series.Column, code.Columnizer],
+        **kwargs,
+    ) -> typing.Callable[[frame.Query], payload.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

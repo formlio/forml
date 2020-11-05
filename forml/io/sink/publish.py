@@ -32,8 +32,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Operator(topology.Operator):
-    """Basic publisher operator.
-    """
+    """Basic publisher operator."""
+
     def __init__(self, writer: task.Spec):
         if writer.actor.is_stateful():
             raise error.Invalid('Stateful actor invalid for a publisher')
@@ -50,11 +50,11 @@ class Operator(topology.Operator):
 
 
 class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
-    """Base class for writer implementation.
-    """
+    """Base class for writer implementation."""
+
     class Actor(task.Actor):
-        """Data publishing actor using the provided writer to store the data.
-        """
+        """Data publishing actor using the provided writer to store the data."""
+
         def __init__(self, writer: typing.Callable[[payload.ColumnMajor], None]):
             self._writer: typing.Callable[[payload.ColumnMajor], None] = writer
 
