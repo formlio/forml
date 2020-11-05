@@ -19,12 +19,9 @@
 """
 Setuptools script for ForML package.
 """
-import sys
 
 import setuptools
 
-sys.path.insert(0, 'src')
-import forml  # noqa: E402
 
 EXTRAS_FLOW = {
     'pandas',
@@ -53,7 +50,6 @@ EXTRAS_DEV = {
 EXTRAS_ALL = EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC
 
 setuptools.setup(name='forml',
-                 version=forml.__version__,
                  description='Lifecycle management framework for Data science projects',
                  long_description=open('README.md', 'r').read(),
                  long_description_content_type='text/markdown',
