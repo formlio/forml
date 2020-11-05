@@ -34,21 +34,20 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Suite(unittest.TestCase, metaclass=abc.ABCMeta):
-    """Abstract base class of operator testing suite.
-    """
+    """Abstract base class of operator testing suite."""
+
     def __repr__(self):
         return self.__class__.__name__
 
     @property
     @abc.abstractmethod
     def __operator__(self) -> typing.Type[topology.Operator]:
-        """Operator instance.
-        """
+        """Operator instance."""
 
 
 class Meta(abc.ABCMeta):
-    """Meta class for generating unittest classes out of our framework.
-    """
+    """Meta class for generating unittest classes out of our framework."""
+
     def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any], **kwargs):
         if not any(issubclass(b, Suite) for b in bases):
             raise TypeError(f'{name} not a valid {Suite.__name__}')
@@ -59,8 +58,8 @@ class Meta(abc.ABCMeta):
 
 
 class Test:
-    """Base class for test implementations.
-    """
+    """Base class for test implementations."""
+
     def __init__(self, launcher: facility.Launcher):
         self._launcher: facility.Launcher = launcher
 
@@ -109,8 +108,8 @@ class Test:
 
 
 class RaisableTest(Test):
-    """Base test class for raising test cases.
-    """
+    """Base test class for raising test cases."""
+
     def __init__(self, launcher: facility.Launcher, exception: spec.Scenario.Exception):
         super().__init__(launcher)
         self._exception: spec.Scenario.Exception = exception
@@ -129,8 +128,8 @@ class RaisableTest(Test):
 
 
 class ReturnableTest(Test):
-    """Base test class for returning test cases.
-    """
+    """Base test class for returning test cases."""
+
     def __init__(self, launcher: facility.Launcher, output: spec.Scenario.Output):
         super().__init__(launcher)
         self._output: spec.Scenario.Output = output
@@ -149,50 +148,46 @@ class ReturnableTest(Test):
 
 
 class TestInitRaises(RaisableTest, Test):
-    """Test composite.
-    """
+    """Test composite."""
+
     def init(self, suite: Suite) -> launchmod.Virtual.Builder:
         with self.raises(suite):
             return super().init(suite)
 
 
 class PlainApplyTest(Test):
-    """Testcase logic.
-    """
+    """Testcase logic."""
+
     def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
         return launcher.apply()
 
 
 class TestPlainApplyReturns(ReturnableTest, PlainApplyTest):
-    """Test composite.
-    """
+    """Test composite."""
 
 
 class TestPlainApplyRaises(RaisableTest, PlainApplyTest):
-    """Test composite.
-    """
+    """Test composite."""
 
 
 class StateTrainTest(Test):
-    """Testcase logic.
-    """
+    """Testcase logic."""
+
     def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
         return launcher.train()
 
 
 class TestStateTrainReturns(ReturnableTest, StateTrainTest):
-    """Test composite.
-    """
+    """Test composite."""
 
 
 class TestStateTrainRaises(RaisableTest, StateTrainTest):
-    """Test composite.
-    """
+    """Test composite."""
 
 
 class StateApplyTest(Test):
-    """Testcase logic.
-    """
+    """Testcase logic."""
+
     def init(self, suite: Suite) -> launchmod.Virtual.Builder:
         launcher = super().init(suite)
         launcher.train()
@@ -203,18 +198,16 @@ class StateApplyTest(Test):
 
 
 class TestStateApplyReturns(ReturnableTest, StateApplyTest):
-    """Test composite.
-    """
+    """Test composite."""
 
 
 class TestStateApplyRaises(RaisableTest, StateApplyTest):
-    """Test composite.
-    """
+    """Test composite."""
 
 
 class Case:
-    """Test case routine.
-    """
+    """Test case routine."""
+
     def __init__(self, name: str, scenario: spec.Scenario, launcher: provcfg.Runner = provcfg.Runner.default):
         self._name: str = name
         launcher = facility.Launcher(scenario.params, scenario.input, launcher)
@@ -248,9 +241,9 @@ class Case:
 
     def __get__(self, suite: Suite, cls):
         def case():
-            """Bound routine representation.
-            """
+            """Bound routine representation."""
             LOGGER.debug('Testing %s[%s] case', suite, self._name)
             self._test(suite)
+
         case.__doc__ = f'Test of {string.capwords(self._name.replace("_", " "))}'
         return case

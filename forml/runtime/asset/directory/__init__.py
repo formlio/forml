@@ -32,18 +32,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Level(metaclass=abc.ABCMeta):
-    """Abstract directory level.
-    """
+    """Abstract directory level."""
+
     class Invalid(error.Invalid):
-        """Indication of an invalid level.
-        """
+        """Indication of an invalid level."""
 
     class Key(metaclass=abc.ABCMeta):
-        """Level key type.
-        """
+        """Level key type."""
+
         class Invalid(error.Invalid, TypeError):
-            """Invalid key type.
-            """
+            """Invalid key type."""
 
         @property
         def next(self) -> 'Level.Key':
@@ -54,11 +52,11 @@ class Level(metaclass=abc.ABCMeta):
             raise NotImplementedError(f'Next key not supported for {self.__class__}')
 
     class Listing(tuple):
-        """Helper class representing a registry listing.
-        """
+        """Helper class representing a registry listing."""
+
         class Empty(error.Missing):
-            """Exception indicating empty listing.
-            """
+            """Exception indicating empty listing."""
+
         def __new__(cls, items: typing.Iterable['Level.Key']):
             return super().__new__(cls, tuple(sorted(set(items))))
 
@@ -130,8 +128,8 @@ class Level(metaclass=abc.ABCMeta):
 
 
 class Cache:
-    """Helper for caching registry method calls.
-    """
+    """Helper for caching registry method calls."""
+
     def __init__(self, method: typing.Callable):
         self._method: str = method.__name__
 
@@ -143,8 +141,7 @@ class Cache:
         return getattr(registry, self._method)(*args, **kwargs)
 
     def clear(self) -> None:
-        """Clear the cache.
-        """
+        """Clear the cache."""
         self.__call__.cache_clear()  # pylint: disable=no-member
 
     @property

@@ -32,8 +32,8 @@ from forml.lib import registry, runner, sink
 
 
 class Parser(dict):
-    """Config parser implementation.
-    """
+    """Config parser implementation."""
+
     def __init__(self, defaults: typing.Mapping[str, typing.Any], *paths: pathlib.Path):
         super().__init__()
         self._sources: typing.List[pathlib.Path] = list()
@@ -58,6 +58,7 @@ class Parser(dict):
             other: Another mapping with config values to be merged with our config.
             **kwargs: Other values provided as keword arguments.
         """
+
         def merge(left: typing.Mapping, right: typing.Mapping) -> typing.Mapping[str, typing.Any]:
             """Recursive merge of two dictionaries with right-to-left precedence. Any non-scalar, non-dictionary objects
             are copied by reference.
@@ -145,18 +146,10 @@ OPT_EVAL = 'eval'
 DEFAULTS = {
     # all static defaults should go rather to the ./config.toml (in this package)
     OPT_TMPDIR: tempfile.gettempdir(),
-    SECTION_REGISTRY: {
-        OPT_PATH: [registry.__name__]
-    },
-    SECTION_RUNNER: {
-        OPT_PATH: [runner.__name__]
-    },
-    SECTION_FEED: {
-        OPT_PATH: []
-    },
-    SECTION_SINK: {
-        OPT_PATH: [sink.__name__]
-    }
+    SECTION_REGISTRY: {OPT_PATH: [registry.__name__]},
+    SECTION_RUNNER: {OPT_PATH: [runner.__name__]},
+    SECTION_FEED: {OPT_PATH: []},
+    SECTION_SINK: {OPT_PATH: [sink.__name__]},
 }
 
 APPNAME = 'forml'

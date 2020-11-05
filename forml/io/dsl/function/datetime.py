@@ -24,8 +24,8 @@ from forml.io.dsl.struct import series, kind as kindmod
 
 
 class Year(series.Univariate):
-    """Extract the year from given date/time.
-    """
+    """Extract the year from given date/time."""
+
     value: series.Operable = property(operator.itemgetter(0))
     kind: kindmod.Any = kindmod.Integer()
 

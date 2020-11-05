@@ -38,11 +38,12 @@ from forml.flow.graph import view, node as grnode
 class Validator(view.Visitor):
     """Visitor ensuring all nodes are in valid state which means:
 
-        * are Worker instances (not Future)
-        * have consistent subscriptions:
-            * only both train and label or all input ports
-            * only both train and label or all output ports
+    * are Worker instances (not Future)
+    * have consistent subscriptions:
+        * only both train and label or all input ports
+        * only both train and label or all output ports
     """
+
     def __init__(self):
         self._futures: typing.Set[grnode.Atomic] = set()
 

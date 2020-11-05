@@ -29,8 +29,8 @@ from forml.flow import task
 
 
 class Wrapping(metaclass=abc.ABCMeta):
-    """Base class for wrappers.
-    """
+    """Base class for wrappers."""
+
     def __init__(self, actor: typing.Type, params: typing.Mapping[str, str]):
         self._actor: typing.Any = actor
         self._params: typing.Mapping[str, str] = params
@@ -65,8 +65,8 @@ class Wrapping(metaclass=abc.ABCMeta):
 
 
 class Mapping(Wrapping):
-    """Base class for actor wrapping.
-    """
+    """Base class for actor wrapping."""
+
     def is_stateful(self) -> bool:
         """Emulation of native actor is_stateful class method.
 
@@ -76,11 +76,11 @@ class Mapping(Wrapping):
 
 
 class Class(Mapping):
-    """Decorator wrapper.
-    """
+    """Decorator wrapper."""
+
     class Actor(Mapping, task.Actor):  # pylint: disable=abstract-method
-        """Wrapper around user class implementing the Actor interface.
-        """
+        """Wrapper around user class implementing the Actor interface."""
+
         def __new__(cls, actor: typing.Any, mapping: typing.Mapping[str, str]):  # pylint: disable=unused-argument
             cls.__abstractmethods__ = frozenset()
             return super().__new__(cls)
@@ -107,8 +107,9 @@ class Class(Mapping):
         return task.name(self._actor)
 
     @staticmethod
-    def actor(cls: typing.Optional[typing.Type] = None, /,  # pylint: disable=bad-staticmethod-argument
-              **mapping: str) -> typing.Type[task.Actor]:
+    def actor(  # pylint: disable=bad-staticmethod-argument
+        cls: typing.Optional[typing.Type] = None, /, **mapping: str
+    ) -> typing.Type[task.Actor]:
         """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
         optionally with mapping of Actor methods to decorated user class implementation.
 
@@ -128,8 +129,7 @@ class Class(Mapping):
             mapping.setdefault(method.__name__, method.__name__)
 
         def decorator(cls) -> typing.Type[task.Actor]:
-            """Decorating function.
-            """
+            """Decorating function."""
             if not inspect.isclass(cls):
                 raise ValueError(f'Invalid actor class {cls}')
             if issubclass(cls, task.Actor):
@@ -145,18 +145,20 @@ class Class(Mapping):
 
 
 class Function(Wrapping):
-    """Function wrapping actor.
-    """
+    """Function wrapping actor."""
+
     class Actor(task.Actor):
-        """Wrapper around user class implementing the Actor interface.
-        """
-        def __init__(self, function: typing.Callable[[typing.Any], typing.Any],
-                     *args: typing.Any, **kwargs: typing.Any):
+        """Wrapper around user class implementing the Actor interface."""
+
+        def __init__(
+            self, function: typing.Callable[[typing.Any], typing.Any], *args: typing.Any, **kwargs: typing.Any
+        ):
             # poor-man's args validation against the function signature; this works only partially as we don't know
             # how many of the function arguments are data input ports (at least one but possibly more)
             signature = inspect.signature(function)
-            signature.replace(parameters=itertools.islice(
-                signature.parameters.values(), 1, None)).bind_partial(*args, **kwargs)
+            signature.replace(parameters=itertools.islice(signature.parameters.values(), 1, None)).bind_partial(
+                *args, **kwargs
+            )
             self._function: typing.Callable[[typing.Any], typing.Any] = function
             self._args: typing.Sequence[typing.Any] = args
             self._kwargs: typing.Mapping[str, typing.Any] = kwargs
@@ -174,10 +176,12 @@ class Function(Wrapping):
             """
             return {'function': self._function, 'args': self._args, 'kwargs': dict(self._kwargs)}
 
-        def set_params(self,  # pylint: disable=arguments-differ
-                       function: typing.Optional[typing.Callable[[typing.Any], float]] = None,
-                       args: typing.Optional[typing.Sequence[typing.Any]] = None,
-                       kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None) -> None:
+        def set_params(
+            self,  # pylint: disable=arguments-differ
+            function: typing.Optional[typing.Callable[[typing.Any], float]] = None,
+            args: typing.Optional[typing.Sequence[typing.Any]] = None,
+            kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        ) -> None:
             """Standard params setter.
 
             Args:
@@ -208,8 +212,9 @@ class Function(Wrapping):
         return False
 
     @staticmethod
-    def actor(function: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None, /,
-              **params: typing.Any) -> typing.Type[task.Actor]:
+    def actor(
+        function: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None, /, **params: typing.Any
+    ) -> typing.Type[task.Actor]:
         """Decorator for turning an user function to a valid actor. This can be used either as parameterless decorator
         or optionally with addition kwargs that will be passed to the function.
 
@@ -221,8 +226,7 @@ class Function(Wrapping):
         """
 
         def decorator(function) -> typing.Type[task.Actor]:
-            """Decorating function.
-            """
+            """Decorating function."""
             return Function(function, **params)
 
         if function:

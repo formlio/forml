@@ -36,17 +36,20 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Table(view.Visitor, abc.Iterable):
-    """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys.
-    """
+    """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys."""
+
     class Linkage:
         """Structure for registering instruction dependency tree as relations between target (receiving) instruction
         and its upstream dependency instructions representing its positional arguments.
         """
+
         def __init__(self):
-            self._absolute: typing.Dict[uuid.UUID,
-                                        typing.List[typing.Optional[uuid.UUID]]] = collections.defaultdict(list)
-            self._prefixed: typing.Dict[uuid.UUID,
-                                        typing.List[typing.Optional[uuid.UUID]]] = collections.defaultdict(list)
+            self._absolute: typing.Dict[uuid.UUID, typing.List[typing.Optional[uuid.UUID]]] = collections.defaultdict(
+                list
+            )
+            self._prefixed: typing.Dict[uuid.UUID, typing.List[typing.Optional[uuid.UUID]]] = collections.defaultdict(
+                list
+            )
 
         def __getitem__(self, instruction: uuid.UUID) -> typing.Sequence[uuid.UUID]:
             return tuple(itertools.chain(reversed(self._prefixed[instruction]), self._absolute[instruction]))
@@ -117,8 +120,8 @@ class Table(view.Visitor, abc.Iterable):
             self._prefixed[instruction].append(argument)
 
     class Index:
-        """Mapping of the stored instructions. Same instruction might be stored under multiple keys.
-        """
+        """Mapping of the stored instructions. Same instruction might be stored under multiple keys."""
+
         def __init__(self):
             self._instructions: typing.Dict[uuid.UUID, code.Instruction] = dict()
 
@@ -173,8 +176,9 @@ class Table(view.Visitor, abc.Iterable):
         self._committer: typing.Optional[uuid.UUID] = None
 
     def __iter__(self) -> code.Symbol:
-        def merge(value: typing.Iterable[typing.Optional[uuid.UUID]],
-                  element: typing.Iterable[typing.Optional[uuid.UUID]]) -> typing.Iterable[uuid.UUID]:
+        def merge(
+            value: typing.Iterable[typing.Optional[uuid.UUID]], element: typing.Iterable[typing.Optional[uuid.UUID]]
+        ) -> typing.Iterable[uuid.UUID]:
             """Merge two iterables with at most one of them having non-null value on each offset into single iterable
             with this non-null values picked.
 
@@ -184,6 +188,7 @@ class Table(view.Visitor, abc.Iterable):
 
             Returns: Merged iterable.
             """
+
             def pick(left: typing.Optional[uuid.UUID], right: typing.Optional[uuid.UUID]) -> typing.Optional[uuid.UUID]:
                 """Pick the non-null value from the two arguments.
 
@@ -195,6 +200,7 @@ class Table(view.Visitor, abc.Iterable):
                 """
                 assert not (left and right), 'Expecting at most one non-null value'
                 return left if left else right
+
             return (pick(a, b) for a, b in itertools.zip_longest(value, element))
 
         stubs = {s for s in (self._index[n] for n in self._linkage.leaves) if isinstance(s, instmod.Getter)}

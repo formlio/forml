@@ -36,16 +36,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
-    """Generation metadata.
-    """
+    """Generation metadata."""
 
     class Mode(types.SimpleNamespace):
-        """Mode metadata.
-        """
+        """Mode metadata."""
 
         class Proxy(tuple):
-            """Mode attributes proxy.
-            """
+            """Mode attributes proxy."""
+
             _tag = property(operator.itemgetter(0))
             _mode = property(operator.itemgetter(1))
 
@@ -90,25 +88,27 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
             return bool(self.timestamp)
 
     class Training(Mode):
-        """Training mode attributes.
-        """
+        """Training mode attributes."""
 
-        def __init__(self, timestamp: typing.Optional[datetime.datetime] = None,
-                     ordinal: typing.Optional[kind.Native] = None):
+        def __init__(
+            self, timestamp: typing.Optional[datetime.datetime] = None, ordinal: typing.Optional[kind.Native] = None
+        ):
             super().__init__(timestamp, ordinal=ordinal)
 
     class Tuning(Mode):
-        """Tuning mode attributes.
-        """
+        """Tuning mode attributes."""
 
-        def __init__(self, timestamp: typing.Optional[datetime.datetime] = None,
-                     score: typing.Optional[float] = None):
+        def __init__(self, timestamp: typing.Optional[datetime.datetime] = None, score: typing.Optional[float] = None):
             super().__init__(timestamp, score=score)
 
     _TSFMT = '%Y-%m-%dT%H:%M:%S.%f'
 
-    def __new__(cls, training: typing.Optional[Training] = None, tuning: typing.Optional[Tuning] = None,
-                states: typing.Optional[typing.Sequence[uuid.UUID]] = None):
+    def __new__(
+        cls,
+        training: typing.Optional[Training] = None,
+        tuning: typing.Optional[Tuning] = None,
+        states: typing.Optional[typing.Sequence[uuid.UUID]] = None,
+    ):
         return super().__new__(cls, training or cls.Training(), tuning or cls.Tuning(), tuple(states or []))
 
     def __bool__(self):
@@ -128,8 +128,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
 
         Returns: New tag instance.
         """
-        if not {k for k, v in self._asdict().items()
-                if not isinstance(v, Tag.Mode)}.issuperset(kwargs.keys()):
+        if not {k for k, v in self._asdict().items() if not isinstance(v, Tag.Mode)}.issuperset(kwargs.keys()):
             raise ValueError('Invalid replacement')
         return self._replace(**kwargs)
 
@@ -148,7 +147,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
 
     @classmethod
     def _strptime(cls, raw: typing.Optional[str]) -> typing.Optional[datetime.datetime]:
-        """ Decode the timestamp from string representation.
+        """Decode the timestamp from string representation.
 
         Args:
             raw: Timestamp string representation.
@@ -164,10 +163,14 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
 
         Returns: String of bytes representation.
         """
-        return json.dumps({
-            'training': {'timestamp': self._strftime(self.training.timestamp), 'ordinal': self.training.ordinal},
-            'tuning': {'timestamp': self._strftime(self.tuning.timestamp), 'score': self.tuning.score},
-            'states': [str(s) for s in self.states]}, indent=4).encode('utf-8')
+        return json.dumps(
+            {
+                'training': {'timestamp': self._strftime(self.training.timestamp), 'ordinal': self.training.ordinal},
+                'tuning': {'timestamp': self._strftime(self.tuning.timestamp), 'score': self.tuning.score},
+                'states': [str(s) for s in self.states],
+            },
+            indent=4,
+        ).encode('utf-8')
 
     @classmethod
     def loads(cls, raw: bytes) -> 'Tag':
@@ -179,11 +182,13 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         Returns: Tag instance.
         """
         meta = json.loads(raw.decode('utf-8'))
-        return cls(training=cls.Training(timestamp=cls._strptime(meta['training']['timestamp']),
-                                         ordinal=meta['training']['ordinal']),
-                   tuning=cls.Tuning(timestamp=cls._strptime(meta['tuning']['timestamp']),
-                                     score=meta['tuning']['score']),
-                   states=(uuid.UUID(s) for s in meta['states']))
+        return cls(
+            training=cls.Training(
+                timestamp=cls._strptime(meta['training']['timestamp']), ordinal=meta['training']['ordinal']
+            ),
+            tuning=cls.Tuning(timestamp=cls._strptime(meta['tuning']['timestamp']), score=meta['tuning']['score']),
+            states=(uuid.UUID(s) for s in meta['states']),
+        )
 
 
 NOTAG = Tag()
@@ -193,11 +198,11 @@ STATES = directory.Cache(persistent.Registry.read)
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
 class Level(directory.Level):
-    """Snapshot of project states in its particular training iteration.
-    """
+    """Snapshot of project states in its particular training iteration."""
+
     class Key(directory.Level.Key, int):
-        """Generation key.
-        """
+        """Generation key."""
+
         MIN = 1
 
         def __new__(cls, key: typing.Optional[typing.Union[str, int, 'Level.Key']] = MIN):

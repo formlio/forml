@@ -29,8 +29,8 @@ from . import Registry
 
 
 class TestRegistry(Registry):
-    """Registry unit tests.
-    """
+    """Registry unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='function')
     def constructor() -> typing.Callable[[], persistent.Registry]:

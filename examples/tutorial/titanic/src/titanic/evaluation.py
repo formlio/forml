@@ -29,6 +29,9 @@ from forml.lib.flow.operator.folding import evaluation
 
 # Typical method of providing component implementation using `component.setup()`. Choosing the `MergingScorer` operator
 # to implement classical crossvalidated metric scoring
-component.setup(evaluation.MergingScorer(
-    crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
-    metric=metrics.log_loss))
+component.setup(
+    evaluation.MergingScorer(
+        crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
+        metric=metrics.log_loss,
+    )
+)

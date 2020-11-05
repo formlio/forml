@@ -49,8 +49,8 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
 
 
 class Registry(provider.Interface, default=provcfg.Registry.default, path=provcfg.Registry.path):
-    """Top-level persistent registry abstraction.
-    """
+    """Top-level persistent registry abstraction."""
+
     def __init__(self, staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):
         if not staging:
             LOGGER.warning('Using temporal non-distributed staging for %s', self)
@@ -99,8 +99,9 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def generations(self, project: 'prjmod.Level.Key',
-                    lineage: 'lngmod.Level.Key') -> typing.Iterable[typing.Union[str, int, 'genmod.Level.Key']]:
+    def generations(
+        self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key'
+    ) -> typing.Iterable[typing.Union[str, int, 'genmod.Level.Key']]:
         """List the generations of given lineage.
 
         Args:
@@ -133,8 +134,9 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def read(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key',
-             sid: uuid.UUID) -> bytes:
+    def read(
+        self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key', sid: uuid.UUID
+    ) -> bytes:
         """Load the state based on provided id.
 
         Args:
@@ -160,8 +162,9 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def open(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key',
-             generation: 'genmod.Level.Key') -> 'genmod.Tag':
+    def open(
+        self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key'
+    ) -> 'genmod.Tag':
         """Return the metadata tag of given generation.
 
         Args:
@@ -174,8 +177,13 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def close(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key',
-              tag: 'genmod.Tag') -> None:
+    def close(
+        self,
+        project: 'prjmod.Level.Key',
+        lineage: 'lngmod.Level.Key',
+        generation: 'genmod.Level.Key',
+        tag: 'genmod.Tag',
+    ) -> None:
         """Seal new generation by storing its metadata tag.
 
         Args:

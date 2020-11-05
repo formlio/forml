@@ -29,18 +29,17 @@ from forml.io import sink as sinkmod
 
 
 class TestHandle:
-    """Sink handle unit tests.
-    """
+    """Sink handle unit tests."""
+
     class Conf(conf.Sink):
-        """Fake override of the conf.Feed class to bypass parsing config file.
-        """
+        """Fake override of the conf.Feed class to bypass parsing config file."""
+
         def __new__(cls, reference: str, identity: str):
             return tuple.__new__(cls, [reference, {'identity': identity}])
 
     @pytest.fixture(scope='session')
     def modal(self, reference: str) -> sinkmod.Handle:
-        """Sink.Mode based handle fixture.
-        """
+        """Sink.Mode based handle fixture."""
         train = self.Conf(reference, 'train')
         apply = self.Conf(reference, 'apply')
         eval_ = self.Conf(reference, 'eval')
@@ -48,13 +47,11 @@ class TestHandle:
 
     @pytest.fixture(scope='session')
     def instant(self, sink: typing.Type[sinkmod.Provider]) -> sinkmod.Handle:
-        """Instant based handle fixture.
-        """
+        """Instant based handle fixture."""
         return sinkmod.Handle(sink(identity='instant'))
 
     def test_getter(self, modal: sinkmod.Handle, instant: sinkmod.Handle):
-        """Test the handle getters.
-        """
+        """Test the handle getters."""
         assert modal.train.identity == 'train'
         assert modal.apply.identity == 'apply'
         assert modal.eval.identity == 'eval'

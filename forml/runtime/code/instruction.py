@@ -31,8 +31,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Loader(code.Instruction):
-    """Registry based state loader.
-    """
+    """Registry based state loader."""
+
     def __init__(self, assets: access.State, key: typing.Union[int, uuid.UUID]):
         self._assets: access.State = assets
         self._key: typing.Union[int, uuid.UUID] = key
@@ -50,8 +50,8 @@ class Loader(code.Instruction):
 
 
 class Dumper(code.Instruction):
-    """Registry based state dumper.
-    """
+    """Registry based state dumper."""
+
     def __init__(self, assets: access.State):
         self._assets: access.State = assets
 
@@ -67,8 +67,8 @@ class Dumper(code.Instruction):
 
 
 class Getter(code.Instruction):
-    """Extracting single item from a vector.
-    """
+    """Extracting single item from a vector."""
+
     def __init__(self, index: int):
         self._index: int = index
 
@@ -87,8 +87,8 @@ class Getter(code.Instruction):
 
 
 class Committer(code.Instruction):
-    """Commit a new lineage generation.
-    """
+    """Commit a new lineage generation."""
+
     def __init__(self, assets: access.State):
         self._assets: access.State = assets
 
@@ -106,11 +106,15 @@ class Functor(code.Instruction):
 
     Functor object must be serializable.
     """
+
     class Shifting:
-        """Extra functionality to be prepended to the main objective.
-        """
-        def __init__(self, consumer: typing.Callable[[task.Actor, typing.Any], None],
-                     objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any]):
+        """Extra functionality to be prepended to the main objective."""
+
+        def __init__(
+            self,
+            consumer: typing.Callable[[task.Actor, typing.Any], None],
+            objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any],
+        ):
             self._consumer: typing.Callable[[task.Actor, typing.Any], None] = consumer
             self._objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
 
@@ -146,8 +150,9 @@ class Functor(code.Instruction):
             LOGGER.debug('%s receiving params (%s)', actor, params)
             actor.set_params(**params)
 
-    def __init__(self, spec: task.Spec,
-                 objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any]):
+    def __init__(
+        self, spec: task.Spec, objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any]
+    ):
         self._spec: task.Spec = spec
         self._objective: typing.Callable[[task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
         self._instance: typing.Optional[task.Actor] = None  # transient
@@ -183,8 +188,8 @@ class Functor(code.Instruction):
 
 
 class Functional(Functor, metaclass=abc.ABCMeta):
-    """Base class for mapper and consumer functors.
-    """
+    """Base class for mapper and consumer functors."""
+
     def __init__(self, spec: task.Spec):
         super().__init__(spec, self._function)
 
@@ -202,8 +207,8 @@ class Functional(Functor, metaclass=abc.ABCMeta):
 
 
 class Mapper(Functional):
-    """Mapper (transformer) functor.
-    """
+    """Mapper (transformer) functor."""
+
     @staticmethod
     def _function(actor: task.Actor, *args) -> typing.Any:
         """Mapper objective is the apply method.
@@ -220,8 +225,8 @@ class Mapper(Functional):
 
 
 class Consumer(Functional):
-    """Consumer (ie trainer) functor.
-    """
+    """Consumer (ie trainer) functor."""
+
     @staticmethod
     def _function(actor: task.Actor, *args) -> bytes:
         """Consumer objective is the train method.

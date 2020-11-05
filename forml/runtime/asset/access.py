@@ -33,10 +33,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class State:
-    """State persistence accessor.
-    """
-    def __init__(self, generation: 'genmod.Level', nodes: typing.Sequence[uuid.UUID],
-                 tag: typing.Optional['genmod.Tag'] = None):
+    """State persistence accessor."""
+
+    def __init__(
+        self, generation: 'genmod.Level', nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['genmod.Tag'] = None
+    ):
         self._generation: 'genmod.Level' = generation
         self._nodes: typing.Tuple[uuid.UUID] = tuple(nodes)
         self._tag: typing.Optional['genmod.Tag'] = tag
@@ -99,12 +100,15 @@ class State:
 
 
 class Assets:
-    """Persistent assets IO for loading and dumping models.
-    """
-    def __init__(self, project: typing.Union[str, 'prjmod.Level.Key'] = conf.PRJNAME,
-                 lineage: typing.Optional[typing.Union[str, 'lngmod.Level.Key']] = None,
-                 generation: typing.Optional[typing.Union[str, int, 'genmod.Level.Key']] = None,
-                 registry: typing.Optional['root.Level'] = None):
+    """Persistent assets IO for loading and dumping models."""
+
+    def __init__(
+        self,
+        project: typing.Union[str, 'prjmod.Level.Key'] = conf.PRJNAME,
+        lineage: typing.Optional[typing.Union[str, 'lngmod.Level.Key']] = None,
+        generation: typing.Optional[typing.Union[str, int, 'genmod.Level.Key']] = None,
+        registry: typing.Optional['root.Level'] = None,
+    ):
         if not registry:
             registry = root.Level(persistent.Registry())
         self._generation: 'genmod.Level' = registry.get(project).get(lineage).get(generation)
@@ -125,8 +129,7 @@ class Assets:
         """
         return self._generation.tag
 
-    def state(self, nodes: typing.Sequence[uuid.UUID],
-              tag: typing.Optional['genmod.Tag'] = None) -> State:
+    def state(self, nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['genmod.Tag'] = None) -> State:
         """Get the state persistence accessor wrapped in a context manager.
 
         Args:

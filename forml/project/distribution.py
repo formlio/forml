@@ -40,8 +40,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Package(collections.namedtuple('Package', 'path, manifest')):
-    """Distribution package.
-    """
+    """Distribution package."""
+
     path: pathlib.Path
     manifest: 'Manifest'
 
@@ -54,8 +54,9 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
         return super().__new__(cls, path.resolve(), Manifest.read(path))
 
     @classmethod
-    def create(cls, source: typing.Union[str, pathlib.Path], manifest: 'Manifest',
-               path: typing.Union[str, pathlib.Path]) -> 'Package':
+    def create(
+        cls, source: typing.Union[str, pathlib.Path], manifest: 'Manifest', path: typing.Union[str, pathlib.Path]
+    ) -> 'Package':
         """Create new package from given source tree.
 
         Args:
@@ -65,6 +66,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 
         Returns: Package instance.
         """
+
         def writeall(level: pathlib.Path, archive: zipfile.ZipFile, root: typing.Optional[pathlib.Path] = None) -> None:
             """Recursive helper for adding directory tree content to an zip archive.
 
@@ -73,6 +75,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                 archive: zipfile instance opened for writing.
                 root: Root of directory tree to be added.
             """
+
             def valid(file: pathlib.Path) -> bool:
                 """Check the item is valid package item candidate.
 
@@ -109,6 +112,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 
         Returns: Artifact instance.
         """
+
         def uninstalled() -> bool:
             """Prune the existing path if not matching the target manifest.
 
@@ -149,8 +153,8 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 
 
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
-    """Distribution manifest implementation.
-    """
+    """Distribution manifest implementation."""
+
     name: prjmod.Level.Key
     version: lngmod.Level.Key
     package: str
@@ -158,15 +162,19 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
 
     MODULE = f'__{Package.FORMAT}__'
     TEMPLATE = string.Template(
-        'NAME = "$name"\n'
-        'VERSION = "$version"\n'
-        'PACKAGE = "$package"\n'
-        'MODULES = $modules\n')
+        'NAME = "$name"\n' 'VERSION = "$version"\n' 'PACKAGE = "$package"\n' 'MODULES = $modules\n'
+    )
 
-    def __new__(cls, name: typing.Union[str, prjmod.Level.Key], version: typing.Union[str, lngmod.Level.Key],
-                package: str, **modules: str):
-        return super().__new__(cls, prjmod.Level.Key(name), lngmod.Level.Key(version), package,
-                               types.MappingProxyType(modules))
+    def __new__(
+        cls,
+        name: typing.Union[str, prjmod.Level.Key],
+        version: typing.Union[str, lngmod.Level.Key],
+        package: str,
+        **modules: str,
+    ):
+        return super().__new__(
+            cls, prjmod.Level.Key(name), lngmod.Level.Key(version), package, types.MappingProxyType(modules)
+        )
 
     def __getnewargs_ex__(self):
         return (self.name, self.version, self.package), dict(self.modules)
@@ -195,8 +203,11 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         path = self.path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open('w') as manifest:
-            manifest.write(self.TEMPLATE.substitute(name=self.name, version=self.version, package=self.package,
-                                                    modules=json.dumps(dict(self.modules))))
+            manifest.write(
+                self.TEMPLATE.substitute(
+                    name=self.name, version=self.version, package=self.package, modules=json.dumps(dict(self.modules))
+                )
+            )
 
     @classmethod
     def read(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> 'Manifest':

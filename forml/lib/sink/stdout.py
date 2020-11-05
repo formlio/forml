@@ -24,11 +24,11 @@ from forml.io import payload, sink
 
 
 class Sink(sink.Provider, alias='stdout'):
-    """Stdout sink.
-    """
+    """Stdout sink."""
+
     class Writer(sink.Provider.Writer):
-        """Sink writer implementation.
-        """
+        """Sink writer implementation."""
+
         @classmethod
         def write(cls, data: typing.Optional[payload.Native], **kwargs: typing.Any) -> None:
             if data is not None:

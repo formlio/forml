@@ -31,17 +31,16 @@ from forml.io.dsl.struct import frame
 
 
 class TestPool:
-    """Feed pool unit tests.
-    """
+    """Feed pool unit tests."""
+
     class Conf(conf.Feed):
-        """Fake override of the conf.Feed class to bypass parsing config file.
-        """
+        """Fake override of the conf.Feed class to bypass parsing config file."""
+
         def __new__(cls, reference: str, priority: float, identity: str):
             return tuple.__new__(cls, [reference, priority, {'identity': identity}])
 
     def test_iter(self, feed: typing.Type[feedmod.Provider], reference: str):
-        """Test the pool iterator.
-        """
+        """Test the pool iterator."""
         conf10 = self.Conf(reference, 10, 'conf10')
         conf1000 = self.Conf(reference, 1000, 'conf1000')
         instant = feed(identity='instant')
@@ -49,8 +48,7 @@ class TestPool:
         assert tuple(f.identity for f in pool) == ('instant', 'conf1000', 'conf10')
 
     def test_match(self, feed: typing.Type[feedmod.Provider], query: frame.Query, person: frame.Table):
-        """Feed matching test.
-        """
+        """Feed matching test."""
         instance = feed(identity='instance')
         pool = feedmod.Pool(instance)
         assert pool.match(query) is instance

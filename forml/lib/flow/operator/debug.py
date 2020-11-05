@@ -34,6 +34,7 @@ class Return(topology.Operator):
     """Transformer that for train flow re-inserts label back to the frame and returns it (apply flow remains unchanged).
     This is useful for cutting a pipeline and appending this operator to return the dataset as is for debugging.
     """
+
     def __init__(self, label: str = 'label'):
         self.inserter: task.Spec = labelmod.ColumnInserter.spec(column=label)
 
@@ -52,8 +53,8 @@ class Return(topology.Operator):
 
 
 class Dumper(task.Actor, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
-    """Pass-through transformer that dumps the input datasets to CSV files.
-    """
+    """Pass-through transformer that dumps the input datasets to CSV files."""
+
     def __init__(self, path: str):
         self.path: str = path
 
@@ -74,8 +75,8 @@ class Dumper(task.Actor, metaclass=abc.ABCMeta):  # pylint: disable=abstract-met
 
 
 class ApplyDumper(Dumper):
-    """Pass-through transformer that dumps the input datasets during apply phase to CSV files.
-    """
+    """Pass-through transformer that dumps the input datasets during apply phase to CSV files."""
+
     def apply(self, features: typing.Any) -> typing.Any:  # pylint: disable=arguments-differ
         """Dump the features.
 
@@ -89,8 +90,7 @@ class ApplyDumper(Dumper):
 
 
 class TrainDumper(Dumper):
-    """Pass-through transformer that dumps the input datasets during train phase to CSV files.
-    """
+    """Pass-through transformer that dumps the input datasets during train phase to CSV files."""
 
     def __init__(self, path: str, label: str = 'label'):
         super().__init__(path)
@@ -143,8 +143,8 @@ class TrainDumper(Dumper):
 
 
 class Dump(topology.Operator):
-    """Transparent transformer that dumps the input datasets to CSV files.
-    """
+    """Transparent transformer that dumps the input datasets to CSV files."""
+
     CSV_SUFFIX = '.csv'
 
     def __init__(self, path: str = '', label: str = 'label'):

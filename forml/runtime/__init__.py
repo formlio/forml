@@ -36,10 +36,15 @@ if typing.TYPE_CHECKING:
 
 
 class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Runner.path):
-    """Abstract base runner class to be extended by particular runner implementations.
-    """
-    def __init__(self, assets: typing.Optional[access.Assets] = None, feed: typing.Optional['feedmod.Provider'] = None,
-                 sink: typing.Optional['sinkmod.Provider'] = None, **_):
+    """Abstract base runner class to be extended by particular runner implementations."""
+
+    def __init__(
+        self,
+        assets: typing.Optional[access.Assets] = None,
+        feed: typing.Optional['feedmod.Provider'] = None,
+        sink: typing.Optional['sinkmod.Provider'] = None,
+        **_,
+    ):
         self._assets: access.Assets = assets or access.Assets()
         self._feed: feedmod.Provider = feed or feedmod.Provider()
         self._sink: typing.Optional[sinkmod.Provider] = sink
@@ -51,8 +56,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._build(lower or self._assets.tag.training.ordinal, upper,
-                                  self._assets.project.pipeline)
+        composition = self._build(lower or self._assets.tag.training.ordinal, upper, self._assets.project.pipeline)
         self._exec(composition.train, self._assets.state(composition.shared, self._assets.tag.training.trigger()))
 
     def apply(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
@@ -83,8 +87,9 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         """
         self._exec(self._evaluation(lower, upper).train)
 
-    def _evaluation(self, lower: typing.Optional['kind.Native'] = None,
-                    upper: typing.Optional['kind.Native'] = None) -> pipeline.Segment:
+    def _evaluation(
+        self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None
+    ) -> pipeline.Segment:
         """Return the evaluation pipeline.
 
         Args:
@@ -97,8 +102,9 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             raise error.Missing('Project not evaluable')
         return self._build(lower, upper, self._assets.project.pipeline >> self._assets.project.evaluation)
 
-    def _build(self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'],
-               *blocks: pipeline.Segment) -> pipeline.Composition:
+    def _build(
+        self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'], *blocks: pipeline.Segment
+    ) -> pipeline.Composition:
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
         Args:
@@ -108,9 +114,11 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
 
         Returns: Assembled flow pipeline.
         """
-        # TODO: stateful feed/sink might pollute the assets
-        return pipeline.Composition(self._feed.load(self._assets.project.source, lower, upper),
-                                    *(b.expand() for b in blocks), self._sink.publish())  # TODO: sink optional
+        return pipeline.Composition(
+            self._feed.load(self._assets.project.source, lower, upper),
+            *(b.expand() for b in blocks),
+            self._sink.publish(),
+        )
 
     def _exec(self, path: pipeline.Segment, assets: typing.Optional[access.State] = None) -> None:
         """Execute the given path and assets.
@@ -135,13 +143,14 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
 
 
 class Platform:
-    """Handle to the runtime functions representing a ForML platform.
-    """
+    """Handle to the runtime functions representing a ForML platform."""
+
     class Launcher:
-        """Runner handle.
-        """
-        def __init__(self, provider: provcfg.Runner, assets: access.Assets,
-                     feeds: 'Platform.Feeds', sink: sinkmod.Handle):
+        """Runner handle."""
+
+        def __init__(
+            self, provider: provcfg.Runner, assets: access.Assets, feeds: 'Platform.Feeds', sink: sinkmod.Handle
+        ):
             self._provider: provcfg.Runner = provider
             self._assets: access.Assets = assets
             self._feeds: Platform.Feeds = feeds
@@ -180,19 +189,21 @@ class Platform:
             raise NotImplementedError()
 
         def __call__(self, query: 'frame.Query', sink: 'sinkmod.Provider') -> Runner:
-            return Runner[self._provider.reference](self._assets, self._feeds.match(query), sink,
-                                                    **self._provider.params)
+            return Runner[self._provider.reference](
+                self._assets, self._feeds.match(query), sink, **self._provider.params
+            )
 
     class Registry:
-        """Registry util handle.
-        """
+        """Registry util handle."""
+
         def __init__(self, registry: typing.Union[provcfg.Registry, persistent.Registry]):
             if isinstance(registry, provcfg.Registry):
                 registry = persistent.Registry[registry.reference](**registry.params)
             self._root: root.Level = root.Level(registry)
 
-        def assets(self, project: typing.Optional[str], lineage: typing.Optional[str],
-                   generation: typing.Optional[str]) -> access.Assets:
+        def assets(
+            self, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str]
+        ) -> access.Assets:
             """Create the assets instance of given registry item.
 
             Args:
@@ -213,8 +224,9 @@ class Platform:
             """
             self._root.get(project).put(package)
 
-        def list(self, project: typing.Optional[str],
-                 lineage: typing.Optional[str]) -> typing.Iterable['directory.Level.Key']:
+        def list(
+            self, project: typing.Optional[str], lineage: typing.Optional[str]
+        ) -> typing.Iterable['directory.Level.Key']:
             """Repository listing subcommand.
 
             Args:
@@ -231,8 +243,8 @@ class Platform:
             return level.list()
 
     class Feeds:
-        """Feed pool and util handle.
-        """
+        """Feed pool and util handle."""
+
         def __init__(self, *configs: typing.Union[provcfg.Feed, 'feedmod.Provider']):
             self._pool: feedmod.Pool = feedmod.Pool(*configs)
 
@@ -253,10 +265,13 @@ class Platform:
             """
             raise NotImplementedError()
 
-    def __init__(self, runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
-                 registry: typing.Optional[typing.Union[provcfg.Registry, persistent.Registry]] = None,
-                 feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = None,
-                 sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, sinkmod.Provider]] = None):
+    def __init__(
+        self,
+        runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
+        registry: typing.Optional[typing.Union[provcfg.Registry, persistent.Registry]] = None,
+        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = None,
+        sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, sinkmod.Provider]] = None,
+    ):
         if isinstance(runner, str):
             runner = provcfg.Runner.resolve(runner)
         self._runner: provcfg.Runner = runner or provcfg.Runner.default
@@ -264,8 +279,12 @@ class Platform:
         self._feeds: Platform.Feeds = self.Feeds(*(feeds or provcfg.Feed.default))
         self._sink: sinkmod.Handle = sinkmod.Handle(sink or provcfg.Sink.Mode.default)
 
-    def launcher(self, project: typing.Optional[str], lineage: typing.Optional[str] = None,
-                 generation: typing.Optional[str] = None) -> 'Platform.Launcher':
+    def launcher(
+        self,
+        project: typing.Optional[str],
+        lineage: typing.Optional[str] = None,
+        generation: typing.Optional[str] = None,
+    ) -> 'Platform.Launcher':
         """Get a runner handle for given project/lineage/generation.
 
         Args:

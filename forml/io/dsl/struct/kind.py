@@ -30,14 +30,15 @@ from forml.io.dsl import error
 
 
 class Meta(abc.ABCMeta):
-    """Meta class for all kinds.
-    """
+    """Meta class for all kinds."""
+
     @property
     def __subkinds__(cls) -> typing.Iterable[typing.Type['Any']]:
         """Return all non-abstract sub-classes of given kind class.
 
         Returns: Iterable of all sub-kinds.
         """
+
         def scan(subs: typing.Iterable[typing.Type['Any']]) -> typing.Iterable[typing.Type['Any']]:
             """Scan the class subtree of given types.
 
@@ -47,18 +48,18 @@ class Meta(abc.ABCMeta):
             Returns: Iterable of all subclasses.
             """
             return (s for c in subs for s in (c, *scan(c.__subclasses__())))
+
         return {k for k in scan(cls.__subclasses__()) if not inspect.isabstract(k)}
 
 
 class Singleton(Meta):
-    """Metaclass for singleton types.
-    """
+    """Metaclass for singleton types."""
+
     def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
         instance = None
 
         def new(cls: typing.Type['Any']) -> 'Any':
-            """Injected class new method ensuring singletons are only created.
-            """
+            """Injected class new method ensuring singletons are only created."""
             nonlocal instance
             if not instance:
                 instance = object.__new__(cls)
@@ -72,8 +73,7 @@ Native = typing.TypeVar('Native')
 
 
 class Any(metaclass=Meta):
-    """Type base class.
-    """
+    """Type base class."""
 
     @property
     @abc.abstractmethod
@@ -93,8 +93,7 @@ class Any(metaclass=Meta):
 
     @abc.abstractmethod
     def __new__(cls, *args, **kwargs):
-        """Abstract constructor.
-        """
+        """Abstract constructor."""
         raise NotImplementedError()
 
     def __eq__(self, other):
@@ -132,79 +131,76 @@ class Any(metaclass=Meta):
 
 
 class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
-    """Primitive data type base class.
-    """
+    """Primitive data type base class."""
+
     def __new__(cls, *args, **kwargs):
-        """This gets actually overwritten by metaclass.
-        """
+        """This gets actually overwritten by metaclass."""
         assert False, 'Expected to be replaced by metaclass'
 
 
 class Numeric(Primitive, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
-    """Numeric data type base class.
-    """
+    """Numeric data type base class."""
 
 
 class Boolean(Primitive):
-    """Boolean data type class.
-    """
+    """Boolean data type class."""
+
     __native__ = bool
     __cardinality__ = 2
 
 
 class Integer(Numeric):
-    """Integer data type class.
-    """
+    """Integer data type class."""
+
     __native__ = int
     __cardinality__ = 1
 
 
 class Float(Numeric):
-    """Float data type class.
-    """
+    """Float data type class."""
+
     __native__ = float
     __cardinality__ = 2
 
 
 class Decimal(Numeric):
-    """Decimal data type class.
-    """
+    """Decimal data type class."""
+
     __native__ = decimal.Decimal
     __cardinality__ = 3
 
 
 class String(Primitive):
-    """String data type class.
-    """
+    """String data type class."""
+
     __native__ = str
     __cardinality__ = 1
 
 
 class Date(Primitive):
-    """Date data type class.
-    """
+    """Date data type class."""
+
     __native__ = datetime.date
     __cardinality__ = 1
 
 
 class Timestamp(Date):
-    """Timestamp data type class.
-    """
+    """Timestamp data type class."""
+
     __native__ = datetime.datetime
     __cardinality__ = 2
 
 
 class Compound(Any, tuple):
-    """Complex data type class.
-    """
+    """Complex data type class."""
+
     @property
     def __cardinality__(self) -> int:
         return len(self)
 
     @abc.abstractmethod
     def __new__(cls, *args, **kwargs):
-        """Abstract constructor.
-        """
+        """Abstract constructor."""
         raise NotImplementedError()
 
     def __eq__(self, other):
@@ -215,8 +211,8 @@ class Compound(Any, tuple):
 
 
 class Array(Compound):
-    """Array data type class.
-    """
+    """Array data type class."""
+
     element: Any = property(operator.itemgetter(0))
     __native__ = list
 
@@ -225,8 +221,8 @@ class Array(Compound):
 
 
 class Map(Compound):
-    """Map data type class.
-    """
+    """Map data type class."""
+
     key: Any = property(operator.itemgetter(0))
     value: Any = property(operator.itemgetter(1))
     __native__ = dict
@@ -236,11 +232,11 @@ class Map(Compound):
 
 
 class Struct(Compound):
-    """Struct data type class.
-    """
+    """Struct data type class."""
+
     class Element(collections.namedtuple('Element', 'name, kind')):
-        """Struct element type.
-        """
+        """Struct element type."""
+
         def __eq__(self, other):
             return other.__class__ == self.__class__ and super().__eq__(other)
 
@@ -261,6 +257,7 @@ def reflect(value: typing.Any) -> Any:
 
     Returns: ETL type.
     """
+
     def same(seq: typing.Iterable[typing.Any]) -> bool:
         """Return true if all elements of a non-empty sequence have same type.
 

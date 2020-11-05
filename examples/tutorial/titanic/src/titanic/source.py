@@ -38,7 +38,7 @@ FEATURES = schema.Passenger.select(
     schema.Passenger.Ticket,
     schema.Passenger.Fare,
     schema.Passenger.Cabin,
-    schema.Passenger.Embarked
+    schema.Passenger.Embarked,
 )
 
 ETL = etl.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe(FEATURES.schema)

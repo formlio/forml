@@ -30,14 +30,13 @@ from forml.flow.pipeline import topology
 
 @pytest.fixture(scope='function')
 def operator(spec: task.Spec) -> topology.Operator:
-    """Operator fixture.
-    """
+    """Operator fixture."""
+
     class Operator(topology.Operator):
-        """Operator mock.
-        """
+        """Operator mock."""
+
         def compose(self, left: topology.Composable) -> pipeline.Segment:
-            """Dummy composition.
-            """
+            """Dummy composition."""
             track = left.expand()
             trainer = node.Worker(spec, 1, 1)
             applier = trainer.fork()
@@ -50,14 +49,13 @@ def operator(spec: task.Spec) -> topology.Operator:
 
 @pytest.fixture(scope='function')
 def origin(spec: task.Spec) -> topology.Operator:
-    """Origin operator fixture.
-    """
+    """Origin operator fixture."""
+
     class Operator(topology.Operator):
-        """Operator mock.
-        """
+        """Operator mock."""
+
         def compose(self, left: topology.Composable) -> pipeline.Segment:
-            """Dummy composition.
-            """
+            """Dummy composition."""
             trainer = node.Worker(spec, 1, 1)
             applier = trainer.fork()
             return pipeline.Segment(applier, trainer)

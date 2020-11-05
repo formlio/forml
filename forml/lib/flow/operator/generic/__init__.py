@@ -43,22 +43,22 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
     def myadapter(df, **kwargs):
         # stateless adapter implementation used for label path
     """
+
     class Builder:
-        """Adapter builder carrying the parameters during decorations.
-        """
+        """Adapter builder carrying the parameters during decorations."""
+
         class Decorator:
-            """Builder-level decorator used for overriding specific modes on previously decorated instances.
-            """
+            """Builder-level decorator used for overriding specific modes on previously decorated instances."""
+
             def __init__(self, builder: 'Adapter.Builder', setter: 'Adapter.Builder.Setter'):
                 self._builder: Adapter.Builder = builder
                 self._setter: Adapter.Builder.Setter = setter
 
-            def __call__(self, actor: typing.Optional[typing.Type[task.Actor]] = None, /,
-                         **params: typing.Any) -> typing.Union['Adapter.Builder', typing.Callable[
-                             [typing.Type[task.Actor]], 'Adapter.Builder']]:
+            def __call__(
+                self, actor: typing.Optional[typing.Type[task.Actor]] = None, /, **params: typing.Any
+            ) -> typing.Union['Adapter.Builder', typing.Callable[[typing.Type[task.Actor]], 'Adapter.Builder']]:
                 def decorator(actor: typing.Type[task.Actor]) -> 'Adapter.Builder':
-                    """Decorating function.
-                    """
+                    """Decorating function."""
                     self._setter(actor, **params)
                     return self._builder
 
@@ -69,8 +69,8 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
                 return decorator
 
         class Setter:
-            """Helper for setting/holding the config parameters for a mode.
-            """
+            """Helper for setting/holding the config parameters for a mode."""
+
             def __init__(self, default: typing.Type[task.Actor]):
                 self._default: typing.Type[task.Actor] = default
                 self._actor: typing.Optional[typing.Type[task.Actor]] = None
@@ -103,17 +103,22 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
             self._label: Adapter.Builder.Setter = self.Setter(actor)
 
         def __call__(self, *args, **kwargs) -> 'Adapter':
-            return Adapter(self._apply.spec(*args, **kwargs), self._train.spec(*args, **kwargs),
-                           self._label.spec(*args, **kwargs))
+            return Adapter(
+                self._apply.spec(*args, **kwargs), self._train.spec(*args, **kwargs), self._label.spec(*args, **kwargs)
+            )
 
     class Decorator:
-        """Adapter-level decorator used to create Adapter (builder) instances in the first place.
-        """
+        """Adapter-level decorator used to create Adapter (builder) instances in the first place."""
+
         def __init__(self, builder: property):
             self._builder: property = builder
 
-        def __call__(self, actor: typing.Optional[typing.Union[typing.Type[task.Actor], 'Adapter.Builder']] = None, /,
-                     **params: typing.Any) -> 'Adapter.Builder':
+        def __call__(
+            self,
+            actor: typing.Optional[typing.Union[typing.Type[task.Actor], 'Adapter.Builder']] = None,
+            /,
+            **params: typing.Any,
+        ) -> 'Adapter.Builder':
             """Actor decorator for creating curried operator that get instantiated upon another (optionally
             parametrized) call.
 
@@ -123,17 +128,22 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
 
             Returns: Curried operator.
             """
+
             def decorator(actor: typing.Union[typing.Type[task.Actor], 'Adapter.Builder']) -> 'Adapter.Builder':
-                """Decorating function.
-                """
+                """Decorating function."""
                 if not isinstance(actor, Adapter.Builder):
                     actor = Adapter.Builder(actor)
                 self._builder.fget(actor)(**params)
                 return actor
+
             return decorator(actor) if actor else decorator
 
-    def __init__(self, apply: typing.Optional[task.Spec] = None, train: typing.Optional[task.Spec] = None,
-                 label: typing.Optional[task.Spec] = None):
+    def __init__(
+        self,
+        apply: typing.Optional[task.Spec] = None,
+        train: typing.Optional[task.Spec] = None,
+        label: typing.Optional[task.Spec] = None,
+    ):
         for mode in apply, train, label:
             if mode and mode.actor.is_stateful():
                 raise error.Invalid('Stateful actor invalid for an adapter')
@@ -142,8 +152,10 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
         self._label: typing.Optional[task.Spec] = label
 
     def __repr__(self):
-        return f'{self.__class__.__name__}' \
-               f'[apply={repr(self._apply)}, train={repr(self._train)}, label={repr(self._label)}]'
+        return (
+            f'{self.__class__.__name__}'
+            f'[apply={repr(self._apply)}, train={repr(self._train)}, label={repr(self._label)}]'
+        )
 
     train = staticmethod(Decorator(Builder.train))
     apply = staticmethod(Decorator(Builder.apply))
@@ -157,6 +169,7 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
 
         Returns: Composed track.
         """
+
         def worker(mode: typing.Optional[task.Spec]) -> typing.Optional[node.Worker]:
             """Create a worker for given spec if not None.
 
@@ -168,4 +181,5 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
             if mode:
                 mode = node.Worker(mode, 1, 1)
             return mode
+
         return left.expand().extend(worker(self._apply), worker(self._train), worker(self._label))

@@ -37,8 +37,8 @@ Column = typing.TypeVar('Column', bound=typing.Sized)
 
 
 class Closure(typing.Generic[Input, Output], tuple, metaclass=abc.ABCMeta):  # pylint: disable=unsubscriptable-object
-    """Generic closure to be used as the parsing products.
-    """
+    """Generic closure to be used as the parsing products."""
+
     handler: typing.Callable[..., Output] = property(operator.itemgetter(0))
 
     def __new__(cls, handler: typing.Callable[..., Output], *args):
@@ -66,69 +66,73 @@ Columnizer = Closure[Table, Column]  # pylint: disable=unsubscriptable-object
 
 
 class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
-    """DSL parser producing an chain of table producing lambda statements.
-    """
+    """DSL parser producing an chain of table producing lambda statements."""
 
     class Series(parsmod.Frame.Series[Columnizer, Columnizer]):
-        """DSL parser producing a chain of column producing lambda statements.
-        """
+        """DSL parser producing a chain of column producing lambda statements."""
 
         class Element(Columnizer):
-            """Closure with parameters required for retrieving a field.
-            """
+            """Closure with parameters required for retrieving a field."""
+
             source: Tabulizer = property(operator.itemgetter(1))
             column: Columnizer = property(operator.itemgetter(2))
 
-            def __new__(cls, handler: typing.Callable[[Table, Columnizer], Column],
-                        source: Tabulizer, column: Columnizer) -> Columnizer:
+            def __new__(
+                cls, handler: typing.Callable[[Table, Columnizer], Column], source: Tabulizer, column: Columnizer
+            ) -> Columnizer:
                 return super().__new__(cls, handler, source, column)
 
             def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
                 return self.source(data), self.column
 
         class Alias(Columnizer):
-            """Closure with parameters required for creating a column alias.
-            """
+            """Closure with parameters required for creating a column alias."""
+
             column: Columnizer = property(operator.itemgetter(1))
             name: str = property(operator.itemgetter(2))
 
-            def __new__(cls, handler: typing.Callable[[Table, Columnizer, str], Column],
-                        column: Columnizer, name: str) -> Columnizer:
+            def __new__(
+                cls, handler: typing.Callable[[Table, Columnizer, str], Column], column: Columnizer, name: str
+            ) -> Columnizer:
                 return super().__new__(cls, handler, column, name)
 
             def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
                 return data, self.column, self.name
 
         class Literal(Columnizer):
-            """Closure with parameters required for creating a literal value.
-            """
+            """Closure with parameters required for creating a literal value."""
+
             value: typing.Any = property(operator.itemgetter(1))
             kind: kindmod.Any = property(operator.itemgetter(2))
 
-            def __new__(cls, handler: typing.Callable[[typing.Any, kindmod.Any], Column],
-                        value: typing.Any, kind: kindmod.Any) -> Columnizer:
+            def __new__(
+                cls, handler: typing.Callable[[typing.Any, kindmod.Any], Column], value: typing.Any, kind: kindmod.Any
+            ) -> Columnizer:
                 return super().__new__(cls, handler, value, kind)
 
             def __args__(self, _: Table) -> typing.Sequence[typing.Any]:
                 return self.value, self.kind
 
         class Expression(Columnizer):
-            """Closure with parameters required for creating an expression.
-            """
+            """Closure with parameters required for creating an expression."""
+
             kind: typing.Type[sermod.Expression] = property(operator.itemgetter(1))
             arguments: typing.Tuple[typing.Any] = property(operator.itemgetter(2))
 
-            def __new__(cls,
-                        handler: typing.Callable[[typing.Type[sermod.Expression], typing.Sequence[Column]], Column],
-                        kind: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]) -> Columnizer:
+            def __new__(
+                cls,
+                handler: typing.Callable[[typing.Type[sermod.Expression], typing.Sequence[Column]], Column],
+                kind: typing.Type[sermod.Expression],
+                arguments: typing.Sequence[typing.Any],
+            ) -> Columnizer:
                 return super().__new__(cls, handler, kind, tuple(arguments))
 
             def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
                 return self.kind, tuple(c(data) if isinstance(c, Closure) else c for c in self.arguments)
 
         class Reference(Columnizer):
-            """Closure with parameters required for holding a reference.
-            """
+            """Closure with parameters required for holding a reference."""
+
             name: str = property(operator.itemgetter(1))
 
             def __new__(cls, handler: typing.Callable[[Table, str], Table], name: str) -> Tabulizer:
@@ -172,8 +176,9 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             """
 
         @abc.abstractmethod
-        def implement_expression(self, expression: typing.Type[sermod.Expression],
-                                 arguments: typing.Sequence[typing.Any]) -> Column:
+        def implement_expression(
+            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        ) -> Column:
             """Literal value provider implementation.
 
             Args:
@@ -206,43 +211,54 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         def generate_reference(self, name: str) -> Columnizer:
             return self.Reference(self.implement_reference, name)
 
-        def generate_expression(self, expression: typing.Type[sermod.Expression],
-                                arguments: typing.Sequence[typing.Any]) -> Columnizer:
+        def generate_expression(
+            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        ) -> Columnizer:
             return self.Expression(self.implement_expression, expression, arguments)
 
     class Join(Tabulizer):
-        """Closure with parameters required for performing a join.
-        """
+        """Closure with parameters required for performing a join."""
+
         left: Tabulizer = property(operator.itemgetter(1))
         right: Tabulizer = property(operator.itemgetter(2))
         condition: typing.Optional[Columnizer] = property(operator.itemgetter(3))
         kind: framod.Join.Kind = property(operator.itemgetter(4))
 
-        def __new__(cls, handler: typing.Callable[[Table, Table, typing.Optional[Columnizer], framod.Join.Kind], Table],
-                    left: Tabulizer, right: Tabulizer, condition: typing.Optional[Columnizer],
-                    kind: framod.Join.Kind) -> Tabulizer:
+        def __new__(
+            cls,
+            handler: typing.Callable[[Table, Table, typing.Optional[Columnizer], framod.Join.Kind], Table],
+            left: Tabulizer,
+            right: Tabulizer,
+            condition: typing.Optional[Columnizer],
+            kind: framod.Join.Kind,
+        ) -> Tabulizer:
             return super().__new__(cls, handler, left, right, condition, kind)
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
             return self.left(data), self.right(data), self.condition, self.kind
 
     class Set(Tabulizer):
-        """Closure with parameters required for performing a set.
-        """
+        """Closure with parameters required for performing a set."""
+
         left: Tabulizer = property(operator.itemgetter(1))
         right: Tabulizer = property(operator.itemgetter(2))
         kind: framod.Set.Kind = property(operator.itemgetter(3))
 
-        def __new__(cls, handler: typing.Callable[[Table, Table, framod.Set.Kind], Table],
-                    left: Tabulizer, right: Tabulizer, kind: framod.Set.Kind) -> Tabulizer:
+        def __new__(
+            cls,
+            handler: typing.Callable[[Table, Table, framod.Set.Kind], Table],
+            left: Tabulizer,
+            right: Tabulizer,
+            kind: framod.Set.Kind,
+        ) -> Tabulizer:
             return super().__new__(cls, handler, left, right, kind)
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
             return self.left(data), self.right(data), self.kind
 
     class Query(Tabulizer):
-        """Closure with parameters required for performing a query.
-        """
+        """Closure with parameters required for performing a query."""
+
         source: Tabulizer = property(operator.itemgetter(1))
         columns: typing.Sequence[Columnizer] = property(operator.itemgetter(2))
         where: typing.Optional[Columnizer] = property(operator.itemgetter(3))
@@ -251,35 +267,49 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         orderby: Tabulizer = property(operator.itemgetter(6))
         rows: typing.Optional[framod.Rows] = property(operator.itemgetter(7))
 
-        def __new__(cls, handler: typing.Callable[[Table, typing.Sequence[Columnizer], typing.Optional[Columnizer],
-                                                   typing.Sequence[Columnizer], typing.Optional[Columnizer],
-                                                   typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
-                                                   typing.Optional[framod.Rows]], Table],
-                    source: Tabulizer, columns: typing.Sequence[Columnizer], where: typing.Optional[Columnizer],
-                    groupby: typing.Sequence[Columnizer], having: typing.Optional[Columnizer],
-                    orderby: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
-                    rows: typing.Optional[framod.Rows]) -> Tabulizer:
+        def __new__(
+            cls,
+            handler: typing.Callable[
+                [
+                    Table,
+                    typing.Sequence[Columnizer],
+                    typing.Optional[Columnizer],
+                    typing.Sequence[Columnizer],
+                    typing.Optional[Columnizer],
+                    typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
+                    typing.Optional[framod.Rows],
+                ],
+                Table,
+            ],
+            source: Tabulizer,
+            columns: typing.Sequence[Columnizer],
+            where: typing.Optional[Columnizer],
+            groupby: typing.Sequence[Columnizer],
+            having: typing.Optional[Columnizer],
+            orderby: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
+            rows: typing.Optional[framod.Rows],
+        ) -> Tabulizer:
             return super().__new__(cls, handler, source, tuple(columns), where, tuple(groupby), having, orderby, rows)
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
             return self.source(data), self.columns, self.where, self.groupby, self.having, self.orderby, self.rows
 
     class Reference(Tabulizer):
-        """Closure with parameters required for holding a reference.
-        """
+        """Closure with parameters required for holding a reference."""
+
         instance: Tabulizer = property(operator.itemgetter(1))
         name: str = property(operator.itemgetter(2))
 
-        def __new__(cls, handler: typing.Callable[[Table, str], Table],
-                    instance: Tabulizer, name: str) -> Tabulizer:
+        def __new__(cls, handler: typing.Callable[[Table, str], Table], instance: Tabulizer, name: str) -> Tabulizer:
             return super().__new__(cls, handler, instance, name)
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
             return self.instance(data), self.name
 
     @abc.abstractmethod
-    def implement_join(self, left: Table, right: Table, condition: typing.Optional[Columnizer],
-                       kind: framod.Join.Kind) -> Table:
+    def implement_join(
+        self, left: Table, right: Table, condition: typing.Optional[Columnizer], kind: framod.Join.Kind
+    ) -> Table:
         """Implementation of join of two tables.
 
         Args:
@@ -304,9 +334,13 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def implement_apply(self, table: Table, partition: typing.Optional[typing.Sequence[Columnizer]] = None,
-                        expression: typing.Optional[typing.Sequence[Columnizer]] = None,
-                        predicate: typing.Optional[Columnizer] = None) -> Table:
+    def implement_apply(
+        self,
+        table: Table,
+        partition: typing.Optional[typing.Sequence[Columnizer]] = None,
+        expression: typing.Optional[typing.Sequence[Columnizer]] = None,
+        predicate: typing.Optional[Columnizer] = None,
+    ) -> Table:
         """Split the input data into groups based on the specified grouping columns,
         then discard all groups for which condition is not met and finally evaluate and materialize given expression
         producing new data consisting of single record per each (remaining) group.
@@ -322,8 +356,9 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def implement_ordering(self, table: Table,
-                           specs: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]]) -> Table:
+    def implement_ordering(
+        self, table: Table, specs: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]]
+    ) -> Table:
         """Row ordering implementation.
 
         Args:
@@ -356,10 +391,16 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         Returns: Table with the limited row count.
         """
 
-    def implement_query(self, table: Table, columns: typing.Sequence[Columnizer], where: typing.Optional[Columnizer],
-                        groupby: typing.Sequence[Columnizer], having: typing.Optional[Columnizer],
-                        orderby: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
-                        rows: typing.Optional[framod.Rows]) -> Table:
+    def implement_query(
+        self,
+        table: Table,
+        columns: typing.Sequence[Columnizer],
+        where: typing.Optional[Columnizer],
+        groupby: typing.Sequence[Columnizer],
+        having: typing.Optional[Columnizer],
+        orderby: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
+        rows: typing.Optional[framod.Rows],
+    ) -> Table:
         """Query implementation.
 
         Args:
@@ -378,8 +419,9 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         if groupby:
             # adding orderby columns as they might be aggregation based
             _seen = set(groupby)
-            aggregate = tuple(c for c in itertools.chain(columns, (o for o, _ in orderby))
-                              if c not in _seen and not _seen.add(c))
+            aggregate = tuple(
+                c for c in itertools.chain(columns, (o for o, _ in orderby)) if c not in _seen and not _seen.add(c)
+            )
             table = self.implement_apply(table, partition=groupby, expression=aggregate, predicate=having)
         if orderby:
             table = self.implement_ordering(table, orderby)
@@ -401,18 +443,24 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         """
 
     # pylint: disable=missing-function-docstring
-    def generate_join(self, left: Tabulizer, right: Tabulizer, condition: typing.Optional[Columnizer],
-                      kind: framod.Join.Kind) -> 'Frame.Join':
+    def generate_join(
+        self, left: Tabulizer, right: Tabulizer, condition: typing.Optional[Columnizer], kind: framod.Join.Kind
+    ) -> 'Frame.Join':
         return self.Join(self.implement_join, left, right, condition, kind)
 
     def generate_set(self, left: Tabulizer, right: Tabulizer, kind: framod.Set.Kind) -> 'Frame.Set':
         return self.Set(self.implement_set, left, right, kind)
 
-    def generate_query(self, source: Tabulizer, columns: typing.Sequence[Columnizer],
-                       where: typing.Optional[Columnizer], groupby: typing.Sequence[Columnizer],
-                       having: typing.Optional[Columnizer],
-                       orderby: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
-                       rows: typing.Optional[framod.Rows]) -> 'Frame.Query':
+    def generate_query(
+        self,
+        source: Tabulizer,
+        columns: typing.Sequence[Columnizer],
+        where: typing.Optional[Columnizer],
+        groupby: typing.Sequence[Columnizer],
+        having: typing.Optional[Columnizer],
+        orderby: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
+        rows: typing.Optional[framod.Rows],
+    ) -> 'Frame.Query':
         return self.Query(self.implement_query, source, columns, where, groupby, having, orderby, rows)
 
     def generate_reference(self, instance: Tabulizer, name: str) -> Tabulizer:

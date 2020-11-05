@@ -30,8 +30,7 @@ from forml.io.dsl.struct import kind as kindmod
 
 
 def test_reflect():
-    """Test reflection exceptions.
-    """
+    """Test reflection exceptions."""
     with pytest.raises(ValueError):
         kindmod.reflect(list())  # empty array
     with pytest.raises(ValueError):
@@ -41,60 +40,52 @@ def test_reflect():
 
 
 class Data(metaclass=abc.ABCMeta):
-    """Common test base class.
-    """
+    """Common test base class."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     @abc.abstractmethod
     def kind() -> typing.Type[kindmod.Any]:
-        """Undertest kind type.
-        """
+        """Undertest kind type."""
 
     @staticmethod
     @pytest.fixture(scope='session')
     @abc.abstractmethod
     def sample() -> typing.Any:
-        """Undertest value.
-        """
+        """Undertest value."""
 
     def test_reflect(self, sample: typing.Any, kind: typing.Type[kindmod.Any]):
-        """Value kind reflection test.
-        """
+        """Value kind reflection test."""
         assert kindmod.reflect(sample) == kind()
 
     def test_hashable(self, kind: typing.Type[kindmod.Any]):
-        """Test hashability.
-        """
+        """Test hashability."""
         assert hash(kind()) == hash(kind())
 
     def test_subkinds(self, kind: typing.Type[kindmod.Any]):
-        """Test the kind is recognized as data subkind.
-        """
+        """Test the kind is recognized as data subkind."""
         assert type(kind()) in kindmod.Any.__subkinds__
 
     def test_cardinality(self, kind: typing.Type[kindmod.Any]):
-        """Test the kind cardinality.
-        """
+        """Test the kind cardinality."""
         assert kind().__cardinality__ > 0
 
 
 class Primitive(Data, metaclass=abc.ABCMeta):
-    """Primitive kind test base class.
-    """
+    """Primitive kind test base class."""
+
     def test_singleton(self, kind: typing.Type[kindmod.Any]):
-        """Test the instances are singletons.
-        """
+        """Test the instances are singletons."""
         assert kind() is kind()
 
 
 class Compound(Data, metaclass=abc.ABCMeta):
-    """Compound kind test base class.
-    """
+    """Compound kind test base class."""
 
 
 class TestBoolean(Primitive):
-    """Boolean type unit tests.
-    """
+    """Boolean type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session', params=(True, False))
     def sample(request) -> typing.Any:
@@ -107,8 +98,8 @@ class TestBoolean(Primitive):
 
 
 class TestInteger(Primitive):
-    """Integer type unit tests.
-    """
+    """Integer type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session', params=(1, -1, 0))
     def sample(request) -> typing.Any:
@@ -121,8 +112,8 @@ class TestInteger(Primitive):
 
 
 class TestFloat(Primitive):
-    """Float type unit tests.
-    """
+    """Float type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session', params=(1.1, -1.1, 0.1))
     def sample(request) -> typing.Any:
@@ -135,8 +126,8 @@ class TestFloat(Primitive):
 
 
 class TestString(Primitive):
-    """String type unit tests.
-    """
+    """String type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session', params=('foo', ''))
     def sample(request) -> typing.Any:
@@ -149,8 +140,8 @@ class TestString(Primitive):
 
 
 class TestDecimal(Primitive):
-    """Decimal type unit tests.
-    """
+    """Decimal type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session', params=(decimal.Decimal('1.1'), decimal.Decimal(0)))
     def sample(request) -> typing.Any:
@@ -163,8 +154,8 @@ class TestDecimal(Primitive):
 
 
 class TestTimestamp(Primitive):
-    """Timestamp type unit tests.
-    """
+    """Timestamp type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session', params=(datetime.datetime.utcfromtimestamp(0), datetime.datetime(2020, 5, 5, 10)))
     def sample(request) -> typing.Any:
@@ -177,8 +168,8 @@ class TestTimestamp(Primitive):
 
 
 class TestDate(Primitive):
-    """Date type unit tests.
-    """
+    """Date type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session', params=(datetime.date.fromtimestamp(0), datetime.date(2020, 5, 5)))
     def sample(request) -> typing.Any:
@@ -191,8 +182,8 @@ class TestDate(Primitive):
 
 
 class TestArray(Compound):
-    """Array type unit tests.
-    """
+    """Array type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def sample() -> typing.Any:
@@ -201,8 +192,7 @@ class TestArray(Compound):
     @staticmethod
     @pytest.fixture(scope='session')
     def element() -> kindmod.Any:
-        """Element fixture.
-        """
+        """Element fixture."""
         return kindmod.Integer()
 
     @staticmethod
@@ -211,14 +201,13 @@ class TestArray(Compound):
         return lambda: kindmod.Array(element)
 
     def test_attribute(self, kind: typing.Type[kindmod.Any], element: kindmod.Any):
-        """Test attribute access.
-        """
+        """Test attribute access."""
         assert kind().element == element
 
 
 class TestMap(Compound):
-    """Map type unit tests.
-    """
+    """Map type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def sample() -> typing.Any:
@@ -227,15 +216,13 @@ class TestMap(Compound):
     @staticmethod
     @pytest.fixture(scope='session')
     def key() -> kindmod.Any:
-        """Key fixture.
-        """
+        """Key fixture."""
         return kindmod.Integer()
 
     @staticmethod
     @pytest.fixture(scope='session')
     def value() -> kindmod.Any:
-        """Value fixture.
-        """
+        """Value fixture."""
         return kindmod.String()
 
     @staticmethod
@@ -244,16 +231,15 @@ class TestMap(Compound):
         return lambda: kindmod.Map(key, value)
 
     def test_attribute(self, kind: typing.Type[kindmod.Any], key: kindmod.Any, value: kindmod.Any):
-        """Test attribute access.
-        """
+        """Test attribute access."""
         instance = kind()
         assert instance.key == key
         assert instance.value == value
 
 
 class TestStruct(Compound):
-    """Struct type unit tests.
-    """
+    """Struct type unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='session')
     def sample() -> typing.Any:

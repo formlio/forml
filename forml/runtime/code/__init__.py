@@ -30,8 +30,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Instruction(metaclass=abc.ABCMeta):
-    """Callable part of an assembly symbol that's responsible for implementing the processing activity.
-    """
+    """Callable part of an assembly symbol that's responsible for implementing the processing activity."""
+
     @abc.abstractmethod
     def execute(self, *args: typing.Any) -> typing.Any:
         """Instruction functionality.
@@ -51,16 +51,17 @@ class Instruction(metaclass=abc.ABCMeta):
         try:
             result = self.execute(*args)
         except Exception as err:
-            LOGGER.exception('Instruction %s failed when processing arguments: %s',
-                             self, ', '.join(f'{str(a):.1024s}' for a in args))
+            LOGGER.exception(
+                'Instruction %s failed when processing arguments: %s', self, ', '.join(f'{str(a):.1024s}' for a in args)
+            )
             raise err
         LOGGER.debug('%s completed (%.2fms)', self, (time.time() - start) * 1000)
         return result
 
 
 class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
-    """Main entity of the assembled code.
-    """
+    """Main entity of the assembled code."""
+
     def __new__(cls, instruction: Instruction, arguments: typing.Optional[typing.Sequence[Instruction]] = None):
         if arguments is None:
             arguments = []

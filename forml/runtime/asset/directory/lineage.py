@@ -36,11 +36,11 @@ ARTIFACTS = directory.Cache(persistent.Registry.mount)
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
 class Level(directory.Level):
-    """Sequence of generations based on same project artifact.
-    """
+    """Sequence of generations based on same project artifact."""
+
     class Key(directory.Level.Key, vermod.Version):  # pylint: disable=abstract-method
-        """Lineage key.
-        """
+        """Lineage key."""
+
         MIN = '0'
 
         def __init__(self, key: typing.Union[str, 'Level.Key'] = MIN):

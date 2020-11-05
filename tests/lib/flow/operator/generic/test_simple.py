@@ -29,16 +29,14 @@ from forml.lib.flow.operator.generic import simple
 
 
 class TestMapper:
-    """Simple mapper unit tests.
-    """
+    """Simple mapper unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='function')
     def operator(actor: typing.Type[task.Actor]):
-        """Operator fixture.
-        """
+        """Operator fixture."""
         return simple.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
 
     def test_compose(self, operator: topology.Operator):
-        """Operator composition test.
-        """
+        """Operator composition test."""
         operator.compose(topology.Origin())

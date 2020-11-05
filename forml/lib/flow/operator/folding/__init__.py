@@ -29,11 +29,10 @@ from forml.lib.flow.actor import ndframe
 
 
 class Crossvalidated(topology.Operator, metaclass=abc.ABCMeta):
-    """Generic crossvalidating operator.
-    """
+    """Generic crossvalidating operator."""
+
     class Builder(metaclass=abc.ABCMeta):
-        """Crossvalidation builder used as a folding context.
-        """
+        """Crossvalidation builder used as a folding context."""
 
         @abc.abstractmethod
         def build(self) -> pipeline.Segment:
@@ -88,8 +87,14 @@ class Crossvalidated(topology.Operator, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def fold(self, fold: int, builder: 'Crossvalidated.Builder', inner: pipeline.Segment,
-             features: node.Worker, labels: node.Worker) -> None:
+    def fold(
+        self,
+        fold: int,
+        builder: 'Crossvalidated.Builder',
+        inner: pipeline.Segment,
+        features: node.Worker,
+        labels: node.Worker,
+    ) -> None:
         """Implement composition of single fold.
 
         Args:

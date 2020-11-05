@@ -29,36 +29,31 @@ from forml import provider as provmod, error
 
 @pytest.fixture(scope='session')
 def alias() -> str:
-    """Provider key.
-    """
+    """Provider key."""
     return 'foobar'
 
 
 @pytest.fixture(scope='session')
 def params() -> typing.Mapping[str, typing.Any]:
-    """Default provider kwargs fixture.
-    """
+    """Default provider kwargs fixture."""
     return {'foo': 'bar', 'baz': 10}
 
 
 @pytest.fixture(scope='session')
-def default(alias: str,
-            params: typing.Mapping[str, typing.Any]) -> typing.Tuple[str, typing.Mapping[str, typing.Any]]:
-    """Default provider spec fixture.
-    """
+def default(alias: str, params: typing.Mapping[str, typing.Any]) -> typing.Tuple[str, typing.Mapping[str, typing.Any]]:
+    """Default provider spec fixture."""
     return alias, params
 
 
 @pytest.fixture(scope='session')
-def interface(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unused-argument
-              str, typing.Any]]) -> typing.Type[provmod.Interface]:
-    """Provider fixture.
-    """
+def interface(
+    default: typing.Tuple[str, typing.Mapping[str, typing.Any]]  # pylint: disable=unused-argument
+) -> typing.Type[provmod.Interface]:
+    """Provider fixture."""
     _T = typing.TypeVar('_T')
 
     class Provider(provmod.Interface, typing.Generic[_T], default=default):
-        """Provider implementation.
-        """
+        """Provider implementation."""
 
         def __init__(self, **kwargs):
             self.kwargs = kwargs
@@ -68,67 +63,66 @@ def interface(default: typing.Tuple[str, typing.Mapping[  # pylint: disable=unus
 
         @abc.abstractmethod
         def provide(self) -> None:
-            """Method required to make provider abstract.
-            """
+            """Method required to make provider abstract."""
 
     return Provider
 
 
 @pytest.fixture(scope='session')
-def provider(interface: typing.Type[provmod.Interface],
-             alias: str) -> typing.Type[provmod.Interface]:  # pylint: disable=unused-argument
-    """Provider fixture.
-    """
+def provider(
+    interface: typing.Type[provmod.Interface], alias: str  # pylint: disable=unused-argument
+) -> typing.Type[provmod.Interface]:
+    """Provider fixture."""
 
     class SubProvider(interface[set], alias=alias):
-        """Provider implementation.
-        """
+        """Provider implementation."""
 
         def provide(self) -> None:
-            """This provider must not be abstract.
-            """
+            """This provider must not be abstract."""
 
     return SubProvider
 
 
 def test_isabstract(interface: typing.Type[provmod.Interface], provider: typing.Type[provmod.Interface]):
-    """Isabstract inspection unit test.
-    """
+    """Isabstract inspection unit test."""
     assert provmod.isabstract(interface)
     assert not provmod.isabstract(provider)
 
 
 class TestInterface:
-    """Provider interface tests.
-    """
-    def test_get(self, interface: typing.Type[provmod.Interface], provider: typing.Type[provmod.Interface],
-                 alias: str, params: typing.Mapping[str, typing.Any]):
-        """Test the provider lookup.
-        """
+    """Provider interface tests."""
+
+    def test_get(
+        self,
+        interface: typing.Type[provmod.Interface],
+        provider: typing.Type[provmod.Interface],
+        alias: str,
+        params: typing.Mapping[str, typing.Any],
+    ):
+        """Test the provider lookup."""
         assert interface[alias] is provider
         assert provider[alias] is provider
         assert interface(val=100) == provider(val=100, **params)
         with pytest.raises(error.Missing):
             assert provider['miss']
 
-    def test_collision(self, provider: typing.Type[provmod.Interface],
-                       alias: str):  # pylint: disable=unused-argument
-        """Test a colliding provider key.
-        """
+    def test_collision(self, provider: typing.Type[provmod.Interface], alias: str):  # pylint: disable=unused-argument
+        """Test a colliding provider key."""
         with pytest.raises(error.Unexpected):
+
             class Colliding(provider, alias=alias):
-                """colliding implementation.
-                """
+                """colliding implementation."""
+
             assert Colliding
 
 
 class TestProvider:
-    """Testing provider implementation.
-    """
+    """Testing provider implementation."""
+
     def test_path(self):
-        """Test the search path based loading.
-        """
+        """Test the search path based loading."""
         from . import service  # pylint: disable=import-outside-toplevel
+
         dummy = service.Provider['dummy']
         assert issubclass(dummy, service.Provider)
         assert service.Provider[f'{dummy.__module__}:{dummy.__qualname__}']().serve() == 'dummy'

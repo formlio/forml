@@ -29,15 +29,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
-    """Frame DSL parser producing SQL code.
-    """
+    """Frame DSL parser producing SQL code."""
+
     class Series(parsmod.Frame.Series[str, str]):
-        """Series DSL parser producing SQL code.
-        """
+        """Series DSL parser producing SQL code."""
 
         class Expression:
-            """Expression generator/formatter.
-            """
+            """Expression generator/formatter."""
+
             ASSOCIATIVE = re.compile(r"\s*(?:(\S*\()?\s*[^-+*/%\s]+\s*(?(1).*\))|TIMESTAMP *'.+'|DATE *'.+')\s*")
 
             def __init__(self, template: str, mapper: typing.Optional[typing.Callable[..., typing.Sequence]] = None):
@@ -77,7 +76,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             kindmod.Decimal(): 'DECIMAL',
             kindmod.String(): 'VARCHAR',
             kindmod.Date(): 'DATE',
-            kindmod.Timestamp(): 'TIMESTAMP'
+            kindmod.Timestamp(): 'TIMESTAMP',
         }
 
         EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., str]] = {
@@ -109,8 +108,11 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         DATE = '%Y-%m-%d'
         TIMESTAMP = '%Y-%m-%d %H:%M:%S'
 
-        def __init__(self, sources: typing.Mapping[frame.Source, str],
-                     columns: typing.Optional[typing.Mapping[series.Column, str]] = None):
+        def __init__(
+            self,
+            sources: typing.Mapping[frame.Source, str],
+            columns: typing.Optional[typing.Mapping[series.Column, str]] = None,
+        ):
             super().__init__(sources, columns or dict())
 
         def resolve_column(self, column: series.Column) -> str:
@@ -171,8 +173,9 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 return f"ARRAY[{', '.join(self.generate_literal(v, kind.element) for v in value)}]"
             raise error.Unsupported(f'Unsupported literal kind: {kind}')
 
-        def generate_expression(self, expression: typing.Type[series.Expression],
-                                arguments: typing.Sequence[typing.Any]) -> str:
+        def generate_expression(
+            self, expression: typing.Type[series.Expression], arguments: typing.Sequence[typing.Any]
+        ) -> str:
             """Expression of given arguments.
 
             Args:
@@ -201,23 +204,23 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         frame.Join.Kind.RIGHT: 'RIGHT',
         frame.Join.Kind.INNER: 'INNER',
         frame.Join.Kind.FULL: 'FULL',
-        frame.Join.Kind.CROSS: 'CROSS'
+        frame.Join.Kind.CROSS: 'CROSS',
     }
 
     SET: typing.Mapping[frame.Set.Kind, str] = {
         frame.Set.Kind.UNION: 'UNION',
         frame.Set.Kind.INTERSECTION: 'INTERSECT',
-        frame.Set.Kind.DIFFERENCE: 'EXCEPT'
+        frame.Set.Kind.DIFFERENCE: 'EXCEPT',
     }
 
     ORDER: typing.Mapping[series.Ordering.Direction, str] = {
         series.Ordering.Direction.ASCENDING: 'ASC',
-        series.Ordering.Direction.DESCENDING: 'DESC'
+        series.Ordering.Direction.DESCENDING: 'DESC',
     }
 
     class Wrap:
-        """Helper class for lexical manipulation.
-        """
+        """Helper class for lexical manipulation."""
+
         WORD = re.compile(r'\s*(\S*\()?\s*[^\s]+\s*(?(1).*\))')
         QUERY = re.compile(r'\s*SELECT')
 
@@ -275,10 +278,16 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         """
         return f'{left} {self.SET[kind]} {right}'
 
-    def generate_query(self, source: str, columns: typing.Sequence[str],  # pylint: disable=no-self-use
-                       where: typing.Optional[str], groupby: str, having: typing.Optional[str],
-                       orderby: typing.Sequence[typing.Tuple[str, series.Ordering.Direction]],
-                       rows: typing.Optional[frame.Rows]) -> str:
+    def generate_query(
+        self,
+        source: str,
+        columns: typing.Sequence[str],  # pylint: disable=no-self-use
+        where: typing.Optional[str],
+        groupby: str,
+        having: typing.Optional[str],
+        orderby: typing.Sequence[typing.Tuple[str, series.Ordering.Direction]],
+        rows: typing.Optional[frame.Rows],
+    ) -> str:
         """Generate query statement code.
 
         Args:

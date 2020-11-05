@@ -32,13 +32,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Finder(abc.MetaPathFinder):
-    """Module path finder implementation.
-    """
+    """Module path finder implementation."""
+
     class Loader(abc.Loader):  # pylint: disable=abstract-method
-        """Module loader implementation.
-        """
-        def __init__(self, module: types.ModuleType,
-                     onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = None):
+        """Module loader implementation."""
+
+        def __init__(
+            self, module: types.ModuleType, onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = None
+        ):
             self._module: types.ModuleType = module
             self._onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = onexec
 
@@ -61,8 +62,9 @@ class Finder(abc.MetaPathFinder):
             if self._onexec:
                 self._onexec(module)
 
-    def __init__(self, module: types.ModuleType,
-                 onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = None):
+    def __init__(
+        self, module: types.ModuleType, onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = None
+    ):
         self._name: str = module.__name__
         self._loader: abc.Loader = self.Loader(module, onexec)
 
@@ -83,8 +85,9 @@ class Finder(abc.MetaPathFinder):
         return None
 
     @classmethod
-    def create(cls, module: types.ModuleType,
-               onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = None) -> typing.Iterable['Finder']:
+    def create(
+        cls, module: types.ModuleType, onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = None
+    ) -> typing.Iterable['Finder']:
         """Return the chain of finders for given module creating fake intermediate modules for missing parents.
 
         Args:
@@ -119,9 +122,9 @@ def context(module: types.ModuleType) -> typing.Iterable[None]:
 
     Returns: Context manager.
     """
+
     def unload() -> None:
-        """Unload the current module instance and all of its parent modules.
-        """
+        """Unload the current module instance and all of its parent modules."""
         name = module.__name__
         while name:
             if name in sys.modules:

@@ -28,8 +28,8 @@ from forml.flow.pipeline import topology
 
 
 class Base(topology.Operator, metaclass=abc.ABCMeta):
-    """Simple is a generic single actor operator.
-    """
+    """Simple is a generic single actor operator."""
+
     SZIN = 1
     SZOUT = 1
 
@@ -40,8 +40,9 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
         return f'{self.__class__.__name__}[{repr(self.spec)}]'
 
     @classmethod
-    def operator(cls, actor: typing.Optional[typing.Type[task.Actor]] = None, /,
-                 **params) -> typing.Callable[..., 'Base']:
+    def operator(
+        cls, actor: typing.Optional[typing.Type[task.Actor]] = None, /, **params
+    ) -> typing.Callable[..., 'Base']:
         """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
         call.
 
@@ -51,9 +52,10 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
 
         Returns: Curried operator.
         """
+
         def decorator(actor: typing.Type[task.Actor]) -> typing.Callable[..., Base]:
-            """Decorating function.
-            """
+            """Decorating function."""
+
             def simple(*args, **kwargs) -> Base:
                 """Curried operator.
 
@@ -63,6 +65,7 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
                 Returns: Operator instance.
                 """
                 return cls(task.Spec(actor, *args, **{**params, **kwargs}))
+
             return simple
 
         if actor:
@@ -92,8 +95,8 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
 
 
 class Mapper(Base):
-    """Basic transformation operator with one input and one output port for each mode.
-    """
+    """Basic transformation operator with one input and one output port for each mode."""
+
     def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:
         """Mapper composition implementation.
 
@@ -111,8 +114,7 @@ class Mapper(Base):
 
 
 class Consumer(Base):
-    """Basic operator with one input and one output port in apply mode and no output in train mode.
-    """
+    """Basic operator with one input and one output port in apply mode and no output in train mode."""
 
     def __init__(self, spec: task.Spec):
         if not spec.actor.is_stateful():
@@ -138,6 +140,7 @@ class Labeler(Base):
 
     Provider actor is expected to have shape of (1, 2) where first output port is a train and second is label.
     """
+
     SZOUT = 2
 
     def apply(self, applier: node.Worker, left: pipeline.Segment) -> pipeline.Segment:

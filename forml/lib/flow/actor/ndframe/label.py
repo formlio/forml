@@ -30,14 +30,15 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ColumnExtractor(task.Actor):
-    """Column based label-extraction actor with 1:2 shape.
-    """
+    """Column based label-extraction actor with 1:2 shape."""
+
     def __init__(self, column: str = 'label'):
         self.column: str = column
 
     @ndframe.auto
-    def apply(self, features: pandas.DataFrame) -> typing.Tuple[  # pylint: disable=arguments-differ
-            pandas.DataFrame, pandas.Series]:
+    def apply(
+        self, features: pandas.DataFrame
+    ) -> typing.Tuple[pandas.DataFrame, pandas.Series]:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
 
         Args:
@@ -64,8 +65,8 @@ class ColumnExtractor(task.Actor):
 
 
 class ColumnInserter(task.Actor):
-    """Label-extraction inversion - inserting a label as a new column to the feature set.
-    """
+    """Label-extraction inversion - inserting a label as a new column to the feature set."""
+
     def __init__(self, column: str = 'label'):
         self.column: str = column
         self._label: typing.Optional[pandas.Series] = None

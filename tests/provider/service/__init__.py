@@ -25,9 +25,8 @@ from . import provider
 
 
 class Provider(provmod.Interface, path=[provider.__name__]):
-    """Service interface.
-    """
+    """Service interface."""
+
     @abc.abstractmethod
     def serve(self) -> str:
-        """Just to make it abstract.
-        """
+        """Just to make it abstract."""

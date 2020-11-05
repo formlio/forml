@@ -30,6 +30,5 @@ conf.PARSER.read(CFG_FILE)
 
 @pytest.fixture(scope='session')
 def cfg_file() -> pathlib.Path:
-    """Fixture for the test config file.
-    """
+    """Fixture for the test config file."""
     return CFG_FILE

@@ -31,12 +31,11 @@ from forml.io.dsl.struct import frame, kind
 
 @pytest.fixture(scope='session')
 def person() -> frame.Table:
-    """Base table fixture.
-    """
+    """Base table fixture."""
 
     class Person(struct.Schema):
-        """Base table.
-        """
+        """Base table."""
+
         surname = struct.Field(kind.String())
         dob = struct.Field(kind.Date(), 'birthday')
 
@@ -45,12 +44,11 @@ def person() -> frame.Table:
 
 @pytest.fixture(scope='session')
 def student(person: frame.Table) -> frame.Table:
-    """Extended table fixture.
-    """
+    """Extended table fixture."""
 
     class Student(person):
-        """Extended table.
-        """
+        """Extended table."""
+
         level = struct.Field(kind.Integer())
         score = struct.Field(kind.Float())
         school = struct.Field(kind.Integer())
@@ -60,12 +58,11 @@ def student(person: frame.Table) -> frame.Table:
 
 @pytest.fixture(scope='session')
 def school() -> frame.Table:
-    """School table fixture.
-    """
+    """School table fixture."""
 
     class School(struct.Schema):
-        """School table.
-        """
+        """School table."""
+
         sid = struct.Field(kind.Integer(), 'id')
         name = struct.Field(kind.String())
 
@@ -74,19 +71,21 @@ def school() -> frame.Table:
 
 @pytest.fixture(scope='session')
 def school_ref(school: frame.Table) -> frame.Reference:
-    """School table reference fixture.
-    """
+    """School table reference fixture."""
     return school.reference('bar')
 
 
 @pytest.fixture(scope='session')
 def query(person: frame.Table, student: frame.Table, school_ref: frame.Reference) -> frame.Query:
-    """Query fixture.
-    """
-    query = student.join(person, student.surname == person.surname) \
-        .join(school_ref, student.school == school_ref.sid) \
-        .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, kind.String())) \
-        .where(student.score < 2).orderby(student.level, student.score).limit(10)
+    """Query fixture."""
+    query = (
+        student.join(person, student.surname == person.surname)
+        .join(school_ref, student.school == school_ref.sid)
+        .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, kind.String()))
+        .where(student.score < 2)
+        .orderby(student.level, student.score)
+        .limit(10)
+    )
     return query
 
 
@@ -97,13 +96,13 @@ def reference() -> str:
 
 
 @pytest.fixture(scope='session')
-def feed(reference: str,  # pylint: disable=unused-argument
-         person: frame.Table, student: frame.Table, school: frame.Table) -> typing.Type[feedmod.Provider]:
-    """Dummy feed fixture.
-    """
+def feed(
+    reference: str, person: frame.Table, student: frame.Table, school: frame.Table  # pylint: disable=unused-argument
+) -> typing.Type[feedmod.Provider]:
+    """Dummy feed fixture."""
+
     class Dummy(feedmod.Provider, alias=reference):
-        """Dummy feed for unit-testing purposes.
-        """
+        """Dummy feed for unit-testing purposes."""
 
         def __init__(self, identity: str, **readerkw):
             super().__init__(**readerkw)
@@ -111,24 +110,18 @@ def feed(reference: str,  # pylint: disable=unused-argument
 
         @property
         def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
-            """Abstract method implementation.
-            """
-            return {
-                student.join(person, student.surname == person.surname).source: None,
-                student: None,
-                school: None
-            }
+            """Abstract method implementation."""
+            return {student.join(person, student.surname == person.surname).source: None, student: None, school: None}
 
     return Dummy
 
 
 @pytest.fixture(scope='session')
 def sink(reference: str) -> typing.Type[sinkmod.Provider]:  # pylint: disable=unused-argument
-    """Dummy sink fixture.
-    """
+    """Dummy sink fixture."""
+
     class Dummy(sinkmod.Provider, alias=reference):
-        """Dummy sink for unit-testing purposes.
-        """
+        """Dummy sink for unit-testing purposes."""
 
         def __init__(self, identity: str, **readerkw):
             super().__init__(**readerkw)

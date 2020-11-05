@@ -29,8 +29,8 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
 class Level(directory.Level):
-    """Sequence of projects.
-    """
+    """Sequence of projects."""
+
     def __init__(self, registry: 'persistent.Registry'):  # pylint: disable=useless-super-delegation
         super().__init__()
         self._registry: persistent.Registry = registry
@@ -71,6 +71,5 @@ class Level(directory.Level):
 
     @property
     def key(self) -> None:
-        """No key for the root.
-        """
+        """No key for the root."""
         return None

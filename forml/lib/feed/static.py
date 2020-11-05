@@ -29,19 +29,24 @@ class Feed(feed.Provider[None, payload.Vector]):
     """Static feed is initialized with actual data which can only be returned in primitive column-wise fashion. No
     advanced ETL can be applied.
     """
+
     def __init__(self, data: typing.Mapping[frame.Table, payload.ColumnMajor]):
         super().__init__()
         self._sources: typing.Mapping[frame.Source, None] = types.MappingProxyType({f: None for f in data})
         self._columns: typing.Mapping[series.Column, payload.Vector] = types.MappingProxyType(
-            {c: s for t, f in data.items() for c, s in zip(t.columns, f)})
+            {c: s for t, f in data.items() for c, s in zip(t.columns, f)}
+        )
 
     #  pylint: disable=unused-argument
     @classmethod
-    def reader(cls, sources: typing.Mapping[frame.Source, None],
-               columns: typing.Mapping[series.Column, payload.Vector], **kwargs: typing.Any) -> typing.Callable[
-                   [frame.Query], payload.ColumnMajor]:
-        """Return the reader instance of this feed (any callable, presumably extract.Reader).
-        """
+    def reader(
+        cls,
+        sources: typing.Mapping[frame.Source, None],
+        columns: typing.Mapping[series.Column, payload.Vector],
+        **kwargs: typing.Any,
+    ) -> typing.Callable[[frame.Query], payload.ColumnMajor]:
+        """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
+
         def read(query: frame.Query) -> payload.ColumnMajor:
             """Reader callback.
 
@@ -56,16 +61,15 @@ class Feed(feed.Provider[None, payload.Vector]):
                 return [columns[c] for c in query.columns]
             except KeyError as err:
                 raise error.Unsupported(f'Column not supported by static feed: {err}')
+
         return read
 
     @property
     def sources(self) -> typing.Mapping[frame.Source, None]:
-        """The explicit sources mapping implemented by this feed to be used by the query parser.
-        """
+        """The explicit sources mapping implemented by this feed to be used by the query parser."""
         return self._sources
 
     @property
     def columns(self) -> typing.Mapping[series.Column, payload.Vector]:
-        """The explicit columns mapping implemented by this feed to be used by the query parser.
-        """
+        """The explicit columns mapping implemented by this feed to be used by the query parser."""
         return self._columns

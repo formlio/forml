@@ -25,8 +25,8 @@ from forml.io.feed.extract.reader import sql
 
 
 class Reader(sql.Reader):
-    """SQLite3 reader.
-    """
+    """SQLite3 reader."""
+
     @classmethod
     def connection(cls, database: str) -> sqlite3.Connection:
         return sqlite3.connect(database=database)

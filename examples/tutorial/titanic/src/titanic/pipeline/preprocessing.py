@@ -40,31 +40,29 @@ from forml.lib.flow.operator.generic import simple
 
 @simple.Mapper.operator
 class NaNImputer(task.Actor):
-    """Imputer for missing values implemented as native ForML actor.
-    """
+    """Imputer for missing values implemented as native ForML actor."""
+
     def __init__(self):
         self._fill: typing.Optional[pd.Series] = None
 
     def train(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the actor by learning the median for each numeric column and finding the most common value for strings.
-        """
-        self._fill = pd.Series([X[c].value_counts().index[0] if X[c].dtype == np.dtype('O')
-                                else X[c].median() for c in X], index=X.columns)
+        """Train the actor by learning the median for each numeric column and finding the most common value for strings."""
+        self._fill = pd.Series(
+            [X[c].value_counts().index[0] if X[c].dtype == np.dtype('O') else X[c].median() for c in X], index=X.columns
+        )
 
     def apply(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Apply the imputation to the given dataset.
-        """
+        """Apply the imputation to the given dataset."""
         return X.fillna(self._fill)
 
 
 @simple.Mapper.operator
 @wrapped.Function.actor
 def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
-    """Transformer extracting a person's title from the name string implemented as wrapped stateless function.
-    """
+    """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
+
     def get_title(name: str) -> str:
-        """Auxiliary method for extracting the title.
-        """
+        """Auxiliary method for extracting the title."""
         if '.' in name:
             return name.split(',')[1].split('.')[0].strip()
         return 'Unknown'

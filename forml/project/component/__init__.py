@@ -48,21 +48,26 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
 
 
 class Source(typing.NamedTuple):
-    """Feed independent data provider description.
-    """
+    """Feed independent data provider description."""
+
     extract: 'Source.Extract'
     transform: typing.Optional[topology.Composable] = None
 
     class Extract(collections.namedtuple('Extract', 'train, apply, label, ordinal')):
-        """Combo of select statements for the different modes.
-        """
+        """Combo of select statements for the different modes."""
+
         train: frame.Query
         apply: frame.Query
         label: typing.Tuple[series.Column]
         ordinal: typing.Optional[series.Operable]
 
-        def __new__(cls, train: frame.Queryable, apply: frame.Queryable, label: typing.Sequence[series.Column],
-                    ordinal: typing.Optional[series.Operable]):
+        def __new__(
+            cls,
+            train: frame.Queryable,
+            apply: frame.Queryable,
+            label: typing.Sequence[series.Column],
+            ordinal: typing.Optional[series.Operable],
+        ):
             train = train.query
             apply = apply.query
             if {c.operable for c in train.columns}.intersection(c.operable for c in label):
@@ -74,8 +79,13 @@ class Source(typing.NamedTuple):
             return super().__new__(cls, train, apply, tuple(label), ordinal)
 
     @classmethod
-    def query(cls, features: frame.Queryable, *label: series.Column, apply: typing.Optional[frame.Queryable] = None,
-              ordinal: typing.Optional[series.Operable] = None) -> 'Source':
+    def query(
+        cls,
+        features: frame.Queryable,
+        *label: series.Column,
+        apply: typing.Optional[frame.Queryable] = None,
+        ordinal: typing.Optional[series.Operable] = None,
+    ) -> 'Source':
         """Create new source with the given extraction.
 
         Args:
@@ -104,12 +114,11 @@ class Source(typing.NamedTuple):
 
 
 class Virtual:
-    """Virtual component module based on real component instance.
-    """
+    """Virtual component module based on real component instance."""
+
     def __init__(self, component: typing.Any, package: typing.Optional[str] = None):
         def onexec(_: types.ModuleType) -> None:
-            """Module onexec handler that fakes the component registration using the setup() method.
-            """
+            """Module onexec handler that fakes the component registration using the setup() method."""
             LOGGER.debug('Accessing virtual component module')
             getattr(importlib.import_module(__name__), setup.__name__)(component)
 
@@ -137,9 +146,10 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
 
     Returns: Component instance.
     """
+
     class Component(types.ModuleType):
-        """Fake component module.
-        """
+        """Fake component module."""
+
         Source = Source
 
         def __init__(self):

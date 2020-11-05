@@ -27,11 +27,14 @@ from forml.flow.graph import view, clean, node as nodemod
 
 
 class Segment(collections.namedtuple('Segment', 'apply, train, label')):
-    """Structure for holding related flow parts of different modes.
-    """
-    def __new__(cls, apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
-                train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
-                label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None):
+    """Structure for holding related flow parts of different modes."""
+
+    def __new__(
+        cls,
+        apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+        train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+        label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+    ):
         def init(mode: typing.Optional[typing.Union[view.Path, nodemod.Atomic]]) -> view.Path:
             """Apply default cleaning to the mode segment.
 
@@ -45,11 +48,15 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
             if isinstance(mode, nodemod.Atomic):
                 mode = view.Path(mode)
             return mode
+
         return super().__new__(cls, init(apply), init(train), init(label))
 
-    def extend(self, apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
-               train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
-               label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None) -> 'Segment':
+    def extend(
+        self,
+        apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+        train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+        label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+    ) -> 'Segment':
         """Helper for creating new Track with specified paths extended by provided values.
 
         Args:
@@ -59,13 +66,18 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
 
         Returns: New Track instance.
         """
-        return self.__class__(self.apply.extend(apply) if apply else self.apply,
-                              self.train.extend(train) if train else self.train,
-                              self.label.extend(label) if label else self.label)
+        return self.__class__(
+            self.apply.extend(apply) if apply else self.apply,
+            self.train.extend(train) if train else self.train,
+            self.label.extend(label) if label else self.label,
+        )
 
-    def use(self, apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
-            train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
-            label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None) -> 'Segment':
+    def use(
+        self,
+        apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+        train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+        label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
+    ) -> 'Segment':
         """Helper for creating new Track with specified paths replaced by provided values.
 
         Args:
@@ -79,11 +91,11 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
 
 
 class Composition(collections.namedtuple('Composition', 'apply, train')):
-    """Structure for holding related flow parts of different modes.
-    """
+    """Structure for holding related flow parts of different modes."""
+
     class Stateful(view.Visitor, abc.Iterable):
-        """Visitor that cumulates gids of stateful nodes.
-        """
+        """Visitor that cumulates gids of stateful nodes."""
+
         def __init__(self):
             self._gids: typing.List[uuid.UUID] = list()
 

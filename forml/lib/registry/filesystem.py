@@ -35,11 +35,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
-    """Repository path utility.
-    """
+    """Repository path utility."""
+
     class Matcher(metaclass=abc.ABCMeta):
-        """Registry component validator.
-        """
+        """Registry component validator."""
 
         @staticmethod
         @abc.abstractmethod
@@ -100,8 +99,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             return True
 
     class Project(Matcher):
-        """Project matcher.
-        """
+        """Project matcher."""
+
         constructor = staticmethod(prjmod.Level.Key)
 
         @staticmethod
@@ -109,8 +108,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             return any(Path.Lineage.valid(i) for i in root.iterdir())
 
     class Lineage(Matcher):
-        """Lineage matcher.
-        """
+        """Lineage matcher."""
+
         constructor = staticmethod(lngmod.Level.Key)
 
         @staticmethod
@@ -118,8 +117,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             return (root / Path.PKGFILE).exists()
 
     class Generation(Matcher):
-        """Generation matcher.
-        """
+        """Generation matcher."""
+
         constructor = staticmethod(genmod.Level.Key)
 
         @staticmethod
@@ -155,8 +154,9 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.project(project) / str(lineage)
 
     @functools.lru_cache()
-    def generation(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key,
-                   generation: genmod.Level.Key) -> pathlib.Path:
+    def generation(
+        self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key
+    ) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
@@ -181,8 +181,13 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.lineage(project, lineage) / self.PKGFILE
 
     @functools.lru_cache()
-    def state(self, sid: uuid.UUID, project: prjmod.Level.Key, lineage: lngmod.Level.Key,
-              generation: typing.Optional[genmod.Level.Key] = None) -> pathlib.Path:
+    def state(
+        self,
+        sid: uuid.UUID,
+        project: prjmod.Level.Key,
+        lineage: lngmod.Level.Key,
+        generation: typing.Optional[genmod.Level.Key] = None,
+    ) -> pathlib.Path:
         """State file path of given sid an project name.
 
         Args:
@@ -212,10 +217,13 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
 
 class Registry(persistent.Registry, alias='filesystem'):
-    """Filesystem registry is a locally-accessible file based hierarchy.
-    """
-    def __init__(self, path: typing.Union[str, pathlib.Path] = conf.USRDIR / 'registry',
-                 staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):
+    """Filesystem registry is a locally-accessible file based hierarchy."""
+
+    def __init__(
+        self,
+        path: typing.Union[str, pathlib.Path] = conf.USRDIR / 'registry',
+        staging: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+    ):
         path = pathlib.Path(path).resolve()
         super().__init__(staging or path / Path.STAGEDIR)
         self._path: Path = Path(path)
@@ -260,8 +268,9 @@ class Registry(persistent.Registry, alias='filesystem'):
             assert package.path.is_file(), 'Expecting file package'
             path.write_bytes(package.path.read_bytes())
 
-    def read(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key,
-             sid: uuid.UUID) -> bytes:
+    def read(
+        self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key, sid: uuid.UUID
+    ) -> bytes:
         path = self._path.state(sid, project, lineage, generation)
         LOGGER.debug('Reading state from %s', path)
         if not path.parent.exists():
@@ -288,8 +297,9 @@ class Registry(persistent.Registry, alias='filesystem'):
         except FileNotFoundError as err:
             raise directory.Level.Listing.Empty(f'No tag under {path}') from err
 
-    def close(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key,
-              tag: 'genmod.Tag') -> None:
+    def close(
+        self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key, tag: 'genmod.Tag'
+    ) -> None:
         path = self._path.tag(project, lineage, generation)
         LOGGER.debug('Committing states of tag %s as %s', tag, path)
         path.parent.mkdir(parents=True, exist_ok=True)

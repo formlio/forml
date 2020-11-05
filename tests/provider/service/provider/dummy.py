@@ -22,9 +22,8 @@ from tests.provider import service
 
 
 class Provider(service.Provider, alias='dummy'):
-    """Provider implementation.
-    """
+    """Provider implementation."""
+
     def serve(self) -> str:
-        """No op.
-        """
+        """No op."""
         return 'dummy'

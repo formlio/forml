@@ -26,9 +26,10 @@ from forml.io.feed.extract.reader import sql
 
 
 class Reader(sql.Reader):
-    """Presto reader.
-    """
+    """Presto reader."""
+
     @classmethod
-    def connection(cls, host: str, port: int = 8080, username: typing.Optional[str] = None,
-                   password: typing.Optional[str] = None) -> presto.Connection:
+    def connection(
+        cls, host: str, port: int = 8080, username: typing.Optional[str] = None, password: typing.Optional[str] = None
+    ) -> presto.Connection:
         return presto.connect(host=host, port=str(port), username=username, password=password)

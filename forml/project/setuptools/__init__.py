@@ -23,6 +23,7 @@ import logging
 import typing
 
 import setuptools
+
 # this makes ourselves a drop-in replacement of original setuptools
 from setuptools import *  # pylint: disable=redefined-builtin; # noqa: F401,F402,F403
 from setuptools import dist
@@ -33,8 +34,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Distribution(dist.Distribution):  # pylint: disable=function-redefined
-    """Extended distribution type with extra forml attributes.
-    """
+    """Extended distribution type with extra forml attributes."""
+
     def __init__(self, attrs=None):
         # mapping between standard forml components and their implementing modules within the project
         self.component: typing.Mapping[str, str] = dict()
@@ -46,7 +47,7 @@ COMMANDS: typing.Mapping[str, typing.Type[launch.Mode]] = {
     'tune': launch.Tune,
     'eval': launch.Eval,
     bdist.Package.COMMAND: bdist.Package,
-    'upload': upload.Registry
+    'upload': upload.Registry,
 }
 
 OPTIONS = {
