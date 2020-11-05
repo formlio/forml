@@ -21,6 +21,7 @@ ForML
 =====
 
 [![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+[![GitHub Build](https://github.com/formlio/forml/workflows/CI%20Build/badge.svg)](https://github.com/formlio/forml/actions)
 [![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://forml.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/forml.svg)](https://badge.fury.io/py/forml)
 

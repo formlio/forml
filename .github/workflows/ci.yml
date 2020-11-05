@@ -16,7 +16,7 @@
 # under the License.
 #
 ---
-name: CI build
+name: CI Build
 
 on: [push]
 
