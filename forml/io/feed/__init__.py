@@ -32,9 +32,9 @@ from forml.io import payload
 from forml.io.dsl import parser
 from forml.io.dsl.struct import visit
 from forml.io.feed import extract
+from forml.project import component
 
 if typing.TYPE_CHECKING:
-    from forml.io import etl as etlmod
     from forml.io.dsl.struct import series, frame, kind as kindmod
 
 
@@ -52,7 +52,7 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column],
     def __init__(self, **readerkw):
         self._readerkw: typing.Dict[str, typing.Any] = readerkw
 
-    def load(self, source: 'etlmod.Source', lower: typing.Optional['kindmod.Native'] = None,
+    def load(self, source: 'component.Source', lower: typing.Optional['kindmod.Native'] = None,
              upper: typing.Optional['kindmod.Native'] = None) -> pipeline.Segment:
         """Provide a pipeline composable segment implementing the etl actions.
 

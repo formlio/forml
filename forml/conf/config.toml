@@ -15,3 +15,36 @@
 # specific language governing permissions and limitations
 # under the License.
 
+logcfg = "logging.ini"
+
+[RUNNER]
+default = "dask"
+
+[RUNNER.dask]
+provider = "dask"
+scheduler = "multiprocessing"
+
+[RUNNER.graphviz]
+provider = "graphviz"
+format = "png"
+
+
+[REGISTRY]
+default = "homedir"
+
+[REGISTRY.virtual]
+provider = "virtual"
+
+[REGISTRY.homedir]
+provider = "filesystem"
+#path = ~/.forml/registry
+
+
+[SINK]
+default = "stdout"
+train = "stdout"
+apply = "stdout"
+eval = "stdout"
+
+[SINK.stdout]
+provider = "stdout"
