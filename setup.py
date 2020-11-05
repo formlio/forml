@@ -78,7 +78,7 @@ setuptools.setup(name='forml',
                  entry_points={'console_scripts': [
                      'forml = forml.cli.forml:Parser',
                  ]},
-                 python_requires='>=3.6',
+                 python_requires='>=3.8',
                  classifiers=[
                      'Development Status :: 2 - Pre-Alpha',
                      'Environment :: Console',
