@@ -23,17 +23,19 @@ Setuptools script for ForML package.
 import setuptools
 
 
+EXTRAS_DASK = {'dask', 'cloudpickle'}
+
+EXTRAS_DEV = {'pre-commit', 'flake8', 'mypy', 'black'}
+
+EXTRAS_DOC = {'sphinx'}
+
 EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
-EXTRAS_DASK = {'dask', 'cloudpickle'}
+EXTRAS_PRESTO = {'pyhive'}
 
-EXTRAS_DOC = {'sphinx'}
-
-EXTRAS_DEV = {'pre-commit', 'flake8', 'mypy', 'black'}
-
-EXTRAS_ALL = EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_PRESTO
 
 setuptools.setup(
     name='forml',
@@ -56,6 +58,7 @@ setuptools.setup(
         'doc': EXTRAS_DOC,
         'flow': EXTRAS_FLOW,
         'graphviz': EXTRAS_GRAPHVIZ,
+        'presto': EXTRAS_PRESTO
     },
     entry_points={
         'console_scripts': [
