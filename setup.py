@@ -23,9 +23,20 @@ Setuptools script for ForML package.
 import setuptools
 
 
-EXTRAS_DASK = {'dask', 'cloudpickle'}
+EXTRAS_DASK = {
+    'cloudpickle',
+    'dask'
+}
 
-EXTRAS_DEV = {'pre-commit', 'flake8', 'mypy', 'black'}
+EXTRAS_DEV = {
+    'black',
+    'flake8-colors',
+    'pre-commit',
+    'pytest-cov',
+    'pytest-flake8',
+    'pytest-pylint',
+    'pytest-xdist',
+}
 
 EXTRAS_DOC = {'sphinx'}
 
@@ -48,8 +59,7 @@ setuptools.setup(
     license='Apache License 2.0',
     packages=setuptools.find_packages(include=['forml*']),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
-    setup_requires=['wheel', 'pytest-runner', 'pytest-xdist', 'pytest-pylint', 'pytest-flake8'],
-    tests_require=['pytest-cov', 'pylint', 'pytest', 'cloudpickle'],
+    setup_requires=['docutils', 'setuptools', 'wheel'],
     install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml'],
     extras_require={
         'all': EXTRAS_ALL,
