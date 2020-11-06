@@ -49,8 +49,8 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         name: codecov-forml
-        file: coverage.xml
-        directory: htmlcov
+        file: ./coverage.xml
+        directory: ./htmlcov
         flags: unittests
         fail_ci_if_error: true
         verbose: true
