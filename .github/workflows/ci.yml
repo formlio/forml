@@ -38,7 +38,7 @@ jobs:
       run: pip install --upgrade tox
     - name: Run tests
       run: |
-        tox -e py
+        tox -e py,report
     - name: Upload test results
       uses: actions/upload-artifact@v2
       with:
@@ -53,4 +53,3 @@ jobs:
         directory: ./htmlcov
         flags: unittests
         fail_ci_if_error: true
-        verbose: true

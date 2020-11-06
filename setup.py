@@ -59,7 +59,7 @@ setuptools.setup(
     license='Apache License 2.0',
     packages=setuptools.find_packages(include=['forml*']),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
-    setup_requires=['docutils', 'setuptools', 'wheel'],
+    setup_requires=['docutils', 'setuptools', 'wheel', 'toml'],
     install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml'],
     extras_require={
         'all': EXTRAS_ALL,
