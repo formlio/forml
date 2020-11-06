@@ -1,6 +1,7 @@
 build/
 _build/
 dist/
+.tox/
 htmlcov/
 coverage.xml
 junit.xml
