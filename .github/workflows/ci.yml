@@ -38,7 +38,7 @@ jobs:
       run: pip install --upgrade tox
     - name: Run tests
       run: |
-        tox -e py,report
+        tox
     - name: Upload test results
       uses: actions/upload-artifact@v2
       with:
