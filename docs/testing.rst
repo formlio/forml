@@ -94,8 +94,7 @@ All test case assertions of the same operator are defined within the operator te
 follows::
 
     class TestMyTransformer(testing.operator(mymodule.MyTransformer)):
-        """MyTransformer unit tests.
-        """
+        """MyTransformer unit tests."""
         # Test scenarios
         invalid_params = testing.Case('foo').raises(TypeError, 'takes 1 positional argument but 2 were given')
         not_trained = testing.Case().apply('bar').raises(ValueError, "Must be trained ahead")
@@ -144,8 +143,7 @@ example uses a custom matcher for asserting the values returned as ``pandas.Data
 
 
     def dataframe_equals(expected: pandas.DataFrame, actual: pandas.DataFrame) -> bool:
-        """DataFrames can't be simply compared for equality so we need a custom matcher.
-        """
+        """DataFrames can't be simply compared for equality so we need a custom matcher."""
         if not actual.equals(expected):
             print(f'Dataframe mismatch: {expected} vs {actual}')
             return False
@@ -153,8 +151,7 @@ example uses a custom matcher for asserting the values returned as ``pandas.Data
 
 
     class TestTitleParser(testing.operator(preprocessing.parse_title)):
-        """Unit testing the stateless TitleParser transformer.
-        """
+        """Unit testing the stateless TitleParser transformer."""
         # Dataset fixtures
         INPUT = pandas.DataFrame({'Name': ['Smith, Mr. John', 'Black, Ms. Jane', 'Brown, Mrs. Jo', 'White, Ian']})
         EXPECTED = pandas.concat((INPUT, pandas.DataFrame({'Title': ['Mr', 'Ms', 'Mrs', 'Unknown']})), axis='columns')

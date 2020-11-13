@@ -17,7 +17,9 @@ Lifecycle
 =========
 
 Machine learning projects are operated in typical modes that are followed in particular order. This pattern is what we
-call a lifecycle. ForML supports two specific lifecycles depending on the state of the project.
+call a lifecycle. ForML supports two specific lifecycles depending on the project stage.
+
+.. _lifecycle-development:
 
 Development Lifecycle
 ---------------------
@@ -38,13 +40,18 @@ Test
 
         $ python3 setup.py test
 
-Score
-    Perform a crossvalidation based on the specs defined in ``evaluation.py`` and return the score. One of the potential
-    usecases might be a CI integration to continuously monitor (evaluate) the changes in the project development.
+    .. note::
+       The test mode is going to be deprecated in the upstream ``setuptools`` package so this will need to change.
+
+Evaluate
+    Perform an evaluation based on the specs defined in ``evaluation.py`` and return the metrics. This can be defined
+    either as cross-validation or a hold-out training. One of the potential usecases might be a CI integration
+    to continuously monitor (evaluate) the changes in the project development.
 
     Example::
 
-        $ python3 setup.py score
+        $ python3 setup.py eval
+
 
 Tune
     Run hyper-parameter tuning reporting the results (not implemented yet).
@@ -82,6 +89,8 @@ Upload
         $ python3 setup.py bdist_4ml upload
 
 
+.. _lifecycle-production:
+
 Production Lifecycle
 --------------------
 
@@ -116,9 +125,9 @@ Apply
 
         forml apply titanic
 
-Score
-    Evaluate the metrics and insights defined in ``evaluation.py`` (not implemented yet).
+Evaluate
+    Measure the actual performance of the model based on the definitions in ``evaluation.py`` (not implemented yet).
 
     Example::
 
-        forml score titanic
+        forml eval titanic

@@ -17,4 +17,8 @@
 
 """
 Schema catalogue.
+
+Conceptually there is no point for any schemas to be held in ForML namespace so this module is just interim.
+Schema catalogs should be published either by the data providers themselves or potentially by some special data
+concentrator services.
 """

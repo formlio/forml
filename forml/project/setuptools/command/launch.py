@@ -69,7 +69,8 @@ class Mode(test.test, metaclass=abc.ABCMeta):
                     break
             else:
                 package = self.distribution.packages[0]
-        return product.Artifact(self.distribution.package_dir.get('', '.'), package=package, **modules)
+        pkgdir = self.distribution.package_dir or {'': '.'}
+        return product.Artifact(pkgdir[''], package=package, **modules)
 
     def run_tests(self) -> None:
         """This is the original test command entry point - let's override it with our actions."""

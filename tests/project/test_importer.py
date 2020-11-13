@@ -19,6 +19,7 @@
 Project importer tests.
 """
 # pylint: disable=no-self-use
+import os
 
 import pytest
 
@@ -30,3 +31,4 @@ def test_isolated(project_package: distribution.Package):
     with pytest.raises(ModuleNotFoundError):
         importer.isolated(project_package.manifest.package)
     importer.isolated(project_package.manifest.package, project_package.path)
+    importer.isolated(project_package.manifest.package, os.path.relpath(project_package.path, os.getcwd()))

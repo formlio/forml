@@ -30,9 +30,9 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-import forml  # noqa: E402
+sys.path.insert(0, os.path.abspath('..'))
 
+import forml  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
@@ -49,22 +49,25 @@ release = forml.__version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
-    'sphinx.ext.graphviz',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
+    'sphinx_rtd_theme',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ['templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build']
 
 intersphinx_mapping = {
     'dask': ('https://docs.dask.org/en/latest/', None),
+    'setuptools': ('https://setuptools.readthedocs.io/en/latest/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'python': ('https://docs.python.org/3/', None),
 }
@@ -74,13 +77,23 @@ intersphinx_mapping = {
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['static']
 
 html_show_sourcelink = False
 
 html_show_copyright = False
+
+# == Extensions configuration ==================================================
+
+# -- Options for sphinx.ext.autodoc --------------------------------------------
+# See: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+
+autoclass_content = 'both'
+autosummary_generate = True
+napoleon_numpy_docstring = False
+napoleon_use_rtype = False

@@ -103,6 +103,9 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             function.Max: Expression('max({})'),
             function.Sum: Expression('sum({})'),
             function.Year: Expression('year({})'),
+            function.Abs: Expression('abs({})'),
+            function.Ceil: Expression('ceil({})'),
+            function.Floor: Expression('floor({})'),
         }
 
         DATE = '%Y-%m-%d'

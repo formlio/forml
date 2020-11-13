@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Datetime functions.
+Date and time manipulating functions.
 """
 import operator
 

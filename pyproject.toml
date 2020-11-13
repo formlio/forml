@@ -19,12 +19,6 @@
 requires = ["setuptools >= 46.4.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.pytest.ini_options]
-addopts = "-rxXs --flake8 --pylint --junitxml=junit.xml --cov=forml --cov-append --cov-report=term"
-required_plugins = ["pytest-pylint", "pytest-flake8"]
-testpaths = ["forml", "tests"]
-junit_family = "xunit2"
-
 [tool.black]
 line-length = 120
 target-version = ['py38']

@@ -89,7 +89,7 @@ class Virtual:
             self._feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = feeds
             self._project: str = project
 
-        def __call__(self, sink: sinkmod.Provider) -> runtime.Platform.Launcher:
+        def __call__(self, sink: sinkmod.Provider) -> 'runtime.Platform.Launcher':
             return runtime.Platform(self._runner, self._registry, self._feeds, sink).launcher(self._project)
 
     def __init__(self, package: distribution.Package):

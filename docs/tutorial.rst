@@ -16,16 +16,98 @@
 Tutorial
 ========
 
-There is a complete ForML project available under ``examples/tutorial/titanic/``. We will use this instance here to
-demonstrate the typical ForML usecases.
+There is a complete ForML project available under ``examples/tutorial/titanic/``. It is the famous `Titanic Challenge
+<https://www.kaggle.com/c/titanic>`_. We will use it here to demonstrate the typical ForML usecases.
 
-Before you start, please make sure to install ForML as per the :doc:`installation` instructions.
+Before you start, please make sure to install ForML as per the :doc:`installation instructions <install>` and ideally
+also familiarize yourself with the :doc:`ForML concepts <concept>`.
+
+Setup
+-----
+
+Datasource Preparation
+''''''''''''''''''''''
+
+ForML uses :doc:`feeds <feed>` to supply data into your projects. We need to register the Titanic dataset to our
+:doc:`platform <platform>`:
+
+1. Let's start with fetching the Titanic dataset from Kaggle (assuming you have the `kaggle API
+   <https://www.kaggle.com/docs/api>`_ CLI tool installed and configured)::
+
+    $ kaggle competitions download -p /tmp -f train.csv titanic
+
+2. Convert the dataset to sqlite DB::
+
+    import pandas as pd
+    import sqlite3
+    pd.read_csv('/tmp/train.csv').to_sql('passenger', sqlite3.connect('/tmp/tutorial.db'), index=False)
+
+Platform Setup
+''''''''''''''
+
+Assuming you have no existing :doc:`feeds <feed>` configured in your system yet, let's create one and register the
+dataset within:
+
+Create a python file under ``~/.forml/tutorial.py`` with the following content::
+
+    from forml.io import feed
+    from forml.lib.reader import sqlite
+    from forml.lib.schema.kaggle import titanic
+
+
+    class Feed(feed.Provider):
+        """Tutorial feed."""
+
+        class Reader(sqlite.Reader):
+            """Using a SQLite reader."""
+
+        @property
+        def sources(self):
+            """This feed can serve just one and only dataset - the titanic passenger table mapped to
+               the titanic.Passenger schema."""
+
+            return {titanic.Passenger: 'passenger'}
+
+
+Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add the following content to your
+``~/.forml/config.toml``::
+
+    [RUNNER]
+    default = "compute"
+
+    [RUNNER.compute]
+    provider = "dask"
+    scheduler = "multiprocessing"
+
+    [RUNNER.visual]
+    provider = "graphviz"
+    format = "png"
+
+    [REGISTRY]
+    default = "tutorial"
+
+    [REGISTRY.tutorial]
+    provider = "filesystem"
+    path = "/tmp/forml-tutorial"
+
+    [FEED]
+    default = ["tutorial"]
+
+    [FEED.tutorial]
+    provider = "tutorial:Feed"
+    database = "/tmp/tutorial.db"
+
+    [SINK]
+    default = "print"
+
+    [SINK.print]
+    provider = "stdout"
 
 
 Project Operations
 ------------------
 
-We will exercise the standard :doc:`lifecycle` actions.
+We will exercise the standard :doc:`lifecycle <lifecycle>` actions.
 
 Development Lifecycle Actions
 '''''''''''''''''''''''''''''
@@ -52,23 +134,27 @@ Development Lifecycle Actions
 
     OK
 
-3. Try running the ``train`` mode on the ``graphviz`` runner to see the train task graph::
+3. Try running the ``train`` mode on the ``graphviz`` runner (called ``visual`` in our config ) to see the train task
+   graph::
 
-    $ python3 setup.py train --runner graphviz
+    $ python3 setup.py train --runner visual
 
 .. image:: images/titanic-train.png
 
-4. Run the ``score`` mode on the (default) ``dask`` runner to get the cross-validation score::
+4. Run the ``eval`` mode on the (default) ``dask`` runner (called ``compute`` in our config) to get the
+   cross-validation score::
 
-    $ python3 setup.py score
+    $ python3 setup.py eval
     0.6531806857218416
 
-5. Create the project package artifact and upload it to the (default) local registry (assuming the same linage doesn't
-   already exist - otherwise increment the project version in the ``setup.py``)::
+5. Create the project package artifact and upload it to the (default) filesystem registry (assuming the same linage
+   doesn't already exist - otherwise increment the project version in the ``setup.py``)::
 
     $ python3 setup.py bdist_4ml upload
 
-   This should publish the project into your local forml registry making it available for the production lifecycle.
+   This should publish the project into your local filesystem forml registry making it available for the production
+   lifecycle. This becomes the first published :ref:`lineage <concept-persistence>` of this project versioned (according
+   to the version from :ref:setup.py `<project-setup>` as ``0.1.dev0``)
 
 Production Lifecycle Actions
 ''''''''''''''''''''''''''''
@@ -76,7 +162,7 @@ Production Lifecycle Actions
 Production lifecycles doesn't need the project working copy so feel free to change the directory to another location
 before executing the commands.
 
-1. List the local registry confirming the project has been published::
+1. List the local registry confirming the project has been published its first lineage::
 
     $ forml list
     forml-example-titanic
@@ -106,7 +192,7 @@ before executing the commands.
 
 4. Run the ``apply`` mode alternatively on the ``graphviz`` runner to explore its task graph::
 
-    $ forml -R graphviz apply forml-example-titanic
+    $ forml -R visual apply forml-example-titanic
 
 .. image:: images/titanic-apply.png
 

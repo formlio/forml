@@ -20,6 +20,7 @@ Project importer machinery.
 """
 import contextlib
 import importlib
+import itertools
 import logging
 import pathlib
 import re
@@ -49,7 +50,8 @@ class Finder(abc.MetaPathFinder):
             Args:
                 spec: Module spec.
 
-            Returns: Module instance.
+            Returns:
+                Module instance.
             """
             return self._module
 
@@ -77,7 +79,8 @@ class Finder(abc.MetaPathFinder):
             path: module path (unused).
             target: module target (unused).
 
-        Returns: Component module spec or nothing.
+        Returns:
+            Component module spec or nothing.
         """
         if fullname == self._name:
             LOGGER.debug('Injecting component module loader')
@@ -94,7 +97,8 @@ class Finder(abc.MetaPathFinder):
             module: Module to create a finder for.
             onexec: Optional callback to be registered with given module.
 
-        Returns: Sequence of necessary finders.
+        Returns:
+            Sequence of necessary finders.
         """
         result = list()
         *parents, _ = module.__name__.split('.')
@@ -120,7 +124,8 @@ def context(module: types.ModuleType) -> typing.Iterable[None]:
     Args:
         module: Module to be returned upon import of forml.project.component.
 
-    Returns: Context manager.
+    Returns:
+        Context manager.
     """
 
     def unload() -> None:
@@ -139,18 +144,31 @@ def context(module: types.ModuleType) -> typing.Iterable[None]:
     unload()
 
 
+def search(*paths: typing.Union[str, pathlib.Path]) -> None:
+    """Simply add the given paths to the front of sys.path removing all potential duplicates.
+
+    Args:
+        *paths: Paths to be inserted to sys.path.
+    """
+    new = list()
+    for item in itertools.chain((str(pathlib.Path(p).resolve()) for p in paths), sys.path):
+        if item not in new:
+            new.append(item)
+    sys.path = new
+
+
 @contextlib.contextmanager
-def searched(*directories: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
+def searched(*paths: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
     """Context manager for putting given paths on python module search path but only for the duration of the context.
 
     Args:
-        *directories: Paths to be inserted to sys.path when in the context.
+        *paths: Paths to be inserted to sys.path when in the context.
 
-    Returns: Context manager.
+    Returns:
+        Context manager.
     """
     original = list(sys.path)
-    for item in directories:
-        sys.path.insert(0, str(pathlib.Path(item).resolve()))
+    search(*paths)
     yield
     sys.path = original
 
@@ -162,7 +180,8 @@ def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] =
         name: Name of module to be loaded.
         path: Optional path to search indicate path based search.
 
-    Returns: Imported module.
+    Returns:
+        Imported module.
     """
     with searched(*([path] if path else [])):
         if name in sys.modules:
@@ -171,6 +190,6 @@ def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] =
         module = importlib.import_module(name)
     if not isinstance(module.__loader__, Finder.Loader):
         source = getattr(module, '__file__', None)
-        if bool(path) ^ bool(source) or (path and not source.startswith(str(path))):
+        if bool(path) ^ bool(source) or (path and not source.startswith(str(pathlib.Path(path).resolve()))):
             raise ModuleNotFoundError(f'No module named {name}')
     return module

@@ -22,16 +22,15 @@ Getting ForML
 
 To install the pre-packaged version of ForML simply use ``pip``::
 
-    pip3 install forml
+    pip install forml
 
 ForML has number of optional features with their own dependencies which can be pulled in during the installation like
 this::
 
-    pip3 install 'forml[stdlib,dask]'
+    pip install 'forml[presto,dask]'
 
-Install the graphviz ecosystem::
-
-    apt-get install graphviz
+Some of the features might have their own binary dependencies that need to be resolved using a system-dependant way
+(ie using the OS package manager).
 
 Extra Features
 --------------
@@ -39,15 +38,17 @@ Extra Features
 +----------+---------------------------------------+----------------------------------------------------------------+
 | Feature  | Install Command                       | Description                                                    |
 +==========+=======================================+================================================================+
-| all      | ``pip3 install 'forml[all]'``         | All extra features                                             |
+| all      | ``pip install 'forml[all]'``          | All extra features                                             |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| dev      | ``pip3 install 'forml[dev]'``         | ForML development tools                                        |
+| dask     | ``pip install 'forml[dask]'``         | The Dask runner                                                |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| doc      | ``pip3 install 'forml[doc]'``         | Documentation publishing dependencies                          |
+| dev      | ``pip install 'forml[dev]'``          | ForML development tools                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| stdlib   | ``pip3 install 'forml[stdlib]'``      | The standard operator and actor library shipped with ForML     |
+| doc      | ``pip install 'forml[doc]'``          | Documentation publishing dependencies                          |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| dask     | ``pip3 install 'forml[dask]'``        | The Dask runner                                                |
+| flow     | ``pip install 'forml[flow]'``         | The standard operator and actor library shipped with ForML     |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| graphviz | ``pip3 install 'forml[graphviz]'``    | The Graphviz pseudo-runner (also requires ``graphviz`` binary) |
+| graphviz | ``pip install 'forml[graphviz]'``     | The Graphviz pseudo-runner (also requires ``graphviz`` binary) |
++----------+---------------------------------------+----------------------------------------------------------------+
+| presto   | ``pip install 'forml[presto]'``       | The PrestoDB reader                                            |
 +----------+---------------------------------------+----------------------------------------------------------------+

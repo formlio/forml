@@ -24,7 +24,9 @@ from forml.io.dsl.struct import series, kind as kindmod
 
 
 class Cast(series.Expression):
-    """Explicitly cast value as given kind."""
+    """Explicitly cast value as given kind.
+
+    This can be used to cast a varchar to a numeric value type and vice versa."""
 
     value: series.Operable = property(operator.itemgetter(0))
     kind: kindmod.Any = property(operator.itemgetter(1))
