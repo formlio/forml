@@ -13,5 +13,18 @@
     specific language governing permissions and limitations
     under the License.
 
-Configuration
-=============
+Output Sink
+===========
+
+Sink is a :doc:`runtime platform <platform>` component responsible for consuming the pipeline produced output.
+
+.. autosummary::
+
+   forml.lib.sink.stdout
+
+
+API
+---
+
+.. autoclass:: forml.io.sink.Provider
+    :members:

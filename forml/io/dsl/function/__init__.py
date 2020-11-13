@@ -40,3 +40,4 @@ from forml.io.dsl.struct.series import (  # noqa: F401
 from forml.io.dsl.function.aggregate import Avg, Count, Min, Max, Sum  # noqa: F401
 from forml.io.dsl.function.conversion import Cast  # noqa: F401
 from forml.io.dsl.function.datetime import Year  # noqa: F401
+from forml.io.dsl.function.math import Abs, Ceil, Floor  # noqa: F401

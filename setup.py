@@ -23,10 +23,7 @@ Setuptools script for ForML package.
 import setuptools
 
 
-EXTRAS_DASK = {
-    'cloudpickle',
-    'dask'
-}
+EXTRAS_DASK = {'cloudpickle', 'dask'}
 
 EXTRAS_DEV = {
     'black',
@@ -38,7 +35,7 @@ EXTRAS_DEV = {
     'pytest-xdist',
 }
 
-EXTRAS_DOC = {'sphinx'}
+EXTRAS_DOC = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx_rtd_theme'}
 
 EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
@@ -55,7 +52,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/formlio/forml',
     maintainer='ForML Development Team',
-    maintainer_email='noreply@forml.io',
+    maintainer_email='forml-dev@googlegroups.com',
     license='Apache License 2.0',
     packages=setuptools.find_packages(include=['forml*']),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
@@ -68,7 +65,7 @@ setuptools.setup(
         'doc': EXTRAS_DOC,
         'flow': EXTRAS_FLOW,
         'graphviz': EXTRAS_GRAPHVIZ,
-        'presto': EXTRAS_PRESTO
+        'presto': EXTRAS_PRESTO,
     },
     entry_points={
         'console_scripts': [

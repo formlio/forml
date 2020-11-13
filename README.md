@@ -24,15 +24,48 @@ ForML
 [![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/master.svg)](https://codecov.io/github/formlio/forml?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://forml.readthedocs.io/en/latest/?badge=latest)
 [![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
-[![PyPI version](https://badge.fury.io/py/forml.svg)](https://badge.fury.io/py/forml)
+[![PyPI version](https://badge.fury.io/py/forml.svg)](https://pypi.org/project/forml/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
-ForML is a lifecycle management framework for Data science projects.
+ForML is a framework for researching, implementing and operating data science projects.
+
+Use ForML to formally describe a data science problem as a composition of high-level operators.
+ForML expands your project into a task dependency graph specific to given life-cycle phase and executes it using any of
+its supported runners.
+
+Solutions built on ForML are naturally easy to reuse, extend, reproduce, or share and collaborate on.
 
 
-Getting Started
----------------
+Not Just Another DAG
+--------------------
 
-Please visit the [documentation](docs) for help with [installing ForML](docs/installation.rst) or
-the [examples](docs/examples.rst) to find some demo project implementations.
+Despite *DAG* (directed acyclic graph) being at the heart of ForML operations, it stands out amongst the many other task
+dependency processing systems due to:
+
+a. Its specialization on machine learning problems that's wired right into the flow topology.
+b. Concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units.
+c. Abstraction of runtime dependencies allowing to run the same project using different technologies.
+
+
+History
+-------
+
+ForML started as an open-source project in response to ever painful transitions of datascience research into production.
+While there are other projects trying to solve this problem, they are typically either generic data processing systems
+too low-level to provide out-of-the-box ML lifecycle routines, or special scientific frameworks that are on the other
+end too high-level to allow for robust operations.
+
+
+Resources
+---------
+
+* [Documentation](https://forml.readthedocs.io/en/latest/)
+* [Source Code](https://github.com/formlio/forml/)
+* Mailing lists:
+
+  * Developers: `forml-dev@googlegroups.com`
+  * Users: `forml-users@googlegroups.com`
+
+* [Issue Tracker](https://github.com/formlio/forml/issues/)
+* [PyPI Repository](https://pypi.org/project/forml/)

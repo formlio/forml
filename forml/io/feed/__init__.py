@@ -105,10 +105,10 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
         reader = self.reader(self.sources, self.columns, **self._readerkw)
         query: 'frame.Query' = source.extract.train
         label: typing.Optional[task.Spec] = None
-        if source.extract.label:  # trainset/label formatting is applied only after label extraction
-            query = query.select(*(*source.extract.train.columns, *source.extract.label))
+        if source.extract.labels:  # trainset/label formatting is applied only after label extraction
+            query = query.select(*(*source.extract.train.columns, *source.extract.labels))
             label = extract.Slicer.Actor.spec(
-                formatter(self.slicer(query.columns, self.columns)), source.extract.train.columns, source.extract.label
+                formatter(self.slicer(query.columns, self.columns)), source.extract.train.columns, source.extract.labels
             )
         else:  # testset formatting is applied straight away
             reader = formatter(reader)
@@ -184,6 +184,13 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
 class Pool:
     """Pool of (possibly) lazily instantiated feeds. If configured without any explicit feeds, all of the feeds
     registered in the provider cache are added.
+
+    The pool is used to provide a feed instance that can satisfy particular DSL query (can provide datasource for all of
+    the schemas used in that query). Feed instances can have priority in which case the first feed with highest priority
+    that's capable of supplying the data is returned.
+
+    TO-DO: This logic should be extended to also probe the available data range so that feed without the expected data
+    range is not prioritized over another feed that has the range but has a lower priority.
     """
 
     class Slot:

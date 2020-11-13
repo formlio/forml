@@ -149,6 +149,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                 LOGGER.debug('Extracting non zip-safe package %s to %s', self.path, path)
                 with zipfile.ZipFile(self.path) as package:
                     package.extractall(path)
+        importer.search(path)
         return product.Artifact(path, self.manifest.package, **self.manifest.modules)
 
 

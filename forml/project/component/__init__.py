@@ -48,55 +48,58 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
 
 
 class Source(typing.NamedTuple):
-    """Feed independent data provider description."""
+    """Feed independent data source descriptor."""
 
     extract: 'Source.Extract'
     transform: typing.Optional[topology.Composable] = None
 
-    class Extract(collections.namedtuple('Extract', 'train, apply, label, ordinal')):
+    class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
 
         train: frame.Query
         apply: frame.Query
-        label: typing.Tuple[series.Column]
+        labels: typing.Tuple[series.Column]
         ordinal: typing.Optional[series.Operable]
 
         def __new__(
             cls,
             train: frame.Queryable,
             apply: frame.Queryable,
-            label: typing.Sequence[series.Column],
+            labels: typing.Sequence[series.Column],
             ordinal: typing.Optional[series.Operable],
         ):
             train = train.query
             apply = apply.query
-            if {c.operable for c in train.columns}.intersection(c.operable for c in label):
+            if {c.operable for c in train.columns}.intersection(c.operable for c in labels):
                 raise error.Invalid('Label-feature overlap')
             if train.schema != apply.schema:
                 raise error.Invalid('Train-apply schema mismatch')
             if ordinal:
                 ordinal = series.Operable.ensure_is(ordinal)
-            return super().__new__(cls, train, apply, tuple(label), ordinal)
+            return super().__new__(cls, train, apply, tuple(labels), ordinal)
 
     @classmethod
     def query(
         cls,
         features: frame.Queryable,
-        *label: series.Column,
+        *labels: series.Column,
         apply: typing.Optional[frame.Queryable] = None,
         ordinal: typing.Optional[series.Operable] = None,
     ) -> 'Source':
-        """Create new source with the given extraction.
+        """Create new source descriptor with the given parameters. All parameters are the DSL objects - either queries
+        or columns.
 
         Args:
-            features: Query defining the train (and possibly apply) features.
-            label: List of training label columns.
-            apply: Optional query defining the apply features (if different from train ones).
+            features: Query defining the train (and if same also the ``apply``) features.
+            labels: Sequence of training label columns.
+            apply: Optional query defining the apply features (if different from train ones). If provided, it must
+                   result in the same schema as the main provided via ``features``.
             ordinal: Optional specification of an ordinal column.
 
-        Returns: New source instance.
+        Returns:
+            Source descriptor instance.
         """
-        return cls(cls.Extract(features, apply or features, label, ordinal))  # pylint: disable=no-member
+        return cls(cls.Extract(features, apply or features, labels, ordinal))  # pylint: disable=no-member
 
     def __rshift__(self, transform: topology.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
@@ -108,7 +111,8 @@ class Source(typing.NamedTuple):
             pipeline: Pipeline to create the artifact with.
             **modules: Other optional artifact modules.
 
-        Returns: Project artifact instance.
+        Returns:
+            Project artifact instance.
         """
         return product.Artifact(source=self, pipeline=pipeline, **modules)
 
@@ -132,7 +136,8 @@ class Virtual:
     def path(self) -> str:
         """The virtual path representing this component.
 
-        Returns: Virtual component module path.
+        Returns:
+            Virtual component module path.
         """
         return self._path
 
@@ -144,7 +149,8 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
         module: Python module containing the component to be loaded.
         path: Path to import from.
 
-    Returns: Component instance.
+    Returns:
+        Component instance.
     """
 
     class Component(types.ModuleType):

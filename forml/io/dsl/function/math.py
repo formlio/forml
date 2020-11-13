@@ -14,3 +14,25 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+"""
+Mathematical functions.
+"""
+
+from forml.io.dsl.struct import series, kind as kindmod
+
+
+class Abs(series.Arithmetic, series.Univariate):
+    """Absolute value."""
+
+
+class Ceil(series.Arithmetic, series.Univariate):
+    """Value rounded up to nearest integer."""
+
+    kind: kindmod.Integer = kindmod.Integer()
+
+
+class Floor(series.Arithmetic, series.Univariate):
+    """Value rounded down to nearest integer."""
+
+    kind: kindmod.Integer = kindmod.Integer()

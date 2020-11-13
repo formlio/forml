@@ -40,7 +40,7 @@ STACK = ensemble.FullStacker(
 
 
 # This is the main pipeline composition:
-INSTANCE = (
+FLOW = (
     preprocessing.NaNImputer()
     >> preprocessing.parse_title(source='Name', target='Title')
     >> preprocessing.ENCODER(cols=['Name', 'Sex', 'Ticket', 'Cabin', 'Embarked', 'Title'])
@@ -49,4 +49,4 @@ INSTANCE = (
 )
 
 # And the final step is registering the pipeline instance as the forml component:
-component.setup(INSTANCE)
+component.setup(FLOW)

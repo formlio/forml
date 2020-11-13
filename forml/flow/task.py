@@ -42,7 +42,8 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
         *args: Optional positional parameters.
         **kwargs: Optional keyword parameters.
 
-    Returns: String name representation.
+    Returns:
+        String name representation.
     """
 
     def extract(obj: typing.Any) -> str:
@@ -50,7 +51,8 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
         Args:
             obj: Object whose name to be extracted.
 
-        Returns: Extracted name.
+        Returns:
+            Extracted name.
         """
         return obj.__name__ if hasattr(obj, '__name__') else repr(obj)
 
@@ -72,20 +74,25 @@ class Actor(metaclass=abc.ABCMeta):
             *args: Positional params.
             **kwargs: Keyword params.
 
-        Returns: Actor spec instance.
+        Returns:
+            Actor spec instance.
         """
         return Spec(cls, *args, **kwargs)
 
     @classmethod
     def is_stateful(cls) -> bool:
-        """Check whether this actor is stateful (determined based on existence of user-overridden train method).
+        """Check whether this actor is stateful (by default determined based on existence of user-overridden train
+        method).
 
-        Returns: True if stateful.
+        Returns:
+            True if stateful.
         """
         return cls.train.__code__ is not Actor.train.__code__
 
     def train(self, features: typing.Any, label: typing.Any) -> None:  # pylint: disable=no-self-use
         """Train the actor using the provided features and label.
+
+        Optional method engaging the *Train* (``features``) and *Label* (``label``) ports on stateful actors.
 
         Args:
             features: Table of feature vectors.
@@ -97,17 +104,23 @@ class Actor(metaclass=abc.ABCMeta):
     def apply(self, *features: typing.Any) -> typing.Union[typing.Any, typing.Sequence[typing.Any]]:
         """Pass features through the apply function (typically transform or predict).
 
+        Mandatory M:N input-output *Apply* ports.
+
         Args:
             features: Table(s) of feature vectors.
 
-        Returns: Transformed features (ie predictions).
+        Returns:
+            Transformed features (ie predictions).
         """
 
     def get_params(self) -> typing.Mapping[str, typing.Any]:  # pylint: disable=no-self-use
         """Get hyper-parameters of this actor.
 
-        Returns: Dictionary of the name-value of the hyperparameters. All of the returned parameters must be acceptable
-        by the companion set_params.
+        Mandatory input and output *Params* ports.
+
+        Returns:
+            Dictionary of the name-value of the hyperparameters. All of the returned parameters must be acceptable
+            by the companion set_params.
         """
         return {}
 
@@ -123,7 +136,8 @@ class Actor(metaclass=abc.ABCMeta):
     def get_state(self) -> bytes:
         """Return the internal state of the actor.
 
-        Returns: state as bytes.
+        Returns:
+            State as bytes.
         """
         if not self.is_stateful():
             return bytes()

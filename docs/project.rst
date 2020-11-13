@@ -18,8 +18,9 @@ Project
 
 Starting New Project
 --------------------
+
 ForML project can either be created manually from scratch by defining the `component structure`_ or simply using the
-``init`` subcommand of the ``forml`` CLI::
+``init`` subcommand of the ``forml`` :ref:`platform-cli`::
 
     $ forml init myproject
 
@@ -28,7 +29,7 @@ Component Structure
 -------------------
 
 ForML project is defined as a set of specific components wrapped into a python package with the usual
-`setuptools <https://setuptools.readthedocs.io/en/latest/setuptools.html>`_ layout. The framework offers the
+:doc:`Setuptools <setuptools>` layout. The framework offers the
 *Convention over Configuration* approach for organizing the internal package structure, which means it automatically
 discovers the relevant project components if the author follows this convention (there is still an option to ignore the
 convention, but the author is then responsible for configuring all the otherwise automatic steps himself).
@@ -42,16 +43,15 @@ project component structure wrapped within the python application layout might l
 
     <project_name>
       ├── setup.py
-      ├── src
-      │    └── <optional_project_namespace>
-      │          └── <project_name>
-      │               ├── __init__.py
-      │               ├── pipeline  # here the component is a package
-      │               │    ├── __init__.py
-      │               │    ├── <moduleX>.py  # arbitrary user defined module
-      │               │    └── <moduleY>.py
-      │               ├── source.py
-      │               └── evaluation.py  # here the component is just a module
+      ├── <optional_project_namespace>
+      │     └── <project_name>
+      │          ├── __init__.py
+      │          ├── pipeline  # here the component is a package
+      │          │    ├── __init__.py
+      │          │    ├── <moduleX>.py  # arbitrary user defined module
+      │          │    └── <moduleY>.py
+      │          ├── source.py
+      │          └── evaluation.py  # here the component is just a module
       ├── tests
       │    ├── __init__.py
       │    ├── test_pipeline.py
@@ -60,12 +60,18 @@ project component structure wrapped within the python application layout might l
       └── ...
 
 
+The individual project components defined in the specific modules described bellow need to be hooked up into the ForML
+framework using the ``component.setup()`` as shown in the examples bellow.
+
+.. autofunction:: forml.project.component.setup
+
+
 Setup.py
 ''''''''
 
-This is the standard `setuptools <https://setuptools.readthedocs.io/en/latest/setuptools.html>`_ module with few extra
-features added to allow the project structure customization and integration of the *Research lifecycle* as described in
-:doc:`lifecycle` sections (ie the ``score`` or ``upload`` commands).
+This is the standard :doc:`Setuptools <setuptools>` module with few extra features added to allow the project structure
+customization and integration of the *Research lifecycle* as described in :doc:`lifecycle` sections (ie the ``eval`` or
+``upload`` commands).
 
 To hook in this extra functionality, the ``setup.py`` just needs to import ``forml.project.setuptools`` instead of the
 original ``setuptools``. The rest is the usual ``setup.py`` content::
@@ -74,12 +80,11 @@ original ``setuptools``. The rest is the usual ``setup.py`` content::
 
     setuptools.setup(name='forml-example-titanic',
                      version='0.1.dev0',
-                     package_dir={'': 'src'},
-                     packages=setuptools.find_packages(where='src'),
+                     packages=setuptools.find_packages(include=['titanic*']),
                      install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'])
 
-Note the specified ``version`` value will become the *lineage* identifier upon *uploading* (as part of the *Research
-lifecycle*) thus needs to be a valid `PEP 440 <https://www.python.org/dev/peps/pep-0440/>`_ version.
+.. note:: The specified ``version`` value will become the *lineage* identifier upon *uploading* (as part of the
+          *Research lifecycle*) thus needs to be a valid :pep:`440` version.
 
 The project should carefully specify all of its dependencies using the ``install_requires`` parameter as these will be
 included in the released ``.4ml`` package.
@@ -92,6 +97,12 @@ the custom locations of its project components using the ``component`` parameter
                      component={'pipeline': 'path.to.my.custom.pipeline.module'})
 
 
+.. note::  Since :pep:`517` setuptools is no longer the Python default build tool, ForML is in the future also likely to
+           take more generic approach to the build frontend/backend and the ``setup.py`` might no longer play the role
+           as described.
+
+.. _project-pipeline:
+
 Pipeline (``pipeline.py``)
 ''''''''''''''''''''''''''
 
@@ -100,47 +111,80 @@ pipeline as a *Directed Acyclic Task Dependency Graph*. For this purpose it come
 the user is supplying with actual functionality (ie feature transformer, classifier) and *composing* together to
 define the final flow.
 
-The pipeline is specified in terms of the *workflow expression interface* which is in detail described in the
+The pipeline is specified in terms of the *workflow expression API* which is in detail described in the
 :doc:`workflow` sections.
 
 Same as for the other project components, the final pipeline expression defined in the ``pipeline.py`` needs to be
-exposed to the framework via the ``forml.project.component.setup()`` handler::
+exposed to the framework via the ``component.setup()`` handler::
 
     from forml.project import component
     from titanic.pipeline import preprocessing, model
-    INSTANCE = preprocessing.NaNImputer() >> model.LR(random_state=42, solver='lbfgs')
 
-    component.setup(INSTANCE)
+    FLOW = preprocessing.NaNImputer() >> model.LR(random_state=42, solver='lbfgs')
+    component.setup(FLOW)
 
+.. _project-evaluation:
 
 Evaluation (``evaluation.py``)
 ''''''''''''''''''''''''''''''
 
 Definition of model evaluation strategy for both the development and production lifecycle.
 
-The evaluation strategy again needs to be submitted to the framework using the ``forml.project.component.setup()``
-handler::
+.. note:: The whole evaluation implementation is interim and more robust concept with different API is ongoing.
+
+The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
 
     from sklearn import model_selection, metrics
     from forml.project import component
-    from forml.stdlib.operator.folding import evaluation
-    INSTANCE = evaluation.MergingScorer(
+    from forml.lib.flow.operator.folding import evaluation
+
+    EVAL = evaluation.MergingScorer(
         crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
         metric=metrics.log_loss)
+    component.setup(EVAL)
 
-    component.setup(INSTANCE)
 
+.. _project-source:
 
-Producer Expression (``source.py``)
-'''''''''''''''''''''''''''''''''''
+Source (``source.py``)
+''''''''''''''''''''''
 
-Project allows to define the ETL process sourcing the data into the system using a *Producer Expression*. This mechanism
-would still be fairly abstract from a physical data source as that's something that would supply a particular *Runtime*.
+This component is the fundamental part of the :doc:`IO concept<io>`. Project can define the ETL process of sourcing
+data into the pipeline using the :doc:`DSL <dsl/index>` referring to some :ref:`catalogized schemas
+<io-catalogized-schemas>` that are at runtime resolved via the available :doc:`feeds <feed>`.
 
-This part is not fully implemented yet.
+The source component is provided in form of a descriptor that's created using the ``.query()`` method as shown in the
+example bellow or documented in the :ref:`Source Descriptor Reference <io-source-descriptor>`.
+
+.. note:: The descriptor allows to further compose with other operators using the usual ``>>`` syntax. Source
+          composition domain is separate from the main pipeline so adding an operator to the source composition vs
+          pipeline composition might have different effect.
+
+The Source descriptor again needs to be submitted to the framework using the ``component.setup()`` handler::
+
+    from forml.lib.flow.operator import cast
+    from forml.lib.schema.kaggle import titanic as schema
+    from forml.project import component
+
+    FEATURES = schema.Passenger.select(
+        schema.Passenger.Pclass,
+        schema.Passenger.Name,
+        schema.Passenger.Sex,
+        schema.Passenger.Age,
+        schema.Passenger.SibSp,
+        schema.Passenger.Parch,
+        schema.Passenger.Ticket,
+        schema.Passenger.Fare,
+        schema.Passenger.Cabin,
+        schema.Passenger.Embarked,
+    )
+
+    ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe(FEATURES.schema)
+    component.setup(ETL)
+
 
 Tests
 '''''
 
-ForML has an operator unit testing facility (see the :doc:`testing` sections) which can be integrated into the usual
+ForML has a rich operator unit testing facility (see the :doc:`testing` sections) which can be integrated into the usual
 ``tests/`` project structure.
