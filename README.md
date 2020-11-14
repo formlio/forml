@@ -43,9 +43,9 @@ Not Just Another DAG
 Despite *DAG* (directed acyclic graph) being at the heart of ForML operations, it stands out amongst the many other task
 dependency processing systems due to:
 
-a. Its specialization on machine learning problems that's wired right into the flow topology.
-b. Concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units.
-c. Abstraction of runtime dependencies allowing to run the same project using different technologies.
+1. Its specialization on machine learning problems that's wired right into the flow topology.
+2. Concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units.
+3. Abstraction of runtime dependencies allowing to run the same project using different technologies.
 
 
 History
