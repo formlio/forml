@@ -42,7 +42,8 @@ def cast(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None
         data: Argument to be converted.
         columns: Optional column names.
 
-    Returns: Converted pandas object.
+    Returns:
+        Converted pandas object.
     """
     if isinstance(data, pdtype.NDFrame):
         return data
@@ -66,7 +67,8 @@ def auto(
     Args:
         wrapped: Actor method to be decorated.
 
-    Returns: Decorated method.
+    Returns:
+        Decorated method.
     """
 
     @functools.wraps(wrapped)
@@ -77,7 +79,8 @@ def auto(
             self: Actor self.
             *args: Input arguments to be converted.
 
-        Returns: Original output.
+        Returns:
+            Original output.
         """
         return wrapped(self, *(cast(a) for a in args))
 
@@ -110,7 +113,8 @@ class TrainTestSplit(task.Actor):
         Args:
             source: Input data set.
 
-        Returns: Features with label column removed plus just the label column in second new dataset.
+        Returns:
+            Features with label column removed plus just the label column in second new dataset.
         """
         if not self._indices:
             raise RuntimeError('Splitter not trained')
@@ -120,7 +124,8 @@ class TrainTestSplit(task.Actor):
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Standard param getter.
 
-        Returns: Actor params.
+        Returns:
+            Actor params.
         """
         return {'crossvalidator': self.crossvalidator}
 
@@ -148,7 +153,8 @@ class Concat(task.Actor):
         Args:
             *source: Individual sources to be concatenated.
 
-        Returns: Single concatenated dataframe.
+        Returns:
+            Single concatenated dataframe.
         """
         return pandas.concat(source, axis=self.axis, ignore_index=True)
 
@@ -166,6 +172,7 @@ class Apply(task.Actor):
         Args:
             source: Inputs to be passed through the provided method.
 
-        Returns: Transformed output as returned by the provided method.
+        Returns:
+            Transformed output as returned by the provided method.
         """
         return self.function(*source)

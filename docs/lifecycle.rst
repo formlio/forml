@@ -16,7 +16,7 @@
 Lifecycle
 =========
 
-Machine learning projects are operated in typical modes that are followed in particular order. This pattern is what we
+Machine learning projects are operated in typical modes that are followed in a particular order. This pattern is what we
 call a lifecycle. ForML supports two specific lifecycles depending on the project stage.
 
 .. _lifecycle-development:
@@ -24,12 +24,12 @@ call a lifecycle. ForML supports two specific lifecycles depending on the projec
 Development Lifecycle
 ---------------------
 
-This lifecycle is typically followed during the project development. All work is done in scope of the project source
+This lifecycle is typically followed during the project development. All work is done in the scope of the project source
 code working copy and no persistent modules are produced upon execution. It is typically managed using the
 ``python setup.py <mode>`` interface or in special case using the :doc:`interactive`. This lifecycle is supposed to aid
 the development process allowing to quickly see the effect of the project changes.
 
-The expected behavior of the particular mode depends on correct project setup as per the :doc:`project` sections.
+The expected behaviour of the particular mode depends on the correct project setup as per the :doc:`project` sections.
 
 The modes of a research lifecycle are:
 
@@ -45,7 +45,7 @@ Test
 
 Evaluate
     Perform an evaluation based on the specs defined in ``evaluation.py`` and return the metrics. This can be defined
-    either as cross-validation or a hold-out training. One of the potential usecases might be a CI integration
+    either as cross-validation or hold-out training. One of the potential use-cases might be a CI integration
     to continuously monitor (evaluate) the changes in the project development.
 
     Example::
@@ -61,7 +61,7 @@ Tune
         $ python3 setup.py tune
 
 Train
-    Run the pipeline in the standard train mode. This will produce all the defined models but since it wont persist
+    Run the pipeline in the standard train mode. This will produce all the defined models but since it won't persist
     them, this mode is useful merely for testing the training (or displaying the task graph on the :doc:`graphviz`).
 
     Example::
@@ -77,7 +77,7 @@ Package
         $ python3 setup.py bdist_4ml
 
 Upload
-    Build and wrap the project into a runable *Artifact* producing a new *Lineage* (that can then be used within
+    Build and wrap the project into a runnable *Artifact* producing a new *Lineage* (that can then be used within
     the *Production Lifecycle*) and upload it to a persistent registry.
 
     .. note::
@@ -94,7 +94,7 @@ Upload
 Production Lifecycle
 --------------------
 
-After publishing a project lineage into a registry using the ``upload`` mode of the *research lifecycle*, the project
+After publishing a project lineage in to a registry using the ``upload`` mode of the *research lifecycle*, the project
 becomes available for the *production lifecycle*. Contrary to the research, this production lifecycle no longer needs
 the project source code working copy as it operates solely on the published artifact plus potentially previously
 persisted model generations.
@@ -104,7 +104,7 @@ modes:
 
 Train
     Fit (incrementally) the stateful parts of the pipeline using new labelled data producing a new *Generation* of
-    the given lineage (unless explicit, the default lineage is the one with highest version).
+    the given lineage (unless explicit, the default lineage is the one with the highest version).
 
     Example::
 
@@ -118,8 +118,8 @@ Tune
         forml tune titanic
 
 Apply
-    Run unlabelled data through a project *generation* (unless explicit, the default generation is the one with highest
-    version) producing transformed output (ie *predictions*).
+    Run unlabelled data through a project *generation* (unless explicit, the default generation is the one with the
+    highest version) producing transformed output (ie *predictions*).
 
     Example::
 

@@ -41,7 +41,8 @@ class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sin
     def publish(self) -> pipeline.Segment:
         """Provide a pipeline composable segment implementing the publish action.
 
-        Returns: Pipeline segment.
+        Returns:
+            Pipeline segment.
         """
         publisher: topology.Composable = publish.Operator(publish.Writer.Actor.spec(self.writer(**self._writerkw)))
         return publisher.expand()
@@ -53,7 +54,8 @@ class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sin
         Args:
             kwargs: Optional writer keyword arguments.
 
-        Returns: Writer instance.
+        Returns:
+            Writer instance.
         """
         return cls.Writer(**kwargs)  # pylint: disable=abstract-class-instantiated
 

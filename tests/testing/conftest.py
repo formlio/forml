@@ -33,7 +33,8 @@ from forml.testing import spec
 def exception() -> spec.Scenario.Exception:
     """Exception fixture.
 
-    Returns: Exception type.
+    Returns:
+        Exception type.
     """
     return spec.Scenario.Exception(RuntimeError, 'This is an Error')
 
@@ -42,7 +43,8 @@ def exception() -> spec.Scenario.Exception:
 def apply_input() -> str:
     """IO fixture.
 
-    Returns: String value.
+    Returns:
+        String value.
     """
     return 'foo'
 
@@ -51,7 +53,8 @@ def apply_input() -> str:
 def apply_output() -> str:
     """IO fixture.
 
-    Returns: String value.
+    Returns:
+        String value.
     """
     return 'bar'
 
@@ -60,7 +63,8 @@ def apply_output() -> str:
 def train_input() -> str:
     """IO fixture.
 
-    Returns: String value.
+    Returns:
+        String value.
     """
     return 'foo'
 
@@ -69,7 +73,8 @@ def train_input() -> str:
 def label_input() -> str:
     """IO fixture.
 
-    Returns: String value.
+    Returns:
+        String value.
     """
     return 'bar'
 
@@ -78,7 +83,8 @@ def label_input() -> str:
 def train_output() -> str:
     """IO fixture.
 
-    Returns: String value.
+    Returns:
+        String value.
     """
     return 'baz'
 

@@ -51,13 +51,13 @@ Project Component Structure
     some common basic structure that can be understood across projects and help (not only) ForML itself to understand
     the project just by visiting the expected places.
 
-    More details about project layout are explained in the :doc:`project` sections.
+    More details about the project layout are explained in the :doc:`project` sections.
 
 .. _concept-dsl:
 
 Data Source DSL
     ForML comes with custom DSL for specifying the data sources required by the project. This allows to decouple the
-    project from a particular data formats and storages and only refer to it using *catalogized schemas*. It is then
+    project from particular data formats and storages and only refer to it using *catalogized schemas*. It is then
     down to the particular execution platform to feed the project pipeline with the actual data based on the given
     DSL query.
 
@@ -105,7 +105,7 @@ Data Providers & Result Consumers
     preconfigured with multiple different feeds held in a *pool* which at query time selects the most suitable feed to
     serve the given project query.
 
-    Similarly any output produced by the ForML pipeline gets captured by the platform and sent to a configured *sink*.
+    Similarly, any output produced by the ForML pipeline gets captured by the platform and sent to a configured *sink*.
     A platform can specify different sink provider for each pipeline mode.
 
     See the :doc:`io` sections for more info about the related concepts.
@@ -113,11 +113,11 @@ Data Providers & Result Consumers
 .. _concept-persistence:
 
 Persistence
-    Fundamental aspect of a project lifecycle is the pipeline state transition occurring during *train* and/or *tune*
-    modes. Each of these transitions produce a new *Generation*. Generations based on same build of a project belong to
-    one *Lineage*.
+    A fundamental aspect of a project lifecycle is the pipeline state transition occurring during *train* and/or *tune*
+    modes. Each of these transitions produces a new *Generation*. Generations based on the same build of a project
+    belong to one *Lineage*.
 
-    Both Lineages and Generations are *project artifacts* that require a persistent runtime storage called *Registry*
+    Both Lineages and Generations are *project artifacts* that require persistent runtime storage called *Registry*
     that allows publishing, locating and fetching these entities. See the :doc:`registry/index` section for the list of
     existing registry implementations and their configurations.
 
@@ -127,5 +127,5 @@ Execution
     At runtime, the native actor DAG produced through the operator composition gets transformed to a representation
     of the selected third-party task dependency *runner* and the actual execution is carried under its control.
 
-    The list of supported runners shipped with ForML and their documentations can be found in the :doc:`runner/index`
+    The list of supported runners shipped with ForML and their documentation can be found in the :doc:`runner/index`
     section.

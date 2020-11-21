@@ -88,7 +88,8 @@ class Atomic(metaclass=abc.ABCMeta):
         Args:
             index: Input/output apply port index.
 
-        Returns: Applicable instance
+        Returns:
+            Applicable instance
         """
         return port.PubSub(self, index)
 
@@ -99,7 +100,8 @@ class Atomic(metaclass=abc.ABCMeta):
         Args:
             other: Object to compare with.
 
-        Returns: True if equal.
+        Returns:
+            True if equal.
         """
         if isinstance(other, Atomic) and other.__class__ is not self.__class__:
             return (
@@ -114,7 +116,8 @@ class Atomic(metaclass=abc.ABCMeta):
         Future can represent a placeholder for that Worker). From that reason we need to hash both of these instances
         into same hashcode and the only attributes can distinguish them in that case is the shape.
 
-        Returns: Node hashcode.
+        Returns:
+            Node hashcode.
         """
         return hash(self.szin) ^ hash(self.szout)
 
@@ -130,7 +133,8 @@ class Atomic(metaclass=abc.ABCMeta):
     def szout(self) -> int:
         """Width of the output apply port.
 
-        Returns: Output apply port width.
+        Returns:
+            Output apply port width.
         """
         return len(self._output)
 
@@ -138,7 +142,8 @@ class Atomic(metaclass=abc.ABCMeta):
     def output(self) -> typing.Sequence[typing.Iterable[port.Subscription]]:
         """Get list of output subscriptions per each port.
 
-        Returns: Output subscriptions.
+        Returns:
+            Output subscriptions.
         """
         return tuple(tuple(s) for s in self._output)
 
@@ -161,14 +166,16 @@ class Atomic(metaclass=abc.ABCMeta):
         Args:
             publisher: Node to check for being it's subscriber,
 
-        Returns: True if we are given node's subscriber.
+        Returns:
+            True if we are given node's subscriber.
         """
 
     @abc.abstractmethod
     def fork(self) -> 'Atomic':
         """Create new node with same shape and actor as self but without any subscriptions.
 
-        Returns: Forked node.
+        Returns:
+            Forked node.
         """
 
 
@@ -198,7 +205,8 @@ class Worker(Atomic):
     def spec(self) -> task.Spec:
         """Task spec in this worker.
 
-        Returns: Task spec.
+        Returns:
+            Task spec.
         """
         return self._group.spec
 
@@ -219,7 +227,8 @@ class Worker(Atomic):
     def input(self) -> typing.Iterable[port.Type]:
         """Get subscribed input ports.
 
-        Returns: Ports.
+        Returns:
+            Ports.
         """
         return port.Subscription.ports(self)
 
@@ -227,7 +236,8 @@ class Worker(Atomic):
     def trained(self) -> bool:
         """Check if this node is subscribed for training data.
 
-        Returns: True if trained.
+        Returns:
+            True if trained.
         """
         return any(isinstance(p, (port.Train, port.Label)) for p in self.input)
 
@@ -235,7 +245,8 @@ class Worker(Atomic):
     def stateful(self) -> bool:
         """Check this actor is stateful.
 
-        Returns: True if stateful.
+        Returns:
+            True if stateful.
         """
         return self._group.spec.actor.is_stateful()
 
@@ -243,7 +254,8 @@ class Worker(Atomic):
     def gid(self) -> uuid.UUID:
         """Return the group ID shared by all forks of this worker.
 
-        Returns: Group ID.
+        Returns:
+            Group ID.
         """
         return self._group.uid
 
@@ -251,7 +263,8 @@ class Worker(Atomic):
     def group(self) -> typing.AbstractSet['Worker']:
         """Set of forked workers in the same fork group.
 
-        Returns: Workers in same fork group.
+        Returns:
+            Workers in same fork group.
         """
         return frozenset(self._group)
 
@@ -262,7 +275,8 @@ class Worker(Atomic):
             train: Train port publisher.
             label: Label port publisher.
 
-        Returns: Self node.
+        Returns:
+            Self node.
         """
         if any(f.trained for f in self._group):
             raise error.Topology('Fork train collision')
@@ -277,14 +291,16 @@ class Worker(Atomic):
         Args:
             publisher: Node to check for being it's subscriber,
 
-        Returns: True if we are given node's subscriber.
+        Returns:
+            True if we are given node's subscriber.
         """
         return any(s.node is self for p in publisher.output for s in p)
 
     def fork(self) -> 'Worker':
         """Create new node with same shape and actor as self but without any subscriptions.
 
-        Returns: Forked node.
+        Returns:
+            Forked node.
         """
         return Worker(self._group, self.szin, self.szout)
 
@@ -297,7 +313,8 @@ class Worker(Atomic):
             szin: Worker input apply port size.
             szout: Worker output apply port size.
 
-        Returns: Generator producing worker forks.
+        Returns:
+            Generator producing worker forks.
         """
         node = cls(spec, szin, szout)
         yield node
@@ -356,7 +373,8 @@ class Future(Atomic):
         Args:
             publisher: Node to check for being it's subscriber,
 
-        Returns: True if we are given node's subscriber.
+        Returns:
+            True if we are given node's subscriber.
         """
         return any(p._node.subscribed(publisher) for p in self._proxy)  # pylint: disable=protected-access
 
@@ -380,6 +398,7 @@ class Future(Atomic):
     def fork(self) -> 'Future':
         """There is nothing to copy on a Future node so just create a new one.
 
-        Returns: new Future node.
+        Returns:
+            new Future node.
         """
         return Future(self.szin, self.szout)

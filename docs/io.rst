@@ -45,18 +45,18 @@ particular physical format or storage technology.
 
 .. image:: images/schema-mapping.png
 
-A schema catalog is a logical group of schemas which both - projects and platforms - can use as a mutual data proxy.
+A schema catalogue is a logical group of schemas which both - projects and platforms - can use as a mutual data proxy.
 It is not a service or a system, rather a namespaced descriptor implemented simply as python module(s) that must be
 available to both the project expecting the particular data and the platform supposed to serve that project. When
 a project pipeline is submitted to any given platform, it attempts to resolve the schemas referred in the project DSL
 using its configured schema-datasource mappings and only when all of these schema dependencies can be satisfied with
 available data sources, the platform is able to launch that pipeline.
 
-Obvious aspect of the schema catalogs is their decentralization. Currently there is no naming convention for the schema
-definition namespaces. Ideally, schemas should be published and held in namespaces of the original data producers. For
-private first-party datasets (ie. company internal data) this is easy - the owner (motivated to use ForML) would just
-maintain a (private) package with schemas of their data sources. For public datasets (whose authors don't endorse ForML
-yet) this leaves it to some (not yet established) community maintained schema catalogs.
+An obvious aspect of the schema catalogues is their decentralization. Currently, there is no naming convention for the
+schema definition namespaces. Ideally, schemas should be published and held in namespaces of the original data
+producers. For private first-party datasets (ie. internal company data) this is easy - the owner (motivated to use
+ForML) would just maintain a (private) package with schemas of their data sources. For public datasets (whose authors
+don't endorse ForML yet) this leaves it to some (not yet established) community maintained schema catalogues.
 
 See the :doc:`dsl/index` for a schema implementation guide.
 

@@ -58,7 +58,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             *extras: Future nodes that might be subscribed to this publisher.
             mask: Optional condition for filtering the subscriptions.
 
-        Returns: Iterable of new Traversals.
+        Returns:
+            Iterable of new Traversals.
         """
         seen = set()
         for node in itertools.chain(
@@ -77,7 +78,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         Args:
             *extras: Future nodes that might be subscribed to this publisher.
 
-        Returns: Subscribers instance.
+        Returns:
+            Subscribers instance.
         """
         return self.directs(*extras, mask=lambda n: not isinstance(n, grnode.Worker) or not n.trained)
 
@@ -88,7 +90,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             expected: Optional indication of the expected tail. If expected is a Future, it's matching Worker is
                       returned instead.
 
-        Returns: Tail traversal of the flow.
+        Returns:
+            Tail traversal of the flow.
         """
         if expected and self.current == expected:
             return self
@@ -120,7 +123,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             Args:
                 node: Node instance to be checked for recurrence.
 
-            Returns: True if not recurrent.
+            Returns:
+                True if not recurrent.
             """
             return node not in seen
 
@@ -150,7 +154,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         Args:
             tail: Last node to copy.
 
-        Returns: Copy of the apply path.
+        Returns:
+            Copy of the apply path.
         """
 
         def traverse(traversal: Traversal) -> None:
@@ -159,7 +164,8 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             Args:
                 traversal: Node to be copied.
 
-            Returns: Copy of the publisher node with all of it's subscriptions resolved.
+            Returns:
+                Copy of the publisher node with all of it's subscriptions resolved.
             """
             if traversal.current == tail:
                 for orig in traversal.predecessors:
@@ -219,7 +225,8 @@ class Path(tuple):
             right: Optional path to extend with (retracing to physical or specified tail if not provided).
             tail: Optional tail as a path output vertex.
 
-        Returns: New extended path.
+        Returns:
+            New extended path.
         """
         # pylint: disable=protected-access
         if right:
@@ -240,14 +247,16 @@ class Path(tuple):
     def publisher(self) -> port.Publishable:
         """Publishable tail node representation.
 
-        Returns: Publishable tail apply port reference.
+        Returns:
+            Publishable tail apply port reference.
         """
         return self._tail[0].publisher
 
     def copy(self) -> 'Path':
         """Make a copy of the apply path topology. Any nodes not on path are ignored.
 
-        Returns: Copy of the apply path.
+        Returns:
+            Copy of the apply path.
         """
 
         copies = Traversal(self._head).copy(self._tail)

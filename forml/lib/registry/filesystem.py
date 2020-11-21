@@ -48,7 +48,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             Args:
                 key: Key text value.
 
-            Returns: Key instance.
+            Returns:
+                Key instance.
             """
 
         @classmethod
@@ -58,7 +59,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             Args:
                 path: Path to be checked.
 
-            Returns: True if valid.
+            Returns:
+                True if valid.
             """
 
             def constructs(name: str) -> bool:
@@ -78,7 +80,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             Args:
                 level: Root path of given level
 
-            Returns: True if valid.
+            Returns:
+                True if valid.
             """
 
         @classmethod
@@ -88,7 +91,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             Args:
                 path: Path to be checked.
 
-            Returns: True if valid.
+            Returns:
+                True if valid.
             """
             if not cls.key(path):
                 LOGGER.debug('Path %s is not a valid level key', path)
@@ -137,7 +141,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         Args:
             project: Name of the project.
 
-        Returns: Project directory path.
+        Returns:
+            Project directory path.
         """
         return self / project
 
@@ -149,7 +154,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             project: Name of the project.
             lineage: Lineage key.
 
-        Returns: Project directory path.
+        Returns:
+            Project directory path.
         """
         return self.project(project) / str(lineage)
 
@@ -164,7 +170,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             lineage: Lineage key.
             generation: Generation key.
 
-        Returns: Project directory path.
+        Returns:
+            Project directory path.
         """
         return self.lineage(project, lineage) / str(generation)
 
@@ -176,7 +183,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             project: Name of the project.
             lineage: Lineage key.
 
-        Returns: Package file path.
+        Returns:
+            Package file path.
         """
         return self.lineage(project, lineage) / self.PKGFILE
 
@@ -196,7 +204,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             generation: Generation key.
             sid: State id.
 
-        Returns: State file path.
+        Returns:
+            State file path.
         """
         if generation is None:
             generation = self.STAGEDIR
@@ -211,7 +220,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             lineage: Lineage key.
             generation: Generation key.
 
-        Returns: Tag file path.
+        Returns:
+            Tag file path.
         """
         return self.generation(project, lineage, generation) / self.TAGFILE
 
@@ -236,7 +246,8 @@ class Registry(persistent.Registry, alias='filesystem'):
             path: Path to be listed.
             matcher: Item matcher.
 
-        Returns: Repository level listing.
+        Returns:
+            Repository level listing.
         """
         try:
             return [matcher.constructor(p.name) for p in path.iterdir() if matcher.valid(p)]

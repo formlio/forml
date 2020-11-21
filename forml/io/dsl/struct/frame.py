@@ -64,7 +64,8 @@ class Source(tuple, metaclass=abc.ABCMeta):
     def columns(self) -> typing.Sequence['series.Column']:
         """Get the list of columns supplied by this source.
 
-        Returns: Sequence of supplied columns.
+        Returns:
+            Sequence of supplying columns.
         """
 
     @property
@@ -72,7 +73,8 @@ class Source(tuple, metaclass=abc.ABCMeta):
     def schema(self) -> typing.Type['struct.Schema']:
         """Get the schema type for this source.
 
-        Returns: Schema type.
+        Returns:
+            Schema type.
         """
         return Table.Schema(
             f'{self.__class__.__name__}Schema',
@@ -191,7 +193,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def query(self) -> 'Query':
         """Return query instance of this queryable.
 
-        Returns: Query instance.
+        Returns:
+            Query instance.
         """
         return Query(self)
 
@@ -201,7 +204,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         Args:
             name: Optional alias to be used for this reference.
 
-        Returns: New reference to this table.
+        Returns:
+            New reference to this table.
         """
         return Reference(self, name)
 
@@ -209,7 +213,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def instance(self) -> 'Source':
         """Return the source instance - which apart from the Reference type is the source itself.
 
-        Returns: Source instance.
+        Returns:
+            Source instance.
         """
         return self
 
@@ -277,7 +282,8 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
     def columns(self) -> typing.Sequence['series.Element']:
         """Tangible columns are instances of series.Element.
 
-        Returns: Sequence of series.Field instances.
+        Returns:
+            Sequence of series.Field instances.
         """
 
 
@@ -429,7 +435,8 @@ class Query(Queryable):
             Args:
                 *columns: List of columns to validate.
 
-            Returns: Original list of columns if all valid.
+            Returns:
+                Original list of columns if all valid.
             """
             if not series.Element.dissect(*columns).issubset(superset):
                 raise error.Syntax(f'{columns} not a subset of source columns: {superset}')

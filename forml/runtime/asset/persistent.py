@@ -43,7 +43,8 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
         prefix: Optional temp dir prefix.
         suffix: Optional temp dir suffix.
 
-    Returns: Temp dir as pathlib path.
+    Returns:
+        Temp dir as pathlib path.
     """
     return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR.name))
 
@@ -74,7 +75,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
             project: Name of the project to work with.
             lineage: Lineage to be loaded.
 
-        Returns: Product artifact.
+        Returns:
+            Product artifact.
         """
         package = self.pull(project, lineage)
         return package.install(self._staging / package.manifest.name / str(package.manifest.version))
@@ -83,7 +85,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
     def projects(self) -> typing.Iterable[typing.Union[str, 'prjmod.Level.Key']]:
         """List projects in given repository.
 
-        Returns: Projects listing.
+        Returns:
+            Projects listing.
         """
         raise NotImplementedError()
 
@@ -94,7 +97,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         Args:
             project: Project to be listed.
 
-        Returns: Lineages listing.
+        Returns:
+            Lineages listing.
         """
         raise NotImplementedError()
 
@@ -108,7 +112,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
             project: Project of which the lineage is to be listed.
             lineage: Lineage of the project to be listed.
 
-        Returns: Generations listing.
+        Returns:
+            Generations listing.
         """
         raise NotImplementedError()
 
@@ -120,7 +125,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
             project: Project of which the lineage artifact is to be returned.
             lineage: Lineage of the project to return the artifact of.
 
-        Returns: Project artifact object.
+        Returns:
+            Project artifact object.
         """
         raise NotImplementedError()
 
@@ -145,7 +151,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
             generation: Generation of the project to read the state from.
             sid: Id of the state object to be loaded.
 
-        Returns: Serialized state or empty byte-array if there is no such state for given (existing) generation.
+        Returns:
+            Serialized state or empty byte-array if there is no such state for given (existing) generation.
         """
         raise NotImplementedError()
 
@@ -172,7 +179,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
             lineage: Lineage of the project to read the metadata from.
             generation: Generation of the project to read the metadata from.
 
-        Returns: Generation metadata.
+        Returns:
+            Generation metadata.
         """
         raise NotImplementedError()
 

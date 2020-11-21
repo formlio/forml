@@ -110,7 +110,8 @@ class Virtual:
         Args:
             runner: Runner alias/qualname to use.
 
-        Returns: Launcher builder.
+        Returns:
+            Launcher builder.
         """
         return self(runner)
 
@@ -120,6 +121,7 @@ class Virtual:
         Args:
             mode: Launcher mode to execute.
 
-        Returns: Callable launcher handler.
+        Returns:
+            Callable launcher handler.
         """
         return getattr(self(), mode)

@@ -64,7 +64,8 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
             manifest: Package manifest to be used.
             path: Target package filesystem path.
 
-        Returns: Package instance.
+        Returns:
+            Package instance.
         """
 
         def writeall(level: pathlib.Path, archive: zipfile.ZipFile, root: typing.Optional[pathlib.Path] = None) -> None:
@@ -82,7 +83,8 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                 Args:
                     file: Item path to be validated.
 
-                Returns: True if valid.
+                Returns:
+                    True if valid.
                 """
                 return file != descriptor
 
@@ -110,13 +112,15 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
         Args:
             path: Target install path.
 
-        Returns: Artifact instance.
+        Returns:
+            Artifact instance.
         """
 
         def uninstalled() -> bool:
             """Prune the existing path if not matching the target manifest.
 
-            Returns: True if uninstalled.
+            Returns:
+                True if uninstalled.
             """
             try:
                 # to allow installing "virtual" packages this even ignores invalid self.path
@@ -191,7 +195,8 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         Args:
             base: Base path for the module.
 
-        Returns: Module path.
+        Returns:
+            Module path.
         """
         return pathlib.Path(base) / f'{cls.MODULE}.py'
 
@@ -217,7 +222,8 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         Args:
             path: Path to import from.
 
-        Returns: Manifest instance.
+        Returns:
+            Manifest instance.
         """
         try:
             module = importer.isolated(cls.MODULE, path)

@@ -60,7 +60,8 @@ class Runner(runtime.Runner, alias='dask'):
                         value: Carry over value.
                         element: Next element.
 
-                    Returns: Non-null value of the two (if any).
+                    Returns:
+                        Non-null value of the two (if any).
                     """
                     assert value is None or element is None, f'Multiple non-null outputs ({value}, {element})'
                     return element if value is None else value

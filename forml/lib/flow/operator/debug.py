@@ -44,7 +44,8 @@ class Return(topology.Operator):
         Args:
             left: Left side.
 
-        Returns: Composed track.
+        Returns:
+            Composed track.
         """
         left: pipeline.Segment = left.expand()
         inserter: node.Worker = node.Worker(self.inserter, 1, 1)
@@ -61,7 +62,8 @@ class Dumper(task.Actor, metaclass=abc.ABCMeta):  # pylint: disable=abstract-met
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Standard param getter.
 
-        Returns: Actor params.
+        Returns:
+            Actor params.
         """
         return {'path': self.path}
 
@@ -83,7 +85,8 @@ class ApplyDumper(Dumper):
         Args:
             features: Input frames.
 
-        Returns: Original unchanged frames.
+        Returns:
+            Original unchanged frames.
         """
         ndframe.cast(features).to_csv(self.path, index=False)
         return features
@@ -102,7 +105,8 @@ class TrainDumper(Dumper):
         Args:
             features: Input frames.
 
-        Returns: Original unchanged frames.
+        Returns:
+            Original unchanged frames.
         """
         return features
 
@@ -127,7 +131,8 @@ class TrainDumper(Dumper):
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Standard param getter.
 
-        Returns: Actor params.
+        Returns:
+            Actor params.
         """
         return {**super().get_params(), 'label': self.label}
 
@@ -161,7 +166,8 @@ class Dump(topology.Operator):
         Args:
             mode: Pipeline operation mode.
 
-        Returns: Path value.
+        Returns:
+            Path value.
         """
         return os.path.join(self.dir, f'{self.name}-{mode}-{self._instances}{self.suffix}')
 
@@ -171,7 +177,8 @@ class Dump(topology.Operator):
         Args:
             left: Left side.
 
-        Returns: Composed track.
+        Returns:
+            Composed track.
         """
         left: pipeline.Segment = left.expand()
         train_dumper: node.Worker = node.Worker(TrainDumper.spec(path=self._path('train'), label=self.label), 1, 1)

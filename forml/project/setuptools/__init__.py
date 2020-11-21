@@ -62,7 +62,8 @@ def setup(**kwargs) -> typing.Optional[dist.Distribution]:  # pylint: disable=fu
     Args:
         **kwargs: Standard setuptools keyword arguments.
 
-    Returns: setuptools distribution object.
+    Returns:
+        setuptools distribution object.
     """
     distribution = None
     # To avoid infinite loops launching the setup.py when multiprocessing is involved in one of the commands (ie Dask

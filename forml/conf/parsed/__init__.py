@@ -39,7 +39,8 @@ class Meta(abc.ABCMeta):
     def default(cls) -> 'Section':
         """Default parsing.
 
-        Returns: Default resolved config.
+        Returns:
+            Default resolved config.
         """
         return cls.resolve()
 
@@ -85,7 +86,8 @@ class Section(metaclass=Meta):
             reference: Config reference.
             kwargs: Common mapping of values mixing the "known" and "generic".
 
-        Returns: Tuple of known plus generic arguments.
+        Returns:
+            Tuple of known plus generic arguments.
         """
         kwargs = dict(kwargs)
         kwargs.update(kwargs.pop(conf.OPT_PARAMS, {}))
@@ -98,7 +100,8 @@ class Section(metaclass=Meta):
         Args:
             reference: Config reference.
 
-        Returns: Config instance.
+        Returns:
+            Config instance.
         """
         return cls(reference)
 
@@ -109,7 +112,8 @@ class Section(metaclass=Meta):
         Args:
             reference: Config reference.
 
-        Returns: Config instance.
+        Returns:
+            Config instance.
         """
         reference = reference or conf.PARSER.get(cls.INDEX, {}).get(cls.SELECTOR)
         if not reference:
@@ -126,7 +130,8 @@ class Section(metaclass=Meta):
         Args:
             other: Right side of the comparison.
 
-        Returns: True if left is less then right.
+        Returns:
+            True if left is less then right.
         """
 
 
@@ -149,7 +154,8 @@ class Multi(Section):  # pylint: disable=abstract-method
         Args:
             references: Config references.
 
-        Returns: Config instances.
+        Returns:
+            Config instances.
         """
         if isinstance(references, str):
             references = [references]

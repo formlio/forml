@@ -34,7 +34,8 @@ def transpose(data: typing.Sequence[Vector]) -> typing.Sequence[Vector]:
     Args:
         data: Input matrix.
 
-    Returns: Transposed output matrix.
+    Returns:
+        Transposed output matrix.
     """
 
     def col(idx: int) -> Vector:
@@ -43,7 +44,8 @@ def transpose(data: typing.Sequence[Vector]) -> typing.Sequence[Vector]:
         Args:
             idx: Index of column to be generated.
 
-        Returns: Vector for given column.
+        Returns:
+            Vector for given column.
         """
         return [data[r][idx] for r in range(nrows)]
 

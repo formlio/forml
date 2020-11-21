@@ -36,7 +36,8 @@ class Meta(abc.ABCMeta):
     def __subkinds__(cls) -> typing.Iterable[typing.Type['Any']]:
         """Return all non-abstract sub-classes of given kind class.
 
-        Returns: Iterable of all sub-kinds.
+        Returns:
+            Iterable of all sub-kinds.
         """
 
         def scan(subs: typing.Iterable[typing.Type['Any']]) -> typing.Iterable[typing.Type['Any']]:
@@ -45,7 +46,8 @@ class Meta(abc.ABCMeta):
             Args:
                 subs: Iterable of classes to descend from.
 
-            Returns: Iterable of all subclasses.
+            Returns:
+                Iterable of all subclasses.
             """
             return (s for c in subs for s in (c, *scan(c.__subclasses__())))
 
@@ -80,7 +82,8 @@ class Any(metaclass=Meta):
     def __native__(self) -> Native:
         """Native python type representing this kind.
 
-        Returns: Native type.
+        Returns:
+            Native type.
         """
 
     @property
@@ -88,7 +91,8 @@ class Any(metaclass=Meta):
     def __cardinality__(self) -> int:
         """Cardinality (relative size) of give kind. Useful to for example distinguish largest subkind of given kind.
 
-        Returns: Cardinality value.
+        Returns:
+            Cardinality value.
         """
 
     @abc.abstractmethod
@@ -112,7 +116,8 @@ class Any(metaclass=Meta):
         Args:
             kind: Kind to be verified.
 
-        Returns: True if instance of our type.
+        Returns:
+            True if instance of our type.
         """
         return isinstance(kind, cls)
 
@@ -123,7 +128,8 @@ class Any(metaclass=Meta):
         Args:
             kind: Kind to be verified.
 
-        Returns: Original kind if instance of our type or raising otherwise.
+        Returns:
+            Original kind if instance of our type or raising otherwise.
         """
         if not cls.match(kind):
             raise error.Syntax(f'{kind} not an instance of a {cls.__name__}')
@@ -255,7 +261,8 @@ def reflect(value: typing.Any) -> Any:
     Args:
         value: Value to be inspected for type.
 
-    Returns: ETL type.
+    Returns:
+        ETL type.
     """
 
     def same(seq: typing.Iterable[typing.Any]) -> bool:
@@ -264,7 +271,8 @@ def reflect(value: typing.Any) -> Any:
         Args:
             seq: Sequence of elements to check.
 
-        Returns: True if all same.
+        Returns:
+            True if all same.
         """
         seq = iter(seq)
         first = type(next(seq))

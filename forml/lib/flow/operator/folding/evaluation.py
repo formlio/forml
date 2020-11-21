@@ -43,7 +43,8 @@ class MergingScorer(folding.Crossvalidated):
         def build(self) -> pipeline.Segment:
             """Builder finalize method.
 
-            Returns: Crossvalidation pipeline segment.
+            Returns:
+                Crossvalidation pipeline segment.
             """
             return self.outer.use(train=self.outer.train.extend(tail=self.merger))
 
@@ -64,7 +65,8 @@ class MergingScorer(folding.Crossvalidated):
             ytrue: Publisher of the tru labels.
             ypred: Publisher of the predicted values.
 
-        Returns: Scoring worker node.
+        Returns:
+            Scoring worker node.
         """
         scorer = node.Worker(self.metric, 2, 1)
         scorer[0].subscribe(ytrue)
@@ -78,7 +80,8 @@ class MergingScorer(folding.Crossvalidated):
             head: Head of the crossvalidation segment.
             inner: Exclusive instance of the inner composition.
 
-        Returns: Builder instance.
+        Returns:
+            Builder instance.
         """
         # TO-DO: apply path based on trainset is confusing compiler
         # inner.apply.subscribe(head.train.publisher)

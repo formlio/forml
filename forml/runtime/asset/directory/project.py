@@ -44,7 +44,8 @@ class Level(directory.Level):
     def list(self) -> directory.Level.Listing:
         """List the content of this level.
 
-        Returns: Level content listing.
+        Returns:
+            Level content listing.
         """
         return self.Listing(lngmod.Level.Key(n) for n in self.registry.lineages(self.key))
 
@@ -54,7 +55,8 @@ class Level(directory.Level):
         Args:
             lineage: Lineage version.
 
-        Returns: Lineage instance.
+        Returns:
+            Lineage instance.
         """
         return lngmod.Level(self, lineage)
 
@@ -64,7 +66,8 @@ class Level(directory.Level):
         Args:
             package: Distribution package to be persisted.
 
-        Returns: new lineage instance based on the package.
+        Returns:
+            new lineage instance based on the package.
         """
         project = package.manifest.name
         lineage = package.manifest.version

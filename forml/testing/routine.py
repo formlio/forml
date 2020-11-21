@@ -75,7 +75,8 @@ class Test:
         Args:
             suite: Testing suite.
 
-        Returns: Runner launcher instance.
+        Returns:
+            Runner launcher instance.
         """
         return self._launcher(suite.__operator__)
 
@@ -85,7 +86,8 @@ class Test:
         Args:
             suite: Tested suite.
 
-        Returns: an assertRaises context manager.
+        Returns:
+            an assertRaises context manager.
         """
         return contextlib.suppress()  # or contextlib.nullcontext() in python3.7
 
@@ -103,7 +105,8 @@ class Test:
         Args:
             launcher: Launcher instance.
 
-        Returns: Produced value.
+        Returns:
+            Produced value.
         """
 
 
@@ -120,7 +123,8 @@ class RaisableTest(Test):
         Args:
             suite: Tested suite.
 
-        Returns: an assertRaises context manager.
+        Returns:
+            an assertRaises context manager.
         """
         if self._exception.message is not None:
             return suite.assertRaisesRegex(self._exception.kind, self._exception.message)
@@ -221,7 +225,8 @@ class Case:
             scenario: Testing scenario specification.
             launcher: Test launcher with given operator.
 
-        Returns: Test case instance.
+        Returns:
+            Test case instance.
         """
         if scenario.outcome is spec.Scenario.Outcome.INIT_RAISES:
             return TestInitRaises(launcher, scenario.exception)

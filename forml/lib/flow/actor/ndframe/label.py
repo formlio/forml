@@ -44,14 +44,16 @@ class ColumnExtractor(task.Actor):
         Args:
             features: Input features set.
 
-        Returns: Features with label column removed plus just the label column in second new dataset.
+        Returns:
+            Features with label column removed plus just the label column in second new dataset.
         """
         return features.drop(columns=self.column), features[self.column]
 
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Standard param getter.
 
-        Returns: Actor params.
+        Returns:
+            Actor params.
         """
         return {'column': self.column}
 
@@ -87,7 +89,8 @@ class ColumnInserter(task.Actor):
         Args:
             features: Input data set.
 
-        Returns: Features with label column removed plus just the label column in second new dataset.
+        Returns:
+            Features with label column removed plus just the label column in second new dataset.
         """
         if self._label is None or len(features) != len(self._label):
             raise RuntimeError('Inserter not trained')
@@ -96,7 +99,8 @@ class ColumnInserter(task.Actor):
     def get_params(self) -> typing.Dict[str, typing.Any]:
         """Standard param getter.
 
-        Returns: Actor params.
+        Returns:
+            Actor params.
         """
         return {'column': self.column}
 

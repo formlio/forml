@@ -38,7 +38,8 @@ class Handle(metaclass=abc.ABCMeta):
     def header(self) -> typing.Sequence[str]:
         """Get the column names.
 
-        Returns: Column names.
+        Returns:
+            Column names.
         """
 
     @abc.abstractmethod
@@ -90,7 +91,8 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
             Args:
                 data: Input data.
 
-            Returns: Data formatted into payload.Columnar format.
+            Returns:
+                Data formatted into payload.Columnar format.
             """
             return super().format(data)
 
@@ -102,7 +104,8 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
                 statement: Query statement in the reader's native syntax.
                 kwargs: Optional reader keyword args.
 
-            Returns: Data provided by the reader.
+            Returns:
+                Data provided by the reader.
             """
             return statement(None)
 
@@ -118,7 +121,8 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
                 sources: Source mappings to be used by the parser.
                 columns: Column mappings to be used by the parser.
 
-            Returns: Parser instance.
+            Returns:
+                Parser instance.
             """
             return cls.Parser(columns, sources)  # pylint: disable=abstract-class-instantiated
 
@@ -136,7 +140,8 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
             columns: Column mappings to be used by the reader.
             kwargs: Optional reader keyword arguments.
 
-        Returns: Reader instance.
+        Returns:
+            Reader instance.
         """
         # def read(query: frame.Query) -> typing.Any:
         #     """Reader callback.
@@ -144,7 +149,8 @@ class Feed(feed.Provider[code.Tabulizer, code.Columnizer]):
         #     Args:
         #         query: Input query instance.
         #
-        #     Returns: Data.
+        #     Returns:
+        #         Data.
         #     """
         #     fields = series.Element.dissect(*query.columns)
         #     # assertion parser to enforce: single source, no expressions, no aggregations, ...

@@ -17,7 +17,7 @@ Data Source DSL
 ===============
 
 To allow projects to :ref:`specify <project-source>` their data requirements in a portable way, ForML comes with its
-generic DSL that's at :doc:`runtime <../platform>` intepreted by the :doc:`feeds subsystem <../feed>`.
+generic DSL that's at :doc:`runtime <../platform>` interpreted by the :doc:`feeds subsystem <../feed>`.
 
 Schema
 ------
@@ -25,6 +25,10 @@ Schema
 
 
 Query
+^^^^^
+
+.. autoclass:: forml.io.dsl.struct.frame.Query
+    :members: columns, select, join, groupby, having, where, limit, orderby
 
 
 Functions

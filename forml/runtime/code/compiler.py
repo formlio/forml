@@ -58,7 +58,8 @@ class Table(view.Visitor, abc.Iterable):
         def leaves(self) -> typing.AbstractSet[uuid.UUID]:
             """Return the leaf nodes that are anyone's dependency.
 
-            Returns: leaf nodes.
+            Returns:
+                leaf nodes.
             """
             parents = {i for a in itertools.chain(self._absolute.values(), self._prefixed.values()) for i in a}
             children = set(self._absolute).union(self._prefixed).difference(parents)
@@ -135,7 +136,8 @@ class Table(view.Visitor, abc.Iterable):
         def instructions(self) -> typing.Iterator[typing.Tuple[code.Instruction, typing.Iterator[uuid.UUID]]]:
             """Iterator over tuples of instructions plus iterator of its keys.
 
-            Returns: Instruction-keys tuples iterator.
+            Returns:
+                Instruction-keys tuples iterator.
             """
             return itertools.groupby(self._instructions.keys(), self._instructions.__getitem__)
 
@@ -148,7 +150,8 @@ class Table(view.Visitor, abc.Iterable):
                 instruction: Runtime instruction to be stored.
                 key: Optional key to be used as instruction reference.
 
-            Returns: Key associated with the instruction.
+            Returns:
+                Key associated with the instruction.
             """
             if not key:
                 key = uuid.uuid4()
@@ -163,7 +166,8 @@ class Table(view.Visitor, abc.Iterable):
                 orig: Original key of the instruction to be re-registered.
                 new: Optional new key to re-register the instruction with.
 
-            Returns: New key associated with the instruction.
+            Returns:
+                New key associated with the instruction.
             """
             instruction = self._instructions[orig]
             del self._instructions[orig]
@@ -186,7 +190,8 @@ class Table(view.Visitor, abc.Iterable):
                 value: Left iterable.
                 element: Right iterable.
 
-            Returns: Merged iterable.
+            Returns:
+                Merged iterable.
             """
 
             def pick(left: typing.Optional[uuid.UUID], right: typing.Optional[uuid.UUID]) -> typing.Optional[uuid.UUID]:
@@ -196,7 +201,8 @@ class Table(view.Visitor, abc.Iterable):
                     left: Left input argument to pick from.
                     right: Right input argument to pick from.
 
-                Returns: The non-null value of the two (if any).
+                Returns:
+                    The non-null value of the two (if any).
                 """
                 assert not (left and right), 'Expecting at most one non-null value'
                 return left if left else right
@@ -263,7 +269,8 @@ def generate(path: view.Path, assets: typing.Optional[access.State] = None) -> t
         path: Flow path to generate the symbols for.
         assets: Runtime assets dependencies.
 
-    Returns: Sequence of symbol code.
+    Returns:
+        Sequence of symbol code.
     """
     table = Table(assets)
     path.accept(table)

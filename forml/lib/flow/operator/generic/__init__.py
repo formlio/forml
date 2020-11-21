@@ -87,7 +87,8 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
                     *args: Optional args for the Spec instance.
                     **kwargs: Optional kwargs for the Spec instance.
 
-                Returns: Spec instance or None if not configured.
+                Returns:
+                    Spec instance or None if not configured.
                 """
                 if not self._actor:
                     return None
@@ -126,7 +127,8 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
                 actor: Decorated actor class.
                 **params: Optional operator kwargs.
 
-            Returns: Curried operator.
+            Returns:
+                Curried operator.
             """
 
             def decorator(actor: typing.Union[typing.Type[task.Actor], 'Adapter.Builder']) -> 'Adapter.Builder':
@@ -167,7 +169,8 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
         Args:
             left: Left side track builder.
 
-        Returns: Composed track.
+        Returns:
+            Composed track.
         """
 
         def worker(mode: typing.Optional[task.Spec]) -> typing.Optional[node.Worker]:
@@ -176,7 +179,8 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
             Args:
                 mode: Task spec for given mode.
 
-            Returns: Worker instance or None.
+            Returns:
+                Worker instance or None.
             """
             if mode:
                 mode = node.Worker(mode, 1, 1)

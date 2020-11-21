@@ -75,14 +75,16 @@ class Statement(typing.NamedTuple):
             lower: Optional lower ordinal value.
             upper:  Optional upper ordinal value.
 
-        Returns: prepared statement binding.
+        Returns:
+            prepared statement binding.
         """
         return cls(cls.Prepared(query, ordinal), lower, upper)  # pylint: disable=no-member
 
     def __call__(self) -> frame.Query:
         """Expand the statement with the provided lower/upper parameters.
 
-        Returns: Expanded query transformed using the associated processor.
+        Returns:
+            Expanded query transformed using the associated processor.
         """
         return self.prepared(self.lower, self.upper)
 
@@ -105,7 +107,8 @@ class Operator(topology.Operator):
     def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Compose the source segment track.
 
-        Returns: Source segment track.
+        Returns:
+            Source segment track.
         """
         if not isinstance(left, topology.Origin):
             raise error.Unexpected('Source not origin')
@@ -174,7 +177,8 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
             sources: Source mappings to be used by the parser.
             columns: Column mappings to be used by the parser.
 
-        Returns: Parser instance.
+        Returns:
+            Parser instance.
         """
 
     @classmethod
@@ -184,7 +188,8 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
         Args:
             data: Input data.
 
-        Returns: Data formatted into payload.Columnar format.
+        Returns:
+            Data formatted into payload.Columnar format.
         """
         return data
 
@@ -197,7 +202,8 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
             statement: Query statement in the reader's native syntax.
             kwargs: Optional reader keyword args.
 
-        Returns: Data provided by the reader.
+        Returns:
+            Data provided by the reader.
         """
 
 

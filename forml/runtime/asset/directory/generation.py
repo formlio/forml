@@ -69,7 +69,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
                 Args:
                     **kwargs: Keyword parameters to be set on given mode attributes.
 
-                Returns: New tag instance with new values.
+                Returns:
+                    New tag instance with new values.
                 """
                 mode = self._mode.__class__(**{**self._mode.__dict__, **kwargs})
                 return Tag(**{k: mode if v is self._mode else v for k, v in self._tag._asdict().items()})
@@ -77,7 +78,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
             def trigger(self, timestamp: typing.Optional[datetime.datetime] = None) -> 'Tag':
                 """Create new tag with given mode triggered (all attributes reset and timestamp set to now).
 
-                Returns: New tag.
+                Returns:
+                    New tag.
                 """
                 return self.replace(timestamp=(timestamp or datetime.datetime.utcnow()))
 
@@ -126,7 +128,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         Args:
             **kwargs: Non-mode attributes to be replaced.
 
-        Returns: New tag instance.
+        Returns:
+            New tag instance.
         """
         if not {k for k, v in self._asdict().items() if not isinstance(v, Tag.Mode)}.issuperset(kwargs.keys()):
             raise ValueError('Invalid replacement')
@@ -139,7 +142,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         Args:
             timestamp: Timestamp to be encoded.
 
-        Returns: Timestamp string representation.
+        Returns:
+            Timestamp string representation.
         """
         if not timestamp:
             return None
@@ -152,7 +156,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         Args:
             raw: Timestamp string representation.
 
-        Returns: Timestamp instance.
+        Returns:
+            Timestamp instance.
         """
         if not raw:
             return None
@@ -161,7 +166,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
     def dumps(self) -> bytes:
         """Dump the tag into a string of bytes.
 
-        Returns: String of bytes representation.
+        Returns:
+            String of bytes representation.
         """
         return json.dumps(
             {
@@ -179,7 +185,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         Args:
             raw: Serialized tag representation to be loaded.
 
-        Returns: Tag instance.
+        Returns:
+            Tag instance.
         """
         meta = json.loads(raw.decode('utf-8'))
         return cls(
@@ -225,7 +232,8 @@ class Level(directory.Level):
     def project(self) -> 'prjmod.Level':
         """Get the project of this generation.
 
-        Returns: Project of this generation.
+        Returns:
+            Project of this generation.
         """
         return self.lineage.project
 
@@ -233,7 +241,8 @@ class Level(directory.Level):
     def lineage(self) -> 'lngmod.Level':
         """Get the lineage key of this generation.
 
-        Returns: Lineage key of this generation.
+        Returns:
+            Lineage key of this generation.
         """
         return self._parent
 
@@ -242,7 +251,8 @@ class Level(directory.Level):
         """Generation metadata. In case of implicit generation and empty lineage this returns a "null" tag (a Tag object
         with all fields empty).
 
-        Returns: Generation tag (metadata) object.
+        Returns:
+            Generation tag (metadata) object.
         """
         # project/lineage must exist so let's fetch it outside of try-except
         project = self.project.key
@@ -257,7 +267,8 @@ class Level(directory.Level):
     def list(self) -> directory.Level.Listing:
         """Return the listing of this level.
 
-        Returns: Level listing.
+        Returns:
+            Level listing.
         """
         return self.Listing(self.tag.states)
 
@@ -267,7 +278,8 @@ class Level(directory.Level):
         Args:
             sid: Index or absolute id of the state object to be loaded.
 
-        Returns: Serialized state.
+        Returns:
+            Serialized state.
         """
         if not self.tag.training:
             return bytes()

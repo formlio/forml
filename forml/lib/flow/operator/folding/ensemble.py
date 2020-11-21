@@ -55,7 +55,8 @@ class FullStacker(folding.Crossvalidated):
         def build(self) -> pipeline.Segment:
             """Builder finalize method.
 
-            Returns: Crossvalidation pipeline segment.
+            Returns:
+                Crossvalidation pipeline segment.
             """
             return self.head.use(
                 apply=self.head.apply.extend(tail=self.applied), train=self.head.train.extend(tail=self.trained)
@@ -75,7 +76,8 @@ class FullStacker(folding.Crossvalidated):
         Args:
             *folds: Individual model predictions.
 
-        Returns: Single dataframe with the merged predictions.
+        Returns:
+            Single dataframe with the merged predictions.
         """
         if not (folds and all(f.shape == folds[0].shape for f in folds)):
             raise ValueError('Folds must have same shape')
@@ -95,7 +97,8 @@ class FullStacker(folding.Crossvalidated):
             head: Head of the crossvalidation segment.
             inner: Exclusive instance of the inner composition.
 
-        Returns: Builder instance.
+        Returns:
+            Builder instance.
         """
         trained: node.Worker = node.Worker(ndframe.Concat.spec(axis='columns'), len(self.bases), 1)
         applied: node.Worker = trained.fork()

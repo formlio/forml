@@ -67,7 +67,8 @@ class Parser(dict):
                 left: Left dictionary to be merged.
                 right: Right dictionary to be merged.
 
-            Returns: Merged dictionary.
+            Returns:
+                Merged dictionary.
             """
             # pylint: disable=isinstance-second-argument-not-valid-type
             result = dict()
@@ -92,7 +93,8 @@ class Parser(dict):
     def sources(self) -> typing.Iterable[pathlib.Path]:
         """Get the sources files used by this parser.
 
-        Returns: Source files.
+        Returns:
+            Source files.
         """
         return tuple(self._sources)
 
@@ -100,7 +102,8 @@ class Parser(dict):
     def errors(self) -> typing.Mapping[pathlib.Path, Exception]:
         """Errors captured during parsing.
 
-        Returns: Mapping between files and the captured errors.
+        Returns:
+            Mapping between files and the captured errors.
         """
         return types.MappingProxyType(self._errors)
 

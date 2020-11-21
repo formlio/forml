@@ -50,7 +50,8 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
             actor: Decorated actor class.
             **params: Optional operator kwargs.
 
-        Returns: Curried operator.
+        Returns:
+            Curried operator.
         """
 
         def decorator(actor: typing.Type[task.Actor]) -> typing.Callable[..., Base]:
@@ -62,7 +63,8 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
                 Args:
                     **kwargs: Operator params.
 
-                Returns: Operator instance.
+                Returns:
+                    Operator instance.
                 """
                 return cls(task.Spec(actor, *args, **{**params, **kwargs}))
 
@@ -78,7 +80,8 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
         Args:
             left: Left side track builder.
 
-        Returns: Composed track.
+        Returns:
+            Composed track.
         """
         return self.apply(node.Worker(self.spec, self.SZIN, self.SZOUT), left.expand())
 
@@ -90,7 +93,8 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
             applier: Node factory to be used.
             left: Track of the left side flows.
 
-        Returns: Composed segment track.
+        Returns:
+            Composed segment track.
         """
 
 
@@ -104,7 +108,8 @@ class Mapper(Base):
             applier: Node factory to be used.
             left: Track of the left side flows.
 
-        Returns: Composed segment track.
+        Returns:
+            Composed segment track.
         """
         train_applier: node.Worker = applier.fork()
         if self.spec.actor.is_stateful():
@@ -128,7 +133,8 @@ class Consumer(Base):
             applier: Node factory to be used.
             left: Track of the left side flows.
 
-        Returns: Composed segment track.
+        Returns:
+            Composed segment track.
         """
         trainer: node.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
@@ -150,7 +156,8 @@ class Labeler(Base):
             applier: Node factory to be used.
             left: Track of the left side flows.
 
-        Returns: Composed segment track.
+        Returns:
+            Composed segment track.
         """
         train: node.Future = node.Future()
         label: node.Future = node.Future()

@@ -35,6 +35,7 @@ def open(  # pylint: disable=redefined-builtin
         package: Package name.
         **modules: Project module mappings.
 
-    Returns: Product artifact.
+    Returns:
+        Product artifact.
     """
     return product.Artifact(path, package, **modules)

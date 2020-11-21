@@ -98,7 +98,8 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
 
-        Returns: Evaluation pipeline.
+        Returns:
+            Evaluation pipeline.
         """
         if not self._assets.project.evaluation:
             raise error.Missing('Project not evaluable')
@@ -114,7 +115,8 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             upper:  Ordinal value as the upper bound for the ETL cycle.
             *blocks: Additional block to assemble.
 
-        Returns: Assembled flow pipeline.
+        Returns:
+            Assembled flow pipeline.
         """
         return pipeline.Composition(
             self._feed.load(self._assets.project.source, lower, upper),
@@ -129,7 +131,8 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             path: Pipeline path.
             assets: Persistent assets to be used.
 
-        Returns: Optional return value.
+        Returns:
+            Optional return value.
         """
         return self._run(compiler.generate(path, assets))
 
@@ -140,7 +143,8 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         Args:
             symbols: task graph to be executed.
 
-        Returns: Optional pipeline return value.
+        Returns:
+            Optional pipeline return value.
         """
 
 
@@ -162,7 +166,8 @@ class Platform:
         def train(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
             """Return the train handler.
 
-            Returns: Train runner.
+            Returns:
+                Train runner.
             """
             return self(self._assets.project.source.extract.train, self._sink.train).train
 
@@ -170,7 +175,8 @@ class Platform:
         def apply(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
             """Return the apply handler.
 
-            Returns: Train handler.
+            Returns:
+                Train handler.
             """
             return self(self._assets.project.source.extract.apply, self._sink.apply).apply
 
@@ -178,7 +184,8 @@ class Platform:
         def eval(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
             """Return the eval handler.
 
-            Returns: Eval runner.
+            Returns:
+                Eval runner.
             """
             return self(self._assets.project.source.extract.train, self._sink.eval).eval
 
@@ -186,7 +193,8 @@ class Platform:
         def tune(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
             """Return the tune handler.
 
-            Returns: Tune handler
+            Returns:
+                Tune handler
             """
             raise NotImplementedError()
 
@@ -213,7 +221,8 @@ class Platform:
                 lineage: Item's lineage.
                 generation: Item's generation.
 
-            Returns: Asset instance.
+            Returns:
+                Asset instance.
             """
             return access.Assets(project, lineage, generation, self._root)
 
@@ -235,7 +244,8 @@ class Platform:
                 project: Name of project to be listed.
                 lineage: Lineage version to be listed.
 
-            Returns: Listing of given registry level.
+            Returns:
+                Listing of given registry level.
             """
             level = self._root
             if project:
@@ -256,7 +266,8 @@ class Platform:
             Args:
                 query: ETL query to be run against the required feed.
 
-            Returns: Feed that's able to provide data for the given query.
+            Returns:
+                Feed that's able to provide data for the given query.
             """
             return self._pool.match(query)
 
@@ -294,7 +305,8 @@ class Platform:
             lineage: Lineage to run.
             generation: Generation to run.
 
-        Returns: Runner handle.
+        Returns:
+            Runner handle.
         """
         return self.Launcher(self._runner, self._registry.assets(project, lineage, generation), self._feeds, self._sink)
 
@@ -302,7 +314,8 @@ class Platform:
     def registry(self) -> 'Platform.Registry':
         """Registry handle getter.
 
-        Returns: Registry handle.
+        Returns:
+            Registry handle.
         """
         return self._registry
 
@@ -310,6 +323,7 @@ class Platform:
     def feeds(self) -> 'Platform.Feeds':
         """Feeds handle getter.
 
-        Returns: Feeds handle.
+        Returns:
+            Feeds handle.
         """
         return self._feeds

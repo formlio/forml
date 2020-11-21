@@ -108,7 +108,8 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         Args:
             subscriber: Node whose subscribed ports should be retrieved.
 
-        Returns: Subscribed ports of given grnode.
+        Returns:
+            Subscribed ports of given grnode.
         """
         return frozenset(cls._PORTS[subscriber])
 
@@ -131,7 +132,8 @@ class Publishable(Applicable):
     def szout(self) -> int:
         """Size of publisher node output.
 
-        Returns: Output size.
+        Returns:
+            Output size.
         """
         return self._node.szout
 
@@ -165,7 +167,8 @@ class Subscriptable(Applicable):
     def szin(self) -> int:
         """Size of publisher node input.
 
-        Returns: Input size.
+        Returns:
+            Input size.
         """
         return self._node.szin
 
@@ -185,7 +188,8 @@ class PubSub(Publishable, Subscriptable):
     def publisher(self) -> Publishable:
         """Return just a publishable representation.
 
-        Returns: Publishable apply port reference.
+        Returns:
+            Publishable apply port reference.
         """
         return Publishable(self._node, self._index)
 
@@ -193,6 +197,7 @@ class PubSub(Publishable, Subscriptable):
     def subscriber(self) -> Subscriptable:
         """Return just a subscriptable representation.
 
-        Returns: Subscriptable apply port reference.
+        Returns:
+            Subscriptable apply port reference.
         """
         return Subscriptable(self._node, self._index)

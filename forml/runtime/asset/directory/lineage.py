@@ -56,7 +56,8 @@ class Level(directory.Level):
     def project(self) -> 'prjmod.Level':
         """Get the project of this generation.
 
-        Returns: Project of this generation.
+        Returns:
+            Project of this generation.
         """
         return self._parent
 
@@ -64,7 +65,8 @@ class Level(directory.Level):
     def artifact(self) -> 'product.Artifact':
         """Lineage artifact.
 
-        Returns: Artifact object.
+        Returns:
+            Artifact object.
         """
         return ARTIFACTS(self.registry, self.project.key, self.key)
 
@@ -76,7 +78,8 @@ class Level(directory.Level):
         Args:
             state: Serialized state to be persisted.
 
-        Returns: Associated state id.
+        Returns:
+            Associated state id.
         """
         sid = uuid.uuid4()
         LOGGER.debug('%s: Dumping state %s', self, sid)
@@ -86,7 +89,8 @@ class Level(directory.Level):
     def list(self) -> directory.Level.Listing:
         """List the content of this level.
 
-        Returns: Level content listing.
+        Returns:
+            Level content listing.
         """
         return self.Listing(genmod.Level.Key(g) for g in self.registry.generations(self.project.key, self.key))
 
@@ -96,7 +100,8 @@ class Level(directory.Level):
         Args:
             generation: Integer generation id.
 
-        Returns: genmod.Level instance.
+        Returns:
+            genmod.Level instance.
         """
         return genmod.Level(self, generation)
 
@@ -107,7 +112,8 @@ class Level(directory.Level):
         Args:
             tag: genmod.Level metadata.
 
-        Returns: genmod.Level instance.
+        Returns:
+            genmod.Level instance.
         """
         try:
             generation = self.list().last.next

@@ -31,7 +31,8 @@ class Meta(parsmod.Meta):
     def path(cls) -> typing.Iterable[str]:
         """Getter for the configured search path of given provider.
 
-        Returns: Sequence of search paths.
+        Returns:
+            Sequence of search paths.
         """
         return conf.PARSER.get(cls.GROUP, {}).get(conf.OPT_PATH, [])
 
@@ -124,7 +125,8 @@ class Sink(Section):
             Args:
                 reference: Optional sync reference - if provided, its used for all modes.
 
-            Returns: Sink.Mode tuple with selected Sink config instances for the particular modes.
+            Returns:
+                Sink.Mode tuple with selected Sink config instances for the particular modes.
             """
             if not reference:
                 try:

@@ -39,7 +39,8 @@ class Instruction(metaclass=abc.ABCMeta):
         Args:
             *args: Sequence of input arguments.
 
-        Returns: Instruction result.
+        Returns:
+            Instruction result.
         """
 
     def __repr__(self):

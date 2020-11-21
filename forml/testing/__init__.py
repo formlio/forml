@@ -38,7 +38,8 @@ def operator(subject: typing.Type[topology.Operator]) -> typing.Type[routine.Sui
         def __operator__(self) -> typing.Type[topology.Operator]:
             """Attached operator.
 
-            Returns: Operator instance.
+            Returns:
+                Operator instance.
             """
             return subject
 

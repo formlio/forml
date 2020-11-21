@@ -49,7 +49,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 Args:
                     *args: Expression arguments.
 
-                Returns: Generated expression value.
+                Returns:
+                    Generated expression value.
                 """
 
                 def clean(arg: str) -> str:
@@ -58,7 +59,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                     Args:
                         arg: Argument to be cleaned.
 
-                    Returns: Clean argument.
+                    Returns:
+                        Clean argument.
                     """
                     if not self.ASSOCIATIVE.fullmatch(arg):
                         arg = f'({arg})'
@@ -124,7 +126,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             Args:
                 column: Column to be resolved.
 
-            Returns: Resolved column.
+            Returns:
+                Resolved column.
             """
             try:
                 return super().resolve_column(column)
@@ -140,7 +143,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 source: Field source value.
                 element: Field symbol.
 
-            Returns: Field representation.
+            Returns:
+                Field representation.
             """
             return f'{source}.{element}'
 
@@ -151,7 +155,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 column: Column value.
                 alias: Alias to be used for given column.
 
-            Returns: Aliased column.
+            Returns:
+                Aliased column.
             """
             return f'{column} AS {alias}'
 
@@ -162,7 +167,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 value: Literal value instance.
                 kind: Literal value type.
 
-            Returns: Literal.
+            Returns:
+                Literal.
             """
             if isinstance(kind, kindmod.String):
                 return f"'{value}'"
@@ -185,7 +191,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 expression: Operator or function implementing the expression.
                 arguments: Expression arguments.
 
-            Returns: Expression.
+            Returns:
+                Expression.
             """
             try:
                 return self.EXPRESSION[expression](*arguments)
@@ -198,7 +205,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             Args:
                 name: Reference name (alias).
 
-            Returns: Reference application.
+            Returns:
+                Reference application.
             """
             return name
 
@@ -234,7 +242,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             Args:
                 value: String to be forced to word.
 
-            Returns: Word value of the input string.
+            Returns:
+                Word value of the input string.
             """
             if not cls.WORD.fullmatch(value):
                 value = f'({value})'
@@ -247,7 +256,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             Args:
                 value: String to be forced to subquery.
 
-            Returns: Input value wrapped to parentheses if a SELECT statement.
+            Returns:
+                Input value wrapped to parentheses if a SELECT statement.
             """
             if cls.QUERY.match(value):
                 value = f'({value})'
@@ -262,7 +272,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             condition: Join condition.
             kind: Join type.
 
-        Returns: Join operation.
+        Returns:
+            Join operation.
         """
         join = f'{left} {self.JOIN[kind]} JOIN {right}'
         if condition:
@@ -277,7 +288,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             right: Right side of the set pair.
             kind: Set type.
 
-        Returns: Set operation.
+        Returns:
+            Set operation.
         """
         return f'{left} {self.SET[kind]} {right}'
 
@@ -302,7 +314,8 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             orderby: Ordering specifier.
             rows: Limit spec tuple.
 
-        Returns: Query.
+        Returns:
+            Query.
         """
         assert columns, 'Expecting columns'
         query = f'SELECT {", ".join(columns)}\nFROM {self.Wrap.subquery(source)}'
@@ -329,6 +342,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             instance: Source value to be referenced (aliased).
             name: Reference name (alias).
 
-        Returns: Source reference definition.
+        Returns:
+            Source reference definition.
         """
         return f'{self.Wrap.word(instance)} AS {name}'
