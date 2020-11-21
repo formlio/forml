@@ -31,9 +31,9 @@ Not Just Another DAG
 Despite *DAG* (directed acyclic graph) being at the heart of ForML operations, it stands out amongst the many other task
 dependency processing systems due to:
 
-a. Its specialization on machine learning problems that's wired right into the flow topology.
-b. Concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units.
-c. Abstraction of runtime dependencies allowing to run the same project using different technologies.
+1. Its specialization on machine learning problems that's wired right into the flow topology.
+2. Concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units.
+3. Abstraction of runtime dependencies allowing to run the same project using different technologies.
 
 
 History
@@ -41,14 +41,14 @@ History
 
 ForML started as an open-source project in response to ever painful transitions of datascience research into production.
 While there are other projects trying to solve this problem, they are typically either generic data processing systems
-too low-level to provide out-of-the-box ML lifecycle routines, or special scientific frameworks that are on the other
+too low-level to provide out-of-the-box ML lifecycle routines or special scientific frameworks that are on the other
 end too high-level to allow for robust operations.
 
 
 Resources
 ---------
 
-* `Documentation <https://forml.readthedocs.io/en/latest/>`_
+* `Documentation <https://docs.forml.io/en/latest/>`_
 * `Source Code <https://github.com/formlio/forml/>`_
 * Mailing lists:
 

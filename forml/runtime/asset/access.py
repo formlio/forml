@@ -48,7 +48,8 @@ class State:
         Args:
             gid: Node gid to be tested.
 
-        Returns: True if persistent.
+        Returns:
+            True if persistent.
         """
         return gid in self._nodes
 
@@ -58,7 +59,8 @@ class State:
         Args:
             gid: Id of node to be looked up for its offset.
 
-        Returns: Offset of given node.
+        Returns:
+            Offset of given node.
         """
         if gid not in self._nodes:
             raise error.Unexpected(f'Unknown node ({gid})')
@@ -70,7 +72,8 @@ class State:
         Args:
             gid: Node group id.
 
-        Returns: Serialized state.
+        Returns:
+            Serialized state.
         """
         LOGGER.debug('Loading state %s', gid)
         return self._generation.get(self.offset(gid))
@@ -82,7 +85,8 @@ class State:
         Args:
             state: State to be dumped.
 
-        Returns: Associated absolute state ID.
+        Returns:
+            Associated absolute state ID.
         """
         LOGGER.debug('Dumping state (%d bytes)', len(state))
         return self._generation.lineage.dump(state)
@@ -117,7 +121,8 @@ class Assets:
     def project(self) -> 'product.Descriptor':
         """Get the project descriptor.
 
-        Returns: Project descriptor.
+        Returns:
+            Project descriptor.
         """
         return self._generation.lineage.artifact.descriptor
 
@@ -125,7 +130,8 @@ class Assets:
     def tag(self) -> 'genmod.Tag':
         """Get the generation tag.
 
-        Returns: Generation tag.
+        Returns:
+            Generation tag.
         """
         return self._generation.tag
 
@@ -136,6 +142,7 @@ class Assets:
             nodes: List of expected persisted stateful nodes.
             tag: Optional generation tag template to be used when committing.
 
-        Returns: State persistence.
+        Returns:
+            State persistence.
         """
         return State(self._generation, nodes, tag)

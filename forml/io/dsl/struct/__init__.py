@@ -35,7 +35,8 @@ class Field(typing.NamedTuple):
         Args:
             name: New name to be used.
 
-        Returns: New Field instance.
+        Returns:
+            New Field instance.
         """
         return self if name == self.name else Field(self.kind, name)
 

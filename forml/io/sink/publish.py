@@ -42,7 +42,8 @@ class Operator(topology.Operator):
     def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Compose the publisher segment track.
 
-        Returns: Sink segment track.
+        Returns:
+            Sink segment track.
         """
         apply: node.Worker = node.Worker(self._writer, 1, 0)
         train: node.Worker = apply.fork()
@@ -81,7 +82,8 @@ class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
         Args:
             data: Output data.
 
-        Returns: Data formatted into payload.Native format.
+        Returns:
+            Data formatted into payload.Native format.
         """
         return data
 

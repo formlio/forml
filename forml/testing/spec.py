@@ -76,7 +76,8 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
         def apply(self) -> typing.Any:
             """Apply dataset.
 
-            Returns: The apply dataset.
+            Returns:
+                The apply dataset.
             """
 
         def __bool__(self):
@@ -125,7 +126,8 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
         def value(self) -> typing.Any:
             """Return the trained or applied exclusive value.
 
-            Returns: Trained or applied value.
+            Returns:
+                Trained or applied value.
             """
             return self.train if self.trained else self.apply
 
@@ -162,7 +164,8 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
     def outcome(self) -> 'Scenario.Outcome':
         """The outcome type of this scenario.
 
-        Returns: Outcome type.
+        Returns:
+            Outcome type.
         """
         return self.OUTCOME[self.Digest(self.input.trained, self.input.applied, self.exception is not None)]
 

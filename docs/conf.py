@@ -94,6 +94,7 @@ html_show_copyright = False
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 
 autoclass_content = 'both'
+autodoc_typehints = 'description'
 autosummary_generate = True
 napoleon_numpy_docstring = False
 napoleon_use_rtype = False

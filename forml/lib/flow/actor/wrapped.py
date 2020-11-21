@@ -49,7 +49,8 @@ class Wrapping(metaclass=abc.ABCMeta):
     def is_stateful(self) -> bool:
         """Emulation of native actor is_stateful class method.
 
-        Returns: True if the wrapped actor is stateful (has a train method).
+        Returns:
+            True if the wrapped actor is stateful (has a train method).
         """
 
     def spec(self, *args, **kwargs) -> task.Spec:
@@ -59,7 +60,8 @@ class Wrapping(metaclass=abc.ABCMeta):
             *args: Args to be used for the spec.
             **kwargs: Keywords to be used for the spec.
 
-        Returns: Actor spec instance.
+        Returns:
+            Actor spec instance.
         """
         return task.Spec(self, *args, **kwargs)
 
@@ -70,7 +72,8 @@ class Mapping(Wrapping):
     def is_stateful(self) -> bool:
         """Emulation of native actor is_stateful class method.
 
-        Returns: True if the wrapped actor is stateful (has a train method).
+        Returns:
+            True if the wrapped actor is stateful (has a train method).
         """
         return hasattr(self._actor, self._params[task.Actor.train.__name__])
 
@@ -120,7 +123,8 @@ class Class(Mapping):
             get_params: Name of user class method implementing the actor get_params.
             set_params: Name of user class method implementing the actor set_params.
 
-        Returns: Actor class.
+        Returns:
+            Actor class.
         """
         if not all(isinstance(a, str) for a in mapping.values()):
             raise ValueError('Invalid mapping')
@@ -172,7 +176,8 @@ class Function(Wrapping):
         def get_params(self) -> typing.Dict[str, typing.Any]:
             """Standard param getter.
 
-            Returns: Evaluation function.
+            Returns:
+                Evaluation function.
             """
             return {'function': self._function, 'args': self._args, 'kwargs': dict(self._kwargs)}
 
@@ -207,7 +212,8 @@ class Function(Wrapping):
     def is_stateful(self) -> bool:
         """Wrapped function is generally stateless.
 
-        Returns: False
+        Returns:
+            False
         """
         return False
 
@@ -222,7 +228,8 @@ class Function(Wrapping):
             function: Decorated function.
             params: Optional kwargs to be passed to function.
 
-        Returns: Actor class.
+        Returns:
+            Actor class.
         """
 
         def decorator(function) -> typing.Type[task.Actor]:

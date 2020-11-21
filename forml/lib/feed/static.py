@@ -53,7 +53,8 @@ class Feed(feed.Provider[None, payload.Vector]):
             Args:
                 query: Input query instance.
 
-            Returns: Data.
+            Returns:
+                Data.
             """
             if query.prefilter or query.postfilter or query.ordering or query.rows:
                 raise error.Unsupported('Query not supported by static feed')

@@ -58,7 +58,8 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     def artifact(self) -> product.Artifact:
         """Get the artifact for this project.
 
-        Returns: Artifact instance.
+        Returns:
+            Artifact instance.
         """
         modules = dict(self.distribution.component)
         package = modules.pop('', None)
@@ -90,7 +91,8 @@ class Mode(test.test, metaclass=abc.ABCMeta):
             *args: Optional args.
             **kwargs: Optional kwargs.
 
-        Returns: Whatever runner response.
+        Returns:
+            Whatever runner response.
         """
 
 

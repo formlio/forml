@@ -63,7 +63,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
             lower: Optional ordinal lower bound.
             upper: Optional ordinal upper bound.
 
-        Returns: Pipeline segment.
+        Returns:
+            Pipeline segment.
         """
 
         def formatter(provider: typing.Callable[..., payload.ColumnMajor]) -> typing.Callable[..., typing.Any]:
@@ -72,7 +73,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
             Args:
                 provider: Original provider whose output is to be formatted.
 
-            Returns: Wrapper that applies formatting upon calling the provider.
+            Returns:
+                Wrapper that applies formatting upon calling the provider.
             """
 
             @functools.wraps(provider)
@@ -83,7 +85,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
                     *args: Original args.
                     **kwargs: Original kwargs.
 
-                Returns: Formatted data.
+                Returns:
+                    Formatted data.
                 """
                 return self.format(provider(*args, **kwargs))
 
@@ -96,7 +99,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
                 handler: Reading handler.
                 spec: Data loading statement.
 
-            Returns: Reader actor spec.
+            Returns:
+                Reader actor spec.
             """
             return extract.Reader.Actor.spec(
                 handler, extract.Statement.prepare(spec, source.extract.ordinal, lower, upper)
@@ -133,7 +137,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
             columns: Column mappings to be used by the reader.
             kwargs: Optional reader keyword arguments.
 
-        Returns: Reader instance.
+        Returns:
+            Reader instance.
         """
         return cls.Reader(sources, columns, **kwargs)  # pylint: disable=abstract-class-instantiated
 
@@ -149,7 +154,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
             schema: List of expected columns to be sliced from.
             columns: Column mappings to be used by the selector.
 
-        Returns: Slicer instance.
+        Returns:
+            Slicer instance.
         """
         return extract.Slicer(schema, columns)
 
@@ -160,7 +166,8 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
         Args:
             data: Input Columnar data to be formatted.
 
-        Returns: Formatted data.
+        Returns:
+            Formatted data.
         """
         return data
 
@@ -169,14 +176,16 @@ class Provider(provmod.Interface, typing.Generic[parser.Source, parser.Column], 
     def sources(self) -> typing.Mapping['frame.Source', parser.Source]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
-        Returns: Sources mapping.
+        Returns:
+            Sources mapping.
         """
 
     @property
     def columns(self) -> typing.Mapping['series.Column', parser.Column]:
         """The explicit columns mapping implemented by this feed to be used by the query parser.
 
-        Returns: Columns mapping.
+        Returns:
+            Columns mapping.
         """
         return {}
 
@@ -210,7 +219,8 @@ class Pool:
         def priority(self) -> float:
             """Slots defined explicitly have infinite priority, lazy ones have priority according ot their config.
 
-            Returns: Priority value.
+            Returns:
+                Priority value.
             """
             return self._descriptor.priority if self._descriptor else float('inf')
 
@@ -218,7 +228,8 @@ class Pool:
         def instance(self) -> Provider:
             """Return the feed instance possibly creating it on the fly if lazy.
 
-            Returns: Feed instance.
+            Returns:
+                Feed instance.
             """
             if self._instance is None:
                 LOGGER.debug('Instantiating feed %s', self._descriptor.reference)
@@ -271,7 +282,8 @@ class Pool:
         Args:
             source: ETL frame source to be run against the required feed.
 
-        Returns: Feed that's able to provide data for the given sources.
+        Returns:
+            Feed that's able to provide data for the given sources.
         """
         for feed in self:
             matcher = self.Matcher(feed.sources)

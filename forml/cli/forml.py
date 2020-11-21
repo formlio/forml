@@ -69,7 +69,8 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             feed: Optional feed references.
             sink: Optional sink reference.
 
-        Returns: Platform instance.
+        Returns:
+            Platform instance.
         """
         return runtime.Platform(
             provcfg.Runner.resolve(runner),
@@ -78,7 +79,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             provcfg.Sink.Mode.resolve(sink),
         )
 
-    @cli.Command(help='tune the given project lineage producing new generation', description='Tune mode execution')
+    @cli.Command(help='tune new generation of given (or default) project lineage', description='Tune mode execution')
     @cli.Param('project', help='project to be tuned')
     @cli.Param('lineage', nargs='?', help='lineage to be tuned')
     @cli.Param('generation', nargs='?', help='generation to be tuned')
@@ -115,7 +116,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         """
         raise error.Missing(f'Tuning project {project}... not implemented')
 
-    @cli.Command(help='train new generation of given project lineage', description='Train mode execution')
+    @cli.Command(help='train new generation of given (or default) project lineage', description='Train mode execution')
     @cli.Param('project', help='project to be trained')
     @cli.Param('lineage', nargs='?', help='lineage to be trained')
     @cli.Param('generation', nargs='?', help='generation to be trained')
@@ -154,7 +155,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         if result is not None:
             print(result)
 
-    @cli.Command(help='apply given generation of given project lineage', description='Apply mode execution')
+    @cli.Command(help='apply given (or default) generation', description='Apply mode execution')
     @cli.Param('project', help='project to be applied')
     @cli.Param('lineage', nargs='?', help='lineage to be applied')
     @cli.Param('generation', nargs='?', help='generation to be applied')
@@ -182,6 +183,43 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             project: Name of project to be tuned.
             lineage: Lineage version to be tuned.
             generation: Generation index to be tuned.
+            runner: Optional runner reference.
+            registry: Optional registry reference.
+            feed: Optional feed references.
+            sink: Optional sink reference.
+            lower: Lower ordinal.
+            upper: Upper ordinal.
+        """
+        print(cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).apply(lower, upper))
+
+    @cli.Command(help='evaluate predictions of given (or default) generation', description='Eval mode execution')
+    @cli.Param('project', help='project to be applied')
+    @cli.Param('lineage', nargs='?', help='lineage to be applied')
+    @cli.Param('generation', nargs='?', help='generation to be applied')
+    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
+    @cli.Param('-O', '--sink', type=str, help='output sink reference')
+    @cli.Param('--lower', help='lower testset ordinal')
+    @cli.Param('--upper', help='upper testset ordinal')
+    def eval(
+        cls,
+        project: typing.Optional[str],
+        lineage: typing.Optional[str],
+        generation: typing.Optional[str],
+        runner: typing.Optional[str],
+        registry: typing.Optional[str],
+        feed: typing.Optional[typing.Sequence[str]],
+        sink: typing.Optional[str],
+        lower: typing.Optional[kind.Native],
+        upper: typing.Optional[kind.Native],
+    ) -> None:
+        """Eval mode execution.
+
+        Args:
+            project: Name of project to be evaluated.
+            lineage: Lineage version to be evaluated.
+            generation: Generation index to be evaluated.
             runner: Optional runner reference.
             registry: Optional registry reference.
             feed: Optional feed references.

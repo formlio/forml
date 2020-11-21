@@ -40,7 +40,8 @@ class Loader(code.Instruction):
     def execute(self) -> typing.Optional[bytes]:  # pylint: disable=arguments-differ
         """Instruction functionality.
 
-        Returns: Loaded state.
+        Returns:
+            Loaded state.
         """
         try:
             return self._assets.load(self._key)
@@ -61,7 +62,8 @@ class Dumper(code.Instruction):
         Args:
             state: State to be persisted.
 
-        Returns: Absolute state id.
+        Returns:
+            Absolute state id.
         """
         return self._assets.dump(state)
 
@@ -81,7 +83,8 @@ class Getter(code.Instruction):
         Args:
             sequence: Sequence of output arguments.
 
-        Returns: Single output item.
+        Returns:
+            Single output item.
         """
         return sequence[self._index]
 
@@ -132,7 +135,8 @@ class Functor(code.Instruction):
                 actor: Target actor to run the objective on.
                 state: Actor state to be used.
 
-            Returns: Actor instance.
+            Returns:
+                Actor instance.
             """
             LOGGER.debug('%s receiving state (%d bytes)', actor, len(state))
             actor.set_state(state)
@@ -145,7 +149,8 @@ class Functor(code.Instruction):
                 actor: Target actor to run the objective on.
                 params: Actor params to be used.
 
-            Returns: Actor instance.
+            Returns:
+                Actor instance.
             """
             LOGGER.debug('%s receiving params (%s)', actor, params)
             actor.set_params(**params)
@@ -169,7 +174,8 @@ class Functor(code.Instruction):
         Args:
             consumer: Callable taking the target actor and eating its first argument.
 
-        Returns: New Functor instance with the objective updated.
+        Returns:
+            New Functor instance with the objective updated.
         """
         return Functor(self._spec, self.Shifting(consumer, self._objective))
 
@@ -177,7 +183,8 @@ class Functor(code.Instruction):
     def _actor(self) -> task.Actor:
         """Internal cached actor instance.
 
-        Returns: Actor instance.
+        Returns:
+            Actor instance.
         """
         if not self._instance:
             self._instance = self._spec()
@@ -202,7 +209,8 @@ class Functional(Functor, metaclass=abc.ABCMeta):
             actor: Target actor to run the objective on.
             *args: List of arguments to be passed to the actor objective.
 
-        Returns: Anything the actor objective returns.
+        Returns:
+            Anything the actor objective returns.
         """
 
 
@@ -217,7 +225,8 @@ class Mapper(Functional):
             actor: Target actor to run the objective on.
             *args: List of arguments to be passed to the actor objective.
 
-        Returns: Output of the apply method.
+        Returns:
+            Output of the apply method.
         """
         result = actor.apply(*args)
         LOGGER.debug('%s result: %.1024s...', actor, result)
@@ -235,7 +244,8 @@ class Consumer(Functional):
             actor: Target actor to run the objective on.
             *args: List of arguments to be passed to the actor objective.
 
-        Returns: New actor state.
+        Returns:
+            New actor state.
         """
         actor.train(*args)
         return actor.get_state()

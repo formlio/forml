@@ -35,7 +35,8 @@ def isabstract(cls: typing.Type['Interface']) -> bool:
     Args:
         cls: Class to be inspected.
 
-    Returns: True if class is abstract or has an abstract inner class.
+    Returns:
+        True if class is abstract or has an abstract inner class.
     """
     return inspect.isabstract(cls) or any(inspect.isabstract(i) for i in cls.__dict__.values())
 
@@ -60,7 +61,8 @@ class Reference:
         Args:
             base: Optional base paths of the reference.
 
-        Returns: Registry path instances.
+        Returns:
+            Registry path instances.
         """
 
 
@@ -158,7 +160,8 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         Args:
             reference: provider reference
 
-        Returns: Registered provider.
+        Returns:
+            Registered provider.
         """
         LOGGER.debug('Getting provider of %s (%d search paths)', reference, len(self.paths))
         if reference not in self.provider:

@@ -60,8 +60,8 @@ project component structure wrapped within the python application layout might l
       └── ...
 
 
-The individual project components defined in the specific modules described bellow need to be hooked up into the ForML
-framework using the ``component.setup()`` as shown in the examples bellow.
+The individual project components defined in the specific modules described below need to be hooked up into the ForML
+framework using the ``component.setup()`` as shown in the examples below.
 
 .. autofunction:: forml.project.component.setup
 
@@ -97,9 +97,9 @@ the custom locations of its project components using the ``component`` parameter
                      component={'pipeline': 'path.to.my.custom.pipeline.module'})
 
 
-.. note::  Since :pep:`517` setuptools is no longer the Python default build tool, ForML is in the future also likely to
-           take more generic approach to the build frontend/backend and the ``setup.py`` might no longer play the role
-           as described.
+.. note::  Since :pep:`517`, setuptools is no longer the Python default build tool, ForML is in the future also likely
+           to take a more generic approach to the build frontend/backend and the ``setup.py`` might no longer play the
+           described role.
 
 .. _project-pipeline:
 
@@ -107,7 +107,7 @@ Pipeline (``pipeline.py``)
 ''''''''''''''''''''''''''
 
 Pipeline definition is the heart of the project component structure. The framework needs to understand the
-pipeline as a *Directed Acyclic Task Dependency Graph*. For this purpose it comes with a concept of *Operators* that
+pipeline as a *Directed Acyclic Task Dependency Graph*. For this purpose, it comes with a concept of *Operators* that
 the user is supplying with actual functionality (ie feature transformer, classifier) and *composing* together to
 define the final flow.
 
@@ -128,9 +128,9 @@ exposed to the framework via the ``component.setup()`` handler::
 Evaluation (``evaluation.py``)
 ''''''''''''''''''''''''''''''
 
-Definition of model evaluation strategy for both the development and production lifecycle.
+Definition of the model evaluation strategy for both the development and production lifecycle.
 
-.. note:: The whole evaluation implementation is interim and more robust concept with different API is ongoing.
+.. note:: The whole evaluation implementation is an interim and more robust concept with different API is ongoing.
 
 The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
 
@@ -149,16 +149,16 @@ The evaluation strategy again needs to be submitted to the framework using the `
 Source (``source.py``)
 ''''''''''''''''''''''
 
-This component is the fundamental part of the :doc:`IO concept<io>`. Project can define the ETL process of sourcing
+This component is a fundamental part of the :doc:`IO concept<io>`. A project can define the ETL process of sourcing
 data into the pipeline using the :doc:`DSL <dsl/index>` referring to some :ref:`catalogized schemas
 <io-catalogized-schemas>` that are at runtime resolved via the available :doc:`feeds <feed>`.
 
 The source component is provided in form of a descriptor that's created using the ``.query()`` method as shown in the
-example bellow or documented in the :ref:`Source Descriptor Reference <io-source-descriptor>`.
+example below or documented in the :ref:`Source Descriptor Reference <io-source-descriptor>`.
 
 .. note:: The descriptor allows to further compose with other operators using the usual ``>>`` syntax. Source
           composition domain is separate from the main pipeline so adding an operator to the source composition vs
-          pipeline composition might have different effect.
+          pipeline composition might have a different effect.
 
 The Source descriptor again needs to be submitted to the framework using the ``component.setup()`` handler::
 

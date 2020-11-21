@@ -54,7 +54,8 @@ class Closure(typing.Generic[Input, Output], tuple, metaclass=abc.ABCMeta):  # p
         Args:
             data: Input data.
 
-        Returns: Sequence of parameters for the closure handler.
+        Returns:
+            Sequence of parameters for the closure handler.
         """
 
     def __call__(self, data: Input, **kwargs) -> Output:
@@ -148,7 +149,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
                 data: Dataframe to get the column from.
                 column: Column reference.
 
-            Returns: Column instance.
+            Returns:
+                Column instance.
             """
             return column(data)
 
@@ -161,7 +163,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
                 column: Column reference.
                 name: Column alias.
 
-            Returns: Aliased column instance.
+            Returns:
+                Aliased column instance.
             """
 
         @abc.abstractmethod
@@ -172,7 +175,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
                 value: Literal value.
                 kind: Value type.
 
-            Returns: Literal value column instance.
+            Returns:
+                Literal value column instance.
             """
 
         @abc.abstractmethod
@@ -185,7 +189,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
                 expression: Expression class.
                 arguments: Sequence of expression arguments.
 
-            Returns: Column as the expression evaluation.
+            Returns:
+                Column as the expression evaluation.
             """
 
         @abc.abstractmethod
@@ -195,7 +200,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             Args:
                 name: Reference name.
 
-            Returns: Column as the expression evaluation.
+            Returns:
+                Column as the expression evaluation.
             """
 
         # pylint: disable=missing-function-docstring
@@ -318,7 +324,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             condition: Joining condition.
             kind: Join type (left outer, right outer, full outer, inner, cross).
 
-        Returns: Joined table.
+        Returns:
+            Joined table.
         """
 
     @abc.abstractmethod
@@ -330,7 +337,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             right: Right side of the set operation.
             kind: Type of the set operation (union/intersection/difference).
 
-        Returns: Combined table.
+        Returns:
+            Combined table.
         """
 
     @abc.abstractmethod
@@ -352,7 +360,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
                         case the new columns should extend the set of the partitioning columns).
             predicate: Optional filter to be applied on the evaluated data.
 
-        Returns: Transformed dataset.
+        Returns:
+            Transformed dataset.
         """
 
     @abc.abstractmethod
@@ -365,7 +374,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             table: Input table.
             specs: Ordering specs - tuple of column and direction specifying the ordering.
 
-        Returns: Table with rows ordered according to given specs.
+        Returns:
+            Table with rows ordered according to given specs.
         """
 
     @abc.abstractmethod
@@ -376,7 +386,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             table: Input table.
             columns: Columns to be projected.
 
-        Returns: Table with the exact columns in given order.
+        Returns:
+            Table with the exact columns in given order.
         """
 
     @abc.abstractmethod
@@ -388,7 +399,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             count: Number of rows to limit the result to.
             offset: Number of rows to skip from the beginning of the input table.
 
-        Returns: Table with the limited row count.
+        Returns:
+            Table with the limited row count.
         """
 
     def implement_query(
@@ -412,7 +424,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             orderby: Ordering specifier.
             rows: Row result limitation.
 
-        Returns: Query result.
+        Returns:
+            Query result.
         """
         if where is not None:
             table = self.implement_apply(table, predicate=where)
@@ -439,7 +452,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             table: Table to be referenced.
             name: Reference name.
 
-        Returns: Referenced table.
+        Returns:
+            Referenced table.
         """
 
     # pylint: disable=missing-function-docstring

@@ -66,7 +66,8 @@ class Feed(feed.Provider[None, typing.Any], alias='testing'):
             Args:
                 query: Input query instance.
 
-            Returns: Data.
+            Returns:
+                Data.
             """
             return columns[DataSet.label] if DataSet.label in query.columns else columns[DataSet.feature]
 

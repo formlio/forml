@@ -31,7 +31,8 @@ class Composable(metaclass=abc.ABCMeta):
     def expand(self) -> pipeline.Segment:
         """Compose and return a segment track.
 
-        Returns: Segment track.
+        Returns:
+            Segment track.
         """
 
     def __rshift__(self, right: 'Composable') -> 'Compound':
@@ -48,7 +49,8 @@ class Composable(metaclass=abc.ABCMeta):
         Args:
             left: Left side composable.
 
-        Returns: Composed segment track.
+        Returns:
+            Composed segment track.
         """
 
 
@@ -58,7 +60,8 @@ class Origin(Composable):
     def expand(self) -> pipeline.Segment:
         """Track of future nodes.
 
-        Returns: Segment track.
+        Returns:
+            Segment track.
         """
         return pipeline.Segment()
 
@@ -68,7 +71,8 @@ class Origin(Composable):
         Args:
             left: Left side composable.
 
-        Returns: Segment track.
+        Returns:
+            Segment track.
         """
         return left.expand()
 
@@ -79,7 +83,8 @@ class Operator(Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
     def expand(self) -> pipeline.Segment:
         """Create dummy composition of this operator on a future origin nodes.
 
-        Returns: Segment track.
+        Returns:
+            Segment track.
         """
         return self.compose(Origin())
 
@@ -105,7 +110,8 @@ class Compound(Composable):
     def expand(self) -> pipeline.Segment:
         """Compose the segment track.
 
-        Returns: Segment track.
+        Returns:
+            Segment track.
         """
         return self._right.compose(self._left)
 
@@ -115,6 +121,7 @@ class Compound(Composable):
         Args:
             left: Left side composable.
 
-        Returns: Segment track.
+        Returns:
+            Segment track.
         """
         return left.expand().extend(*self.expand())

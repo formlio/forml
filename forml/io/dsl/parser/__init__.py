@@ -65,7 +65,8 @@ class Container(typing.Generic[Symbol]):
             def pop(self) -> Symbol:
                 """Remove and return a value from the top of the stack.
 
-                Returns: Item from the stack top.
+                Returns:
+                    Item from the stack top.
                 """
                 if not self._stack:
                     raise RuntimeError('Empty context')
@@ -78,7 +79,8 @@ class Container(typing.Generic[Symbol]):
         def dirty(self) -> bool:
             """Check the context is safe to be closed.
 
-            Returns: True if not safe for closing.
+            Returns:
+                True if not safe for closing.
             """
             return bool(self.symbols)
 
@@ -109,7 +111,8 @@ class Container(typing.Generic[Symbol]):
         """Storage retrieval. Must be called exactly once and at the point where there is exactly one symbol pending
         in the context. Successful fetch will kill the context.
 
-        Returns: Last symbol from the context.
+        Returns:
+            Last symbol from the context.
         """
         symbol = self.context.symbols.pop()
         if self.context.dirty:
@@ -126,7 +129,8 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
         override: Callable resolver that returns an explicit value for given subject or raises KeyError for unknown
         mapping.
 
-    Returns: Visitor method decorator.
+    Returns:
+        Visitor method decorator.
     """
 
     def decorator(method: typing.Callable[[Container, typing.Any], typing.ContextManager[None]]) -> typing.Callable:
@@ -135,7 +139,8 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
         Args:
             method: Visitor method to be decorated.
 
-        Returns: Decorated version of the visit_* method.
+        Returns:
+            Decorated version of the visit_* method.
         """
 
         @functools.wraps(method)
@@ -177,7 +182,8 @@ class Columnar(
         Args:
             column: Column instance
 
-        Returns: Column in target code.
+        Returns:
+            Column in target code.
         """
 
     def resolve_source(self, source: frame.Source) -> Source:
@@ -186,7 +192,8 @@ class Columnar(
         Args:
             source: Source instance.
 
-        Returns: Target code for the source instance.
+        Returns:
+            Target code for the source instance.
         """
         try:
             return self._sources[source]
@@ -212,7 +219,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             Args:
                 column: Column instance.
 
-            Returns: Column in target code representation.
+            Returns:
+                Column in target code representation.
             """
             try:
                 return self._columns[column]
@@ -226,7 +234,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             Args:
                 column: Column instance
 
-            Returns: Column in target code.
+            Returns:
+                Column in target code.
             """
             with self as visitor:
                 column.accept(visitor)
@@ -239,7 +248,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             Args:
                 name: Reference name.
 
-            Returns: Instance reference in target code.
+            Returns:
+                Instance reference in target code.
             """
 
         @abc.abstractmethod
@@ -250,7 +260,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                 origin: Column value already in target code.
                 element: Field symbol to be used for given column.
 
-            Returns: Field in target code.
+            Returns:
+                Field in target code.
             """
 
         @abc.abstractmethod
@@ -261,7 +272,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                 column: Column value already in target code.
                 alias: Alias to be used for given column.
 
-            Returns: Aliased column in target code.
+            Returns:
+                Aliased column in target code.
             """
 
         @abc.abstractmethod
@@ -272,7 +284,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                 value: Literal value instance.
                 kind: Literal value type.
 
-            Returns: Literal in target code representation.
+            Returns:
+                Literal in target code representation.
             """
 
         @abc.abstractmethod
@@ -285,7 +298,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                 expression: Operator or function implementing the expression.
                 arguments: Expression arguments.
 
-            Returns: Expression in target code representation.
+            Returns:
+                Expression in target code representation.
             """
 
         def generate_table(self, table: Source) -> Source:  # pylint: disable=no-self-use
@@ -294,7 +308,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             Args:
                 table: Table (already in target code based on the provided mapping) to be generated.
 
-            Returns: Table target code potentially optimized based on field requirements.
+            Returns:
+                Table target code potentially optimized based on field requirements.
             """
             return table
 
@@ -346,7 +361,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                 def predicate(self) -> typing.Optional[sermod.Predicate]:
                     """Combine the factors into single predicate.
 
-                    Returns: Predicate expression.
+                    Returns:
+                        Predicate expression.
                     """
                     return functools.reduce(sermod.Or, sorted(self.factors)) if self.factors else None
 
@@ -358,7 +374,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             def items(self) -> typing.ItemsView[frame.Table, 'Frame.Context.Tables.Segment']:
                 """Get the key-value pairs of this mapping.
 
-                Returns: Key-value mapping items.
+                Returns:
+                    Key-value mapping items.
                 """
                 return self._segments.items()
 
@@ -400,7 +417,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         Args:
             column: Column instance
 
-        Returns: Column in target code.
+        Returns:
+            Column in target code.
         """
         with self._series as visitor:
             column.accept(visitor)
@@ -414,7 +432,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             instance: Instance value already in target code.
             name: Reference name.
 
-        Returns: Instance reference in target code.
+        Returns:
+            Instance reference in target code.
         """
 
     @abc.abstractmethod
@@ -429,7 +448,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             condition: Join condition.
             kind: Join type.
 
-        Returns: Target code for the join operation.
+        Returns:
+            Target code for the join operation.
         """
 
     @abc.abstractmethod
@@ -441,7 +461,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             right: Right side of the set pair.
             kind: Set type.
 
-        Returns: Target code for the set operation.
+        Returns:
+            Target code for the set operation.
         """
 
     @abc.abstractmethod
@@ -466,7 +487,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             orderby: Ordering specifier in target code.
             rows: Limit spec tuple.
 
-        Returns: Query in target code.
+        Returns:
+            Query in target code.
         """
 
     def generate_table(  # pylint: disable=no-self-use
@@ -482,7 +504,8 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             columns: List of fields to be retrieved from the table (potentially subset of all available).
             predicate: Row filter to be possibly pushed down when retrieving the data from given table.
 
-        Returns: Table target code potentially optimized based on field requirements.
+        Returns:
+            Table target code potentially optimized based on field requirements.
         """
         return table
 

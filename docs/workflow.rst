@@ -17,14 +17,14 @@ Workflow
 ========
 
 Workflow is the backbone of the ML solution responsible for holding all its pieces in the right place together. On the
-low level it is a *Task Dependency Graph* where edges represent data flows and vertices are the data transformations.
+low level, it is a *Task Dependency Graph* where edges represent data flows and vertices are the data transformations.
 
 ForML is providing a convenient API for defining complex workflows using simple notation based on two main entities:
 
 Operators
-    are high level pipeline macros that can be composed together and eventually expand into the task graph.
+    are high-level pipeline macros that can be composed together and eventually expand into the task graph.
 Actors
-    as the low level primitives forming the graph vertices.
+    as the low-level primitives forming the graph vertices.
 
 Each ForML workflow has dual *train* vs *apply* mode for implementing the specific scenarios of supervised learning.
 
@@ -43,20 +43,20 @@ The meaning of operators and how are they defined using actors is described in m
 Actor
 -----
 
-Actor is the lowest level task graph entity representing an atomic blackbox with three types of *application ports*:
+Actor is the lowest level task graph entity representing an atomic black box with three types of *application ports*:
 
 * M input and N output *Apply* ports
 * one *Train* input port
 * one *Label* input port
 
-Additionally there are two types of *system ports* but they are not available for manipulation from the user API.
+Additionally, there are two types of *system ports* but they are not available for manipulation from the user API.
 These are:
 
 * one input and output *State* port
-* one input and output *Params* port (hyper parameters)
+* one input and output *Params* port (hyperparameters)
 
-Actor is expected to process data arriving to input ports and return results using output ports if applicable. There is
-specific consistency constraint which ports can or need to be active (attached) at the same time: either both *Train*
+Actor is expected to process data arriving to input ports and return results using output ports if applicable. There
+is specific consistency constraint which ports can or need to be active (attached) at the same time: either both *Train*
 and *Label* or all *Apply* inputs and outputs.
 
 Ports of different actors can be connected via subscriptions. Any input port can be subscribed to at most one upstream
@@ -66,7 +66,7 @@ itself.
 The system doesn't care what is the particular internal processing functionality of any actors, all that matters is
 their interconnection determining the task graph topology.
 
-The actor API is defined using an abstract class of ``task.Actor``. For user defined actors it's best to
+The actor API is defined using an abstract class of ``task.Actor``. For user-defined actors it's best to
 simply extend this class filling in the abstract methods with the desired functionality. The API looks like this:
 
 .. autoclass:: forml.flow.task.Actor
@@ -76,9 +76,9 @@ simply extend this class filling in the abstract methods with the desired functi
 Native Actors
 .............
 
-Basic mechanism for declaring custom actors is implementing the ``task.Actor`` interface.
+The basic mechanism for declaring custom actors is implementing the ``task.Actor`` interface.
 
-Example of user-defined native actor::
+Example of a user-defined native actor::
 
     import typing
     import pandas as pd
@@ -104,8 +104,8 @@ Note this actor doesn't implement the ``train`` method making it a simple *state
 Wrapped Class Actors
 ....................
 
-Another option of defining actors is reusing third-party classes that are providing desired functionality. These classes
-cannot be changed to extend ForML base Actor class but can be wrapped using a ``wrapped.Class.actor``
+Another option of defining actors is reusing third-party classes that are providing the desired functionality. These
+classes cannot be changed to extend ForML base Actor class but can be wrapped using a ``wrapped.Class.actor``
 decorator like this::
 
     from sklearn import ensemble as sklearn
@@ -145,29 +145,29 @@ and support a *composition operation* (the ``>>`` syntax) for building up the pi
 and their wiring and expands the task graph through composition with other operators.
 
 Operator composition is a very powerful concept built into ForML. It is the composition in
-the `mathematical sense <https://en.wikipedia.org/wiki/Function_composition>`_ that allows to expand the task graph
-topology into a complex layout just by simple combination of two operators. More details about the composition
-mechanism is discussed in the :doc:`operator` sections.
+the `mathematical sense <https://en.wikipedia.org/wiki/Function_composition>`_ that allows to expanding the task graph
+topology into a complex layout just by a simple combination of two operators. More details about the composition
+mechanism are discussed in the :doc:`operator` sections.
 
 Pipeline for supervised learning project has typically two modes - *learning* and *applying* (also known as *training*
 or *fitting* and *predicting* or *transforming*). To implement the pipeline mode duality, operators actually define
-the composition separately for each of the two modes. This eventually allows to produce different graph topology for
+the composition separately for each of the two modes. This eventually allows producing different graph topology for
 *train* vs *apply* mode while defining the pipeline just once using one set of operators. This also prevents any
-inconsistencies between the *train* vs *apply* flows as these are only assembled along each other when composing
+inconsistencies between the *train* vs *apply* flows as these are only assembled along each with other when composing
 the encapsulating operators.
 
 Operators can implement whatever complex functionality using any number of actors. There is however one condition: the
 subgraph defined by an operator can internally split into multiple branches but can only be connected (both on input and
-output side) to other operators using single port of single node.
+output side) to other operators using a single port of a single node.
 
 Standard ML entities like *transformers* or *estimators* can be turned into operators easily by wrapping them within the
 provided decorators or adding a provided mixin class into the class hierarchy. More complex entities like for example
 a *stacked ensembler* need to be implemented as operators from scratch (reusable entities can be maintained centrally as
 library operators). For simple operators (typically single-actor operators) are available convenient decorators under
-the ``forml.flow.operator.generic.simple`` that make it really easy to create specific instances. More details on the
+the ``forml.flow.operator.generic.simple`` that makes it really easy to create specific instances. More details on the
 topic of operator development can be found in the :doc:`operator` sections.
 
-Following is an example of creating simple transformer operator by decorating an user defined actor with the
+Following is an example of creating a simple transformer operator by decorating a user-defined actor with the
 ``simple.Mapper.operator`` decorator::
 
     import typing

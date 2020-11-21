@@ -41,7 +41,8 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
             Args:
                 mode: Mode segment provided either as a path or just a node.
 
-            Returns: Cleaned mode path.
+            Returns:
+                Cleaned mode path.
             """
             if not mode:
                 mode = nodemod.Future()
@@ -64,7 +65,8 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
             train: Optional path to be connected to train segment.
             label: Optional path to be connected to label segment.
 
-        Returns: New Track instance.
+        Returns:
+            New Track instance.
         """
         return self.__class__(
             self.apply.extend(apply) if apply else self.apply,
@@ -85,7 +87,8 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
             train: Optional path to be used as train segment.
             label: Optional path to be used as label segment.
 
-        Returns: New Track instance.
+        Returns:
+            New Track instance.
         """
         return self.__class__(apply or self.apply, train or self.train, label or self.label)
 
@@ -124,7 +127,8 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
     def shared(self) -> typing.Sequence[uuid.UUID]:
         """Get the set of nodes with state shared between the apply/train modes.
 
-        Returns: Set of nodes sharing state between pipeline modes.
+        Returns:
+            Set of nodes sharing state between pipeline modes.
         """
         apply = self.Stateful()
         self.apply.accept(apply)

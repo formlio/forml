@@ -16,7 +16,7 @@
 Operator Unit Testing
 =====================
 
-ForML provides custom testing framework for user defined operators. It is built on top of the standard ``unittest``
+ForML provides a custom testing framework for user-defined operators. It is built on top of the standard ``unittest``
 library with an API specialized to cover all the standard operator outcomes while minimizing any boiler-plating.
 
 The tests need to be placed under the ``tests/`` folder of your :doc:`project` (note ``unittest`` requires all test
@@ -108,7 +108,7 @@ test suite class.
 Running Your Tests
 ------------------
 
-All the suites are transparently expanded into full blown ``unittest.TestCase`` definition so from here you would treat
+All the suites are transparently expanded into full-blown ``unittest.TestCase`` definition so from here you would treat
 them as normal unit tests, which means you can simply run them using the usual::
 
     $ python3 setup.py test
@@ -135,7 +135,7 @@ Custom Value Matchers
 ---------------------
 
 All the ``.returns()`` assertions are implemented using the ``unittest.TestCase.assertEquals()`` which compares the
-expected and actual values checking for ``__eq__()`` equality. If this is not valid comparison for the particular
+expected and actual values checking for ``__eq__()`` equality. If this is not a valid comparison for the particular
 data types used by the operator, you have to supply custom matcher as a second parameter to the assertion.
 
 This can be useful for example for ``pandas.DataFrames``, which don't support simple boolean equality check. Following

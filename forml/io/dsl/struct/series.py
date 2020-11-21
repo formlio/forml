@@ -41,7 +41,8 @@ def cast(value: typing.Any) -> 'Column':
     Args:
         value: Value to be represented as Operable column.
 
-    Returns: Operable column instance.
+    Returns:
+        Operable column instance.
     """
     if not isinstance(value, Column):
         LOGGER.debug('Converting value of %s to a literal type', value)
@@ -63,7 +64,8 @@ class Column(tuple, metaclass=abc.ABCMeta):
         def __call__(self, *column: 'Column') -> typing.FrozenSet['Column']:
             """Apply this dissector to the given columns.
 
-            Returns: Set of instances matching the registered types used in given column(s).
+            Returns:
+                Set of instances matching the registered types used in given column(s).
             """
             for col in column:
                 col.accept(self)
@@ -96,7 +98,8 @@ class Column(tuple, metaclass=abc.ABCMeta):
     def name(self) -> typing.Optional[str]:
         """Column nme
 
-        Returns: name string.
+        Returns:
+            name string.
         """
 
     @property
@@ -104,7 +107,8 @@ class Column(tuple, metaclass=abc.ABCMeta):
     def kind(self) -> kindmod.Any:
         """Column type.
 
-        Returns: type.
+        Returns:
+            type.
         """
 
     @abc.abstractmethod
@@ -120,14 +124,16 @@ class Column(tuple, metaclass=abc.ABCMeta):
     def operable(self) -> 'Operable':
         """Return the operable of this column (apart from Aliased, operable is the column itself).
 
-        Returns: Column's operable.
+        Returns:
+            Column's operable.
         """
 
     @classmethod
     def dissect(cls, *column: 'Column') -> typing.FrozenSet['Column']:
         """Return an iterable of instances of this type composing given column(s).
 
-        Returns: Set of this type instances used in given column(s).
+        Returns:
+            Set of this type instances used in given column(s).
         """
         return cls.Dissect(cls)(*column)
 
@@ -138,7 +144,8 @@ class Column(tuple, metaclass=abc.ABCMeta):
         Args:
             column: Column to be verified.
 
-        Returns: Original column if instance of our type or raising otherwise.
+        Returns:
+            Original column if instance of our type or raising otherwise.
         """
         column = cast(column)
         if not isinstance(column, cls):
@@ -152,7 +159,8 @@ class Column(tuple, metaclass=abc.ABCMeta):
         Args:
             column: Column to be verified.
 
-        Returns: Original column if containing our type or raising otherwise.
+        Returns:
+            Original column if containing our type or raising otherwise.
         """
         if not cls.dissect(column):
             raise error.Syntax(f'No {cls.__name__} instance(s) found in {column}')
@@ -165,7 +173,8 @@ class Column(tuple, metaclass=abc.ABCMeta):
         Args:
             column: Column to be verified.
 
-        Returns: Original column if not of our type or raising otherwise.
+        Returns:
+            Original column if not of our type or raising otherwise.
         """
         if cls.dissect(column):
             raise error.Syntax(f'{cls.__name__} instance(s) found in {column}')
@@ -178,7 +187,8 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
     Args:
         handler: Callable to be decorated.
 
-    Returns: Decorated callable.
+    Returns:
+        Decorated callable.
     """
 
     @functools.wraps(handler)
@@ -188,7 +198,8 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
         Args:
             *args: Arguments to be forced to columns.
 
-        Returns: Arguments converted to columns.
+        Returns:
+            Arguments converted to columns.
         """
         return handler(*(cast(a).operable for a in args))
 
@@ -213,7 +224,8 @@ class Operable(Column, metaclass=abc.ABCMeta):
         Args:
             alias:
 
-        Returns: New column instance with given alias.
+        Returns:
+            New column instance with given alias.
         """
         return Aliased(self, alias)
 
@@ -355,7 +367,8 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         Args:
             specs: One or many columns or actual ordering instances.
 
-        Returns: Sequence of ordering terms.
+        Returns:
+            Sequence of ordering terms.
         """
         specs = itertools.zip_longest(specs, specs[1:])
         for column, direction in specs:
@@ -388,7 +401,8 @@ class Aliased(Column):
     def kind(self) -> kindmod.Any:
         """Column type.
 
-        Returns: Inner column type.
+        Returns:
+            Inner column type.
         """
         return self.operable.kind
 
@@ -420,7 +434,8 @@ class Literal(Operable):
     def name(self) -> None:
         """Literal has no name without an explicit aliasing.
 
-        Returns: None.
+        Returns:
+            None.
         """
         return None
 
@@ -478,7 +493,8 @@ class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
     def name(self) -> None:
         """Expression has no name without an explicit aliasing.
 
-        Returns: None.
+        Returns:
+            None.
         """
         return None
 
@@ -508,7 +524,8 @@ class Operator(metaclass=abc.ABCMeta):
     def symbol(self) -> str:
         """Operator symbol.
 
-        Returns: String representation of the symbol.
+        Returns:
+            String representation of the symbol.
         """
 
 
@@ -573,7 +590,8 @@ class Predicate(metaclass=abc.ABCMeta):
                 right: Right primitive to be merged.
                 operator: Operator to be used for combining individual predicates.
 
-            Returns: New Primitive instance with individual predicates combined.
+            Returns:
+                New Primitive instance with individual predicates combined.
             """
             return cls(
                 *(
@@ -608,7 +626,8 @@ class Predicate(metaclass=abc.ABCMeta):
     def factors(self) -> 'Predicate.Factors':
         """Mapping of primitive source predicates - involving just a single Table.
 
-        Returns: Break down of factors involved in this predicate.
+        Returns:
+            Break down of factors involved in this predicate.
         """
 
     @classmethod
@@ -621,7 +640,8 @@ class Predicate(metaclass=abc.ABCMeta):
         Args:
             column: Column instance to be checked for its compliance.
 
-        Returns: Column instance.
+        Returns:
+            Column instance.
         """
         column = Operable.ensure_is(column)
         if cls is Predicate:  # bare Predicate - accept anything of a boolean kind.
@@ -714,7 +734,8 @@ class Comparison(Predicate):
         def operable(self) -> Infix:
             """Materialize the real Comparison instance represented by this proxy.
 
-            Returns: Comparison instance.
+            Returns:
+                Comparison instance.
             """
             return self.operator(self.left, self.right)
 
@@ -800,7 +821,8 @@ class Arithmetic:
     def kind(self) -> kindmod.Numeric:
         """Largest cardinality kind of all operators kinds.
 
-        Returns: Numeric kind.
+        Returns:
+            Numeric kind.
         """
         return functools.reduce(
             functools.partial(max, key=lambda k: k.__cardinality__),
@@ -885,7 +907,8 @@ class Window(Cumulative):
                 ordering: Order in which input rows should be processed.
                 frame: Sliding window specification.
 
-            Returns: Windowed column instance.
+            Returns:
+                Windowed column instance.
             """
             return Window(self, partition, ordering, frame)
 
@@ -910,7 +933,8 @@ class Window(Cumulative):
     def name(self) -> None:
         """Window has no name without an explicit aliasing.
 
-        Returns: None.
+        Returns:
+            None.
         """
         return None
 

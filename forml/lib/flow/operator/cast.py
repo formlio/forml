@@ -38,6 +38,7 @@ def ndframe(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = N
         data: Input data.
         columns: Optional column names.
 
-    Returns: Pandas dataframe/series.
+    Returns:
+        Pandas dataframe/series.
     """
     return ndfmod.cast(data, columns=columns)

@@ -48,14 +48,16 @@ class Level(directory.Level):
     def registry(self) -> 'persistent.Registry':
         """Registry instance.
 
-        Returns: Registry instance.
+        Returns:
+            Registry instance.
         """
         return self._registry
 
     def list(self) -> directory.Level.Listing:
         """List the content of this level.
 
-        Returns: Level content listing.
+        Returns:
+            Level content listing.
         """
         return self.Listing(prjmod.Level.Key(k) for k in self.registry.projects())
 
@@ -65,7 +67,8 @@ class Level(directory.Level):
         Args:
             project: Project name.
 
-        Returns: Project instance.
+        Returns:
+            Project instance.
         """
         return prjmod.Level(self, project)
 

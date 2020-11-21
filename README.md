@@ -24,8 +24,9 @@ ForML
 [![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/master.svg)](https://codecov.io/github/formlio/forml?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://forml.readthedocs.io/en/latest/?badge=latest)
 [![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
-[![PyPI version](https://badge.fury.io/py/forml.svg)](https://pypi.org/project/forml/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PyPI Version](https://badge.fury.io/py/forml.svg)](https://pypi.org/project/forml/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/forml)](https://pypi.org/project/forml/)
+[![Code Style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
 ForML is a framework for researching, implementing and operating data science projects.
@@ -53,14 +54,14 @@ History
 
 ForML started as an open-source project in response to ever painful transitions of datascience research into production.
 While there are other projects trying to solve this problem, they are typically either generic data processing systems
-too low-level to provide out-of-the-box ML lifecycle routines, or special scientific frameworks that are on the other
+too low-level to provide out-of-the-box ML lifecycle routines or special scientific frameworks that are on the other
 end too high-level to allow for robust operations.
 
 
 Resources
 ---------
 
-* [Documentation](https://forml.readthedocs.io/en/latest/)
+* [Documentation](https://docs.forml.io/en/latest/)
 * [Source Code](https://github.com/formlio/forml/)
 * Mailing lists:
 

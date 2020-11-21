@@ -70,7 +70,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         def build(self) -> 'Descriptor':
             """Create the descriptor.
 
-            Returns: Descriptor instance.
+            Returns:
+                Descriptor instance.
             """
             if not all(self._handlers.values()):
                 LOGGER.warning('Incomplete builder (missing %s)', ', '.join(c for c, h in self if not h))
@@ -106,7 +107,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
             path: Path to load from.
             package: Base package to be considered as a root for all component modules.
             **modules: Component module mappings.
-        Returns: Project descriptor.
+        Returns:
+            Project descriptor.
         """
         builder = cls.Builder()
         if any(c not in builder for c in modules):
@@ -150,7 +152,8 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     def descriptor(self) -> Descriptor:
         """Extracting the project descriptor from this artifact.
 
-        Returns: Project descriptor.
+        Returns:
+            Project descriptor.
         """
         return Descriptor.load(self.package, self.path, **self.modules)
 
@@ -159,7 +162,8 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     def launcher(self) -> 'launcher.Virtual':
         """Return the launcher configured with a virtual registry preloaded with this artifact.
 
-        Returns: Launcher instance.
+        Returns:
+            Launcher instance.
         """
         project = (self.package or conf.PRJNAME).replace('.', '-')
 

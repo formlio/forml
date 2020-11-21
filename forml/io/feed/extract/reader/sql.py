@@ -45,7 +45,8 @@ class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
         Args:
             **kwargs: Connection specific keyword arguments.
 
-        Returns: Connection instance.
+        Returns:
+            Connection instance.
         """
 
     @classmethod
@@ -58,7 +59,8 @@ class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
             sources: Source mappings to be used by the parser.
             columns: Column mappings to be used by the parser.
 
-        Returns: Parser instance.
+        Returns:
+            Parser instance.
         """
         return cls.Parser(sources, columns)
 
@@ -69,7 +71,8 @@ class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
         Args:
             data: Row oriented input.
 
-        Returns: Columnar output.
+        Returns:
+            Columnar output.
         """
         return payload.transpose(data)
 
@@ -81,7 +84,8 @@ class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
             statement: Query statement in the reader's native syntax.
             kwargs: Optional reader keyword args.
 
-        Returns: Row-oriented data provided by the reader.
+        Returns:
+            Row-oriented data provided by the reader.
         """
         LOGGER.debug('Establishing SQL connection')
         with contextlib.closing(cls.connection(**kwargs)) as connection:

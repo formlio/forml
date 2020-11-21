@@ -47,7 +47,8 @@ class Level(metaclass=abc.ABCMeta):
         def next(self) -> 'Level.Key':
             """Get the next key in sequence.
 
-            Returns: Next key.
+            Returns:
+                Next key.
             """
             raise NotImplementedError(f'Next key not supported for {self.__class__}')
 
@@ -64,7 +65,8 @@ class Level(metaclass=abc.ABCMeta):
         def last(self) -> 'Level.Key':
             """Get the last (most recent) item from the listing.
 
-            Returns: Id of the last item.
+            Returns:
+                Id of the last item.
             """
             try:
                 return self[-1]
@@ -90,7 +92,8 @@ class Level(metaclass=abc.ABCMeta):
     def registry(self) -> 'persistent.Registry':
         """Registry instance.
 
-        Returns: Registry instance.
+        Returns:
+            Registry instance.
         """
         return self._parent.registry
 
@@ -98,7 +101,8 @@ class Level(metaclass=abc.ABCMeta):
     def key(self) -> 'Level.Key':
         """Either user specified or last lazily listed level key.
 
-        Returns: ID of this level.
+        Returns:
+            ID of this level.
         """
         if self._key is None:
             if not self._parent:
@@ -113,7 +117,8 @@ class Level(metaclass=abc.ABCMeta):
     def list(self) -> 'Level.Listing':
         """Return the listing of this level.
 
-        Returns: Level listing.
+        Returns:
+            Level listing.
         """
 
     @abc.abstractmethod
@@ -123,7 +128,8 @@ class Level(metaclass=abc.ABCMeta):
         Args:
             key: Item key to get.
 
-        Returns: Item as a level instance.
+        Returns:
+            Item as a level instance.
         """
 
 
@@ -148,6 +154,7 @@ class Cache:
     def info(self) -> functools._CacheInfo:  # pylint: disable=protected-access
         """Return the cache info.
 
-        Returns: Cache info tuple.
+        Returns:
+            Cache info tuple.
         """
         return self.__call__.cache_info()  # pylint: disable=no-value-for-parameter

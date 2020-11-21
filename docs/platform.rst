@@ -23,10 +23,10 @@ Platform is a configuration-driven selection of particular *providers* implement
 * :doc:`feed`
 * :doc:`sink`
 
-ForML uses internal *bank* of available provider implementations of the different possible types. Provider instances are
-registered in this bank using one of two possible *references*:
+ForML uses an internal *bank* of available provider implementations of the different possible types. Provider instances
+are registered in this bank using one of two possible *references*:
 
-* provider's *fully qualified class name* - for example the ``forml.lib.runner.dask:Runner``
+* provider's *fully qualified class name* - for example, the ``forml.lib.runner.dask:Runner``
 * for convenience, each provider can also optionally have an *alias* defined by its author - ie ``dask``
 
 .. note:: For any provider implementation to be placed into the ForML provider bank, it needs to get imported somehow.
@@ -44,7 +44,7 @@ locate and merge the ``config.toml`` in the following places (in order of parsin
 +-----------------+--------------------------------------------------------------------+
 | Location        | Meaning                                                            |
 +=================+====================================================================+
-| ``/etc/forml``  | **System** wide global configuration                               |
+| ``/etc/forml``  | **System**-wide global configuration                               |
 +-----------------+--------------------------------------------------------------------+
 | ``~/.forml``    | **User** homedir configuration (unless ``$FORML_HOME`` is set)     |
 +-----------------+--------------------------------------------------------------------+
@@ -104,10 +104,11 @@ Feed Providers
 Among the different *provider* types, :doc:`Feeds <feed>` are unique as each instance usually needs to be special
 implementation specific to the given platform. Part of the feed functionality is to resolve the :ref:`catalogized
 schemas <io-catalogized-schemas>` to the physical datasets known to the platform. This might not be always possible via
-configuration and the whole feed needs to be implemented as code. For this purpose the *system* and *user* configuration
-directories are also potentially searched by the provider importer so that the custom feeds can be placed there.
+configuration and the whole feed needs to be implemented as code. For this purpose, the *system* and *user*
+configuration directories are also potentially searched by the provider importer so that the custom feeds can be placed
+there.
 
-For example the following feed implementation stored under ``~/.forml/tutorial.py`` can be referenced from the config
+For example, the following feed implementation stored under ``~/.forml/tutorial.py`` can be referenced from the config
 file simply as ``tutorial:Feed``::
 
     from forml.io import feed
@@ -138,28 +139,23 @@ syntax:
 
 .. code-block:: none
 
-    usage: forml [-h] [-C CONFIG] [-P REGISTRY] [-R RUNNER] [-E ENGINE]
-                 {init,list,tune,train,apply} ...
+    usage: forml [-h] [-C CONFIG] [-L LOGLEVEL] {init,list,tune,train,apply,eval} ...
 
     Lifecycle Management for Datascience Projects
 
     positional arguments:
-      {init,list,tune,train,apply}
+      {init,list,tune,train,apply,eval}
                             program subcommands (-h for individual description)
         init                create skeleton for a new project
         list                show the content of the selected registry
-        tune                tune the given project lineage producing new
-                            generation
-        train               train new generation of given project lineage
-        apply               apply given generation of given project lineage
+        tune                tune new generation of given (or default) project lineage
+        train               train new generation of given (or default) project lineage
+        apply               apply given (or default) generation
+        eval                evaluate predictions of given (or default) generation
 
     optional arguments:
       -h, --help            show this help message and exit
       -C CONFIG, --config CONFIG
                             additional config file
-      -P REGISTRY, --registry REGISTRY
-                            persistent registry reference
-      -R RUNNER, --runner RUNNER
-                            runtime runner reference
-      -E ENGINE, --engine ENGINE
-                            IO engine reference
+      -L LOGLEVEL, --loglevel LOGLEVEL
+                            log with given level
