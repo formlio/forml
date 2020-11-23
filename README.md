@@ -31,9 +31,9 @@ ForML
 
 ForML is a framework for researching, implementing and operating data science projects.
 
-Use ForML to formally describe a data science problem as a composition of high-level operators.
-ForML expands your project into a task dependency graph specific to given life-cycle phase and executes it using any of
-its supported runners.
+Use ForML to formally describe a data science problem as a composition of high-level operators. ForML expands your
+project into a task dependency graph specific to a given life-cycle phase and executes it using any of its supported
+runners.
 
 Solutions built on ForML are naturally easy to reuse, extend, reproduce, or share and collaborate on.
 
@@ -44,9 +44,9 @@ Not Just Another DAG
 Despite *DAG* (directed acyclic graph) being at the heart of ForML operations, it stands out amongst the many other task
 dependency processing systems due to:
 
-1. Its specialization on machine learning problems that's wired right into the flow topology.
-2. Concept of high-level operator composition which helps wrapping complex ML techniques into simple reusable units.
-3. Abstraction of runtime dependencies allowing to run the same project using different technologies.
+1. Its specialization on machine learning problems, that is wired right into the flow topology.
+2. Concept of high-level operator composition which helps to wrap complex ML techniques into simple reusable units.
+3. An abstraction of runtime dependencies allowing to run the same project using different technologies.
 
 
 History

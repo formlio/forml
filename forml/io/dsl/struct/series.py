@@ -222,7 +222,7 @@ class Operable(Column, metaclass=abc.ABCMeta):
         """Use an alias for this column.
 
         Args:
-            alias:
+            alias: Aliased column name.
 
         Returns:
             New column instance with given alias.

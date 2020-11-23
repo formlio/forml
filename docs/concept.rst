@@ -101,7 +101,7 @@ selected by the configuration of the runtime environment called simply the :doc:
 Data Providers & Result Consumers
     The data source DSL defined within the project gets transcoded into a reader-specific ETL code and then served
     by one of the available schema-matching *feed* providers. Feeds can potentially serve an arbitrary number of
-    data sources that are advertised against the same *schema catalogues* referred by projects. A platform can be
+    data sources that are advertised against the same *schema catalogs* referred by projects. A platform can be
     preconfigured with multiple different feeds held in a *pool* which at query time selects the most suitable feed to
     serve the given project query.
 

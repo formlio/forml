@@ -219,15 +219,40 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         return self
 
     def select(self, *columns: 'series.Column') -> 'Query':
-        """Specify the output columns to be provided."""
+        """Specify the output columns to be provided (projection).
+
+        Args:
+            columns: Sequence of column expressions.
+
+        Returns:
+            Query instance.
+        """
         return self.query.select(*columns)
 
     def where(self, condition: 'series.Expression') -> 'Query':
-        """Add a row pre-filtering condition."""
+        """Add a row-filtering condition that's evaluated before any aggregations.
+
+        Repeated calls to ``.where`` combine all the conditions (logical AND).
+
+        Args:
+            condition: Boolean column expression.
+
+        Returns:
+            Query instance.
+        """
         return self.query.where(condition)
 
     def having(self, condition: 'series.Expression') -> 'Query':
-        """Add a row post-filtering condition."""
+        """Add a row-filtering condition that's applied to the evaluated aggregations.
+
+        Repeated calls to ``.having`` combine all the conditions (logical AND).
+
+        Args:
+            condition: Boolean column expression.
+
+        Returns:
+            Query instance.
+        """
         return self.query.having(condition)
 
     def join(
@@ -236,11 +261,27 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         condition: typing.Optional['series.Expression'] = None,
         kind: typing.Optional[typing.Union[Join.Kind, str]] = None,
     ) -> 'Query':
-        """Join with other tangible."""
+        """Join with another datasource.
+
+        Args:
+            other: Source to join with.
+            condition: Column expression as the join condition.
+            kind: Type of the join operation (INNER, LEFT, RIGHT, FULL CROSS).
+
+        Returns:
+            Query instance.
+        """
         return self.query.join(other, condition, kind)
 
     def groupby(self, *columns: 'series.Operable') -> 'Query':
-        """Aggregating spec."""
+        """Aggregation specifiers.
+
+        Args:
+            columns: Sequence of column expressions.
+
+        Returns:
+            Query instance.
+        """
         return self.query.groupby(*columns)
 
     def orderby(
@@ -251,23 +292,59 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             typing.Tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
         ],
     ) -> 'Query':
-        """series.Ordering spec."""
+        """Ordering specifiers.
+
+        Args:
+            *columns: Sequence of column expressions and direction tuples.
+
+        Returns:
+            Query instance.
+        """
         return self.query.orderby(*columns)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':
-        """Restrict the result rows by its max count with an optional offset."""
+        """Restrict the result rows by its max count with an optional offset.
+
+        Args:
+            count: Number of rows to return.
+            offset: Skip the given number of rows.
+
+        Returns:
+            Query instance.
+        """
         return self.query.limit(count, offset)
 
     def union(self, other: 'Queryable') -> 'Query':
-        """Set union with the other source."""
+        """Set union with the other source.
+
+        Args:
+            other: Query to union with.
+
+        Returns:
+            Query instance.
+        """
         return self.query.union(other)
 
     def intersection(self, other: 'Queryable') -> 'Query':
-        """Set intersection with the other source."""
+        """Set intersection with the other source.
+
+        Args:
+            other: Query to intersect with.
+
+        Returns:
+            Query instance.
+        """
         return self.query.intersection(other)
 
     def difference(self, other: 'Queryable') -> 'Query':
-        """Set difference with the other source."""
+        """Set difference with the other source.
+
+        Args:
+            other: Query to difference with.
+
+        Returns:
+            Query instance.
+        """
         return self.query.difference(other)
 
 
@@ -483,6 +560,11 @@ class Query(Queryable):
     @property
     @functools.lru_cache()
     def columns(self) -> typing.Sequence['series.Column']:
+        """Get the list of columns supplied by this query.
+
+        Returns:
+            A sequence of supplying columns.
+        """
         return self.selection if self.selection else self.source.columns
 
     def accept(self, visitor: visit.Frame) -> None:
