@@ -217,12 +217,42 @@ class TestSchema:
 
             _ = Colliding
 
+        class Override(schema):
+            """Schema with overridden field kind."""
+
+            school = struct.Field(kind.String())
+
+        assert Override.school.kind == kind.String()
+        assert schema.school.kind == kind.Integer()
+
     def test_access(self, schema: typing.Type['struct.Schema']):
         """Test the schema access methods."""
         assert tuple(schema) == ('surname', 'dob', 'level', 'score', 'school')
         assert schema.dob.name == 'birthday'
         assert schema['dob'].name == 'birthday'
         assert schema['birthday'].name == 'birthday'
+
+    def test_ordering(self):
+        """Test the field ordering rules in schema inheritance."""
+
+        class Base(struct.Schema):
+            """Base schema."""
+
+            first = struct.Field(kind.Integer())
+            fixme = struct.Field(kind.Float(), name='old')
+
+        class Child(Base):
+            """Child schema - adding a field "last" plus overriding kind of the "fixme" field."""
+
+            last = struct.Field(kind.Integer())
+            fixme = struct.Field(kind.String(), name='new')
+
+        assert tuple(Child.schema) == ('first', 'fixme', 'last')
+        assert Child.fixme.kind == kind.String()
+        assert Child.new == Child.fixme
+        assert Base.old
+        with pytest.raises(AttributeError):
+            assert Child.old
 
 
 class TestReference(Tangible):

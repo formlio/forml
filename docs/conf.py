@@ -96,5 +96,8 @@ html_show_copyright = False
 autoclass_content = 'both'
 autodoc_typehints = 'description'
 autosummary_generate = True
+
+# -- Options for sphinx.ext.napoleon --------------------------------------------
+# See: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_numpy_docstring = False
 napoleon_use_rtype = False

@@ -410,16 +410,15 @@ class Table(Origin):
         """Meta class for schema type ensuring consistent hashing."""
 
         def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any]):
-            existing = {s[k].name or k for s in bases if isinstance(s, Table.Schema) for k in s}
+            existing = {s[k].name: k for s in bases if isinstance(s, Table.Schema) for k in s}
             for key, field in namespace.items():
                 if not isinstance(field, struct.Field):
                     continue
-                new = field.name or key
-                if new in existing:
-                    raise error.Syntax(f'Colliding field name {new} in schema {name}')
-                existing.add(new)
                 if not field.name:
-                    namespace[key] = field.renamed(key)  # to normalize so that hash/eq is consistent
+                    namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
+                if field.name in existing and field.name != existing[field.name]:
+                    raise error.Syntax(f'Colliding field name {field.name} in schema {name}')
+                existing[field.name] = key
             return super().__new__(mcs, name, bases, namespace)
 
         def __hash__(cls):
@@ -444,8 +443,12 @@ class Table(Origin):
             raise AttributeError(f'Unknown field {name}')
 
         def __iter__(cls) -> typing.Iterator[str]:
+            seen = set()  # fields overridden by inheritance need to appear in original position
             return iter(
-                k for c in reversed(inspect.getmro(cls)) for k, f in c.__dict__.items() if isinstance(f, struct.Field)
+                k
+                for c in reversed(inspect.getmro(cls))
+                for k, f in c.__dict__.items()
+                if isinstance(f, struct.Field) and k not in seen and not seen.add(k)
             )
 
     schema: typing.Type['struct.Schema'] = property(operator.itemgetter(0))

@@ -20,9 +20,9 @@
 ForML
 =====
 
-[![GitHub Build](https://github.com/formlio/forml/workflows/CI%20Build/badge.svg)](https://github.com/formlio/forml/actions)
+[![GitHub Build](https://github.com/formlio/forml/workflows/CI%20Build/badge.svg)](https://github.com/formlio/forml/actions/)
 [![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/master.svg)](https://codecov.io/github/formlio/forml?branch=master)
-[![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://forml.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://docs.forml.io/en/latest/)
 [![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![PyPI Version](https://badge.fury.io/py/forml.svg)](https://pypi.org/project/forml/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/forml)](https://pypi.org/project/forml/)
