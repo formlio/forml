@@ -35,7 +35,7 @@ Catalogized Schemas
 -------------------
 
 To achieve data access independence, ForML introduces a concept of *catalogized schemas*. Instead of implementing
-direct operations on specific data source instances, the :doc:`dsl/index` used to define the input data ETL refers only
+direct operations on specific data source instances, the :doc:`dsl` used to define the input data ETL refers only
 to abstract data *schemas*. It is then the responsibility of the *platform* to resolve the requested schemas (and the
 whole ETL queries specified on top of that) mapping them to actual datasources hosted in the particular runtime
 environment.
@@ -58,14 +58,14 @@ producers. For private first-party datasets (ie. internal company data) this is 
 ForML) would just maintain a (private) package with schemas of their data sources. For public datasets (whose authors
 don't endorse ForML yet) this leaves it to some (not yet established) community maintained schema catalogs.
 
-See the :doc:`dsl/index` for a schema implementation guide.
+See the :doc:`dsl` for a schema implementation guide.
 
 .. _io-source-descriptor:
 
 Source Descriptor
 -----------------
 
-ForML projects specify their input data requirements (mainly the ETL :doc:`DSL <dsl/index>` query optionally composed
+ForML projects specify their input data requirements (mainly the ETL :doc:`DSL <dsl>` query optionally composed
 with other transforming operators) in form of a *source descriptor* (supplied within the :doc:`project structure
 <project>` using the :ref:`source.py <project-source>` component).
 

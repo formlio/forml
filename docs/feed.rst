@@ -17,7 +17,7 @@ Source Feed
 ===========
 
 Feed is a :doc:`runtime platform <platform>` component responsible for resolving the :doc:`project defined <project>`
-:doc:`ETL query <dsl/index>` providing the requested data.
+:doc:`ETL query <dsl>` providing the requested data.
 
 .. autosummary::
 
