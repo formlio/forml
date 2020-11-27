@@ -81,7 +81,7 @@ Content
     lifecycle
     workflow
     io
-    dsl/index
+    dsl
     interactive
     operator
     testing

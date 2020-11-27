@@ -150,7 +150,7 @@ Source (``source.py``)
 ''''''''''''''''''''''
 
 This component is a fundamental part of the :doc:`IO concept<io>`. A project can define the ETL process of sourcing
-data into the pipeline using the :doc:`DSL <dsl/index>` referring to some :ref:`catalogized schemas
+data into the pipeline using the :doc:`DSL <dsl>` referring to some :ref:`catalogized schemas
 <io-catalogized-schemas>` that are at runtime resolved via the available :doc:`feeds <feed>`.
 
 The source component is provided in form of a descriptor that's created using the ``.query()`` method as shown in the

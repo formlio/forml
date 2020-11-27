@@ -69,7 +69,7 @@ Data Source DSL
                 .where(student.score < 2) \
                 .orderby(student.level, student.score)
 
-    Full guide and the DSL references can be found in the :doc:`dsl/index` sections.
+    Full guide and the DSL references can be found in the :doc:`dsl` sections.
 
 .. _concept-workflow:
 
