@@ -22,5 +22,5 @@ setuptools.setup(
     version='0.1.dev0',
     packages=setuptools.find_packages(include=['titanic*']),
     setup_requires=['pytest-runner'],
-    install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
+    install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
 )

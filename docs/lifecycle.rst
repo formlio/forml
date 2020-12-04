@@ -40,9 +40,6 @@ Test
 
         $ python3 setup.py test
 
-    .. note::
-       The test mode is going to be deprecated in the upstream ``setuptools`` package so this will need to change.
-
 Evaluate
     Perform an evaluation based on the specs defined in ``evaluation.py`` and return the metrics. This can be defined
     either as cross-validation or hold-out training. One of the potential use-cases might be a CI integration

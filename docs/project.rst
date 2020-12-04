@@ -96,11 +96,6 @@ the custom locations of its project components using the ``component`` parameter
     setuptools.setup(...,
                      component={'pipeline': 'path.to.my.custom.pipeline.module'})
 
-
-.. note::  Since :pep:`517`, setuptools is no longer the Python default build tool, ForML is in the future also likely
-           to take a more generic approach to the build frontend/backend and the ``setup.py`` might no longer play the
-           described role.
-
 .. _project-pipeline:
 
 Pipeline (``pipeline.py``)
@@ -130,7 +125,8 @@ Evaluation (``evaluation.py``)
 
 Definition of the model evaluation strategy for both the development and production lifecycle.
 
-.. note:: The whole evaluation implementation is an interim and more robust concept with different API is ongoing.
+.. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
+.roadmap.
 
 The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
 

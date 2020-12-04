@@ -18,7 +18,7 @@
 """
 ForML top level.
 """
-__version__ = '0.2.dev0'
+__version__ = '0.2.dev1'
 __author__ = 'ForML Authors'
 
 from forml.conf import logging

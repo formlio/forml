@@ -24,7 +24,7 @@ repos:
   hooks:
   - id: check-added-large-files
   - id: check-ast
-  - id: check-byte-order-marker
+  - id: fix-byte-order-marker
   - id: check-case-conflict
   - id: check-merge-conflict
   - id: check-yaml

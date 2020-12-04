@@ -85,8 +85,19 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['static']
 
 html_show_sourcelink = False
-
 html_show_copyright = False
+html_logo = 'images/logo.svg'
+html_theme_options = {
+    'logo_only': False,
+    'display_version': False,
+}
+html_context = {
+    'display_github': True,
+    'github_user': 'formlio',
+    'github_repo': 'forml',
+    'github_version': 'master',
+    'conf_py_path': '/docs/',
+}
 
 # == Extensions configuration ==================================================
 
