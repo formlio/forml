@@ -20,13 +20,11 @@ Custom setuptools commands for pipeline execution modes.
 """
 import abc
 import logging
-import os
 import typing
 
 from setuptools.command import test
 
 from forml.conf.parsed import provider
-from forml.project import product
 from forml.runtime import launcher as launchmod
 
 LOGGER = logging.getLogger(__name__)
@@ -54,29 +52,12 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """Fini options."""
         self.ensure_string_list('feed')
 
-    @property
-    def artifact(self) -> product.Artifact:
-        """Get the artifact for this project.
-
-        Returns:
-            Artifact instance.
-        """
-        modules = dict(self.distribution.component)
-        package = modules.pop('', None)
-        if not package:
-            for mod in modules.values():
-                if '.' in mod:
-                    package, _ = os.path.splitext(mod)
-                    break
-            else:
-                package = self.distribution.packages[0]
-        pkgdir = self.distribution.package_dir or {'': '.'}
-        return product.Artifact(pkgdir[''], package=package, **modules)
-
     def run_tests(self) -> None:
         """This is the original test command entry point - let's override it with our actions."""
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        launcher = self.artifact.launcher(provider.Runner.resolve(self.runner), provider.Feed.resolve(self.feed))
+        launcher = self.distribution.artifact.launcher(
+            provider.Runner.resolve(self.runner), provider.Feed.resolve(self.feed)
+        )
         result = self.launch(launcher, lower=self.lower, upper=self.upper)
         if result is not None:
             print(result)

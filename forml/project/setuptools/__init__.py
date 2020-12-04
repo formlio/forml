@@ -20,6 +20,7 @@ Customized setuptools.
 """
 import inspect
 import logging
+import os
 import typing
 
 import setuptools
@@ -28,6 +29,7 @@ import setuptools
 from setuptools import *  # pylint: disable=redefined-builtin; # noqa: F401,F402,F403
 from setuptools import dist
 
+from forml.project import product
 from forml.project.setuptools.command import launch, bdist, upload
 
 LOGGER = logging.getLogger(__name__)
@@ -41,8 +43,27 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
         self.component: typing.Mapping[str, str] = dict()
         super().__init__(attrs)
 
+    @property
+    def artifact(self) -> product.Artifact:
+        """Get the artifact for this project.
 
-COMMANDS: typing.Mapping[str, typing.Type[launch.Mode]] = {
+        Returns:
+            Artifact instance.
+        """
+        modules = dict(self.component)
+        package = modules.pop('', None)
+        if not package:
+            for mod in modules.values():
+                if '.' in mod:
+                    package, _ = os.path.splitext(mod)
+                    break
+            else:
+                package = self.packages[0]
+        pkgdir = self.package_dir or {'': '.'}
+        return product.Artifact(pkgdir[''], package=package, **modules)
+
+
+COMMANDS: typing.Mapping[str, typing.Type[setuptools.Command]] = {
     'train': launch.Train,
     'tune': launch.Tune,
     'eval': launch.Eval,

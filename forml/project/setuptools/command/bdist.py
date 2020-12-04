@@ -63,7 +63,9 @@ class Package(setuptools.Command):
         """Package manifest."""
         name = self.distribution.get_name()
         version = self.distribution.get_version()
-        return distribution.Manifest(name=name, version=version, package='titanic')
+        return distribution.Manifest(
+            name=name, version=version, package=self.distribution.artifact.package, **self.distribution.artifact.modules
+        )
 
     def run(self) -> None:
         """Trigger the packaging process."""

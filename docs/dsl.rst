@@ -50,7 +50,7 @@ a *date* field ``dob`` (aliased as ``birthday``) plus its extended version ``Stu
 * schemas can be extended
 * extended fields can override same name fields from parents
 * field ordering is based on the in-class definition order, fields from parent classes come before fields of child
-classes, overriding a field doesn't change its position
+  classes, overriding a field doesn't change its position
 
 Schemas are expected to be published in form of :ref:`catalogs <io-catalogized-schemas>` which can be imported by both
 :doc:`projects <../project>` and :doc:`platforms <../platform>` making them the mapping intermediaries.
