@@ -70,7 +70,7 @@ The actor API is defined using an abstract class of ``task.Actor``. For user-def
 simply extend this class filling in the abstract methods with the desired functionality. The API looks like this:
 
 .. autoclass:: forml.flow.task.Actor
-   :members: apply, train, get_params
+   :members: apply, train, get_params, set_params, get_state, set_state
 
 
 Native Actors

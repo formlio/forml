@@ -100,7 +100,7 @@ class Finder(abc.MetaPathFinder):
         Returns:
             Sequence of necessary finders.
         """
-        result = list()
+        result = []
         *parents, _ = module.__name__.split('.')
         path = ''
         for subpath in parents:
@@ -150,7 +150,7 @@ def search(*paths: typing.Union[str, pathlib.Path]) -> None:
     Args:
         *paths: Paths to be inserted to sys.path.
     """
-    new = list()
+    new = []
     for item in itertools.chain((str(pathlib.Path(p).resolve()) for p in paths), sys.path):
         if item not in new:
             new.append(item)

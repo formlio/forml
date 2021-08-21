@@ -145,14 +145,15 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                 assert self.path.is_dir(), f'Expecting zip file or directory: {self.path}'
                 LOGGER.debug('Installing directory based package %s to %s', self.path, path)
                 shutil.copytree(self.path, path, ignore=lambda *_: {'__pycache__'})
-            elif all(self.PYSFX.search(n) for n in zipfile.ZipFile(self.path).namelist()):  # is a zip-safe
-                LOGGER.debug('Installing zip-safe package %s to %s', self.path, path)
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(self.path.read_bytes())
             else:
-                LOGGER.debug('Extracting non zip-safe package %s to %s', self.path, path)
                 with zipfile.ZipFile(self.path) as package:
-                    package.extractall(path)
+                    if all(self.PYSFX.search(n) for n in package.namelist()):  # is a zip-safe
+                        LOGGER.debug('Installing zip-safe package %s to %s', self.path, path)
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_bytes(self.path.read_bytes())
+                    else:
+                        LOGGER.debug('Extracting non zip-safe package %s to %s', self.path, path)
+                        package.extractall(path)
         importer.search(path)
         return product.Artifact(path, self.manifest.package, **self.manifest.modules)
 

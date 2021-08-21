@@ -131,7 +131,7 @@ class Section(metaclass=Meta):
             other: Right side of the comparison.
 
         Returns:
-            True if left is less then right.
+            True if left is less than right.
         """
 
 
@@ -148,15 +148,15 @@ class Multi(Section):  # pylint: disable=abstract-method
     """
 
     @classmethod
-    def _lookup(cls, references: typing.Iterable[str]) -> typing.Sequence[Section]:
+    def _lookup(cls, reference: typing.Iterable[str]) -> typing.Sequence[Section]:
         """Create a sequence of config instances based on given references.
 
         Args:
-            references: Config references.
+            reference: Config references.
 
         Returns:
             Config instances.
         """
-        if isinstance(references, str):
-            references = [references]
-        return tuple(sorted(cls(r) for r in references))
+        if isinstance(reference, str):
+            reference = [reference]
+        return tuple(sorted(cls(r) for r in reference))

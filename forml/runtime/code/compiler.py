@@ -124,7 +124,7 @@ class Table(view.Visitor, abc.Iterable):
         """Mapping of the stored instructions. Same instruction might be stored under multiple keys."""
 
         def __init__(self):
-            self._instructions: typing.Dict[uuid.UUID, code.Instruction] = dict()
+            self._instructions: typing.Dict[uuid.UUID, code.Instruction] = {}
 
         def __contains__(self, key: uuid.UUID) -> bool:
             return key in self._instructions

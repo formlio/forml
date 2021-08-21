@@ -66,7 +66,7 @@ class Reference:
         """
 
 
-class Qualifier(typing.NamedTuple, Reference):
+class Qualifier(collections.namedtuple('Qualifier', 'module, qualname'), Reference):
     """Reference determining the provider class within its module."""
 
     module: str
@@ -123,7 +123,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
                 return
 
     def __new__(cls):
-        return super().__new__(cls, dict(), set())
+        return super().__new__(cls, dict(), set())  # pylint: disable=use-dict-literal
 
     def add(self, provider: typing.Type['Interface'], alias: typing.Optional[Alias], paths: typing.Set[Path]):
         """Push package to lazy loading stack.
@@ -172,7 +172,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
 
 
 REGISTRY: typing.Dict[typing.Type['Interface'], Registry] = collections.defaultdict(Registry)
-DEFAULTS: typing.Dict[typing.Type['Interface'], typing.Tuple[str, typing.Mapping[str, typing.Any]]] = dict()
+DEFAULTS: typing.Dict[typing.Type['Interface'], typing.Tuple[str, typing.Mapping[str, typing.Any]]] = {}
 
 
 class Meta(abc.ABCMeta):

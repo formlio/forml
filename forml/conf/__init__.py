@@ -36,9 +36,9 @@ class Parser(dict):
 
     def __init__(self, defaults: typing.Mapping[str, typing.Any], *paths: pathlib.Path):
         super().__init__()
-        self._sources: typing.List[pathlib.Path] = list()
-        self._errors: typing.Dict[pathlib.Path, Exception] = dict()
-        self._notifiers: typing.List[typing.Callable[[], None]] = list()
+        self._sources: typing.List[pathlib.Path] = []
+        self._errors: typing.Dict[pathlib.Path, Exception] = {}
+        self._notifiers: typing.List[typing.Callable[[], None]] = []
         self.update(defaults)
         for src in paths:
             self.read(src)
@@ -71,7 +71,7 @@ class Parser(dict):
                 Merged dictionary.
             """
             # pylint: disable=isinstance-second-argument-not-valid-type
-            result = dict()
+            result = {}
             common = set(left).intersection(right)
             for key in set(left).union(right):
                 if key in common and isinstance(left[key], typing.Mapping) and isinstance(right[key], typing.Mapping):

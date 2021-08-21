@@ -49,16 +49,16 @@ class Level(directory.Level):
         """
         return self.Listing(lngmod.Level.Key(n) for n in self.registry.lineages(self.key))
 
-    def get(self, lineage: typing.Optional[typing.Union[str, lngmod.Level.Key]] = None) -> lngmod.Level:
+    def get(self, key: typing.Optional[typing.Union[str, lngmod.Level.Key]] = None) -> lngmod.Level:
         """Get a lineage instance by its id.
 
         Args:
-            lineage: Lineage version.
+            key: Lineage version.
 
         Returns:
             Lineage instance.
         """
-        return lngmod.Level(self, lineage)
+        return lngmod.Level(self, key)
 
     def put(self, package: 'distribution.Package') -> lngmod.Level:
         """Publish new lineage to the repository based on provided package.

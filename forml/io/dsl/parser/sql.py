@@ -118,7 +118,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             sources: typing.Mapping[frame.Source, str],
             columns: typing.Optional[typing.Mapping[series.Column, str]] = None,
         ):
-            super().__init__(sources, columns or dict())
+            super().__init__(sources, columns or {})
 
         def resolve_column(self, column: series.Column) -> str:
             """Resolver falling back to a field name in case of no explicit mapping.
@@ -136,17 +136,17 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                     return column.name
                 raise err
 
-        def generate_element(self, source: str, element: str) -> str:  # pylint: disable=no-self-use
+        def generate_element(self, origin: str, element: str) -> str:  # pylint: disable=no-self-use
             """Generate a field code.
 
             Args:
-                source: Field source value.
+                origin: Field source value.
                 element: Field symbol.
 
             Returns:
                 Field representation.
             """
-            return f'{source}.{element}'
+            return f'{origin}.{element}'
 
         def generate_alias(self, column: str, alias: str) -> str:  # pylint: disable=no-self-use
             """Generate column alias code.

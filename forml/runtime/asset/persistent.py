@@ -33,7 +33,9 @@ if typing.TYPE_CHECKING:
     from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
-TMPDIR = tempfile.TemporaryDirectory(prefix=f'{conf.APPNAME}-persistent-', dir=conf.tmpdir)
+TMPDIR = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
+    prefix=f'{conf.APPNAME}-persistent-', dir=conf.tmpdir
+)
 
 
 def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = None) -> pathlib.Path:

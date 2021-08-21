@@ -61,16 +61,16 @@ class Level(directory.Level):
         """
         return self.Listing(prjmod.Level.Key(k) for k in self.registry.projects())
 
-    def get(self, project: typing.Union[str, prjmod.Level.Key]) -> 'prjmod.Level':
+    def get(self, key: typing.Union[str, prjmod.Level.Key]) -> 'prjmod.Level':
         """Get a project instance by its name.
 
         Args:
-            project: Project name.
+            key: Project name.
 
         Returns:
             Project instance.
         """
-        return prjmod.Level(self, project)
+        return prjmod.Level(self, key)
 
     @property
     def key(self) -> None:

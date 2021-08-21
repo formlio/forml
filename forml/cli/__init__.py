@@ -69,7 +69,7 @@ class Builder:
 
     def __init__(self, handler: typing.Callable):
         self._handler: typing.Callable = handler
-        self._params: typing.List['Param'] = list()
+        self._params: typing.List['Param'] = []
         self._command: typing.Optional['Command'] = None
 
     def add(self, param: 'Param') -> None:
@@ -92,7 +92,7 @@ class Builder:
 
     def __call__(self, name: str, parser: argparse._SubParsersAction) -> Handler:
         command = parser.add_parser(self._command.name or name, **self._command.kwargs)
-        dests = list()
+        dests = []
         for param in reversed(self._params):
             dests.append(command.add_argument(*param.args, **param.kwargs).dest)
         return Handler(self._handler, dests)

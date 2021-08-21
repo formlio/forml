@@ -108,8 +108,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         constructor = staticmethod(prjmod.Level.Key)
 
         @staticmethod
-        def content(root: pathlib.Path) -> bool:
-            return any(Path.Lineage.valid(i) for i in root.iterdir())
+        def content(level: pathlib.Path) -> bool:
+            return any(Path.Lineage.valid(i) for i in level.iterdir())
 
     class Lineage(Matcher):
         """Lineage matcher."""
@@ -117,8 +117,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         constructor = staticmethod(lngmod.Level.Key)
 
         @staticmethod
-        def content(root: pathlib.Path) -> bool:
-            return (root / Path.PKGFILE).exists()
+        def content(level: pathlib.Path) -> bool:
+            return (level / Path.PKGFILE).exists()
 
     class Generation(Matcher):
         """Generation matcher."""
@@ -126,8 +126,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         constructor = staticmethod(genmod.Level.Key)
 
         @staticmethod
-        def content(root: pathlib.Path) -> bool:
-            return (root / Path.TAGFILE).exists()
+        def content(level: pathlib.Path) -> bool:
+            return (level / Path.TAGFILE).exists()
 
     STAGEDIR = '.stage'
     STATESFX = 'bin'

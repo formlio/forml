@@ -24,9 +24,6 @@ import os
 import typing
 
 import setuptools
-
-# this makes ourselves a drop-in replacement of original setuptools
-from setuptools import *  # pylint: disable=redefined-builtin; # noqa: F401,F402,F403
 from setuptools import dist
 
 from forml.project import product
@@ -38,10 +35,29 @@ LOGGER = logging.getLogger(__name__)
 class Distribution(dist.Distribution):  # pylint: disable=function-redefined
     """Extended distribution type with extra forml attributes."""
 
+    COMMANDS: typing.Mapping[str, typing.Type[setuptools.Command]] = {
+        'train': launch.Train,
+        'tune': launch.Tune,
+        'eval': launch.Eval,
+        bdist.Package.COMMAND: bdist.Package,
+        'upload': upload.Registry,
+    }
+
     def __init__(self, attrs=None):
         # mapping between standard forml components and their implementing modules within the project
-        self.component: typing.Mapping[str, str] = dict()
+        self.component: typing.Mapping[str, str] = {}
+        attrs = dict(attrs or ())
+        attrs.setdefault('cmdclass', {}).update(self.COMMANDS)
         super().__init__(attrs)
+
+    def run_commands(self):
+        """Overriding the default functionality to allow bypassing the execution if not called from setup.py:setup.
+
+        This is to avoid fork looping ie when using Dask multiprocessing runner.
+        """
+        if inspect.currentframe().f_back.f_back.f_back.f_globals.get('__name__') != '__main__':
+            return
+        super().run_commands()
 
     @property
     def artifact(self) -> product.Artifact:
@@ -61,34 +77,3 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
                 package = self.packages[0]
         pkgdir = self.package_dir or {'': '.'}
         return product.Artifact(pkgdir[''], package=package, **modules)
-
-
-COMMANDS: typing.Mapping[str, typing.Type[setuptools.Command]] = {
-    'train': launch.Train,
-    'tune': launch.Tune,
-    'eval': launch.Eval,
-    bdist.Package.COMMAND: bdist.Package,
-    'upload': upload.Registry,
-}
-
-OPTIONS = {
-    'distclass': Distribution,
-    'cmdclass': COMMANDS,
-}
-
-
-def setup(**kwargs) -> typing.Optional[dist.Distribution]:  # pylint: disable=function-redefined
-    """Setuptools wrapper for defining user projects using setup.py.
-
-    Args:
-        **kwargs: Standard setuptools keyword arguments.
-
-    Returns:
-        setuptools distribution object.
-    """
-    distribution = None
-    # To avoid infinite loops launching the setup.py when multiprocessing is involved in one of the commands (ie Dask
-    # with multiprocessing scheduler is used as runner) we inspect the caller space to check the __name__ == '__main__'
-    if inspect.currentframe().f_back.f_globals.get('__name__') == '__main__':
-        distribution = setuptools.setup(**{**kwargs, **OPTIONS})
-    return distribution

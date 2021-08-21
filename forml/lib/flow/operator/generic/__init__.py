@@ -74,7 +74,7 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
             def __init__(self, default: typing.Type[task.Actor]):
                 self._default: typing.Type[task.Actor] = default
                 self._actor: typing.Optional[typing.Type[task.Actor]] = None
-                self._params: typing.Mapping[str, typing.Any] = dict()
+                self._params: typing.Mapping[str, typing.Any] = {}
 
             def __call__(self, actor: typing.Optional[typing.Type[task.Actor]] = None, /, **params: typing.Any) -> None:
                 self._actor = actor or self._default

@@ -159,8 +159,8 @@ example below or documented in the :ref:`Source Descriptor Reference <io-source-
 The Source descriptor again needs to be submitted to the framework using the ``component.setup()`` handler::
 
     from forml.lib.flow.operator import cast
-    from forml.lib.schema.kaggle import titanic as schema
     from forml.project import component
+    from openschema.kaggle import titanic as schema
 
     FEATURES = schema.Passenger.select(
         schema.Passenger.Pclass,

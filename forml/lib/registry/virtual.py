@@ -39,7 +39,7 @@ class Registry(filesystem.Registry, alias='virtual'):
     """
 
     def __init__(self):
-        self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(
+        self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
             prefix='registry-virtual-', dir=persistent.TMPDIR.name
         )
         self._artifacts: typing.Dict[

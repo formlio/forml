@@ -272,20 +272,20 @@ class Level(directory.Level):
         """
         return self.Listing(self.tag.states)
 
-    def get(self, sid: typing.Union[uuid.UUID, int]) -> bytes:
+    def get(self, key: typing.Union[uuid.UUID, int]) -> bytes:
         """Load the state based on provided id or positional index.
 
         Args:
-            sid: Index or absolute id of the state object to be loaded.
+            key: Index or absolute id of the state object to be loaded.
 
         Returns:
             Serialized state.
         """
         if not self.tag.training:
             return bytes()
-        if isinstance(sid, int):
-            sid = self.tag.states[sid]
-        if sid not in self.tag.states:
-            raise Level.Invalid(f'Unknown state reference for {self}: {sid}')
-        LOGGER.debug('%s: Getting state %s', self, sid)
-        return STATES(self.registry, self.project.key, self.lineage.key, self.key, sid)
+        if isinstance(key, int):
+            key = self.tag.states[key]
+        if key not in self.tag.states:
+            raise Level.Invalid(f'Unknown state reference for {self}: {key}')
+        LOGGER.debug('%s: Getting state %s', self, key)
+        return STATES(self.registry, self.project.key, self.lineage.key, self.key, key)

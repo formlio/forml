@@ -49,7 +49,7 @@ class Container(typing.Generic[Symbol]):
             """Stack for parsed symbols."""
 
             def __init__(self):
-                self._stack: typing.List[Symbol] = list()
+                self._stack: typing.List[Symbol] = []
 
             def __bool__(self):
                 return bool(self._stack)
@@ -86,7 +86,7 @@ class Container(typing.Generic[Symbol]):
 
     def __init__(self):
         self._context: typing.Optional[Container.Context] = None
-        self._stack: typing.List[Container.Context] = list()
+        self._stack: typing.List[Container.Context] = []
 
     @property
     def context(self) -> 'Container.Context':
@@ -343,7 +343,7 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
 
         @bypass(resolve_column)
         def visit_window(self, column: sermod.Window) -> typing.ContextManager[None]:
-            raise NotImplementedError('Window functions not yet supported')
+            raise RuntimeError('Window functions not yet supported')
 
     class Context(Container.Context):
         """Extended container context for holding the segments."""

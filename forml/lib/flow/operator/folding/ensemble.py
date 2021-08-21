@@ -106,8 +106,8 @@ class FullStacker(folding.Crossvalidated):
         merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(
             ndframe.Apply.spec(function=self._merge), self.nsplits, 1
         )
-        stackers: typing.Dict[topology.Composable, node.Worker] = dict()
-        mergers: typing.Dict[topology.Composable, node.Worker] = dict()
+        stackers: typing.Dict[topology.Composable, node.Worker] = {}
+        mergers: typing.Dict[topology.Composable, node.Worker] = {}
         for index, (base, stack, merge) in enumerate(zip(self.bases, stack_forks, merge_forks)):
             stackers[base] = stack
             mergers[base] = merge
@@ -120,7 +120,7 @@ class FullStacker(folding.Crossvalidated):
         self,
         fold: int,
         builder: 'FullStacker.Builder',  # pylint: disable=arguments-differ
-        pretrack: pipeline.Segment,
+        inner: pipeline.Segment,
         features: node.Worker,
         labels: node.Worker,
     ) -> None:
@@ -129,20 +129,20 @@ class FullStacker(folding.Crossvalidated):
         Args:
             fold: Fold index.
             builder: Composition builder (folding context).
-            pretrack: Exclusive instance of the inner composition.
+            inner: Exclusive instance of the inner composition.
             features: Features splitter actor.
             labels: Labels splitter actor.
         """
-        pretrack.train.subscribe(features[2 * fold])
-        pretrack.label.subscribe(labels[2 * fold])
-        pretrack.apply.subscribe(builder.head.apply.publisher)
-        preapply = pretrack.apply.copy()
+        inner.train.subscribe(features[2 * fold])
+        inner.label.subscribe(labels[2 * fold])
+        inner.apply.subscribe(builder.head.apply.publisher)
+        preapply = inner.apply.copy()
         preapply.subscribe(features[2 * fold + 1])
         for base in self.bases:
             basetrack = base.expand()
-            basetrack.train.subscribe(pretrack.train.publisher)
-            basetrack.label.subscribe(pretrack.label.publisher)
-            basetrack.apply.subscribe(pretrack.apply.publisher)
+            basetrack.train.subscribe(inner.train.publisher)
+            basetrack.label.subscribe(inner.label.publisher)
+            basetrack.apply.subscribe(inner.apply.publisher)
             builder.mergers[base][fold].subscribe(basetrack.apply.publisher)
             baseapply = basetrack.apply.copy()
             baseapply.subscribe(preapply.publisher)

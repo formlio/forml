@@ -205,8 +205,8 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             """
 
         # pylint: disable=missing-function-docstring
-        def generate_element(self, source: Tabulizer, element: Columnizer) -> Columnizer:
-            return self.Element(self.implement_element, source, element)
+        def generate_element(self, origin: Tabulizer, element: Columnizer) -> Columnizer:
+            return self.Element(self.implement_element, origin, element)
 
         def generate_alias(self, column: Columnizer, alias: str) -> Columnizer:
             return self.Alias(self.implement_alias, column, alias)

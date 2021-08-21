@@ -352,7 +352,7 @@ class Future(Atomic):
 
     def __init__(self, szin: int = 1, szout: int = 1):
         super().__init__(szin, szout)
-        self._proxy: typing.Dict[port.Publishable, int] = dict()
+        self._proxy: typing.Dict[port.Publishable, int] = {}
 
     def __getitem__(self, index) -> port.PubSub:
         def register(publisher: port.Publishable) -> None:

@@ -181,7 +181,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
                 for node in traversal.mappers(tail):
                     traverse(node)
 
-        copies = dict()
+        copies = {}
         traverse(self)
         return copies
 

@@ -46,7 +46,9 @@ class NaNImputer(task.Actor):
         self._fill: typing.Optional[pd.Series] = None
 
     def train(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the actor by learning the median for each numeric column and finding the most common value for strings."""
+        """Train the actor by learning the median for each numeric column and finding the most common value for
+        strings.
+        """
         self._fill = pd.Series(
             [X[c].value_counts().index[0] if X[c].dtype == np.dtype('O') else X[c].median() for c in X], index=X.columns
         )

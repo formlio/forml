@@ -71,8 +71,8 @@ class Column(tuple, metaclass=abc.ABCMeta):
                 col.accept(self)
             return frozenset(self._match)
 
-        def visit_origin(self, source: 'framod.Source') -> None:
-            for column in source.columns:
+        def visit_origin(self, origin: 'framod.Source') -> None:
+            for column in origin.columns:
                 if column not in self._seen:
                     self._seen.add(column)
                     column.accept(self)

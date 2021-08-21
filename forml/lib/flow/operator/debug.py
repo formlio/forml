@@ -136,7 +136,11 @@ class TrainDumper(Dumper):
         """
         return {**super().get_params(), 'label': self.label}
 
-    def set_params(self, label: typing.Optional[str] = None, **params: str) -> None:  # pylint: disable=arguments-differ
+    def set_params(  # pylint: disable=arguments-renamed
+        self,
+        label: typing.Optional[str] = None,  # pylint: disable=arguments-differ
+        **params: str,
+    ) -> None:
         """Standard params setter.
 
         Args:

@@ -100,7 +100,7 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         """Visitor that cumulates gids of stateful nodes."""
 
         def __init__(self):
-            self._gids: typing.List[uuid.UUID] = list()
+            self._gids: typing.List[uuid.UUID] = []
 
         def __iter__(self) -> typing.Iterator[uuid.UUID]:
             return iter(self._gids)

@@ -39,7 +39,7 @@ class WrappedActor:
     """Actor to-be mockup."""
 
     def __init__(self, **params):
-        self._model = list()
+        self._model = []
         self._params = params
 
     def train(self, features, labels) -> None:
@@ -140,15 +140,15 @@ def project_artifact(project_package: distribution.Package, project_path: str) -
 
 
 @pytest.fixture(scope='session')
-def project_name(project_package: distribution.Package) -> prjmod.Level.Key:
+def project_name(project_manifest: distribution.Manifest) -> prjmod.Level.Key:
     """Test project name fixture."""
-    return project_package.manifest.name
+    return project_manifest.name
 
 
 @pytest.fixture(scope='session')
-def project_lineage(project_package: distribution.Package) -> lngmod.Level.Key:
+def project_lineage(project_manifest: distribution.Manifest) -> lngmod.Level.Key:
     """Test project lineage fixture."""
-    return project_package.manifest.version
+    return project_manifest.version
 
 
 @pytest.fixture(scope='session')

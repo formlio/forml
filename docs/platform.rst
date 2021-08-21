@@ -113,7 +113,7 @@ file simply as ``tutorial:Feed``::
 
     from forml.io import feed
     from forml.lib.reader import sqlite
-    from forml.lib.schema.kaggle import titanic
+    from openschema.kaggle import titanic
 
 
     class Feed(feed.Provider):

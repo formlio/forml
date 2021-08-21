@@ -15,12 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from forml.project import setuptools
+"""
+Titanic project.
+"""
+
+import setuptools
+from forml.project import setuptools as forml
 
 setuptools.setup(
     name='forml-example-titanic',
     version='0.1.dev0',
     packages=setuptools.find_packages(include=['titanic*']),
-    setup_requires=['pytest-runner'],
+    setup_requires=['forml', 'pytest-runner'],
     install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
+    distclass=forml.Distribution,
 )

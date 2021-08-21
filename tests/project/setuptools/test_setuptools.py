@@ -19,10 +19,31 @@
 Project steuptools tests.
 """
 # pylint: disable=no-self-use
+import pytest
+import setuptools
 
-from forml.project import setuptools
+from forml.project import setuptools as setupmod, distribution as distmod, product
 
 
-def test_upstream():
-    """Test our setuptools imports all upstream features."""
-    assert setuptools.find_packages
+class TestDistribution:
+    """Distribution unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def distribution(project_package: distmod.Package) -> setupmod.Distribution:
+        """Test project distribution fixture."""
+
+        return setuptools.setup(
+            name=str(project_package.manifest.name),
+            version=str(project_package.manifest.version),
+            packages=setuptools.find_namespace_packages(
+                where=project_package.path, include=[f'{project_package.manifest.package}*']
+            ),
+            package_dir={'': project_package.path},
+            distclass=setupmod.Distribution,
+            script_args=['--version'],
+        )
+
+    def test_artifact(self, distribution: setupmod.Distribution, project_artifact: product.Artifact):
+        """Test the artifact loaded using this distribution."""
+        assert distribution.artifact == project_artifact

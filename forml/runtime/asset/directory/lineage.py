@@ -94,16 +94,16 @@ class Level(directory.Level):
         """
         return self.Listing(genmod.Level.Key(g) for g in self.registry.generations(self.project.key, self.key))
 
-    def get(self, generation: typing.Optional[typing.Union[str, int, genmod.Level.Key]] = None) -> genmod.Level:
+    def get(self, key: typing.Optional[typing.Union[str, int, genmod.Level.Key]] = None) -> genmod.Level:
         """Get a generation instance by its id.
 
         Args:
-            generation: Integer generation id.
+            key: Integer generation id.
 
         Returns:
             genmod.Level instance.
         """
-        return genmod.Level(self, generation)
+        return genmod.Level(self, key)
 
     def put(self, tag: genmod.Tag) -> genmod.Level:
         """Commit a new generation described by its tag. All states listed on the tag are expected to have
