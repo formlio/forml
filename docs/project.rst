@@ -16,6 +16,23 @@
 Project
 =======
 
++--------------------------+
+| Pipeline                 |
++--------------------------+
+| Rollout Strategy         |
++--------------------------+
+| Dataset Specification    | Query/ies, ordinal column, label extraction
++--------------------------+
+| Training Schedule
++--------------------------+
+| Evaluation Schedule
++--------------------------+
+| Loss Function
++--------------------------+
+| Evaluation Strategy
++--------------------------+
+| Hyperparameter Tunning
+
 Starting New Project
 --------------------
 
@@ -43,6 +60,7 @@ project component structure wrapped within the python application layout might l
 
     <project_name>
       ├── setup.py
+      ├── rollout.py
       ├── <optional_project_namespace>
       │     └── <project_name>
       │          ├── __init__.py
@@ -51,7 +69,9 @@ project component structure wrapped within the python application layout might l
       │          │    ├── <moduleX>.py  # arbitrary user defined module
       │          │    └── <moduleY>.py
       │          ├── source.py
-      │          └── evaluation.py  # here the component is just a module
+      │          ├── evaluation.py  # here the component is just a module
+      │          ├── schedule.py
+      │          └── tuning.py
       ├── tests
       │    ├── __init__.py
       │    ├── test_pipeline.py
@@ -98,8 +118,8 @@ the custom locations of its project components using the ``component`` parameter
 
 .. _project-pipeline:
 
-Pipeline (``pipeline.py``)
-''''''''''''''''''''''''''
+Pipeline Topology (``pipeline.py``)
+'''''''''''''''''''''''''''''''''''
 
 Pipeline definition is the heart of the project component structure. The framework needs to understand the
 pipeline as a *Directed Acyclic Task Dependency Graph*. For this purpose, it comes with a concept of *Operators* that
@@ -118,32 +138,11 @@ exposed to the framework via the ``component.setup()`` handler::
     FLOW = preprocessing.NaNImputer() >> model.LR(random_state=42, solver='lbfgs')
     component.setup(FLOW)
 
-.. _project-evaluation:
-
-Evaluation (``evaluation.py``)
-''''''''''''''''''''''''''''''
-
-Definition of the model evaluation strategy for both the development and production lifecycle.
-
-.. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
-.roadmap.
-
-The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
-
-    from sklearn import model_selection, metrics
-    from forml.project import component
-    from forml.lib.flow.operator.folding import evaluation
-
-    EVAL = evaluation.MergingScorer(
-        crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
-        metric=metrics.log_loss)
-    component.setup(EVAL)
-
 
 .. _project-source:
 
-Source (``source.py``)
-''''''''''''''''''''''
+Dataset Specification (``source.py``)
+'''''''''''''''''''''''''''''''''''''
 
 This component is a fundamental part of the :doc:`IO concept<io>`. A project can define the ETL process of sourcing
 data into the pipeline using the :doc:`DSL <dsl>` referring to some :ref:`catalogized schemas
@@ -155,6 +154,9 @@ example below or documented in the :ref:`Source Descriptor Reference <io-source-
 .. note:: The descriptor allows to further compose with other operators using the usual ``>>`` syntax. Source
           composition domain is separate from the main pipeline so adding an operator to the source composition vs
           pipeline composition might have a different effect.
+
+Part of the dataset specification can also be a reference to the *ordinal* column (used for determining data ranges for
+splitting or incremental operations) and *label* columns for supervised learning/evaluation.
 
 The Source descriptor again needs to be submitted to the framework using the ``component.setup()`` handler::
 
@@ -177,6 +179,47 @@ The Source descriptor again needs to be submitted to the framework using the ``c
 
     ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe(FEATURES.schema)
     component.setup(ETL)
+
+
+.. _project-evaluation:
+
+Evaluation Strategy (``evaluation.py``)
+'''''''''''''''''''''''''''''''''''''''
+
+Definition of the model evaluation strategy for both the development (backtesting) and production
+:doc:`lifecycle <lifecycle>`.
+
+.. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
+.roadmap.
+
+The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
+
+    from sklearn import model_selection, metrics
+    from forml.project import component
+    from forml.lib.flow.operator.folding import evaluation
+
+    EVAL = evaluation.MergingScorer(
+        crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
+        metric=metrics.log_loss)
+    component.setup(EVAL)
+
+
+.. _project-tuning:
+
+Hyperparameter Tuning Strategy (``tuning.py``)
+''''''''''''''''''''''''''''''''''''''''''''''
+
+
+.. _project-schedule:
+
+Scheduling Rules (``schedule.py``)
+''''''''''''''''''''''''''''''''''
+
+
+.. _project-rollout:
+
+Rollout Strategy (``rollout.py``)
+''''''''''''''''''''''''''''''''''
 
 
 Tests

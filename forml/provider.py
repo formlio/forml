@@ -220,7 +220,7 @@ class Meta(abc.ABCMeta):
         return f'{repr(cls)}[{", ".join(str(c) for c in cls)}]'  # pylint: disable=not-an-iterable
 
     def __eq__(cls, other):
-        return other.__module__ is cls.__module__ and other.__qualname__ is cls.__qualname__
+        return isinstance(other, Meta) and other.__module__ is cls.__module__ and other.__qualname__ is cls.__qualname__
 
     def __hash__(cls):
         return hash(cls.__module__) ^ hash(cls.__qualname__)

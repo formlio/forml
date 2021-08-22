@@ -16,8 +16,13 @@
 Lifecycle
 =========
 
-Machine learning projects are operated in typical modes that are followed in a particular order. This pattern is what we
-call a lifecycle. ForML supports two specific lifecycles depending on the project stage.
+Machine learning projects are operated in typical stages that are followed in a particular order. This pattern is what
+we call a *lifecycle*. ForML supports two specific lifecycles depending on the project stage.
+
+.. note::
+   Do not confuse the lifecycles with *operational modes*. Forml projects can be operated in number of modes
+   (:ref:`cli/batch <platform-cli>` - as used in the examples bellow, :doc:`interactively <interactive>` or using the
+   :doc:`serving layer <serving>`) each of which is subject to a particular lifecycle.
 
 .. _lifecycle-development:
 
@@ -31,7 +36,7 @@ the development process allowing to quickly see the effect of the project change
 
 The expected behaviour of the particular mode depends on the correct project setup as per the :doc:`project` sections.
 
-The modes of a research lifecycle are:
+The stages of a development lifecycle are:
 
 Test
     Simply run through the unit tests defined as per the :doc:`testing` framework.
@@ -41,8 +46,8 @@ Test
         $ python3 setup.py test
 
 Evaluate
-    Perform an evaluation based on the specs defined in ``evaluation.py`` and return the metrics. This can be defined
-    either as cross-validation or hold-out training. One of the potential use-cases might be a CI integration
+    Perform a backtesting evaluation based on the specs defined in ``evaluation.py`` and return the metrics. This can be
+    defined either as cross-validation or hold-out training. One of the potential use-cases might be a CI integration
     to continuously monitor (evaluate) the changes in the project development.
 
     Example::
@@ -59,7 +64,8 @@ Tune
 
 Train
     Run the pipeline in the standard train mode. This will produce all the defined models but since it won't persist
-    them, this mode is useful merely for testing the training (or displaying the task graph on the :doc:`graphviz`).
+    them, this mode is useful merely for testing the training (or displaying the task graph on the
+    :doc:`Graphviz runner <runner/graphviz>`).
 
     Example::
 
@@ -96,8 +102,8 @@ becomes available for the *production lifecycle*. Contrary to the research, this
 the project source code working copy as it operates solely on the published artifact plus potentially previously
 persisted model generations.
 
-The production lifecycle is operated using the CLI (see :doc:`runtime` for full synopsis) and offers the following
-modes:
+The production lifecycle is either exercised in batch mode using :ref:`the CLI <platform-cli>` or
+embedded within a :doc:`serving layer <serving>`. In any case, the stages of the production lifecycle are:
 
 Train
     Fit (incrementally) the stateful parts of the pipeline using new labelled data producing a new *Generation* of

@@ -16,7 +16,7 @@
 Output Sink
 ===========
 
-Sink is a :doc:`runtime platform <platform>` component responsible for consuming the pipeline produced output.
+Sink is a :doc:`runtime platform <platform>` component responsible for consuming the produced output.
 
 .. autosummary::
 

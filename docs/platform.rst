@@ -16,12 +16,13 @@
 Platform Setup
 ==============
 
-Platform is a configuration-driven selection of particular *providers* implementing four abstract concepts:
+Platform is a configuration-driven selection of particular *providers* implementing a number of abstract concepts:
 
 * :doc:`runner/index`
 * :doc:`registry/index`
 * :doc:`feed`
 * :doc:`sink`
+* :ref:`Serving components <serving-components>`
 
 ForML uses an internal *bank* of available provider implementations of the different possible types. Provider instances
 are registered in this bank using one of two possible *references*:
@@ -134,8 +135,8 @@ using a config file specified in the top-level ``logcfg`` option in the main `co
 CLI
 ---
 
-The production :doc:`lifecycle <lifecycle>` management can be fully operated from command-line using the following
-syntax:
+The production :doc:`lifecycle <lifecycle>` management can be fully operated in a batch mode from command-line using
+the following syntax:
 
 .. code-block:: none
 
