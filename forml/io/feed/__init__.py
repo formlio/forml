@@ -30,13 +30,9 @@ from forml.flow import task, pipeline
 from forml.flow.pipeline import topology
 from forml.io import payload
 from forml.io.dsl import parser
-from forml.io.dsl.struct import visit
+from forml.io.dsl.struct import series, kind as kindmod, frame
 from forml.io.feed import extract
 from forml.project import component
-
-if typing.TYPE_CHECKING:
-    from forml.io.dsl.struct import series, frame, kind as kindmod
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -240,7 +236,7 @@ class Pool:
                 self._instance = Provider[self._descriptor.reference](**self._descriptor.params)
             return self._instance
 
-    class Matcher(visit.Frame):
+    class Matcher(frame.Visitor):
         """Visitor that can be used to determine whether the accepting Frame can be constructed using the provided
         sources. The logic is based on traversing the Frame tree and if hitting a Table (tree leaf) that's not among the
         defined sources it resolves as not matching.

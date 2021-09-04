@@ -41,10 +41,15 @@ class TupleParser(metaclass=abc.ABCMeta):
         return result
 
     def test_parsing(
-        self, query: framod.Query, student: framod.Table, school_ref: framod.Reference, parser: parsmod.Frame
+        self,
+        query: framod.Query,
+        student: framod.Table,
+        school: framod.Table,
+        school_ref: framod.Reference,
+        parser: parsmod.Frame,
     ):
         """Parsing test."""
-        with parser:
+        with parser.switch():
             query.accept(parser)
             result = self.format(parser.fetch())
         assert result[0][0] == ('foo',)

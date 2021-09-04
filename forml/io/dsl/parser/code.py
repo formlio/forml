@@ -131,17 +131,6 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
                 return self.kind, tuple(c(data) if isinstance(c, Closure) else c for c in self.arguments)
 
-        class Reference(Columnizer):
-            """Closure with parameters required for holding a reference."""
-
-            name: str = property(operator.itemgetter(1))
-
-            def __new__(cls, handler: typing.Callable[[Table, str], Table], name: str) -> Tabulizer:
-                return super().__new__(cls, handler, name)
-
-            def __args__(self, _: Table) -> typing.Sequence[typing.Any]:
-                return tuple([self.name])
-
         def implement_element(self, data: Table, column: Columnizer) -> Column:  # pylint: disable=no-self-use
             """Column provider implementation.
 
@@ -193,17 +182,6 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
                 Column as the expression evaluation.
             """
 
-        @abc.abstractmethod
-        def implement_reference(self, name: str) -> Column:
-            """Reference value provider implementation.
-
-            Args:
-                name: Reference name.
-
-            Returns:
-                Column as the expression evaluation.
-            """
-
         # pylint: disable=missing-function-docstring
         def generate_element(self, origin: Tabulizer, element: Columnizer) -> Columnizer:
             return self.Element(self.implement_element, origin, element)
@@ -213,9 +191,6 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
 
         def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Columnizer:
             return self.Literal(self.implement_literal, value, kind)
-
-        def generate_reference(self, name: str) -> Columnizer:
-            return self.Reference(self.implement_reference, name)
 
         def generate_expression(
             self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
@@ -300,7 +275,7 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
             return self.source(data), self.columns, self.where, self.groupby, self.having, self.orderby, self.rows
 
-    class Reference(Tabulizer):
+    class RefOrigin(Tabulizer):
         """Closure with parameters required for holding a reference."""
 
         instance: Tabulizer = property(operator.itemgetter(1))
@@ -311,6 +286,17 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
             return self.instance(data), self.name
+
+    class RefHandle(Columnizer):
+        """Closure with parameters required for holding a reference."""
+
+        name: str = property(operator.itemgetter(1))
+
+        def __new__(cls, handler: typing.Callable[[Table, str], Table], name: str) -> Tabulizer:
+            return super().__new__(cls, handler, name)
+
+        def __args__(self, _: Table) -> typing.Sequence[typing.Any]:
+            return tuple([self.name])
 
     @abc.abstractmethod
     def implement_join(
@@ -445,11 +431,22 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         return table
 
     @abc.abstractmethod
-    def implement_reference(self, table: Table, name: str) -> Table:
-        """Table reference (alias) implementation.
+    def implement_reforigin(self, table: Table, name: str) -> Table:
+        """Table reference origin implementation.
 
         Args:
             table: Table to be referenced.
+            name: Reference name.
+
+        Returns:
+            Referenced table.
+        """
+
+    @abc.abstractmethod
+    def implement_refhandle(self, name: str) -> Table:
+        """Table reference handle implementation.
+
+        Args:
             name: Reference name.
 
         Returns:
@@ -477,5 +474,5 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
     ) -> 'Frame.Query':
         return self.Query(self.implement_query, source, columns, where, groupby, having, orderby, rows)
 
-    def generate_reference(self, instance: Tabulizer, name: str) -> Tabulizer:
-        return self.Reference(self.implement_reference, instance, name)
+    def generate_reference(self, instance: Tabulizer, name: str) -> typing.Tuple[Tabulizer, Tabulizer]:
+        return self.RefOrigin(self.implement_reforigin, instance, name), self.RefHandle(self.implement_refhandle, name)

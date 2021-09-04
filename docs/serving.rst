@@ -63,7 +63,7 @@ agent bootstrapping or periodical cache refreshing while others are synchronous 
 4. Fetching all missing input features for augmenting the particular request according to the project
    :ref:`input DSL <concept-dsl>`.
 5. Running the prediction pipeline and responding with the result.
-6. Submitting query metadata to the *query bus*.
+6. Submitting query metadata to the *query logbus*.
 
 The rollout workflow employed by the agent is a powerful concept allowing to select particular model/generation
 dynamically based on the project-defined function of any available parameters (mainly the performance metrics). This
@@ -84,7 +84,7 @@ Query LogBus
 ''''''''''''
 
 Standard publisher-subscriber software bus for distributing the serving queries metadata to allow for further (offline)
-processing like the performance reporting or general debugging. The typical attributes sent to the query bus per each
+processing like the performance reporting or general debugging. The typical attributes sent to the query logbus per each
 event are:
 
 * timestamp
@@ -99,7 +99,7 @@ Metrics DB
 ''''''''''
 
 Another storage service for aggregating the performance metric as time series derived from both the metadata pushed via
-*query bus* as well as the main *feedback loop* and produced by the *offline agent* processing.
+*query logbus* as well as the main *feedback loop* and produced by the *offline agent* processing.
 
 The Metric DB is a crucial source of information not only for any sorts of operational monitoring/reporting but
 especially for the dynamic model generation selection performed by the online agent according to the rollout strategy

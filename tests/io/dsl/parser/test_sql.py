@@ -45,7 +45,7 @@ class Parser(metaclass=abc.ABCMeta):
                 """Replace all whitespace with single space."""
                 return ' '.join(value.strip().split())
 
-            with parser as visitor:
+            with parser.switch() as visitor:
                 self.query.accept(visitor)
                 result = visitor.fetch()
             assert strip(result) == strip(self.expected)

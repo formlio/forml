@@ -115,10 +115,9 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
 
         def __init__(
             self,
-            sources: typing.Mapping[frame.Source, str],
             columns: typing.Optional[typing.Mapping[series.Column, str]] = None,
         ):
-            super().__init__(sources, columns or {})
+            super().__init__(columns or {})
 
         def resolve_column(self, column: series.Column) -> str:
             """Resolver falling back to a field name in case of no explicit mapping.
@@ -198,17 +197,6 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
                 return self.EXPRESSION[expression](*arguments)
             except KeyError as err:
                 raise error.Unsupported(f'Unsupported expression: {expression}') from err
-
-        def generate_reference(self, name: str) -> str:  # pylint: disable=no-self-use
-            """Generate a source reference (alias) application.
-
-            Args:
-                name: Reference name (alias).
-
-            Returns:
-                Reference application.
-            """
-            return name
 
     JOIN: typing.Mapping[frame.Join.Kind, str] = {
         frame.Join.Kind.LEFT: 'LEFT',
@@ -298,7 +286,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
         source: str,
         columns: typing.Sequence[str],  # pylint: disable=no-self-use
         where: typing.Optional[str],
-        groupby: str,
+        groupby: typing.Sequence[str],
         having: typing.Optional[str],
         orderby: typing.Sequence[typing.Tuple[str, series.Ordering.Direction]],
         rows: typing.Optional[frame.Rows],
@@ -335,7 +323,7 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             query += f' {rows.count}'
         return query
 
-    def generate_reference(self, instance: str, name: str) -> str:  # pylint: disable=no-self-use
+    def generate_reference(self, instance: str, name: str) -> typing.Tuple[str, str]:  # pylint: disable=no-self-use
         """Generate a source reference (alias) definition.
 
         Args:
@@ -343,6 +331,6 @@ class Frame(parsmod.Frame[str, str]):  # pylint: disable=unsubscriptable-object
             name: Reference name (alias).
 
         Returns:
-            Source reference definition.
+            Tuple of referenced origin and the bare reference handle both in target code.
         """
-        return f'{self.Wrap.word(instance)} AS {name}'
+        return f'{self.Wrap.word(instance)} AS {name}', name

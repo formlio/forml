@@ -30,7 +30,7 @@ import typing
 from collections import abc as colabc
 
 from forml.io.dsl import error
-from forml.io.dsl.struct import frame as framod, kind as kindmod, visit as vismod
+from forml.io.dsl.struct import frame as framod, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,10 +50,65 @@ def cast(value: typing.Any) -> 'Column':
     return value
 
 
+class Visitor:
+    """Series visitor."""
+
+    def visit_column(self, column: 'Column') -> None:  # pylint: disable=unused-argument, no-self-use
+        """Generic column hook.
+
+        Args:
+            column: Column instance to be visited.
+        """
+
+    def visit_aliased(self, column: 'Aliased') -> None:
+        """Generic expression hook.
+
+        Args:
+            column: Aliased column instance to be visited.
+        """
+        column.operable.accept(self)
+        self.visit_column(column)
+
+    def visit_element(self, column: 'Element') -> None:
+        """Generic expression hook.
+
+        Args:
+            column: Element instance to be visited.
+        """
+        self.visit_column(column)
+
+    def visit_literal(self, column: 'Literal') -> None:
+        """Generic literal hook.
+
+        Args:
+            column: Literal instance to be visited.
+        """
+        self.visit_column(column)
+
+    def visit_expression(self, column: 'Expression') -> None:
+        """Generic expression hook.
+
+        Args:
+            column: Expression instance to be visited.
+        """
+        for term in column:
+            if isinstance(term, Column):
+                term.accept(self)
+        self.visit_column(column)
+
+    def visit_window(self, column: 'Window') -> None:
+        """Generic window hook.
+
+        Args:
+            column: Window instance to be visited.
+        """
+        self.visit_column(column)
+
+
 class Column(tuple, metaclass=abc.ABCMeta):
     """Base class for column types (ie fields or select expressions)."""
 
-    class Dissect(vismod.Series):
+    class Dissect(Visitor):
         """Visitor extracting column instances of given type(s)."""
 
         def __init__(self, *types: typing.Type):
@@ -70,12 +125,6 @@ class Column(tuple, metaclass=abc.ABCMeta):
             for col in column:
                 col.accept(self)
             return frozenset(self._match)
-
-        def visit_origin(self, origin: 'framod.Source') -> None:
-            for column in origin.columns:
-                if column not in self._seen:
-                    self._seen.add(column)
-                    column.accept(self)
 
         def visit_column(self, column: 'Column') -> None:
             if any(isinstance(column, t) for t in self._types):
@@ -112,7 +161,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def accept(self, visitor: vismod.Series) -> None:
+    def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -406,7 +455,7 @@ class Aliased(Column):
         """
         return self.operable.kind
 
-    def accept(self, visitor: vismod.Series) -> None:
+    def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -439,7 +488,7 @@ class Literal(Operable):
         """
         return None
 
-    def accept(self, visitor: vismod.Series) -> None:
+    def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -449,7 +498,7 @@ class Literal(Operable):
 
 
 class Element(Operable):
-    """Named column of particular source."""
+    """Named column of particular origin (table or a reference)."""
 
     origin: 'framod.Origin' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
@@ -466,7 +515,7 @@ class Element(Operable):
     def kind(self) -> kindmod.Any:
         return self.origin.schema[self.name].kind
 
-    def accept(self, visitor: vismod.Series) -> None:
+    def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -498,7 +547,7 @@ class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
         """
         return None
 
-    def accept(self, visitor: vismod.Series) -> None:
+    def accept(self, visitor: Visitor) -> None:
         visitor.visit_expression(self)
 
 
@@ -727,7 +776,7 @@ class Comparison(Predicate):
         def kind(self) -> kindmod.Any:
             raise RuntimeError('Pythonic comparison proxy used as a column')
 
-        def accept(self, visitor: vismod.Series) -> None:
+        def accept(self, visitor: Visitor) -> None:
             raise RuntimeError('Pythonic comparison proxy used as a column')
 
         @property
@@ -942,7 +991,7 @@ class Window(Cumulative):
     def kind(self) -> kindmod.Any:
         return self.function.kind
 
-    def accept(self, visitor: vismod.Series) -> None:
+    def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:

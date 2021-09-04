@@ -20,13 +20,14 @@ ETL DSL parser.
 """
 import abc
 import collections
+import contextlib
 import functools
 import logging
 import types
 import typing
 
 from forml.io.dsl import error
-from forml.io.dsl.struct import series as sermod, frame, visit, kind as kindmod
+from forml.io.dsl.struct import series as sermod, frame, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class Container(typing.Generic[Symbol]):
                     raise RuntimeError('Empty context')
                 return self._stack.pop()
 
-        def __init__(self):
+        def __init__(self, *args, **kwargs):  # pylint: disable=unused-argument
             self.symbols: Container.Context.Symbols = self.Symbols()
 
         @property
@@ -95,14 +96,12 @@ class Container(typing.Generic[Symbol]):
             raise RuntimeError('Invalid context')
         return self._context
 
-    def __enter__(self) -> 'Container':
+    @contextlib.contextmanager
+    def switch(self, *args, **kwargs) -> typing.Iterable['Container']:
+        """Switch to a new context."""
         self._stack.append(self._context)
-        self._context = self.Context()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type or exc_val or exc_tb:
-            return
+        self._context = self.Context(*args, **kwargs)
+        yield self
         if self._context and self._context.dirty:
             raise RuntimeError('Context not fetched')
         self._context = self._stack.pop()
@@ -166,51 +165,21 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
     return decorator
 
 
-class Columnar(
-    typing.Generic[Source, Column], Container[typing.Union[Source, Column]], visit.Columnar, metaclass=abc.ABCMeta
-):
-    """Base parser class for both Frame and Series visitors."""
-
-    def __init__(self, sources: typing.Mapping[frame.Source, Source]):
-        super().__init__()
-        self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
-
-    @abc.abstractmethod
-    def generate_column(self, column: sermod.Column) -> Column:
-        """Generate target code for the generic column type.
-
-        Args:
-            column: Column instance
-
-        Returns:
-            Column in target code.
-        """
-
-    def resolve_source(self, source: frame.Source) -> Source:
-        """Get a custom target code for a source type.
-
-        Args:
-            source: Source instance.
-
-        Returns:
-            Target code for the source instance.
-        """
-        try:
-            return self._sources[source]
-        except KeyError as err:
-            raise error.Mapping(f'Unknown mapping for source {source}') from err
-
-
-class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Frame, metaclass=abc.ABCMeta):
+class Frame(typing.Generic[Source, Column], Container[Source], frame.Visitor, metaclass=abc.ABCMeta):
     """Frame source parser."""
 
-    class Series(typing.Generic[Source, Column], Columnar[Source, Column], visit.Series, metaclass=abc.ABCMeta):
+    class Series(typing.Generic[Source, Column], Container[Column], sermod.Visitor, metaclass=abc.ABCMeta):
         """Series column parser."""
 
-        def __init__(
-            self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]
-        ):
-            super().__init__(sources)
+        class Context(Container.Context):
+            """Extended container context for holding the origins."""
+
+            def __init__(self, origins: typing.Mapping[frame.Origin, Source]):
+                super().__init__()
+                self.origins: typing.Mapping[frame.Origin, Source] = types.MappingProxyType(origins)
+
+        def __init__(self, columns: typing.Mapping[sermod.Column, Column]):
+            super().__init__()
             self._columns: typing.Mapping[sermod.Column, Column] = types.MappingProxyType(columns)
 
         def resolve_column(self, column: sermod.Column) -> Column:
@@ -226,31 +195,6 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                 return self._columns[column]
             except KeyError as err:
                 raise error.Mapping(f'Unknown mapping for column {column}') from err
-
-        @functools.lru_cache()
-        def generate_column(self, column: sermod.Column) -> Column:
-            """Generate target code for the generic column type.
-
-            Args:
-                column: Column instance
-
-            Returns:
-                Column in target code.
-            """
-            with self as visitor:
-                column.accept(visitor)
-                return visitor.fetch()
-
-        @abc.abstractmethod
-        def generate_reference(self, name: str) -> Column:
-            """Generate reference code.
-
-            Args:
-                name: Reference name.
-
-            Returns:
-                Instance reference in target code.
-            """
 
         @abc.abstractmethod
         def generate_element(self, origin: Source, element: Column) -> Column:
@@ -302,25 +246,6 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
                 Expression in target code representation.
             """
 
-        def generate_table(self, table: Source) -> Source:  # pylint: disable=no-self-use
-            """Generate a target code for a table instance given its actual field requirements.
-
-            Args:
-                table: Table (already in target code based on the provided mapping) to be generated.
-
-            Returns:
-                Table target code potentially optimized based on field requirements.
-            """
-            return table
-
-        def visit_table(self, origin: frame.Table) -> None:
-            super().visit_table(origin)
-            self.context.symbols.push(self.generate_table(self.resolve_source(origin)))
-
-        def visit_reference(self, origin: frame.Reference) -> None:
-            super().visit_reference(origin)
-            self.context.symbols.push(self.generate_reference(origin.name))
-
         def visit_aliased(self, column: sermod.Aliased) -> None:
             super().visit_aliased(column)
             self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), column.name))
@@ -331,7 +256,9 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
 
         def visit_element(self, column: sermod.Element) -> None:
             super().visit_element(column)
-            self.context.symbols.push(self.generate_element(self.context.symbols.pop(), self.resolve_column(column)))
+            self.context.symbols.push(
+                self.generate_element(self.context.origins[column.origin], self.resolve_column(column))
+            )
 
         @bypass(resolve_column)
         def visit_expression(self, column: sermod.Expression) -> None:
@@ -405,10 +332,26 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         def __init__(self):
             super().__init__()
             self.tables: Frame.Context.Tables = self.Tables()
+            self.origins: typing.Dict[frame.Origin, Source] = {}
 
     def __init__(self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]):
-        super().__init__(sources)
-        self._series: Frame.Series = self.Series(sources, columns)  # pylint: disable=abstract-class-instantiated
+        super().__init__()
+        self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
+        self._series: Frame.Series = self.Series(columns)  # pylint: disable=abstract-class-instantiated
+
+    def resolve_source(self, source: frame.Source) -> Source:
+        """Get a custom target code for a source type.
+
+        Args:
+            source: Source instance.
+
+        Returns:
+            Target code for the source instance.
+        """
+        try:
+            return self._sources[source]
+        except KeyError as err:
+            raise error.Mapping(f'Unknown mapping for source {source}') from err
 
     @functools.lru_cache()
     def generate_column(self, column: sermod.Column) -> Column:
@@ -420,12 +363,12 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         Returns:
             Column in target code.
         """
-        with self._series as visitor:
+        with self._series.switch(types.MappingProxyType(self.context.origins)) as visitor:
             column.accept(visitor)
             return visitor.fetch()
 
     @abc.abstractmethod
-    def generate_reference(self, instance: Source, name: str) -> Source:
+    def generate_reference(self, instance: Source, name: str) -> typing.Tuple[Source, Source]:
         """Generate reference code.
 
         Args:
@@ -433,7 +376,7 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
             name: Reference name.
 
         Returns:
-            Instance reference in target code.
+            Tuple of referenced origin and the bare reference handle both in target code.
         """
 
     @abc.abstractmethod
@@ -494,34 +437,48 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
     def generate_table(  # pylint: disable=no-self-use
         self,
         table: Source,
-        columns: typing.Iterable[Column],  # pylint: disable=unused-argument
-        predicate: typing.Optional[Column],  # pylint: disable=unused-argument
+        constraints: typing.Callable[
+            [Source], typing.Tuple[typing.Iterable[Column], typing.Optional[Column]]
+        ],  # pylint: disable=unused-argument
     ) -> Source:  # pylint: disable=unused-argument
         """Generate a target code for a table instance given its actual field requirements.
 
         Args:
             table: Table (already in target code based on the provided mapping) to be generated.
-            columns: List of fields to be retrieved from the table (potentially subset of all available).
-            predicate: Row filter to be possibly pushed down when retrieving the data from given table.
+            constraints: Factory of fields to be retrieved from the table (potentially subset of all available) and an
+                         optional row filter to be possibly pushed down when retrieving the data from given table.
 
         Returns:
             Table target code potentially optimized based on field requirements.
         """
+        _ = constraints(table)
         return table
 
     def visit_table(self, origin: frame.Table) -> None:
-        fields = [self.generate_column(f) for f in sorted(self.context.tables[origin].fields)]
-        predicate = self.context.tables[origin].predicate
-        if predicate is not None:
-            predicate = self.generate_column(predicate)
+        def constraints(table: Source) -> typing.Iterable[Column]:
+            """Factory for providing fields+predicate constraints for the generated table.
+
+            Returns:
+                Tuple of fields and predicate constraints.
+            """
+            self.context.origins[origin] = table
+            predicate = self.context.tables[origin].predicate
+            if predicate is not None:
+                predicate = self.generate_column(predicate)
+            return [self.generate_column(f) for f in sorted(self.context.tables[origin].fields)], predicate
+
         super().visit_table(origin)
-        self.context.symbols.push(self.generate_table(self.resolve_source(origin), fields, predicate))
+        symbol = self.generate_table(self.resolve_source(origin), constraints)
+        self.context.origins[origin] = symbol
+        self.context.symbols.push(symbol)
 
     def visit_reference(self, origin: frame.Reference) -> None:
         super().visit_reference(origin)
-        self.context.symbols.push(self.generate_reference(self.context.symbols.pop(), origin.name))
+        referenced, handle = self.generate_reference(self.context.symbols.pop(), origin.name)
+        self.context.origins[origin] = handle
+        self.context.symbols.push(referenced)
 
-    @bypass(Columnar.resolve_source)
+    @bypass(resolve_source)
     def visit_join(self, source: frame.Join) -> None:
         if source.condition:
             self.context.tables.filter(source.condition)
@@ -531,16 +488,16 @@ class Frame(typing.Generic[Source, Column], Columnar[Source, Column], visit.Fram
         expression = self.generate_column(source.condition) if source.condition is not None else None
         self.context.symbols.push(self.generate_join(left, right, expression, source.kind))
 
-    @bypass(Columnar.resolve_source)
+    @bypass(resolve_source)
     def visit_set(self, source: frame.Set) -> None:
         super().visit_set(source)
         right = self.context.symbols.pop()
         left = self.context.symbols.pop()
         self.context.symbols.push(self.generate_set(left, right, source.kind))
 
-    @bypass(Columnar.resolve_source)
+    @bypass(resolve_source)
     def visit_query(self, source: frame.Query) -> None:
-        with self:
+        with self.switch():
             self.context.tables.select(*source.columns)
             if source.prefilter is not None:
                 self.context.tables.filter(source.prefilter)

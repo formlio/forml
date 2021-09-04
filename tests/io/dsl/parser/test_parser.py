@@ -46,14 +46,14 @@ class TestContainer:
 
     def test_context(self, storage, value):
         """Test context nesting."""
-        with storage:
+        with storage.switch():
             storage.context.symbols.push(value)
-            with storage:
+            with storage.switch():
                 with pytest.raises(RuntimeError):
                     storage.context.symbols.pop()
             assert storage.fetch() == value
         with pytest.raises(RuntimeError):
-            with storage:
+            with storage.switch():
                 storage.context.symbols.push(value)
 
 
@@ -78,9 +78,6 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
         def generate_alias(self, column: tuple, alias: str) -> tuple:
             return column, alias
 
-        def generate_reference(self, name: str) -> tuple:
-            return tuple([name])
-
     # pylint: disable=missing-function-docstring
     def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: framod.Join.Kind) -> tuple:
         return left, kind, right, condition
@@ -101,7 +98,7 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
         return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows
 
     def generate_reference(self, instance: tuple, name: str) -> tuple:
-        return instance, name
+        return (instance, name), (name,)
 
 
 class TestParser(TupleParser):

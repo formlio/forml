@@ -29,7 +29,7 @@ import string
 import typing
 
 from forml.io.dsl import error, struct
-from forml.io.dsl.struct import series, visit
+from forml.io.dsl.struct import series
 
 LOGGER = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             raise KeyError(f'Invalid column {name}') from err
 
     @abc.abstractmethod
-    def accept(self, visitor: visit.Frame) -> None:
+    def accept(self, visitor: 'Visitor') -> None:
         """Visitor acceptor.
 
         Args:
@@ -152,7 +152,7 @@ class Join(Source):
     def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
-    def accept(self, visitor: visit.Frame) -> None:
+    def accept(self, visitor: 'Visitor') -> None:
         visitor.visit_join(self)
 
 
@@ -182,7 +182,7 @@ class Set(Source):
     def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
-    def accept(self, visitor: visit.Frame) -> None:
+    def accept(self, visitor: 'Visitor') -> None:
         visitor.visit_set(self)
 
 
@@ -349,7 +349,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 
 
 class Origin(Queryable, metaclass=abc.ABCMeta):
-    """Origin is a queryable that can be referenced by some identifier (rather than just a statement itself).
+    """Origin is a queryable that can be referenced by some handle (rather than just a statement itself) - effectively
+    a Table or a subquery with a Reference.
 
     It's columns are represented using series.Element.
     """
@@ -391,7 +392,7 @@ class Reference(Origin):
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
         return Reference(self.instance, name)
 
-    def accept(self, visitor: visit.Columnar) -> None:
+    def accept(self, visitor: 'Visitor') -> None:
         """Visitor acceptor.
 
         Args:
@@ -476,7 +477,7 @@ class Table(Origin):
     def columns(self) -> typing.Sequence['series.Field']:
         return tuple(series.Field(self, self.schema[k].name or k) for k in self.schema)
 
-    def accept(self, visitor: visit.Columnar) -> None:
+    def accept(self, visitor: 'Visitor') -> None:
         visitor.visit_table(self)
 
 
@@ -570,7 +571,7 @@ class Query(Queryable):
         """
         return self.selection if self.selection else self.source.columns
 
-    def accept(self, visitor: visit.Frame) -> None:
+    def accept(self, visitor: 'Visitor') -> None:
         visitor.visit_query(self)
 
     def select(self, *columns: 'series.Column') -> 'Query':
@@ -625,3 +626,60 @@ class Query(Queryable):
             self.ordering,
             Rows(count, offset),
         )
+
+
+class Visitor:
+    """Frame visitor."""
+
+    def visit_source(self, source: Source) -> None:  # pylint: disable=unused-argument, no-self-use
+        """Generic source hook.
+
+        Args:
+            source: Source instance to be visited.
+        """
+
+    def visit_table(self, origin: Table) -> None:
+        """Table hook.
+
+        Args:
+            origin: Source instance to be visited.
+        """
+        self.visit_source(origin)
+
+    def visit_reference(self, origin: Reference) -> None:
+        """Reference hook.
+
+        Args:
+            origin: Instance to be visited.
+        """
+        origin.instance.accept(self)
+        self.visit_source(origin)
+
+    def visit_join(self, source: Join) -> None:
+        """Join hook.
+
+        Args:
+            source: Instance to be visited.
+        """
+        source.left.accept(self)
+        source.right.accept(self)
+        self.visit_source(source)
+
+    def visit_set(self, source: Set) -> None:
+        """Set hook.
+
+        Args:
+            source: Instance to be visited.
+        """
+        source.left.accept(self)
+        source.right.accept(self)
+        self.visit_source(source)
+
+    def visit_query(self, source: Query) -> None:
+        """Query hook.
+
+        Args:
+            source: Instance to be visited.
+        """
+        source.source.accept(self)
+        self.visit_source(source)

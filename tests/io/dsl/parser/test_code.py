@@ -134,9 +134,6 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
         ) -> tuple:
             return expression, *arguments
 
-        def implement_reference(self, name: str) -> tuple:
-            return tuple([name])
-
     # pylint: disable=missing-function-docstring
     def implement_join(
         self, left: tuple, right: tuple, condition: typing.Optional[code.Columnizer], kind: framod.Join.Kind
@@ -176,8 +173,11 @@ class Frame(code.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
     def implement_limit(self, table: tuple, count: int, offset: int) -> tuple:
         return self.Result(table, rows=(count, offset))
 
-    def implement_reference(self, table: tuple, name: str) -> tuple:
+    def implement_reforigin(self, table: tuple, name: str) -> tuple:
         return table, name
+
+    def implement_refhandle(self, name: str) -> tuple:
+        return tuple([name])
 
 
 class TestParser(TupleParser):
