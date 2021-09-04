@@ -28,7 +28,8 @@ import uuid
 import pytest
 
 from forml.flow import task
-from forml.io.dsl import struct
+from forml.io import feed as feedmod, sink as sinkmod
+from forml.io.dsl import function, parser, struct
 from forml.io.dsl.struct import frame, kind
 from forml.lib.flow.actor import wrapped
 from forml.project import distribution, product
@@ -190,3 +191,104 @@ def schema() -> frame.Table:
         age = struct.Field(kind.Integer())
 
     return Human
+
+
+@pytest.fixture(scope='session')
+def person() -> frame.Table:
+    """Base table fixture."""
+
+    class Person(struct.Schema):
+        """Base table."""
+
+        surname = struct.Field(kind.String())
+        dob = struct.Field(kind.Date(), 'birthday')
+
+    return Person
+
+
+@pytest.fixture(scope='session')
+def student(person: frame.Table) -> frame.Table:
+    """Extended table fixture."""
+
+    class Student(person):
+        """Extended table."""
+
+        level = struct.Field(kind.Integer())
+        score = struct.Field(kind.Float())
+        school = struct.Field(kind.Integer())
+
+    return Student
+
+
+@pytest.fixture(scope='session')
+def school() -> frame.Table:
+    """School table fixture."""
+
+    class School(struct.Schema):
+        """School table."""
+
+        sid = struct.Field(kind.Integer(), 'id')
+        name = struct.Field(kind.String())
+
+    return School
+
+
+@pytest.fixture(scope='session')
+def school_ref(school: frame.Table) -> frame.Reference:
+    """School table reference fixture."""
+    return school.reference('bar')
+
+
+@pytest.fixture(scope='session')
+def query(person: frame.Table, student: frame.Table, school_ref: frame.Reference) -> frame.Query:
+    """Query fixture."""
+    query = (
+        student.join(person, student.surname == person.surname)
+        .join(school_ref, student.school == school_ref.sid)
+        .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, kind.String()))
+        .where(student.score < 2)
+        .orderby(student.level, student.score)
+        .limit(10)
+    )
+    return query
+
+
+@pytest.fixture(scope='session')
+def reference() -> str:
+    """Dummy feed/sink reference fixture"""
+    return 'dummy'
+
+
+@pytest.fixture(scope='session')
+def feed(
+    reference: str, person: frame.Table, student: frame.Table, school: frame.Table  # pylint: disable=unused-argument
+) -> typing.Type[feedmod.Provider]:
+    """Dummy feed fixture."""
+
+    class Dummy(feedmod.Provider, alias=reference):
+        """Dummy feed for unit-testing purposes."""
+
+        def __init__(self, identity: str, **readerkw):
+            super().__init__(**readerkw)
+            self.identity: str = identity
+
+        @property
+        def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
+            """Abstract method implementation."""
+            return {student.join(person, student.surname == person.surname).source: None, student: None, school: None}
+
+    return Dummy
+
+
+@pytest.fixture(scope='session')
+def sink(reference: str) -> typing.Type[sinkmod.Provider]:  # pylint: disable=unused-argument
+    """Dummy sink fixture."""
+
+    class Dummy(sinkmod.Provider, alias=reference):
+        """Dummy sink for unit-testing purposes."""
+
+        def __init__(self, identity: str, **readerkw):
+            super().__init__(**readerkw)
+            self.identity: str = identity
+
+    return Dummy

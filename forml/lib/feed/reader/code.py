@@ -66,136 +66,133 @@ Tabulizer = Closure[Table, Table]  # pylint: disable=unsubscriptable-object
 Columnizer = Closure[Table, Column]  # pylint: disable=unsubscriptable-object
 
 
-class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
+class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
     """DSL parser producing an chain of table producing lambda statements."""
 
-    class Series(parsmod.Frame.Series[Columnizer, Columnizer]):
-        """DSL parser producing a chain of column producing lambda statements."""
+    class Element(Columnizer):
+        """Closure with parameters required for retrieving a field."""
 
-        class Element(Columnizer):
-            """Closure with parameters required for retrieving a field."""
+        source: Tabulizer = property(operator.itemgetter(1))
+        column: Columnizer = property(operator.itemgetter(2))
 
-            source: Tabulizer = property(operator.itemgetter(1))
-            column: Columnizer = property(operator.itemgetter(2))
-
-            def __new__(
-                cls, handler: typing.Callable[[Table, Columnizer], Column], source: Tabulizer, column: Columnizer
-            ) -> Columnizer:
-                return super().__new__(cls, handler, source, column)
-
-            def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
-                return self.source(data), self.column
-
-        class Alias(Columnizer):
-            """Closure with parameters required for creating a column alias."""
-
-            column: Columnizer = property(operator.itemgetter(1))
-            name: str = property(operator.itemgetter(2))
-
-            def __new__(
-                cls, handler: typing.Callable[[Table, Columnizer, str], Column], column: Columnizer, name: str
-            ) -> Columnizer:
-                return super().__new__(cls, handler, column, name)
-
-            def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
-                return data, self.column, self.name
-
-        class Literal(Columnizer):
-            """Closure with parameters required for creating a literal value."""
-
-            value: typing.Any = property(operator.itemgetter(1))
-            kind: kindmod.Any = property(operator.itemgetter(2))
-
-            def __new__(
-                cls, handler: typing.Callable[[typing.Any, kindmod.Any], Column], value: typing.Any, kind: kindmod.Any
-            ) -> Columnizer:
-                return super().__new__(cls, handler, value, kind)
-
-            def __args__(self, _: Table) -> typing.Sequence[typing.Any]:
-                return self.value, self.kind
-
-        class Expression(Columnizer):
-            """Closure with parameters required for creating an expression."""
-
-            kind: typing.Type[sermod.Expression] = property(operator.itemgetter(1))
-            arguments: typing.Tuple[typing.Any] = property(operator.itemgetter(2))
-
-            def __new__(
-                cls,
-                handler: typing.Callable[[typing.Type[sermod.Expression], typing.Sequence[Column]], Column],
-                kind: typing.Type[sermod.Expression],
-                arguments: typing.Sequence[typing.Any],
-            ) -> Columnizer:
-                return super().__new__(cls, handler, kind, tuple(arguments))
-
-            def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
-                return self.kind, tuple(c(data) if isinstance(c, Closure) else c for c in self.arguments)
-
-        def implement_element(self, data: Table, column: Columnizer) -> Column:  # pylint: disable=no-self-use
-            """Column provider implementation.
-
-            Args:
-                data: Dataframe to get the column from.
-                column: Column reference.
-
-            Returns:
-                Column instance.
-            """
-            return column(data)
-
-        @abc.abstractmethod
-        def implement_alias(self, data: Table, column: Columnizer, name: str) -> Column:
-            """Column provider implementation.
-
-            Args:
-                data: Dataframe whose column is to be aliased.
-                column: Column reference.
-                name: Column alias.
-
-            Returns:
-                Aliased column instance.
-            """
-
-        @abc.abstractmethod
-        def implement_literal(self, value: typing.Any, kind: kindmod.Any) -> Column:
-            """Literal value provider implementation.
-
-            Args:
-                value: Literal value.
-                kind: Value type.
-
-            Returns:
-                Literal value column instance.
-            """
-
-        @abc.abstractmethod
-        def implement_expression(
-            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
-        ) -> Column:
-            """Literal value provider implementation.
-
-            Args:
-                expression: Expression class.
-                arguments: Sequence of expression arguments.
-
-            Returns:
-                Column as the expression evaluation.
-            """
-
-        # pylint: disable=missing-function-docstring
-        def generate_element(self, origin: Tabulizer, element: Columnizer) -> Columnizer:
-            return self.Element(self.implement_element, origin, element)
-
-        def generate_alias(self, column: Columnizer, alias: str) -> Columnizer:
-            return self.Alias(self.implement_alias, column, alias)
-
-        def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Columnizer:
-            return self.Literal(self.implement_literal, value, kind)
-
-        def generate_expression(
-            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        def __new__(
+            cls, handler: typing.Callable[[Table, Columnizer], Column], source: Tabulizer, column: Columnizer
         ) -> Columnizer:
-            return self.Expression(self.implement_expression, expression, arguments)
+            return super().__new__(cls, handler, source, column)
+
+        def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
+            return self.source(data), self.column
+
+    class Alias(Columnizer):
+        """Closure with parameters required for creating a column alias."""
+
+        column: Columnizer = property(operator.itemgetter(1))
+        name: str = property(operator.itemgetter(2))
+
+        def __new__(
+            cls, handler: typing.Callable[[Table, Columnizer, str], Column], column: Columnizer, name: str
+        ) -> Columnizer:
+            return super().__new__(cls, handler, column, name)
+
+        def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
+            return data, self.column, self.name
+
+    class Literal(Columnizer):
+        """Closure with parameters required for creating a literal value."""
+
+        value: typing.Any = property(operator.itemgetter(1))
+        kind: kindmod.Any = property(operator.itemgetter(2))
+
+        def __new__(
+            cls, handler: typing.Callable[[typing.Any, kindmod.Any], Column], value: typing.Any, kind: kindmod.Any
+        ) -> Columnizer:
+            return super().__new__(cls, handler, value, kind)
+
+        def __args__(self, _: Table) -> typing.Sequence[typing.Any]:
+            return self.value, self.kind
+
+    class Expression(Columnizer):
+        """Closure with parameters required for creating an expression."""
+
+        kind: typing.Type[sermod.Expression] = property(operator.itemgetter(1))
+        arguments: typing.Tuple[typing.Any] = property(operator.itemgetter(2))
+
+        def __new__(
+            cls,
+            handler: typing.Callable[[typing.Type[sermod.Expression], typing.Sequence[Column]], Column],
+            kind: typing.Type[sermod.Expression],
+            arguments: typing.Sequence[typing.Any],
+        ) -> Columnizer:
+            return super().__new__(cls, handler, kind, tuple(arguments))
+
+        def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
+            return self.kind, tuple(c(data) if isinstance(c, Closure) else c for c in self.arguments)
+
+    def implement_element(self, data: Table, column: Columnizer) -> Column:  # pylint: disable=no-self-use
+        """Column provider implementation.
+
+        Args:
+            data: Dataframe to get the column from.
+            column: Column reference.
+
+        Returns:
+            Column instance.
+        """
+        return column(data)
+
+    @abc.abstractmethod
+    def implement_alias(self, data: Table, column: Columnizer, name: str) -> Column:
+        """Column provider implementation.
+
+        Args:
+            data: Dataframe whose column is to be aliased.
+            column: Column reference.
+            name: Column alias.
+
+        Returns:
+            Aliased column instance.
+        """
+
+    @abc.abstractmethod
+    def implement_literal(self, value: typing.Any, kind: kindmod.Any) -> Column:
+        """Literal value provider implementation.
+
+        Args:
+            value: Literal value.
+            kind: Value type.
+
+        Returns:
+            Literal value column instance.
+        """
+
+    @abc.abstractmethod
+    def implement_expression(
+        self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+    ) -> Column:
+        """Literal value provider implementation.
+
+        Args:
+            expression: Expression class.
+            arguments: Sequence of expression arguments.
+
+        Returns:
+            Column as the expression evaluation.
+        """
+
+    # pylint: disable=missing-function-docstring
+    def generate_element(self, origin: Tabulizer, element: Columnizer) -> Columnizer:
+        return self.Element(self.implement_element, origin, element)
+
+    def generate_alias(self, column: Columnizer, alias: str) -> Columnizer:
+        return self.Alias(self.implement_alias, column, alias)
+
+    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Columnizer:
+        return self.Literal(self.implement_literal, value, kind)
+
+    def generate_expression(
+        self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+    ) -> Columnizer:
+        return self.Expression(self.implement_expression, expression, arguments)
 
     class Join(Tabulizer):
         """Closure with parameters required for performing a join."""
@@ -456,10 +453,10 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
     # pylint: disable=missing-function-docstring
     def generate_join(
         self, left: Tabulizer, right: Tabulizer, condition: typing.Optional[Columnizer], kind: framod.Join.Kind
-    ) -> 'Frame.Join':
+    ) -> 'Parser.Join':
         return self.Join(self.implement_join, left, right, condition, kind)
 
-    def generate_set(self, left: Tabulizer, right: Tabulizer, kind: framod.Set.Kind) -> 'Frame.Set':
+    def generate_set(self, left: Tabulizer, right: Tabulizer, kind: framod.Set.Kind) -> 'Parser.Set':
         return self.Set(self.implement_set, left, right, kind)
 
     def generate_query(
@@ -471,7 +468,7 @@ class Frame(parsmod.Frame[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         having: typing.Optional[Columnizer],
         orderby: typing.Sequence[typing.Tuple[Columnizer, sermod.Ordering.Direction]],
         rows: typing.Optional[framod.Rows],
-    ) -> 'Frame.Query':
+    ) -> 'Parser.Query':
         return self.Query(self.implement_query, source, columns, where, groupby, having, orderby, rows)
 
     def generate_reference(self, instance: Tabulizer, name: str) -> typing.Tuple[Tabulizer, Tabulizer]:

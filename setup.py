@@ -41,14 +41,14 @@ EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
-EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
+EXTRAS_SQL = {'sqlalchemy', 'sqlalchemy-trino'}
 
 EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
 
 setuptools.setup(
     name='forml',
     description='Lifecycle management framework for Data science projects',
-    long_description=open('README.md', 'r').read(),
+    long_description=open('README.md', 'r', encoding='utf8').read(),  # pylint: disable=consider-using-with
     long_description_content_type='text/markdown',
     url='https://github.com/formlio/forml',
     maintainer='ForML Development Team',

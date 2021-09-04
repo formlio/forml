@@ -249,9 +249,9 @@ class Pool:
         def __bool__(self):
             return self._matches
 
-        def visit_reference(self, origin: 'frame.Reference') -> None:
-            if self and origin not in self._sources:
-                super().visit_reference(origin)
+        def visit_reference(self, source: 'frame.Reference') -> None:
+            if self and source not in self._sources:
+                super().visit_reference(source)
 
         def visit_join(self, source: 'frame.Join') -> None:
             if self and source not in self._sources:
@@ -265,8 +265,8 @@ class Pool:
             if self and source not in self._sources:
                 super().visit_query(source)
 
-        def visit_table(self, origin: 'frame.Table') -> None:
-            if origin not in self._sources:
+        def visit_table(self, source: 'frame.Table') -> None:
+            if source not in self._sources:
                 self._matches = False
 
     def __init__(self, *feeds: typing.Union[provcfg.Feed, str, Provider]):

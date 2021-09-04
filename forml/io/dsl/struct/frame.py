@@ -638,22 +638,22 @@ class Visitor:
             source: Source instance to be visited.
         """
 
-    def visit_table(self, origin: Table) -> None:
+    def visit_table(self, source: Table) -> None:
         """Table hook.
 
         Args:
-            origin: Source instance to be visited.
+            source: Source instance to be visited.
         """
-        self.visit_source(origin)
+        self.visit_source(source)
 
-    def visit_reference(self, origin: Reference) -> None:
+    def visit_reference(self, source: Reference) -> None:
         """Reference hook.
 
         Args:
-            origin: Instance to be visited.
+            source: Instance to be visited.
         """
-        origin.instance.accept(self)
-        self.visit_source(origin)
+        source.instance.accept(self)
+        self.visit_source(source)
 
     def visit_join(self, source: Join) -> None:
         """Join hook.

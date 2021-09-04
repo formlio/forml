@@ -24,9 +24,8 @@ import typing
 
 import pytest
 
-from forml.io.dsl import parser as parsmod
-from forml.io.dsl.struct import series as sermod, frame as framod, kind as kindmod
-from . import TupleParser
+from forml.io.dsl import parser as parsmod, function
+from forml.io.dsl.struct import frame as framod, kind as kindmod, series as sermod
 
 
 class TestContainer:
@@ -46,37 +45,34 @@ class TestContainer:
 
     def test_context(self, storage, value):
         """Test context nesting."""
-        with storage.switch():
+        with storage:
             storage.context.symbols.push(value)
-            with storage.switch():
+            with storage:
                 with pytest.raises(RuntimeError):
                     storage.context.symbols.pop()
             assert storage.fetch() == value
         with pytest.raises(RuntimeError):
-            with storage.switch():
+            with storage:
                 storage.context.symbols.push(value)
 
 
-class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-object
+class Parser(parsmod.Visitor[tuple, tuple]):  # pylint: disable=unsubscriptable-object
     """Dummy frame parser wrapping all terms into tuples."""
 
-    class Series(parsmod.Frame.Series[tuple, tuple]):
-        """Dummy series parser wrapping all terms into tuples."""
+    # pylint: disable=missing-function-docstring
+    def generate_element(self, origin: tuple, element: tuple) -> tuple:
+        return origin, element
 
-        # pylint: disable=missing-function-docstring
-        def generate_element(self, origin: tuple, element: tuple) -> tuple:
-            return origin, element
+    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
+        return value, kind
 
-        def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
-            return value, kind
+    def generate_expression(
+        self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+    ) -> tuple:
+        return expression, *arguments
 
-        def generate_expression(
-            self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
-        ) -> tuple:
-            return expression, *arguments
-
-        def generate_alias(self, column: tuple, alias: str) -> tuple:
-            return column, alias
+    def generate_alias(self, column: tuple, alias: str) -> tuple:
+        return column, alias
 
     # pylint: disable=missing-function-docstring
     def generate_join(self, left: tuple, right: tuple, condition: tuple, kind: framod.Join.Kind) -> tuple:
@@ -101,7 +97,7 @@ class Frame(parsmod.Frame[tuple, tuple]):  # pylint: disable=unsubscriptable-obj
         return (instance, name), (name,)
 
 
-class TestParser(TupleParser):
+class TestParser:
     """Frame parser tests."""
 
     @staticmethod
@@ -138,6 +134,28 @@ class TestParser(TupleParser):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mapping[sermod.Column, tuple]) -> Frame:
+    def parser(sources: typing.Mapping[framod.Source, tuple], columns: typing.Mapping[sermod.Column, tuple]) -> Parser:
         """Parser fixture."""
-        return Frame(sources, columns)
+        return Parser(sources, columns)
+
+    def test_parsing(
+        self,
+        query: framod.Query,
+        student: framod.Table,
+        school_ref: framod.Reference,
+        parser: parsmod.Visitor,
+    ):
+        """Parsing test."""
+        with parser:
+            query.accept(parser)
+            result = parser.fetch()
+        assert result[0][0] == ('foo',)
+        assert result[1] == (
+            (((student,), (student.surname,)), 'student'),
+            (('bar',), (school_ref['name'],)),
+            (function.Cast, ((student,), (student.score,)), kindmod.String()),
+        )
+        assert result[5] == (
+            (((student,), ('baz',)), sermod.Ordering.Direction.ASCENDING),
+            (((student,), (student.score,)), sermod.Ordering.Direction.ASCENDING),
+        )

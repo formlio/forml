@@ -35,129 +35,121 @@ from forml.io.feed import extract
 LOGGER = logging.getLogger(__name__)
 
 
-class Parser(parsmod.Frame[sql.Selectable, sql.ColumnElement]):  # pylint: disable=unsubscriptable-object
+class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: disable=unsubscriptable-object
     """Frame DSL parser producing SQLAlchemy select expression."""
 
-    class Series(parsmod.Frame.Series[sql.Selectable, sql.ColumnElement]):
-        """Series DSL parser producing SQL code."""
+    KIND: typing.Mapping[kindmod.Any, sql.ColumnElement] = {
+        kindmod.Boolean(): sqltypes.Boolean(),
+        kindmod.Integer(): sqltypes.Integer(),
+        kindmod.Float(): sqltypes.Float(),
+        kindmod.Decimal(): sqltypes.DECIMAL(),
+        kindmod.String(): sqltypes.Unicode(),
+        kindmod.Date(): sqltypes.Date(),
+        kindmod.Timestamp(): sqltypes.DateTime(),
+    }
 
-        KIND: typing.Mapping[kindmod.Any, sql.ColumnElement] = {
-            kindmod.Boolean(): sqltypes.Boolean(),
-            kindmod.Integer(): sqltypes.Integer(),
-            kindmod.Float(): sqltypes.Float(),
-            kindmod.Decimal(): sqltypes.DECIMAL(),
-            kindmod.String(): sqltypes.Unicode(),
-            kindmod.Date(): sqltypes.Date(),
-            kindmod.Timestamp(): sqltypes.DateTime(),
-        }
+    EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., sql.ColumnElement]] = {
+        function.Addition: operator.add,
+        function.Subtraction: operator.sub,
+        function.Multiplication: operator.mul,
+        function.Division: operator.truediv,
+        function.Modulus: operator.mod,
+        function.LessThan: operator.lt,
+        function.LessEqual: operator.le,
+        function.GreaterThan: operator.gt,
+        function.GreaterEqual: operator.ge,
+        function.Equal: operator.eq,
+        function.NotEqual: operator.ne,
+        function.IsNull: lambda c: c.is_(None),
+        function.NotNull: lambda c: c.is_not(None),
+        function.And: operator.and_,
+        function.Or: operator.or_,
+        function.Not: operator.not_,
+        function.Cast: lambda c, k: sql.cast(c, Parser.KIND[k]),
+        function.Avg: func.avg,
+        function.Count: func.count,
+        function.Min: func.min,
+        function.Max: func.max,
+        function.Sum: func.sum,
+        function.Year: func.year,
+        function.Abs: operator.abs,
+        function.Ceil: func.ceil,
+        function.Floor: func.floor,
+    }
 
-        EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., sql.ColumnElement]] = {
-            function.Addition: operator.add,
-            function.Subtraction: operator.sub,
-            function.Multiplication: operator.mul,
-            function.Division: operator.truediv,
-            function.Modulus: operator.mod,
-            function.LessThan: operator.lt,
-            function.LessEqual: operator.le,
-            function.GreaterThan: operator.gt,
-            function.GreaterEqual: operator.ge,
-            function.Equal: operator.eq,
-            function.NotEqual: operator.ne,
-            function.IsNull: lambda c: c.is_(None),
-            function.NotNull: lambda c: c.is_not(None),
-            function.And: operator.and_,
-            function.Or: operator.or_,
-            function.Not: operator.not_,
-            function.Cast: lambda c, k: sql.cast(c, Parser.Series.KIND[k]),
-            function.Avg: func.avg,
-            function.Count: func.count,
-            function.Min: func.min,
-            function.Max: func.max,
-            function.Sum: func.sum,
-            function.Year: func.year,
-            function.Abs: operator.abs,
-            function.Ceil: func.ceil,
-            function.Floor: func.floor,
-        }
+    def resolve_column(self, column: series.Column) -> sql.ColumnElement:
+        """Resolver falling back to a field name in case of no explicit mapping.
 
-        def __init__(self, columns: typing.Optional[typing.Mapping[series.Column, sql.ColumnElement]] = None):
-            super().__init__(columns or {})
+        Args:
+            column: Column to be resolved.
 
-        def resolve_column(self, column: series.Column) -> sql.ColumnElement:
-            """Resolver falling back to a field name in case of no explicit mapping.
+        Returns:
+            Resolved column.
+        """
+        try:
+            return super().resolve_column(column)
+        except error.Mapping as err:
+            if isinstance(column, series.Element):
+                return sql.column(column.name)
+            raise err
 
-            Args:
-                column: Column to be resolved.
+    def generate_element(
+        self, origin: sql.Selectable, element: sql.ColumnElement
+    ) -> sql.ColumnElement:  # pylint: disable=no-self-use
+        """Generate a field code.
 
-            Returns:
-                Resolved column.
-            """
-            try:
-                return super().resolve_column(column)
-            except error.Mapping as err:
-                if isinstance(column, series.Element):
-                    return sql.column(column.name)
-                raise err
+        Args:
+            origin: Field source value.
+            element: Field symbol.
 
-        def generate_element(
-            self, origin: sql.Selectable, element: sql.ColumnElement
-        ) -> sql.ColumnElement:  # pylint: disable=no-self-use
-            """Generate a field code.
+        Returns:
+            Field representation.
+        """
+        return sql.column(element.name, _selectable=origin)
 
-            Args:
-                origin: Field source value.
-                element: Field symbol.
+    def generate_alias(self, column: sql.ColumnElement, alias: str) -> sql.ColumnElement:  # pylint: disable=no-self-use
+        """Generate column alias code.
 
-            Returns:
-                Field representation.
-            """
-            return sql.column(element.name, _selectable=origin)
+        Args:
+            column: Column value.
+            alias: Alias to be used for given column.
 
-        def generate_alias(
-            self, column: sql.ColumnElement, alias: str
-        ) -> sql.ColumnElement:  # pylint: disable=no-self-use
-            """Generate column alias code.
+        Returns:
+            Aliased column.
+        """
+        return column.label(alias)
 
-            Args:
-                column: Column value.
-                alias: Alias to be used for given column.
+    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> sql.ColumnElement:
+        """Generate a literal value.
 
-            Returns:
-                Aliased column.
-            """
-            return column.label(alias)
+        Args:
+            value: Literal value instance.
+            kind: Literal value type.
 
-        def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> sql.ColumnElement:
-            """Generate a literal value.
+        Returns:
+            Literal.
+        """
+        try:
+            return sql.bindparam(None, value, self.KIND[kind])
+        except KeyError as err:
+            raise error.Unsupported(f'Unsupported literal kind: {kind}') from err
 
-            Args:
-                value: Literal value instance.
-                kind: Literal value type.
+    def generate_expression(
+        self, expression: typing.Type[series.Expression], arguments: typing.Sequence[typing.Any]
+    ) -> sql.ColumnElement:
+        """Expression of given arguments.
 
-            Returns:
-                Literal.
-            """
-            try:
-                return sql.bindparam(None, value, self.KIND[kind])
-            except KeyError as err:
-                raise error.Unsupported(f'Unsupported literal kind: {kind}') from err
+        Args:
+            expression: Operator or function implementing the expression.
+            arguments: Expression arguments.
 
-        def generate_expression(
-            self, expression: typing.Type[series.Expression], arguments: typing.Sequence[typing.Any]
-        ) -> sql.ColumnElement:
-            """Expression of given arguments.
-
-            Args:
-                expression: Operator or function implementing the expression.
-                arguments: Expression arguments.
-
-            Returns:
-                Expression.
-            """
-            try:
-                return self.EXPRESSION[expression](*arguments)
-            except KeyError as err:
-                raise error.Unsupported(f'Unsupported expression: {expression}') from err
+        Returns:
+            Expression.
+        """
+        try:
+            return self.EXPRESSION[expression](*arguments)
+        except KeyError as err:
+            raise error.Unsupported(f'Unsupported expression: {expression}') from err
 
     SET: typing.Mapping[frame.Set.Kind, typing.Callable[[sql.Selectable, sql.Selectable], sql.Selectable]] = {
         frame.Set.Kind.UNION: sql.Select.union,
@@ -267,18 +259,6 @@ class Parser(parsmod.Frame[sql.Selectable, sql.ColumnElement]):  # pylint: disab
 
 class Reader(extract.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame], metaclass=abc.ABCMeta):
     """SQLAlchemy based feed."""
-
-    @classmethod
-    @abc.abstractmethod
-    def connection(cls, **kwargs: typing.Any):
-        """Create a PEP249 compliant connection instance.
-
-        Args:
-            **kwargs: Connection specific keyword arguments.
-
-        Returns:
-            Connection instance.
-        """
 
     @classmethod
     def parser(

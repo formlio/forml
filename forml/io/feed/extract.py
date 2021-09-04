@@ -170,7 +170,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
         cls,
         sources: typing.Mapping[frame.Source, parsmod.Source],
         columns: typing.Mapping[series.Column, parsmod.Column],
-    ) -> parsmod.Frame:
+    ) -> parsmod.Visitor:
         """Return the parser instance of this reader.
 
         Args:

@@ -14,19 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-"""
-SQLite3 reader implementation.
-"""
-
-import sqlite3
-
-from forml.io.feed.extract.reader import sql
-
-
-class Reader(sql.Reader):
-    """SQLite3 reader."""
-
-    @classmethod
-    def connection(cls, database: str) -> sqlite3.Connection:
-        return sqlite3.connect(database=database)

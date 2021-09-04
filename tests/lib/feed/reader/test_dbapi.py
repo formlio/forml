@@ -27,8 +27,8 @@ import typing
 import pytest
 
 from forml.io.dsl import function
-from forml.io.dsl.parser import sql
 from forml.io.dsl.struct import series, frame, kind
+from forml.lib.feed.reader import dbapi
 
 
 class Parser(metaclass=abc.ABCMeta):
@@ -40,14 +40,14 @@ class Parser(metaclass=abc.ABCMeta):
         query: frame.Query
         expected: str
 
-        def __call__(self, parser: sql.Frame):
+        def __call__(self, parser: dbapi.Parser):
             def strip(value: str) -> str:
                 """Replace all whitespace with single space."""
                 return ' '.join(value.strip().split())
 
-            with parser.switch() as visitor:
-                self.query.accept(visitor)
-                result = visitor.fetch()
+            with parser:
+                self.query.accept(parser)
+                result = parser.fetch()
             assert strip(result) == strip(self.expected)
 
     @staticmethod
@@ -64,9 +64,9 @@ class Parser(metaclass=abc.ABCMeta):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def parser(sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]) -> sql.Frame:
+    def parser(sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]) -> dbapi.Parser:
         """Parser fixture."""
-        return sql.Frame(sources, columns)
+        return dbapi.Parser(sources, columns)
 
     @classmethod
     @abc.abstractmethod
@@ -74,7 +74,7 @@ class Parser(metaclass=abc.ABCMeta):
     def case(cls, student: frame.Table, school: frame.Table) -> Case:
         """Case fixture."""
 
-    def test_parse(self, parser: sql.Frame, case: Case):
+    def test_parse(self, parser: dbapi.Parser, case: Case):
         """Parsing test."""
         case(parser)
 
