@@ -18,7 +18,6 @@
 """
 SQLAlchemy based ETL feed.
 """
-import abc
 import datetime
 import inspect
 import logging
@@ -26,10 +25,11 @@ import operator
 import typing
 
 import pandas
-from sqlalchemy import sql, func, types as sqltypes
-from sqlalchemy.engine import interfaces
-from sqlalchemy.dialects.sqlite import base as sqlite
+import sqlalchemy
 from pyhive import sqlalchemy_trino as trino
+from sqlalchemy import sql, func, types as sqltypes
+from sqlalchemy.dialects.sqlite import base as sqlite
+from sqlalchemy.engine import interfaces
 
 from forml.io import payload
 from forml.io.dsl import parser as parsmod, function, error
@@ -331,8 +331,19 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         return ref, ref
 
 
-class Reader(extract.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame], metaclass=abc.ABCMeta):
-    """SQLAlchemy based feed."""
+class Reader(extract.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]):
+    """SQLAlchemy based reader."""
+
+    def __init__(
+        self,
+        sources: typing.Mapping[frame.Source, parsmod.Source],
+        columns: typing.Mapping[series.Column, parsmod.Column],
+        connection: typing.Union[str, interfaces.Connectable],
+        **kwargs,
+    ):
+        if isinstance(connection, str):
+            connection = sqlalchemy.create_engine(connection)
+        super().__init__(sources, columns, **{**kwargs, 'con': connection})
 
     @classmethod
     def parser(
@@ -361,7 +372,7 @@ class Reader(extract.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
         Returns:
             Columnar output.
         """
-        return data.values
+        return data.values.transpose()
 
     @classmethod
     def read(cls, statement: sql.Selectable, **kwargs) -> pandas.DataFrame:

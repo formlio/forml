@@ -74,18 +74,6 @@ class Parser(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def sources(student: frame.Table, school: frame.Table) -> typing.Mapping[frame.Source, str]:
-        """Sources mapping fixture."""
-
-    @staticmethod
-    @abc.abstractmethod
-    @pytest.fixture(scope='session')
-    def columns(student: frame.Table) -> typing.Mapping[series.Column, str]:
-        """Columns mapping fixture."""
-
-    @staticmethod
-    @abc.abstractmethod
-    @pytest.fixture(scope='session')
     def parser(
         sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]
     ) -> parsmod.Visitor:

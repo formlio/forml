@@ -22,9 +22,12 @@ SQL alchemy parser tests.
 import types
 import typing
 
+import numpy
+import pandas
 import pytest
+import sqlalchemy
 from pyhive import sqlalchemy_trino as trino
-from sqlalchemy import sql
+from sqlalchemy import sql, engine
 
 from forml.io.dsl import parser as parsmod
 from forml.io.dsl.struct import series, frame
@@ -32,20 +35,30 @@ from forml.lib.feed.reader.sql import alchemy
 from . import Parser
 
 
+@pytest.fixture(scope='session')
+def sources(
+    student: frame.Table, school: frame.Table, person: frame.Table
+) -> typing.Mapping[frame.Source, sql.Selectable]:
+    """Sources mapping fixture."""
+    student_table = sql.table('student')
+    return types.MappingProxyType(
+        {
+            student: student_table,
+            school: sql.table('school'),
+            frame.Join(student, person, student.surname == person.surname): student_table,
+            person: sql.table('person'),
+        }
+    )
+
+
+@pytest.fixture(scope='session')
+def columns(student: frame.Table) -> typing.Mapping[series.Column, sql.ColumnElement]:
+    """Columns mapping fixture."""
+    return types.MappingProxyType({student.level: sql.column('class')})
+
+
 class TestParser(Parser):
     """SQL parser unit tests base class."""
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def sources(student: frame.Table, school: frame.Table) -> typing.Mapping[frame.Source, sql.Selectable]:
-        """Sources mapping fixture."""
-        return types.MappingProxyType({student: sql.table('student'), school: sql.table('school')})
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def columns(student: frame.Table) -> typing.Mapping[series.Column, sql.ColumnElement]:
-        """Columns mapping fixture."""
-        return types.MappingProxyType({student.level: sql.column('class')})
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -85,3 +98,40 @@ class TestParser(Parser):
             if kind != frame.Join.Kind.CROSS:
                 return school.sid == student.school, ' ON "school"."id" = "student"."school"'
             return None, ' ON true'
+
+
+class TestReader:
+    """Alchemy reader test."""
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def connection(student_data: pandas.DataFrame, school_data: pandas.DataFrame):
+        """Populated in-memory SQLite connection fixture."""
+        connection = sqlalchemy.create_engine('sqlite:///:memory:').connect()
+        student_data.rename({'level': 'class'}, axis='columns').to_sql('student', connection, index=False)
+        school_data.to_sql('school', connection, index=False)
+        return connection
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def reader(
+        connection: engine.Connectable,
+        sources: typing.Mapping[frame.Source, sql.Selectable],
+        columns: typing.Mapping[series.Column, sql.ColumnElement],
+    ) -> alchemy.Reader:
+        """Aclhemy reader fixture."""
+        return alchemy.Reader(sources, columns, connection)
+
+    def test_read(
+        self, reader: alchemy.Reader, query: frame.Query, student_data: pandas.DataFrame, school_data: pandas.DataFrame
+    ):
+        """Test the read operation."""
+        result = reader(query)
+        expected = (
+            student_data[student_data['score'] < 2]
+            .sort_values(['level', 'score'])
+            .set_index('school')
+            .join(school_data.set_index('id'))[['surname', 'name', 'score']]
+            .apply(lambda s: s.apply(str))
+        ).values.transpose()
+        assert numpy.array_equal(result, expected)
