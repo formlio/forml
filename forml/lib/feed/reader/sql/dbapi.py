@@ -26,6 +26,7 @@ import typing
 
 from forml.io import payload
 from forml.io.dsl import parser as parsmod, function, error
+from forml.io.dsl.parser import Source, Column
 from forml.io.dsl.struct import series, frame, kind as kindmod
 from forml.io.feed import extract
 
@@ -74,7 +75,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
 
     KIND: typing.Mapping[kindmod.Any, str] = {
         kindmod.Boolean(): 'BOOLEAN',
-        kindmod.Integer(): 'BIGINT',
+        kindmod.Integer(): 'INTEGER',
         kindmod.Float(): 'DOUBLE',
         kindmod.Decimal(): 'DECIMAL',
         kindmod.String(): 'VARCHAR',
@@ -99,7 +100,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         function.And: Expression('{} AND {}'),
         function.Or: Expression('{} OR {}'),
         function.Not: Expression('NOT {}'),
-        function.Cast: Expression('cast({} AS {})', lambda _, k: [_, Parser.KIND[k]]),
+        function.Cast: Expression('CAST({} AS {})', lambda _, k: [_, Parser.KIND[k]]),
         function.Avg: Expression('avg({})'),
         function.Count: Expression('count({})', lambda c=None: [c if c is not None else '*']),
         function.Min: Expression('min({})'),
@@ -112,7 +113,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
     }
 
     DATE = '%Y-%m-%d'
-    TIMESTAMP = '%Y-%m-%d %H:%M:%S'
+    TIMESTAMP = '%Y-%m-%d %H:%M:%S.%f'
 
     def resolve_column(self, column: series.Column) -> str:
         """Resolver falling back to a field name in case of no explicit mapping.
@@ -140,7 +141,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         Returns:
             Field representation.
         """
-        return f'{origin}.{element}'
+        return f'"{origin}"."{element}"'
 
     def generate_alias(self, column: str, alias: str) -> str:  # pylint: disable=no-self-use
         """Generate column alias code.
@@ -152,7 +153,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         Returns:
             Aliased column.
         """
-        return f'{column} AS {alias}'
+        return f'{column} AS "{alias}"'
 
     def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> str:
         """Generate a literal value.
@@ -194,11 +195,11 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
             raise error.Unsupported(f'Unsupported expression: {expression}') from err
 
     JOIN: typing.Mapping[frame.Join.Kind, str] = {
-        frame.Join.Kind.LEFT: 'LEFT',
-        frame.Join.Kind.RIGHT: 'RIGHT',
-        frame.Join.Kind.INNER: 'INNER',
-        frame.Join.Kind.FULL: 'FULL',
-        frame.Join.Kind.CROSS: 'CROSS',
+        frame.Join.Kind.LEFT: 'LEFT OUTER JOIN',
+        frame.Join.Kind.RIGHT: 'RIGHT OUTER JOIN',
+        frame.Join.Kind.INNER: 'JOIN',
+        frame.Join.Kind.FULL: 'FULL OUTER JOIN',
+        frame.Join.Kind.CROSS: 'CROSS JOIN',
     }
 
     SET: typing.Mapping[frame.Set.Kind, str] = {
@@ -258,10 +259,15 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         Returns:
             Join operation.
         """
-        join = f'{left} {self.JOIN[kind]} JOIN {right}'
+        join = f'{left} {self.JOIN[kind]} {right}'
         if condition:
             join += f' ON {condition}'
         return join
+
+    def generate_table(
+        self, table: Source, columns: typing.Iterable[Column], predicate: typing.Optional[Column]
+    ) -> Source:
+        return f'"{table}"'
 
     def generate_set(self, left: str, right: str, kind: frame.Set.Kind) -> str:
         """Generate target code for a set operation using the left/right terms, given a set type.
@@ -328,7 +334,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         Returns:
             Tuple of referenced origin and the bare reference handle both in target code.
         """
-        return f'{self.Wrap.word(instance)} AS {name}', name
+        return f'{self.Wrap.word(instance)} AS "{name}"', name
 
 
 class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):

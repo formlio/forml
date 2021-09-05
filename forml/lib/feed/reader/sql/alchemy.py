@@ -19,13 +19,17 @@
 SQLAlchemy based ETL feed.
 """
 import abc
+import datetime
+import inspect
 import logging
 import operator
 import typing
 
 import pandas
-from sqlalchemy import sql, func
-from sqlalchemy.sql import sqltypes
+from sqlalchemy import sql, func, types as sqltypes
+from sqlalchemy.engine import interfaces
+from sqlalchemy.dialects.sqlite import base as sqlite
+from pyhive import sqlalchemy_trino as trino
 
 from forml.io import payload
 from forml.io.dsl import parser as parsmod, function, error
@@ -33,6 +37,74 @@ from forml.io.dsl.struct import series, frame, kind as kindmod
 from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)
+
+
+Native = typing.TypeVar('Native')
+
+
+class Type(typing.Generic[Native], sqltypes.TypeDecorator):
+    """Base class for custom types with explicit literal processors for specific dialects."""
+
+    cache_ok = True
+    PROCESSOR: typing.Mapping[typing.Type[interfaces.Dialect], typing.Callable[[Native], str]] = {}
+
+    def _process(self, value: Native, dialect: interfaces.Dialect) -> str:
+        """Type processing implementation.
+
+        Args:
+            value: Native value to be processed.
+            dialect: Target dialect to process for.
+
+        Returns: Dialect encoded value.
+        """
+        for base in inspect.getmro(type(dialect)):
+            if base in self.PROCESSOR:
+                processor = self.PROCESSOR[base]
+                break
+        else:
+            processor = self.impl.literal_processor(dialect)
+        return processor(value)
+
+    def process_literal_param(self, value: Native, dialect: interfaces.Dialect):
+        return self._process(value, dialect)
+
+    def process_bind_param(self, value, dialect: interfaces.Dialect):
+        return self._process(value, dialect)
+
+    def process_result_value(self, value, dialect: interfaces.Dialect):
+        return self._process(value, dialect)
+
+    def literal_processor(self, dialect: interfaces.Dialect):
+        def processor(value: Native):
+            return self._process(value, dialect)
+
+        return processor
+
+    @property
+    def python_type(self):
+        return self.impl.python_type
+
+
+class Date(Type[datetime.date]):
+    """Custom Date type."""
+
+    impl = sqltypes.Date
+    ISOFMT = '%Y-%m-%d'
+    PROCESSOR = {
+        trino.TrinoDialect: lambda v: f"DATE '{v.strftime(Date.ISOFMT)}'",
+        sqlite.SQLiteDialect: lambda v: f"'{v.strftime(Date.ISOFMT)}'",
+    }
+
+
+class DateTime(Type[datetime.datetime]):
+    """Custom DateTime type."""
+
+    impl = sqltypes.DateTime
+    ISOFMT = '%Y-%m-%d %H:%M:%S.%f'
+    PROCESSOR = {
+        trino.TrinoDialect: lambda v: f"TIMESTAMP '{v.strftime(DateTime.ISOFMT)}'",
+        sqlite.SQLiteDialect: lambda v: f"'{v.strftime(DateTime.ISOFMT)}'",
+    }
 
 
 class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: disable=unsubscriptable-object
@@ -44,8 +116,8 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         kindmod.Float(): sqltypes.Float(),
         kindmod.Decimal(): sqltypes.DECIMAL(),
         kindmod.String(): sqltypes.Unicode(),
-        kindmod.Date(): sqltypes.Date(),
-        kindmod.Timestamp(): sqltypes.DateTime(),
+        kindmod.Date(): Date(),
+        kindmod.Timestamp(): DateTime(),
     }
 
     EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., sql.ColumnElement]] = {
@@ -179,8 +251,10 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         Returns:
             Join operation.
         """
-        opts = {'onclause': condition if condition else sql.literal(True)}  # onclause=literal(True) -> CROSS JOIN
-        if kind is frame.Join.Kind.FULL:
+        opts = {
+            'onclause': condition if condition is not None else sql.literal(True)
+        }  # onclause=literal(True) -> CROSS JOIN
+        if kind in {frame.Join.Kind.FULL, frame.Join.Kind.CROSS}:
             opts['full'] = True
         elif kind is not frame.Join.Kind.INNER:
             opts['isouter'] = True
@@ -227,11 +301,11 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         """
         assert columns, 'Expecting columns'
         query = sql.select(columns).select_from(source)
-        if where:
+        if where is not None:
             query = query.where(where)
         if groupby:
             query = query.group_by(*groupby)
-        if having:
+        if having is not None:
             query = query.having(having)
         if orderby:
             query = query.order_by(*(self.ORDER[d](c) for c, d in orderby))

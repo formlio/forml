@@ -41,7 +41,7 @@ EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
-EXTRAS_SQL = {'sqlalchemy', 'sqlalchemy-trino'}
+EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
 EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
 
