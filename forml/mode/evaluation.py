@@ -105,6 +105,9 @@ class Metric(abc.ABC):
             Single node with one apply output providing the metric output.
         """
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}Metric'
+
     def __call__(self, data: Product) -> Score:
         """Frontend method for returning the complete Score operator implementing the metric evaluation."""
         return data.score(self.score(*data.outcomes))
@@ -132,6 +135,9 @@ class Method(abc.ABC):
         Returns:
             Set of Ytrue/Ypred outcome pairs.
         """
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}Method'
 
     def __call__(self, pipeline: topology.Composable) -> Product:
         """Frontend method for providing the evaluation product DAG.

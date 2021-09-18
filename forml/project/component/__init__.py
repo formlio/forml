@@ -168,6 +168,7 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
         """Fake component module."""
 
         Source = Source
+        Evaluation = Evaluation
 
         def __init__(self):
             super().__init__(__name__)

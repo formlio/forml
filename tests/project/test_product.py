@@ -19,6 +19,7 @@
 Project tests.
 """
 # pylint: disable=no-self-use
+import typing
 
 import pytest
 
@@ -51,9 +52,9 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def evaluation(spec) -> topology.Composable:
+    def evaluation() -> compmod.Evaluation:
         """Evaluation fixture."""
-        return simple.Consumer(spec)
+        return compmod.Evaluation(None, None)
 
     def test_api(self, builder: product.Descriptor.Builder):
         """Testing the builder API."""
@@ -65,7 +66,7 @@ class TestBuilder:
         builder: product.Descriptor.Builder,
         source: compmod.Source,
         pipeline: topology.Composable,
-        evaluation: topology.Composable,
+        evaluation: compmod.Evaluation,
     ):
         """Testing build."""
         with pytest.raises(error.Invalid):
@@ -80,7 +81,7 @@ class TestBuilder:
         assert descriptor.evaluation == evaluation
 
 
-def load(package: distribution.Package, component: str) -> topology.Composable:
+def load(package: distribution.Package, component: str) -> typing.Any:
     """Helper for importing the project component module."""
     module = f'{package.manifest.package}.{package.manifest.modules.get(component, component)}'
     return importer.isolated(module, package.path).INSTANCE
@@ -99,7 +100,7 @@ def source(project_package: distribution.Package) -> topology.Composable:
 
 
 @pytest.fixture(scope='session')
-def evaluation(project_package: distribution.Package) -> topology.Composable:
+def evaluation(project_package: distribution.Package) -> compmod.Evaluation:
     """Evaluation fixture."""
     return load(project_package, 'evaluation')
 
@@ -117,7 +118,7 @@ class TestDescriptor:
         project_package: distribution.Package,
         source: compmod.Source,
         pipeline: topology.Composable,
-        evaluation: topology.Composable,
+        evaluation: compmod.Evaluation,
     ):
         """Testing the descriptor loader."""
         with pytest.raises(error.Unexpected):
@@ -134,7 +135,7 @@ class TestArtifact:
     """Artifact unit tests."""
 
     def test_descriptor(
-        self, project_artifact, source: compmod.Source, pipeline: topology.Composable, evaluation: topology.Composable
+        self, project_artifact, source: compmod.Source, pipeline: topology.Composable, evaluation: compmod.Evaluation
     ):
         """Testing descriptor access."""
         assert repr(project_artifact.descriptor.pipeline) == repr(pipeline)
