@@ -62,7 +62,7 @@ class MergingScorer(folding.Crossvalidated):
         """Metric scoring routing.
 
         Args:
-            ytrue: Publisher of the tru labels.
+            ytrue: Publisher of the true labels.
             ypred: Publisher of the predicted values.
 
         Returns:

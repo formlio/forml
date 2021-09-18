@@ -37,6 +37,10 @@ LOGGER = logging.getLogger(__name__)
 class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluation')):
     """Top level ForML project descriptor holding the implementations of individual project components."""
 
+    source: 'compmod.Source'
+    pipeline: topology.Composable
+    evaluation: typing.Optional['compmod.Evaluation']
+
     class Builder(abc.Set):
         """Descriptor builder allowing to setup attributes one by one."""
 
@@ -81,13 +85,13 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         cls,
         source: 'compmod.Source',
         pipeline: topology.Composable,
-        evaluation: typing.Optional[topology.Operator] = None,
+        evaluation: typing.Optional['compmod.Evaluation'] = None,
     ):
         if not isinstance(pipeline, topology.Composable):
             raise error.Invalid('Invalid pipeline')
         if not isinstance(source, compmod.Source):
             raise error.Invalid('Invalid source')
-        if evaluation and not isinstance(evaluation, topology.Operator):
+        if evaluation and not isinstance(evaluation, compmod.Evaluation):
             raise error.Invalid('Invalid evaluation')
         return super().__new__(cls, source, pipeline, evaluation)
 

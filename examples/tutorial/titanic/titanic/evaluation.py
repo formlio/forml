@@ -24,14 +24,14 @@ the forml loader.
 
 from sklearn import model_selection, metrics
 
+from forml.lib.flow.evaluation import metric, method
 from forml.project import component
-from forml.lib.flow.operator.folding import evaluation
 
-# Typical method of providing component implementation using `component.setup()`. Choosing the `MergingScorer` operator
-# to implement classical crossvalidated metric scoring
+# Typical method of providing component implementation using `component.setup()`. Choosing the CrossVal method
+# to implement classic cross-validated metric scoring
 component.setup(
-    evaluation.MergingScorer(
-        crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
-        metric=metrics.log_loss,
+    component.Evaluation(
+        metric.Function(metrics.log_loss),
+        method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
     )
 )

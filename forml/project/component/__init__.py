@@ -31,6 +31,7 @@ import typing
 from forml import error
 from forml.flow.pipeline import topology
 from forml.io.dsl.struct import series, frame
+from forml.mode import evaluation
 from forml.project import importer
 from forml.project import product
 from forml.project.component import virtual
@@ -115,6 +116,19 @@ class Source(typing.NamedTuple):
             Project artifact instance.
         """
         return product.Artifact(source=self, pipeline=pipeline, **modules)
+
+
+class Evaluation(typing.NamedTuple):
+    """Evaluation descriptor."""
+
+    metric: evaluation.Metric
+    """Loss/Score function."""
+
+    method: evaluation.Method
+    """Strategy for generation validation data - ie holdout, cross-validation etc."""
+
+    # probes: typing.Mapping[...] = None
+    """Auxiliary evaluation probes plugged inside of the pipeline."""
 
 
 class Virtual:

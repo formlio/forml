@@ -83,9 +83,16 @@ class TestPath:
             grnode2[0].publish(grnode3, port.Train())
         return view.Path(head)
 
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def superpath(path: view.Path, simple: grnode.Worker) -> view.Path:
+        """Fixture containing the path as of its sub-path."""
+        path.subscribe(simple[0])
+        return view.Path(simple)
+
     def test_invalid(self, multi: grnode.Worker):
         """Testing invalid path."""
-        with pytest.raises(error.Topology):  # not a simple edge gnode
+        with pytest.raises(error.Topology):  # not a simple edge node
             view.Path(multi)
 
     def test_copy(self, path: view.Path):
@@ -98,3 +105,13 @@ class TestPath:
         multi.train(path.publisher, path.publisher)
         path.subscribe(simple[0])
         assert view.Path(simple)._tail is path._tail
+
+    def test_subpath(self, path: view.Path, superpath: view.Path):
+        """Testing subpath checking."""
+        assert path.issubpath(path)
+        assert not superpath.issubpath(path)
+        assert path.issubpath(superpath)
+
+    def test_root(self, path: view.Path, superpath: view.Path):
+        """Test the root path selector."""
+        assert view.Path.root(path, superpath) is view.Path.root(superpath, path) is superpath

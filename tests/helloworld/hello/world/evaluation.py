@@ -18,16 +18,9 @@
 """
 Dummy project evaluation.
 """
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
+from forml.lib.flow import metric
 from forml.project import component
 
 
-@simple.Mapper.operator
-@wrapped.Function.actor
-def evaluate():
-    """Dummy evaluator."""
-
-
-INSTANCE = evaluate()
+INSTANCE = component.Evaluation(metric=metric.Function(), method=...)
 component.setup(INSTANCE)

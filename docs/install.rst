@@ -27,7 +27,7 @@ To install the pre-packaged version of ForML simply use ``pip``::
 ForML has a number of optional features with their own dependencies which can be pulled in during the installation like
 this::
 
-    pip install 'forml[presto,dask]'
+    pip install 'forml[sql,dask]'
 
 Some of the features might have their own binary dependencies that need to be resolved using a system-dependant way
 (ie using the OS package manager).
@@ -50,5 +50,5 @@ Extra Features
 +----------+---------------------------------------+----------------------------------------------------------------+
 | graphviz | ``pip install 'forml[graphviz]'``     | The Graphviz pseudo-runner (also requires ``graphviz`` binary) |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| presto   | ``pip install 'forml[presto]'``       | The PrestoDB reader                                            |
+| sql      | ``pip install 'forml[sql]'``          | SQL reader dependencies                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+

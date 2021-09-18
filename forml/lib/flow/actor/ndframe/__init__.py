@@ -92,6 +92,10 @@ class TrainTestSplit(task.Actor):
 
     The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to
     split data and labels independently.
+
+    The splits are provided in a range of output ports where a given fold with index i is delivered via ports:
+      * [2 * i]: trainset
+      * [2 * i + 1]: testset
     """
 
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):

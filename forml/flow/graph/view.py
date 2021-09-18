@@ -20,6 +20,7 @@ Graph view - useful lenses and manipulation of graph topology parts.
 """
 
 import collections
+import functools
 import itertools
 import operator
 import typing
@@ -203,6 +204,63 @@ class Path(tuple):
         if tail.szout > 1:
             raise error.Topology('Simple tail required')
         return super().__new__(cls, (head, tail))
+
+    def issubpath(self, other: 'Path') -> bool:
+        """Check this is a sub-path of the other.
+
+        It is a sub-path if our head is found anywhere on the other path.
+
+        Args:
+            other: Path to check against.
+
+        Returns:
+            True if this is a sub-path of the other.
+        """
+
+        def check(node: grnode.Atomic) -> None:
+            """Check the node is our head node.
+
+            Args:
+                node: Graph node to check for being this head.
+            """
+            nonlocal result
+            if node is self._head:
+                result = True
+
+        result = False
+        Traversal(other._head).each(self._head, check)
+        return result
+
+    @staticmethod
+    def root(first: 'Path', *others: 'Path') -> 'Path':
+        """Get the root paths amongst the parameters - path that all the others are sub-paths of.
+
+        All paths must be related.
+
+        Args:
+            first: Path to start with (syntax to enforce passing at least one path as an argument).
+            others: Remaining args of paths from which the root should be selected.
+        Returns:
+            Root path that all the others are sub-path of.
+        """
+
+        def choose(left: Path, right: Path) -> Path:
+            """Choose the super-path out of the two.
+
+            Args:
+                left: One path to chose from.
+                right: The other path to choose from.
+            Returns:
+                Root path of the two.
+            """
+            if left.issubpath(right):
+                return right
+            elif right.issubpath(left):
+                return left
+            else:
+                raise error.Topology('Unrelated paths.')
+
+        return functools.reduce(choose, others, first)
 
     def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.

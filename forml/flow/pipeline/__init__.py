@@ -58,7 +58,7 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
         train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
         label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
     ) -> 'Segment':
-        """Helper for creating new Track with specified paths extended by provided values.
+        """Helper for creating new Segment with specified paths extended by provided values.
 
         Args:
             apply: Optional path to be connected to apply segment.
@@ -80,7 +80,7 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
         train: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
         label: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
     ) -> 'Segment':
-        """Helper for creating new Track with specified paths replaced by provided values.
+        """Helper for creating new Segment with specified paths replaced by provided values.
 
         Args:
             apply: Optional path to be used as apply segment.
