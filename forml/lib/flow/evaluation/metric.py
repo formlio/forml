@@ -22,7 +22,7 @@ import statistics
 import typing
 
 from forml.flow import task
-from forml.flow.graph import node, port
+from forml.flow.graph import node
 from forml.lib.flow.actor import wrapped
 from forml.mode import evaluation
 
@@ -38,8 +38,8 @@ class Function(evaluation.Metric):
         self._metric: task.Spec = wrapped.Function.Actor.spec(function=metric)
         self._reducer: task.Spec = wrapped.Function.Actor.spec(function=reducer)
 
-    def compose(self, *outcomes: evaluation.Outcome) -> port.Publishable:
-        def score(fold: evaluation.Outcome) -> node.Worker:
+    def score(self, *outcomes: evaluation.Outcome) -> node.Worker:
+        def apply(fold: evaluation.Outcome) -> node.Worker:
             """Score the given outcome fold.
 
             Args:
@@ -68,9 +68,9 @@ class Function(evaluation.Metric):
             return reducer
 
         assert outcomes, 'Expecting outcomes.'
-        result = score(outcomes[0])
+        result = apply(outcomes[0])
         if (fold_count := len(outcomes)) > 1:
             result = merge(node.Worker(self._reducer, fold_count, 1), result, 0)
             for idx, out in enumerate(outcomes[1:], start=1):
-                merge(result, score(out), idx)
-        return result[0].publisher
+                merge(result, apply(out), idx)
+        return result

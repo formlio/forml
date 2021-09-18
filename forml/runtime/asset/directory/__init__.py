@@ -142,7 +142,7 @@ class Cache:
     def __repr__(self):
         return repr(self.info)
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def __call__(self, registry: 'persistent.Registry', *args, **kwargs):
         return getattr(registry, self._method)(*args, **kwargs)
 
@@ -157,4 +157,4 @@ class Cache:
         Returns:
             Cache info tuple.
         """
-        return self.__call__.cache_info()  # pylint: disable=no-value-for-parameter
+        return self.__call__.cache_info()  # pylint: disable=no-member

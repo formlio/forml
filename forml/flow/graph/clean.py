@@ -29,7 +29,6 @@ Graph topology validation.
 # * at most single trained node per each instance (enforced synchronously)
 # * either both train and label or all apply inputs and outputs are active
 """
-import typing
 
 from forml.flow import error
 from forml.flow.graph import view, node as grnode
@@ -45,7 +44,7 @@ class Validator(view.Visitor):
     """
 
     def __init__(self):
-        self._futures: typing.Set[grnode.Atomic] = set()
+        self._futures: set[grnode.Atomic] = set()
 
     def visit_node(self, node: grnode.Atomic) -> None:
         """Node visit.

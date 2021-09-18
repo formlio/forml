@@ -18,9 +18,14 @@
 """
 Dummy project evaluation.
 """
-from forml.lib.flow import metric
+from sklearn import model_selection, metrics
+
+from forml.lib.flow.evaluation import metric, method
 from forml.project import component
 
-
-INSTANCE = component.Evaluation(metric=metric.Function(), method=...)
-component.setup(INSTANCE)
+component.setup(
+    component.Evaluation(
+        metric.Function(metrics.log_loss),
+        method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    )
+)

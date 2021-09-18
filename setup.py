@@ -48,7 +48,7 @@ EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_GRAPHV
 setuptools.setup(
     name='forml',
     description='Lifecycle management framework for Data science projects',
-    long_description=open('README.md', 'r', encoding='utf8').read(),  # pylint: disable=consider-using-with
+    long_description=open('README.md', encoding='utf8').read(),  # pylint: disable=consider-using-with
     long_description_content_type='text/markdown',
     url='https://github.com/formlio/forml',
     maintainer='ForML Development Team',

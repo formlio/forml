@@ -22,12 +22,13 @@ import abc
 import collections
 import typing
 
+from forml.flow import pipeline as pipemod, error
 from forml.flow.graph import node, port
 from forml.flow.pipeline import topology
 
 
 class Outcome(typing.NamedTuple):
-    """Ytrue/Ypred outcome pair of DAG Paths."""
+    """Ytrue/Ypred outcome pair of output ports."""
 
     true: port.Publishable
     """True outcome port."""
@@ -36,32 +37,56 @@ class Outcome(typing.NamedTuple):
 
 
 class Source(typing.NamedTuple):
+    """Evaluation pipeline source ports."""
+
     features: port.Subscriptable
     """Features input port."""
     labels: port.Subscriptable
     """Labels input port."""
 
-    def outcomes(self, *outcomes: Outcome) -> 'Set':
-        return Set(self, *outcomes)
+    def produce(self, *outcomes: Outcome) -> 'Product':
+        """Utility method for creating the evaluation Product using the provided outcomes.
+
+        Args:
+            outcomes: Individual outcomes.
+        """
+        return Product(self, *outcomes)
 
 
-class Score(typing.NamedTuple):
+class Score(topology.Operator):
+    """Evaluation result value operator."""
+
+    def __init__(self, source: Source, value: node.Atomic):
+        if value.szout > 1:
+            raise error.Topology('Simple output required')
+        self._source: Source = source
+        self._value: node.Atomic = value
+
+    def compose(self, left: topology.Composable) -> pipemod.Segment:
+        source = left.expand()
+        self._source.features.subscribe(source.train.publisher)
+        self._source.labels.subscribe(source.label.publisher)
+        return source.use(source.apply.extend(tail=self._value))
+
+
+class Product(collections.namedtuple('Product', 'source, outcomes')):
     """Evaluation dataset is a DAG producing Ytrue/Ypred data suitable for metric evaluation."""
 
     source: Source
-    value: port.Publishable
-
-
-class Set(collections.namedtuple('Set', 'source, outcomes')):
-    """Evaluation dataset is a DAG producing Ytrue/Ypred data suitable for metric evaluation."""
-
-    source: Source
-    outcomes: typing.Tuple[Outcome]
+    outcomes: tuple[Outcome]
 
     def __new__(cls, source: Source, *outcomes: Outcome):
         return super().__new__(cls, source, outcomes)
 
-    def score(self, value: port.Publishable) -> Score:
+    def score(self, value: node.Atomic) -> Score:
+        """Helper method for creating the Score operator.
+
+        Args:
+            value: Node (already connected to the DAG flowing from source) implementing the scoring.
+
+        Returns:
+            Operator that can be composed with feed/sink to produce the evaluation score.
+        """
         return Score(self.source, value)
 
 
@@ -69,7 +94,7 @@ class Metric(abc.ABC):
     """Evaluation metric interface."""
 
     @abc.abstractmethod
-    def compose(self, *outcomes: Outcome) -> port.Publishable:
+    def score(self, *outcomes: Outcome) -> node.Atomic:
         """Compose the metric evaluation on top of the dataset DAG and return the tail node of the new DAG that's
         expected to have single output apply port delivering the calculated metric.
 
@@ -80,9 +105,9 @@ class Metric(abc.ABC):
             Single node with one apply output providing the metric output.
         """
 
-    def score(self, data: Set) -> Score:
-        """Frontend method for returning the complete DAG implementing the metric evaluation."""
-        return data.score(self.compose(*data.outcomes))
+    def __call__(self, data: Product) -> Score:
+        """Frontend method for returning the complete Score operator implementing the metric evaluation."""
+        return data.score(self.score(*data.outcomes))
 
 
 class Method(abc.ABC):
@@ -94,8 +119,30 @@ class Method(abc.ABC):
     """
 
     @abc.abstractmethod
-    def apply(self, pipeline: topology.Composable) -> Set:
-        """Compose the evaluation DataSet DAG producing the ytrue/ypred values.
+    def produce(
+        self, features: port.Publishable, label: port.Publishable, pipeline: topology.Composable
+    ) -> typing.Iterable[Outcome]:
+        """Compose the DAGs producing the ytrue/ypred outcomes.
 
-        The operator is only expected to be engaged using its train/label paths.
+        Args:
+            features: Source port producing the input features.
+            label: Source port producing the input labels.
+            pipeline: Evaluation processing subject.
+
+        Returns:
+            Set of Ytrue/Ypred outcome pairs.
         """
+
+    def __call__(self, pipeline: topology.Composable) -> Product:
+        """Frontend method for providing the evaluation product DAG.
+
+        Args:
+            pipeline: Evaluation processing subject.
+
+        Returns:
+            Evaluation product (suitable for use with a Metric implementation).
+        """
+        features = node.Future()
+        label = node.Future()
+        source = Source(features[0].subscriber, label[0].subscriber)
+        return source.produce(*self.produce(features[0].publisher, label[0].publisher, pipeline))

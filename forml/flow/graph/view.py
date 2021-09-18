@@ -216,6 +216,7 @@ class Path(tuple):
         Returns:
             True if this is a sub-path of the other.
         """
+        # pylint: disable=protected-access
 
         def check(node: grnode.Atomic) -> None:
             """Check the node is our head node.
@@ -255,10 +256,9 @@ class Path(tuple):
             """
             if left.issubpath(right):
                 return right
-            elif right.issubpath(left):
+            if right.issubpath(left):
                 return left
-            else:
-                raise error.Topology('Unrelated paths.')
+            raise error.Topology('Unrelated paths.')
 
         return functools.reduce(choose, others, first)
 

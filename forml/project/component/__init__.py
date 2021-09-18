@@ -59,7 +59,7 @@ class Source(typing.NamedTuple):
 
         train: frame.Query
         apply: frame.Query
-        labels: typing.Tuple[series.Column]
+        labels: tuple[series.Column]
         ordinal: typing.Optional[series.Operable]
 
         def __new__(
@@ -126,9 +126,6 @@ class Evaluation(typing.NamedTuple):
 
     method: evaluation.Method
     """Strategy for generation validation data - ie holdout, cross-validation etc."""
-
-    # probes: typing.Mapping[...] = None
-    """Auxiliary evaluation probes plugged inside of the pipeline."""
 
 
 class Virtual:

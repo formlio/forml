@@ -29,6 +29,10 @@ from forml.flow.graph import view, clean, node as nodemod
 class Segment(collections.namedtuple('Segment', 'apply, train, label')):
     """Structure for holding related flow parts of different modes."""
 
+    apply: view.Path
+    train: view.Path
+    label: view.Path
+
     def __new__(
         cls,
         apply: typing.Optional[typing.Union[view.Path, nodemod.Atomic]] = None,
@@ -96,11 +100,14 @@ class Segment(collections.namedtuple('Segment', 'apply, train, label')):
 class Composition(collections.namedtuple('Composition', 'apply, train')):
     """Structure for holding related flow parts of different modes."""
 
+    apply: view.Path
+    train: view.Path
+
     class Stateful(view.Visitor, abc.Iterable):
         """Visitor that cumulates gids of stateful nodes."""
 
         def __init__(self):
-            self._gids: typing.List[uuid.UUID] = []
+            self._gids: list[uuid.UUID] = []
 
         def __iter__(self) -> typing.Iterator[uuid.UUID]:
             return iter(self._gids)
