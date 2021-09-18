@@ -39,7 +39,7 @@ class State:
         self, generation: 'genmod.Level', nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['genmod.Tag'] = None
     ):
         self._generation: 'genmod.Level' = generation
-        self._nodes: typing.Tuple[uuid.UUID] = tuple(nodes)
+        self._nodes: tuple[uuid.UUID] = tuple(nodes)
         self._tag: typing.Optional['genmod.Tag'] = tag
 
     def __contains__(self, gid: uuid.UUID) -> bool:

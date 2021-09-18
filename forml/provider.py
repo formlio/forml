@@ -29,7 +29,7 @@ from forml import error
 LOGGER = logging.getLogger(__name__)
 
 
-def isabstract(cls: typing.Type['Interface']) -> bool:
+def isabstract(cls: type['Interface']) -> bool:
     """Extended version of inspect.isabstract that also considers any inner classes.
 
     Args:
@@ -44,7 +44,7 @@ def isabstract(cls: typing.Type['Interface']) -> bool:
 class Reference:
     """Provider reference base class/dispatcher."""
 
-    def __new__(cls, value: typing.Union[typing.Type['Interface'], str]):
+    def __new__(cls, value: typing.Union[type['Interface'], str]):
         if isinstance(value, str):
             if Qualifier.DELIMITER not in value:
                 return Alias(value)
@@ -125,7 +125,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
     def __new__(cls):
         return super().__new__(cls, dict(), set())  # pylint: disable=use-dict-literal
 
-    def add(self, provider: typing.Type['Interface'], alias: typing.Optional[Alias], paths: typing.Set[Path]):
+    def add(self, provider: type['Interface'], alias: typing.Optional[Alias], paths: set[Path]):
         """Push package to lazy loading stack.
 
         Args:
@@ -154,7 +154,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             )
             self.provider[ref] = provider
 
-    def get(self, reference: Reference) -> typing.Type['Interface']:
+    def get(self, reference: Reference) -> type['Interface']:
         """Get the registered provider or attempt to load all search paths packages that might be containing it.
 
         Args:
@@ -171,8 +171,8 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         return self.provider[reference]
 
 
-REGISTRY: typing.Dict[typing.Type['Interface'], Registry] = collections.defaultdict(Registry)
-DEFAULTS: typing.Dict[typing.Type['Interface'], typing.Tuple[str, typing.Mapping[str, typing.Any]]] = {}
+REGISTRY: dict[type['Interface'], Registry] = collections.defaultdict(Registry)
+DEFAULTS: dict[type['Interface'], tuple[str, typing.Mapping[str, typing.Any]]] = {}
 
 
 class Meta(abc.ABCMeta):
@@ -183,7 +183,7 @@ class Meta(abc.ABCMeta):
         name,
         bases,
         namespace,
-        default: typing.Optional[typing.Tuple[str, typing.Mapping[str, typing.Any]]] = None,
+        default: typing.Optional[tuple[str, typing.Mapping[str, typing.Any]]] = None,
         **kwargs,
     ):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
@@ -196,10 +196,10 @@ class Meta(abc.ABCMeta):
     def __call__(cls, *args, **kwargs) -> 'Interface':
         if cls in DEFAULTS:
             reference, params = DEFAULTS[cls]
-            return cls[reference](*args, **{**params, **kwargs})  # pylint: disable=unsubscriptable-object
+            return cls[reference](*args, **params | kwargs)  # pylint: disable=unsubscriptable-object
         return super().__call__(*args, **kwargs)
 
-    def __getitem__(cls, reference: typing.Any) -> typing.Type['Interface']:
+    def __getitem__(cls, reference: typing.Any) -> type['Interface']:
         if not isinstance(reference, str) and issubclass(cls, typing.Generic):
             return cls.__class_getitem__(reference)
         try:

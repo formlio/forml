@@ -225,7 +225,7 @@ class Slicer:
             self._features: slice = slice(fstop)
             self._label: typing.Union[slice, int] = slice(fstop, fstop + lcount) if lcount > 1 else fstop
 
-        def apply(self, columns: payload.ColumnMajor) -> typing.Tuple[typing.Any, typing.Any]:
+        def apply(self, columns: payload.ColumnMajor) -> tuple[typing.Any, typing.Any]:
             assert len(columns) == (
                 self._label.stop if isinstance(self._label, slice) else self._label + 1
             ), 'Unexpected number of columns for splitting'

@@ -36,9 +36,9 @@ class Parser(dict):
 
     def __init__(self, defaults: typing.Mapping[str, typing.Any], *paths: pathlib.Path):
         super().__init__()
-        self._sources: typing.List[pathlib.Path] = []
-        self._errors: typing.Dict[pathlib.Path, Exception] = {}
-        self._notifiers: typing.List[typing.Callable[[], None]] = []
+        self._sources: list[pathlib.Path] = []
+        self._errors: dict[pathlib.Path, Exception] = {}
+        self._notifiers: list[typing.Callable[[], None]] = []
         self.update(defaults)
         for src in paths:
             self.read(src)

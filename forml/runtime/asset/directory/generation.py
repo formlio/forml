@@ -72,7 +72,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
                 Returns:
                     New tag instance with new values.
                 """
-                mode = self._mode.__class__(**{**self._mode.__dict__, **kwargs})
+                mode = self._mode.__class__(**self._mode.__dict__ | kwargs)
                 return Tag(**{k: mode if v is self._mode else v for k, v in self._tag._asdict().items()})
 
             def trigger(self, timestamp: typing.Optional[datetime.datetime] = None) -> 'Tag':

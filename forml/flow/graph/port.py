@@ -41,7 +41,7 @@ class Type(int):
 class Meta(type):
     """Metaclass for singleton types."""
 
-    def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
+    def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
         value = namespace.pop('VALUE')
         instance = None
 
@@ -76,7 +76,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
     """Descriptor representing subscription node input port of given type."""
 
     # registry of ports subscribed on given node
-    _PORTS: typing.Dict['grnode.Atomic', typing.Set[Type]] = collections.defaultdict(set)
+    _PORTS: dict['grnode.Atomic', set[Type]] = collections.defaultdict(set)
 
     def __new__(cls, subscriber: 'grnode.Atomic', port: Type):
         if port in cls._PORTS[subscriber]:

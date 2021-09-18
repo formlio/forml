@@ -55,9 +55,9 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
                 self._setter: Adapter.Builder.Setter = setter
 
             def __call__(
-                self, actor: typing.Optional[typing.Type[task.Actor]] = None, /, **params: typing.Any
-            ) -> typing.Union['Adapter.Builder', typing.Callable[[typing.Type[task.Actor]], 'Adapter.Builder']]:
-                def decorator(actor: typing.Type[task.Actor]) -> 'Adapter.Builder':
+                self, actor: typing.Optional[type[task.Actor]] = None, /, **params: typing.Any
+            ) -> typing.Union['Adapter.Builder', typing.Callable[[type[task.Actor]], 'Adapter.Builder']]:
+                def decorator(actor: type[task.Actor]) -> 'Adapter.Builder':
                     """Decorating function."""
                     self._setter(actor, **params)
                     return self._builder
@@ -71,12 +71,12 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
         class Setter:
             """Helper for setting/holding the config parameters for a mode."""
 
-            def __init__(self, default: typing.Type[task.Actor]):
-                self._default: typing.Type[task.Actor] = default
-                self._actor: typing.Optional[typing.Type[task.Actor]] = None
+            def __init__(self, default: type[task.Actor]):
+                self._default: type[task.Actor] = default
+                self._actor: typing.Optional[type[task.Actor]] = None
                 self._params: typing.Mapping[str, typing.Any] = {}
 
-            def __call__(self, actor: typing.Optional[typing.Type[task.Actor]] = None, /, **params: typing.Any) -> None:
+            def __call__(self, actor: typing.Optional[type[task.Actor]] = None, /, **params: typing.Any) -> None:
                 self._actor = actor or self._default
                 self._params = params
 
@@ -92,13 +92,13 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
                 """
                 if not self._actor:
                     return None
-                return self._actor.spec(*args, **{**self._params, **kwargs})
+                return self._actor.spec(*args, **self._params | kwargs)
 
         train = property(lambda self: Adapter.Builder.Decorator(self, self._train))
         apply = property(lambda self: Adapter.Builder.Decorator(self, self._apply))
         label = property(lambda self: Adapter.Builder.Decorator(self, self._label))
 
-        def __init__(self, actor: typing.Type[task.Actor]):
+        def __init__(self, actor: type[task.Actor]):
             self._train: Adapter.Builder.Setter = self.Setter(actor)
             self._apply: Adapter.Builder.Setter = self.Setter(actor)
             self._label: Adapter.Builder.Setter = self.Setter(actor)
@@ -116,7 +116,7 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
 
         def __call__(
             self,
-            actor: typing.Optional[typing.Union[typing.Type[task.Actor], 'Adapter.Builder']] = None,
+            actor: typing.Optional[typing.Union[type[task.Actor], 'Adapter.Builder']] = None,
             /,
             **params: typing.Any,
         ) -> 'Adapter.Builder':
@@ -131,7 +131,7 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
                 Curried operator.
             """
 
-            def decorator(actor: typing.Union[typing.Type[task.Actor], 'Adapter.Builder']) -> 'Adapter.Builder':
+            def decorator(actor: typing.Union[type[task.Actor], 'Adapter.Builder']) -> 'Adapter.Builder':
                 """Decorating function."""
                 if not isinstance(actor, Adapter.Builder):
                     actor = Adapter.Builder(actor)

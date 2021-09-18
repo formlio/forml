@@ -62,7 +62,7 @@ class TestActor:
         instance.set_state(state)
         assert instance.get_params()['x'] == 100  # state shouldn't override parameter setting
 
-    def test_spec(self, actor: typing.Type[task.Actor], hyperparams: typing.Mapping[str, int], spec: task.Spec):
+    def test_spec(self, actor: type[task.Actor], hyperparams: typing.Mapping[str, int], spec: task.Spec):
         """Test the spec creation of the actor class."""
         assert actor.spec(**hyperparams) == spec
 
@@ -79,7 +79,7 @@ class TestSpec:
         """Test spec hashability."""
         assert spec in {spec}
 
-    def test_serializable(self, spec: task.Spec, actor: typing.Type[task.Actor]):
+    def test_serializable(self, spec: task.Spec, actor: type[task.Actor]):
         """Test spec serializability."""
         assert pickle.loads(pickle.dumps(spec)).actor == actor
 

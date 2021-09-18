@@ -189,7 +189,7 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         return f'{self.name}-{self.version}'
 
     @classmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def path(cls, base: typing.Union[str, pathlib.Path]) -> pathlib.Path:
         """Return the manifest module path.
 

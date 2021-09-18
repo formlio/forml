@@ -59,7 +59,7 @@ class Dumper(task.Actor, metaclass=abc.ABCMeta):  # pylint: disable=abstract-met
     def __init__(self, path: str):
         self.path: str = path
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         """Standard param getter.
 
         Returns:
@@ -128,7 +128,7 @@ class TrainDumper(Dumper):
         """
         return bytes()
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         """Standard param getter.
 
         Returns:

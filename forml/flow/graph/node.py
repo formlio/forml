@@ -55,7 +55,7 @@ class Port(colabc.Iterable):
     """Output port subscriptions as an ordered set."""
 
     def __init__(self):
-        self._subscriptions: typing.Dict[port.Subscription, None] = collections.OrderedDict()
+        self._subscriptions: dict[port.Subscription, None] = collections.OrderedDict()
 
     def add(self, subscription: port.Subscription) -> None:
         """Add new subscription to this port.
@@ -77,7 +77,7 @@ class Atomic(metaclass=abc.ABCMeta):
             raise ValueError('Invalid node shape')
         self.szin: int = szin
         self.uid: uuid.UUID = uuid.uuid4()
-        self._output: typing.Tuple[Port] = tuple(Port() for _ in range(szout))
+        self._output: tuple[Port] = tuple(Port() for _ in range(szout))
 
     def __repr__(self):
         return f'{self.__class__.__name__}[uid={self.uid}]'
@@ -352,7 +352,7 @@ class Future(Atomic):
 
     def __init__(self, szin: int = 1, szout: int = 1):
         super().__init__(szin, szout)
-        self._proxy: typing.Dict[port.Publishable, int] = {}
+        self._proxy: dict[port.Publishable, int] = {}
 
     def __getitem__(self, index) -> port.PubSub:
         def register(publisher: port.Publishable) -> None:

@@ -45,9 +45,9 @@ class Handler:
 
     def __init__(self, handler: typing.Callable, params: typing.Sequence[str]):
         self._handler: typing.Callable = handler
-        self._params: typing.Tuple[str] = tuple(params)
+        self._params: tuple[str] = tuple(params)
 
-    def __get__(self, _, parser: typing.Type['Parser']):
+    def __get__(self, _, parser: type['Parser']):
         def call(namespace: argparse.Namespace) -> None:
             """Parsers bound method created from original handler.
 
@@ -69,7 +69,7 @@ class Builder:
 
     def __init__(self, handler: typing.Callable):
         self._handler: typing.Callable = handler
-        self._params: typing.List['Param'] = []
+        self._params: list['Param'] = []
         self._command: typing.Optional['Command'] = None
 
     def add(self, param: 'Param') -> None:
@@ -122,8 +122,8 @@ class Param(Spec):
         context.add(self)
 
     def __init__(self, *args, **kwargs):
-        self.args: typing.Tuple[typing.Any] = args
-        self.kwargs: typing.Dict[str, typing.Any] = kwargs
+        self.args: tuple[typing.Any] = args
+        self.kwargs: dict[str, typing.Any] = kwargs
 
 
 class Command(Spec):
@@ -131,7 +131,7 @@ class Command(Spec):
 
     def __init__(self, name: typing.Optional[str] = None, **kwargs):
         self.name: typing.Optional[str] = name
-        self.kwargs: typing.Dict[str, typing.Any] = dict(kwargs)
+        self.kwargs: dict[str, typing.Any] = dict(kwargs)
 
     def accept(self, context: 'Builder') -> None:
         context.set(self)
@@ -142,7 +142,7 @@ class Meta(type):
 
     CMDKEY = 'command'
 
-    def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any], **kwargs):
+    def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any], **kwargs):
         parser = argparse.ArgumentParser(parents=[PARSER], add_help=True, **kwargs)
         subparsers = parser.add_subparsers(
             dest=mcs.CMDKEY, help='program subcommands (-h for individual description)', required=True

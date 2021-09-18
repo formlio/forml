@@ -191,7 +191,7 @@ class Parser(metaclass=abc.ABCMeta):
         @staticmethod
         def condition(
             kind: frame.Join.Kind, student: frame.Table, school: frame.Table
-        ) -> typing.Tuple[typing.Optional[series.Expression], str]:
+        ) -> tuple[typing.Optional[series.Expression], str]:
             """The condition snippet."""
             if kind != frame.Join.Kind.CROSS:
                 return school.sid == student.school, ' ON "school"."id" = "student"."school"'

@@ -134,7 +134,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     TAGFILE = 'tag.json'
     PKGFILE = f'package.{distribution.Package.FORMAT}'
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def project(self, project: prjmod.Level.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -146,7 +146,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self / project
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def lineage(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -159,7 +159,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.project(project) / str(lineage)
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def generation(
         self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key
     ) -> pathlib.Path:
@@ -175,7 +175,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.lineage(project, lineage) / str(generation)
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def package(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> pathlib.Path:
         """Package file path of given project name/lineage.
 
@@ -188,7 +188,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.lineage(project, lineage) / self.PKGFILE
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def state(
         self,
         sid: uuid.UUID,
@@ -211,7 +211,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             generation = self.STAGEDIR
         return self.generation(project, lineage, generation) / f'{sid}.{self.STATESFX}'
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def tag(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key) -> pathlib.Path:
         """Tag file path of given project name.
 
@@ -239,7 +239,7 @@ class Registry(persistent.Registry, alias='filesystem'):
         self._path: Path = Path(path)
 
     @staticmethod
-    def _listing(path: pathlib.Path, matcher: typing.Type[Path.Matcher]) -> typing.Iterable:
+    def _listing(path: pathlib.Path, matcher: type[Path.Matcher]) -> typing.Iterable:
         """Helper for listing given repository level.
 
         Args:

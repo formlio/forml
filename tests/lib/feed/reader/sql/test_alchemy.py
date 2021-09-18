@@ -94,7 +94,7 @@ class TestParser(Parser):
         @staticmethod
         def condition(
             kind: frame.Join.Kind, student: frame.Table, school: frame.Table
-        ) -> typing.Tuple[typing.Optional[series.Expression], str]:
+        ) -> tuple[typing.Optional[series.Expression], str]:
             if kind != frame.Join.Kind.CROSS:
                 return school.sid == student.school, ' ON "school"."id" = "student"."school"'
             return None, ' ON true'

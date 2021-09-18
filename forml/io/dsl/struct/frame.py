@@ -69,8 +69,8 @@ class Source(tuple, metaclass=abc.ABCMeta):
         """
 
     @property
-    @functools.lru_cache()
-    def schema(self) -> typing.Type['struct.Schema']:
+    @functools.lru_cache
+    def schema(self) -> type['struct.Schema']:
         """Get the schema type for this source.
 
         Returns:
@@ -88,7 +88,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         except KeyError as err:
             raise AttributeError(f'Invalid column {name}') from err
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def __getitem__(self, name: typing.Union[int, str]) -> typing.Any:
         try:
             return super().__getitem__(name)
@@ -148,7 +148,7 @@ class Join(Source):
         return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
@@ -178,7 +178,7 @@ class Set(Source):
         return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def columns(self) -> typing.Sequence['series.Column']:
         return self.left.columns + self.right.columns
 
@@ -289,7 +289,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         *columns: typing.Union[
             'series.Operable',
             typing.Union['series.Ordering.Direction', str],
-            typing.Tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+            tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
         ],
     ) -> 'Query':
         """Ordering specifiers.
@@ -381,12 +381,12 @@ class Reference(Origin):
         return f'{self.name}=[{repr(self.instance)}]'
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def columns(self) -> typing.Sequence['series.Element']:
         return tuple(series.Element(self, c.name) for c in self.instance.columns)
 
     @property
-    def schema(self) -> typing.Type['struct.Schema']:
+    def schema(self) -> type['struct.Schema']:
         return self.instance.schema
 
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
@@ -410,7 +410,7 @@ class Table(Origin):
     class Schema(type):
         """Meta class for schema type ensuring consistent hashing."""
 
-        def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any]):
+        def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
             existing = {s[k].name: k for s in bases if isinstance(s, Table.Schema) for k in s}
             for key, field in namespace.items():
                 if not isinstance(field, struct.Field):
@@ -426,7 +426,7 @@ class Table(Origin):
             # pylint: disable=not-an-iterable
             return functools.reduce(operator.xor, (hash(getattr(cls, k)) for k in cls), 0)
 
-        def __eq__(cls, other: typing.Type['struct.Schema']):
+        def __eq__(cls, other: type['struct.Schema']):
             return len(cls) == len(other) and all(getattr(cls, c) == getattr(other, o) for c, o in zip(cls, other))
 
         def __len__(cls):
@@ -435,7 +435,7 @@ class Table(Origin):
         def __repr__(cls):
             return f'{cls.__module__}:{cls.__qualname__}'
 
-        @functools.lru_cache()
+        @functools.lru_cache
         def __getitem__(cls, name: str) -> 'struct.Field':
             for key in cls:  # pylint: disable=not-an-iterable
                 field = getattr(cls, key)
@@ -452,13 +452,13 @@ class Table(Origin):
                 if isinstance(f, struct.Field) and k not in seen and not seen.add(k)
             )
 
-    schema: typing.Type['struct.Schema'] = property(operator.itemgetter(0))
+    schema: type['struct.Schema'] = property(operator.itemgetter(0))
 
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
-        schema: typing.Union[str, typing.Type['struct.Schema']],
-        bases: typing.Optional[typing.Tuple[typing.Type]] = None,
-        namespace: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        schema: typing.Union[str, type['struct.Schema']],
+        bases: typing.Optional[tuple[type]] = None,
+        namespace: typing.Optional[dict[str, typing.Any]] = None,
     ):
         if isinstance(schema, str):  # used as metaclass
             if bases:
@@ -473,7 +473,7 @@ class Table(Origin):
         return self.schema.__name__
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def columns(self) -> typing.Sequence['series.Field']:
         return tuple(series.Field(self, self.schema[k].name or k) for k in self.schema)
 
@@ -485,11 +485,11 @@ class Query(Queryable):
     """Generic source descriptor."""
 
     source: Source = property(operator.itemgetter(0))
-    selection: typing.Tuple['series.Column'] = property(operator.itemgetter(1))
+    selection: tuple['series.Column'] = property(operator.itemgetter(1))
     prefilter: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
-    grouping: typing.Tuple['series.Operable'] = property(operator.itemgetter(3))
+    grouping: tuple['series.Operable'] = property(operator.itemgetter(3))
     postfilter: typing.Optional['series.Expression'] = property(operator.itemgetter(4))
-    ordering: typing.Tuple['series.Ordering'] = property(operator.itemgetter(5))
+    ordering: tuple['series.Ordering'] = property(operator.itemgetter(5))
     rows: typing.Optional[Rows] = property(operator.itemgetter(6))
 
     def __new__(
@@ -504,7 +504,7 @@ class Query(Queryable):
                 typing.Union[
                     'series.Operable',
                     typing.Union['series.Ordering.Direction', str],
-                    typing.Tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+                    tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
                 ]
             ]
         ] = None,
@@ -562,7 +562,7 @@ class Query(Queryable):
         return self
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def columns(self) -> typing.Sequence['series.Column']:
         """Get the list of columns supplied by this query.
 
@@ -611,7 +611,7 @@ class Query(Queryable):
         *columns: typing.Union[
             'series.Operable',
             typing.Union['series.Ordering.Direction', str],
-            typing.Tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+            tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
         ],
     ) -> 'Query':
         return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, columns, self.rows)

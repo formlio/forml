@@ -40,9 +40,7 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
         return f'{self.__class__.__name__}[{repr(self.spec)}]'
 
     @classmethod
-    def operator(
-        cls, actor: typing.Optional[typing.Type[task.Actor]] = None, /, **params
-    ) -> typing.Callable[..., 'Base']:
+    def operator(cls, actor: typing.Optional[type[task.Actor]] = None, /, **params) -> typing.Callable[..., 'Base']:
         """Actor decorator for creating curried operator that get instantiated upon another (optionally parametrized)
         call.
 
@@ -54,7 +52,7 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
             Curried operator.
         """
 
-        def decorator(actor: typing.Type[task.Actor]) -> typing.Callable[..., Base]:
+        def decorator(actor: type[task.Actor]) -> typing.Callable[..., Base]:
             """Decorating function."""
 
             def simple(*args, **kwargs) -> Base:
@@ -66,7 +64,7 @@ class Base(topology.Operator, metaclass=abc.ABCMeta):
                 Returns:
                     Operator instance.
                 """
-                return cls(task.Spec(actor, *args, **{**params, **kwargs}))
+                return cls(task.Spec(actor, *args, **params | kwargs))
 
             return simple
 

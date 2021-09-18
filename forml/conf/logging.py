@@ -33,14 +33,12 @@ DEFAULTS = dict(prj_name=conf.PRJNAME, log_facility=handlers.SysLogHandler.LOG_U
 
 def setup(*path: pathlib.Path, **defaults: typing.Any):
     """Setup logger according to the params."""
-    parser = configparser.ConfigParser({**DEFAULTS, **defaults})
+    parser = configparser.ConfigParser(DEFAULTS | defaults)
     tried = set()
     used = parser.read(
-        (
-            p
-            for p in ((b / conf.logcfg).resolve() for b in itertools.chain(conf.PATH, path))
-            if not (p in tried or tried.add(p))
-        )
+        p
+        for p in ((b / conf.logcfg).resolve() for b in itertools.chain(conf.PATH, path))
+        if not (p in tried or tried.add(p))
     )
     config.fileConfig(parser, disable_existing_loggers=True)
     logging.captureWarnings(capture=True)

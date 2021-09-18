@@ -171,7 +171,7 @@ class Predicate(Operable, metaclass=abc.ABCMeta):
     def test_logical(
         self,
         operation: typing.Callable[[typing.Any, typing.Any], series.Logical],
-        operator: typing.Type[series.Predicate],
+        operator: type[series.Predicate],
         column: series.Predicate,
     ):
         """Logical operators tests."""
@@ -249,7 +249,7 @@ class TestComparison(Predicate):
     def test_comparison(
         self,
         operation: typing.Callable[[typing.Any, typing.Any], series.Logical],
-        operator: typing.Type[series.Logical],
+        operator: type[series.Logical],
         student: frame.Table,
     ):
         """Comparison operators tests."""
@@ -281,7 +281,7 @@ class TestArithmetic(Operable):
     def test_arithmetic(
         self,
         operation: typing.Callable[[typing.Any, typing.Any], series.Arithmetic],
-        operator: typing.Type[series.Arithmetic],
+        operator: type[series.Arithmetic],
         column: series.Operable,
     ):
         """Arithmetic operators tests."""

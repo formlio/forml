@@ -20,8 +20,6 @@ Feed utils unit tests.
 """
 # pylint: disable=no-self-use
 
-import typing
-
 import pytest
 
 from forml.conf.parsed import provider as conf
@@ -46,7 +44,7 @@ class TestHandle:
         return sinkmod.Handle(conf.Sink.Mode([train, apply, eval_]))
 
     @pytest.fixture(scope='session')
-    def instant(self, sink: typing.Type[sinkmod.Provider]) -> sinkmod.Handle:
+    def instant(self, sink: type[sinkmod.Provider]) -> sinkmod.Handle:
         """Instant based handle fixture."""
         return sinkmod.Handle(sink(identity='instant'))
 

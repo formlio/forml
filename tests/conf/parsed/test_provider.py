@@ -33,7 +33,7 @@ class Section(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Section]:
+    def provider() -> type[provcfg.Section]:
         """Provider type."""
 
     @staticmethod
@@ -42,11 +42,11 @@ class Section(metaclass=abc.ABCMeta):
     def default() -> str:
         """Default provider name fixture."""
 
-    def test_default(self, provider: typing.Type[provcfg.Section], default: str):
+    def test_default(self, provider: type[provcfg.Section], default: str):
         """Default provider config test."""
         assert provider.default.reference == default
 
-    def test_path(self, provider: typing.Type[provcfg.Section]):
+    def test_path(self, provider: type[provcfg.Section]):
         """Path getter test."""
         assert isinstance(provider.path, (tuple, list))
 
@@ -56,7 +56,7 @@ class TestRunner(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Runner]:
+    def provider() -> type[provcfg.Runner]:
         """Provider type."""
         return provcfg.Runner
 
@@ -72,7 +72,7 @@ class TestRegistry(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Registry]:
+    def provider() -> type[provcfg.Registry]:
         """Provider type."""
         return provcfg.Registry
 
@@ -88,7 +88,7 @@ class TestFeed(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Feed]:
+    def provider() -> type[provcfg.Feed]:
         """Provider type."""
         return provcfg.Feed
 
@@ -98,7 +98,7 @@ class TestFeed(Section):
         """Provider type."""
         return 'bar'
 
-    def test_default(self, provider: typing.Type[provcfg.Section], default: str):
+    def test_default(self, provider: type[provcfg.Section], default: str):
         """Default provider config test."""
         assert default in {p.reference for p in provider.default}
 
@@ -108,7 +108,7 @@ class TestSink(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> typing.Type[provcfg.Sink]:
+    def provider() -> type[provcfg.Sink]:
         """Provider type."""
         return provcfg.Sink
 

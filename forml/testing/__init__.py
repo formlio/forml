@@ -24,7 +24,7 @@ from forml.flow.pipeline import topology
 from forml.testing import spec, routine
 
 
-def operator(subject: typing.Type[topology.Operator]) -> typing.Type[routine.Suite]:
+def operator(subject: type[topology.Operator]) -> type[routine.Suite]:
     """Operator base class generator.
 
     Args:
@@ -35,7 +35,7 @@ def operator(subject: typing.Type[topology.Operator]) -> typing.Type[routine.Sui
         """Generated base class."""
 
         @property
-        def __operator__(self) -> typing.Type[topology.Operator]:
+        def __operator__(self) -> type[topology.Operator]:
             """Attached operator.
 
             Returns:

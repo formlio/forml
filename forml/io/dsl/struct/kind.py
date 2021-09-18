@@ -33,14 +33,14 @@ class Meta(abc.ABCMeta):
     """Meta class for all kinds."""
 
     @property
-    def __subkinds__(cls) -> typing.Iterable[typing.Type['Any']]:
+    def __subkinds__(cls) -> typing.Iterable[type['Any']]:
         """Return all non-abstract sub-classes of given kind class.
 
         Returns:
             Iterable of all sub-kinds.
         """
 
-        def scan(subs: typing.Iterable[typing.Type['Any']]) -> typing.Iterable[typing.Type['Any']]:
+        def scan(subs: typing.Iterable[type['Any']]) -> typing.Iterable[type['Any']]:
             """Scan the class subtree of given types.
 
             Args:
@@ -57,10 +57,10 @@ class Meta(abc.ABCMeta):
 class Singleton(Meta):
     """Metaclass for singleton types."""
 
-    def __new__(mcs, name: str, bases: typing.Tuple[type], namespace: typing.Dict[str, typing.Any]):
+    def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
         instance = None
 
-        def new(cls: typing.Type['Any']) -> 'Any':
+        def new(cls: type['Any']) -> 'Any':
             """Injected class new method ensuring singletons are only created."""
             nonlocal instance
             if not instance:

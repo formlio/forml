@@ -100,7 +100,7 @@ class TrainTestSplit(task.Actor):
 
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
         self.crossvalidator: model_selection.BaseCrossValidator = crossvalidator
-        self._indices: typing.Optional[typing.Tuple[typing.Tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
+        self._indices: typing.Optional[tuple[tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
 
     def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
         """Train the splitter on the provided data.
@@ -125,7 +125,7 @@ class TrainTestSplit(task.Actor):
         LOGGER.debug('Splitting %d rows into %d train-test sets', len(source), len(self._indices))
         return tuple(s for a, b in self._indices for s in (source.iloc[a], source.iloc[b]))
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         """Standard param getter.
 
         Returns:

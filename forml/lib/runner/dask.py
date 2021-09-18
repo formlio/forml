@@ -69,9 +69,7 @@ class Runner(runtime.Runner, alias='dask'):
                 return functools.reduce(nonnull, leaves, None)
 
         def __init__(self, symbols: typing.Sequence[code.Symbol]):
-            tasks: typing.Dict[int, typing.Tuple[code.Instruction, int]] = {
-                id(i): (i, *(id(p) for p in a)) for i, a in symbols
-            }
+            tasks: dict[int, tuple[code.Instruction, int]] = {id(i): (i, *(id(p) for p in a)) for i, a in symbols}
             assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'

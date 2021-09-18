@@ -20,8 +20,6 @@ Feed utils unit tests.
 """
 # pylint: disable=no-self-use
 
-import typing
-
 import pytest
 
 from forml import error
@@ -39,7 +37,7 @@ class TestPool:
         def __new__(cls, reference: str, priority: float, identity: str):
             return tuple.__new__(cls, [reference, priority, {'identity': identity}])
 
-    def test_iter(self, feed: typing.Type[feedmod.Provider], reference: str):
+    def test_iter(self, feed: type[feedmod.Provider], reference: str):
         """Test the pool iterator."""
         conf10 = self.Conf(reference, 10, 'conf10')
         conf1000 = self.Conf(reference, 1000, 'conf1000')
@@ -47,7 +45,7 @@ class TestPool:
         pool = feedmod.Pool(conf10, instant, conf1000)
         assert tuple(f.identity for f in pool) == ('instant', 'conf1000', 'conf10')
 
-    def test_match(self, feed: typing.Type[feedmod.Provider], query: frame.Query, person: frame.Table):
+    def test_match(self, feed: type[feedmod.Provider], query: frame.Query, person: frame.Table):
         """Feed matching test."""
         instance = feed(identity='instance')
         pool = feedmod.Pool(instance)

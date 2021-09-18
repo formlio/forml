@@ -44,12 +44,8 @@ class Table(view.Visitor, abc.Iterable):
         """
 
         def __init__(self):
-            self._absolute: typing.Dict[uuid.UUID, typing.List[typing.Optional[uuid.UUID]]] = collections.defaultdict(
-                list
-            )
-            self._prefixed: typing.Dict[uuid.UUID, typing.List[typing.Optional[uuid.UUID]]] = collections.defaultdict(
-                list
-            )
+            self._absolute: dict[uuid.UUID, list[typing.Optional[uuid.UUID]]] = collections.defaultdict(list)
+            self._prefixed: dict[uuid.UUID, list[typing.Optional[uuid.UUID]]] = collections.defaultdict(list)
 
         def __getitem__(self, instruction: uuid.UUID) -> typing.Sequence[uuid.UUID]:
             return tuple(itertools.chain(reversed(self._prefixed[instruction]), self._absolute[instruction]))
@@ -124,7 +120,7 @@ class Table(view.Visitor, abc.Iterable):
         """Mapping of the stored instructions. Same instruction might be stored under multiple keys."""
 
         def __init__(self):
-            self._instructions: typing.Dict[uuid.UUID, code.Instruction] = {}
+            self._instructions: dict[uuid.UUID, code.Instruction] = {}
 
         def __contains__(self, key: uuid.UUID) -> bool:
             return key in self._instructions
@@ -133,7 +129,7 @@ class Table(view.Visitor, abc.Iterable):
             return self._instructions[key]
 
         @property
-        def instructions(self) -> typing.Iterator[typing.Tuple[code.Instruction, typing.Iterator[uuid.UUID]]]:
+        def instructions(self) -> typing.Iterator[tuple[code.Instruction, typing.Iterator[uuid.UUID]]]:
             """Iterator over tuples of instructions plus iterator of its keys.
 
             Returns:

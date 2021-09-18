@@ -40,15 +40,15 @@ def params() -> typing.Mapping[str, typing.Any]:
 
 
 @pytest.fixture(scope='session')
-def default(alias: str, params: typing.Mapping[str, typing.Any]) -> typing.Tuple[str, typing.Mapping[str, typing.Any]]:
+def default(alias: str, params: typing.Mapping[str, typing.Any]) -> tuple[str, typing.Mapping[str, typing.Any]]:
     """Default provider spec fixture."""
     return alias, params
 
 
 @pytest.fixture(scope='session')
 def interface(
-    default: typing.Tuple[str, typing.Mapping[str, typing.Any]]  # pylint: disable=unused-argument
-) -> typing.Type[provmod.Interface]:
+    default: tuple[str, typing.Mapping[str, typing.Any]]  # pylint: disable=unused-argument
+) -> type[provmod.Interface]:
     """Provider fixture."""
     _T = typing.TypeVar('_T')
 
@@ -70,8 +70,8 @@ def interface(
 
 @pytest.fixture(scope='session')
 def provider(
-    interface: typing.Type[provmod.Interface], alias: str  # pylint: disable=unused-argument
-) -> typing.Type[provmod.Interface]:
+    interface: type[provmod.Interface], alias: str  # pylint: disable=unused-argument
+) -> type[provmod.Interface]:
     """Provider fixture."""
 
     class SubProvider(interface[set], alias=alias):
@@ -83,7 +83,7 @@ def provider(
     return SubProvider
 
 
-def test_isabstract(interface: typing.Type[provmod.Interface], provider: typing.Type[provmod.Interface]):
+def test_isabstract(interface: type[provmod.Interface], provider: type[provmod.Interface]):
     """Isabstract inspection unit test."""
     assert provmod.isabstract(interface)
     assert not provmod.isabstract(provider)
@@ -94,8 +94,8 @@ class TestInterface:
 
     def test_get(
         self,
-        interface: typing.Type[provmod.Interface],
-        provider: typing.Type[provmod.Interface],
+        interface: type[provmod.Interface],
+        provider: type[provmod.Interface],
         alias: str,
         params: typing.Mapping[str, typing.Any],
     ):
@@ -106,7 +106,7 @@ class TestInterface:
         with pytest.raises(error.Missing):
             assert provider['miss']
 
-    def test_collision(self, provider: typing.Type[provmod.Interface], alias: str):  # pylint: disable=unused-argument
+    def test_collision(self, provider: type[provmod.Interface], alias: str):  # pylint: disable=unused-argument
         """Test a colliding provider key."""
         with pytest.raises(error.Unexpected):
 

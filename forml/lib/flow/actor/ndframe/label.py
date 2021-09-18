@@ -38,7 +38,7 @@ class ColumnExtractor(task.Actor):
     @ndframe.auto
     def apply(
         self, features: pandas.DataFrame
-    ) -> typing.Tuple[pandas.DataFrame, pandas.Series]:  # pylint: disable=arguments-differ
+    ) -> tuple[pandas.DataFrame, pandas.Series]:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
 
         Args:
@@ -49,7 +49,7 @@ class ColumnExtractor(task.Actor):
         """
         return features.drop(columns=self.column), features[self.column]
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         """Standard param getter.
 
         Returns:
@@ -96,7 +96,7 @@ class ColumnInserter(task.Actor):
             raise RuntimeError('Inserter not trained')
         return features.set_index(self._label.rename(self.column)).reset_index()
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         """Standard param getter.
 
         Returns:

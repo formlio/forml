@@ -48,7 +48,7 @@ class Provider(
         """Abstract reader of the feed."""
 
     def __init__(self, **readerkw):
-        self._readerkw: typing.Dict[str, typing.Any] = readerkw
+        self._readerkw: dict[str, typing.Any] = readerkw
 
     def load(
         self,
@@ -243,7 +243,7 @@ class Pool:
         """
 
         def __init__(self, sources: typing.Iterable['frame.Source']):
-            self._sources: typing.FrozenSet['frame.Source'] = frozenset(sources)
+            self._sources: frozenset['frame.Source'] = frozenset(sources)
             self._matches: bool = True
 
         def __bool__(self):
@@ -270,7 +270,7 @@ class Pool:
                 self._matches = False
 
     def __init__(self, *feeds: typing.Union[provcfg.Feed, str, Provider]):
-        self._feeds: typing.Tuple[Pool.Slot] = tuple(sorted((self.Slot(f) for f in feeds or Provider), reverse=True))
+        self._feeds: tuple[Pool.Slot] = tuple(sorted((self.Slot(f) for f in feeds or Provider), reverse=True))
 
     def __iter__(self) -> typing.Iterable[Provider]:
         for feed in self._feeds:

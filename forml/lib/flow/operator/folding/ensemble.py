@@ -41,14 +41,14 @@ class FullStacker(folding.Crossvalidated):
         def __init__(
             self,
             head: pipeline.Segment,
-            stackers: typing.Dict[topology.Composable, node.Worker],
-            mergers: typing.Dict[topology.Composable, node.Worker],
+            stackers: dict[topology.Composable, node.Worker],
+            mergers: dict[topology.Composable, node.Worker],
             trained: node.Worker,
             applied: node.Worker,
         ):
             self.head: pipeline.Segment = head
-            self.stackers: typing.Dict[topology.Composable, node.Worker] = stackers
-            self.mergers: typing.Dict[topology.Composable, node.Worker] = mergers
+            self.stackers: dict[topology.Composable, node.Worker] = stackers
+            self.mergers: dict[topology.Composable, node.Worker] = mergers
             self.trained: node.Worker = trained
             self.applied: node.Worker = applied
 
@@ -106,8 +106,8 @@ class FullStacker(folding.Crossvalidated):
         merge_forks: typing.Iterable[node.Worker] = node.Worker.fgen(
             ndframe.Apply.spec(function=self._merge), self.nsplits, 1
         )
-        stackers: typing.Dict[topology.Composable, node.Worker] = {}
-        mergers: typing.Dict[topology.Composable, node.Worker] = {}
+        stackers: dict[topology.Composable, node.Worker] = {}
+        mergers: dict[topology.Composable, node.Worker] = {}
         for index, (base, stack, merge) in enumerate(zip(self.bases, stack_forks, merge_forks)):
             stackers[base] = stack
             mergers[base] = merge

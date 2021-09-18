@@ -71,7 +71,7 @@ class NativeActor(WrappedActor, task.Actor):
 
 
 @pytest.fixture(scope='session', params=(NativeActor, wrapped.Class.actor(WrappedActor, apply='predict')))
-def actor(request) -> typing.Type[task.Actor]:
+def actor(request) -> type[task.Actor]:
     """Stateful actor fixture."""
     return request.param
 
@@ -83,13 +83,13 @@ def hyperparams() -> typing.Mapping[str, int]:
 
 
 @pytest.fixture(scope='session')
-def spec(actor: typing.Type[task.Actor], hyperparams):
+def spec(actor: type[task.Actor], hyperparams):
     """Task spec fixture."""
     return task.Spec(actor, **hyperparams)
 
 
 @pytest.fixture(scope='session')
-def trainset() -> typing.Tuple[str, str]:
+def trainset() -> tuple[str, str]:
     """Trainset fixture."""
     return '123', 'xyz'
 
@@ -262,7 +262,7 @@ def reference() -> str:
 @pytest.fixture(scope='session')
 def feed(
     reference: str, person: frame.Table, student: frame.Table, school: frame.Table  # pylint: disable=unused-argument
-) -> typing.Type[feedmod.Provider]:
+) -> type[feedmod.Provider]:
     """Dummy feed fixture."""
 
     class Dummy(feedmod.Provider, alias=reference):
@@ -281,7 +281,7 @@ def feed(
 
 
 @pytest.fixture(scope='session')
-def sink(reference: str) -> typing.Type[sinkmod.Provider]:  # pylint: disable=unused-argument
+def sink(reference: str) -> type[sinkmod.Provider]:  # pylint: disable=unused-argument
     """Dummy sink fixture."""
 
     class Dummy(sinkmod.Provider, alias=reference):

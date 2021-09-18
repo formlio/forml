@@ -61,9 +61,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
                 c: self.Handler() for c in Descriptor._fields
             }
 
-        def __iter__(self) -> typing.Iterator[typing.Tuple[str, typing.Callable[[typing.Any], None]]]:
-            for component, handler in self._handlers.items():
-                yield component, handler
+        def __iter__(self) -> typing.Iterator[tuple[str, typing.Callable[[typing.Any], None]]]:
+            yield from self._handlers.items()
 
         def __len__(self):
             return len(self._handlers)
@@ -162,7 +161,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         return Descriptor.load(self.package, self.path, **self.modules)
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def launcher(self) -> 'launcher.Virtual':
         """Return the launcher configured with a virtual registry preloaded with this artifact.
 

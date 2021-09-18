@@ -41,14 +41,14 @@ class Suite(unittest.TestCase, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def __operator__(self) -> typing.Type[topology.Operator]:
+    def __operator__(self) -> type[topology.Operator]:
         """Operator instance."""
 
 
 class Meta(abc.ABCMeta):
     """Meta class for generating unittest classes out of our framework."""
 
-    def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any], **kwargs):
+    def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any], **kwargs):
         if not any(issubclass(b, Suite) for b in bases):
             raise TypeError(f'{name} not a valid {Suite.__name__}')
         for title, scenario in [(t, s) for t, s in namespace.items() if isinstance(s, spec.Scenario)]:

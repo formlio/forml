@@ -83,7 +83,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         kindmod.Timestamp(): 'TIMESTAMP',
     }
 
-    EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., str]] = {
+    EXPRESSION: typing.Mapping[type[series.Expression], typing.Callable[..., str]] = {
         function.Addition: Expression('{} + {}'),
         function.Subtraction: Expression('{} - {}'),
         function.Multiplication: Expression('{} * {}'),
@@ -177,9 +177,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
             return f"ARRAY[{', '.join(self.generate_literal(v, kind.element) for v in value)}]"
         raise error.Unsupported(f'Unsupported literal kind: {kind}')
 
-    def generate_expression(
-        self, expression: typing.Type[series.Expression], arguments: typing.Sequence[typing.Any]
-    ) -> str:
+    def generate_expression(self, expression: type[series.Expression], arguments: typing.Sequence[typing.Any]) -> str:
         """Expression of given arguments.
 
         Args:
@@ -289,7 +287,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         where: typing.Optional[str],
         groupby: typing.Sequence[str],
         having: typing.Optional[str],
-        orderby: typing.Sequence[typing.Tuple[str, series.Ordering.Direction]],
+        orderby: typing.Sequence[tuple[str, series.Ordering.Direction]],
         rows: typing.Optional[frame.Rows],
     ) -> str:
         """Generate query statement code.
@@ -324,7 +322,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
             query += f' {rows.count}'
         return query
 
-    def generate_reference(self, instance: str, name: str) -> typing.Tuple[str, str]:  # pylint: disable=no-self-use
+    def generate_reference(self, instance: str, name: str) -> tuple[str, str]:  # pylint: disable=no-self-use
         """Generate a source reference (alias) definition.
 
         Args:

@@ -31,7 +31,7 @@ from forml.flow import task
 class Wrapping(metaclass=abc.ABCMeta):
     """Base class for wrappers."""
 
-    def __init__(self, actor: typing.Type, params: typing.Mapping[str, str]):
+    def __init__(self, actor: type, params: typing.Mapping[str, str]):
         self._actor: typing.Any = actor
         self._params: typing.Mapping[str, str] = params
 
@@ -99,7 +99,7 @@ class Class(Mapping):
                 return super().__getattribute__(item)
             return getattr(self._actor, self._params.get(item, item))
 
-    def __init__(self, actor: typing.Type, params: typing.Mapping[str, str]):
+    def __init__(self, actor: type, params: typing.Mapping[str, str]):
         assert not issubclass(actor, task.Actor), 'Wrapping a true actor'
         super().__init__(actor, params)
 
@@ -111,8 +111,8 @@ class Class(Mapping):
 
     @staticmethod
     def actor(  # pylint: disable=bad-staticmethod-argument
-        cls: typing.Optional[typing.Type] = None, /, **mapping: str
-    ) -> typing.Type[task.Actor]:
+        cls: typing.Optional[type] = None, /, **mapping: str
+    ) -> type[task.Actor]:
         """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
         optionally with mapping of Actor methods to decorated user class implementation.
 
@@ -132,7 +132,7 @@ class Class(Mapping):
         for method in (task.Actor.apply, task.Actor.train, task.Actor.get_params, task.Actor.set_params):
             mapping.setdefault(method.__name__, method.__name__)
 
-        def decorator(cls) -> typing.Type[task.Actor]:
+        def decorator(cls) -> type[task.Actor]:
             """Decorating function."""
             if not inspect.isclass(cls):
                 raise ValueError(f'Invalid actor class {cls}')
@@ -173,7 +173,7 @@ class Function(Wrapping):
         def apply(self, *features: typing.Any) -> typing.Union[typing.Any, typing.Sequence[typing.Any]]:
             return self._function(*features, *self._args, **self._kwargs)
 
-        def get_params(self) -> typing.Dict[str, typing.Any]:
+        def get_params(self) -> dict[str, typing.Any]:
             """Standard param getter.
 
             Returns:
@@ -185,7 +185,7 @@ class Function(Wrapping):
             self,  # pylint: disable=arguments-differ
             function: typing.Optional[typing.Callable[[typing.Any], float]] = None,
             args: typing.Optional[typing.Sequence[typing.Any]] = None,
-            kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            kwargs: typing.Optional[dict[str, typing.Any]] = None,
         ) -> None:
             """Standard params setter.
 
@@ -207,7 +207,7 @@ class Function(Wrapping):
         super().__init__(function, params)
 
     def __call__(self, *args, **kwargs) -> 'Function.Actor':
-        return self.Actor(self._actor, *args, **{**self._params, **kwargs})
+        return self.Actor(self._actor, *args, **self._params | kwargs)
 
     def is_stateful(self) -> bool:
         """Wrapped function is generally stateless.
@@ -220,7 +220,7 @@ class Function(Wrapping):
     @staticmethod
     def actor(
         function: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None, /, **params: typing.Any
-    ) -> typing.Type[task.Actor]:
+    ) -> type[task.Actor]:
         """Decorator for turning an user function to a valid actor. This can be used either as parameterless decorator
         or optionally with addition kwargs that will be passed to the function.
 
@@ -232,7 +232,7 @@ class Function(Wrapping):
             Actor class.
         """
 
-        def decorator(function) -> typing.Type[task.Actor]:
+        def decorator(function) -> type[task.Actor]:
             """Decorating function."""
             return Function(function, **params)
 

@@ -15,21 +15,23 @@
 # specific language governing permissions and limitations
 # under the License.
 
+"""
+Forml demos.
+"""
+
 import typing
 
 import pandas as pd
-from forml.lib.flow.operator import cast
-
-from forml.io.dsl import struct
-from forml.io.dsl.struct import kind
-from forml.lib.feed import static
-
-from forml.project import component
 from sklearn import ensemble, linear_model, impute, preprocessing, feature_extraction, naive_bayes
 
 from forml.flow import task
+from forml.io.dsl import struct
+from forml.io.dsl.struct import kind
+from forml.lib.feed import static
 from forml.lib.flow.actor import wrapped
+from forml.lib.flow.operator import cast
 from forml.lib.flow.operator.generic import simple
+from forml.project import component
 
 SimpleImputer = simple.Mapper.operator(wrapped.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
 
@@ -61,10 +63,10 @@ class Extractor(task.Actor):
     def __init__(self, column: str = 'label'):
         self._column: str = column
 
-    def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
+    def apply(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
         return df.drop(columns=self._column), df[self._column]
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         return {'column': self._column}
 
     def set_params(self, column: str) -> None:

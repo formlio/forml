@@ -49,7 +49,7 @@ class Container(typing.Generic[Symbol]):
             """Stack for parsed symbols."""
 
             def __init__(self):
-                self._stack: typing.List[Symbol] = []
+                self._stack: list[Symbol] = []
 
             def __bool__(self):
                 return bool(self._stack)
@@ -91,7 +91,7 @@ class Container(typing.Generic[Symbol]):
                     return functools.reduce(sermod.Or, sorted(self.factors)) if self.factors else None
 
             def __init__(self):
-                self._segments: typing.Dict[frame.Table, Container.Context.Tables.Segment] = collections.defaultdict(
+                self._segments: dict[frame.Table, Container.Context.Tables.Segment] = collections.defaultdict(
                     self.Segment
                 )
 
@@ -129,7 +129,7 @@ class Container(typing.Generic[Symbol]):
         def __init__(self):
             self.symbols: Container.Context.Symbols = self.Symbols()
             self.tables: Container.Context.Tables = self.Tables()
-            self.origins: typing.Dict[frame.Origin, Source] = {}
+            self.origins: dict[frame.Origin, Source] = {}
 
         @property
         def dirty(self) -> bool:
@@ -142,7 +142,7 @@ class Container(typing.Generic[Symbol]):
 
     def __init__(self):
         self._context: typing.Optional[Container.Context] = None
-        self._stack: typing.List[Container.Context] = []
+        self._stack: list[Container.Context] = []
 
     @property
     def context(self) -> 'Container.Context':
@@ -250,7 +250,7 @@ class Visitor(
         except KeyError as err:
             raise error.Mapping(f'Unknown mapping for column {column}') from err
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def generate_column(self, column: sermod.Column) -> Column:
         """Generate target code for the generic column type.
 
@@ -301,7 +301,7 @@ class Visitor(
 
     @abc.abstractmethod
     def generate_expression(
-        self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        self, expression: type[sermod.Expression], arguments: typing.Sequence[typing.Any]
     ) -> Column:
         """Generate target code for an expression of given arguments.
 
@@ -372,7 +372,7 @@ class Visitor(
         return table
 
     @abc.abstractmethod
-    def generate_reference(self, instance: Source, name: str) -> typing.Tuple[Source, Source]:
+    def generate_reference(self, instance: Source, name: str) -> tuple[Source, Source]:
         """Generate reference code.
 
         Args:
@@ -420,7 +420,7 @@ class Visitor(
         where: typing.Optional[Column],
         groupby: typing.Sequence[Column],
         having: typing.Optional[Column],
-        orderby: typing.Sequence[typing.Tuple[Column, sermod.Ordering.Direction]],
+        orderby: typing.Sequence[tuple[Column, sermod.Ordering.Direction]],
         rows: typing.Optional[frame.Rows],
     ) -> Source:
         """Generate query statement code.

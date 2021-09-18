@@ -111,12 +111,12 @@ class Column(tuple, metaclass=abc.ABCMeta):
     class Dissect(Visitor):
         """Visitor extracting column instances of given type(s)."""
 
-        def __init__(self, *types: typing.Type):
-            self._types: typing.FrozenSet[typing.Type] = frozenset(types)
-            self._match: typing.Set['Column'] = set()
-            self._seen: typing.Set['Column'] = set()
+        def __init__(self, *types: type):
+            self._types: frozenset[type] = frozenset(types)
+            self._match: set['Column'] = set()
+            self._seen: set['Column'] = set()
 
-        def __call__(self, *column: 'Column') -> typing.FrozenSet['Column']:
+        def __call__(self, *column: 'Column') -> frozenset['Column']:
             """Apply this dissector to the given columns.
 
             Returns:
@@ -178,7 +178,7 @@ class Column(tuple, metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def dissect(cls, *column: 'Column') -> typing.FrozenSet['Column']:
+    def dissect(cls, *column: 'Column') -> frozenset['Column']:
         """Return an iterable of instances of this type composing given column(s).
 
         Returns:
@@ -407,7 +407,7 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
             typing.Union[
                 Operable,
                 typing.Union['Ordering.Direction', str],
-                typing.Tuple[Operable, typing.Union['Ordering.Direction', str]],
+                tuple[Operable, typing.Union['Ordering.Direction', str]],
             ]
         ],
     ) -> typing.Iterable['Ordering']:
@@ -680,7 +680,7 @@ class Predicate(metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def ensure_is(cls: typing.Type[Operable], column: Operable) -> Operable:
+    def ensure_is(cls: type[Operable], column: Operable) -> Operable:
         """Ensure given column is a predicate. Since this mixin class is supposed to be used as a first base class of
         its column implementors, this will mask the Column.ensure_is API. Here we add special implementation depending
         on whether it is used directly on the Predicate class or its bare mixin subclasses or the actual Column
@@ -717,7 +717,7 @@ class And(Logical, Infix):
     symbol = 'AND'
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def factors(self: 'And') -> 'Predicate.Factors':
         return self.left.factors & self.right.factors
 
@@ -728,7 +728,7 @@ class Or(Logical, Infix):
     symbol = 'OR'
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def factors(self: 'Or') -> 'Predicate.Factors':
         return self.left.factors | self.right.factors
 
@@ -754,11 +754,11 @@ class Comparison(Predicate):
         the extracted .operable instance of the true Comparison type.
         """
 
-        operator: typing.Type[Infix] = property(opermod.itemgetter(0))
+        operator: type[Infix] = property(opermod.itemgetter(0))
         left: Operable = property(opermod.itemgetter(1))
         right: Operable = property(opermod.itemgetter(2))
 
-        def __new__(cls, operator: typing.Type[Infix], left: Operable, right: Operable):
+        def __new__(cls, operator: type[Infix], left: Operable, right: Operable):
             return super().__new__(cls, operator, left, right)
 
         def __bool__(self):
@@ -796,7 +796,7 @@ class Comparison(Predicate):
             raise error.Syntax(f'Invalid operands for {self} comparison')
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def factors(self: 'Comparison') -> Predicate.Factors:
         return Predicate.Factors(self) if len({f.origin for f in Field.dissect(self)}) == 1 else Predicate.Factors()
 
@@ -917,8 +917,8 @@ class Window(Cumulative):
     """Window type column representation."""
 
     function: 'Window.Function' = property(opermod.itemgetter(0))
-    partition: typing.Tuple[Operable] = property(opermod.itemgetter(1))
-    ordering: typing.Tuple[Ordering] = property(opermod.itemgetter(2))
+    partition: tuple[Operable] = property(opermod.itemgetter(1))
+    ordering: tuple[Ordering] = property(opermod.itemgetter(2))
     frame: typing.Optional['Window.Frame'] = property(opermod.itemgetter(3))
 
     class Frame(collections.namedtuple('Frame', 'mode, start, end')):
@@ -943,7 +943,7 @@ class Window(Cumulative):
                     typing.Union[
                         Operable,
                         typing.Union['Ordering.Direction', str],
-                        typing.Tuple[Operable, typing.Union['Ordering.Direction', str]],
+                        tuple[Operable, typing.Union['Ordering.Direction', str]],
                     ]
                 ]
             ] = None,
@@ -970,7 +970,7 @@ class Window(Cumulative):
                 typing.Union[
                     Operable,
                     typing.Union['Ordering.Direction', str],
-                    typing.Tuple[Operable, typing.Union['Ordering.Direction', str]],
+                    tuple[Operable, typing.Union['Ordering.Direction', str]],
                 ]
             ]
         ] = None,

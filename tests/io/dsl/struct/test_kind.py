@@ -32,9 +32,9 @@ from forml.io.dsl.struct import kind as kindmod
 def test_reflect():
     """Test reflection exceptions."""
     with pytest.raises(ValueError):
-        kindmod.reflect(list())  # empty array
+        kindmod.reflect([])  # empty array
     with pytest.raises(ValueError):
-        kindmod.reflect(dict())  # empty map
+        kindmod.reflect({})  # empty map
     with pytest.raises(ValueError):
         kindmod.reflect({1: 'a', 2: 3})  # not a struct (int keys) neither map (multiple value types)
 
@@ -45,7 +45,7 @@ class Data(metaclass=abc.ABCMeta):
     @staticmethod
     @pytest.fixture(scope='session')
     @abc.abstractmethod
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         """Undertest kind type."""
 
     @staticmethod
@@ -54,19 +54,19 @@ class Data(metaclass=abc.ABCMeta):
     def sample() -> typing.Any:
         """Undertest value."""
 
-    def test_reflect(self, sample: typing.Any, kind: typing.Type[kindmod.Any]):
+    def test_reflect(self, sample: typing.Any, kind: type[kindmod.Any]):
         """Value kind reflection test."""
         assert kindmod.reflect(sample) == kind()
 
-    def test_hashable(self, kind: typing.Type[kindmod.Any]):
+    def test_hashable(self, kind: type[kindmod.Any]):
         """Test hashability."""
         assert hash(kind()) == hash(kind())
 
-    def test_subkinds(self, kind: typing.Type[kindmod.Any]):
+    def test_subkinds(self, kind: type[kindmod.Any]):
         """Test the kind is recognized as data subkind."""
         assert type(kind()) in kindmod.Any.__subkinds__
 
-    def test_cardinality(self, kind: typing.Type[kindmod.Any]):
+    def test_cardinality(self, kind: type[kindmod.Any]):
         """Test the kind cardinality."""
         assert kind().__cardinality__ > 0
 
@@ -74,7 +74,7 @@ class Data(metaclass=abc.ABCMeta):
 class Primitive(Data, metaclass=abc.ABCMeta):
     """Primitive kind test base class."""
 
-    def test_singleton(self, kind: typing.Type[kindmod.Any]):
+    def test_singleton(self, kind: type[kindmod.Any]):
         """Test the instances are singletons."""
         assert kind() is kind()
 
@@ -93,7 +93,7 @@ class TestBoolean(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return kindmod.Boolean
 
 
@@ -107,7 +107,7 @@ class TestInteger(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return kindmod.Integer
 
 
@@ -121,7 +121,7 @@ class TestFloat(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return kindmod.Float
 
 
@@ -135,7 +135,7 @@ class TestString(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return kindmod.String
 
 
@@ -149,7 +149,7 @@ class TestDecimal(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return kindmod.Decimal
 
 
@@ -163,7 +163,7 @@ class TestTimestamp(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return kindmod.Timestamp
 
 
@@ -177,7 +177,7 @@ class TestDate(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return kindmod.Date
 
 
@@ -197,10 +197,10 @@ class TestArray(Compound):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind(element: kindmod.Any) -> typing.Type[kindmod.Any]:
+    def kind(element: kindmod.Any) -> type[kindmod.Any]:
         return lambda: kindmod.Array(element)
 
-    def test_attribute(self, kind: typing.Type[kindmod.Any], element: kindmod.Any):
+    def test_attribute(self, kind: type[kindmod.Any], element: kindmod.Any):
         """Test attribute access."""
         assert kind().element == element
 
@@ -227,10 +227,10 @@ class TestMap(Compound):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind(key: kindmod.Any, value: kindmod.Any) -> typing.Type[kindmod.Any]:
+    def kind(key: kindmod.Any, value: kindmod.Any) -> type[kindmod.Any]:
         return lambda: kindmod.Map(key, value)
 
-    def test_attribute(self, kind: typing.Type[kindmod.Any], key: kindmod.Any, value: kindmod.Any):
+    def test_attribute(self, kind: type[kindmod.Any], key: kindmod.Any, value: kindmod.Any):
         """Test attribute access."""
         instance = kind()
         assert instance.key == key
@@ -247,5 +247,5 @@ class TestStruct(Compound):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def kind() -> typing.Type[kindmod.Any]:
+    def kind() -> type[kindmod.Any]:
         return lambda: kindmod.Struct(foo=kindmod.Integer(), bar=kindmod.String(), baz=kindmod.Boolean())

@@ -19,7 +19,6 @@
 Simple operator unit tests.
 """
 # pylint: disable=no-self-use
-import typing
 
 import pytest
 
@@ -33,7 +32,7 @@ class TestMapper:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def operator(actor: typing.Type[task.Actor]):
+    def operator(actor: type[task.Actor]):
         """Operator fixture."""
         return simple.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
 

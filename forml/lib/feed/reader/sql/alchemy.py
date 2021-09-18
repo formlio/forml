@@ -46,7 +46,7 @@ class Type(typing.Generic[Native], sqltypes.TypeDecorator):
     """Base class for custom types with explicit literal processors for specific dialects."""
 
     cache_ok = True
-    PROCESSOR: typing.Mapping[typing.Type[interfaces.Dialect], typing.Callable[[Native], str]] = {}
+    PROCESSOR: typing.Mapping[type[interfaces.Dialect], typing.Callable[[Native], str]] = {}
 
     def _process(self, value: Native, dialect: interfaces.Dialect) -> str:
         """Type processing implementation.
@@ -120,7 +120,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         kindmod.Timestamp(): DateTime(),
     }
 
-    EXPRESSION: typing.Mapping[typing.Type[series.Expression], typing.Callable[..., sql.ColumnElement]] = {
+    EXPRESSION: typing.Mapping[type[series.Expression], typing.Callable[..., sql.ColumnElement]] = {
         function.Addition: operator.add,
         function.Subtraction: operator.sub,
         function.Multiplication: operator.mul,
@@ -207,7 +207,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
             raise error.Unsupported(f'Unsupported literal kind: {kind}') from err
 
     def generate_expression(
-        self, expression: typing.Type[series.Expression], arguments: typing.Sequence[typing.Any]
+        self, expression: type[series.Expression], arguments: typing.Sequence[typing.Any]
     ) -> sql.ColumnElement:
         """Expression of given arguments.
 
@@ -282,7 +282,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         where: typing.Optional[sql.ColumnElement],
         groupby: typing.Sequence[sql.ColumnElement],
         having: typing.Optional[sql.ColumnElement],
-        orderby: typing.Sequence[typing.Tuple[sql.ColumnElement, series.Ordering.Direction]],
+        orderby: typing.Sequence[tuple[sql.ColumnElement, series.Ordering.Direction]],
         rows: typing.Optional[frame.Rows],
     ) -> sql.Selectable:
         """Generate query statement code.
@@ -317,7 +317,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
 
     def generate_reference(
         self, instance: sql.Selectable, name: str
-    ) -> typing.Tuple[sql.Selectable, sql.Selectable]:  # pylint: disable=no-self-use
+    ) -> tuple[sql.Selectable, sql.Selectable]:  # pylint: disable=no-self-use
         """Generate a source reference (alias) definition.
 
         Args:

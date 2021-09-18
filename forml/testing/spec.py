@@ -134,7 +134,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
     class Exception(collections.namedtuple('Exception', 'kind, message')):
         """Exception type."""
 
-        def __new__(cls, kind: typing.Type[Exception], message: typing.Optional[str] = None):
+        def __new__(cls, kind: type[Exception], message: typing.Optional[str] = None):
             if not issubclass(kind, Exception):
                 raise ValueError('Invalid exception type')
             return super().__new__(cls, kind, message)
@@ -144,7 +144,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
         params: 'Scenario.Params',
         input: typing.Optional['Scenario.Input'] = None,  # pylint: disable=redefined-builtin
         output: typing.Optional['Scenario.Output'] = None,
-        exception: typing.Optional[typing.Type[Exception]] = None,
+        exception: typing.Optional[type[Exception]] = None,
     ):
         if not output:
             output = cls.Output()
@@ -160,7 +160,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
         return hash(self.params) ^ hash(self.input.trained) ^ hash(self.input.applied) ^ hash(self.exception)
 
     @property
-    @functools.lru_cache()
+    @functools.lru_cache
     def outcome(self) -> 'Scenario.Outcome':
         """The outcome type of this scenario.
 
@@ -179,7 +179,7 @@ class Raisable:
         self._params: Scenario.Params = params
         self._input: Scenario.Input = input or Scenario.Input()
 
-    def raises(self, kind: typing.Type[Exception], message: typing.Optional[str] = None) -> Scenario:
+    def raises(self, kind: type[Exception], message: typing.Optional[str] = None) -> Scenario:
         """Assertion on expected exception."""
         return Scenario(self._params, self._input, exception=Scenario.Exception(kind, message))
 

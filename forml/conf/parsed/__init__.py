@@ -29,7 +29,7 @@ from forml import error, conf
 class Meta(abc.ABCMeta):
     """Metaclass for parsed config options tht adds the itemgetter properties to the class."""
 
-    def __new__(mcs, name: str, bases: typing.Tuple[typing.Type], namespace: typing.Dict[str, typing.Any]):
+    def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
         if 'FIELDS' in namespace:
             for index, field in enumerate(namespace.pop('FIELDS')):
                 namespace[field] = property(operator.itemgetter(index))
@@ -60,7 +60,7 @@ class Section(metaclass=Meta):
     """
 
     # list of parsed config field names
-    FIELDS: typing.Tuple[str] = ('params',)
+    FIELDS: tuple[str] = ('params',)
     # master section containing the references to the particular GROUP sections
     INDEX: str = abc.abstractmethod
     # name of option in INDEX section containing reference(s) to the particular GROUP section
@@ -79,7 +79,7 @@ class Section(metaclass=Meta):
     @classmethod
     def _extract(
         cls, reference: str, kwargs: typing.Mapping[str, typing.Any]  # pylint: disable=unused-argument
-    ) -> typing.Tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+    ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
         """Extract the config values as a sequence of "known" semantic arguments and mapping of "generic" options.
 
         Args:

@@ -196,17 +196,17 @@ class TestSchema:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def schema(student: frame.Table) -> typing.Type['struct.Schema']:
+    def schema(student: frame.Table) -> type['struct.Schema']:
         """Schema fixture."""
         return student.schema
 
-    def test_identity(self, schema: typing.Type['struct.Schema'], student: frame.Table):
+    def test_identity(self, schema: type['struct.Schema'], student: frame.Table):
         """Schema identity tests."""
         other = student.query.schema
         assert schema is not other
         assert len({schema, other}) == 1
 
-    def test_colliding(self, schema: typing.Type['struct.Schema']):
+    def test_colliding(self, schema: type['struct.Schema']):
         """Test schema with colliding field names."""
         with pytest.raises(error.Syntax):
 
@@ -225,7 +225,7 @@ class TestSchema:
         assert Override.school.kind == kind.String()
         assert schema.school.kind == kind.Integer()
 
-    def test_access(self, schema: typing.Type['struct.Schema']):
+    def test_access(self, schema: type['struct.Schema']):
         """Test the schema access methods."""
         assert tuple(schema) == ('surname', 'dob', 'level', 'score', 'school')
         assert schema.dob.name == 'birthday'

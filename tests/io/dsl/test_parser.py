@@ -66,9 +66,7 @@ class Parser(parsmod.Visitor[tuple, tuple]):  # pylint: disable=unsubscriptable-
     def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> tuple:
         return value, kind
 
-    def generate_expression(
-        self, expression: typing.Type[sermod.Expression], arguments: typing.Sequence[typing.Any]
-    ) -> tuple:
+    def generate_expression(self, expression: type[sermod.Expression], arguments: typing.Sequence[typing.Any]) -> tuple:
         return expression, *arguments
 
     def generate_alias(self, column: tuple, alias: str) -> tuple:
@@ -88,7 +86,7 @@ class Parser(parsmod.Visitor[tuple, tuple]):  # pylint: disable=unsubscriptable-
         where: typing.Optional[tuple],
         groupby: typing.Sequence[tuple],
         having: typing.Optional[tuple],
-        orderby: typing.Sequence[typing.Tuple[tuple, sermod.Ordering.Direction]],
+        orderby: typing.Sequence[tuple[tuple, sermod.Ordering.Direction]],
         rows: typing.Optional[framod.Rows],
     ) -> tuple:
         return source, tuple(columns), where, tuple(groupby), having, tuple(orderby), rows

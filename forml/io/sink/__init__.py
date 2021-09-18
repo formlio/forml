@@ -36,7 +36,7 @@ class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sin
         """Abstract sink writer."""
 
     def __init__(self, **writerkw):
-        self._writerkw: typing.Dict[str, typing.Any] = writerkw
+        self._writerkw: dict[str, typing.Any] = writerkw
 
     def publish(self) -> pipeline.Segment:
         """Provide a pipeline composable segment implementing the publish action.

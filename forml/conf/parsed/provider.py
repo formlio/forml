@@ -40,13 +40,13 @@ class Meta(parsmod.Meta):
 class Section(parsmod.Section, metaclass=Meta):
     """Special sections of forml providers config options."""
 
-    FIELDS: typing.Tuple[str] = ('reference', 'params')
+    FIELDS: tuple[str] = ('reference', 'params')
     SELECTOR = conf.OPT_DEFAULT
 
     @classmethod
     def _extract(
         cls, reference: str, kwargs: typing.Mapping[str, typing.Any]
-    ) -> typing.Tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+    ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
         kwargs = dict(kwargs)
         provider = kwargs.pop(conf.OPT_PROVIDER, reference)
         _, kwargs = super()._extract(reference, kwargs)
@@ -81,12 +81,12 @@ class Feed(parsmod.Multi, Section):
 
     INDEX: str = conf.SECTION_FEED
     GROUP: str = conf.SECTION_FEED
-    FIELDS: typing.Tuple[str] = ('reference', 'priority', 'params')
+    FIELDS: tuple[str] = ('reference', 'priority', 'params')
 
     @classmethod
     def _extract(
         cls, reference: str, kwargs: typing.Mapping[str, typing.Any]
-    ) -> typing.Tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+    ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
         kwargs = dict(kwargs)
         priority = kwargs.pop(conf.OPT_PRIORITY, 0)
         [reference], kwargs = super()._extract(reference, kwargs)
@@ -114,7 +114,7 @@ class Sink(Section):
         eval = <eval-sink-reference>
         """
 
-        FIELDS: typing.Tuple[str] = ('train', 'apply', 'eval')
+        FIELDS: tuple[str] = ('train', 'apply', 'eval')
         INDEX: str = conf.SECTION_SINK
         GROUP: str = conf.SECTION_SINK
 

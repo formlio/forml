@@ -98,7 +98,7 @@ class Launcher:
         """Visitor that tries to instantiate each node in attempt to validate it."""
 
         def __init__(self):
-            self._gids: typing.Set[uuid.UUID] = set()
+            self._gids: set[uuid.UUID] = set()
 
         def visit_node(self, node: nodemod.Worker) -> None:
             if isinstance(node, nodemod.Worker) and node.gid not in self._gids:
@@ -111,7 +111,7 @@ class Launcher:
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
-    def __call__(self, operator: typing.Type[topology.Operator]) -> launcher.Virtual.Builder:
+    def __call__(self, operator: type[topology.Operator]) -> launcher.Virtual.Builder:
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
         segment = instance.expand()

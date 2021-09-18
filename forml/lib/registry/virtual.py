@@ -42,8 +42,8 @@ class Registry(filesystem.Registry, alias='virtual'):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
             prefix='registry-virtual-', dir=persistent.TMPDIR.name
         )
-        self._artifacts: typing.Dict[
-            'prjmod.Level.Key', typing.Dict['lngmod.Level.Key', 'product.Artifact']
+        self._artifacts: dict[
+            'prjmod.Level.Key', dict['lngmod.Level.Key', 'product.Artifact']
         ] = collections.defaultdict(dict)
         super().__init__(self._storage.name)
 
