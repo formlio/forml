@@ -89,7 +89,7 @@ class Any(metaclass=Meta):
     @property
     @abc.abstractmethod
     def __cardinality__(self) -> int:
-        """Cardinality (relative size) of give kind. Useful to for example distinguish largest subkind of given kind.
+        """Cardinality (relative size) of given kind. Useful to for example distinguish largest subkind of given kind.
 
         Returns:
             Cardinality value.

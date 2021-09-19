@@ -28,12 +28,17 @@ from forml import error
 from forml.flow import task
 
 
-class Wrapping(metaclass=abc.ABCMeta):
+Target = typing.Union[str, typing.Callable[..., typing.Any]]
+ValueT = typing.TypeVar('ValueT')
+ActorT = typing.TypeVar('ActorT')
+
+
+class Proxy(typing.Generic[ActorT, ValueT], metaclass=abc.ABCMeta):
     """Base class for wrappers."""
 
-    def __init__(self, actor: type, params: typing.Mapping[str, str]):
-        self._actor: typing.Any = actor
-        self._params: typing.Mapping[str, str] = params
+    def __init__(self, actor: ActorT, params: typing.Mapping[str, ValueT]):
+        self._actor: ActorT = actor
+        self._params: typing.Mapping[str, ValueT] = params
 
     def __hash__(self):
         return hash(self._actor) ^ hash(tuple(sorted(self._params.items())))
@@ -66,7 +71,7 @@ class Wrapping(metaclass=abc.ABCMeta):
         return task.Spec(self, *args, **kwargs)
 
 
-class Mapping(Wrapping):
+class Mapping(Proxy[ActorT, Target]):
     """Base class for actor wrapping."""
 
     def is_stateful(self) -> bool:
@@ -75,32 +80,47 @@ class Mapping(Wrapping):
         Returns:
             True if the wrapped actor is stateful (has a train method).
         """
-        return hasattr(self._actor, self._params[task.Actor.train.__name__])
+        attr = self._params[task.Actor.train.__name__]
+        return callable(attr) or hasattr(self._actor, attr)
 
 
-class Class(Mapping):
+class Class(Mapping[type]):
     """Decorator wrapper."""
 
-    class Actor(Mapping, task.Actor):  # pylint: disable=abstract-method
+    class Actor(Mapping[object], task.Actor):  # pylint: disable=abstract-method
         """Wrapper around user class implementing the Actor interface."""
 
-        def __new__(cls, actor: typing.Any, mapping: typing.Mapping[str, str]):  # pylint: disable=unused-argument
+        class Decorated:
+            """Decorated representation of the mapping target."""
+
+            def __init__(self, instance: object, decorator: typing.Callable[..., typing.Any]):
+                self._instance: object = instance
+                self._decorator: typing.Callable[..., typing.Any] = decorator
+
+            def __call__(self, *args, **kwargs):
+                return self._decorator(self._instance, *args, **kwargs)
+
+        def __new__(cls, actor: object, params: typing.Mapping[str, Target]):  # pylint: disable=unused-argument
             cls.__abstractmethods__ = frozenset()
             return super().__new__(cls)
 
-        def __init__(self, actor: typing.Any, params: typing.Mapping[str, str]):
+        def __init__(self, actor: object, params: typing.Mapping[str, Target]):
             super().__init__(actor, params)
 
         def __getnewargs__(self):
             return self._actor, self._params
 
         def __getattribute__(self, item):
-            if item.startswith('_') or item not in self._params and not hasattr(self._actor, item):
-                return super().__getattribute__(item)
-            return getattr(self._actor, self._params.get(item, item))
+            if not item.startswith('_'):
+                if item in self._params:
+                    attr = self._params[item]
+                    return self.Decorated(self._actor, attr) if callable(attr) else getattr(self._actor, attr)
+                if hasattr(self._actor, item):
+                    return getattr(self._actor, item)
+            return super().__getattribute__(item)
 
-    def __init__(self, actor: type, params: typing.Mapping[str, str]):
-        assert not issubclass(actor, task.Actor), 'Wrapping a true actor'
+    def __init__(self, actor: type, params: typing.Mapping[str, Target]):
+        assert not issubclass(actor, task.Actor), 'Already an actor'
         super().__init__(actor, params)
 
     def __call__(self, *args, **kwargs) -> task.Actor:
@@ -111,22 +131,25 @@ class Class(Mapping):
 
     @staticmethod
     def actor(  # pylint: disable=bad-staticmethod-argument
-        cls: typing.Optional[type] = None, /, **mapping: str
+        cls: typing.Optional[type] = None, /, **mapping: Target
     ) -> type[task.Actor]:
         """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
         optionally with mapping of Actor methods to decorated user class implementation.
 
         Args:
             cls: Decorated class.
-            apply: Name of user class method implementing the actor apply.
-            train: Name of user class method implementing the actor train.
-            get_params: Name of user class method implementing the actor get_params.
-            set_params: Name of user class method implementing the actor set_params.
+            apply: Method name or decorator function implementing the actor apply.
+            train: Method name or decorator function implementing the actor train.
+            get_params: Method name or decorator function implementing the actor get_params.
+            set_params: Method name or decorator function implementing the actor set_params.
 
         Returns:
             Actor class.
         """
-        if not all(isinstance(a, str) for a in mapping.values()):
+        if not all(
+            isinstance(a, (str, typing.Callable))  # pylint: disable=isinstance-second-argument-not-valid-type
+            for a in mapping.values()
+        ):
             raise ValueError('Invalid mapping')
 
         for method in (task.Actor.apply, task.Actor.train, task.Actor.get_params, task.Actor.set_params):
@@ -138,7 +161,7 @@ class Class(Mapping):
                 raise ValueError(f'Invalid actor class {cls}')
             if issubclass(cls, task.Actor):
                 return cls
-            for target in {t for s, t in mapping.items() if s != task.Actor.train.__name__}:
+            for target in {t for s, t in mapping.items() if s != task.Actor.train.__name__ and not callable(t)}:
                 if not callable(getattr(cls, target, None)):
                     raise error.Missing(f'Wrapped actor missing required {target} implementation')
             return Class(cls, mapping)
@@ -148,7 +171,7 @@ class Class(Mapping):
         return decorator
 
 
-class Function(Wrapping):
+class Function(Proxy[typing.Callable[[typing.Any], typing.Any], typing.Any]):
     """Function wrapping actor."""
 
     class Actor(task.Actor):

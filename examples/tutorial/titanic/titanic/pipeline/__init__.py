@@ -26,10 +26,10 @@ All the submodules of this packages have no semantic meaning for ForML - they ar
 created just for structuring the project code base splitting it into these particular parts with arbitrary names.
 """
 from sklearn import model_selection
+from titanic.pipeline import preprocessing, model
 
 from forml.lib.flow.operator.folding import ensemble
 from forml.project import component
-from titanic.pipeline import preprocessing, model
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.

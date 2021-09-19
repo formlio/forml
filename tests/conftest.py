@@ -70,7 +70,15 @@ class NativeActor(WrappedActor, task.Actor):
         return self.predict(features[0])
 
 
-@pytest.fixture(scope='session', params=(NativeActor, wrapped.Class.actor(WrappedActor, apply='predict')))
+def train_decorator(actor, *args, **kwargs):
+    """Wrapping decorator for the train method."""
+    return actor.train(*args, **kwargs)
+
+
+@pytest.fixture(
+    scope='session',
+    params=(NativeActor, wrapped.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
+)
 def actor(request) -> type[task.Actor]:
     """Stateful actor fixture."""
     return request.param
