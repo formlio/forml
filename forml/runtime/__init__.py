@@ -24,8 +24,11 @@ import typing
 from forml import provider as provmod, error
 from forml.conf.parsed import provider as provcfg
 from forml.flow import pipeline
+from forml.flow.graph import view
+from forml.flow.pipeline import topology
 from forml.io import feed as feedmod, sink as sinkmod
 from forml.io.dsl.struct import frame, kind
+from forml.mode import evaluation
 from forml.runtime import code
 from forml.runtime.asset import persistent, access, directory
 from forml.runtime.asset.directory import root
@@ -87,26 +90,17 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        self._exec(self._evaluation(lower, upper).train)
-
-    def _evaluation(
-        self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None
-    ) -> pipeline.Segment:
-        """Return the evaluation pipeline.
-
-        Args:
-            lower: Ordinal value as the lower bound for the ETL cycle.
-            upper:  Ordinal value as the upper bound for the ETL cycle.
-
-        Returns:
-            Evaluation pipeline.
-        """
-        if not self._assets.project.evaluation:
+        spec = self._assets.project.evaluation
+        if not spec:
             raise error.Missing('Project not evaluable')
-        return self._build(lower, upper, self._assets.project.pipeline >> self._assets.project.evaluation)
+
+        composition = self._build(
+            lower, upper, self._assets.project.pipeline >> evaluation.Score(spec.method, spec.metric)
+        )
+        self._exec(composition.train)
 
     def _build(
-        self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'], *blocks: pipeline.Segment
+        self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'], *blocks: topology.Composable
     ) -> pipeline.Composition:
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
@@ -124,7 +118,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             self._sink.publish(),
         )
 
-    def _exec(self, path: pipeline.Segment, assets: typing.Optional[access.State] = None) -> None:
+    def _exec(self, path: view.Path, assets: typing.Optional[access.State] = None) -> None:
         """Execute the given path and assets.
 
         Args:

@@ -76,7 +76,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
     """Descriptor representing subscription node input port of given type."""
 
     # registry of ports subscribed on given node
-    _PORTS: dict['grnode.Atomic', set[Type]] = collections.defaultdict(set)
+    _PORTS: dict['grnode.Atomic', set[Type]] = collections.defaultdict(set)  # TO-DO: switch to weakref
 
     def __new__(cls, subscriber: 'grnode.Atomic', port: Type):
         if port in cls._PORTS[subscriber]:
@@ -148,6 +148,7 @@ class Publishable(Applicable):
         try:
             self.republish(subscription)
         except Exception as err:
+            # TO-DO: use weakref
             Subscription._PORTS[subscriber].discard(port)  # pylint: disable=protected-access
             raise err
 

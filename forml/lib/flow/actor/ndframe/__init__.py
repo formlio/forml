@@ -45,16 +45,19 @@ def cast(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None
     Returns:
         Converted pandas object.
     """
-    if isinstance(data, pdtype.NDFrame):
-        return data
-    if isinstance(data, numpy.ndarray):
-        return pandas.Series(data) if data.ndim == 1 else pandas.DataFrame(data, columns=columns)
-    if isinstance(data, (tuple, list)):
-        if data and not isinstance(data[0], (tuple, list)):
-            return pandas.Series(data)
+
+    def from_columns() -> pandas.DataFrame:
+        """Helper conversion from list of columns."""
         return pandas.concat(
             (pandas.Series(d, name=n) for d, n in itertools.zip_longest(data, columns or [])), axis='columns'
         )
+
+    if isinstance(data, pdtype.NDFrame):
+        return data
+    if isinstance(data, numpy.ndarray):
+        return pandas.Series(data) if data.ndim == 1 else from_columns()
+    if isinstance(data, (tuple, list)):
+        return pandas.Series(data) if data and not isinstance(data[0], (tuple, list)) else from_columns()
     LOGGER.warning('Unknown NDFrame conversion strategy for %s: %.1024s', type(data), data)
     return data
 

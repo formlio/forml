@@ -19,10 +19,9 @@
 Evaluation mode functionality.
 """
 import abc
-import collections
 import typing
 
-from forml.flow import pipeline as pipemod, error
+from forml.flow import pipeline as pipemod
 from forml.flow.graph import node, port
 from forml.flow.pipeline import topology
 
@@ -34,60 +33,6 @@ class Outcome(typing.NamedTuple):
     """True outcome port."""
     pred: port.Publishable
     """Predicted outcome port."""
-
-
-class Source(typing.NamedTuple):
-    """Evaluation pipeline source ports."""
-
-    features: port.Subscriptable
-    """Features input port."""
-    labels: port.Subscriptable
-    """Labels input port."""
-
-    def produce(self, *outcomes: Outcome) -> 'Product':
-        """Utility method for creating the evaluation Product using the provided outcomes.
-
-        Args:
-            outcomes: Individual outcomes.
-        """
-        return Product(self, *outcomes)
-
-
-class Score(topology.Operator):
-    """Evaluation result value operator."""
-
-    def __init__(self, source: Source, value: node.Atomic):
-        if value.szout > 1:
-            raise error.Topology('Simple output required')
-        self._source: Source = source
-        self._value: node.Atomic = value
-
-    def compose(self, left: topology.Composable) -> pipemod.Segment:
-        source = left.expand()
-        self._source.features.subscribe(source.train.publisher)
-        self._source.labels.subscribe(source.label.publisher)
-        return source.use(source.apply.extend(tail=self._value))
-
-
-class Product(collections.namedtuple('Product', 'source, outcomes')):
-    """Evaluation dataset is a DAG producing Ytrue/Ypred data suitable for metric evaluation."""
-
-    source: Source
-    outcomes: tuple[Outcome]
-
-    def __new__(cls, source: Source, *outcomes: Outcome):
-        return super().__new__(cls, source, outcomes)
-
-    def score(self, value: node.Atomic) -> Score:
-        """Helper method for creating the Score operator.
-
-        Args:
-            value: Node (already connected to the DAG flowing from source) implementing the scoring.
-
-        Returns:
-            Operator that can be composed with feed/sink to produce the evaluation score.
-        """
-        return Score(self.source, value)
 
 
 class Metric(abc.ABC):
@@ -108,10 +53,6 @@ class Metric(abc.ABC):
     def __repr__(self):
         return f'{self.__class__.__name__}Metric'
 
-    def __call__(self, data: Product) -> Score:
-        """Frontend method for returning the complete Score operator implementing the metric evaluation."""
-        return data.score(self.score(*data.outcomes))
-
 
 class Method(abc.ABC):
     """Interface for extending the pipeline DAG with the logic producing a dataset of Ytrue and Ypred columns that can
@@ -123,14 +64,14 @@ class Method(abc.ABC):
 
     @abc.abstractmethod
     def produce(
-        self, features: port.Publishable, label: port.Publishable, pipeline: topology.Composable
+        self, pipeline: topology.Composable, features: port.Publishable, label: port.Publishable
     ) -> typing.Iterable[Outcome]:
         """Compose the DAGs producing the ytrue/ypred outcomes.
 
         Args:
+            pipeline: Evaluation processing subject.
             features: Source port producing the input features.
             label: Source port producing the input labels.
-            pipeline: Evaluation processing subject.
 
         Returns:
             Set of Ytrue/Ypred outcome pairs.
@@ -139,16 +80,16 @@ class Method(abc.ABC):
     def __repr__(self):
         return f'{self.__class__.__name__}Method'
 
-    def __call__(self, pipeline: topology.Composable) -> Product:
-        """Frontend method for providing the evaluation product DAG.
 
-        Args:
-            pipeline: Evaluation processing subject.
+class Score(topology.Operator):
+    """Evaluation result value operator."""
 
-        Returns:
-            Evaluation product (suitable for use with a Metric implementation).
-        """
-        features = node.Future()
-        label = node.Future()
-        source = Source(features[0].subscriber, label[0].subscriber)
-        return source.produce(*self.produce(features[0].publisher, label[0].publisher, pipeline))
+    def __init__(self, method: Method, metric: Metric):
+        self._method: Method = method
+        self._metric: Metric = metric
+
+    def compose(self, left: topology.Composable) -> pipemod.Segment:
+        head: pipemod.Segment = pipemod.Segment()
+        outcomes = self._method.produce(left, head.train.publisher, head.label.publisher)
+        value = self._metric.score(*outcomes)
+        return head.use(train=head.train.extend(tail=value))

@@ -45,22 +45,23 @@ class CrossVal(evaluation.Method):
         return self._splitter.kwargs['crossvalidator'].get_n_splits()
 
     def produce(
-        self, features: port.Publishable, label: port.Publishable, pipeline: topology.Composable
+        self, pipeline: topology.Composable, features: port.Publishable, label: port.Publishable
     ) -> typing.Iterable[evaluation.Outcome]:
         splitter = node.Worker(self._splitter, 1, 2 * self.nsplits)
         splitter.train(features, label)
-        features: node.Worker = splitter.fork()
-        features[0].subscribe(features)
-        labels: node.Worker = splitter.fork()
-        labels[0].subscribe(label)
+
+        features_splits: node.Worker = splitter.fork()
+        features_splits[0].subscribe(features)
+        label_splits: node.Worker = splitter.fork()
+        label_splits[0].subscribe(label)
 
         outcomes = []
         for idx in range(self.nsplits):
             fold: pipemod.Segment = pipeline.expand()
-            fold.train.subscribe(features[2 * idx])
-            fold.label.subscribe(labels[2 * idx])
-            fold.apply.subscribe(features[2 * idx + 1])
-            outcomes.append(evaluation.Outcome(labels[2 * idx + 1].publisher, fold.apply.publisher))
+            fold.train.subscribe(features_splits[2 * idx])
+            fold.label.subscribe(label_splits[2 * idx])
+            fold.apply.subscribe(features_splits[2 * idx + 1])
+            outcomes.append(evaluation.Outcome(label_splits[2 * idx + 1].publisher, fold.apply.publisher))
         return tuple(outcomes)
 
 

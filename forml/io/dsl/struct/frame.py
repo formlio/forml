@@ -464,9 +464,8 @@ class Table(Origin):
             if bases:
                 bases = (bases[0].schema,)
             schema = mcs.Schema(schema, bases, namespace)
-        else:
-            if bases or namespace:
-                raise TypeError('Unexpected use of schema table')
+        elif bases or namespace:
+            raise TypeError('Unexpected use of schema table')
         return super().__new__(mcs, schema)  # used as constructor
 
     def __repr__(self):
