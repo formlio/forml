@@ -40,5 +40,5 @@ FEATURES = schema.Passenger.select(
     schema.Passenger.Embarked,
 )
 
-ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe(FEATURES.schema)
+ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe([f.name for f in FEATURES.schema])
 component.setup(ETL)

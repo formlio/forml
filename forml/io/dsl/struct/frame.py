@@ -19,6 +19,7 @@
 ETL schema types.
 """
 import abc
+import collections
 import enum
 import functools
 import inspect
@@ -93,10 +94,11 @@ class Source(tuple, metaclass=abc.ABCMeta):
         try:
             return super().__getitem__(name)
         except (TypeError, IndexError) as err:
-            for key, column in zip(self.schema, self.columns):
-                if name in {key, self.schema[key].name}:
+            name = self.schema[name].name
+            for field, column in zip(self.schema, self.columns):
+                if name == field.name:
                     return column
-            raise KeyError(f'Invalid column {name}') from err
+            raise RuntimeError(f'Inconsistent {name} lookup vs schema iteration') from err
 
     @abc.abstractmethod
     def accept(self, visitor: 'Visitor') -> None:
@@ -411,23 +413,35 @@ class Table(Origin):
         """Meta class for schema type ensuring consistent hashing."""
 
         def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
-            existing = {s[k].name: k for s in bases if isinstance(s, Table.Schema) for k in s}
+            seen = set()
+            existing = collections.ChainMap(
+                *(
+                    {f.name: k}
+                    for b in bases
+                    if isinstance(b, Table.Schema)
+                    for c in reversed(inspect.getmro(b))
+                    for k, f in c.__dict__.items()
+                    if isinstance(f, struct.Field) and k not in seen and not seen.add(k)
+                )
+            )
+            if existing and len(existing.maps) > len(existing):
+                raise error.Syntax(f'Colliding base classes in schema {name}')
             for key, field in namespace.items():
                 if not isinstance(field, struct.Field):
                     continue
                 if not field.name:
                     namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
-                if field.name in existing and field.name != existing[field.name]:
+                if field.name in existing and existing[field.name] != key:
                     raise error.Syntax(f'Colliding field name {field.name} in schema {name}')
                 existing[field.name] = key
             return super().__new__(mcs, name, bases, namespace)
 
         def __hash__(cls):
             # pylint: disable=not-an-iterable
-            return functools.reduce(operator.xor, (hash(getattr(cls, k)) for k in cls), 0)
+            return functools.reduce(operator.xor, (hash(f) for f in cls), 0)
 
         def __eq__(cls, other: type['struct.Schema']):
-            return len(cls) == len(other) and all(getattr(cls, c) == getattr(other, o) for c, o in zip(cls, other))
+            return len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
 
         def __len__(cls):
             return sum(1 for _ in cls)  # pylint: disable=not-an-iterable
@@ -437,19 +451,22 @@ class Table(Origin):
 
         @functools.lru_cache
         def __getitem__(cls, name: str) -> 'struct.Field':
-            for key in cls:  # pylint: disable=not-an-iterable
-                field = getattr(cls, key)
-                if name in {key, field.name}:
-                    return field
-            raise AttributeError(f'Unknown field {name}')
+            try:
+                return getattr(cls, name)
+            except AttributeError:
+                for field in cls:  # pylint: disable=not-an-iterable
+                    if name == field.name:
+                        return field
+            raise KeyError(f'Unknown field {name}')
 
-        def __iter__(cls) -> typing.Iterator[str]:
-            seen = set()  # fields overridden by inheritance need to appear in original position
+        def __iter__(cls) -> typing.Iterator['struct.Field']:
             return iter(
-                k
-                for c in reversed(inspect.getmro(cls))
-                for k, f in c.__dict__.items()
-                if isinstance(f, struct.Field) and k not in seen and not seen.add(k)
+                {
+                    k: f
+                    for c in reversed(inspect.getmro(cls))
+                    for k, f in c.__dict__.items()
+                    if isinstance(f, struct.Field)
+                }.values()
             )
 
     schema: type['struct.Schema'] = property(operator.itemgetter(0))
@@ -474,7 +491,7 @@ class Table(Origin):
     @property
     @functools.lru_cache
     def columns(self) -> typing.Sequence['series.Field']:
-        return tuple(series.Field(self, self.schema[k].name or k) for k in self.schema)
+        return tuple(series.Field(self, f.name) for f in self.schema)
 
     def accept(self, visitor: 'Visitor') -> None:
         visitor.visit_table(self)

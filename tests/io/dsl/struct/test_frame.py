@@ -208,26 +208,37 @@ class TestSchema:
 
     def test_colliding(self, schema: type['struct.Schema']):
         """Test schema with colliding field names."""
-        with pytest.raises(error.Syntax):
+        with pytest.raises(error.Syntax, match='Colliding field name'):
 
-            class Colliding(schema):
+            class FieldCollision(schema):
                 """Schema with colliding field names."""
 
                 birthday = struct.Field(kind.Integer())
 
-            _ = Colliding
+            _ = FieldCollision
+
+        with pytest.raises(error.Syntax, match='Colliding base classes'):
+
+            class Another(struct.Schema):
+                """Another schema also having the birthday field."""
+
+                birthday = struct.Field(kind.Integer())
+
+            class BaseCollision(schema, Another.schema):  # pylint: disable=inherit-non-class
+                """Schema with colliding base classes."""
+
+            _ = BaseCollision
 
         class Override(schema):
             """Schema with overridden field kind."""
 
             school = struct.Field(kind.String())
 
-        assert Override.school.kind == kind.String()
-        assert schema.school.kind == kind.Integer()
+        assert schema.school.kind == kind.Integer() and Override.school.kind == kind.String()
 
     def test_access(self, schema: type['struct.Schema']):
         """Test the schema access methods."""
-        assert tuple(schema) == ('surname', 'dob', 'level', 'score', 'school')
+        assert tuple(f.name for f in schema) == ('surname', 'birthday', 'level', 'score', 'school')
         assert schema.dob.name == 'birthday'
         assert schema['dob'].name == 'birthday'
         assert schema['birthday'].name == 'birthday'
@@ -247,7 +258,7 @@ class TestSchema:
             last = struct.Field(kind.Integer())
             fixme = struct.Field(kind.String(), name='new')
 
-        assert tuple(Child.schema) == ('first', 'fixme', 'last')
+        assert tuple(f.name for f in Child.schema) == ('first', 'new', 'last')  # pylint: disable=not-an-iterable
         assert Child.fixme.kind == kind.String()
         assert Child.new == Child.fixme
         assert Base.old
