@@ -34,12 +34,12 @@ class Adapter(topology.Operator, metaclass=abc.ABCMeta):
 
     @Adapter.train(**kwargs)  # optional kwargs will be passed to actor
     @Adapter.apply  # decorators can be chained if same actor is supposed to be used for another mode
-    @wrapped.Function.actor
+    @topology.Function.actor
     def myadapter(df, **kwargs):
         # stateless adapter implementation used for train/apply paths
 
     @myadapter.label(**kwargs)  # previously decorated adapter can be used as decorator itself to override certain mode
-    @wrapped.Function.actor
+    @topology.Function.actor
     def myadapter(df, **kwargs):
         # stateless adapter implementation used for label path
     """

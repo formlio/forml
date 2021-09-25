@@ -16,21 +16,11 @@
 # under the License.
 
 """
-Titanic evaluation definition.
-
-This is one of the main _formal_ forml components (along with `source` and `evaluation`) that's being looked up by
-the forml loader.
+Dag composition utilities frontend API module.
 """
 
-from sklearn import model_selection, metrics
+from forml.lib.flow.topology._wrapped import Class, Function, Adapter
+from forml.lib.flow.topology._simple import Mapper, Consumer, Labeler
 
-from forml.lib.flow.evaluation import metric, method
-from forml.project import component
 
-# Typical method of providing component implementation using `component.setup()`. Choosing the CrossVal method
-# to implement classic cross-validated metric scoring
-EVAL = component.Evaluation(
-    metric.Function(metrics.log_loss),
-    method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
-)
-component.setup(EVAL)
+__all__ = ['Class', 'Function', 'Adapter', 'Mapper', 'Consumer', 'Labeler']

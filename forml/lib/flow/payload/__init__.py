@@ -16,29 +16,12 @@
 # under the License.
 
 """
-Data casting operators.
+Transformation utilities frontend API module.
 """
-import typing
 
-from pandas.core import generic as pdtype
-
-from forml.lib.flow.actor import wrapped, ndframe as ndfmod
-from forml.lib.flow.operator import generic
+from forml.lib.flow.payload._format import to_pandas, pandas_params
+from forml.lib.flow.payload._common import Concat, Apply, ColumnExtractor, LabelMerger
+from forml.lib.flow.payload._split import CVFolds
 
 
-@generic.Adapter.apply
-@generic.Adapter.train
-@generic.Adapter.label
-@wrapped.Function.actor
-def ndframe(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None) -> pdtype.NDFrame:
-    """Simple 1:1 operator that attempts to convert the data on each of apply/train/label path to pandas
-    dataframe/series.
-
-    Args:
-        data: Input data.
-        columns: Optional column names.
-
-    Returns:
-        Pandas dataframe/series.
-    """
-    return ndfmod.cast(data, columns=columns)
+__all__ = ['to_pandas', 'pandas_params', 'Concat', 'Apply', 'ColumnExtractor', 'LabelMerger', 'CVFolds']

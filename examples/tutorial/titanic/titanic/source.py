@@ -23,7 +23,7 @@ the forml loader. In this case it is implemented as a python module but it could
 `source/__init__.py` (to potentially split it into additional informal submodules).
 """
 
-from forml.lib.flow.operator import cast
+from forml.lib.flow import payload
 from openschema.kaggle import titanic as schema
 from forml.project import component
 
@@ -40,5 +40,7 @@ FEATURES = schema.Passenger.select(
     schema.Passenger.Embarked,
 )
 
-ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe([f.name for f in FEATURES.schema])
+ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas(
+    [f.name for f in FEATURES.schema]
+)
 component.setup(ETL)

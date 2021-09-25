@@ -21,7 +21,7 @@ Wrapped actor unit tests.
 # pylint: disable=no-self-use
 import pytest
 from forml.flow import task
-from forml.lib.flow.actor import wrapped
+from forml.lib.flow import topology
 
 
 class TestFunction:
@@ -32,7 +32,7 @@ class TestFunction:
     def actor() -> task.Actor:
         """Actor fixture."""
 
-        @wrapped.Function.actor
+        @topology.Function.actor
         def replace(string: str, old: str, new: str, count=-1):
             """Actor wrapped function."""
             return string.replace(old, new, count)

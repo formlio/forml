@@ -31,7 +31,7 @@ from forml.flow import task
 from forml.io import feed as feedmod, sink as sinkmod
 from forml.io.dsl import function, parser, struct
 from forml.io.dsl.struct import frame, kind
-from forml.lib.flow.actor import wrapped
+from forml.lib.flow import topology
 from forml.project import distribution, product
 from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
 
@@ -77,7 +77,7 @@ def train_decorator(actor, *args, **kwargs):
 
 @pytest.fixture(
     scope='session',
-    params=(NativeActor, wrapped.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
+    params=(NativeActor, topology.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
 )
 def actor(request) -> type[task.Actor]:
     """Stateful actor fixture."""

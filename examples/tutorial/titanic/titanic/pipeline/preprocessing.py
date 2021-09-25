@@ -34,11 +34,10 @@ import numpy as np
 import pandas as pd
 
 from forml.flow import task
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
+from forml.lib.flow import topology
 
 
-@simple.Mapper.operator
+@topology.Mapper.operator
 class NaNImputer(task.Actor):
     """Imputer for missing values implemented as native ForML actor."""
 
@@ -58,8 +57,8 @@ class NaNImputer(task.Actor):
         return X.fillna(self._fill)
 
 
-@simple.Mapper.operator
-@wrapped.Function.actor
+@topology.Mapper.operator
+@topology.Function.actor
 def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
     """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
 
@@ -74,4 +73,6 @@ def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
 
 
 # 3rd party transformer wrapped as an actor into a mapper operator:
-ENCODER = simple.Mapper.operator(wrapped.Class.actor(category_encoders.HashingEncoder, train='fit', apply='transform'))
+ENCODER = topology.Mapper.operator(
+    topology.Class.actor(category_encoders.HashingEncoder, train='fit', apply='transform')
+)

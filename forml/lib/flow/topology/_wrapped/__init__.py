@@ -14,3 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+"""
+Topology wrappers API.
+"""
+from forml.lib.flow.topology._wrapped._actor import Class, Function
+from forml.lib.flow.topology._wrapped._operator import Adapter
+
+
+__all__ = ['Class', 'Function', 'Adapter']

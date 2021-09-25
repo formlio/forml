@@ -51,7 +51,7 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
 class Source(typing.NamedTuple):
     """Feed independent data source descriptor."""
 
-    extract: 'Source.Extract'
+    extract: 'Source.Separate'
     transform: typing.Optional[topology.Composable] = None
 
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):

@@ -25,7 +25,7 @@ from sklearn import model_selection
 from forml.flow import task, pipeline as pipemod
 from forml.flow.graph import node, port
 from forml.flow.pipeline import topology
-from forml.lib.flow.actor import ndframe
+from forml.lib.flow import payload
 from forml.mode import evaluation
 
 
@@ -33,7 +33,7 @@ class CrossVal(evaluation.Method):
     """Cross validation ytrue/ypred dataset producer."""
 
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
-        self._splitter: task.Spec = ndframe.TrainTestSplit.spec(crossvalidator=crossvalidator)
+        self._splitter: task.Spec = payload.CVFolds.spec(crossvalidator=crossvalidator)
 
     @property
     def nsplits(self) -> int:
@@ -56,12 +56,12 @@ class CrossVal(evaluation.Method):
         label_splits[0].subscribe(label)
 
         outcomes = []
-        for idx in range(self.nsplits):
+        for fid in range(self.nsplits):
             fold: pipemod.Segment = pipeline.expand()
-            fold.train.subscribe(features_splits[2 * idx])
-            fold.label.subscribe(label_splits[2 * idx])
-            fold.apply.subscribe(features_splits[2 * idx + 1])
-            outcomes.append(evaluation.Outcome(label_splits[2 * idx + 1].publisher, fold.apply.publisher))
+            fold.train.subscribe(features_splits[2 * fid])
+            fold.label.subscribe(label_splits[2 * fid])
+            fold.apply.subscribe(features_splits[2 * fid + 1])
+            outcomes.append(evaluation.Outcome(label_splits[2 * fid + 1].publisher, fold.apply.publisher))
         return tuple(outcomes)
 
 

@@ -208,6 +208,19 @@ class TestSchema:
 
     def test_colliding(self, schema: type['struct.Schema']):
         """Test schema with colliding field names."""
+
+        class Base(struct.Schema):
+            """Another schema also having the birthday field."""
+
+            birthday = struct.Field(kind.Integer())
+
+        with pytest.raises(error.Syntax, match='Colliding base classes'):
+
+            class BaseCollision(schema, Base.schema):  # pylint: disable=inherit-non-class
+                """Schema with colliding base classes."""
+
+            _ = BaseCollision
+
         with pytest.raises(error.Syntax, match='Colliding field name'):
 
             class FieldCollision(schema):
@@ -216,18 +229,6 @@ class TestSchema:
                 birthday = struct.Field(kind.Integer())
 
             _ = FieldCollision
-
-        with pytest.raises(error.Syntax, match='Colliding base classes'):
-
-            class Another(struct.Schema):
-                """Another schema also having the birthday field."""
-
-                birthday = struct.Field(kind.Integer())
-
-            class BaseCollision(schema, Another.schema):  # pylint: disable=inherit-non-class
-                """Schema with colliding base classes."""
-
-            _ = BaseCollision
 
         class Override(schema):
             """Schema with overridden field kind."""

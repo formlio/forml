@@ -160,7 +160,7 @@ splitting or incremental operations) and *label* columns for supervised learning
 
 The Source descriptor again needs to be submitted to the framework using the ``component.setup()`` handler::
 
-    from forml.lib.flow.operator import cast
+    from forml.lib.flow import payload
     from forml.project import component
     from openschema.kaggle import titanic as schema
 
@@ -177,7 +177,7 @@ The Source descriptor again needs to be submitted to the framework using the ``c
         schema.Passenger.Embarked,
     )
 
-    ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe(FEATURES.schema)
+    ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
     component.setup(ETL)
 
 
@@ -195,12 +195,13 @@ Definition of the model evaluation strategy for both the development (backtestin
 The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
 
     from sklearn import model_selection, metrics
+    from forml.lib.flow.evaluation import metric, method
     from forml.project import component
-    from forml.lib.flow.operator.folding import evaluation
 
-    EVAL = evaluation.MergingScorer(
-        crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
-        metric=metrics.log_loss)
+    EVAL = component.Evaluation(
+            metric.Function(metrics.log_loss),
+            method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    )
     component.setup(EVAL)
 
 

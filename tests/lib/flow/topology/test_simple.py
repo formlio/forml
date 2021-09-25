@@ -23,8 +23,8 @@ Simple operator unit tests.
 import pytest
 
 from forml.flow import task
-from forml.flow.pipeline import topology
-from forml.lib.flow.operator.generic import simple
+from forml.flow.pipeline import topology as topmod
+from forml.lib.flow import topology
 
 
 class TestMapper:
@@ -34,8 +34,8 @@ class TestMapper:
     @pytest.fixture(scope='function')
     def operator(actor: type[task.Actor]):
         """Operator fixture."""
-        return simple.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
+        return topology.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
 
-    def test_compose(self, operator: topology.Operator):
+    def test_compose(self, operator: topmod.Operator):
         """Operator composition test."""
-        operator.compose(topology.Origin())
+        operator.compose(topmod.Origin())

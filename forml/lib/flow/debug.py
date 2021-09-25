@@ -26,8 +26,7 @@ import typing
 from forml.flow import task, pipeline
 from forml.flow.graph import node, view
 from forml.flow.pipeline import topology
-from forml.lib.flow.actor import ndframe
-from forml.lib.flow.actor.ndframe import label as labelmod
+from forml.lib.flow import payload
 
 
 class Return(topology.Operator):
@@ -36,7 +35,7 @@ class Return(topology.Operator):
     """
 
     def __init__(self, label: str = 'label'):
-        self.inserter: task.Spec = labelmod.ColumnInserter.spec(column=label)
+        self.inserter: task.Spec = payload.LabelMerger.spec(column=label)
 
     def compose(self, left: topology.Composable) -> pipeline.Segment:
         """Composition implementation.
@@ -79,6 +78,7 @@ class Dumper(task.Actor, metaclass=abc.ABCMeta):  # pylint: disable=abstract-met
 class ApplyDumper(Dumper):
     """Pass-through transformer that dumps the input datasets during apply phase to CSV files."""
 
+    @payload.pandas_params
     def apply(self, features: typing.Any) -> typing.Any:  # pylint: disable=arguments-differ
         """Dump the features.
 
@@ -88,7 +88,7 @@ class ApplyDumper(Dumper):
         Returns:
             Original unchanged frames.
         """
-        ndframe.cast(features).to_csv(self.path, index=False)
+        features.to_csv(self.path, index=False)
         return features
 
 
@@ -110,6 +110,7 @@ class TrainDumper(Dumper):
         """
         return features
 
+    @payload.pandas_params
     def train(self, features: typing.Any, label: typing.Any) -> None:
         """Dump the features along with labels.
 
@@ -117,8 +118,6 @@ class TrainDumper(Dumper):
             features: X table.
             label: Y series.
         """
-        features = ndframe.cast(features)
-        label = ndframe.cast(label)
         features.set_index(label.rename(self.label)).reset_index().to_csv(self.path, index=False)
 
     def get_state(self) -> bytes:

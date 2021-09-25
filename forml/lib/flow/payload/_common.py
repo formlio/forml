@@ -16,17 +16,57 @@
 # under the License.
 
 """
-Label manipulation actors.
+Column manipulation actors.
 """
+
 import logging
 import typing
 
 import pandas
+from pandas.core import generic as pdtype
 
 from forml.flow import task
-from forml.lib.flow.actor import ndframe
+from forml.lib.flow.payload import _format
 
 LOGGER = logging.getLogger(__name__)
+
+
+class Concat(task.Actor):
+    """Concatenate objects received on the input ports into single dataframe."""
+
+    def __init__(self, axis: str = 'index'):
+        self.axis: str = axis
+
+    @_format.pandas_params
+    def apply(self, *source: pdtype.NDFrame) -> pandas.DataFrame:
+        """Concat the individual objects into one dataframe.
+
+        Args:
+            *source: Individual sources to be concatenated.
+
+        Returns:
+            Single concatenated dataframe.
+        """
+        return pandas.concat(source, axis=self.axis, ignore_index=True)
+
+
+class Apply(task.Actor):
+    """Generic source apply actor."""
+
+    def __init__(self, function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame]):
+        self.function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame] = function
+
+    @_format.pandas_params
+    def apply(self, *source: pdtype.NDFrame) -> pdtype.NDFrame:  # pylint: disable=arguments-differ
+        """Execute the provided method with the given sources.
+
+        Args:
+            source: Inputs to be passed through the provided method.
+
+        Returns:
+            Transformed output as returned by the provided method.
+        """
+        return self.function(*source)
 
 
 class ColumnExtractor(task.Actor):
@@ -35,7 +75,7 @@ class ColumnExtractor(task.Actor):
     def __init__(self, column: str = 'label'):
         self.column: str = column
 
-    @ndframe.auto
+    @_format.pandas_params
     def apply(
         self, features: pandas.DataFrame
     ) -> tuple[pandas.DataFrame, pandas.Series]:  # pylint: disable=arguments-differ
@@ -66,14 +106,14 @@ class ColumnExtractor(task.Actor):
         self.column = column
 
 
-class ColumnInserter(task.Actor):
+class LabelMerger(task.Actor):
     """Label-extraction inversion - inserting a label as a new column to the feature set."""
 
     def __init__(self, column: str = 'label'):
         self.column: str = column
         self._label: typing.Optional[pandas.Series] = None
 
-    @ndframe.auto
+    @_format.pandas_params
     def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
         """Train the inserter by remembering the labels.
         Args:
@@ -82,7 +122,7 @@ class ColumnInserter(task.Actor):
         """
         self._label = label
 
-    @ndframe.auto
+    @_format.pandas_params
     def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
 

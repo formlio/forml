@@ -24,9 +24,9 @@ import typing
 import pytest
 
 from forml import error
-from forml.flow.pipeline import topology
+from forml.flow.pipeline import topology as topmod
 from forml.project import product, distribution, importer, component as compmod
-from forml.lib.flow.operator.generic import simple
+from forml.lib.flow import topology
 
 
 class TestBuilder:
@@ -40,9 +40,9 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def pipeline(spec) -> topology.Composable:
+    def pipeline(spec) -> topmod.Composable:
         """Pipeline fixture."""
-        return simple.Consumer(spec)
+        return topology.Consumer(spec)
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -65,7 +65,7 @@ class TestBuilder:
         self,
         builder: product.Descriptor.Builder,
         source: compmod.Source,
-        pipeline: topology.Composable,
+        pipeline: topmod.Composable,
         evaluation: compmod.Evaluation,
     ):
         """Testing build."""
@@ -88,13 +88,13 @@ def load(package: distribution.Package, component: str) -> typing.Any:
 
 
 @pytest.fixture(scope='session')
-def pipeline(project_package: distribution.Package) -> topology.Composable:
+def pipeline(project_package: distribution.Package) -> topmod.Composable:
     """Pipeline fixture."""
     return load(project_package, 'pipeline')
 
 
 @pytest.fixture(scope='session')
-def source(project_package: distribution.Package) -> topology.Composable:
+def source(project_package: distribution.Package) -> topmod.Composable:
     """Source fixture."""
     return load(project_package, 'source')
 
@@ -117,7 +117,7 @@ class TestDescriptor:
         self,
         project_package: distribution.Package,
         source: compmod.Source,
-        pipeline: topology.Composable,
+        pipeline: topmod.Composable,
         evaluation: compmod.Evaluation,
     ):
         """Testing the descriptor loader."""
@@ -135,7 +135,7 @@ class TestArtifact:
     """Artifact unit tests."""
 
     def test_descriptor(
-        self, project_artifact, source: compmod.Source, pipeline: topology.Composable, evaluation: compmod.Evaluation
+        self, project_artifact, source: compmod.Source, pipeline: topmod.Composable, evaluation: compmod.Evaluation
     ):
         """Testing descriptor access."""
         assert repr(project_artifact.descriptor.pipeline) == repr(pipeline)

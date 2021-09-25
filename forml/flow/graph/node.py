@@ -193,9 +193,19 @@ class Worker(Atomic):
         def __repr__(self):
             return f'{self.spec}[uid={self.uid}]'
 
-    def __init__(self, meta: typing.Union[task.Spec, Group], szin: int, szout: int):
+    @typing.overload
+    def __init__(self, group_or_spec: task.Spec, /, szin: int, szout: int):
+        """Constructor for a new independent worker."""
+
+    @typing.overload
+    def __init__(self, group_or_spec: Group, /, szin: int, szout: int):
+        """Constructor for a new worker belonging to the given group."""
+
+    def __init__(self, group_or_spec, /, szin, szout):
         super().__init__(szin, szout)
-        self._group: Worker.Group = meta if isinstance(meta, Worker.Group) else self.Group(meta)
+        self._group: Worker.Group = (
+            group_or_spec if isinstance(group_or_spec, Worker.Group) else self.Group(group_or_spec)
+        )
         self._group.add(self)
 
     def __repr__(self):

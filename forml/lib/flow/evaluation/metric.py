@@ -23,7 +23,7 @@ import typing
 
 from forml.flow import task
 from forml.flow.graph import node
-from forml.lib.flow.actor import wrapped
+from forml.lib.flow import topology
 from forml.mode import evaluation
 
 
@@ -35,8 +35,8 @@ class Function(evaluation.Metric):
         metric: typing.Callable[[typing.Any, typing.Any], float],
         reducer: typing.Callable[..., float] = lambda *m: statistics.mean(m),
     ):
-        self._metric: task.Spec = wrapped.Function.Actor.spec(function=metric)
-        self._reducer: task.Spec = wrapped.Function.Actor.spec(function=reducer)
+        self._metric: task.Spec = topology.Function.Actor.spec(function=metric)
+        self._reducer: task.Spec = topology.Function.Actor.spec(function=reducer)
 
     def score(self, *outcomes: evaluation.Outcome) -> node.Worker:
         def apply(fold: evaluation.Outcome) -> node.Worker:

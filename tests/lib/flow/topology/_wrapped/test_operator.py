@@ -19,8 +19,7 @@ Generic operators unit tests.
 """
 # pylint: disable=no-self-use
 
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator import generic
+from forml.lib.flow import topology
 
 
 class TestAdapter:
@@ -30,14 +29,14 @@ class TestAdapter:
     def test_noparams(self):
         """Test adapter setup using non-parametrized decorators."""
 
-        @generic.Adapter.train
-        @wrapped.Function.actor
+        @topology.Adapter.train
+        @topology.Function.actor
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @wrapped.Function.actor
+        @topology.Function.actor
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -49,14 +48,14 @@ class TestAdapter:
     def test_params(self):
         """Test adapter setup using parametrized decorators."""
 
-        @generic.Adapter.train(foo='foo', bar='foo')
-        @wrapped.Function.actor
+        @topology.Adapter.train(foo='foo', bar='foo')
+        @topology.Function.actor
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @wrapped.Function.actor(bar='bar', baz='bar')
+        @topology.Function.actor(bar='bar', baz='bar')
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -68,10 +67,10 @@ class TestAdapter:
     def test_multi(self):
         """Test adapter setup using multiple decorators."""
 
-        @generic.Adapter.train(foo='foo')
-        @generic.Adapter.apply(bar='foo')
-        @generic.Adapter.label
-        @wrapped.Function.actor
+        @topology.Adapter.train(foo='foo')
+        @topology.Adapter.apply(bar='foo')
+        @topology.Adapter.label
+        @topology.Function.actor
         def funcfoo(_, **kw):
             """Dummy actor."""
             return 'foo', kw
@@ -81,7 +80,7 @@ class TestAdapter:
         assert funcfoo._label.spec()().apply(None) == ('foo', {})
 
         @funcfoo.apply(bar='bar')
-        @wrapped.Function.actor
+        @topology.Function.actor
         def funcbar(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -93,10 +92,10 @@ class TestAdapter:
     def test_setup(self):
         """Test the operator instantiation."""
 
-        @generic.Adapter.train(foo='foo', bar='bar')
-        @generic.Adapter.apply(foo='foo', bar='bar')
-        @generic.Adapter.label(foo='foo', bar='bar')
-        @wrapped.Function.actor
+        @topology.Adapter.train(foo='foo', bar='bar')
+        @topology.Adapter.apply(foo='foo', bar='bar')
+        @topology.Adapter.label(foo='foo', bar='bar')
+        @topology.Function.actor
         def func(_, *args, **kwargs):
             """Dummy actor."""
             return 'foo', args, kwargs
