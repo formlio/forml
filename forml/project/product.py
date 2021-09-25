@@ -25,8 +25,7 @@ import types
 import typing
 from collections import abc
 
-from forml import conf, error
-from forml.flow.pipeline import topology
+from forml import conf, error, flow
 from forml.project import component as compmod, distribution, importer
 from forml.runtime import launcher
 from forml.runtime.asset import persistent
@@ -38,7 +37,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
     """Top level ForML project descriptor holding the implementations of individual project components."""
 
     source: 'compmod.Source'
-    pipeline: topology.Composable
+    pipeline: flow.Composable
     evaluation: typing.Optional['compmod.Evaluation']
 
     class Builder(abc.Set):
@@ -83,10 +82,10 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
     def __new__(
         cls,
         source: 'compmod.Source',
-        pipeline: topology.Composable,
+        pipeline: flow.Composable,
         evaluation: typing.Optional['compmod.Evaluation'] = None,
     ):
-        if not isinstance(pipeline, topology.Composable):
+        if not isinstance(pipeline, flow.Composable):
             raise error.Invalid('Invalid pipeline')
         if not isinstance(source, compmod.Source):
             raise error.Invalid('Invalid source')

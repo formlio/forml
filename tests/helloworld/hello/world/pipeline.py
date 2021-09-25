@@ -18,7 +18,7 @@
 """
 Dummy project pipeline.
 """
-from forml.lib.flow import topology
+from forml.lib.pipeline import topology
 from forml.project import component
 
 

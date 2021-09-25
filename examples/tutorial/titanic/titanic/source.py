@@ -23,7 +23,7 @@ the forml loader. In this case it is implemented as a python module but it could
 `source/__init__.py` (to potentially split it into additional informal submodules).
 """
 
-from forml.lib.flow import payload
+from forml.lib.pipeline import payload
 from openschema.kaggle import titanic as schema
 from forml.project import component
 

@@ -22,38 +22,35 @@ import abc
 import logging
 import typing
 
-from forml import error
-from forml.flow import task, pipeline
-from forml.flow.graph import node
-from forml.flow.pipeline import topology
+from forml import flow, error
 from forml.io import payload
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Operator(topology.Operator):
+class Operator(flow.Operator):
     """Basic publisher operator."""
 
-    def __init__(self, writer: task.Spec):
+    def __init__(self, writer: flow.Spec):
         if writer.actor.is_stateful():
             raise error.Invalid('Stateful actor invalid for a publisher')
-        self._writer: task.Spec = writer
+        self._writer: flow.Spec = writer
 
-    def compose(self, left: topology.Composable) -> pipeline.Segment:
+    def compose(self, left: flow.Composable) -> flow.Trunk:
         """Compose the publisher segment track.
 
         Returns:
             Sink segment track.
         """
-        apply: node.Worker = node.Worker(self._writer, 1, 0)
-        train: node.Worker = apply.fork()
+        apply: flow.Worker = flow.Worker(self._writer, 1, 0)
+        train: flow.Worker = apply.fork()
         return left.expand().extend(apply, train)
 
 
 class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
     """Base class for writer implementation."""
 
-    class Actor(task.Actor):
+    class Actor(flow.Actor):
         """Data publishing actor using the provided writer to store the data."""
 
         def __init__(self, writer: typing.Callable[[payload.ColumnMajor], None]):
@@ -69,7 +66,7 @@ class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __repr__(self):
-        return task.name(self.__class__, **self._kwargs)
+        return flow.name(self.__class__, **self._kwargs)
 
     def __call__(self, data: payload.ColumnMajor) -> None:
         LOGGER.debug('Starting to publish')

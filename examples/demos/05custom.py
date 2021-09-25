@@ -21,12 +21,12 @@ import numpy as np
 import pandas as pd
 
 import demos
-from forml.flow import task
-from forml.lib.flow.operator.generic import simple
+from forml import flow
+from forml.lib.pipeline import topology
 
 
-@simple.Mapper.operator
-class NaNImputer(task.Actor):
+@topology.Mapper.operator
+class NaNImputer(flow.Actor):
     """Custom NaN imputation logic."""
 
     def train(self, features: pd.DataFrame, label: pd.DataFrame):

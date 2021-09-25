@@ -20,7 +20,7 @@ Dummy project evaluation.
 """
 from sklearn import model_selection, metrics
 
-from forml.lib.flow.evaluation import metric, method
+from forml.lib.pipeline.evaluation import metric, method
 from forml.project import component
 
 INSTANCE = component.Evaluation(

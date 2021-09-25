@@ -27,11 +27,11 @@ import uuid
 
 import pytest
 
-from forml.flow import task
+from forml.flow import _task
 from forml.io import feed as feedmod, sink as sinkmod
 from forml.io.dsl import function, parser, struct
 from forml.io.dsl.struct import frame, kind
-from forml.lib.flow import topology
+from forml.lib.pipeline import topology
 from forml.project import distribution, product
 from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
 
@@ -62,7 +62,7 @@ class WrappedActor:
         self._params.update(params)
 
 
-class NativeActor(WrappedActor, task.Actor):
+class NativeActor(WrappedActor, _task.Actor):
     """Actor implementation."""
 
     def apply(self, *features: typing.Any) -> typing.Any:
@@ -79,7 +79,7 @@ def train_decorator(actor, *args, **kwargs):
     scope='session',
     params=(NativeActor, topology.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
 )
-def actor(request) -> type[task.Actor]:
+def actor(request) -> type[_task.Actor]:
     """Stateful actor fixture."""
     return request.param
 
@@ -91,9 +91,9 @@ def hyperparams() -> typing.Mapping[str, int]:
 
 
 @pytest.fixture(scope='session')
-def spec(actor: type[task.Actor], hyperparams):
+def spec(actor: type[_task.Actor], hyperparams):
     """Task spec fixture."""
-    return task.Spec(actor, **hyperparams)
+    return _task.Spec(actor, **hyperparams)
 
 
 @pytest.fixture(scope='session')
@@ -109,7 +109,7 @@ def testset(trainset) -> str:
 
 
 @pytest.fixture(scope='session')
-def state(spec: task.Spec, trainset) -> bytes:
+def state(spec: _task.Spec, trainset) -> bytes:
     """Actor state fixture."""
     actor = spec()
     actor.train(*trainset)
@@ -117,7 +117,7 @@ def state(spec: task.Spec, trainset) -> bytes:
 
 
 @pytest.fixture(scope='session')
-def prediction(spec: task.Spec, state: bytes, testset) -> int:
+def prediction(spec: _task.Spec, state: bytes, testset) -> int:
     """Prediction result fixture."""
     actor = spec()
     actor.set_state(state)

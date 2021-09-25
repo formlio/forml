@@ -22,10 +22,7 @@ import abc
 import logging
 import typing
 
-from forml import error
-from forml.flow import task, pipeline
-from forml.flow.graph import node, view
-from forml.flow.pipeline import topology
+from forml import flow, error
 from forml.io import payload
 from forml.io.dsl import parser as parsmod
 from forml.io.dsl.struct import kind as kindmod, series, frame
@@ -89,48 +86,48 @@ class Statement(typing.NamedTuple):
         return self.prepared(self.lower, self.upper)
 
 
-class Operator(topology.Operator):
+class Operator(flow.Operator):
     """Basic source operator with optional label extraction.
 
     Label extractor is expected to be an actor with single input and two output ports - train and actual label.
     """
 
     def __init__(
-        self, apply: task.Spec, train: typing.Optional[task.Spec] = None, label: typing.Optional[task.Spec] = None
+        self, apply: flow.Spec, train: typing.Optional[flow.Spec] = None, label: typing.Optional[flow.Spec] = None
     ):
         if apply.actor.is_stateful() or (train and train.actor.is_stateful()) or (label and label.actor.is_stateful()):
             raise error.Invalid('Stateful actor invalid for an extractor')
-        self._apply: task.Spec = apply
-        self._train: task.Spec = train or apply
-        self._label: typing.Optional[task.Spec] = label
+        self._apply: flow.Spec = apply
+        self._train: flow.Spec = train or apply
+        self._label: typing.Optional[flow.Spec] = label
 
-    def compose(self, left: topology.Composable) -> pipeline.Segment:
+    def compose(self, left: flow.Composable) -> flow.Trunk:
         """Compose the source segment track.
 
         Returns:
             Source segment track.
         """
-        if not isinstance(left, topology.Origin):
+        if not isinstance(left, flow.Origin):
             raise error.Unexpected('Source not origin')
-        apply: view.Path = view.Path(node.Worker(self._apply, 0, 1))
-        train: view.Path = view.Path(node.Worker(self._train, 0, 1))
-        label: typing.Optional[view.Path] = None
+        apply: flow.Path = flow.Path(flow.Worker(self._apply, 0, 1))
+        train: flow.Path = flow.Path(flow.Worker(self._train, 0, 1))
+        label: typing.Optional[flow.Path] = None
         if self._label:
-            train_tail = node.Future()
-            label_tail = node.Future()
-            extract = node.Worker(self._label, 1, 2)
+            train_tail = flow.Future()
+            label_tail = flow.Future()
+            extract = flow.Worker(self._label, 1, 2)
             extract[0].subscribe(train.publisher)
             train_tail[0].subscribe(extract[0])
             label_tail[0].subscribe(extract[1])
             train = train.extend(tail=train_tail)
             label = train.extend(tail=label_tail)
-        return pipeline.Segment(apply, train, label)
+        return flow.Trunk(apply, train, label)
 
 
 class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], metaclass=abc.ABCMeta):
     """Base class for reader implementation."""
 
-    class Actor(task.Actor):
+    class Actor(flow.Actor):
         """Data extraction actor using the provided reader and statement to load the data."""
 
         def __init__(self, reader: typing.Callable[[frame.Query], payload.ColumnMajor], statement: Statement):
@@ -154,7 +151,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __repr__(self):
-        return task.name(self.__class__, **self._kwargs)
+        return flow.name(self.__class__, **self._kwargs)
 
     def __call__(self, query: frame.Query) -> payload.ColumnMajor:
         LOGGER.debug('Parsing ETL query')
@@ -210,7 +207,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
 class Slicer:
     """Base class for slicer implementation."""
 
-    class Actor(task.Actor):
+    class Actor(flow.Actor):
         """Column extraction actor using the provided slicer to separate features from labels."""
 
         def __init__(

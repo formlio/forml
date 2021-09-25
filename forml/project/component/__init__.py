@@ -28,13 +28,12 @@ import sys
 import types
 import typing
 
-from forml import error
-from forml.flow.pipeline import topology
+from forml import flow, error
 from forml.io.dsl.struct import series, frame
-from forml.mode import evaluation
 from forml.project import importer
 from forml.project import product
 from forml.project.component import virtual
+from forml.runtime.mode import evaluation
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class Source(typing.NamedTuple):
     """Feed independent data source descriptor."""
 
     extract: 'Source.Separate'
-    transform: typing.Optional[topology.Composable] = None
+    transform: typing.Optional[flow.Composable] = None
 
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
@@ -102,10 +101,10 @@ class Source(typing.NamedTuple):
         """
         return cls(cls.Extract(features, apply or features, labels, ordinal))  # pylint: disable=no-member
 
-    def __rshift__(self, transform: topology.Composable) -> 'Source':
+    def __rshift__(self, transform: flow.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
-    def bind(self, pipeline: typing.Union[str, topology.Composable], **modules: typing.Any) -> 'product.Artifact':
+    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> 'product.Artifact':
         """Create an artifact from this source and given pipeline.
 
         Args:

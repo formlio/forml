@@ -21,18 +21,16 @@ Runtime layer.
 import abc
 import typing
 
+from forml import flow
 from forml import provider as provmod, error
 from forml.conf.parsed import provider as provcfg
-from forml.flow import pipeline
-from forml.flow.graph import view
-from forml.flow.pipeline import topology
 from forml.io import feed as feedmod, sink as sinkmod
 from forml.io.dsl.struct import frame, kind
-from forml.mode import evaluation
 from forml.runtime import code
 from forml.runtime.asset import persistent, access, directory
 from forml.runtime.asset.directory import root
 from forml.runtime.code import compiler
+from forml.runtime.mode import evaluation
 
 if typing.TYPE_CHECKING:
     from forml.project import distribution
@@ -100,8 +98,8 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         self._exec(composition.train)
 
     def _build(
-        self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'], *blocks: topology.Composable
-    ) -> pipeline.Composition:
+        self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'], *blocks: flow.Composable
+    ) -> flow.Composition:
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
         Args:
@@ -112,13 +110,13 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         Returns:
             Assembled flow pipeline.
         """
-        return pipeline.Composition(
+        return flow.Composition(
             self._feed.load(self._assets.project.source, lower, upper),
             *(b.expand() for b in blocks),
             self._sink.publish(),
         )
 
-    def _exec(self, path: view.Path, assets: typing.Optional[access.State] = None) -> None:
+    def _exec(self, path: flow.Path, assets: typing.Optional[access.State] = None) -> None:
         """Execute the given path and assets.
 
         Args:

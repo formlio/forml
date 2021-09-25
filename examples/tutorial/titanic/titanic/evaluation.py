@@ -24,7 +24,7 @@ the forml loader.
 
 from sklearn import model_selection, metrics
 
-from forml.lib.flow.evaluation import metric, method
+from forml.lib.pipeline.evaluation import metric, method
 from forml.project import component
 
 # Typical method of providing component implementation using `component.setup()`. Choosing the CrossVal method

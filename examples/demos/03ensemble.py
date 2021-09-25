@@ -18,9 +18,9 @@
 from sklearn import model_selection
 
 import demos
-from forml.lib.flow.operator.folding import ensemble
+from forml.lib.pipeline import ensemble
 
-STACK = ensemble.FullStacker(
+STACK = ensemble.FullStack(
     bases=(demos.RFC(max_depth=3), demos.GBC(max_depth=3)), crossvalidator=model_selection.StratifiedKFold(n_splits=2)
 )
 

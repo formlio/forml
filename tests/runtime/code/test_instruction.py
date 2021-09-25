@@ -25,7 +25,7 @@ import typing
 
 import pytest
 
-from forml.flow import task
+from forml.flow import _task
 from forml.runtime.code import instruction
 
 
@@ -34,12 +34,12 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(spec: task.Spec) -> instruction.Functional:
+    def functor(spec: _task.Spec) -> instruction.Functional:
         """Functor fixture."""
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def shifting() -> typing.Callable[[task.Actor, typing.Any], task.Actor]:
+    def shifting() -> typing.Callable[[_task.Actor, typing.Any], _task.Actor]:
         """Functor fixture."""
 
         class Shifter:
@@ -49,7 +49,7 @@ class Functor(metaclass=abc.ABCMeta):
                 self.captured = None
                 self.called = False
 
-            def __call__(self, actor: task.Actor, first: typing.Any) -> task.Actor:
+            def __call__(self, actor: _task.Actor, first: typing.Any) -> _task.Actor:
                 self.captured = first
                 return actor
 
@@ -67,7 +67,7 @@ class Functor(metaclass=abc.ABCMeta):
     def test_shiftby(
         self,
         functor: instruction.Functor,
-        shifting: typing.Callable[[task.Actor, typing.Any], task.Actor],
+        shifting: typing.Callable[[_task.Actor, typing.Any], _task.Actor],
         state: bytes,
         args: typing.Sequence,
     ):
@@ -92,7 +92,7 @@ class TestMapper(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: task.Spec) -> instruction.Mapper:
+    def functor(spec: _task.Spec) -> instruction.Mapper:
         """Functor fixture."""
         return instruction.Mapper(spec)
 
@@ -117,7 +117,7 @@ class TestConsumer(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: task.Spec) -> instruction.Consumer:
+    def functor(spec: _task.Spec) -> instruction.Consumer:
         """Functor fixture."""
         return instruction.Consumer(spec)
 

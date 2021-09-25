@@ -33,12 +33,12 @@ import category_encoders
 import numpy as np
 import pandas as pd
 
-from forml.flow import task
-from forml.lib.flow import topology
+from forml import flow
+from forml.lib.pipeline import topology
 
 
 @topology.Mapper.operator
-class NaNImputer(task.Actor):
+class NaNImputer(flow.Actor):
     """Imputer for missing values implemented as native ForML actor."""
 
     def __init__(self):

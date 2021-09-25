@@ -28,7 +28,7 @@ created just for structuring the project code base splitting it into these parti
 from sklearn import model_selection
 from titanic.pipeline import preprocessing, model
 
-from forml.lib.flow import ensemble
+from forml.lib.pipeline import ensemble
 from forml.project import component
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and

@@ -26,7 +26,7 @@ import typing
 import unittest
 
 from forml.conf.parsed import provider as provcfg
-from forml.flow.pipeline import topology
+from forml.flow._suite import member
 from forml.runtime import launcher as launchmod
 from forml.testing import spec, facility
 
@@ -41,7 +41,7 @@ class Suite(unittest.TestCase, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def __operator__(self) -> type[topology.Operator]:
+    def __operator__(self) -> type[member.Operator]:
         """Operator instance."""
 
 

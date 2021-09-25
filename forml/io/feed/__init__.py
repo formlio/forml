@@ -23,11 +23,8 @@ import functools
 import logging
 import typing
 
-from forml import error
-from forml import provider as provmod
+from forml import flow, error, provider as provmod
 from forml.conf.parsed import provider as provcfg
-from forml.flow import task, pipeline
-from forml.flow.pipeline import topology
 from forml.io import payload
 from forml.io.dsl import parser
 from forml.io.dsl.struct import series, kind as kindmod, frame
@@ -55,7 +52,7 @@ class Provider(
         source: 'component.Source',
         lower: typing.Optional['kindmod.Native'] = None,
         upper: typing.Optional['kindmod.Native'] = None,
-    ) -> pipeline.Segment:
+    ) -> flow.Trunk:
         """Provide a pipeline composable segment implementing the etl actions.
 
         Args:
@@ -92,7 +89,7 @@ class Provider(
 
             return wrapper
 
-        def actor(handler: typing.Callable[..., typing.Any], spec: 'frame.Query') -> task.Spec:
+        def actor(handler: typing.Callable[..., typing.Any], spec: 'frame.Query') -> flow.Spec:
             """Helper for creating the reader actor spec for given query.
 
             Args:
@@ -108,7 +105,7 @@ class Provider(
 
         reader = self.reader(self.sources, self.columns, **self._readerkw)
         query: 'frame.Query' = source.extract.train
-        label: typing.Optional[task.Spec] = None
+        label: typing.Optional[flow.Spec] = None
         if source.extract.labels:  # trainset/label formatting is applied only after label extraction
             query = query.select(*(*source.extract.train.columns, *source.extract.labels))
             label = extract.Slicer.Actor.spec(
@@ -118,7 +115,7 @@ class Provider(
             reader = formatter(reader)
         train = actor(reader, query)
         apply = actor(formatter(self.reader(self.sources, self.columns, **self._readerkw)), source.extract.apply)
-        loader: topology.Composable = extract.Operator(apply, train, label)
+        loader: flow.Composable = extract.Operator(apply, train, label)
         if source.transform:
             loader >>= source.transform
         return loader.expand()

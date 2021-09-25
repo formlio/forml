@@ -22,10 +22,8 @@ import logging
 import typing
 import uuid
 
+from forml import flow
 from forml.conf.parsed import provider as provcfg
-from forml.flow.graph import node as nodemod
-from forml.flow.graph import view
-from forml.flow.pipeline import topology
 from forml.io import payload, feed
 from forml.io.dsl import struct
 from forml.io.dsl.struct import series, frame, kind
@@ -94,14 +92,14 @@ class Feed(feed.Provider[None, typing.Any], alias='testing'):
 class Launcher:
     """Test runner is a minimal forml pipeline wrapping the tested operator."""
 
-    class Initializer(view.Visitor):
+    class Initializer(flow.Visitor):
         """Visitor that tries to instantiate each node in attempt to validate it."""
 
         def __init__(self):
             self._gids: set[uuid.UUID] = set()
 
-        def visit_node(self, node: nodemod.Worker) -> None:
-            if isinstance(node, nodemod.Worker) and node.gid not in self._gids:
+        def visit_node(self, node: flow.Worker) -> None:
+            if isinstance(node, flow.Worker) and node.gid not in self._gids:
                 self._gids.add(node.gid)
                 node.spec()
 
@@ -111,7 +109,7 @@ class Launcher:
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
-    def __call__(self, operator: type[topology.Operator]) -> launcher.Virtual.Builder:
+    def __call__(self, operator: type[flow.Operator]) -> launcher.Virtual.Builder:
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
         segment = instance.expand()

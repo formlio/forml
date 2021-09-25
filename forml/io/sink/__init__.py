@@ -21,10 +21,8 @@ IO sink utils.
 import abc
 import typing
 
-from forml import provider as provmod
+from forml import flow, provider as provmod
 from forml.conf.parsed import provider as provcfg
-from forml.flow import pipeline
-from forml.flow.pipeline import topology
 from forml.io import payload
 from forml.io.sink import publish
 
@@ -38,13 +36,13 @@ class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sin
     def __init__(self, **writerkw):
         self._writerkw: dict[str, typing.Any] = writerkw
 
-    def publish(self) -> pipeline.Segment:
+    def publish(self) -> flow.Trunk:
         """Provide a pipeline composable segment implementing the publish action.
 
         Returns:
             Pipeline segment.
         """
-        publisher: topology.Composable = publish.Operator(publish.Writer.Actor.spec(self.writer(**self._writerkw)))
+        publisher: flow.Composable = publish.Operator(publish.Writer.Actor.spec(self.writer(**self._writerkw)))
         return publisher.expand()
 
     @classmethod

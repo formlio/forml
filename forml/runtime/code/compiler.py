@@ -27,7 +27,7 @@ import uuid
 import collections
 from collections import abc
 
-from forml.flow.graph import node as grnode, view
+from forml import flow
 from forml.runtime import code
 from forml.runtime.code import instruction as instmod
 from forml.runtime.asset import access
@@ -35,7 +35,7 @@ from forml.runtime.asset import access
 LOGGER = logging.getLogger(__name__)
 
 
-class Table(view.Visitor, abc.Iterable):
+class Table(flow.Visitor, abc.Iterable):
     """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys."""
 
     class Linkage:
@@ -83,7 +83,7 @@ class Table(view.Visitor, abc.Iterable):
             assert not args[index], 'Link collision'
             args[index] = argument
 
-        def update(self, node: grnode.Worker, getter: typing.Callable[[int], uuid.UUID]) -> None:
+        def update(self, node: flow.Worker, getter: typing.Callable[[int], uuid.UUID]) -> None:
             """Register given node (its eventual functor) as an absolute positional argument of all of its subscribers.
 
             For multi-output nodes the output needs to be passed through Getter instructions that are extracting
@@ -213,14 +213,14 @@ class Table(view.Visitor, abc.Iterable):
             arguments = functools.reduce(merge, (self._linkage[k] for k in keys))
             yield code.Symbol(instruction, tuple(self._index[a] for a in arguments))
 
-    def add(self, node: grnode.Worker) -> None:
+    def add(self, node: flow.Worker) -> None:
         """Populate the symbol table to implement the logical flow of given node.
 
         Args:
             node: Node to be added - compiled into symbols.
         """
         assert node.uid not in self._index, f'Node collision ({node})'
-        assert isinstance(node, grnode.Worker), f'Not a worker node ({node})'
+        assert isinstance(node, flow.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
         functor = instmod.Mapper(node.spec)
@@ -249,7 +249,7 @@ class Table(view.Visitor, abc.Iterable):
         if not node.trained:
             self._linkage.update(node, lambda index: self._index.set(instmod.Getter(index)))
 
-    def visit_node(self, node: grnode.Worker) -> None:
+    def visit_node(self, node: flow.Worker) -> None:
         """Visitor entrypoint.
 
         Args:
@@ -258,7 +258,7 @@ class Table(view.Visitor, abc.Iterable):
         self.add(node)
 
 
-def generate(path: view.Path, assets: typing.Optional[access.State] = None) -> typing.Sequence[code.Symbol]:
+def generate(path: flow.Path, assets: typing.Optional[access.State] = None) -> typing.Sequence[code.Symbol]:
     """Generate the symbol code based on given flow path.
 
     Args:
