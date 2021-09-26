@@ -21,7 +21,7 @@ Titanic project.
 
 import setuptools
 
-from forml.project import setuptools as forml
+from forml.project import _setuptools as forml
 
 setuptools.setup(
     name='forml-example-titanic',

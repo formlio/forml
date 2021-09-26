@@ -18,8 +18,8 @@
 """
 Dummy project source.
 """
+from forml import project
 from forml.io import dsl
-from forml.project import component
 
 
 class HelloWorld(dsl.Schema):
@@ -28,5 +28,5 @@ class HelloWorld(dsl.Schema):
     name = dsl.Field(dsl.String())
 
 
-INSTANCE = component.Source.query(HelloWorld.select(HelloWorld.name))
-component.setup(INSTANCE)
+INSTANCE = project.Source.query(HelloWorld.select(HelloWorld.name))
+project.setup(INSTANCE)

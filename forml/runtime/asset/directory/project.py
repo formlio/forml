@@ -25,7 +25,7 @@ from forml.runtime.asset import directory
 from forml.runtime.asset.directory import lineage as lngmod
 
 if typing.TYPE_CHECKING:
-    from forml.project import distribution
+    from forml import project as prj
     from forml.runtime.asset.directory import root as rootmod
 
 LOGGER = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class Level(directory.Level):
         """
         return lngmod.Level(self, key)
 
-    def put(self, package: 'distribution.Package') -> lngmod.Level:
+    def put(self, package: 'prj.Package') -> lngmod.Level:
         """Publish new lineage to the repository based on provided package.
 
         Args:

@@ -27,7 +27,7 @@ from forml.lib.registry import filesystem
 from forml.runtime.asset import persistent
 
 if typing.TYPE_CHECKING:
-    from forml.project import distribution, product  # pylint: disable=unused-import
+    from forml import project as prj
     from forml.runtime.asset.directory import lineage as lngmod
     from forml.runtime.asset.directory import project as prjmod
 
@@ -43,9 +43,9 @@ class Registry(filesystem.Registry, alias='virtual'):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
             prefix='registry-virtual-', dir=persistent.TMPDIR.name
         )
-        self._artifacts: dict[
-            'prjmod.Level.Key', dict['lngmod.Level.Key', 'product.Artifact']
-        ] = collections.defaultdict(dict)
+        self._artifacts: dict['prjmod.Level.Key', dict['lngmod.Level.Key', 'prj.Artifact']] = collections.defaultdict(
+            dict
+        )
         super().__init__(self._storage.name)
 
     def projects(self) -> typing.Iterable['prjmod.Level.Key']:
@@ -54,12 +54,12 @@ class Registry(filesystem.Registry, alias='virtual'):
     def lineages(self, project: 'prjmod.Level.Key') -> typing.Iterable['lngmod.Level.Key']:
         return iter(self._artifacts[project].keys())
 
-    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'product.Artifact':
+    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Artifact':
         return self._artifacts[project][lineage]
 
-    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'distribution.Package':
+    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Package':
         raise NotImplementedError('No packages in virtual repository')
 
-    def push(self, package: 'distribution.Package') -> None:
+    def push(self, package: 'prj.Package') -> None:
         artifact = package.install(package.path)  # avoid copying by installing to self
         self._artifacts[package.manifest.name][package.manifest.version] = artifact

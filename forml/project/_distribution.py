@@ -33,9 +33,10 @@ import typing
 import zipfile
 
 from forml import error
-from forml.project import importer, product
 from forml.runtime.asset.directory import lineage as lngmod
 from forml.runtime.asset.directory import project as prjmod
+
+from . import _importer, _product
 
 LOGGER = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
             writeall(pathlib.Path(source), package)
         return cls(path)
 
-    def install(self, path: typing.Union[str, pathlib.Path]) -> 'product.Artifact':
+    def install(self, path: typing.Union[str, pathlib.Path]) -> '_product.Artifact':
         """Return the project artifact based on this package mounted on given path.
 
         Args:
@@ -155,8 +156,8 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                     else:
                         LOGGER.debug('Extracting non zip-safe package %s to %s', self.path, path)
                         package.extractall(path)
-        importer.search(path)
-        return product.Artifact(path, self.manifest.package, **self.manifest.modules)
+        _importer.search(path)
+        return _product.Artifact(path, self.manifest.package, **self.manifest.modules)
 
 
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
@@ -169,7 +170,14 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
 
     MODULE = f'__{Package.FORMAT}__'
     TEMPLATE = string.Template(
-        'NAME = "$name"\n' 'VERSION = "$version"\n' 'PACKAGE = "$package"\n' 'MODULES = $modules\n'
+        '\n'.join(
+            (
+                'NAME = "$name"',
+                'VERSION = "$version"',
+                'PACKAGE = "$package"',
+                'MODULES = $modules',
+            )
+        )
     )
 
     def __new__(
@@ -228,7 +236,7 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
             Manifest instance.
         """
         try:
-            module = importer.isolated(cls.MODULE, path)
+            module = _importer.isolated(cls.MODULE, path)
             manifest = cls(module.NAME, module.VERSION, module.PACKAGE, **module.MODULES)
         except ModuleNotFoundError as err:
             raise error.Missing(f'Unknown manifest ({err})')

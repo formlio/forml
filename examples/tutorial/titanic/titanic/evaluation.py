@@ -24,13 +24,13 @@ the forml loader.
 
 from sklearn import metrics, model_selection
 
+from forml import project
 from forml.lib.pipeline.evaluation import method, metric
-from forml.project import component
 
 # Typical method of providing component implementation using `component.setup()`. Choosing the CrossVal method
 # to implement classic cross-validated metric scoring
-EVAL = component.Evaluation(
+EVAL = project.Evaluation(
     metric.Function(metrics.log_loss),
     method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
 )
-component.setup(EVAL)
+project.setup(EVAL)

@@ -27,7 +27,7 @@ import typing
 import uuid
 
 from forml import conf
-from forml.project import distribution
+from forml import project as prj
 from forml.runtime.asset import directory, persistent
 from forml.runtime.asset.directory import generation as genmod
 from forml.runtime.asset.directory import lineage as lngmod
@@ -134,7 +134,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     STAGEDIR = '.stage'
     STATESFX = 'bin'
     TAGFILE = 'tag.json'
-    PKGFILE = f'package.{distribution.Package.FORMAT}'
+    PKGFILE = f'package.{prj.Package.FORMAT}'
 
     @functools.lru_cache
     def project(self, project: prjmod.Level.Key) -> pathlib.Path:
@@ -267,10 +267,10 @@ class Registry(persistent.Registry, alias='filesystem'):
     def generations(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> typing.Iterable[genmod.Level.Key]:
         return self._listing(self._path.lineage(project, lineage), Path.Generation)
 
-    def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> 'distribution.Package':
-        return distribution.Package(self._path.package(project, lineage))
+    def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> 'prj.Package':
+        return prj.Package(self._path.package(project, lineage))
 
-    def push(self, package: 'distribution.Package') -> None:
+    def push(self, package: 'prj.Package') -> None:
         project = package.manifest.name
         lineage = package.manifest.version
         path = self._path.package(project, lineage)

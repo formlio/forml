@@ -26,7 +26,7 @@ from forml.runtime.asset import persistent
 from forml.runtime.asset.directory import root
 
 if typing.TYPE_CHECKING:
-    from forml.project import product  # pylint: disable=unused-import
+    from forml import project as prj
     from forml.runtime.asset.directory import generation as genmod
     from forml.runtime.asset.directory import lineage as lngmod
     from forml.runtime.asset.directory import project as prjmod  # noqa: F401
@@ -120,7 +120,7 @@ class Assets:
         self._generation: 'genmod.Level' = registry.get(project).get(lineage).get(generation)
 
     @property
-    def project(self) -> 'product.Descriptor':
+    def project(self) -> 'prj.Descriptor':
         """Get the project descriptor.
 
         Returns:

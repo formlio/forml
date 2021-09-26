@@ -28,7 +28,7 @@ from forml import flow
 from forml.io import dsl
 from forml.lib.feed import static
 from forml.lib.pipeline import payload, topology
-from forml.project import component
+from forml.project import _component
 
 SimpleImputer = topology.Mapper.operator(topology.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
 
@@ -101,4 +101,4 @@ class Feed(static.Feed):
 
 
 FEED = Feed()
-SOURCE = component.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.to_pandas(columns=['Age'])
+SOURCE = _component.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.to_pandas(columns=['Age'])

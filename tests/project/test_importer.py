@@ -23,12 +23,13 @@ import os
 
 import pytest
 
-from forml.project import distribution, importer
+from forml import project
+from forml.project import _importer
 
 
-def test_isolated(project_package: distribution.Package):
+def test_isolated(project_package: project.Package):
     """Isolated importer unit test."""
     with pytest.raises(ModuleNotFoundError):
-        importer.isolated(project_package.manifest.package)
-    importer.isolated(project_package.manifest.package, project_package.path)
-    importer.isolated(project_package.manifest.package, os.path.relpath(project_package.path, os.getcwd()))
+        _importer.isolated(project_package.manifest.package)
+    _importer.isolated(project_package.manifest.package, project_package.path)
+    _importer.isolated(project_package.manifest.package, os.path.relpath(project_package.path, os.getcwd()))

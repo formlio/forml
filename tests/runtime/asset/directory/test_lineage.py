@@ -24,7 +24,7 @@ import typing
 import pytest
 
 import forml
-from forml.project import distribution
+from forml import project as prj
 from forml.runtime.asset import directory as dirmod
 from forml.runtime.asset.directory import lineage as lngmod
 from forml.runtime.asset.directory import project as prjmod
@@ -90,7 +90,7 @@ class TestLevel(Level):
         with pytest.raises(dirmod.Level.Invalid):
             _ = directory.get(project_name).get(invalid_level).artifact
 
-    def test_put(self, directory: rootmod.Level, project_name: prjmod.Level.Key, project_package: distribution.Package):
+    def test_put(self, directory: rootmod.Level, project_name: prjmod.Level.Key, project_package: prj.Package):
         """Registry put unit test."""
         with pytest.raises(dirmod.Level.Invalid):  # lineage already exists
             directory.get(project_name).put(project_package)

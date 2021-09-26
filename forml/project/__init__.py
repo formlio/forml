@@ -15,19 +15,25 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Project setup mechanics.
+"""
+Project management mechanics.
 """
 import pathlib
 import typing
 
-from forml.project import product
+from ._component import Evaluation, Source, setup
+from ._distribution import Manifest, Package
+from ._product import Artifact, Descriptor
+from ._setuptools import Distribution
+
+__all__ = ['open', 'setup', 'Source', 'Evaluation', 'Descriptor', 'Artifact', 'Distribution', 'Manifest', 'Package']
 
 
 def open(  # pylint: disable=redefined-builtin
     path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     package: typing.Optional[str] = None,
     **modules: typing.Any,
-) -> product.Artifact:
+) -> Artifact:
     """Shortcut for getting a product artifact.
 
     Args:
@@ -38,4 +44,4 @@ def open(  # pylint: disable=redefined-builtin
     Returns:
         Product artifact.
     """
-    return product.Artifact(path, package, **modules)
+    return Artifact(path, package, **modules)

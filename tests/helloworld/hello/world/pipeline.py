@@ -18,8 +18,8 @@
 """
 Dummy project pipeline.
 """
+from forml import project
 from forml.lib.pipeline import topology
-from forml.project import component
 
 
 @topology.Mapper.operator
@@ -29,4 +29,4 @@ def noop():
 
 
 INSTANCE = noop()
-component.setup(INSTANCE)
+project.setup(INSTANCE)

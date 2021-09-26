@@ -24,7 +24,7 @@ import uuid
 
 import pytest
 
-from forml.project import distribution
+from forml import project as prj
 from forml.runtime.asset import access
 from forml.runtime.asset import directory as dirmod
 from forml.runtime.asset import persistent
@@ -66,7 +66,7 @@ def registry(
     valid_generation: genmod.Level.Key,
     tag: genmod.Tag,
     states: typing.Mapping[uuid.UUID, bytes],
-    project_package: distribution.Package,
+    project_package: prj.Package,
 ) -> persistent.Registry:
     """Registry fixture."""
     content = {
@@ -93,10 +93,10 @@ def registry(
             except KeyError as err:
                 raise dirmod.Level.Invalid(f'Invalid lineage ({lineage})') from err
 
-        def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> distribution.Package:
+        def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> prj.Package:
             return content[project][lineage][0]
 
-        def push(self, package: distribution.Package) -> None:
+        def push(self, package: prj.Package) -> None:
             raise NotImplementedError()
 
         def read(

@@ -63,7 +63,7 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
         train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
         label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
     ) -> 'Trunk':
-        """Helper for creating new Segment with specified paths extended by provided values.
+        """Helper for creating new Trunk with specified paths extended by provided values.
 
         Args:
             apply: Optional path to be connected to apply segment.
@@ -85,7 +85,7 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
         train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
         label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
     ) -> 'Trunk':
-        """Helper for creating new Segment with specified paths replaced by provided values.
+        """Helper for creating new Trunk with specified paths replaced by provided values.
 
         Args:
             apply: Optional path to be used as apply segment.

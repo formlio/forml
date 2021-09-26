@@ -26,10 +26,13 @@ import typing
 from collections import abc
 
 from forml import conf, error, flow
-from forml.project import component as compmod
-from forml.project import distribution, importer
-from forml.runtime import launcher
 from forml.runtime.asset import persistent
+
+from . import _component as compmod
+from . import _distribution, _importer
+
+if typing.TYPE_CHECKING:
+    from forml.runtime import launcher as launchmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -141,7 +144,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             path = pathlib.Path(path).resolve()
         prefix = package or conf.PRJNAME
         for key, value in modules.items():
-            if not isinstance(value, str):  # component provided as true instance rather then module path
+            if not isinstance(value, str):  # component provided as true instance rather than module path
                 modules[key] = compmod.Virtual(value, f'{prefix}.{key}').path
         return super().__new__(cls, path, package, types.MappingProxyType(modules))
 
@@ -162,7 +165,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
     @property
     @functools.lru_cache
-    def launcher(self) -> 'launcher.Virtual':
+    def launcher(self) -> 'launchmod.Virtual':
         """Return the launcher configured with a virtual registry preloaded with this artifact.
 
         Returns:
@@ -179,8 +182,10 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             MODULES = self.modules
 
             def __init__(self):
-                super().__init__(distribution.Manifest.MODULE)
+                super().__init__(_distribution.Manifest.MODULE)
 
-        with importer.context(Manifest()):
+        from forml.runtime import launcher as launchmod  # pylint: disable=import-outside-toplevel
+
+        with _importer.context(Manifest()):
             # dummy package forced to load our fake manifest
-            return launcher.Virtual(distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-')))
+            return launchmod.Virtual(_distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-')))

@@ -26,15 +26,14 @@ import typing
 
 import pytest
 
-from forml import error
+from forml import error, project
 from forml.io import dsl
-from forml.project import component as compmod
-from forml.project import importer
+from forml.project import _component, _importer
 
 
 def test_setup():
     """Test the direct setup access."""
-    compmod.setup(object())
+    project.setup(object())
 
 
 class TestContext:
@@ -54,7 +53,7 @@ class TestContext:
 
     def test_context(self, name: str, module: types.ModuleType):
         """Testing the context manager."""
-        with importer.context(module):
+        with _importer.context(module):
             assert importlib.import_module(name) == module
 
 
@@ -75,12 +74,12 @@ class TestVirtual:
 
     def test_load(self, component: typing.Any, package: str):
         """Test loading of the virtual component."""
-        assert compmod.load(compmod.Virtual(component, package=package).path) == component
+        assert _component.load(_component.Virtual(component, package=package).path) == component
 
 
 def test_load():
     """Testing the top level component.load() function."""
-    provided = compmod.load('component', pathlib.Path(__file__).parent)
+    provided = _component.load('component', pathlib.Path(__file__).parent)
     import component  # pylint: disable=import-outside-toplevel
 
     assert provided is component.INSTANCE
@@ -92,6 +91,6 @@ class TestSource:
     def test_query(self, schema: dsl.Table):
         """Test the query setup."""
         with pytest.raises(error.Invalid):
-            compmod.Source.query(schema, schema.age)
-        query = compmod.Source.query(schema)
+            project.Source.query(schema, schema.age)
+        query = project.Source.query(schema)
         assert isinstance(query.extract.train, dsl.Query)

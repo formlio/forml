@@ -24,14 +24,13 @@ import pathlib
 
 import pytest
 
-from forml import error
-from forml.project import distribution
+from forml import error, project
 
 
 @pytest.fixture(scope='session')
-def project_manifest() -> distribution.Manifest:
+def project_manifest() -> project.Manifest:
     """Manifest fixture."""
-    return distribution.Manifest('foo', '1.0.dev1', 'bar', baz='baz')
+    return project.Manifest('foo', '1.0.dev1', 'bar', baz='baz')
 
 
 class TestManifest:
@@ -40,30 +39,30 @@ class TestManifest:
     def test_rw(self, tmp_path: pathlib.Path, project_manifest):
         """Test reading/writing a manifest."""
         project_manifest.write(tmp_path)
-        assert distribution.Manifest.read(tmp_path) == project_manifest
+        assert project.Manifest.read(tmp_path) == project_manifest
 
     def test_invalid(self, tmp_path: str):
         """Test invalid manifests."""
-        path = os.path.join(tmp_path, f'{distribution.Manifest.MODULE}.py')
+        path = os.path.join(tmp_path, f'{project.Manifest.MODULE}.py')
         os.open(path, os.O_CREAT)
         with pytest.raises(error.Invalid):  # Invalid manifest
-            distribution.Manifest.read(tmp_path)
+            project.Manifest.read(tmp_path)
         os.remove(path)
         with pytest.raises(error.Missing):  # Unknown manifest
-            distribution.Manifest.read(tmp_path)
+            project.Manifest.read(tmp_path)
         with pytest.raises(error.Invalid):
-            distribution.Manifest('foo', 'invalid.version', 'project')
+            project.Manifest('foo', 'invalid.version', 'project')
 
 
 class TestPackage:
     """Package unit tests."""
 
-    def test_create(self, project_package: distribution.Package, tmp_path: pathlib.Path):
+    def test_create(self, project_package: project.Package, tmp_path: pathlib.Path):
         """Test package creation."""
-        result = distribution.Package.create(project_package.path, project_package.manifest, tmp_path / 'testpkg.4ml')
+        result = project.Package.create(project_package.path, project_package.manifest, tmp_path / 'testpkg.4ml')
         assert result.manifest == project_package.manifest
 
-    def test_install(self, project_package: distribution.Package, tmp_path: pathlib.Path):
+    def test_install(self, project_package: project.Package, tmp_path: pathlib.Path):
         """Package install unit test."""
         artifact = project_package.install(tmp_path / 'foo')
         assert artifact.package == project_package.manifest.package

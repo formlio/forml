@@ -28,8 +28,8 @@ created just for structuring the project code base splitting it into these parti
 from sklearn import model_selection
 from titanic.pipeline import model, preprocessing
 
+from forml import project
 from forml.lib.pipeline import ensemble
-from forml.project import component
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
@@ -49,4 +49,4 @@ FLOW = (
 )
 
 # And the final step is registering the pipeline instance as the forml component:
-component.setup(FLOW)
+project.setup(FLOW)

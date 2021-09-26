@@ -27,7 +27,7 @@ from forml.runtime.asset import directory, persistent
 from forml.runtime.asset.directory import generation as genmod
 
 if typing.TYPE_CHECKING:
-    from forml.project import product
+    from forml import project as prj
     from forml.runtime.asset.directory import project as prjmod
 
 LOGGER = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class Level(directory.Level):
         return self._parent
 
     @property
-    def artifact(self) -> 'product.Artifact':
+    def artifact(self) -> 'prj.Artifact':
         """Lineage artifact.
 
         Returns:

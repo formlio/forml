@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Flow segments represent partial pipeline blocks during pipeline assembly.
+Flow members represent partial pipeline blocks during pipeline assembly.
 """
 import abc
 import weakref
@@ -31,10 +31,10 @@ class Composable(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def expand(self) -> assembly.Trunk:
-        """Compose and return a segment track.
+        """Compose and return a trunk track.
 
         Returns:
-            Segment track.
+            Trunk track.
         """
 
     def __rshift__(self, right: 'Composable') -> 'Compound':
@@ -46,13 +46,13 @@ class Composable(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def compose(self, left: 'Composable') -> assembly.Trunk:
-        """Expand the left segment producing new composed segment track.
+        """Expand the left trunk producing new composed trunk track.
 
         Args:
             left: Left side composable.
 
         Returns:
-            Composed segment track.
+            Composed trunk track.
         """
 
 
@@ -63,7 +63,7 @@ class Origin(Composable):
         """Track of future nodes.
 
         Returns:
-            Segment track.
+            Trunk track.
         """
         return assembly.Trunk()
 
@@ -74,7 +74,7 @@ class Origin(Composable):
             left: Left side composable.
 
         Returns:
-            Segment track.
+            Trunk track.
         """
         return left.expand()
 
@@ -86,7 +86,7 @@ class Operator(Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
         """Create dummy composition of this operator on a future origin nodes.
 
         Returns:
-            Segment track.
+            Trunk track.
         """
         return self.compose(Origin())
 
@@ -110,10 +110,10 @@ class Compound(Composable):
         return f'{self._left} >> {self._right}'
 
     def expand(self) -> assembly.Trunk:
-        """Compose the segment track.
+        """Compose the trunk track.
 
         Returns:
-            Segment track.
+            Trunk track.
         """
         return self._right.compose(self._left)
 
@@ -124,6 +124,6 @@ class Compound(Composable):
             left: Left side composable.
 
         Returns:
-            Segment track.
+            Trunk track.
         """
         return left.expand().extend(*self.expand())

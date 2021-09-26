@@ -32,7 +32,7 @@ from forml.io.dsl import parser
 from . import extract
 
 if typing.TYPE_CHECKING:
-    from forml.project import component
+    from forml import project
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class Feed(
 
     def load(
         self,
-        source: 'component.Source',
+        source: 'project.Source',
         lower: typing.Optional['dsl.Native'] = None,
         upper: typing.Optional['dsl.Native'] = None,
     ) -> flow.Trunk:

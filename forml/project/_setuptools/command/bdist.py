@@ -25,13 +25,13 @@ import typing
 import pip._internal as pip
 import setuptools
 
-from forml.project import distribution
+from ... import _distribution
 
 
 class Package(setuptools.Command):
     """ForML build package."""
 
-    COMMAND = f'bdist_{distribution.Package.FORMAT}'
+    COMMAND = f'bdist_{_distribution.Package.FORMAT}'
     description = 'create a ForML distribution'
 
     user_options = [
@@ -48,7 +48,7 @@ class Package(setuptools.Command):
         """Fini options."""
         if self.bdist_dir is None:
             bdist_base = self.get_finalized_command('bdist').bdist_base
-            self.bdist_dir = os.path.join(bdist_base, distribution.Package.FORMAT)
+            self.bdist_dir = os.path.join(bdist_base, _distribution.Package.FORMAT)
 
         need_options = ('dist_dir',)
         self.set_undefined_options('bdist', *zip(need_options, need_options))
@@ -56,14 +56,14 @@ class Package(setuptools.Command):
     @property
     def filename(self) -> str:
         """Target package file name."""
-        return f'{self.distribution.get_name()}-{self.distribution.get_version()}.{distribution.Package.FORMAT}'
+        return f'{self.distribution.get_name()}-{self.distribution.get_version()}.{_distribution.Package.FORMAT}'
 
     @property
-    def manifest(self) -> distribution.Manifest:
+    def manifest(self) -> _distribution.Manifest:
         """Package manifest."""
         name = self.distribution.get_name()
         version = self.distribution.get_version()
-        return distribution.Manifest(
+        return _distribution.Manifest(
             name=name, version=version, package=self.distribution.artifact.package, **self.distribution.artifact.modules
         )
 
@@ -82,6 +82,6 @@ class Package(setuptools.Command):
         if not os.path.exists(self.dist_dir):
             os.makedirs(self.dist_dir)
         target = os.path.join(self.dist_dir, self.filename)
-        data = (self.COMMAND, '', str(distribution.Package.create(self.bdist_dir, self.manifest, target).path))
+        data = (self.COMMAND, '', str(_distribution.Package.create(self.bdist_dir, self.manifest, target).path))
         if data not in self.distribution.dist_files:
             self.distribution.dist_files.append(data)

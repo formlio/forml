@@ -20,11 +20,11 @@ Dummy project evaluation.
 """
 from sklearn import metrics, model_selection
 
+from forml import project
 from forml.lib.pipeline.evaluation import method, metric
-from forml.project import component
 
-INSTANCE = component.Evaluation(
+INSTANCE = project.Evaluation(
     metric.Function(metrics.log_loss),
     method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
 )
-component.setup(INSTANCE)
+project.setup(INSTANCE)

@@ -22,10 +22,9 @@ import logging
 import typing
 import uuid
 
-from forml import flow, io
+from forml import flow, io, project
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
-from forml.project import component
 from forml.runtime import launcher
 from forml.testing import spec
 
@@ -103,7 +102,7 @@ class Launcher:
 
     def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: provcfg.Runner):
         self._params: spec.Scenario.Params = params
-        self._source: component.Source = component.Source.query(DataSet.select(DataSet.feature), DataSet.label)
+        self._source: project.Source = project.Source.query(DataSet.select(DataSet.feature), DataSet.label)
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 

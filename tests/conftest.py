@@ -27,11 +27,10 @@ import uuid
 
 import pytest
 
-from forml import flow, io
+from forml import flow, io, project
 from forml.io import dsl
 from forml.io.dsl import function, parser
 from forml.lib.pipeline import topology
-from forml.project import distribution, product
 from forml.runtime.asset.directory import generation as genmod
 from forml.runtime.asset.directory import lineage as lngmod
 from forml.runtime.asset.directory import project as prjmod
@@ -132,31 +131,31 @@ def project_path() -> pathlib.Path:
 
 
 @pytest.fixture(scope='session')
-def project_package(project_path: pathlib.Path) -> distribution.Package:
+def project_package(project_path: pathlib.Path) -> project.Package:
     """Test project package fixture."""
-    return distribution.Package(project_path)
+    return project.Package(project_path)
 
 
 @pytest.fixture(scope='session')
-def project_manifest(project_package: distribution.Package) -> distribution.Manifest:
+def project_manifest(project_package: project.Package) -> project.Manifest:
     """Test project manifest fixture."""
     return project_package.manifest
 
 
 @pytest.fixture(scope='session')
-def project_artifact(project_package: distribution.Package, project_path: str) -> product.Artifact:
+def project_artifact(project_package: project.Package, project_path: str) -> project.Artifact:
     """Test project artifact fixture."""
     return project_package.install(project_path)
 
 
 @pytest.fixture(scope='session')
-def project_name(project_manifest: distribution.Manifest) -> prjmod.Level.Key:
+def project_name(project_manifest: project.Manifest) -> prjmod.Level.Key:
     """Test project name fixture."""
     return project_manifest.name
 
 
 @pytest.fixture(scope='session')
-def project_lineage(project_manifest: distribution.Manifest) -> lngmod.Level.Key:
+def project_lineage(project_manifest: project.Manifest) -> lngmod.Level.Key:
     """Test project lineage fixture."""
     return project_manifest.version
 

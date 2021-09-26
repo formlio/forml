@@ -25,8 +25,8 @@ the forml loader. In this case it is implemented as a python module but it could
 
 from openschema.kaggle import titanic as schema
 
+from forml import project
 from forml.lib.pipeline import payload
-from forml.project import component
 
 FEATURES = schema.Passenger.select(
     schema.Passenger.Pclass,
@@ -41,7 +41,5 @@ FEATURES = schema.Passenger.select(
     schema.Passenger.Embarked,
 )
 
-ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas(
-    [f.name for f in FEATURES.schema]
-)
-component.setup(ETL)
+ETL = project.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
+project.setup(ETL)

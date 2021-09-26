@@ -25,7 +25,7 @@ import uuid
 
 import pytest
 
-from forml.project import distribution
+from forml import project as prj
 from forml.runtime.asset import persistent
 from forml.runtime.asset.directory import generation as genmod
 from forml.runtime.asset.directory import lineage as lngmod
@@ -51,7 +51,7 @@ class Registry(metaclass=abc.ABCMeta):
     @pytest.fixture(scope='function')
     def populated(
         constructor: typing.Callable[[], persistent.Registry],
-        project_package: distribution.Package,
+        project_package: prj.Package,
         project_name: prjmod.Level.Key,
         project_lineage: lngmod.Level.Key,
         valid_generation: genmod.Level.Key,
@@ -94,7 +94,7 @@ class Registry(metaclass=abc.ABCMeta):
         assert not any(empty.lineages(project_name))
         assert list(populated.generations(project_name, project_lineage)) == [valid_generation]
 
-    def test_push(self, empty: persistent.Registry, project_package: distribution.Package):
+    def test_push(self, empty: persistent.Registry, project_package: prj.Package):
         """Registry put unit test."""
         empty.push(project_package)
 
@@ -103,7 +103,7 @@ class Registry(metaclass=abc.ABCMeta):
         populated: persistent.Registry,
         project_name: prjmod.Level.Key,
         project_lineage: lngmod.Level.Key,
-        project_package: distribution.Package,
+        project_package: prj.Package,
     ):
         """Registry take unit test."""
         assert populated.mount(project_name, project_lineage).package == project_package.manifest.package

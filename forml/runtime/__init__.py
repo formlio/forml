@@ -32,7 +32,7 @@ from forml.runtime.code import compiler
 from forml.runtime.mode import evaluation
 
 if typing.TYPE_CHECKING:
-    from forml.project import distribution
+    from forml import project as prj
 
 
 class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Runner.path):
@@ -217,7 +217,7 @@ class Platform:
             """
             return access.Assets(project, lineage, generation, self._root)
 
-        def publish(self, project: str, package: 'distribution.Package') -> None:
+        def publish(self, project: str, package: 'prj.Package') -> None:
             """Publish new package into the registry.
 
             Args:

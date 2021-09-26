@@ -22,9 +22,7 @@ Project steuptools tests.
 import pytest
 import setuptools
 
-from forml.project import distribution as distmod
-from forml.project import product
-from forml.project import setuptools as setupmod
+from forml import project
 
 
 class TestDistribution:
@@ -32,7 +30,7 @@ class TestDistribution:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def distribution(project_package: distmod.Package) -> setupmod.Distribution:
+    def distribution(project_package: project.Package) -> project.Distribution:
         """Test project distribution fixture."""
 
         return setuptools.setup(
@@ -42,10 +40,10 @@ class TestDistribution:
                 where=project_package.path, include=[f'{project_package.manifest.package}*']
             ),
             package_dir={'': project_package.path},
-            distclass=setupmod.Distribution,
+            distclass=project.Distribution,
             script_args=['--version'],
         )
 
-    def test_artifact(self, distribution: setupmod.Distribution, project_artifact: product.Artifact):
+    def test_artifact(self, distribution: project.Distribution, project_artifact: project.Artifact):
         """Test the artifact loaded using this distribution."""
         assert distribution.artifact == project_artifact

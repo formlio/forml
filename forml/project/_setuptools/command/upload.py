@@ -24,8 +24,9 @@ import setuptools
 
 from forml import error, runtime
 from forml.conf.parsed import provider as provcfg
-from forml.project import distribution
-from forml.project.setuptools.command import bdist
+
+from ... import _distribution
+from . import bdist
 
 
 class Registry(setuptools.Command):
@@ -46,7 +47,7 @@ class Registry(setuptools.Command):
 
     def run(self) -> None:
         """Trigger the deployment process."""
-        packages = [distribution.Package(f) for c, _, f in self.distribution.dist_files if c == bdist.Package.COMMAND]
+        packages = [_distribution.Package(f) for c, _, f in self.distribution.dist_files if c == bdist.Package.COMMAND]
         if not packages:
             raise error.Invalid(
                 'Must create and upload files in one command ' f'(e.g. setup.py {bdist.Package.COMMAND} upload)'

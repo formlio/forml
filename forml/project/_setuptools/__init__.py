@@ -26,8 +26,8 @@ import typing
 import setuptools
 from setuptools import dist
 
-from forml.project import product
-from forml.project.setuptools.command import bdist, launch, upload
+from .. import _product
+from .command import bdist, launch, upload
 
 LOGGER = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
         super().run_commands()
 
     @property
-    def artifact(self) -> product.Artifact:
+    def artifact(self) -> _product.Artifact:
         """Get the artifact for this project.
 
         Returns:
@@ -76,4 +76,4 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
             else:
                 package = self.packages[0]
         pkgdir = self.package_dir or {'': '.'}
-        return product.Artifact(pkgdir[''], package=package, **modules)
+        return _product.Artifact(pkgdir[''], package=package, **modules)

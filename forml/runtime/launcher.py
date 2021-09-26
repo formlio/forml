@@ -22,11 +22,12 @@ import multiprocessing
 import queue as quemod
 import typing
 
-from forml import io, runtime
+from forml import io
+from forml import project as prj
+from forml import runtime
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
 from forml.lib.registry import virtual
-from forml.project import distribution
 from forml.runtime.asset import persistent
 from forml.runtime.asset.directory import root
 
@@ -90,7 +91,7 @@ class Virtual:
         def __call__(self, sink: io.Sink) -> 'runtime.Platform.Launcher':
             return runtime.Platform(self._runner, self._registry, self._feeds, sink).launcher(self._project)
 
-    def __init__(self, package: distribution.Package):
+    def __init__(self, package: prj.Package):
         self._project: str = package.manifest.name
         self._registry: persistent.Registry = virtual.Registry()
         root.Level(self._registry).get(self._project).put(package)

@@ -29,7 +29,7 @@ from forml import conf, provider
 from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
 
 if typing.TYPE_CHECKING:
-    from forml.project import distribution, product
+    from forml import project as prj
     from forml.runtime.asset.directory import generation as genmod
     from forml.runtime.asset.directory import lineage as lngmod
     from forml.runtime.asset.directory import project as prjmod  # noqa: F401
@@ -72,7 +72,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other._staging == self._staging
 
-    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'product.Artifact':
+    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Artifact':
         """Take given project/lineage package and return it as artifact instance.
 
         Args:
@@ -96,7 +96,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
 
     @abc.abstractmethod
     def lineages(self, project: 'prjmod.Level.Key') -> typing.Iterable[typing.Union[str, 'lngmod.Level.Key']]:
-        """List the lineages of given project.
+        """List the lineages of given prj.
 
         Args:
             project: Project to be listed.
@@ -122,7 +122,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'distribution.Package':
+    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Package':
         """Return the package of given lineage.
 
         Args:
@@ -135,7 +135,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def push(self, package: 'distribution.Package') -> None:
+    def push(self, package: 'prj.Package') -> None:
         """Start new lineage of a project based on given artifact.
 
         Args:

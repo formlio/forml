@@ -30,9 +30,10 @@ import typing
 
 from forml import error, flow
 from forml.io import dsl
-from forml.project import importer, product
-from forml.project.component import virtual
 from forml.runtime.mode import evaluation
+
+from .. import _importer, _product
+from .._component import virtual
 
 LOGGER = logging.getLogger(__name__)
 
@@ -103,7 +104,7 @@ class Source(typing.NamedTuple):
     def __rshift__(self, transform: flow.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
-    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> 'product.Artifact':
+    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> '_product.Artifact':
         """Create an artifact from this source and given pipeline.
 
         Args:
@@ -113,7 +114,7 @@ class Source(typing.NamedTuple):
         Returns:
             Project artifact instance.
         """
-        return product.Artifact(source=self, pipeline=pipeline, **modules)
+        return _product.Artifact(source=self, pipeline=pipeline, **modules)
 
 
 class Evaluation(typing.NamedTuple):
@@ -139,7 +140,7 @@ class Virtual:
             package = secrets.token_urlsafe(16)
         self._path = f'{virtual.__name__}.{package}'
         LOGGER.debug('Registering virtual component [%s]: %s', component, self._path)
-        sys.meta_path[:0] = importer.Finder.create(types.ModuleType(self._path), onexec)
+        sys.meta_path[:0] = _importer.Finder.create(types.ModuleType(self._path), onexec)
 
     @property
     def path(self) -> str:
@@ -189,10 +190,10 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
             result = component
 
     result = None
-    with importer.context(Component()):
+    with _importer.context(Component()):
         if module in sys.modules:
             del sys.modules[module]
         LOGGER.debug('Importing project component from %s', module)
-        importer.isolated(module, path)
+        _importer.isolated(module, path)
 
     return result
