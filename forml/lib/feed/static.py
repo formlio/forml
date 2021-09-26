@@ -20,11 +20,12 @@ Static feed implementation.
 import types
 import typing
 
-from forml.io import dsl, feed, layout
+from forml import io
+from forml.io import dsl, layout
 from forml.io.dsl import error
 
 
-class Feed(feed.Provider[None, layout.Vector]):
+class Feed(io.Feed[None, layout.Vector]):
     """Static feed is initialized with actual data which can only be returned in primitive column-wise fashion. No
     advanced ETL can be applied.
     """

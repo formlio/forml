@@ -22,9 +22,9 @@ import logging
 import typing
 import uuid
 
-from forml import flow
+from forml import flow, io
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl, feed, layout
+from forml.io import dsl, layout
 from forml.project import component
 from forml.runtime import launcher
 from forml.testing import spec
@@ -42,7 +42,7 @@ class DataSet(dsl.Schema):
     label: dsl.Field = dsl.Field(dsl.Float())
 
 
-class Feed(feed.Provider[None, typing.Any], alias='testing'):
+class Feed(io.Feed[None, typing.Any], alias='testing'):
     """Special feed to input the test cases."""
 
     def __init__(self, scenario: spec.Scenario.Input, **kwargs):

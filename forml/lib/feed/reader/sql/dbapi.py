@@ -24,10 +24,10 @@ import logging
 import re
 import typing
 
+from forml import io
 from forml.io import dsl, layout
 from forml.io.dsl import error, function
 from forml.io.dsl import parser as parsmod
-from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)
 
@@ -332,7 +332,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         return f'{self.Wrap.word(instance)} AS "{name}"', name
 
 
-class Reader(extract.Reader[str, str, layout.RowMajor], metaclass=abc.ABCMeta):
+class Reader(io.Feed.Reader[str, str, layout.RowMajor], metaclass=abc.ABCMeta):
     """SQL reader base class for PEP249 compliant DB APIs."""
 
     @classmethod

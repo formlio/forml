@@ -22,12 +22,9 @@ import multiprocessing
 import queue as quemod
 import typing
 
-from forml import runtime
+from forml import io, runtime
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl
-from forml.io import feed as feedmod  # pylint: disable=unused-import
-from forml.io import layout
-from forml.io import sink as sinkmod
+from forml.io import dsl, layout
 from forml.lib.registry import virtual
 from forml.project import distribution
 from forml.runtime.asset import persistent
@@ -47,10 +44,10 @@ class Virtual:
         class Handler:
             """Actual callable as a proxy for the specific launcher callback."""
 
-            class Sink(sinkmod.Provider):
+            class Sink(io.Sink):
                 """Special sink to forward the output to a multiprocessing.Queue."""
 
-                class Writer(sinkmod.Provider.Writer):
+                class Writer(io.Sink.Writer):
                     """Sink writer."""
 
                     @classmethod
@@ -82,15 +79,15 @@ class Virtual:
             self,
             runner: typing.Optional[provcfg.Runner],
             registry: persistent.Registry,
-            feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]],
+            feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'io.Feed']]],
             project: str,
         ):
             self._runner: typing.Optional[provcfg.Runner] = runner
             self._registry: persistent.Registry = registry
-            self._feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = feeds
+            self._feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'io.Feed']]] = feeds
             self._project: str = project
 
-        def __call__(self, sink: sinkmod.Provider) -> 'runtime.Platform.Launcher':
+        def __call__(self, sink: io.Sink) -> 'runtime.Platform.Launcher':
             return runtime.Platform(self._runner, self._registry, self._feeds, sink).launcher(self._project)
 
     def __init__(self, package: distribution.Package):
@@ -101,7 +98,7 @@ class Virtual:
     def __call__(
         self,
         runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
-        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = None,
+        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'io.Feed']]] = None,
     ) -> 'Virtual.Builder':
         return self.Builder(runner, self._registry, feeds, self._project)
 

@@ -22,11 +22,11 @@ Feed utils unit tests.
 
 import pytest
 
+from forml import io
 from forml.conf.parsed import provider as conf
-from forml.io import sink as sinkmod
 
 
-class TestHandle:
+class TestExporter:
     """Sink handle unit tests."""
 
     class Conf(conf.Sink):
@@ -36,19 +36,19 @@ class TestHandle:
             return tuple.__new__(cls, [reference, {'identity': identity}])
 
     @pytest.fixture(scope='session')
-    def modal(self, reference: str) -> sinkmod.Handle:
+    def modal(self, reference: str) -> io.Exporter:
         """Sink.Mode based handle fixture."""
         train = self.Conf(reference, 'train')
         apply = self.Conf(reference, 'apply')
         eval_ = self.Conf(reference, 'eval')
-        return sinkmod.Handle(conf.Sink.Mode([train, apply, eval_]))
+        return io.Exporter(conf.Sink.Mode([train, apply, eval_]))
 
     @pytest.fixture(scope='session')
-    def instant(self, sink: type[sinkmod.Provider]) -> sinkmod.Handle:
+    def instant(self, sink: type[io.Sink]) -> io.Exporter:
         """Instant based handle fixture."""
-        return sinkmod.Handle(sink(identity='instant'))
+        return io.Exporter(sink(identity='instant'))
 
-    def test_getter(self, modal: sinkmod.Handle, instant: sinkmod.Handle):
+    def test_getter(self, modal: io.Exporter, instant: io.Exporter):
         """Test the handle getters."""
         assert modal.train.identity == 'train'
         assert modal.apply.identity == 'apply'

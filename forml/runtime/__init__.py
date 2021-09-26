@@ -21,12 +21,10 @@ Runtime layer.
 import abc
 import typing
 
-from forml import error, flow
+from forml import error, flow, io
 from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
-from forml.io import feed as feedmod
-from forml.io import sink as sinkmod
 from forml.runtime import code
 from forml.runtime.asset import access, directory, persistent
 from forml.runtime.asset.directory import root
@@ -43,13 +41,13 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
     def __init__(
         self,
         assets: typing.Optional[access.Assets] = None,
-        feed: typing.Optional['feedmod.Provider'] = None,
-        sink: typing.Optional['sinkmod.Provider'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Feed'] = None,
         **_,
     ):
         self._assets: access.Assets = assets or access.Assets()
-        self._feed: feedmod.Provider = feed or feedmod.Provider()
-        self._sink: typing.Optional[sinkmod.Provider] = sink
+        self._feed: io.Feed = feed or io.Feed()
+        self._sink: typing.Optional[io.Sink] = sink
 
     def train(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         """Run the training code.
@@ -148,12 +146,12 @@ class Platform:
         """Runner handle."""
 
         def __init__(
-            self, provider: provcfg.Runner, assets: access.Assets, feeds: 'Platform.Feeds', sink: sinkmod.Handle
+            self, provider: provcfg.Runner, assets: access.Assets, feeds: 'Platform.Feeds', sink: 'io.Exporter'
         ):
             self._provider: provcfg.Runner = provider
             self._assets: access.Assets = assets
             self._feeds: Platform.Feeds = feeds
-            self._sink: sinkmod.Handle = sink
+            self._sink: io.Exporter = sink
 
         @property
         def train(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
@@ -191,7 +189,7 @@ class Platform:
             """
             raise NotImplementedError()
 
-        def __call__(self, query: 'dsl.Query', sink: 'sinkmod.Provider') -> Runner:
+        def __call__(self, query: 'dsl.Query', sink: 'io.Feed') -> Runner:
             return Runner[self._provider.reference](
                 self._assets, self._feeds.match(query), sink, **self._provider.params
             )
@@ -250,10 +248,10 @@ class Platform:
     class Feeds:
         """Feed pool and util handle."""
 
-        def __init__(self, *configs: typing.Union[provcfg.Feed, 'feedmod.Provider']):
-            self._pool: feedmod.Pool = feedmod.Pool(*configs)
+        def __init__(self, *configs: typing.Union[provcfg.Feed, 'io.Feed']):
+            self._pool: io.Importer = io.Importer(*configs)
 
-        def match(self, query: 'dsl.Query') -> 'feedmod.Provider':
+        def match(self, query: 'dsl.Query') -> 'io.Feed':
             """Select the feed that can provide for given query.
 
             Args:
@@ -275,15 +273,15 @@ class Platform:
         self,
         runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
         registry: typing.Optional[typing.Union[provcfg.Registry, persistent.Registry]] = None,
-        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'feedmod.Provider']]] = None,
-        sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, sinkmod.Provider]] = None,
+        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'io.Feed']]] = None,
+        sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, 'io.Sink']] = None,
     ):
         if isinstance(runner, str):
             runner = provcfg.Runner.resolve(runner)
         self._runner: provcfg.Runner = runner or provcfg.Runner.default
         self._registry: Platform.Registry = self.Registry(registry or provcfg.Registry.default)
         self._feeds: Platform.Feeds = self.Feeds(*(feeds or provcfg.Feed.default))
-        self._sink: sinkmod.Handle = sinkmod.Handle(sink or provcfg.Sink.Mode.default)
+        self._sink: io.Exporter = io.Exporter(sink or provcfg.Sink.Mode.default)
 
     def launcher(
         self,

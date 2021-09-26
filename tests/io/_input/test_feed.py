@@ -22,13 +22,12 @@ Feed utils unit tests.
 
 import pytest
 
-from forml import error
+from forml import error, io
 from forml.conf.parsed import provider as conf
 from forml.io import dsl
-from forml.io import feed as feedmod
 
 
-class TestPool:
+class TestImporter:
     """Feed pool unit tests."""
 
     class Conf(conf.Feed):
@@ -37,18 +36,18 @@ class TestPool:
         def __new__(cls, reference: str, priority: float, identity: str):
             return tuple.__new__(cls, [reference, priority, {'identity': identity}])
 
-    def test_iter(self, feed: type[feedmod.Provider], reference: str):
+    def test_iter(self, feed: type[io.Feed], reference: str):
         """Test the pool iterator."""
         conf10 = self.Conf(reference, 10, 'conf10')
         conf1000 = self.Conf(reference, 1000, 'conf1000')
         instant = feed(identity='instant')
-        pool = feedmod.Pool(conf10, instant, conf1000)
+        pool = io.Importer(conf10, instant, conf1000)
         assert tuple(f.identity for f in pool) == ('instant', 'conf1000', 'conf10')
 
-    def test_match(self, feed: type[feedmod.Provider], query: dsl.Query, person: dsl.Table):
+    def test_match(self, feed: type[io.Feed], query: dsl.Query, person: dsl.Table):
         """Feed matching test."""
         instance = feed(identity='instance')
-        pool = feedmod.Pool(instance)
+        pool = io.Importer(instance)
         assert pool.match(query) is instance
         with pytest.raises(error.Missing):
             pool.match(person)

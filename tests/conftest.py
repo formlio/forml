@@ -27,10 +27,8 @@ import uuid
 
 import pytest
 
-from forml import flow
+from forml import flow, io
 from forml.io import dsl
-from forml.io import feed as feedmod
-from forml.io import sink as sinkmod
 from forml.io.dsl import function, parser
 from forml.lib.pipeline import topology
 from forml.project import distribution, product
@@ -273,10 +271,10 @@ def reference() -> str:
 @pytest.fixture(scope='session')
 def feed(
     reference: str, person: dsl.Table, student: dsl.Table, school: dsl.Table  # pylint: disable=unused-argument
-) -> type[feedmod.Provider]:
+) -> type[io.Feed]:
     """Dummy feed fixture."""
 
-    class Dummy(feedmod.Provider, alias=reference):
+    class Dummy(io.Feed, alias=reference):
         """Dummy feed for unit-testing purposes."""
 
         def __init__(self, identity: str, **readerkw):
@@ -292,10 +290,10 @@ def feed(
 
 
 @pytest.fixture(scope='session')
-def sink(reference: str) -> type[sinkmod.Provider]:  # pylint: disable=unused-argument
+def sink(reference: str) -> type[io.Sink]:  # pylint: disable=unused-argument
     """Dummy sink fixture."""
 
-    class Dummy(sinkmod.Provider, alias=reference):
+    class Dummy(io.Sink, alias=reference):
         """Dummy sink for unit-testing purposes."""
 
         def __init__(self, identity: str, **readerkw):

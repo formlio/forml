@@ -28,13 +28,16 @@ from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
 from forml.io.dsl import parser
-from forml.io.feed import extract
-from forml.project import component
+
+from . import extract
+
+if typing.TYPE_CHECKING:
+    from forml.project import component
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Provider(
+class Feed(
     provmod.Interface,
     typing.Generic[parser.Source, parser.Feature],
     path=provcfg.Feed.path,  # pylint: disable=no-member
@@ -189,7 +192,7 @@ class Provider(
         return {}
 
 
-class Pool:
+class Importer:
     """Pool of (possibly) lazily instantiated feeds. If configured without any explicit feeds, all of the feeds
     registered in the provider cache are added.
 
@@ -204,14 +207,14 @@ class Pool:
     class Slot:
         """Representation of a single feed provided either explicitly s an instance or lazily as a descriptor."""
 
-        def __init__(self, feed: typing.Union[provcfg.Feed, str, Provider]):
+        def __init__(self, feed: typing.Union[provcfg.Feed, str, Feed]):
             if isinstance(feed, str):
                 feed = provcfg.Feed.resolve(feed)
             descriptor, instance = (feed, None) if isinstance(feed, provcfg.Feed) else (None, feed)
             self._descriptor: typing.Optional[provcfg.Feed] = descriptor
-            self._instance: typing.Optional[Provider] = instance
+            self._instance: typing.Optional[Feed] = instance
 
-        def __lt__(self, other: 'Pool.Slot'):
+        def __lt__(self, other: 'Importer.Slot'):
             return self.priority < other.priority
 
         @property
@@ -224,7 +227,7 @@ class Pool:
             return self._descriptor.priority if self._descriptor else float('inf')
 
         @property
-        def instance(self) -> Provider:
+        def instance(self) -> Feed:
             """Return the feed instance possibly creating it on the fly if lazy.
 
             Returns:
@@ -232,7 +235,7 @@ class Pool:
             """
             if self._instance is None:
                 LOGGER.debug('Instantiating feed %s', self._descriptor.reference)
-                self._instance = Provider[self._descriptor.reference](**self._descriptor.params)
+                self._instance = Feed[self._descriptor.reference](**self._descriptor.params)
             return self._instance
 
     class Matcher(dsl.Source.Visitor):
@@ -268,14 +271,14 @@ class Pool:
             if source not in self._sources:
                 self._matches = False
 
-    def __init__(self, *feeds: typing.Union[provcfg.Feed, str, Provider]):
-        self._feeds: tuple[Pool.Slot] = tuple(sorted((self.Slot(f) for f in feeds or Provider), reverse=True))
+    def __init__(self, *feeds: typing.Union[provcfg.Feed, str, Feed]):
+        self._feeds: tuple[Importer.Slot] = tuple(sorted((self.Slot(f) for f in feeds or Feed), reverse=True))
 
-    def __iter__(self) -> typing.Iterable[Provider]:
+    def __iter__(self) -> typing.Iterable[Feed]:
         for feed in self._feeds:
             yield feed.instance
 
-    def match(self, source: 'dsl.Source') -> Provider:
+    def match(self, source: 'dsl.Source') -> Feed:
         """Select a feed that can provide for (be used to construct) the given source.
 
         Args:

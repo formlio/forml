@@ -25,9 +25,7 @@ import typing
 
 import dask
 
-from forml import runtime
-from forml.io import feed as feedmod
-from forml.io import sink as sinkmod
+from forml import io, runtime
 from forml.runtime import code
 from forml.runtime.asset import access
 
@@ -91,8 +89,8 @@ class Runner(runtime.Runner, alias='dask'):
     def __init__(
         self,
         assets: typing.Optional[access.Assets] = None,
-        feed: typing.Optional[feedmod.Provider] = None,
-        sink: typing.Optional[sinkmod.Provider] = None,
+        feed: typing.Optional[io.Feed] = None,
+        sink: typing.Optional[io.Sink] = None,
         scheduler: typing.Optional[str] = None,
     ):
         super().__init__(assets, feed, sink)

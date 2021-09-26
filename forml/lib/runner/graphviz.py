@@ -23,9 +23,7 @@ import typing
 
 import graphviz as grviz
 
-from forml import conf, runtime
-from forml.io import feed as feedmod
-from forml.io import sink as sinkmod
+from forml import conf, io, runtime
 from forml.runtime import code
 from forml.runtime.asset import access
 from forml.runtime.code import instruction
@@ -41,8 +39,8 @@ class Runner(runtime.Runner, alias='graphviz'):
     def __init__(
         self,
         assets: typing.Optional[access.Assets] = None,
-        feed: typing.Optional[feedmod.Provider] = None,
-        sink: typing.Optional[sinkmod.Provider] = None,
+        feed: typing.Optional[io.Feed] = None,
+        sink: typing.Optional[io.Sink] = None,
         filepath: typing.Optional[str] = None,
         **gvkw: typing.Any,
     ):

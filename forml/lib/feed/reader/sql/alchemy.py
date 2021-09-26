@@ -32,10 +32,10 @@ from sqlalchemy import types as sqltypes
 from sqlalchemy.dialects.sqlite import base as sqlite
 from sqlalchemy.engine import interfaces
 
+from forml import io
 from forml.io import dsl, layout
 from forml.io.dsl import error, function
 from forml.io.dsl import parser as parsmod
-from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)
 
@@ -334,7 +334,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         return ref, ref
 
 
-class Reader(extract.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]):
+class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]):
     """SQLAlchemy based reader."""
 
     def __init__(
