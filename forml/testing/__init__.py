@@ -18,40 +18,8 @@
 """
 Testing framework.
 """
-import typing
 
-from forml import flow
-from forml.testing import routine, spec
+from ._routine import Suite, operator
+from ._spec import Case, Scenario
 
-
-def operator(subject: type[flow.Operator]) -> type[routine.Suite]:
-    """Operator base class generator.
-
-    Args:
-        subject: Operator to be tested within given suite.
-    """
-
-    class Operator(routine.Suite, metaclass=routine.Meta):
-        """Generated base class."""
-
-        @property
-        def __operator__(self) -> type[flow.Operator]:
-            """Attached operator.
-
-            Returns:
-                Operator instance.
-            """
-            return subject
-
-    return Operator
-
-
-class Case(spec.Appliable):
-    """Test case entrypoint."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(spec.Scenario.Params(*args, **kwargs))
-
-    def train(self, features: typing.Any, labels: typing.Any = None) -> spec.Trained:
-        """Train input dataset definition."""
-        return spec.Trained(self._params, spec.Scenario.Input(train=features, label=labels))
+__all__ = ['Case', 'operator', 'Suite', 'Scenario']

@@ -25,10 +25,10 @@ import string
 import typing
 import unittest
 
+from forml import flow
 from forml.conf.parsed import provider as provcfg
-from forml.flow._suite import member
 from forml.runtime import launcher as launchmod
-from forml.testing import facility, spec
+from forml.testing import _facility, _spec
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class Suite(unittest.TestCase, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def __operator__(self) -> type[member.Operator]:
+    def __operator__(self) -> type[flow.Operator]:
         """Operator instance."""
 
 
@@ -51,7 +51,7 @@ class Meta(abc.ABCMeta):
     def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any], **kwargs):
         if not any(issubclass(b, Suite) for b in bases):
             raise TypeError(f'{name} not a valid {Suite.__name__}')
-        for title, scenario in [(t, s) for t, s in namespace.items() if isinstance(s, spec.Scenario)]:
+        for title, scenario in [(t, s) for t, s in namespace.items() if isinstance(s, _spec.Scenario)]:
             namespace[f'test_{title}'] = Case(title, scenario)
             del namespace[title]
         return super().__new__(mcs, name, bases, namespace)
@@ -60,8 +60,8 @@ class Meta(abc.ABCMeta):
 class Test:
     """Base class for test implementations."""
 
-    def __init__(self, launcher: facility.Launcher):
-        self._launcher: facility.Launcher = launcher
+    def __init__(self, launcher: _facility.Launcher):
+        self._launcher: _facility.Launcher = launcher
 
     def __call__(self, suite: Suite) -> None:
         launcher: typing.Optional[launchmod.Virtual.Builder] = self.init(suite)
@@ -113,9 +113,9 @@ class Test:
 class RaisableTest(Test):
     """Base test class for raising test cases."""
 
-    def __init__(self, launcher: facility.Launcher, exception: spec.Scenario.Exception):
+    def __init__(self, launcher: _facility.Launcher, exception: _spec.Scenario.Exception):
         super().__init__(launcher)
-        self._exception: spec.Scenario.Exception = exception
+        self._exception: _spec.Scenario.Exception = exception
 
     def raises(self, suite: Suite) -> typing.ContextManager:
         """Context manager for wrapping raising assertions.
@@ -134,9 +134,9 @@ class RaisableTest(Test):
 class ReturnableTest(Test):
     """Base test class for returning test cases."""
 
-    def __init__(self, launcher: facility.Launcher, output: spec.Scenario.Output):
+    def __init__(self, launcher: _facility.Launcher, output: _spec.Scenario.Output):
         super().__init__(launcher)
-        self._output: spec.Scenario.Output = output
+        self._output: _spec.Scenario.Output = output
 
     def matches(self, suite: Suite, value: typing.Any) -> None:
         """Context manager for wrapping raising assertions.
@@ -212,13 +212,13 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine."""
 
-    def __init__(self, name: str, scenario: spec.Scenario, launcher: provcfg.Runner = provcfg.Runner.default):
+    def __init__(self, name: str, scenario: _spec.Scenario, launcher: provcfg.Runner = provcfg.Runner.default):
         self._name: str = name
-        launcher = facility.Launcher(scenario.params, scenario.input, launcher)
+        launcher = _facility.Launcher(scenario.params, scenario.input, launcher)
         self._test: Test = self.select(scenario, launcher)
 
     @staticmethod
-    def select(scenario: spec.Scenario, launcher: facility.Launcher) -> Test:
+    def select(scenario: _spec.Scenario, launcher: _facility.Launcher) -> Test:
         """Selecting and setting up the test implementation for given scenario.
 
         Args:
@@ -228,19 +228,19 @@ class Case:
         Returns:
             Test case instance.
         """
-        if scenario.outcome is spec.Scenario.Outcome.INIT_RAISES:
+        if scenario.outcome is _spec.Scenario.Outcome.INIT_RAISES:
             return TestInitRaises(launcher, scenario.exception)
-        if scenario.outcome is spec.Scenario.Outcome.PLAINAPPLY_RAISES:
+        if scenario.outcome is _spec.Scenario.Outcome.PLAINAPPLY_RAISES:
             return TestPlainApplyRaises(launcher, scenario.exception)
-        if scenario.outcome is spec.Scenario.Outcome.STATETRAIN_RAISES:
+        if scenario.outcome is _spec.Scenario.Outcome.STATETRAIN_RAISES:
             return TestStateTrainRaises(launcher, scenario.exception)
-        if scenario.outcome is spec.Scenario.Outcome.STATEAPPLY_RAISES:
+        if scenario.outcome is _spec.Scenario.Outcome.STATEAPPLY_RAISES:
             return TestStateApplyRaises(launcher, scenario.exception)
-        if scenario.outcome is spec.Scenario.Outcome.PLAINAPPLY_RETURNS:
+        if scenario.outcome is _spec.Scenario.Outcome.PLAINAPPLY_RETURNS:
             return TestPlainApplyReturns(launcher, scenario.output)
-        if scenario.outcome is spec.Scenario.Outcome.STATETRAIN_RETURNS:
+        if scenario.outcome is _spec.Scenario.Outcome.STATETRAIN_RETURNS:
             return TestStateTrainReturns(launcher, scenario.output)
-        if scenario.outcome is spec.Scenario.Outcome.STATEAPPLY_RETURNS:
+        if scenario.outcome is _spec.Scenario.Outcome.STATEAPPLY_RETURNS:
             return TestStateApplyReturns(launcher, scenario.output)
         raise RuntimeError('Unexpected scenario outcome')
 
@@ -252,3 +252,25 @@ class Case:
 
         case.__doc__ = f'Test of {string.capwords(self._name.replace("_", " "))}'
         return case
+
+
+def operator(subject: type[flow.Operator]) -> type[Suite]:
+    """Operator base class generator.
+
+    Args:
+        subject: Operator to be tested within given suite.
+    """
+
+    class Operator(Suite, metaclass=Meta):
+        """Generated base class."""
+
+        @property
+        def __operator__(self) -> type[flow.Operator]:
+            """Attached operator.
+
+            Returns:
+                Operator instance.
+            """
+            return subject
+
+    return Operator

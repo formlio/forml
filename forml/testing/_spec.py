@@ -210,3 +210,14 @@ class Trained(Appliable):
     ) -> Scenario:
         """Assertion on expected return value."""
         return Scenario(self._params, self._input, Scenario.Output(train=output, matcher=matcher))
+
+
+class Case(Appliable):
+    """Test case entrypoint."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(Scenario.Params(*args, **kwargs))
+
+    def train(self, features: typing.Any, labels: typing.Any = None) -> Trained:
+        """Train input dataset definition."""
+        return Trained(self._params, Scenario.Input(train=features, label=labels))

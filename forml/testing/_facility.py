@@ -26,7 +26,7 @@ from forml import flow, io, project
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
 from forml.runtime import launcher
-from forml.testing import spec
+from forml.testing import _spec
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,9 +44,9 @@ class DataSet(dsl.Schema):
 class Feed(io.Feed[None, typing.Any], alias='testing'):
     """Special feed to input the test cases."""
 
-    def __init__(self, scenario: spec.Scenario.Input, **kwargs):
+    def __init__(self, scenario: _spec.Scenario.Input, **kwargs):
         super().__init__(**kwargs)
-        self._scenario: spec.Scenario.Input = scenario
+        self._scenario: _spec.Scenario.Input = scenario
 
     # pylint: disable=unused-argument
     @classmethod
@@ -100,8 +100,8 @@ class Launcher:
                 self._gids.add(node.gid)
                 node.spec()
 
-    def __init__(self, params: spec.Scenario.Params, scenario: spec.Scenario.Input, runner: provcfg.Runner):
-        self._params: spec.Scenario.Params = params
+    def __init__(self, params: _spec.Scenario.Params, scenario: _spec.Scenario.Input, runner: provcfg.Runner):
+        self._params: _spec.Scenario.Params = params
         self._source: project.Source = project.Source.query(DataSet.select(DataSet.feature), DataSet.label)
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
