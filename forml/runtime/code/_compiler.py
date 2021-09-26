@@ -25,17 +25,16 @@ import itertools
 import logging
 import typing
 import uuid
-from collections import abc
 
 from forml import flow
-from forml.runtime import code
 from forml.runtime.asset import access
-from forml.runtime.code import instruction as instmod
+
+from . import _target
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Table(flow.Visitor, abc.Iterable):
+class Table(flow.Visitor, typing.Iterable):
     """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys."""
 
     class Linkage:
@@ -120,7 +119,7 @@ class Table(flow.Visitor, abc.Iterable):
         """Mapping of the stored instructions. Same instruction might be stored under multiple keys."""
 
         def __init__(self):
-            self._instructions: dict[uuid.UUID, code.Instruction] = {}
+            self._instructions: dict[uuid.UUID, _target.Instruction] = {}
 
         def __contains__(self, key: uuid.UUID) -> bool:
             return key in self._instructions
@@ -129,7 +128,7 @@ class Table(flow.Visitor, abc.Iterable):
             return self._instructions[key]
 
         @property
-        def instructions(self) -> typing.Iterator[tuple[code.Instruction, typing.Iterator[uuid.UUID]]]:
+        def instructions(self) -> typing.Iterator[tuple[_target.Instruction, typing.Iterator[uuid.UUID]]]:
             """Iterator over tuples of instructions plus iterator of its keys.
 
             Returns:
@@ -137,7 +136,7 @@ class Table(flow.Visitor, abc.Iterable):
             """
             return itertools.groupby(self._instructions.keys(), self._instructions.__getitem__)
 
-        def set(self, instruction: code.Instruction, key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
+        def set(self, instruction: _target.Instruction, key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
             """Store given instruction by provided or generated key.
 
             It is an error to store instruction with existing key (to avoid, use the reset method).
@@ -175,7 +174,7 @@ class Table(flow.Visitor, abc.Iterable):
         self._index: Table.Index = self.Index()
         self._committer: typing.Optional[uuid.UUID] = None
 
-    def __iter__(self) -> code.Symbol:
+    def __iter__(self) -> _target.Symbol:
         def merge(
             value: typing.Iterable[typing.Optional[uuid.UUID]], element: typing.Iterable[typing.Optional[uuid.UUID]]
         ) -> typing.Iterable[uuid.UUID]:
@@ -205,13 +204,13 @@ class Table(flow.Visitor, abc.Iterable):
 
             return (pick(a, b) for a, b in itertools.zip_longest(value, element))
 
-        stubs = {s for s in (self._index[n] for n in self._linkage.leaves) if isinstance(s, instmod.Getter)}
+        stubs = {s for s in (self._index[n] for n in self._linkage.leaves) if isinstance(s, _target.Getter)}
         for instruction, keys in self._index.instructions:
             if instruction in stubs:
                 LOGGER.debug('Pruning stub getter %s', instruction)
                 continue
             arguments = functools.reduce(merge, (self._linkage[k] for k in keys))
-            yield code.Symbol(instruction, tuple(self._index[a] for a in arguments))
+            yield _target.Symbol(instruction, tuple(self._index[a] for a in arguments))
 
     def add(self, node: flow.Worker) -> None:
         """Populate the symbol table to implement the logical flow of given node.
@@ -223,31 +222,31 @@ class Table(flow.Visitor, abc.Iterable):
         assert isinstance(node, flow.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
-        functor = instmod.Mapper(node.spec)
+        functor = _target.Mapper(node.spec)
         aliases = [node.uid]
         if node.stateful:
             state = node.gid
             persistent = self._assets and state in self._assets
             assert persistent or any(n.trained for n in node.group), 'Non-persistent stateful node without training'
             if persistent and state not in self._index:
-                self._index.set(instmod.Loader(self._assets, state), state)
+                self._index.set(_target.Loader(self._assets, state), state)
             if node.trained:
-                functor = instmod.Consumer(node.spec)
+                functor = _target.Consumer(node.spec)
                 aliases.append(state)
                 if persistent:
                     if not self._committer:
-                        self._committer = self._index.set(instmod.Committer(self._assets))
-                    dumper = self._index.set(instmod.Dumper(self._assets))
+                        self._committer = self._index.set(_target.Committer(self._assets))
+                    dumper = self._index.set(_target.Dumper(self._assets))
                     self._linkage.insert(dumper, node.uid)
                     self._linkage.insert(self._committer, dumper, self._assets.offset(state))
                     state = self._index.reset(state)  # re-register loader under it's own id
             if persistent or not node.trained:
-                functor = functor.shiftby(instmod.Functor.Shifting.state)
+                functor = functor.shiftby(_target.Functor.Shifting.state)
                 self._linkage.prepend(node.uid, state)
         for key in aliases:
             self._index.set(functor, key)
         if not node.trained:
-            self._linkage.update(node, lambda index: self._index.set(instmod.Getter(index)))
+            self._linkage.update(node, lambda index: self._index.set(_target.Getter(index)))
 
     def visit_node(self, node: flow.Worker) -> None:
         """Visitor entrypoint.
@@ -258,7 +257,7 @@ class Table(flow.Visitor, abc.Iterable):
         self.add(node)
 
 
-def generate(path: flow.Path, assets: typing.Optional[access.State] = None) -> typing.Sequence[code.Symbol]:
+def generate(path: flow.Path, assets: typing.Optional[access.State] = None) -> typing.Sequence[_target.Symbol]:
     """Generate the symbol code based on given flow path.
 
     Args:

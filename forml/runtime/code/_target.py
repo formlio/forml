@@ -19,18 +19,64 @@
 Code instructions.
 """
 import abc
+import collections
 import logging
+import time
 import typing
 import uuid
 
-from forml import flow
-from forml.runtime import code
+from forml import error, flow
 from forml.runtime.asset import access, directory
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Loader(code.Instruction):
+class Instruction(metaclass=abc.ABCMeta):
+    """Callable part of an assembly symbol that's responsible for implementing the processing activity."""
+
+    @abc.abstractmethod
+    def execute(self, *args: typing.Any) -> typing.Any:
+        """Instruction functionality.
+
+        Args:
+            *args: Sequence of input arguments.
+
+        Returns:
+            Instruction result.
+        """
+
+    def __repr__(self):
+        return self.__class__.__name__
+
+    def __call__(self, *args: typing.Any) -> typing.Any:
+        LOGGER.debug('%s invoked (%d args)', self, len(args))
+        start = time.time()
+        try:
+            result = self.execute(*args)
+        except Exception as err:
+            LOGGER.exception(
+                'Instruction %s failed when processing arguments: %s', self, ', '.join(f'{str(a):.1024s}' for a in args)
+            )
+            raise err
+        LOGGER.debug('%s completed (%.2fms)', self, (time.time() - start) * 1000)
+        return result
+
+
+class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
+    """Main entity of the assembled code."""
+
+    def __new__(cls, instruction: Instruction, arguments: typing.Optional[typing.Sequence[Instruction]] = None):
+        if arguments is None:
+            arguments = []
+        if not all(arguments):
+            raise error.Missing('All arguments required')
+        return super().__new__(cls, instruction, tuple(arguments))
+
+    def __repr__(self):
+        return f'{self.instruction}{self.arguments}'
+
+
+class Loader(Instruction):
     """Registry based state loader."""
 
     def __init__(self, assets: access.State, key: typing.Union[int, uuid.UUID]):
@@ -50,7 +96,7 @@ class Loader(code.Instruction):
             return None
 
 
-class Dumper(code.Instruction):
+class Dumper(Instruction):
     """Registry based state dumper."""
 
     def __init__(self, assets: access.State):
@@ -68,7 +114,7 @@ class Dumper(code.Instruction):
         return self._assets.dump(state)
 
 
-class Getter(code.Instruction):
+class Getter(Instruction):
     """Extracting single item from a vector."""
 
     def __init__(self, index: int):
@@ -89,7 +135,7 @@ class Getter(code.Instruction):
         return sequence[self._index]
 
 
-class Committer(code.Instruction):
+class Committer(Instruction):
     """Commit a new lineage generation."""
 
     def __init__(self, assets: access.State):
@@ -104,7 +150,7 @@ class Committer(code.Instruction):
         self._assets.commit(states)
 
 
-class Functor(code.Instruction):
+class Functor(Instruction):
     """Special instruction for wrapping task actors.
 
     Functor object must be serializable.

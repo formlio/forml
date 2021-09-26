@@ -28,7 +28,6 @@ from forml.io import dsl
 from forml.runtime import code
 from forml.runtime.asset import access, directory, persistent
 from forml.runtime.asset.directory import root
-from forml.runtime.code import compiler
 from forml.runtime.mode import evaluation
 
 if typing.TYPE_CHECKING:
@@ -125,7 +124,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         Returns:
             Optional return value.
         """
-        return self._run(compiler.generate(path, assets))
+        return self._run(code.generate(path, assets))
 
     @abc.abstractmethod
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:

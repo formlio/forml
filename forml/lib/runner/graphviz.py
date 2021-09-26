@@ -26,7 +26,6 @@ import graphviz as grviz
 from forml import conf, io, runtime
 from forml.runtime import code
 from forml.runtime.asset import access
-from forml.runtime.code import instruction
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class Runner(runtime.Runner, alias='graphviz'):
         dot: grviz.Digraph = grviz.Digraph(**self._gvkw)
         for sym in symbols:
             attrs = dict(shape='ellipse', style='rounded')
-            if isinstance(sym.instruction, instruction.Functor):
+            if isinstance(sym.instruction, code.Functor):
                 attrs.update(shape='box')
             dot.node(repr(id(sym.instruction)), repr(sym.instruction), **attrs)
             for idx, arg in enumerate(sym.arguments):

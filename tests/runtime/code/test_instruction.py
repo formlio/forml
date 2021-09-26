@@ -26,7 +26,7 @@ import typing
 import pytest
 
 from forml import flow
-from forml.runtime.code import instruction
+from forml.runtime.code import _target
 
 
 class Functor(metaclass=abc.ABCMeta):
@@ -34,7 +34,7 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(spec: flow.Spec) -> instruction.Functional:
+    def functor(spec: flow.Spec) -> _target.Functional:
         """Functor fixture."""
 
     @staticmethod
@@ -66,24 +66,24 @@ class Functor(metaclass=abc.ABCMeta):
 
     def test_shiftby(
         self,
-        functor: instruction.Functor,
+        functor: _target.Functor,
         shifting: typing.Callable[[flow.Actor, typing.Any], flow.Actor],
         state: bytes,
         args: typing.Sequence,
     ):
         """Test shiftby."""
-        functor = functor.shiftby(shifting).shiftby(instruction.Functor.Shifting.state)
+        functor = functor.shiftby(shifting).shiftby(_target.Functor.Shifting.state)
         functor(state, None, *args)
         assert not shifting
         functor(state, 'foobar', *args)
         assert shifting == 'foobar'
 
-    def test_serializable(self, functor: instruction.Functor, state: bytes, args: typing.Sequence):
+    def test_serializable(self, functor: _target.Functor, state: bytes, args: typing.Sequence):
         """Test functor serializability."""
-        functor = functor.shiftby(instruction.Functor.Shifting.state)
+        functor = functor.shiftby(_target.Functor.Shifting.state)
         output = functor(state, *args)
         clone = pickle.loads(pickle.dumps(functor))
-        assert isinstance(clone, instruction.Functor)
+        assert isinstance(clone, _target.Functor)
         assert functor(state, *args) == output
 
 
@@ -92,9 +92,9 @@ class TestMapper(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> instruction.Mapper:
+    def functor(spec: flow.Spec) -> _target.Mapper:
         """Functor fixture."""
-        return instruction.Mapper(spec)
+        return _target.Mapper(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -102,13 +102,13 @@ class TestMapper(Functor):
         """Functor args fixture."""
         return [testset]
 
-    def test_call(self, functor: instruction.Functor, state: bytes, hyperparams, testset, prediction):
+    def test_call(self, functor: _target.Functor, state: bytes, hyperparams, testset, prediction):
         """Test the functor call."""
         with pytest.raises(ValueError):
             functor(testset)
-        functor = functor.shiftby(instruction.Functor.Shifting.state)
+        functor = functor.shiftby(_target.Functor.Shifting.state)
         assert functor(state, testset) == prediction
-        functor = functor.shiftby(instruction.Functor.Shifting.params)
+        functor = functor.shiftby(_target.Functor.Shifting.params)
         assert functor(hyperparams, state, testset) == prediction
 
 
@@ -117,9 +117,9 @@ class TestConsumer(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> instruction.Consumer:
+    def functor(spec: flow.Spec) -> _target.Consumer:
         """Functor fixture."""
-        return instruction.Consumer(spec)
+        return _target.Consumer(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -127,8 +127,8 @@ class TestConsumer(Functor):
         """Functor args fixture."""
         return [trainset, testset]
 
-    def test_call(self, functor: instruction.Functor, state: bytes, hyperparams, trainset):
+    def test_call(self, functor: _target.Functor, state: bytes, hyperparams, trainset):
         """Test the functor call."""
         assert functor(*trainset) == state
-        functor = functor.shiftby(instruction.Functor.Shifting.params)
+        functor = functor.shiftby(_target.Functor.Shifting.params)
         assert functor(hyperparams, *trainset) == state
