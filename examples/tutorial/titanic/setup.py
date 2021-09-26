@@ -20,6 +20,7 @@ Titanic project.
 """
 
 import setuptools
+
 from forml.project import setuptools as forml
 
 setuptools.setup(

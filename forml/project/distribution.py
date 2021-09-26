@@ -33,8 +33,9 @@ import typing
 import zipfile
 
 from forml import error
-from forml.project import product, importer
-from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
+from forml.project import importer, product
+from forml.runtime.asset.directory import lineage as lngmod
+from forml.runtime.asset.directory import project as prjmod
 
 LOGGER = logging.getLogger(__name__)
 

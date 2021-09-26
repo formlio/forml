@@ -16,20 +16,24 @@
 # under the License.
 
 """
-Conversion functions.
+Mathematical functions.
 """
-import operator
 
-from forml.io.dsl.struct import series, kind as kindmod
+from .._struct import kind as kindmod
+from .._struct import series
 
 
-class Cast(series.Expression):
-    """Explicitly cast value as given kind.
+class Abs(series.Arithmetic, series.Univariate):
+    """Absolute value."""
 
-    This can be used to cast a varchar to a numeric value type and vice versa."""
 
-    value: series.Operable = property(operator.itemgetter(0))
-    kind: kindmod.Any = property(operator.itemgetter(1))
+class Ceil(series.Arithmetic, series.Univariate):
+    """Value rounded up to nearest integer."""
 
-    def __new__(cls, value: series.Operable, kind: kindmod.Any):
-        return super().__new__(cls, value, kind)
+    kind: kindmod.Integer = kindmod.Integer()
+
+
+class Floor(series.Arithmetic, series.Univariate):
+    """Value rounded down to nearest integer."""
+
+    kind: kindmod.Integer = kindmod.Integer()

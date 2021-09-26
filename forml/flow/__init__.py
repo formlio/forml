@@ -19,24 +19,27 @@
 ForML flow composition logic.
 """
 
-from ._graph import Atomic, Future, Path, Publishable, Subscriptable, Visitor, Worker
-from ._suite import Composable, Composition, Operator, Origin, Trunk
+from ._graph.node import Atomic, Future, Worker
+from ._graph.port import Publishable, Subscriptable
+from ._graph.span import Path, Visitor
+from ._suite.assembly import Composition, Trunk
+from ._suite.member import Composable, Operator, Origin
 from ._task import Actor, Spec, name
 
 __all__ = [
     'Actor',
-    'Spec',
+    'Atomic',
+    'Composable',
+    'Composition',
+    'Future',
     'name',
+    'Operator',
+    'Origin',
     'Path',
+    'Publishable',
+    'Spec',
+    'Subscriptable',
+    'Trunk',
     'Visitor',
     'Worker',
-    'Future',
-    'Atomic',
-    'Publishable',
-    'Subscriptable',
-    'Composable',
-    'Origin',
-    'Operator',
-    'Trunk',
-    'Composition',
 ]

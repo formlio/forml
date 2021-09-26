@@ -27,7 +27,7 @@ import numpy
 import pandas
 from pandas.core import generic as pdtype
 
-from forml.flow import _task
+from forml import flow
 from forml.lib.pipeline import topology
 
 LOGGER = logging.getLogger(__name__)
@@ -65,8 +65,8 @@ def _ndf(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None
 
 
 def pandas_params(
-    wrapped: typing.Callable[[_task.Actor, pdtype.NDFrame], typing.Any]
-) -> typing.Callable[[_task.Actor, typing.Any], typing.Any]:
+    wrapped: typing.Callable[[flow.Actor, pdtype.NDFrame], typing.Any]
+) -> typing.Callable[[flow.Actor, typing.Any], typing.Any]:
     """Decorator for converting input parameters and return value to pandas.
 
     Args:
@@ -77,7 +77,7 @@ def pandas_params(
     """
 
     @functools.wraps(wrapped)
-    def wrapper(self: _task.Actor, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+    def wrapper(self: flow.Actor, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Decorating wrapper.
 
         Args:

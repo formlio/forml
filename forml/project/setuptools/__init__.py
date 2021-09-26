@@ -27,7 +27,7 @@ import setuptools
 from setuptools import dist
 
 from forml.project import product
-from forml.project.setuptools.command import launch, bdist, upload
+from forml.project.setuptools.command import bdist, launch, upload
 
 LOGGER = logging.getLogger(__name__)
 

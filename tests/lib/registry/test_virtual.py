@@ -23,8 +23,9 @@ import typing
 
 import pytest
 
-from forml.runtime.asset import persistent
 from forml.lib.registry import virtual
+from forml.runtime.asset import persistent
+
 from . import Registry
 
 

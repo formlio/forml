@@ -26,7 +26,7 @@ All the submodules of this packages have no semantic meaning for ForML - they ar
 created just for structuring the project code base splitting it into these particular parts with arbitrary names.
 """
 from sklearn import model_selection
-from titanic.pipeline import preprocessing, model
+from titanic.pipeline import model, preprocessing
 
 from forml.lib.pipeline import ensemble
 from forml.project import component

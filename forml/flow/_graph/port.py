@@ -22,6 +22,7 @@ import collections
 import typing
 
 from forml.flow import error
+
 from . import node as nodemod  # pylint: disable=unused-import
 
 

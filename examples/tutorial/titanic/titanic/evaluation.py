@@ -22,9 +22,9 @@ This is one of the main _formal_ forml components (along with `source` and `eval
 the forml loader.
 """
 
-from sklearn import model_selection, metrics
+from sklearn import metrics, model_selection
 
-from forml.lib.pipeline.evaluation import metric, method
+from forml.lib.pipeline.evaluation import method, metric
 from forml.project import component
 
 # Typical method of providing component implementation using `component.setup()`. Choosing the CrossVal method

@@ -27,7 +27,9 @@ import pytest
 
 from forml.project import distribution
 from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
+from forml.runtime.asset.directory import generation as genmod
+from forml.runtime.asset.directory import lineage as lngmod
+from forml.runtime.asset.directory import project as prjmod
 
 
 class Registry(metaclass=abc.ABCMeta):

@@ -16,29 +16,21 @@
 # under the License.
 
 """
-Aggregation functions.
+Conversion functions.
 """
+import operator
 
-from forml.io.dsl.struct import series, kind as kindmod
-
-
-class Count(series.Aggregate, series.Univariate):
-    """Number of the input rows."""
-
-    kind: kindmod.Integer = kindmod.Integer()
+from .._struct import kind as kindmod
+from .._struct import series
 
 
-class Avg(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Average of the column values."""
+class Cast(series.Expression):
+    """Explicitly cast value as given kind.
 
+    This can be used to cast a varchar to a numeric value type and vice versa."""
 
-class Max(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Maximum of the column values."""
+    value: series.Operable = property(operator.itemgetter(0))
+    kind: kindmod.Any = property(operator.itemgetter(1))
 
-
-class Min(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Minimum of the column values."""
-
-
-class Sum(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Sum of the column values."""
+    def __new__(cls, value: series.Operable, kind: kindmod.Any):
+        return super().__new__(cls, value, kind)

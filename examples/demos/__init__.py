@@ -22,13 +22,12 @@ Forml demos.
 import typing
 
 import pandas as pd
-from sklearn import ensemble, linear_model, impute, preprocessing, feature_extraction, naive_bayes
+from sklearn import ensemble, feature_extraction, impute, linear_model, naive_bayes, preprocessing
 
 from forml import flow
-from forml.io.dsl import struct
-from forml.io.dsl.struct import kind
+from forml.io import dsl
 from forml.lib.feed import static
-from forml.lib.pipeline import topology, payload
+from forml.lib.pipeline import payload, topology
 from forml.project import component
 
 SimpleImputer = topology.Mapper.operator(topology.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
@@ -84,11 +83,11 @@ def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna()
 
 
-class Demo(struct.Schema):
+class Demo(dsl.Schema):
     """Demo schema representation."""
 
-    Label = struct.Field(kind.Integer())
-    Age = struct.Field(kind.Integer())
+    Label = dsl.Field(dsl.Integer())
+    Age = dsl.Field(dsl.Integer())
 
 
 DATA = [[1, 1, 1, 0, 0, 0], [10, 11, 12, 13, 14, 15]]

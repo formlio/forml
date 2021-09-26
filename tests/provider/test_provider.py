@@ -24,7 +24,8 @@ import typing
 
 import pytest
 
-from forml import provider as provmod, error
+from forml import error
+from forml import provider as provmod
 
 
 @pytest.fixture(scope='session')

@@ -24,8 +24,8 @@ import pytest
 
 from forml import error
 from forml.conf.parsed import provider as conf
+from forml.io import dsl
 from forml.io import feed as feedmod
-from forml.io.dsl.struct import frame
 
 
 class TestPool:
@@ -45,7 +45,7 @@ class TestPool:
         pool = feedmod.Pool(conf10, instant, conf1000)
         assert tuple(f.identity for f in pool) == ('instant', 'conf1000', 'conf10')
 
-    def test_match(self, feed: type[feedmod.Provider], query: frame.Query, person: frame.Table):
+    def test_match(self, feed: type[feedmod.Provider], query: dsl.Query, person: dsl.Table):
         """Feed matching test."""
         instance = feed(identity='instance')
         pool = feedmod.Pool(instance)

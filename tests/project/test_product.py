@@ -23,9 +23,10 @@ import typing
 
 import pytest
 
-from forml import flow, error
-from forml.project import product, distribution, importer, component as compmod
+from forml import error, flow
 from forml.lib.pipeline import topology
+from forml.project import component as compmod
+from forml.project import distribution, importer, product
 
 
 class TestBuilder:

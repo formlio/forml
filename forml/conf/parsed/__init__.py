@@ -23,7 +23,7 @@ import operator
 import types
 import typing
 
-from forml import error, conf
+from forml import conf, error
 
 
 class Meta(abc.ABCMeta):

@@ -22,8 +22,8 @@ import abc
 import logging
 import typing
 
-from forml import flow, error
-from forml.io import payload
+from forml import error, flow
+from forml.io import layout
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,19 +47,19 @@ class Operator(flow.Operator):
         return left.expand().extend(apply, train)
 
 
-class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
+class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
     """Base class for writer implementation."""
 
     class Actor(flow.Actor):
         """Data publishing actor using the provided writer to store the data."""
 
-        def __init__(self, writer: typing.Callable[[payload.ColumnMajor], None]):
-            self._writer: typing.Callable[[payload.ColumnMajor], None] = writer
+        def __init__(self, writer: typing.Callable[[layout.ColumnMajor], None]):
+            self._writer: typing.Callable[[layout.ColumnMajor], None] = writer
 
         def __repr__(self):
             return repr(self._writer)
 
-        def apply(self, data: payload.ColumnMajor) -> None:
+        def apply(self, data: layout.ColumnMajor) -> None:
             self._writer(data)
 
     def __init__(self, **kwargs: typing.Any):
@@ -68,12 +68,12 @@ class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, data: payload.ColumnMajor) -> None:
+    def __call__(self, data: layout.ColumnMajor) -> None:
         LOGGER.debug('Starting to publish')
         return self.write(self.format(data), **self._kwargs)
 
     @classmethod
-    def format(cls, data: payload.ColumnMajor) -> payload.Native:
+    def format(cls, data: layout.ColumnMajor) -> layout.Native:
         """Format the output data into the required payload.Native format.
 
         Args:
@@ -86,7 +86,7 @@ class Writer(typing.Generic[payload.Native], metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def write(cls, data: payload.Native, **kwargs: typing.Any) -> None:
+    def write(cls, data: layout.Native, **kwargs: typing.Any) -> None:
         """Perform the write operation with the given data.
 
         Args:

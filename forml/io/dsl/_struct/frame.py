@@ -29,8 +29,10 @@ import random
 import string
 import typing
 
-from forml.io.dsl import error, struct
-from forml.io.dsl.struct import series
+from forml.io.dsl import error
+
+from .. import _struct
+from . import series
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +50,62 @@ class Rows(typing.NamedTuple):
 class Source(tuple, metaclass=abc.ABCMeta):
     """Source base class."""
 
+    class Visitor:
+        """Source visitor."""
+
+        def visit_source(self, source: 'Source') -> None:  # pylint: disable=unused-argument, no-self-use
+            """Generic source hook.
+
+            Args:
+                source: Source instance to be visited.
+            """
+
+        def visit_table(self, source: 'Table') -> None:
+            """Table hook.
+
+            Args:
+                source: Source instance to be visited.
+            """
+            self.visit_source(source)
+
+        def visit_reference(self, source: 'Reference') -> None:
+            """Reference hook.
+
+            Args:
+                source: Instance to be visited.
+            """
+            source.instance.accept(self)
+            self.visit_source(source)
+
+        def visit_join(self, source: 'Join') -> None:
+            """Join hook.
+
+            Args:
+                source: Instance to be visited.
+            """
+            source.left.accept(self)
+            source.right.accept(self)
+            self.visit_source(source)
+
+        def visit_set(self, source: 'Set') -> None:
+            """Set hook.
+
+            Args:
+                source: Instance to be visited.
+            """
+            source.left.accept(self)
+            source.right.accept(self)
+            self.visit_source(source)
+
+        def visit_query(self, source: 'Query') -> None:
+            """Query hook.
+
+            Args:
+                source: Instance to be visited.
+            """
+            source.source.accept(self)
+            self.visit_source(source)
+
     def __new__(cls, *args):
         return super().__new__(cls, args)
 
@@ -62,16 +120,16 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def columns(self) -> typing.Sequence['series.Column']:
-        """Get the list of columns supplied by this source.
+    def features(self) -> typing.Sequence['series.Feature']:
+        """Get the list of features supplied by this source.
 
         Returns:
-            Sequence of supplying columns.
+            Sequence of supplying features.
         """
 
     @property
     @functools.lru_cache
-    def schema(self) -> type['struct.Schema']:
+    def schema(self) -> type['_struct.Schema']:
         """Get the schema type for this source.
 
         Returns:
@@ -79,15 +137,15 @@ class Source(tuple, metaclass=abc.ABCMeta):
         """
         return Table.Schema(
             f'{self.__class__.__name__}Schema',
-            (struct.Schema.schema,),
-            {(c.name or f'_{i}'): struct.Field(c.kind, c.name) for i, c in enumerate(self.columns)},
+            (_struct.Schema.schema,),
+            {(c.name or f'_{i}'): _struct.Field(c.kind, c.name) for i, c in enumerate(self.features)},
         )
 
-    def __getattr__(self, name: str) -> 'series.Column':
+    def __getattr__(self, name: str) -> 'series.Feature':
         try:
             return self[name]
         except KeyError as err:
-            raise AttributeError(f'Invalid column {name}') from err
+            raise AttributeError(f'Invalid feature {name}') from err
 
     @functools.lru_cache
     def __getitem__(self, name: typing.Union[int, str]) -> typing.Any:
@@ -95,13 +153,13 @@ class Source(tuple, metaclass=abc.ABCMeta):
             return super().__getitem__(name)
         except (TypeError, IndexError) as err:
             name = self.schema[name].name
-            for field, column in zip(self.schema, self.columns):
+            for field, feature in zip(self.schema, self.features):
                 if name == field.name:
-                    return column
+                    return feature
             raise RuntimeError(f'Inconsistent {name} lookup vs schema iteration') from err
 
     @abc.abstractmethod
-    def accept(self, visitor: 'Visitor') -> None:
+    def accept(self, visitor: Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -142,8 +200,8 @@ class Join(Source):
             if kind is cls.Kind.CROSS:
                 raise error.Syntax('Illegal use of condition for cross-join')
             condition = series.Cumulative.ensure_notin(series.Predicate.ensure_is(condition))
-            if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.columns, *right.columns)):
-                raise error.Syntax(f'({condition}) not a subset of source columns ({left.columns}, {right.columns})')
+            if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.features, *right.features)):
+                raise error.Syntax(f'({condition}) not a subset of source features ({left.features}, {right.features})')
         return super().__new__(cls, left, right, condition, kind)
 
     def __repr__(self):
@@ -151,10 +209,10 @@ class Join(Source):
 
     @property
     @functools.lru_cache
-    def columns(self) -> typing.Sequence['series.Column']:
-        return self.left.columns + self.right.columns
+    def features(self) -> typing.Sequence['series.Feature']:
+        return self.left.features + self.right.features
 
-    def accept(self, visitor: 'Visitor') -> None:
+    def accept(self, visitor: Source.Visitor) -> None:
         visitor.visit_join(self)
 
 
@@ -181,10 +239,10 @@ class Set(Source):
 
     @property
     @functools.lru_cache
-    def columns(self) -> typing.Sequence['series.Column']:
-        return self.left.columns + self.right.columns
+    def features(self) -> typing.Sequence['series.Feature']:
+        return self.left.features + self.right.features
 
-    def accept(self, visitor: 'Visitor') -> None:
+    def accept(self, visitor: Source.Visitor) -> None:
         visitor.visit_set(self)
 
 
@@ -220,16 +278,16 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self
 
-    def select(self, *columns: 'series.Column') -> 'Query':
-        """Specify the output columns to be provided (projection).
+    def select(self, *features: 'series.Feature') -> 'Query':
+        """Specify the output features to be provided (projection).
 
         Args:
-            columns: Sequence of column expressions.
+            features: Sequence of feature expressions.
 
         Returns:
             Query instance.
         """
-        return self.query.select(*columns)
+        return self.query.select(*features)
 
     def where(self, condition: 'series.Expression') -> 'Query':
         """Add a row-filtering condition that's evaluated before any aggregations.
@@ -237,7 +295,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         Repeated calls to ``.where`` combine all the conditions (logical AND).
 
         Args:
-            condition: Boolean column expression.
+            condition: Boolean feature expression.
 
         Returns:
             Query instance.
@@ -250,7 +308,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         Repeated calls to ``.having`` combine all the conditions (logical AND).
 
         Args:
-            condition: Boolean column expression.
+            condition: Boolean feature expression.
 
         Returns:
             Query instance.
@@ -267,7 +325,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 
         Args:
             other: Source to join with.
-            condition: Column expression as the join condition.
+            condition: Feature expression as the join condition.
             kind: Type of the join operation (INNER, LEFT, RIGHT, FULL CROSS).
 
         Returns:
@@ -275,20 +333,20 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.join(other, condition, kind)
 
-    def groupby(self, *columns: 'series.Operable') -> 'Query':
+    def groupby(self, *features: 'series.Operable') -> 'Query':
         """Aggregation specifiers.
 
         Args:
-            columns: Sequence of column expressions.
+            features: Sequence of feature expressions.
 
         Returns:
             Query instance.
         """
-        return self.query.groupby(*columns)
+        return self.query.groupby(*features)
 
     def orderby(
         self,
-        *columns: typing.Union[
+        *features: typing.Union[
             'series.Operable',
             typing.Union['series.Ordering.Direction', str],
             tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
@@ -297,12 +355,12 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Ordering specifiers.
 
         Args:
-            *columns: Sequence of column expressions and direction tuples.
+            *features: Sequence of feature expressions and direction tuples.
 
         Returns:
             Query instance.
         """
-        return self.query.orderby(*columns)
+        return self.query.orderby(*features)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':
         """Restrict the result rows by its max count with an optional offset.
@@ -354,13 +412,13 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
     """Origin is a queryable that can be referenced by some handle (rather than just a statement itself) - effectively
     a Table or a subquery with a Reference.
 
-    It's columns are represented using series.Element.
+    Its features are represented using series.Element.
     """
 
     @property
     @abc.abstractmethod
-    def columns(self) -> typing.Sequence['series.Element']:
-        """Tangible columns are instances of series.Element.
+    def features(self) -> typing.Sequence['series.Element']:
+        """Tangible features are instances of series.Element.
 
         Returns:
             Sequence of series.Field instances.
@@ -384,17 +442,17 @@ class Reference(Origin):
 
     @property
     @functools.lru_cache
-    def columns(self) -> typing.Sequence['series.Element']:
-        return tuple(series.Element(self, c.name) for c in self.instance.columns)
+    def features(self) -> typing.Sequence['series.Element']:
+        return tuple(series.Element(self, c.name) for c in self.instance.features)
 
     @property
-    def schema(self) -> type['struct.Schema']:
+    def schema(self) -> type['_struct.Schema']:
         return self.instance.schema
 
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
         return Reference(self.instance, name)
 
-    def accept(self, visitor: 'Visitor') -> None:
+    def accept(self, visitor: Source.Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -421,13 +479,13 @@ class Table(Origin):
                     if isinstance(b, Table.Schema)
                     for c in reversed(inspect.getmro(b))
                     for k, f in c.__dict__.items()
-                    if isinstance(f, struct.Field) and k not in seen and not seen.add(k)
+                    if isinstance(f, _struct.Field) and k not in seen and not seen.add(k)
                 )
             )
             if existing and len(existing.maps) > len(existing):
                 raise error.Syntax(f'Colliding base classes in schema {name}')
             for key, field in namespace.items():
-                if not isinstance(field, struct.Field):
+                if not isinstance(field, _struct.Field):
                     continue
                 if not field.name:
                     namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
@@ -440,7 +498,7 @@ class Table(Origin):
             # pylint: disable=not-an-iterable
             return functools.reduce(operator.xor, (hash(f) for f in cls), 0)
 
-        def __eq__(cls, other: type['struct.Schema']):
+        def __eq__(cls, other: type['_struct.Schema']):
             return len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
 
         def __len__(cls):
@@ -450,7 +508,7 @@ class Table(Origin):
             return f'{cls.__module__}:{cls.__qualname__}'
 
         @functools.lru_cache
-        def __getitem__(cls, name: str) -> 'struct.Field':
+        def __getitem__(cls, name: str) -> '_struct.Field':
             try:
                 return getattr(cls, name)
             except AttributeError:
@@ -459,21 +517,21 @@ class Table(Origin):
                         return field
             raise KeyError(f'Unknown field {name}')
 
-        def __iter__(cls) -> typing.Iterator['struct.Field']:
+        def __iter__(cls) -> typing.Iterator['_struct.Field']:
             return iter(
                 {
                     k: f
                     for c in reversed(inspect.getmro(cls))
                     for k, f in c.__dict__.items()
-                    if isinstance(f, struct.Field)
+                    if isinstance(f, _struct.Field)
                 }.values()
             )
 
-    schema: type['struct.Schema'] = property(operator.itemgetter(0))
+    schema: type['_struct.Schema'] = property(operator.itemgetter(0))
 
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
-        schema: typing.Union[str, type['struct.Schema']],
+        schema: typing.Union[str, type['_struct.Schema']],
         bases: typing.Optional[tuple[type]] = None,
         namespace: typing.Optional[dict[str, typing.Any]] = None,
     ):
@@ -490,10 +548,10 @@ class Table(Origin):
 
     @property
     @functools.lru_cache
-    def columns(self) -> typing.Sequence['series.Field']:
-        return tuple(series.Field(self, f.name) for f in self.schema)
+    def features(self) -> typing.Sequence['series.Column']:
+        return tuple(series.Column(self, f.name) for f in self.schema)
 
-    def accept(self, visitor: 'Visitor') -> None:
+    def accept(self, visitor: Source.Visitor) -> None:
         visitor.visit_table(self)
 
 
@@ -501,7 +559,7 @@ class Query(Queryable):
     """Generic source descriptor."""
 
     source: Source = property(operator.itemgetter(0))
-    selection: tuple['series.Column'] = property(operator.itemgetter(1))
+    selection: tuple['series.Feature'] = property(operator.itemgetter(1))
     prefilter: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
     grouping: tuple['series.Operable'] = property(operator.itemgetter(3))
     postfilter: typing.Optional['series.Expression'] = property(operator.itemgetter(4))
@@ -511,7 +569,7 @@ class Query(Queryable):
     def __new__(
         cls,
         source: Source,
-        selection: typing.Optional[typing.Iterable['series.Column']] = None,
+        selection: typing.Optional[typing.Iterable['series.Feature']] = None,
         prefilter: typing.Optional['series.Expression'] = None,
         grouping: typing.Optional[typing.Iterable['series.Operable']] = None,
         postfilter: typing.Optional['series.Expression'] = None,
@@ -526,35 +584,35 @@ class Query(Queryable):
         ] = None,
         rows: typing.Optional[Rows] = None,
     ):
-        def ensure_subset(*columns: 'series.Column') -> typing.Sequence['series.Column']:
-            """Ensure the provided columns is a valid subset of the available source columns.
+        def ensure_subset(*features: 'series.Feature') -> typing.Sequence['series.Feature']:
+            """Ensure the provided features is a valid subset of the available source features.
 
             Args:
-                *columns: List of columns to validate.
+                *features: List of features to validate.
 
             Returns:
-                Original list of columns if all valid.
+                Original list of features if all valid.
             """
-            if not series.Element.dissect(*columns).issubset(superset):
-                raise error.Syntax(f'{columns} not a subset of source columns: {superset}')
-            return columns
+            if not series.Element.dissect(*features).issubset(superset):
+                raise error.Syntax(f'{features} not a subset of source features: {superset}')
+            return features
 
-        superset = series.Element.dissect(*source.columns)
-        selection = tuple(ensure_subset(*(series.Column.ensure_is(c) for c in selection or [])))
+        superset = series.Element.dissect(*source.features)
+        selection = tuple(ensure_subset(*(series.Feature.ensure_is(c) for c in selection or [])))
         if prefilter is not None:
             prefilter = series.Cumulative.ensure_notin(
                 series.Predicate.ensure_is(*ensure_subset(series.Operable.ensure_is(prefilter)))
             )
         if grouping:
             grouping = ensure_subset(*(series.Cumulative.ensure_notin(series.Operable.ensure_is(g)) for g in grouping))
-            for aggregate in {c.operable for c in selection or source.columns}.difference(grouping):
+            for aggregate in {c.operable for c in selection or source.features}.difference(grouping):
                 series.Aggregate.ensure_in(aggregate)
         if postfilter is not None:
             postfilter = series.Window.ensure_notin(
                 series.Predicate.ensure_is(*ensure_subset(series.Operable.ensure_is(postfilter)))
             )
         ordering = tuple(series.Ordering.make(ordering or []))
-        ensure_subset(*(o.column for o in ordering))
+        ensure_subset(*(o.feature for o in ordering))
         return super().__new__(cls, source, selection, prefilter, tuple(grouping or []), postfilter, ordering, rows)
 
     def __repr__(self):
@@ -579,19 +637,19 @@ class Query(Queryable):
 
     @property
     @functools.lru_cache
-    def columns(self) -> typing.Sequence['series.Column']:
-        """Get the list of columns supplied by this query.
+    def features(self) -> typing.Sequence['series.Feature']:
+        """Get the list of features supplied by this query.
 
         Returns:
-            A sequence of supplying columns.
+            A sequence of supplying features.
         """
-        return self.selection if self.selection else self.source.columns
+        return self.selection if self.selection else self.source.features
 
-    def accept(self, visitor: 'Visitor') -> None:
+    def accept(self, visitor: Source.Visitor) -> None:
         visitor.visit_query(self)
 
-    def select(self, *columns: 'series.Column') -> 'Query':
-        return Query(self.source, columns, self.prefilter, self.grouping, self.postfilter, self.ordering, self.rows)
+    def select(self, *features: 'series.Feature') -> 'Query':
+        return Query(self.source, features, self.prefilter, self.grouping, self.postfilter, self.ordering, self.rows)
 
     def where(self, condition: 'series.Expression') -> 'Query':
         if self.prefilter is not None:
@@ -619,18 +677,18 @@ class Query(Queryable):
             self.rows,
         )
 
-    def groupby(self, *columns: 'series.Operable') -> 'Query':
-        return Query(self.source, self.selection, self.prefilter, columns, self.postfilter, self.ordering, self.rows)
+    def groupby(self, *features: 'series.Operable') -> 'Query':
+        return Query(self.source, self.selection, self.prefilter, features, self.postfilter, self.ordering, self.rows)
 
     def orderby(
         self,
-        *columns: typing.Union[
+        *features: typing.Union[
             'series.Operable',
             typing.Union['series.Ordering.Direction', str],
             tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
         ],
     ) -> 'Query':
-        return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, columns, self.rows)
+        return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, features, self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'Query':
         return Query(
@@ -642,60 +700,3 @@ class Query(Queryable):
             self.ordering,
             Rows(count, offset),
         )
-
-
-class Visitor:
-    """Frame visitor."""
-
-    def visit_source(self, source: Source) -> None:  # pylint: disable=unused-argument, no-self-use
-        """Generic source hook.
-
-        Args:
-            source: Source instance to be visited.
-        """
-
-    def visit_table(self, source: Table) -> None:
-        """Table hook.
-
-        Args:
-            source: Source instance to be visited.
-        """
-        self.visit_source(source)
-
-    def visit_reference(self, source: Reference) -> None:
-        """Reference hook.
-
-        Args:
-            source: Instance to be visited.
-        """
-        source.instance.accept(self)
-        self.visit_source(source)
-
-    def visit_join(self, source: Join) -> None:
-        """Join hook.
-
-        Args:
-            source: Instance to be visited.
-        """
-        source.left.accept(self)
-        source.right.accept(self)
-        self.visit_source(source)
-
-    def visit_set(self, source: Set) -> None:
-        """Set hook.
-
-        Args:
-            source: Instance to be visited.
-        """
-        source.left.accept(self)
-        source.right.accept(self)
-        self.visit_source(source)
-
-    def visit_query(self, source: Query) -> None:
-        """Query hook.
-
-        Args:
-            source: Instance to be visited.
-        """
-        source.source.accept(self)
-        self.visit_source(source)

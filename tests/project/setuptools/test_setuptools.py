@@ -22,7 +22,9 @@ Project steuptools tests.
 import pytest
 import setuptools
 
-from forml.project import setuptools as setupmod, distribution as distmod, product
+from forml.project import distribution as distmod
+from forml.project import product
+from forml.project import setuptools as setupmod
 
 
 class TestDistribution:

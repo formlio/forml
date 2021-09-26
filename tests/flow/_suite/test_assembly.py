@@ -20,10 +20,10 @@ Flow segment unit tests.
 """
 # pylint: disable=no-self-use
 import pytest
-from forml.flow._graph import span, node
 
-from forml.flow import _suite, error
-from forml.flow._suite import member
+from forml.flow import error
+from forml.flow._graph import node, span
+from forml.flow._suite import assembly, member
 
 
 class TestTrunk:
@@ -31,7 +31,7 @@ class TestTrunk:
 
     def test_new(self):
         """Test segment setup."""
-        assert all(isinstance(m, span.Path) for m in _suite.Trunk(span.Path(node.Future()), node.Future(), None))
+        assert all(isinstance(m, span.Path) for m in assembly.Trunk(span.Path(node.Future()), node.Future(), None))
 
 
 class TestComposition:
@@ -39,17 +39,17 @@ class TestComposition:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def composition(origin: member.Operator, operator: member.Operator) -> _suite.Composition:
+    def composition(origin: member.Operator, operator: member.Operator) -> assembly.Composition:
         """Composition fixture."""
-        return _suite.Composition((origin >> operator).expand())
+        return assembly.Composition((origin >> operator).expand())
 
     def test_composition(self, origin: member.Operator, operator: member.Operator):
         """Test the pipeline."""
         with pytest.raises(error.Topology):  # contains Future node
-            _suite.Composition(operator.expand())
+            assembly.Composition(operator.expand())
 
-        _suite.Composition((origin >> operator).expand())
+        assembly.Composition((origin >> operator).expand())
 
-    def test_shared(self, composition: _suite.Composition):
+    def test_shared(self, composition: assembly.Composition):
         """Test the composition shared nodes."""
         assert any(composition.shared)

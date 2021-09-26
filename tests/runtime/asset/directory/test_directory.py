@@ -22,7 +22,9 @@ ForML asset directory unit tests.
 import pytest
 
 from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
+from forml.runtime.asset.directory import generation as genmod
+from forml.runtime.asset.directory import lineage as lngmod
+from forml.runtime.asset.directory import project as prjmod
 
 
 class TestCache:

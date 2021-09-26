@@ -27,8 +27,9 @@ import typing
 import pytest
 
 from forml import error
-from forml.io.dsl.struct import frame
-from forml.project import component as compmod, importer
+from forml.io import dsl
+from forml.project import component as compmod
+from forml.project import importer
 
 
 def test_setup():
@@ -88,9 +89,9 @@ def test_load():
 class TestSource:
     """Source unit tests."""
 
-    def test_query(self, schema: frame.Table):
+    def test_query(self, schema: dsl.Table):
         """Test the query setup."""
         with pytest.raises(error.Invalid):
             compmod.Source.query(schema, schema.age)
         query = compmod.Source.query(schema)
-        assert isinstance(query.extract.train, frame.Query)
+        assert isinstance(query.extract.train, dsl.Query)

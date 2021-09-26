@@ -20,7 +20,9 @@ ForML persistent unit tests.
 """
 # pylint: disable=no-self-use
 from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import root as rootmod, project as prjmod, lineage as lngmod
+from forml.runtime.asset.directory import lineage as lngmod
+from forml.runtime.asset.directory import project as prjmod
+from forml.runtime.asset.directory import root as rootmod
 
 
 class TestRegistry:

@@ -24,8 +24,8 @@ import logging
 import operator
 import typing
 
+from forml.io import dsl
 from forml.io.dsl import parser as parsmod
-from forml.io.dsl.struct import frame as framod, series as sermod, kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -73,38 +73,38 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         """Closure with parameters required for retrieving a field."""
 
         source: Tabulizer = property(operator.itemgetter(1))
-        column: Columnizer = property(operator.itemgetter(2))
+        feature: Columnizer = property(operator.itemgetter(2))
 
         def __new__(
-            cls, handler: typing.Callable[[Table, Columnizer], Column], source: Tabulizer, column: Columnizer
+            cls, handler: typing.Callable[[Table, Columnizer], Column], source: Tabulizer, feature: Columnizer
         ) -> Columnizer:
-            return super().__new__(cls, handler, source, column)
+            return super().__new__(cls, handler, source, feature)
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
-            return self.source(data), self.column
+            return self.source(data), self.feature
 
     class Alias(Columnizer):
-        """Closure with parameters required for creating a column alias."""
+        """Closure with parameters required for creating a feature alias."""
 
-        column: Columnizer = property(operator.itemgetter(1))
+        feature: Columnizer = property(operator.itemgetter(1))
         name: str = property(operator.itemgetter(2))
 
         def __new__(
-            cls, handler: typing.Callable[[Table, Columnizer, str], Column], column: Columnizer, name: str
+            cls, handler: typing.Callable[[Table, Columnizer, str], Column], feature: Columnizer, name: str
         ) -> Columnizer:
-            return super().__new__(cls, handler, column, name)
+            return super().__new__(cls, handler, feature, name)
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
-            return data, self.column, self.name
+            return data, self.feature, self.name
 
     class Literal(Columnizer):
         """Closure with parameters required for creating a literal value."""
 
         value: typing.Any = property(operator.itemgetter(1))
-        kind: kindmod.Any = property(operator.itemgetter(2))
+        kind: dsl.Any = property(operator.itemgetter(2))
 
         def __new__(
-            cls, handler: typing.Callable[[typing.Any, kindmod.Any], Column], value: typing.Any, kind: kindmod.Any
+            cls, handler: typing.Callable[[typing.Any, dsl.Any], Column], value: typing.Any, kind: dsl.Any
         ) -> Columnizer:
             return super().__new__(cls, handler, value, kind)
 
@@ -114,13 +114,13 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
     class Expression(Columnizer):
         """Closure with parameters required for creating an expression."""
 
-        kind: type[sermod.Expression] = property(operator.itemgetter(1))
+        kind: type[dsl.Expression] = property(operator.itemgetter(1))
         arguments: tuple[typing.Any] = property(operator.itemgetter(2))
 
         def __new__(
             cls,
-            handler: typing.Callable[[type[sermod.Expression], typing.Sequence[Column]], Column],
-            kind: type[sermod.Expression],
+            handler: typing.Callable[[type[dsl.Expression], typing.Sequence[Column]], Column],
+            kind: type[dsl.Expression],
             arguments: typing.Sequence[typing.Any],
         ) -> Columnizer:
             return super().__new__(cls, handler, kind, tuple(arguments))
@@ -128,33 +128,33 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
             return self.kind, tuple(c(data) if isinstance(c, Closure) else c for c in self.arguments)
 
-    def implement_element(self, data: Table, column: Columnizer) -> Column:  # pylint: disable=no-self-use
+    def implement_element(self, data: Table, feature: Columnizer) -> Column:  # pylint: disable=no-self-use
         """Column provider implementation.
 
         Args:
-            data: Dataframe to get the column from.
-            column: Column reference.
+            data: Dataframe to get the feature from.
+            feature: Column reference.
 
         Returns:
             Column instance.
         """
-        return column(data)
+        return feature(data)
 
     @abc.abstractmethod
-    def implement_alias(self, data: Table, column: Columnizer, name: str) -> Column:
+    def implement_alias(self, data: Table, feature: Columnizer, name: str) -> Column:
         """Column provider implementation.
 
         Args:
-            data: Dataframe whose column is to be aliased.
-            column: Column reference.
+            data: Dataframe whose feature is to be aliased.
+            feature: Column reference.
             name: Column alias.
 
         Returns:
-            Aliased column instance.
+            Aliased feature instance.
         """
 
     @abc.abstractmethod
-    def implement_literal(self, value: typing.Any, kind: kindmod.Any) -> Column:
+    def implement_literal(self, value: typing.Any, kind: dsl.Any) -> Column:
         """Literal value provider implementation.
 
         Args:
@@ -162,13 +162,11 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
             kind: Value type.
 
         Returns:
-            Literal value column instance.
+            Literal value feature instance.
         """
 
     @abc.abstractmethod
-    def implement_expression(
-        self, expression: type[sermod.Expression], arguments: typing.Sequence[typing.Any]
-    ) -> Column:
+    def implement_expression(self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]) -> Column:
         """Literal value provider implementation.
 
         Args:
@@ -183,14 +181,14 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
     def generate_element(self, origin: Tabulizer, element: Columnizer) -> Columnizer:
         return self.Element(self.implement_element, origin, element)
 
-    def generate_alias(self, column: Columnizer, alias: str) -> Columnizer:
-        return self.Alias(self.implement_alias, column, alias)
+    def generate_alias(self, feature: Columnizer, alias: str) -> Columnizer:
+        return self.Alias(self.implement_alias, feature, alias)
 
-    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Columnizer:
+    def generate_literal(self, value: typing.Any, kind: dsl.Any) -> Columnizer:
         return self.Literal(self.implement_literal, value, kind)
 
     def generate_expression(
-        self, expression: type[sermod.Expression], arguments: typing.Sequence[typing.Any]
+        self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]
     ) -> Columnizer:
         return self.Expression(self.implement_expression, expression, arguments)
 
@@ -200,15 +198,15 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         left: Tabulizer = property(operator.itemgetter(1))
         right: Tabulizer = property(operator.itemgetter(2))
         condition: typing.Optional[Columnizer] = property(operator.itemgetter(3))
-        kind: framod.Join.Kind = property(operator.itemgetter(4))
+        kind: dsl.Join.Kind = property(operator.itemgetter(4))
 
         def __new__(
             cls,
-            handler: typing.Callable[[Table, Table, typing.Optional[Columnizer], framod.Join.Kind], Table],
+            handler: typing.Callable[[Table, Table, typing.Optional[Columnizer], dsl.Join.Kind], Table],
             left: Tabulizer,
             right: Tabulizer,
             condition: typing.Optional[Columnizer],
-            kind: framod.Join.Kind,
+            kind: dsl.Join.Kind,
         ) -> Tabulizer:
             return super().__new__(cls, handler, left, right, condition, kind)
 
@@ -220,14 +218,14 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
 
         left: Tabulizer = property(operator.itemgetter(1))
         right: Tabulizer = property(operator.itemgetter(2))
-        kind: framod.Set.Kind = property(operator.itemgetter(3))
+        kind: dsl.Set.Kind = property(operator.itemgetter(3))
 
         def __new__(
             cls,
-            handler: typing.Callable[[Table, Table, framod.Set.Kind], Table],
+            handler: typing.Callable[[Table, Table, dsl.Set.Kind], Table],
             left: Tabulizer,
             right: Tabulizer,
-            kind: framod.Set.Kind,
+            kind: dsl.Set.Kind,
         ) -> Tabulizer:
             return super().__new__(cls, handler, left, right, kind)
 
@@ -238,12 +236,12 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         """Closure with parameters required for performing a query."""
 
         source: Tabulizer = property(operator.itemgetter(1))
-        columns: typing.Sequence[Columnizer] = property(operator.itemgetter(2))
+        features: typing.Sequence[Columnizer] = property(operator.itemgetter(2))
         where: typing.Optional[Columnizer] = property(operator.itemgetter(3))
         groupby: typing.Sequence[Columnizer] = property(operator.itemgetter(4))
         having: typing.Optional[Columnizer] = property(operator.itemgetter(5))
         orderby: Tabulizer = property(operator.itemgetter(6))
-        rows: typing.Optional[framod.Rows] = property(operator.itemgetter(7))
+        rows: typing.Optional[dsl.Rows] = property(operator.itemgetter(7))
 
         def __new__(
             cls,
@@ -254,23 +252,23 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
                     typing.Optional[Columnizer],
                     typing.Sequence[Columnizer],
                     typing.Optional[Columnizer],
-                    typing.Sequence[tuple[Columnizer, sermod.Ordering.Direction]],
-                    typing.Optional[framod.Rows],
+                    typing.Sequence[tuple[Columnizer, dsl.Ordering.Direction]],
+                    typing.Optional[dsl.Rows],
                 ],
                 Table,
             ],
             source: Tabulizer,
-            columns: typing.Sequence[Columnizer],
+            features: typing.Sequence[Columnizer],
             where: typing.Optional[Columnizer],
             groupby: typing.Sequence[Columnizer],
             having: typing.Optional[Columnizer],
-            orderby: typing.Sequence[tuple[Columnizer, sermod.Ordering.Direction]],
-            rows: typing.Optional[framod.Rows],
+            orderby: typing.Sequence[tuple[Columnizer, dsl.Ordering.Direction]],
+            rows: typing.Optional[dsl.Rows],
         ) -> Tabulizer:
-            return super().__new__(cls, handler, source, tuple(columns), where, tuple(groupby), having, orderby, rows)
+            return super().__new__(cls, handler, source, tuple(features), where, tuple(groupby), having, orderby, rows)
 
         def __args__(self, data: Table) -> typing.Sequence[typing.Any]:
-            return self.source(data), self.columns, self.where, self.groupby, self.having, self.orderby, self.rows
+            return self.source(data), self.features, self.where, self.groupby, self.having, self.orderby, self.rows
 
     class RefOrigin(Tabulizer):
         """Closure with parameters required for holding a reference."""
@@ -297,7 +295,7 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def implement_join(
-        self, left: Table, right: Table, condition: typing.Optional[Columnizer], kind: framod.Join.Kind
+        self, left: Table, right: Table, condition: typing.Optional[Columnizer], kind: dsl.Join.Kind
     ) -> Table:
         """Implementation of join of two tables.
 
@@ -312,8 +310,8 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def implement_set(self, left: Table, right: Table, kind: framod.Set.Kind) -> Table:
-        """Implementation of set combination of two tables with same columns.
+    def implement_set(self, left: Table, right: Table, kind: dsl.Set.Kind) -> Table:
+        """Implementation of set combination of two tables with same features.
 
         Args:
             left: Left side of the set operation.
@@ -332,15 +330,15 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         expression: typing.Optional[typing.Sequence[Columnizer]] = None,
         predicate: typing.Optional[Columnizer] = None,
     ) -> Table:
-        """Split the input data into groups based on the specified grouping columns,
+        """Split the input data into groups based on the specified grouping features,
         then discard all groups for which condition is not met and finally evaluate and materialize given expression
         producing new data consisting of single record per each (remaining) group.
 
         Args:
             table: Input data to be transformed.
             partition: Optional set of expressions defining the data grouping.
-            expression: Optional set of expressions producing new columns upon evaluation (might be aggregating in which
-                        case the new columns should extend the set of the partitioning columns).
+            expression: Optional set of expressions producing new features upon evaluation (might be aggregating in
+                        which case the new features should extend the set of the partitioning features).
             predicate: Optional filter to be applied on the evaluated data.
 
         Returns:
@@ -349,28 +347,28 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def implement_ordering(
-        self, table: Table, specs: typing.Sequence[tuple[Columnizer, sermod.Ordering.Direction]]
+        self, table: Table, specs: typing.Sequence[tuple[Columnizer, dsl.Ordering.Direction]]
     ) -> Table:
         """Row ordering implementation.
 
         Args:
             table: Input table.
-            specs: Ordering specs - tuple of column and direction specifying the ordering.
+            specs: Ordering specs - tuple of feature and direction specifying the ordering.
 
         Returns:
             Table with rows ordered according to given specs.
         """
 
     @abc.abstractmethod
-    def implement_project(self, table: Table, columns: typing.Sequence[Columnizer]) -> Table:
+    def implement_project(self, table: Table, features: typing.Sequence[Columnizer]) -> Table:
         """Column projection implementation.
 
         Args:
             table: Input table.
-            columns: Columns to be projected.
+            features: Columns to be projected.
 
         Returns:
-            Table with the exact columns in given order.
+            Table with the exact features in given order.
         """
 
     @abc.abstractmethod
@@ -389,18 +387,18 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
     def implement_query(
         self,
         table: Table,
-        columns: typing.Sequence[Columnizer],
+        features: typing.Sequence[Columnizer],
         where: typing.Optional[Columnizer],
         groupby: typing.Sequence[Columnizer],
         having: typing.Optional[Columnizer],
-        orderby: typing.Sequence[tuple[Columnizer, sermod.Ordering.Direction]],
-        rows: typing.Optional[framod.Rows],
+        orderby: typing.Sequence[tuple[Columnizer, dsl.Ordering.Direction]],
+        rows: typing.Optional[dsl.Rows],
     ) -> Table:
         """Query implementation.
 
         Args:
             table: Source to be queried.
-            columns: List of columns for projection.
+            features: List of features for projection.
             where: Prefilter specifier.
             groupby: Grouping specifier.
             having: Postfilter specifier.
@@ -413,16 +411,16 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
         if where is not None:
             table = self.implement_apply(table, predicate=where)
         if groupby:
-            # adding orderby columns as they might be aggregation based
+            # adding orderby features as they might be aggregation based
             _seen = set(groupby)
             aggregate = tuple(
-                c for c in itertools.chain(columns, (o for o, _ in orderby)) if c not in _seen and not _seen.add(c)
+                c for c in itertools.chain(features, (o for o, _ in orderby)) if c not in _seen and not _seen.add(c)
             )
             table = self.implement_apply(table, partition=groupby, expression=aggregate, predicate=having)
         if orderby:
             table = self.implement_ordering(table, orderby)
-        if columns:
-            table = self.implement_project(table, columns)
+        if features:
+            table = self.implement_project(table, features)
         if rows:
             table = self.implement_limit(table, rows.count, rows.offset)
         return table
@@ -452,24 +450,24 @@ class Parser(parsmod.Visitor[Tabulizer, Columnizer], metaclass=abc.ABCMeta):
 
     # pylint: disable=missing-function-docstring
     def generate_join(
-        self, left: Tabulizer, right: Tabulizer, condition: typing.Optional[Columnizer], kind: framod.Join.Kind
+        self, left: Tabulizer, right: Tabulizer, condition: typing.Optional[Columnizer], kind: dsl.Join.Kind
     ) -> 'Parser.Join':
         return self.Join(self.implement_join, left, right, condition, kind)
 
-    def generate_set(self, left: Tabulizer, right: Tabulizer, kind: framod.Set.Kind) -> 'Parser.Set':
+    def generate_set(self, left: Tabulizer, right: Tabulizer, kind: dsl.Set.Kind) -> 'Parser.Set':
         return self.Set(self.implement_set, left, right, kind)
 
     def generate_query(
         self,
         source: Tabulizer,
-        columns: typing.Sequence[Columnizer],
+        features: typing.Sequence[Columnizer],
         where: typing.Optional[Columnizer],
         groupby: typing.Sequence[Columnizer],
         having: typing.Optional[Columnizer],
-        orderby: typing.Sequence[tuple[Columnizer, sermod.Ordering.Direction]],
-        rows: typing.Optional[framod.Rows],
+        orderby: typing.Sequence[tuple[Columnizer, dsl.Ordering.Direction]],
+        rows: typing.Optional[dsl.Rows],
     ) -> 'Parser.Query':
-        return self.Query(self.implement_query, source, columns, where, groupby, having, orderby, rows)
+        return self.Query(self.implement_query, source, features, where, groupby, having, orderby, rows)
 
     def generate_reference(self, instance: Tabulizer, name: str) -> tuple[Tabulizer, Tabulizer]:
         return self.RefOrigin(self.implement_reforigin, instance, name), self.RefHandle(self.implement_refhandle, name)

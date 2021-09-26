@@ -16,23 +16,6 @@
 Project
 =======
 
-+--------------------------+
-| Pipeline                 |
-+--------------------------+
-| Rollout Strategy         |
-+--------------------------+
-| Dataset Specification    | Query/ies, ordinal column, label extraction
-+--------------------------+
-| Training Schedule
-+--------------------------+
-| Evaluation Schedule
-+--------------------------+
-| Loss Function
-+--------------------------+
-| Evaluation Strategy
-+--------------------------+
-| Hyperparameter Tunning
-
 Starting New Project
 --------------------
 
@@ -60,7 +43,6 @@ project component structure wrapped within the python application layout might l
 
     <project_name>
       ├── setup.py
-      ├── rollout.py
       ├── <optional_project_namespace>
       │     └── <project_name>
       │          ├── __init__.py
@@ -216,11 +198,6 @@ Hyperparameter Tuning Strategy (``tuning.py``)
 Scheduling Rules (``schedule.py``)
 ''''''''''''''''''''''''''''''''''
 
-
-.. _project-rollout:
-
-Rollout Strategy (``rollout.py``)
-''''''''''''''''''''''''''''''''''
 
 
 Tests

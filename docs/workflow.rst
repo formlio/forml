@@ -82,9 +82,9 @@ Example of a user-defined native actor::
 
     import typing
     import pandas as pd
-    from forml.flow import task
+    from forml import flow
 
-    class LabelExtractor(task.Actor):
+    class LabelExtractor(flow.Actor):
         """Simple label-extraction actor returning a specific column from input feature set."""
         def __init__(self, column: str = 'label'):
             self._column: str = column
@@ -109,7 +109,7 @@ classes cannot be changed to extend ForML base Actor class but can be wrapped us
 decorator like this::
 
     from sklearn import ensemble as sklearn
-    from forml.lib.flow import topology
+    from forml.lib.pipeline import topology
 
     gbc_actor = topology.Class.actor(sklearn.GradientBoostingClassifier, train='fit', apply='predict_proba')
 
@@ -122,7 +122,7 @@ Decorated Function Actors
 Last option of defining actors is simplistic decorating of user-defined functions::
 
     import pandas as pd
-    from forml.lib.flowimport topology
+    from forml.lib.pipeline import topology
 
     @topology.Function.actor
     def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
@@ -164,20 +164,20 @@ Standard ML entities like *transformers* or *estimators* can be turned into oper
 provided decorators or adding a provided mixin class into the class hierarchy. More complex entities like for example
 a *stacked ensembler* need to be implemented as operators from scratch (reusable entities can be maintained centrally as
 library operators). For simple operators (typically single-actor operators) are available convenient decorators under
-the ``forml.lob.flow.topology`` that makes it really easy to create specific instances. More details on the
+the ``forml.lib.pipeline.topology`` that makes it really easy to create specific instances. More details on the
 topic of operator development can be found in the :doc:`operator` sections.
 
 Following is an example of creating a simple transformer operator by decorating a user-defined actor with the
-``simple.Mapper.operator`` decorator::
+``topology.Mapper.operator`` decorator::
 
     import typing
     import pandas as pd
     import numpy as np
-    from forml.flow import task
-    from forml.lib.flow import topology
+    from forml import flow
+    from forml.lib.pipeline import topology
 
     @topology.Mapper.operator
-    class NaNImputer(task.Actor):
+    class NaNImputer(flow.Actor):
         """Imputer for missing values implemented as native ForML actor."""
         def __init__(self):
             self._fill: typing.Optional[pd.Series] = None
@@ -194,7 +194,7 @@ Following is an example of creating a simple transformer operator by decorating 
 It is also possible to use the decorator to create operators from third-party wrapped Actors::
 
     from sklearn import ensemble as sklearn
-    from forml.lib.flow import topology
+    from forml.lib.pipeline import topology
 
     RFC = topology.Consumer.operator(topology.Class.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
 

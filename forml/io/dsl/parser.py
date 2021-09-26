@@ -25,13 +25,13 @@ import logging
 import types
 import typing
 
-from forml.io.dsl import error
-from forml.io.dsl.struct import series as sermod, frame, kind as kindmod
+from forml.io import dsl
+from forml.io.dsl import error, function
 
 LOGGER = logging.getLogger(__name__)
 
 Source = typing.TypeVar('Source')
-Column = typing.TypeVar('Column')
+Feature = typing.TypeVar('Feature')
 Symbol = typing.TypeVar('Symbol')
 
 
@@ -76,26 +76,26 @@ class Container(typing.Generic[Symbol]):
             """Container for segments of all tables."""
 
             class Segment(collections.namedtuple('Segment', 'fields, factors')):
-                """Frame segment specification as a list of columns (vertical) and row predicates (horizontal)."""
+                """Frame segment specification as a list of features (vertical) and row predicates (horizontal)."""
 
                 def __new__(cls):
                     return super().__new__(cls, set(), set())
 
                 @property
-                def predicate(self) -> typing.Optional[sermod.Predicate]:
+                def predicate(self) -> typing.Optional[dsl.Predicate]:
                     """Combine the factors into single predicate.
 
                     Returns:
                         Predicate expression.
                     """
-                    return functools.reduce(sermod.Or, sorted(self.factors)) if self.factors else None
+                    return functools.reduce(function.Or, sorted(self.factors)) if self.factors else None
 
             def __init__(self):
-                self._segments: dict[frame.Table, Container.Context.Tables.Segment] = collections.defaultdict(
+                self._segments: dict[dsl.Table, Container.Context.Tables.Segment] = collections.defaultdict(
                     self.Segment
                 )
 
-            def items(self) -> typing.ItemsView[frame.Table, 'Container.Context.Tables.Segment']:
+            def items(self) -> typing.ItemsView[dsl.Table, 'Container.Context.Tables.Segment']:
                 """Get the key-value pairs of this mapping.
 
                 Returns:
@@ -103,19 +103,19 @@ class Container(typing.Generic[Symbol]):
                 """
                 return self._segments.items()
 
-            def __getitem__(self, table: frame.Table) -> 'Container.Context.Tables.Segment':
+            def __getitem__(self, table: dsl.Table) -> 'Container.Context.Tables.Segment':
                 return self._segments[table]
 
-            def select(self, *column: sermod.Column) -> None:
-                """Extract fields from given list of columns and register them into segments of their relevant tables.
+            def select(self, *feature: dsl.Feature) -> None:
+                """Extract fields from given list of features and register them into segments of their relevant tables.
 
                 Args:
-                    *column: Columns to be to extracted and registered.
+                    *feature: Features to be to extracted and registered.
                 """
-                for field in sermod.Field.dissect(*column):
+                for field in dsl.Column.dissect(*feature):
                     self[field.origin].fields.add(field)
 
-            def filter(self, expression: sermod.Predicate) -> None:
+            def filter(self, expression: dsl.Predicate) -> None:
                 """Extract predicate factors from given expression and register them into segments of their relevant
                 tables. Also register the whole expression using .select().
 
@@ -129,7 +129,7 @@ class Container(typing.Generic[Symbol]):
         def __init__(self):
             self.symbols: Container.Context.Symbols = self.Symbols()
             self.tables: Container.Context.Tables = self.Tables()
-            self.origins: dict[frame.Origin, Source] = {}
+            self.origins: dict[dsl.Origin, Source] = {}
 
         @property
         def dirty(self) -> bool:
@@ -223,72 +223,72 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
 
 
 class Visitor(
-    typing.Generic[Source, Column],
-    Container[typing.Union[Source, Column]],
-    frame.Visitor,
-    sermod.Visitor,
+    typing.Generic[Source, Feature],
+    Container[typing.Union[Source, Feature]],
+    dsl.Source.Visitor,
+    dsl.Feature.Visitor,
     metaclass=abc.ABCMeta,
 ):
     """Frame source parser."""
 
-    def __init__(self, sources: typing.Mapping[frame.Source, Source], columns: typing.Mapping[sermod.Column, Column]):
+    def __init__(self, sources: typing.Mapping[dsl.Source, Source], features: typing.Mapping[dsl.Feature, Feature]):
         super().__init__()
-        self._sources: typing.Mapping[frame.Source, Source] = types.MappingProxyType(sources)
-        self._columns: typing.Mapping[sermod.Column, Column] = types.MappingProxyType(columns)
+        self._sources: typing.Mapping[dsl.Source, Source] = types.MappingProxyType(sources)
+        self._features: typing.Mapping[dsl.Feature, Feature] = types.MappingProxyType(features)
 
-    def resolve_column(self, column: sermod.Column) -> Column:
-        """Get a custom target code for a column value.
+    def resolve_feature(self, feature: dsl.Feature) -> Feature:
+        """Get a custom target code for a feature value.
 
         Args:
-            column: Column instance.
+            feature: Feature instance.
 
         Returns:
-            Column in target code representation.
+            Feature in target code representation.
         """
         try:
-            return self._columns[column]
+            return self._features[feature]
         except KeyError as err:
-            raise error.Mapping(f'Unknown mapping for column {column}') from err
+            raise error.Mapping(f'Unknown mapping for feature {feature}') from err
 
     @functools.lru_cache
-    def generate_column(self, column: sermod.Column) -> Column:
-        """Generate target code for the generic column type.
+    def generate_feature(self, feature: dsl.Feature) -> Feature:
+        """Generate target code for the generic feature type.
 
         Args:
-            column: Column instance
+            feature: Feature instance
 
         Returns:
-            Column in target code.
+            Feature in target code.
         """
-        column.accept(self)
+        feature.accept(self)
         return self.context.symbols.pop()
 
     @abc.abstractmethod
-    def generate_element(self, origin: Source, element: Column) -> Column:
-        """Generate a field code.
+    def generate_element(self, origin: Source, element: Feature) -> Feature:
+        """Generate an element code.
 
         Args:
-            origin: Column value already in target code.
-            element: Field symbol to be used for given column.
+            origin: Origin value already in target code.
+            element: Element symbol to be used for given feature.
 
         Returns:
-            Field in target code.
+            Element in target code.
         """
 
     @abc.abstractmethod
-    def generate_alias(self, column: Column, alias: str) -> Column:
-        """Generate column alias code.
+    def generate_alias(self, feature: Feature, alias: str) -> Feature:
+        """Generate feature alias code.
 
         Args:
-            column: Column value already in target code.
-            alias: Alias to be used for given column.
+            feature: Feature value already in target code.
+            alias: Alias to be used for given feature.
 
         Returns:
-            Aliased column in target code.
+            Aliased feature in target code.
         """
 
     @abc.abstractmethod
-    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> Column:
+    def generate_literal(self, value: typing.Any, kind: dsl.Any) -> Feature:
         """Generate target code for a literal value.
 
         Args:
@@ -300,9 +300,7 @@ class Visitor(
         """
 
     @abc.abstractmethod
-    def generate_expression(
-        self, expression: type[sermod.Expression], arguments: typing.Sequence[typing.Any]
-    ) -> Column:
+    def generate_expression(self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]) -> Feature:
         """Generate target code for an expression of given arguments.
 
         Args:
@@ -313,33 +311,33 @@ class Visitor(
             Expression in target code representation.
         """
 
-    def visit_aliased(self, column: sermod.Aliased) -> None:
-        super().visit_aliased(column)
-        self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), column.name))
+    def visit_aliased(self, feature: dsl.Aliased) -> None:
+        super().visit_aliased(feature)
+        self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), feature.name))
 
-    def visit_literal(self, column: sermod.Literal) -> None:
-        super().visit_literal(column)
-        self.context.symbols.push(self.generate_literal(column.value, column.kind))
+    def visit_literal(self, feature: dsl.Literal) -> None:
+        super().visit_literal(feature)
+        self.context.symbols.push(self.generate_literal(feature.value, feature.kind))
 
-    def visit_element(self, column: sermod.Element) -> None:
-        super().visit_element(column)
+    def visit_element(self, feature: dsl.Element) -> None:
+        super().visit_element(feature)
         self.context.symbols.push(
-            self.generate_element(self.context.origins[column.origin], self.resolve_column(column))
+            self.generate_element(self.context.origins[feature.origin], self.resolve_feature(feature))
         )
 
-    @bypass(resolve_column)
-    def visit_expression(self, column: sermod.Expression) -> None:
-        super().visit_expression(column)
+    @bypass(resolve_feature)
+    def visit_expression(self, feature: dsl.Expression) -> None:
+        super().visit_expression(feature)
         arguments = tuple(
-            reversed([self.context.symbols.pop() if isinstance(c, sermod.Column) else c for c in reversed(column)])
+            reversed([self.context.symbols.pop() if isinstance(c, dsl.Feature) else c for c in reversed(feature)])
         )
-        self.context.symbols.push(self.generate_expression(column.__class__, arguments))
+        self.context.symbols.push(self.generate_expression(feature.__class__, arguments))
 
-    @bypass(resolve_column)
-    def visit_window(self, column: sermod.Window) -> typing.ContextManager[None]:
+    @bypass(resolve_feature)
+    def visit_window(self, feature: dsl.Window) -> typing.ContextManager[None]:
         raise RuntimeError('Window functions not yet supported')
 
-    def resolve_source(self, source: frame.Source) -> Source:
+    def resolve_source(self, source: dsl.Source) -> Source:
         """Get a custom target code for a source type.
 
         Args:
@@ -356,14 +354,14 @@ class Visitor(
     def generate_table(  # pylint: disable=no-self-use
         self,
         table: Source,
-        columns: typing.Iterable[Column],  # pylint: disable=unused-argument
-        predicate: typing.Optional[Column],  # pylint: disable=unused-argument
+        features: typing.Iterable[Feature],  # pylint: disable=unused-argument
+        predicate: typing.Optional[Feature],  # pylint: disable=unused-argument
     ) -> Source:  # pylint: disable=unused-argument
         """Generate a target code for a table instance given its actual field requirements.
 
         Args:
             table: Table (already in target code based on the provided mapping) to be generated.
-            columns: List of fields to be retrieved from the table (potentially subset of all available).
+            features: List of fields to be retrieved from the table (potentially subset of all available).
             predicate: Row filter to be possibly pushed down when retrieving the data from given table.
 
         Returns:
@@ -385,7 +383,7 @@ class Visitor(
 
     @abc.abstractmethod
     def generate_join(
-        self, left: Source, right: Source, condition: typing.Optional[Column], kind: frame.Join.Kind
+        self, left: Source, right: Source, condition: typing.Optional[Feature], kind: dsl.Join.Kind
     ) -> Source:
         """Generate target code for a join operation using the left/right terms, given condition and a join type.
 
@@ -400,7 +398,7 @@ class Visitor(
         """
 
     @abc.abstractmethod
-    def generate_set(self, left: Source, right: Source, kind: frame.Set.Kind) -> Source:
+    def generate_set(self, left: Source, right: Source, kind: dsl.Set.Kind) -> Source:
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -416,18 +414,18 @@ class Visitor(
     def generate_query(
         self,
         source: Source,
-        columns: typing.Sequence[Column],
-        where: typing.Optional[Column],
-        groupby: typing.Sequence[Column],
-        having: typing.Optional[Column],
-        orderby: typing.Sequence[tuple[Column, sermod.Ordering.Direction]],
-        rows: typing.Optional[frame.Rows],
+        features: typing.Sequence[Feature],
+        where: typing.Optional[Feature],
+        groupby: typing.Sequence[Feature],
+        having: typing.Optional[Feature],
+        orderby: typing.Sequence[tuple[Feature, dsl.Ordering.Direction]],
+        rows: typing.Optional[dsl.Rows],
     ) -> Source:
         """Generate query statement code.
 
         Args:
             source: Source already in target code.
-            columns: Sequence of selected columns in target code.
+            features: Sequence of selected features in target code.
             where: Where condition in target code.
             groupby: Sequence of grouping specifiers in target code.
             having: Having condition in target code.
@@ -438,42 +436,42 @@ class Visitor(
             Query in target code.
         """
 
-    def visit_table(self, source: frame.Table) -> None:
+    def visit_table(self, source: dsl.Table) -> None:
         self.context.origins[source] = origin = self.resolve_source(source)
-        fields = [self.generate_column(f) for f in sorted(self.context.tables[source].fields)]
+        features = [self.generate_feature(f) for f in sorted(self.context.tables[source].fields)]
         predicate = self.context.tables[source].predicate
         if predicate is not None:
-            predicate = self.generate_column(predicate)
+            predicate = self.generate_feature(predicate)
         super().visit_table(source)
-        self.context.symbols.push(self.generate_table(origin, fields, predicate))
+        self.context.symbols.push(self.generate_table(origin, features, predicate))
 
-    def visit_reference(self, source: frame.Reference) -> None:
+    def visit_reference(self, source: dsl.Reference) -> None:
         super().visit_reference(source)
         origin, handle = self.generate_reference(self.context.symbols.pop(), source.name)
         self.context.origins[source] = handle
         self.context.symbols.push(origin)
 
     @bypass(resolve_source)
-    def visit_join(self, source: frame.Join) -> None:
+    def visit_join(self, source: dsl.Join) -> None:
         if source.condition:
             self.context.tables.filter(source.condition)
         super().visit_join(source)
         right = self.context.symbols.pop()
         left = self.context.symbols.pop()
-        expression = self.generate_column(source.condition) if source.condition is not None else None
+        expression = self.generate_feature(source.condition) if source.condition is not None else None
         self.context.symbols.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(resolve_source)
-    def visit_set(self, source: frame.Set) -> None:
+    def visit_set(self, source: dsl.Set) -> None:
         super().visit_set(source)
         right = self.context.symbols.pop()
         left = self.context.symbols.pop()
         self.context.symbols.push(self.generate_set(left, right, source.kind))
 
     @bypass(resolve_source)
-    def visit_query(self, source: frame.Query) -> None:
+    def visit_query(self, source: dsl.Query) -> None:
         with self:
-            self.context.tables.select(*source.columns)
+            self.context.tables.select(*source.features)
             if source.prefilter is not None:
                 self.context.tables.filter(source.prefilter)
             if source.postfilter is not None:
@@ -481,12 +479,12 @@ class Visitor(
             self.context.tables.select(*source.grouping)
             self.context.tables.select(*(c for c, _ in source.ordering))
             super().visit_query(source)
-            columns = [self.generate_column(c) for c in source.columns]
-            where = self.generate_column(source.prefilter) if source.prefilter is not None else None
-            groupby = [self.generate_column(c) for c in source.grouping]
-            having = self.generate_column(source.postfilter) if source.postfilter is not None else None
-            orderby = [(self.generate_column(c), o) for c, o in source.ordering]
+            features = [self.generate_feature(c) for c in source.features]
+            where = self.generate_feature(source.prefilter) if source.prefilter is not None else None
+            groupby = [self.generate_feature(c) for c in source.grouping]
+            having = self.generate_feature(source.postfilter) if source.postfilter is not None else None
+            orderby = [(self.generate_feature(c), o) for c, o in source.ordering]
             query = self.generate_query(
-                self.context.symbols.pop(), columns, where, groupby, having, orderby, source.rows
+                self.context.symbols.pop(), features, where, groupby, having, orderby, source.rows
             )
         self.context.symbols.push(query)

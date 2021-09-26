@@ -21,13 +21,14 @@ Runtime layer.
 import abc
 import typing
 
-from forml import flow
-from forml import provider as provmod, error
+from forml import error, flow
+from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
-from forml.io import feed as feedmod, sink as sinkmod
-from forml.io.dsl.struct import frame, kind
+from forml.io import dsl
+from forml.io import feed as feedmod
+from forml.io import sink as sinkmod
 from forml.runtime import code
-from forml.runtime.asset import persistent, access, directory
+from forml.runtime.asset import access, directory, persistent
 from forml.runtime.asset.directory import root
 from forml.runtime.code import compiler
 from forml.runtime.mode import evaluation
@@ -50,7 +51,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         self._feed: feedmod.Provider = feed or feedmod.Provider()
         self._sink: typing.Optional[sinkmod.Provider] = sink
 
-    def train(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
+    def train(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         """Run the training code.
 
         Args:
@@ -60,7 +61,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         composition = self._build(lower or self._assets.tag.training.ordinal, upper, self._assets.project.pipeline)
         self._exec(composition.train, self._assets.state(composition.shared, self._assets.tag.training.trigger()))
 
-    def apply(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
+    def apply(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         """Run the applying code.
 
         Args:
@@ -71,7 +72,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         self._exec(composition.apply, self._assets.state(composition.shared))
 
     def tune(  # pylint: disable=no-self-use
-        self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None
+        self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
     ) -> None:
         """Run the tune mode.
 
@@ -81,7 +82,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         """
         raise error.Missing('Not yet supported')
 
-    def eval(self, lower: typing.Optional['kind.Native'] = None, upper: typing.Optional['kind.Native'] = None) -> None:
+    def eval(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         """Run the development model evaluation.
 
         Args:
@@ -98,7 +99,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         self._exec(composition.train)
 
     def _build(
-        self, lower: typing.Optional['kind.Native'], upper: typing.Optional['kind.Native'], *blocks: flow.Composable
+        self, lower: typing.Optional['dsl.Native'], upper: typing.Optional['dsl.Native'], *blocks: flow.Composable
     ) -> flow.Composition:
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
@@ -155,7 +156,7 @@ class Platform:
             self._sink: sinkmod.Handle = sink
 
         @property
-        def train(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
+        def train(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
             """Return the train handler.
 
             Returns:
@@ -164,7 +165,7 @@ class Platform:
             return self(self._assets.project.source.extract.train, self._sink.train).train
 
         @property
-        def apply(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
+        def apply(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
             """Return the apply handler.
 
             Returns:
@@ -173,7 +174,7 @@ class Platform:
             return self(self._assets.project.source.extract.apply, self._sink.apply).apply
 
         @property
-        def eval(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
+        def eval(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
             """Return the eval handler.
 
             Returns:
@@ -182,7 +183,7 @@ class Platform:
             return self(self._assets.project.source.extract.train, self._sink.eval).eval
 
         @property
-        def tune(self) -> typing.Callable[[typing.Optional['kind.Native'], typing.Optional['kind.Native']], None]:
+        def tune(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
             """Return the tune handler.
 
             Returns:
@@ -190,7 +191,7 @@ class Platform:
             """
             raise NotImplementedError()
 
-        def __call__(self, query: 'frame.Query', sink: 'sinkmod.Provider') -> Runner:
+        def __call__(self, query: 'dsl.Query', sink: 'sinkmod.Provider') -> Runner:
             return Runner[self._provider.reference](
                 self._assets, self._feeds.match(query), sink, **self._provider.params
             )
@@ -252,7 +253,7 @@ class Platform:
         def __init__(self, *configs: typing.Union[provcfg.Feed, 'feedmod.Provider']):
             self._pool: feedmod.Pool = feedmod.Pool(*configs)
 
-        def match(self, query: 'frame.Query') -> 'feedmod.Provider':
+        def match(self, query: 'dsl.Query') -> 'feedmod.Provider':
             """Select the feed that can provide for given query.
 
             Args:

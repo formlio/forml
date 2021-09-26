@@ -28,7 +28,7 @@ import cloudpickle
 import pytest
 
 from forml.io.dsl import error
-from forml.io.dsl.struct import series, frame, kind
+from forml.io.dsl._struct import frame, kind, series
 
 
 class TestOrdering:
@@ -59,65 +59,65 @@ class TestOrdering:
         )
 
 
-class Column(metaclass=abc.ABCMeta):
-    """Base class for column tests."""
+class Feature(metaclass=abc.ABCMeta):
+    """Base class for feature tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
     @abc.abstractmethod
-    def column() -> series.Column:
-        """Column undertest."""
+    def feature() -> series.Feature:
+        """Feature undertest."""
 
     @abc.abstractmethod
-    def test_operable(self, column: series.Column):
+    def test_operable(self, feature: series.Feature):
         """Test the element getter."""
 
-    def test_dissect(self, column: series.Column):
-        """Test the column dissection."""
-        assert column in column.dissect(column)
+    def test_dissect(self, feature: series.Feature):
+        """Test the feature dissection."""
+        assert feature in feature.dissect(feature)
 
-    def test_identity(self, column: series.Column, school: frame.Table):
+    def test_identity(self, feature: series.Feature, school: frame.Table):
         """Test the identity (hashability, equality, sorting)."""
-        assert len({column, column, school.sid}) == 2
-        assert sorted((column, school.sid)) == sorted((column, school.sid), key=lambda c: repr(c.operable))
+        assert len({feature, feature, school.sid}) == 2
+        assert sorted((feature, school.sid)) == sorted((feature, school.sid), key=lambda c: repr(c.operable))
 
-    def test_serilizable(self, column: series.Column):
+    def test_serilizable(self, feature: series.Feature):
         """Test source serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(column)) == column
+        assert cloudpickle.loads(cloudpickle.dumps(feature)) == feature
 
-    def test_kind(self, column: series.Column):
-        """Test the column kind."""
-        assert isinstance(column.kind, kind.Any)
+    def test_kind(self, feature: series.Feature):
+        """Test the feature kind."""
+        assert isinstance(feature.kind, kind.Any)
 
 
-class Operable(Column, metaclass=abc.ABCMeta):
-    """Base class for element columns."""
+class Operable(Feature, metaclass=abc.ABCMeta):
+    """Base class for element features."""
 
-    def test_operable(self, column: series.Operable):
-        assert column.operable == column
+    def test_operable(self, feature: series.Operable):
+        assert feature.operable == feature
 
-    def test_alias(self, column: series.Operable):
-        """Field aliasing test."""
-        aliased = column.alias('foo')
+    def test_alias(self, feature: series.Operable):
+        """Feature aliasing test."""
+        aliased = feature.alias('foo')
         assert aliased.name == 'foo'
-        assert aliased.kind == column.kind
+        assert aliased.kind == feature.kind
 
 
-class TestAliased(Column):
-    """Aliased column tests."""
+class TestAliased(Feature):
+    """Aliased feature tests."""
 
     @staticmethod
     @pytest.fixture(scope='session', params=(series.Literal('baz'),))
-    def column(request) -> series.Aliased:
+    def feature(request) -> series.Aliased:
         """Aliased fixture."""
         return request.param.alias('foobar')
 
-    def test_operable(self, column: series.Aliased):
-        assert isinstance(column.operable, series.Operable)
+    def test_operable(self, feature: series.Aliased):
+        assert isinstance(feature.operable, series.Operable)
 
 
 class TestLiteral(Operable):
-    """Literal column tests."""
+    """Literal feature tests."""
 
     @staticmethod
     @pytest.fixture(
@@ -132,7 +132,7 @@ class TestLiteral(Operable):
             datetime.date(2020, 5, 5),
         ),
     )
-    def column(request) -> series.Literal:
+    def feature(request) -> series.Literal:
         """Literal fixture."""
         return series.Literal(request.param)
 
@@ -142,27 +142,27 @@ class TestElement(Operable):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def column(student: frame.Table) -> series.Element:
+    def feature(student: frame.Table) -> series.Element:
         """Element fixture."""
         return student.reference().surname
 
 
-class TestField(TestElement):
+class TestColumn(TestElement):
     """Field unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def column(student: frame.Table) -> series.Field:
-        """Field fixture."""
+    def feature(student: frame.Table) -> series.Column:
+        """Column fixture."""
         return student.surname
 
-    def test_table(self, column: series.Element, student: frame.Table):
-        """Test the column table reference."""
-        assert column.origin == student
+    def test_table(self, feature: series.Element, student: frame.Table):
+        """Test the feature table reference."""
+        assert feature.origin == student
 
 
 class Predicate(Operable, metaclass=abc.ABCMeta):
-    """Predicate columns tests."""
+    """Predicate features tests."""
 
     @pytest.mark.parametrize(
         'operation, operator',
@@ -172,25 +172,25 @@ class Predicate(Operable, metaclass=abc.ABCMeta):
         self,
         operation: typing.Callable[[typing.Any, typing.Any], series.Logical],
         operator: type[series.Predicate],
-        column: series.Predicate,
+        feature: series.Predicate,
     ):
         """Logical operators tests."""
-        assert isinstance(operation(column, True), operator)
+        assert isinstance(operation(feature, True), operator)
         with pytest.raises(error.Syntax):
-            operation(1, column)
+            operation(1, feature)
         if isinstance(operation, series.Bivariate):
-            assert isinstance(operation(False, column), operator)
-            assert isinstance(operation(column, column), operator)
+            assert isinstance(operation(False, feature), operator)
+            assert isinstance(operation(feature, feature), operator)
             with pytest.raises(error.Syntax):
-                operation(column, 1)
+                operation(feature, 1)
 
-    def test_predicate(self, column: series.Predicate, student: frame.Table):
+    def test_predicate(self, feature: series.Predicate, student: frame.Table):
         """Test predicate features."""
-        factors = column.factors
+        factors = feature.factors
         assert factors & factors | factors == factors
         for table, expression in factors.items():
             series.Predicate.ensure_is(expression)
-            assert len({f.origin for f in series.Field.dissect(expression)}) == 1
+            assert len({f.origin for f in series.Column.dissect(expression)}) == 1
             assert table == student
 
 
@@ -199,7 +199,7 @@ class TestLogical(Predicate):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(series.And, series.Or, series.Not))
-    def column(request, student: frame.Table) -> series.Logical:
+    def feature(request, student: frame.Table) -> series.Logical:
         """Logical fixture."""
         if issubclass(request.param, series.Bivariate):
             return request.param(student.score > 1, student.surname != 'foo')
@@ -223,7 +223,7 @@ class TestComparison(Predicate):
             series.NotNull,
         ),
     )
-    def column(request, student: frame.Table) -> series.Comparison:
+    def feature(request, student: frame.Table) -> series.Comparison:
         """Comparison fixture."""
         if issubclass(request.param, series.Bivariate):
             return request.param(student.score, 1)
@@ -264,7 +264,7 @@ class TestArithmetic(Operable):
         scope='session',
         params=(series.Addition, series.Subtraction, series.Division, series.Multiplication, series.Modulus),
     )
-    def column(request, student: frame.Table) -> series.Arithmetic:
+    def feature(request, student: frame.Table) -> series.Arithmetic:
         """Arithmetic fixture."""
         return request.param(student.score, 1)
 
@@ -282,13 +282,13 @@ class TestArithmetic(Operable):
         self,
         operation: typing.Callable[[typing.Any, typing.Any], series.Arithmetic],
         operator: type[series.Arithmetic],
-        column: series.Operable,
+        feature: series.Operable,
     ):
         """Arithmetic operators tests."""
-        assert isinstance(operation(column, 1), operator)
-        assert isinstance(operation(1, column), operator)
-        assert isinstance(operation(column, column), operator)
+        assert isinstance(operation(feature, 1), operator)
+        assert isinstance(operation(1, feature), operator)
+        assert isinstance(operation(feature, feature), operator)
         with pytest.raises(error.Syntax):
-            operation(column, 'foo')
+            operation(feature, 'foo')
         with pytest.raises(error.Syntax):
-            operation(True, column)
+            operation(True, feature)

@@ -25,12 +25,14 @@ import tempfile
 import typing
 import uuid
 
-from forml import provider, conf
+from forml import conf, provider
 from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
 
 if typing.TYPE_CHECKING:
     from forml.project import distribution, product
-    from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod  # noqa: F401
+    from forml.runtime.asset.directory import generation as genmod
+    from forml.runtime.asset.directory import lineage as lngmod
+    from forml.runtime.asset.directory import project as prjmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
 TMPDIR = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with

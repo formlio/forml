@@ -14,34 +14,22 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 """
-DSL structures.
+Date and time manipulating functions.
 """
+import operator
 
-import typing
-
-from forml.io.dsl.struct import frame, kind as kindmod
-
-
-class Field(typing.NamedTuple):
-    """Schema field class."""
-
-    kind: kindmod.Any
-    name: typing.Optional[str] = None
-
-    def renamed(self, name: typing.Optional[str]) -> 'Field':
-        """Return copy of the field with the new name.
-
-        Args:
-            name: New name to be used.
-
-        Returns:
-            New Field instance.
-        """
-        return self if name == self.name else Field(self.kind, name)
+from .._struct import kind as kindmod
+from .._struct import series
 
 
-class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
-    """Base class for table schema definitions. Note the meta class is actually going to turn it into an instance
-    of frame.Table.
-    """
+class Year(series.Univariate):
+    """Extract the year from given date/time."""
+
+    value: series.Operable = property(operator.itemgetter(0))
+    kind: kindmod.Any = kindmod.Integer()
+
+    def __new__(cls, value: series.Operable):
+        kindmod.Date.ensure(series.Operable.ensure_is(value).kind)
+        return super().__new__(cls, value)

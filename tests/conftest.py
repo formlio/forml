@@ -27,13 +27,16 @@ import uuid
 
 import pytest
 
-from forml.flow import _task
-from forml.io import feed as feedmod, sink as sinkmod
-from forml.io.dsl import function, parser, struct
-from forml.io.dsl.struct import frame, kind
+from forml import flow
+from forml.io import dsl
+from forml.io import feed as feedmod
+from forml.io import sink as sinkmod
+from forml.io.dsl import function, parser
 from forml.lib.pipeline import topology
 from forml.project import distribution, product
-from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
+from forml.runtime.asset.directory import generation as genmod
+from forml.runtime.asset.directory import lineage as lngmod
+from forml.runtime.asset.directory import project as prjmod
 
 
 class WrappedActor:
@@ -62,7 +65,7 @@ class WrappedActor:
         self._params.update(params)
 
 
-class NativeActor(WrappedActor, _task.Actor):
+class NativeActor(WrappedActor, flow.Actor):
     """Actor implementation."""
 
     def apply(self, *features: typing.Any) -> typing.Any:
@@ -79,7 +82,7 @@ def train_decorator(actor, *args, **kwargs):
     scope='session',
     params=(NativeActor, topology.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
 )
-def actor(request) -> type[_task.Actor]:
+def actor(request) -> type[flow.Actor]:
     """Stateful actor fixture."""
     return request.param
 
@@ -91,9 +94,9 @@ def hyperparams() -> typing.Mapping[str, int]:
 
 
 @pytest.fixture(scope='session')
-def spec(actor: type[_task.Actor], hyperparams):
+def spec(actor: type[flow.Actor], hyperparams):
     """Task spec fixture."""
-    return _task.Spec(actor, **hyperparams)
+    return flow.Spec(actor, **hyperparams)
 
 
 @pytest.fixture(scope='session')
@@ -109,7 +112,7 @@ def testset(trainset) -> str:
 
 
 @pytest.fixture(scope='session')
-def state(spec: _task.Spec, trainset) -> bytes:
+def state(spec: flow.Spec, trainset) -> bytes:
     """Actor state fixture."""
     actor = spec()
     actor.train(*trainset)
@@ -117,7 +120,7 @@ def state(spec: _task.Spec, trainset) -> bytes:
 
 
 @pytest.fixture(scope='session')
-def prediction(spec: _task.Spec, state: bytes, testset) -> int:
+def prediction(spec: flow.Spec, state: bytes, testset) -> int:
     """Prediction result fixture."""
     actor = spec()
     actor.set_state(state)
@@ -189,71 +192,71 @@ def tag(states: typing.Mapping[uuid.UUID, bytes]) -> genmod.Tag:
 
 
 @pytest.fixture(scope='session')
-def schema() -> frame.Table:
+def schema() -> dsl.Table:
     """Schema fixture."""
 
-    class Human(struct.Schema):
+    class Human(dsl.Schema):
         """Human schema representation."""
 
-        name = struct.Field(kind.String())
-        age = struct.Field(kind.Integer())
+        name = dsl.Field(dsl.String())
+        age = dsl.Field(dsl.Integer())
 
     return Human
 
 
 @pytest.fixture(scope='session')
-def person() -> frame.Table:
+def person() -> dsl.Table:
     """Base table fixture."""
 
-    class Person(struct.Schema):
+    class Person(dsl.Schema):
         """Base table."""
 
-        surname = struct.Field(kind.String())
-        dob = struct.Field(kind.Date(), 'birthday')
+        surname = dsl.Field(dsl.String())
+        dob = dsl.Field(dsl.Date(), 'birthday')
 
     return Person
 
 
 @pytest.fixture(scope='session')
-def student(person: frame.Table) -> frame.Table:
+def student(person: dsl.Table) -> dsl.Table:
     """Extended table fixture."""
 
     class Student(person):
         """Extended table."""
 
-        level = struct.Field(kind.Integer())
-        score = struct.Field(kind.Float())
-        school = struct.Field(kind.Integer())
+        level = dsl.Field(dsl.Integer())
+        score = dsl.Field(dsl.Float())
+        school = dsl.Field(dsl.Integer())
 
     return Student
 
 
 @pytest.fixture(scope='session')
-def school() -> frame.Table:
+def school() -> dsl.Table:
     """School table fixture."""
 
-    class School(struct.Schema):
+    class School(dsl.Schema):
         """School table."""
 
-        sid = struct.Field(kind.Integer(), 'id')
-        name = struct.Field(kind.String())
+        sid = dsl.Field(dsl.Integer(), 'id')
+        name = dsl.Field(dsl.String())
 
     return School
 
 
 @pytest.fixture(scope='session')
-def school_ref(school: frame.Table) -> frame.Reference:
+def school_ref(school: dsl.Table) -> dsl.Reference:
     """School table reference fixture."""
     return school.reference('bar')
 
 
 @pytest.fixture(scope='session')
-def query(person: frame.Table, student: frame.Table, school_ref: frame.Reference) -> frame.Query:
+def query(person: dsl.Table, student: dsl.Table, school_ref: dsl.Reference) -> dsl.Query:
     """Query fixture."""
     query = (
         student.join(person, student.surname == person.surname)
         .join(school_ref, student.school == school_ref.sid)
-        .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, kind.String()))
+        .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, dsl.String()))
         .where(student.score < 2)
         .orderby(student.level, student.score)
         .limit(10)
@@ -269,7 +272,7 @@ def reference() -> str:
 
 @pytest.fixture(scope='session')
 def feed(
-    reference: str, person: frame.Table, student: frame.Table, school: frame.Table  # pylint: disable=unused-argument
+    reference: str, person: dsl.Table, student: dsl.Table, school: dsl.Table  # pylint: disable=unused-argument
 ) -> type[feedmod.Provider]:
     """Dummy feed fixture."""
 
@@ -281,7 +284,7 @@ def feed(
             self.identity: str = identity
 
         @property
-        def sources(self) -> typing.Mapping[frame.Source, parser.Source]:
+        def sources(self) -> typing.Mapping[dsl.Source, parser.Source]:
             """Abstract method implementation."""
             return {student.join(person, student.surname == person.surname).source: None, student: None, school: None}
 

@@ -19,18 +19,18 @@
 Runtime symbols compilation.
 """
 
+import collections
 import functools
 import itertools
 import logging
 import typing
 import uuid
-import collections
 from collections import abc
 
 from forml import flow
 from forml.runtime import code
-from forml.runtime.code import instruction as instmod
 from forml.runtime.asset import access
+from forml.runtime.code import instruction as instmod
 
 LOGGER = logging.getLogger(__name__)
 

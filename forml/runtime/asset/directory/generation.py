@@ -26,11 +26,12 @@ import types
 import typing
 import uuid
 
-from forml.io.dsl.struct import kind
+from forml.io import dsl
 from forml.runtime.asset import directory, persistent
 
 if typing.TYPE_CHECKING:
-    from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
+    from forml.runtime.asset.directory import lineage as lngmod
+    from forml.runtime.asset.directory import project as prjmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -93,7 +94,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         """Training mode attributes."""
 
         def __init__(
-            self, timestamp: typing.Optional[datetime.datetime] = None, ordinal: typing.Optional[kind.Native] = None
+            self, timestamp: typing.Optional[datetime.datetime] = None, ordinal: typing.Optional[dsl.Native] = None
         ):
             super().__init__(timestamp, ordinal=ordinal)
 

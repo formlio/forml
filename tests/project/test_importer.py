@@ -23,7 +23,7 @@ import os
 
 import pytest
 
-from forml.project import importer, distribution
+from forml.project import distribution, importer
 
 
 def test_isolated(project_package: distribution.Package):

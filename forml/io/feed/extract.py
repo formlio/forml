@@ -22,10 +22,9 @@ import abc
 import logging
 import typing
 
-from forml import flow, error
-from forml.io import payload
+from forml import error, flow
+from forml.io import dsl, layout
 from forml.io.dsl import parser as parsmod
-from forml.io.dsl.struct import kind as kindmod, series, frame
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,18 +33,18 @@ class Statement(typing.NamedTuple):
     """Select statement defined as a query and definition of the ordinal expression."""
 
     prepared: 'Prepared'
-    lower: typing.Optional[kindmod.Native]
-    upper: typing.Optional[kindmod.Native]
+    lower: typing.Optional[dsl.Native]
+    upper: typing.Optional[dsl.Native]
 
     class Prepared(typing.NamedTuple):
         """Statement bound with particular lower/upper parameters."""
 
-        query: frame.Query
-        ordinal: typing.Optional[series.Operable]
+        query: dsl.Query
+        ordinal: typing.Optional[dsl.Operable]
 
         def __call__(
-            self, lower: typing.Optional[kindmod.Native] = None, upper: typing.Optional[kindmod.Native] = None
-        ) -> frame.Query:
+            self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
+        ) -> dsl.Query:
             query = self.query
             if self.ordinal is not None:
                 if lower:
@@ -59,10 +58,10 @@ class Statement(typing.NamedTuple):
     @classmethod
     def prepare(
         cls,
-        query: frame.Query,
-        ordinal: typing.Optional[series.Operable],
-        lower: typing.Optional[kindmod.Native] = None,
-        upper: typing.Optional[kindmod.Native] = None,
+        query: dsl.Query,
+        ordinal: typing.Optional[dsl.Operable],
+        lower: typing.Optional[dsl.Native] = None,
+        upper: typing.Optional[dsl.Native] = None,
     ) -> 'Statement':
         """Bind the particular lower/upper parameters with this prepared statement.
 
@@ -77,7 +76,7 @@ class Statement(typing.NamedTuple):
         """
         return cls(cls.Prepared(query, ordinal), lower, upper)  # pylint: disable=no-member
 
-    def __call__(self) -> frame.Query:
+    def __call__(self) -> dsl.Query:
         """Expand the statement with the provided lower/upper parameters.
 
         Returns:
@@ -124,14 +123,14 @@ class Operator(flow.Operator):
         return flow.Trunk(apply, train, label)
 
 
-class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], metaclass=abc.ABCMeta):
+class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], metaclass=abc.ABCMeta):
     """Base class for reader implementation."""
 
     class Actor(flow.Actor):
         """Data extraction actor using the provided reader and statement to load the data."""
 
-        def __init__(self, reader: typing.Callable[[frame.Query], payload.ColumnMajor], statement: Statement):
-            self._reader: typing.Callable[[frame.Query], payload.ColumnMajor] = reader
+        def __init__(self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], statement: Statement):
+            self._reader: typing.Callable[[dsl.Query], layout.ColumnMajor] = reader
             self._statement: Statement = statement
 
         def __repr__(self):
@@ -142,20 +141,20 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
 
     def __init__(
         self,
-        sources: typing.Mapping[frame.Source, parsmod.Source],
-        columns: typing.Mapping[series.Column, parsmod.Column],
+        sources: typing.Mapping[dsl.Source, parsmod.Source],
+        features: typing.Mapping[dsl.Feature, parsmod.Feature],
         **kwargs: typing.Any,
     ):
-        self._sources: typing.Mapping[frame.Source, parsmod.Source] = sources
-        self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
+        self._sources: typing.Mapping[dsl.Source, parsmod.Source] = sources
+        self._features: typing.Mapping[dsl.Feature, parsmod.Feature] = features
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, query: frame.Query) -> payload.ColumnMajor:
+    def __call__(self, query: dsl.Query) -> layout.ColumnMajor:
         LOGGER.debug('Parsing ETL query')
-        with self.parser(self._sources, self._columns) as visitor:
+        with self.parser(self._sources, self._features) as visitor:
             query.accept(visitor)
             result = visitor.fetch()
         LOGGER.debug('Starting ETL read using: %s', result)
@@ -165,34 +164,34 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Column, payload.Native], met
     @abc.abstractmethod
     def parser(
         cls,
-        sources: typing.Mapping[frame.Source, parsmod.Source],
-        columns: typing.Mapping[series.Column, parsmod.Column],
+        sources: typing.Mapping[dsl.Source, parsmod.Source],
+        features: typing.Mapping[dsl.Feature, parsmod.Feature],
     ) -> parsmod.Visitor:
         """Return the parser instance of this reader.
 
         Args:
             sources: Source mappings to be used by the parser.
-            columns: Column mappings to be used by the parser.
+            features: Feature mappings to be used by the parser.
 
         Returns:
             Parser instance.
         """
 
     @classmethod
-    def format(cls, data: payload.Native) -> payload.ColumnMajor:
+    def format(cls, data: layout.Native) -> layout.ColumnMajor:
         """Format the input data into the required payload.ColumnMajor format.
 
         Args:
             data: Input data.
 
         Returns:
-            Data formatted into payload.Columnar format.
+            Data formatted into layout.ColumnMajor format.
         """
         return data
 
     @classmethod
     @abc.abstractmethod
-    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> payload.Native:
+    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> layout.Native:
         """Perform the read operation with the given statement.
 
         Args:
@@ -212,26 +211,26 @@ class Slicer:
 
         def __init__(
             self,
-            slicer: typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor],
-            features: typing.Sequence[series.Column],
-            labels: typing.Sequence[series.Column],
+            slicer: typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor],
+            features: typing.Sequence[dsl.Feature],
+            labels: typing.Sequence[dsl.Feature],
         ):
-            self._slicer: typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor] = slicer
+            self._slicer: typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor] = slicer
             fstop = len(features)
             lcount = len(labels)
             self._features: slice = slice(fstop)
             self._label: typing.Union[slice, int] = slice(fstop, fstop + lcount) if lcount > 1 else fstop
 
-        def apply(self, columns: payload.ColumnMajor) -> tuple[typing.Any, typing.Any]:
-            assert len(columns) == (
+        def apply(self, features: layout.ColumnMajor) -> tuple[typing.Any, typing.Any]:
+            assert len(features) == (
                 self._label.stop if isinstance(self._label, slice) else self._label + 1
-            ), 'Unexpected number of columns for splitting'
-            return self._slicer(columns, self._features), self._slicer(columns, self._label)
+            ), 'Unexpected number of features for splitting'
+            return self._slicer(features, self._features), self._slicer(features, self._label)
 
-    def __init__(self, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, parsmod.Column]):
-        self._schema: typing.Sequence[series.Column] = schema
-        self._columns: typing.Mapping[series.Column, parsmod.Column] = columns
+    def __init__(self, schema: typing.Sequence[dsl.Feature], features: typing.Mapping[dsl.Feature, parsmod.Feature]):
+        self._schema: typing.Sequence[dsl.Feature] = schema
+        self._features: typing.Mapping[dsl.Feature, parsmod.Feature] = features
 
-    def __call__(self, source: payload.ColumnMajor, selection: typing.Union[slice, int]) -> payload.ColumnMajor:
-        LOGGER.debug('Selecting columns: %s', self._schema[selection])
+    def __call__(self, source: layout.ColumnMajor, selection: typing.Union[slice, int]) -> layout.ColumnMajor:
+        LOGGER.debug('Selecting features: %s', self._schema[selection])
         return source[selection]

@@ -24,10 +24,9 @@ import logging
 import re
 import typing
 
-from forml.io import payload
-from forml.io.dsl import parser as parsmod, function, error
-from forml.io.dsl.parser import Source, Column
-from forml.io.dsl.struct import series, frame, kind as kindmod
+from forml.io import dsl, layout
+from forml.io.dsl import error, function
+from forml.io.dsl import parser as parsmod
 from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)
@@ -73,17 +72,17 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
             args = [clean(a) for a in args]
             return self._template.format(*args)
 
-    KIND: typing.Mapping[kindmod.Any, str] = {
-        kindmod.Boolean(): 'BOOLEAN',
-        kindmod.Integer(): 'INTEGER',
-        kindmod.Float(): 'DOUBLE',
-        kindmod.Decimal(): 'DECIMAL',
-        kindmod.String(): 'VARCHAR',
-        kindmod.Date(): 'DATE',
-        kindmod.Timestamp(): 'TIMESTAMP',
+    KIND: typing.Mapping[dsl.Any, str] = {
+        dsl.Boolean(): 'BOOLEAN',
+        dsl.Integer(): 'INTEGER',
+        dsl.Float(): 'DOUBLE',
+        dsl.Decimal(): 'DECIMAL',
+        dsl.String(): 'VARCHAR',
+        dsl.Date(): 'DATE',
+        dsl.Timestamp(): 'TIMESTAMP',
     }
 
-    EXPRESSION: typing.Mapping[type[series.Expression], typing.Callable[..., str]] = {
+    EXPRESSION: typing.Mapping[type[dsl.Expression], typing.Callable[..., str]] = {
         function.Addition: Expression('{} + {}'),
         function.Subtraction: Expression('{} - {}'),
         function.Multiplication: Expression('{} * {}'),
@@ -115,20 +114,20 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
     DATE = '%Y-%m-%d'
     TIMESTAMP = '%Y-%m-%d %H:%M:%S.%f'
 
-    def resolve_column(self, column: series.Column) -> str:
+    def resolve_feature(self, feature: dsl.Feature) -> str:
         """Resolver falling back to a field name in case of no explicit mapping.
 
         Args:
-            column: Column to be resolved.
+            feature: Column to be resolved.
 
         Returns:
-            Resolved column.
+            Resolved feature.
         """
         try:
-            return super().resolve_column(column)
+            return super().resolve_feature(feature)
         except error.Mapping as err:
-            if isinstance(column, series.Element):
-                return column.name
+            if isinstance(feature, dsl.Element):
+                return feature.name
             raise err
 
     def generate_element(self, origin: str, element: str) -> str:  # pylint: disable=no-self-use
@@ -143,19 +142,19 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         """
         return f'"{origin}"."{element}"'
 
-    def generate_alias(self, column: str, alias: str) -> str:  # pylint: disable=no-self-use
-        """Generate column alias code.
+    def generate_alias(self, feature: str, alias: str) -> str:  # pylint: disable=no-self-use
+        """Generate feature alias code.
 
         Args:
-            column: Column value.
-            alias: Alias to be used for given column.
+            feature: Column value.
+            alias: Alias to be used for given feature.
 
         Returns:
-            Aliased column.
+            Aliased feature.
         """
-        return f'{column} AS "{alias}"'
+        return f'{feature} AS "{alias}"'
 
-    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> str:
+    def generate_literal(self, value: typing.Any, kind: dsl.Any) -> str:
         """Generate a literal value.
 
         Args:
@@ -165,19 +164,19 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         Returns:
             Literal.
         """
-        if isinstance(kind, kindmod.String):
+        if isinstance(kind, dsl.String):
             return f"'{value}'"
-        if isinstance(kind, kindmod.Numeric):
+        if isinstance(kind, dsl.Numeric):
             return f'{value}'
-        if isinstance(kind, kindmod.Timestamp):
+        if isinstance(kind, dsl.Timestamp):
             return f"TIMESTAMP '{value.strftime(self.TIMESTAMP)}'"
-        if isinstance(kind, kindmod.Date):
+        if isinstance(kind, dsl.Date):
             return f"DATE '{value.strftime(self.DATE)}'"
-        if isinstance(kind, kindmod.Array):
+        if isinstance(kind, dsl.Array):
             return f"ARRAY[{', '.join(self.generate_literal(v, kind.element) for v in value)}]"
         raise error.Unsupported(f'Unsupported literal kind: {kind}')
 
-    def generate_expression(self, expression: type[series.Expression], arguments: typing.Sequence[typing.Any]) -> str:
+    def generate_expression(self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]) -> str:
         """Expression of given arguments.
 
         Args:
@@ -192,23 +191,23 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         except KeyError as err:
             raise error.Unsupported(f'Unsupported expression: {expression}') from err
 
-    JOIN: typing.Mapping[frame.Join.Kind, str] = {
-        frame.Join.Kind.LEFT: 'LEFT OUTER JOIN',
-        frame.Join.Kind.RIGHT: 'RIGHT OUTER JOIN',
-        frame.Join.Kind.INNER: 'JOIN',
-        frame.Join.Kind.FULL: 'FULL OUTER JOIN',
-        frame.Join.Kind.CROSS: 'CROSS JOIN',
+    JOIN: typing.Mapping[dsl.Join.Kind, str] = {
+        dsl.Join.Kind.LEFT: 'LEFT OUTER JOIN',
+        dsl.Join.Kind.RIGHT: 'RIGHT OUTER JOIN',
+        dsl.Join.Kind.INNER: 'JOIN',
+        dsl.Join.Kind.FULL: 'FULL OUTER JOIN',
+        dsl.Join.Kind.CROSS: 'CROSS JOIN',
     }
 
-    SET: typing.Mapping[frame.Set.Kind, str] = {
-        frame.Set.Kind.UNION: 'UNION',
-        frame.Set.Kind.INTERSECTION: 'INTERSECT',
-        frame.Set.Kind.DIFFERENCE: 'EXCEPT',
+    SET: typing.Mapping[dsl.Set.Kind, str] = {
+        dsl.Set.Kind.UNION: 'UNION',
+        dsl.Set.Kind.INTERSECTION: 'INTERSECT',
+        dsl.Set.Kind.DIFFERENCE: 'EXCEPT',
     }
 
-    ORDER: typing.Mapping[series.Ordering.Direction, str] = {
-        series.Ordering.Direction.ASCENDING: 'ASC',
-        series.Ordering.Direction.DESCENDING: 'DESC',
+    ORDER: typing.Mapping[dsl.Ordering.Direction, str] = {
+        dsl.Ordering.Direction.ASCENDING: 'ASC',
+        dsl.Ordering.Direction.DESCENDING: 'DESC',
     }
 
     class Wrap:
@@ -245,7 +244,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
                 value = f'({value})'
             return value
 
-    def generate_join(self, left: str, right: str, condition: typing.Optional[str], kind: frame.Join.Kind) -> str:
+    def generate_join(self, left: str, right: str, condition: typing.Optional[str], kind: dsl.Join.Kind) -> str:
         """Generate target code for a join operation using the left/right terms, condition and a join type.
 
         Args:
@@ -262,12 +261,10 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
             join += f' ON {condition}'
         return join
 
-    def generate_table(
-        self, table: Source, columns: typing.Iterable[Column], predicate: typing.Optional[Column]
-    ) -> Source:
+    def generate_table(self, table: str, features: typing.Iterable[str], predicate: typing.Optional[str]) -> str:
         return f'"{table}"'
 
-    def generate_set(self, left: str, right: str, kind: frame.Set.Kind) -> str:
+    def generate_set(self, left: str, right: str, kind: dsl.Set.Kind) -> str:
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -283,18 +280,18 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
     def generate_query(
         self,
         source: str,
-        columns: typing.Sequence[str],  # pylint: disable=no-self-use
+        features: typing.Sequence[str],  # pylint: disable=no-self-use
         where: typing.Optional[str],
         groupby: typing.Sequence[str],
         having: typing.Optional[str],
-        orderby: typing.Sequence[tuple[str, series.Ordering.Direction]],
-        rows: typing.Optional[frame.Rows],
+        orderby: typing.Sequence[tuple[str, dsl.Ordering.Direction]],
+        rows: typing.Optional[dsl.Rows],
     ) -> str:
         """Generate query statement code.
 
         Args:
             source: Source.
-            columns: Sequence of selected columns.
+            features: Sequence of selected features.
             where: Where condition.
             groupby: Sequence of grouping specifiers.
             having: Having condition.
@@ -304,8 +301,8 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         Returns:
             Query.
         """
-        assert columns, 'Expecting columns'
-        query = f'SELECT {", ".join(columns)}\nFROM {self.Wrap.subquery(source)}'
+        assert features, 'Expecting features'
+        query = f'SELECT {", ".join(features)}\nFROM {self.Wrap.subquery(source)}'
         if where:
             query += f'\nWHERE {where}'
         if groupby:
@@ -335,7 +332,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         return f'{self.Wrap.word(instance)} AS "{name}"', name
 
 
-class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
+class Reader(extract.Reader[str, str, layout.RowMajor], metaclass=abc.ABCMeta):
     """SQL reader base class for PEP249 compliant DB APIs."""
 
     @classmethod
@@ -351,21 +348,21 @@ class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def parser(cls, sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]) -> Parser:
+    def parser(cls, sources: typing.Mapping[dsl.Source, str], features: typing.Mapping[dsl.Feature, str]) -> Parser:
         """Return the parser instance of this reader.
 
         Args:
             sources: Source mappings to be used by the parser.
-            columns: Column mappings to be used by the parser.
+            features: Column mappings to be used by the parser.
 
         Returns:
             Parser instance.
         """
-        return Parser(sources, columns)
+        return Parser(sources, features)
 
     @classmethod
-    def format(cls, data: payload.RowMajor) -> payload.ColumnMajor:
-        """PEP249 assumes row oriented results, we need columnar so let's transpose here.
+    def format(cls, data: layout.RowMajor) -> layout.ColumnMajor:
+        """PEP249 assumes row oriented results, we need featurear so let's transpose here.
 
         Args:
             data: Row oriented input.
@@ -373,10 +370,10 @@ class Reader(extract.Reader[str, str, payload.RowMajor], metaclass=abc.ABCMeta):
         Returns:
             Columnar output.
         """
-        return payload.transpose(data)
+        return layout.transpose(data)
 
     @classmethod
-    def read(cls, statement: str, **kwargs) -> payload.RowMajor:
+    def read(cls, statement: str, **kwargs) -> layout.RowMajor:
         """Perform the read operation with the given statement.
 
         Args:

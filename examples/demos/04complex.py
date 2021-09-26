@@ -15,9 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import demos
 from sklearn import model_selection
 
-import demos
 from forml.lib.pipeline import ensemble
 
 FH_RFC = demos.FeatureHasher(n_features=128) >> demos.RFC(n_estimators=20, n_jobs=4, max_depth=3)

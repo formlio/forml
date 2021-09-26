@@ -25,14 +25,15 @@ import typing
 
 import pytest
 
-from forml.io.dsl import function, parser as parsmod
-from forml.io.dsl.struct import series, frame, kind
+from forml.io import dsl
+from forml.io.dsl import function
+from forml.io.dsl import parser as parsmod
 
 
 class Case(typing.NamedTuple):
     """Test case input/output."""
 
-    query: frame.Source
+    query: dsl.Source
     expected: str
 
 
@@ -42,7 +43,7 @@ class Scenario(abc.ABC):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def case(student: frame.Table, school: frame.Table) -> Case:
+    def case(student: dsl.Table, school: dsl.Table) -> Case:
         """Test case query and expected result."""
 
     @pytest.fixture(scope='session')
@@ -74,9 +75,7 @@ class Parser(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def parser(
-        sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]
-    ) -> parsmod.Visitor:
+    def parser(sources: typing.Mapping[dsl.Source, str], features: typing.Mapping[dsl.Feature, str]) -> parsmod.Visitor:
         """Parser fixture."""
 
     @staticmethod
@@ -101,7 +100,7 @@ class Parser(metaclass=abc.ABCMeta):
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: frame.Table, school: frame.Table) -> Case:
+        def case(student: dsl.Table, school: dsl.Table) -> Case:
             return Case(
                 student.select(student.surname.alias('student'), student.score),
                 'SELECT "student"."surname" AS "student", "student"."score" FROM "student"',
@@ -120,8 +119,8 @@ class Parser(metaclass=abc.ABCMeta):
                 Case(datetime.datetime(2020, 7, 9, 7, 38, 21, 123456), "TIMESTAMP '2020-07-09 07:38:21.123456'"),
             ),
         )
-        def case(request, student: frame.Table, school: frame.Table) -> Case:
-            query = student.select(series.Literal(request.param.query).alias('literal'))
+        def case(request, student: dsl.Table, school: dsl.Table) -> Case:
+            query = student.select(dsl.Literal(request.param.query).alias('literal'))
             expected = f'SELECT {request.param.expected} AS "literal" FROM "student"'
             return Case(query, expected)
 
@@ -133,22 +132,22 @@ class Parser(metaclass=abc.ABCMeta):
             scope='session',
             params=(
                 Case(
-                    (function.Cast(series.Literal('1'), kind.Integer()) + 1).alias('int'),
+                    (function.Cast(dsl.Literal('1'), dsl.Integer()) + 1).alias('int'),
                     '''CAST('1' AS INTEGER) + 1 AS "int"''',
                 ),
-                Case(((1 + series.Literal(1)) * 2).alias('int'), '''(1 + 1) * 2 AS "int"'''),
+                Case(((1 + dsl.Literal(1)) * 2).alias('int'), '''(1 + 1) * 2 AS "int"'''),
                 Case(
                     function.Year(datetime.datetime(2020, 7, 9, 16, 58, 32, 654321)).alias('year'),
                     '''year(TIMESTAMP '2020-07-09 16:58:32.654321') AS "year"''',
                 ),
                 Case(function.Year(datetime.date(2020, 7, 9)).alias('year'), '''year(DATE '2020-07-09') AS "year"'''),
                 Case(
-                    (2 * (function.Year(datetime.date(2020, 7, 9)) + series.Literal(1))).alias('calc'),
+                    (2 * (function.Year(datetime.date(2020, 7, 9)) + dsl.Literal(1))).alias('calc'),
                     '''2 * (year(DATE '2020-07-09') + 1) AS "calc"''',
                 ),
             ),
         )
-        def case(request, student: frame.Table, school: frame.Table) -> Case:
+        def case(request, student: dsl.Table, school: dsl.Table) -> Case:
             query = student.select(request.param.query)
             expected = f'SELECT {request.param.expected} FROM "student"'
             return Case(query, expected)
@@ -158,11 +157,11 @@ class Parser(metaclass=abc.ABCMeta):
 
         KIND = {
             None: 'JOIN',
-            frame.Join.Kind.LEFT: 'LEFT OUTER JOIN',
-            frame.Join.Kind.RIGHT: 'RIGHT OUTER JOIN',
-            frame.Join.Kind.FULL: 'FULL OUTER JOIN',
-            frame.Join.Kind.INNER: 'JOIN',
-            frame.Join.Kind.CROSS: 'CROSS JOIN',
+            dsl.Join.Kind.LEFT: 'LEFT OUTER JOIN',
+            dsl.Join.Kind.RIGHT: 'RIGHT OUTER JOIN',
+            dsl.Join.Kind.FULL: 'FULL OUTER JOIN',
+            dsl.Join.Kind.INNER: 'JOIN',
+            dsl.Join.Kind.CROSS: 'CROSS JOIN',
         }
 
         @classmethod
@@ -170,30 +169,30 @@ class Parser(metaclass=abc.ABCMeta):
             scope='session',
             params=(
                 None,
-                frame.Join.Kind.LEFT,
-                frame.Join.Kind.RIGHT,
-                frame.Join.Kind.FULL,
-                frame.Join.Kind.INNER,
-                frame.Join.Kind.CROSS,
+                dsl.Join.Kind.LEFT,
+                dsl.Join.Kind.RIGHT,
+                dsl.Join.Kind.FULL,
+                dsl.Join.Kind.INNER,
+                dsl.Join.Kind.CROSS,
             ),
         )
-        def case(cls, request, student: frame.Table, school: frame.Table) -> Case:
+        def case(cls, request, student: dsl.Table, school: dsl.Table) -> Case:
             dsl, sql = cls.condition(request.param, student, school)
             query = student.join(school, dsl, kind=request.param).select(student.surname, school.name)
             expected = f'SELECT "student"."surname", "school"."name" FROM {cls.join(request.param)}{sql}'
             return Case(query, expected)
 
         @classmethod
-        def join(cls, kind: frame.Join.Kind) -> str:
+        def join(cls, kind: dsl.Join.Kind) -> str:
             """The join snippet."""
             return f'"student" {cls.KIND[kind]} "school"'
 
         @staticmethod
         def condition(
-            kind: frame.Join.Kind, student: frame.Table, school: frame.Table
-        ) -> tuple[typing.Optional[series.Expression], str]:
+            kind: dsl.Join.Kind, student: dsl.Table, school: dsl.Table
+        ) -> tuple[typing.Optional[dsl.Expression], str]:
             """The condition snippet."""
-            if kind != frame.Join.Kind.CROSS:
+            if kind != dsl.Join.Kind.CROSS:
                 return school.sid == student.school, ' ON "school"."id" = "student"."school"'
             return None, ''
 
@@ -205,12 +204,12 @@ class Parser(metaclass=abc.ABCMeta):
             scope='session',
             params=(
                 Case(None, 'ASC'),
-                Case(series.Ordering.Direction.ASCENDING, 'ASC'),
-                Case(series.Ordering.Direction.DESCENDING, 'DESC'),
+                Case(dsl.Ordering.Direction.ASCENDING, 'ASC'),
+                Case(dsl.Ordering.Direction.DESCENDING, 'DESC'),
             ),
         )
-        def case(request, student: frame.Table, school: frame.Table) -> Case:
-            query = student.select(student.score).orderby(series.Ordering(student.score, request.param.query))
+        def case(request, student: dsl.Table, school: dsl.Table) -> Case:
+            query = student.select(student.score).orderby(dsl.Ordering(student.score, request.param.query))
             expected = f'SELECT "student"."score" FROM "student" ORDER BY "student"."score" {request.param.expected}'
             return Case(query, expected)
 
@@ -219,7 +218,7 @@ class Parser(metaclass=abc.ABCMeta):
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: frame.Table, school: frame.Table) -> Case:
+        def case(student: dsl.Table, school: dsl.Table) -> Case:
             query = (
                 student.join(school, school.sid == student.school)
                 .select(student.surname.alias('student'), function.Count(school.name).alias('num'))
@@ -243,7 +242,7 @@ class Parser(metaclass=abc.ABCMeta):
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: frame.Table, school: frame.Table) -> Case:
+        def case(student: dsl.Table, school: dsl.Table) -> Case:
             student = student.reference('foo')
             subquery = (
                 student.join(school, school.sid == student.school)

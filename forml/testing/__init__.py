@@ -21,7 +21,7 @@ Testing framework.
 import typing
 
 from forml import flow
-from forml.testing import spec, routine
+from forml.testing import routine, spec
 
 
 def operator(subject: type[flow.Operator]) -> type[routine.Suite]:

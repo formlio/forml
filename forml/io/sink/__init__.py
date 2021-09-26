@@ -21,9 +21,10 @@ IO sink utils.
 import abc
 import typing
 
-from forml import flow, provider as provmod
+from forml import flow
+from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
-from forml.io import payload
+from forml.io import layout
 from forml.io.sink import publish
 
 
@@ -46,7 +47,7 @@ class Provider(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sin
         return publisher.expand()
 
     @classmethod
-    def writer(cls, **kwargs: typing.Any) -> typing.Callable[[payload.ColumnMajor], None]:
+    def writer(cls, **kwargs: typing.Any) -> typing.Callable[[layout.ColumnMajor], None]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

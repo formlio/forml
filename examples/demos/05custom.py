@@ -17,10 +17,10 @@
 
 import typing
 
+import demos
 import numpy as np
 import pandas as pd
 
-import demos
 from forml import flow
 from forml.lib.pipeline import topology
 

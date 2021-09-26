@@ -14,12 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-"""
-ForML pipeline composition logic.
-"""
-
-from .assembly import Trunk, Composition
-from .member import Composable, Origin, Operator
-
-__all__ = ['Composable', 'Origin', 'Operator', 'Trunk', 'Composition']

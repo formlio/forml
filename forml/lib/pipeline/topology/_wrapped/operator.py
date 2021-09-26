@@ -21,7 +21,7 @@ Generic operators.
 import abc
 import typing
 
-from forml import flow, error
+from forml import error, flow
 
 
 class Adapter(flow.Operator, metaclass=abc.ABCMeta):

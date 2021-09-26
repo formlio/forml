@@ -19,10 +19,10 @@
 Payload tests.
 """
 # pylint: disable=no-self-use
-from forml.io import payload
+from forml.io import layout
 
 
 def test_transpose():
     """Transposition unit test."""
-    assert payload.transpose([]) == []
-    assert payload.transpose([[1, 2, 3], [4, 5, 6]]) == [[1, 4], [2, 5], [3, 6]]
+    assert layout.transpose([]) == []
+    assert layout.transpose([[1, 2, 3], [4, 5, 6]]) == [[1, 4], [2, 5], [3, 6]]

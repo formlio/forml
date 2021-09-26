@@ -26,7 +26,9 @@ import operator
 import typing
 
 from forml.flow import error
-from . import node as nodemod, port
+
+from . import node as nodemod
+from . import port
 
 
 class Visitor(nodemod.Visitor):

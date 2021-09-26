@@ -24,8 +24,7 @@ import inspect
 import itertools
 import typing
 
-from forml import flow, error
-
+from forml import error, flow
 
 Target = typing.Union[str, typing.Callable[..., typing.Any]]
 ValueT = typing.TypeVar('ValueT')

@@ -113,16 +113,16 @@ For example, the following feed implementation stored under ``~/.forml/tutorial.
 file simply as ``tutorial:Feed``::
 
     from forml.io import feed
-    from forml.lib.reader import sqlite
+    from forml.lib.feed.reader.sql import alchemy
     from openschema.kaggle import titanic
-
+    import sqlalchemy
 
     class Feed(feed.Provider):
-        class Reader(sqlite.Reader):
+        class Reader(alchemy.Reader):
+
         @property
         def sources(self):
-            return {titanic.Passenger: 'passenger'}
-
+            return {titanic.Passenger: sqlalchemy.table('passenger')}
 
 Logging
 -------

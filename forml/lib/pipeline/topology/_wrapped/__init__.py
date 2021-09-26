@@ -14,12 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-"""
-Topology wrappers API.
-"""
-from .actor import Class, Function
-from .operator import Adapter
-
-
-__all__ = ['Class', 'Function', 'Adapter']

@@ -26,7 +26,10 @@ import pytest
 import forml
 from forml.project import distribution
 from forml.runtime.asset import directory as dirmod
-from forml.runtime.asset.directory import root as rootmod, project as prjmod, lineage as lngmod
+from forml.runtime.asset.directory import lineage as lngmod
+from forml.runtime.asset.directory import project as prjmod
+from forml.runtime.asset.directory import root as rootmod
+
 from . import Level
 
 

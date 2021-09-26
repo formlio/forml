@@ -24,8 +24,8 @@ ForML testing unit tests fixtures.
 import typing
 
 import pytest
-from forml import testing
 
+from forml import testing
 from forml.testing import spec
 
 

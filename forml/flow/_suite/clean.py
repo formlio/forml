@@ -31,10 +31,12 @@ Graph topology validation.
 """
 
 from forml.flow import error
-from .. import _graph
+
+from .._graph import node as nodemod
+from .._graph import span
 
 
-class Validator(_graph.Visitor):
+class Validator(span.Visitor):
     """Visitor ensuring all nodes are in valid state which means:
 
     * are Worker instances (not Future)
@@ -44,18 +46,18 @@ class Validator(_graph.Visitor):
     """
 
     def __init__(self):
-        self._futures: set[_graph.Atomic] = set()
+        self._futures: set[nodemod.Atomic] = set()
 
-    def visit_node(self, node: _graph.Atomic) -> None:
+    def visit_node(self, node: nodemod.Atomic) -> None:
         """Node visit.
 
         Args:
             node: Node to be visited.
         """
-        if isinstance(node, _graph.Future):
+        if isinstance(node, nodemod.Future):
             self._futures.add(node)
 
-    def visit_path(self, path: _graph.Path) -> None:
+    def visit_path(self, path: span.Path) -> None:
         """Final visit.
 
         Args:

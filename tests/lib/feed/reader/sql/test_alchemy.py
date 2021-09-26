@@ -27,32 +27,31 @@ import pandas
 import pytest
 import sqlalchemy
 from pyhive import sqlalchemy_trino as trino
-from sqlalchemy import sql, engine
+from sqlalchemy import engine, sql
 
+from forml.io import dsl
 from forml.io.dsl import parser as parsmod
-from forml.io.dsl.struct import series, frame
 from forml.lib.feed.reader.sql import alchemy
+
 from . import Parser
 
 
 @pytest.fixture(scope='session')
-def sources(
-    student: frame.Table, school: frame.Table, person: frame.Table
-) -> typing.Mapping[frame.Source, sql.Selectable]:
+def sources(student: dsl.Table, school: dsl.Table, person: dsl.Table) -> typing.Mapping[dsl.Source, sql.Selectable]:
     """Sources mapping fixture."""
     student_table = sql.table('student')
     return types.MappingProxyType(
         {
             student: student_table,
             school: sql.table('school'),
-            frame.Join(student, person, student.surname == person.surname): student_table,
+            dsl.Join(student, person, student.surname == person.surname): student_table,
             person: sql.table('person'),
         }
     )
 
 
 @pytest.fixture(scope='session')
-def columns(student: frame.Table) -> typing.Mapping[series.Column, sql.ColumnElement]:
+def features(student: dsl.Table) -> typing.Mapping[dsl.Feature, sql.ColumnElement]:
     """Columns mapping fixture."""
     return types.MappingProxyType({student.level: sql.column('class')})
 
@@ -63,10 +62,11 @@ class TestParser(Parser):
     @staticmethod
     @pytest.fixture(scope='session')
     def parser(
-        sources: typing.Mapping[frame.Source, sql.Selectable], columns: typing.Mapping[series.Column, sql.ColumnElement]
+        sources: typing.Mapping[dsl.Source, sql.Selectable],
+        features: typing.Mapping[dsl.Feature, sql.ColumnElement],
     ) -> alchemy.Parser:
         """Parser fixture."""
-        return alchemy.Parser(sources, columns)
+        return alchemy.Parser(sources, features)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -78,24 +78,24 @@ class TestParser(Parser):
 
         KIND = {
             None: 'JOIN',
-            frame.Join.Kind.LEFT: 'LEFT OUTER JOIN',
-            frame.Join.Kind.RIGHT: 'LEFT OUTER JOIN',
-            frame.Join.Kind.FULL: 'FULL OUTER JOIN',
-            frame.Join.Kind.INNER: 'JOIN',
-            frame.Join.Kind.CROSS: 'FULL OUTER JOIN',
+            dsl.Join.Kind.LEFT: 'LEFT OUTER JOIN',
+            dsl.Join.Kind.RIGHT: 'LEFT OUTER JOIN',
+            dsl.Join.Kind.FULL: 'FULL OUTER JOIN',
+            dsl.Join.Kind.INNER: 'JOIN',
+            dsl.Join.Kind.CROSS: 'FULL OUTER JOIN',
         }
 
         @classmethod
-        def join(cls, kind: frame.Join.Kind) -> str:
-            if kind != frame.Join.Kind.RIGHT:
+        def join(cls, kind: dsl.Join.Kind) -> str:
+            if kind != dsl.Join.Kind.RIGHT:
                 return f'"student" {cls.KIND[kind]} "school"'
             return f'"school" {cls.KIND[kind]} "student"'
 
         @staticmethod
         def condition(
-            kind: frame.Join.Kind, student: frame.Table, school: frame.Table
-        ) -> tuple[typing.Optional[series.Expression], str]:
-            if kind != frame.Join.Kind.CROSS:
+            kind: dsl.Join.Kind, student: dsl.Table, school: dsl.Table
+        ) -> tuple[typing.Optional[dsl.Expression], str]:
+            if kind != dsl.Join.Kind.CROSS:
                 return school.sid == student.school, ' ON "school"."id" = "student"."school"'
             return None, ' ON true'
 
@@ -116,14 +116,14 @@ class TestReader:
     @pytest.fixture(scope='function')
     def reader(
         connection: engine.Connectable,
-        sources: typing.Mapping[frame.Source, sql.Selectable],
-        columns: typing.Mapping[series.Column, sql.ColumnElement],
+        sources: typing.Mapping[dsl.Source, sql.Selectable],
+        features: typing.Mapping[dsl.Feature, sql.ColumnElement],
     ) -> alchemy.Reader:
         """Aclhemy reader fixture."""
-        return alchemy.Reader(sources, columns, connection)
+        return alchemy.Reader(sources, features, connection)
 
     def test_read(
-        self, reader: alchemy.Reader, query: frame.Query, student_data: pandas.DataFrame, school_data: pandas.DataFrame
+        self, reader: alchemy.Reader, query: dsl.Query, student_data: pandas.DataFrame, school_data: pandas.DataFrame
     ):
         """Test the read operation."""
         result = reader(query)

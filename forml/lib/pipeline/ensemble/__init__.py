@@ -21,5 +21,4 @@ Ensembling operators.
 
 from ._folding import FullStack
 
-
 __all__ = ['FullStack']

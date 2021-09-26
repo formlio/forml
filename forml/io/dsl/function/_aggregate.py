@@ -16,23 +16,30 @@
 # under the License.
 
 """
-Mathematical functions.
+Aggregation functions.
 """
 
-from forml.io.dsl.struct import series, kind as kindmod
+from .._struct import kind as kindmod
+from .._struct import series
 
 
-class Abs(series.Arithmetic, series.Univariate):
-    """Absolute value."""
-
-
-class Ceil(series.Arithmetic, series.Univariate):
-    """Value rounded up to nearest integer."""
+class Count(series.Aggregate, series.Univariate):
+    """Number of the input rows."""
 
     kind: kindmod.Integer = kindmod.Integer()
 
 
-class Floor(series.Arithmetic, series.Univariate):
-    """Value rounded down to nearest integer."""
+class Avg(series.Arithmetic, series.Aggregate, series.Univariate):
+    """Average of the feature values."""
 
-    kind: kindmod.Integer = kindmod.Integer()
+
+class Max(series.Arithmetic, series.Aggregate, series.Univariate):
+    """Maximum of the feature values."""
+
+
+class Min(series.Arithmetic, series.Aggregate, series.Univariate):
+    """Minimum of the feature values."""
+
+
+class Sum(series.Arithmetic, series.Aggregate, series.Univariate):
+    """Sum of the feature values."""

@@ -21,7 +21,7 @@ Set of generic operator skeletons that can be simply used as wrappers about rele
 import abc
 import typing
 
-from forml import flow, error
+from forml import error, flow
 
 
 class Base(flow.Operator, metaclass=abc.ABCMeta):

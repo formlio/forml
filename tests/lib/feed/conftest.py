@@ -24,11 +24,11 @@ import datetime
 import pandas
 import pytest
 
-from forml.io.dsl.struct import frame
+from forml.io import dsl
 
 
 @pytest.fixture(scope='session')
-def student_data(student: frame.Table) -> pandas.DataFrame:
+def student_data(student: dsl.Table) -> pandas.DataFrame:
     """Student table fixture."""
     return pandas.DataFrame(
         [
@@ -36,12 +36,12 @@ def student_data(student: frame.Table) -> pandas.DataFrame:
             ['brown', datetime.date(2014, 3, 11), 2, 1.4, 1],
             ['white', datetime.date(2017, 1, 1), 1, 3.3, 2],
         ],
-        columns=(c.name for c in student.columns),
+        columns=(c.name for c in student.features),
     )
 
 
 @pytest.fixture(scope='session')
-def school_data(school: frame.Table) -> pandas.DataFrame:
+def school_data(school: dsl.Table) -> pandas.DataFrame:
     """School table fixture."""
 
-    return pandas.DataFrame([[1, 'prodigy'], [2, 'dummies']], columns=(c.name for c in school.columns))
+    return pandas.DataFrame([[1, 'prodigy'], [2, 'dummies']], columns=(c.name for c in school.features))

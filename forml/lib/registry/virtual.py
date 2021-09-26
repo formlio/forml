@@ -23,12 +23,13 @@ import logging
 import tempfile
 import typing
 
-from forml.runtime.asset import persistent
 from forml.lib.registry import filesystem
+from forml.runtime.asset import persistent
 
 if typing.TYPE_CHECKING:
-    from forml.project import product, distribution  # pylint: disable=unused-import
-    from forml.runtime.asset.directory import project as prjmod, lineage as lngmod
+    from forml.project import distribution, product  # pylint: disable=unused-import
+    from forml.runtime.asset.directory import lineage as lngmod
+    from forml.runtime.asset.directory import project as prjmod
 
 LOGGER = logging.getLogger(__name__)
 

@@ -24,7 +24,8 @@ import typing
 
 import pytest
 
-from forml.testing import spec, routine as routinemod
+from forml.testing import routine as routinemod
+from forml.testing import spec
 
 
 class Runner:
@@ -117,7 +118,7 @@ class TestInitRaises(Routine):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def scenario(init_raises: spec.Scenario) -> spec.Scenario:
+    def scenario(init_raises: spec.Scenario) -> spec.Scenario:  # pylint: disable=arguments-renamed
         return init_raises
 
 
@@ -126,7 +127,7 @@ class TestPlainApplyRaises(Routine):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def scenario(plainapply_raises: spec.Scenario) -> spec.Scenario:
+    def scenario(plainapply_raises: spec.Scenario) -> spec.Scenario:  # pylint: disable=arguments-renamed
         return plainapply_raises
 
 
@@ -135,7 +136,7 @@ class TestPlainApplyReturns(Routine):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def scenario(plainapply_returns: spec.Scenario) -> spec.Scenario:
+    def scenario(plainapply_returns: spec.Scenario) -> spec.Scenario:  # pylint: disable=arguments-renamed
         return plainapply_returns
 
 
@@ -144,7 +145,7 @@ class TestStateTrainRaises(Routine):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def scenario(statetrain_raises: spec.Scenario) -> spec.Scenario:
+    def scenario(statetrain_raises: spec.Scenario) -> spec.Scenario:  # pylint: disable=arguments-renamed
         return statetrain_raises
 
 
@@ -153,7 +154,7 @@ class TestStateTrainReturns(Routine):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def scenario(statetrain_returns: spec.Scenario) -> spec.Scenario:
+    def scenario(statetrain_returns: spec.Scenario) -> spec.Scenario:  # pylint: disable=arguments-renamed
         return statetrain_returns
 
 
@@ -162,7 +163,7 @@ class TestStateApplyRaises(Routine):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def scenario(stateapply_raises: spec.Scenario) -> spec.Scenario:
+    def scenario(stateapply_raises: spec.Scenario) -> spec.Scenario:  # pylint: disable=arguments-renamed
         return stateapply_raises
 
 
@@ -171,5 +172,5 @@ class TestStateApplyReturns(Routine):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def scenario(stateapply_returns: spec.Scenario) -> spec.Scenario:
+    def scenario(stateapply_returns: spec.Scenario) -> spec.Scenario:  # pylint: disable=arguments-renamed
         return stateapply_returns

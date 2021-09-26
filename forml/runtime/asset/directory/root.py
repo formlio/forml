@@ -18,10 +18,9 @@
 """Generic assets directory.
 """
 import logging
-
 import typing
 
-from forml.runtime.asset import persistent, directory
+from forml.runtime.asset import directory, persistent
 from forml.runtime.asset.directory import project as prjmod
 
 LOGGER = logging.getLogger(__name__)

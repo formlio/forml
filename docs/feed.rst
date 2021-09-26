@@ -29,8 +29,8 @@ Reader
 
 .. autosummary::
 
-   forml.lib.reader.presto
-   forml.lib.reader.sqlite
+   forml.lib.feed.reader.sql.alchemy
+   forml.lib.feed.reader.sql.dbapi
 
 
 API

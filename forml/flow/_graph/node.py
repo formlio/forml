@@ -36,8 +36,9 @@ import typing
 import uuid
 
 from forml.flow import error
-from . import port
+
 from .. import _task
+from . import port
 
 
 class Visitor:

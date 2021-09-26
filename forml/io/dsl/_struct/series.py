@@ -27,108 +27,111 @@ import logging
 import operator as opermod
 import types
 import typing
-from collections import abc as colabc
 
 from forml.io.dsl import error
-from forml.io.dsl.struct import frame as framod, kind as kindmod
+
+from . import frame as framod
+from . import kind as kindmod
 
 LOGGER = logging.getLogger(__name__)
 
 
-def cast(value: typing.Any) -> 'Column':
-    """Attempt to create a literal instance of the value unless already a column.
+def cast(value: typing.Any) -> 'Feature':
+    """Attempt to create a literal instance of the value unless already a feature.
 
     Args:
-        value: Value to be represented as Operable column.
+        value: Value to be represented as Operable feature.
 
     Returns:
-        Operable column instance.
+        Operable feature instance.
     """
-    if not isinstance(value, Column):
+    if not isinstance(value, Feature):
         LOGGER.debug('Converting value of %s to a literal type', value)
         value = Literal(value)
     return value
 
 
-class Visitor:
-    """Series visitor."""
+class Feature(tuple, metaclass=abc.ABCMeta):
+    """Base class for feature types (ie fields or select expressions)."""
 
-    def visit_column(self, column: 'Column') -> None:  # pylint: disable=unused-argument, no-self-use
-        """Generic column hook.
+    class Visitor:
+        """Feature visitor."""
 
-        Args:
-            column: Column instance to be visited.
-        """
+        def visit_feature(self, feature: 'Feature') -> None:  # pylint: disable=unused-argument, no-self-use
+            """Generic feature hook.
 
-    def visit_aliased(self, column: 'Aliased') -> None:
-        """Generic expression hook.
+            Args:
+                feature: Feature instance to be visited.
+            """
 
-        Args:
-            column: Aliased column instance to be visited.
-        """
-        column.operable.accept(self)
-        self.visit_column(column)
+        def visit_aliased(self, feature: 'Aliased') -> None:
+            """Generic expression hook.
 
-    def visit_element(self, column: 'Element') -> None:
-        """Generic expression hook.
+            Args:
+                feature: Aliased feature instance to be visited.
+            """
+            feature.operable.accept(self)
+            self.visit_feature(feature)
 
-        Args:
-            column: Element instance to be visited.
-        """
-        self.visit_column(column)
+        def visit_element(self, feature: 'Element') -> None:
+            """Generic expression hook.
 
-    def visit_literal(self, column: 'Literal') -> None:
-        """Generic literal hook.
+            Args:
+                feature: Element instance to be visited.
+            """
+            self.visit_feature(feature)
 
-        Args:
-            column: Literal instance to be visited.
-        """
-        self.visit_column(column)
+        def visit_literal(self, feature: 'Literal') -> None:
+            """Generic literal hook.
 
-    def visit_expression(self, column: 'Expression') -> None:
-        """Generic expression hook.
+            Args:
+                feature: Literal instance to be visited.
+            """
+            self.visit_feature(feature)
 
-        Args:
-            column: Expression instance to be visited.
-        """
-        for term in column:
-            if isinstance(term, Column):
-                term.accept(self)
-        self.visit_column(column)
+        def visit_expression(self, feature: 'Expression') -> None:
+            """Generic expression hook.
 
-    def visit_window(self, column: 'Window') -> None:
-        """Generic window hook.
+            Args:
+                feature: Expression instance to be visited.
+            """
+            for term in feature:
+                if isinstance(term, Feature):
+                    term.accept(self)
+            self.visit_feature(feature)
 
-        Args:
-            column: Window instance to be visited.
-        """
-        self.visit_column(column)
+        def visit_window(self, feature: 'Window') -> None:
+            """Generic window hook.
 
-
-class Column(tuple, metaclass=abc.ABCMeta):
-    """Base class for column types (ie fields or select expressions)."""
+            Args:
+                feature: Window instance to be visited.
+            """
+            self.visit_feature(feature)
 
     class Dissect(Visitor):
-        """Visitor extracting column instances of given type(s)."""
+        """Visitor extracting feature instances of given type(s)."""
 
         def __init__(self, *types: type):
             self._types: frozenset[type] = frozenset(types)
-            self._match: set['Column'] = set()
-            self._seen: set['Column'] = set()
+            self._match: set['Feature'] = set()
+            self._seen: set['Feature'] = set()
 
-        def __call__(self, *column: 'Column') -> frozenset['Column']:
-            """Apply this dissector to the given columns.
+        def __call__(self, *feature: 'Feature') -> frozenset['Feature']:
+            """Apply this dissector to the given features.
+
+            Args:
+                feature: Sequence of features to dissect.
 
             Returns:
-                Set of instances matching the registered types used in given column(s).
+                Set of instances matching the registered types used in given feature(s).
             """
-            for col in column:
+            for col in feature:
                 col.accept(self)
             return frozenset(self._match)
 
-        def visit_column(self, column: 'Column') -> None:
-            if any(isinstance(column, t) for t in self._types):
-                self._match.add(column)
+        def visit_feature(self, feature: 'Feature') -> None:
+            if any(isinstance(feature, t) for t in self._types):
+                self._match.add(feature)
 
     def __new__(cls, *args):
         return super().__new__(cls, args)
@@ -145,19 +148,19 @@ class Column(tuple, metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def name(self) -> typing.Optional[str]:
-        """Column nme
+        """Feature name.
 
         Returns:
-            name string.
+            Name string.
         """
 
     @property
     @abc.abstractmethod
     def kind(self) -> kindmod.Any:
-        """Column type.
+        """Feature type.
 
         Returns:
-            type.
+            Type.
         """
 
     @abc.abstractmethod
@@ -171,67 +174,70 @@ class Column(tuple, metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def operable(self) -> 'Operable':
-        """Return the operable of this column (apart from Aliased, operable is the column itself).
+        """Return the operable of this feature (apart from Aliased, operable is the feature itself).
 
         Returns:
-            Column's operable.
+            Feature's operable.
         """
 
     @classmethod
-    def dissect(cls, *column: 'Column') -> frozenset['Column']:
-        """Return an iterable of instances of this type composing given column(s).
-
-        Returns:
-            Set of this type instances used in given column(s).
-        """
-        return cls.Dissect(cls)(*column)
-
-    @classmethod
-    def ensure_is(cls, column: 'Column') -> 'Column':
-        """Ensure given column is of our type.
+    def dissect(cls, *feature: 'Feature') -> frozenset['Feature']:
+        """Return an iterable of instances of this type composing given feature(s).
 
         Args:
-            column: Column to be verified.
+            feature: Sequence of features to dissect.
 
         Returns:
-            Original column if instance of our type or raising otherwise.
+            Set of this type instances used in given feature(s).
         """
-        column = cast(column)
-        if not isinstance(column, cls):
-            raise error.Syntax(f'{column} not an instance of a {cls.__name__}')
-        return column
+        return cls.Dissect(cls)(*feature)
 
     @classmethod
-    def ensure_in(cls, column: 'Column') -> 'Column':
-        """Ensure given column is composed of our type.
+    def ensure_is(cls, feature: 'Feature') -> 'Feature':
+        """Ensure given feature is of our type.
 
         Args:
-            column: Column to be verified.
+            feature: Feature to be verified.
 
         Returns:
-            Original column if containing our type or raising otherwise.
+            Original feature if instance of our type or raising otherwise.
         """
-        if not cls.dissect(column):
-            raise error.Syntax(f'No {cls.__name__} instance(s) found in {column}')
-        return column
+        feature = cast(feature)
+        if not isinstance(feature, cls):
+            raise error.Syntax(f'{feature} not an instance of a {cls.__name__}')
+        return feature
 
     @classmethod
-    def ensure_notin(cls, column: 'Column') -> 'Column':
-        """Ensure given column is not composed of our type.
+    def ensure_in(cls, feature: 'Feature') -> 'Feature':
+        """Ensure given feature is composed of our type.
 
         Args:
-            column: Column to be verified.
+            feature: Feature to be verified.
 
         Returns:
-            Original column if not of our type or raising otherwise.
+            Original feature if containing our type or raising otherwise.
         """
-        if cls.dissect(column):
-            raise error.Syntax(f'{cls.__name__} instance(s) found in {column}')
-        return column
+        if not cls.dissect(feature):
+            raise error.Syntax(f'No {cls.__name__} instance(s) found in {feature}')
+        return feature
+
+    @classmethod
+    def ensure_notin(cls, feature: 'Feature') -> 'Feature':
+        """Ensure given feature is not composed of our type.
+
+        Args:
+            feature: Feature to be verified.
+
+        Returns:
+            Original feature if not of our type or raising otherwise.
+        """
+        if cls.dissect(feature):
+            raise error.Syntax(f'{cls.__name__} instance(s) found in {feature}')
+        return feature
 
 
-def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
-    """Decorator for forcing function arguments to operable columns.
+def featurize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
+    """Decorator for forcing function arguments to operable features.
 
     Args:
         handler: Callable to be decorated.
@@ -245,126 +251,126 @@ def columnize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
         """Actual decorator.
 
         Args:
-            *args: Arguments to be forced to columns.
+            *args: Arguments to be forced to features.
 
         Returns:
-            Arguments converted to columns.
+            Arguments converted to features.
         """
         return handler(*(cast(a).operable for a in args))
 
     return wrapper
 
 
-class Operable(Column, metaclass=abc.ABCMeta):
-    """Base class for columns that can be used in expressions, conditions, grouping and/or ordering definitions."""
+class Operable(Feature, metaclass=abc.ABCMeta):
+    """Base class for features that can be used in expressions, conditions, grouping and/or ordering definitions."""
 
     @property
     def operable(self) -> 'Operable':
         return self
 
     @classmethod
-    def ensure_is(cls, column: 'Column') -> 'Operable':
-        """Ensure given given column is an Operable."""
-        return super().ensure_is(column).operable
+    def ensure_is(cls, feature: 'Feature') -> 'Operable':
+        """Ensure given given feature is an Operable."""
+        return super().ensure_is(feature).operable
 
     def alias(self, alias: str) -> 'Aliased':
-        """Use an alias for this column.
+        """Use an alias for this feature.
 
         Args:
-            alias: Aliased column name.
+            alias: Aliased feature name.
 
         Returns:
-            New column instance with given alias.
+            New feature instance with given alias.
         """
         return Aliased(self, alias)
 
-    __hash__ = Column.__hash__  # otherwise gets overwritten to None due to redefined __eq__
+    __hash__ = Feature.__hash__  # otherwise gets overwritten to None due to redefined __eq__
 
-    @columnize
+    @featurize
     def __eq__(self, other: 'Operable') -> 'Equal':
         return Comparison.Pythonic(Equal, self, other)
 
-    @columnize
+    @featurize
     def __ne__(self, other: 'Operable') -> 'NotEqual':
         return NotEqual(self, other)
 
-    @columnize
+    @featurize
     def __lt__(self, other: 'Operable') -> 'LessThan':
         return Comparison.Pythonic(LessThan, self, other)
 
-    @columnize
+    @featurize
     def __le__(self, other: 'Operable') -> 'LessEqual':
         return LessEqual(self, other)
 
-    @columnize
+    @featurize
     def __gt__(self, other: 'Operable') -> 'GreaterThan':
         return GreaterThan(self, other)
 
-    @columnize
+    @featurize
     def __ge__(self, other: 'Operable') -> 'GreaterEqual':
         return GreaterEqual(self, other)
 
-    @columnize
+    @featurize
     def __and__(self, other: 'Operable') -> 'And':
         return And(self, other)
 
-    @columnize
+    @featurize
     def __rand__(self, other: 'Operable') -> 'And':
         return And(other, self)
 
-    @columnize
+    @featurize
     def __or__(self, other: 'Operable') -> 'Or':
         return Or(self, other)
 
-    @columnize
+    @featurize
     def __ror__(self, other: 'Operable') -> 'Or':
         return Or(other, self)
 
     def __invert__(self) -> 'Not':
         return Not(self)
 
-    @columnize
+    @featurize
     def __add__(self, other: 'Operable') -> 'Addition':
         return Addition(self, other)
 
-    @columnize
+    @featurize
     def __radd__(self, other: 'Operable') -> 'Addition':
         return Addition(other, self)
 
-    @columnize
+    @featurize
     def __sub__(self, other: 'Operable') -> 'Subtraction':
         return Subtraction(self, other)
 
-    @columnize
+    @featurize
     def __rsub__(self, other: 'Operable') -> 'Subtraction':
         return Subtraction(other, self)
 
-    @columnize
+    @featurize
     def __mul__(self, other: 'Operable') -> 'Multiplication':
         return Multiplication(self, other)
 
-    @columnize
+    @featurize
     def __rmul__(self, other: 'Operable') -> 'Multiplication':
         return Multiplication(other, self)
 
-    @columnize
+    @featurize
     def __truediv__(self, other: 'Operable') -> 'Division':
         return Division(self, other)
 
-    @columnize
+    @featurize
     def __rtruediv__(self, other: 'Operable') -> 'Division':
         return Division(other, self)
 
-    @columnize
+    @featurize
     def __mod__(self, other: 'Operable') -> 'Modulus':
         return Modulus(self, other)
 
-    @columnize
+    @featurize
     def __rmod__(self, other: 'Operable') -> 'Modulus':
         return Modulus(other, self)
 
 
-class Ordering(collections.namedtuple('Ordering', 'column, direction')):
+class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
     """OrderBy spec."""
 
     @enum.unique
@@ -387,18 +393,18 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
         def __repr__(self):
             return f'<{self.value}>'
 
-        def __call__(self, column: typing.Union[Operable, 'Ordering']) -> 'Ordering':
-            if isinstance(column, Ordering):
-                column = column.column
-            return Ordering(column, self)
+        def __call__(self, feature: typing.Union[Operable, 'Ordering']) -> 'Ordering':
+            if isinstance(feature, Ordering):
+                feature = feature.feature
+            return Ordering(feature, self)
 
-    def __new__(cls, column: Operable, direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
+    def __new__(cls, feature: Operable, direction: typing.Optional[typing.Union['Ordering.Direction', str]] = None):
         return super().__new__(
-            cls, Operable.ensure_is(column), cls.Direction(direction) if direction else cls.Direction.ASCENDING
+            cls, Operable.ensure_is(feature), cls.Direction(direction) if direction else cls.Direction.ASCENDING
         )
 
     def __repr__(self):
-        return f'{repr(self.column)}{repr(self.direction)}'
+        return f'{repr(self.feature)}{repr(self.direction)}'
 
     @classmethod
     def make(
@@ -411,51 +417,51 @@ class Ordering(collections.namedtuple('Ordering', 'column, direction')):
             ]
         ],
     ) -> typing.Iterable['Ordering']:
-        """Helper to generate orderings from given columns and directions.
+        """Helper to generate orderings from given features and directions.
 
         Args:
-            specs: One or many columns or actual ordering instances.
+            specs: One or many features or actual ordering instances.
 
         Returns:
             Sequence of ordering terms.
         """
         specs = itertools.zip_longest(specs, specs[1:])
-        for column, direction in specs:
-            if isinstance(column, Column):
+        for feature, direction in specs:
+            if isinstance(feature, Feature):
                 if isinstance(direction, (Ordering.Direction, str)):
-                    yield Ordering.Direction(direction)(column)
+                    yield Ordering.Direction(direction)(feature)
                     next(specs)  # pylint: disable=stop-iteration-return
                 else:
-                    yield Ordering(column)
-            elif isinstance(column, colabc.Sequence) and len(column) == 2:
-                column, direction = column
-                yield Ordering.Direction(direction)(column)
+                    yield Ordering(feature)
+            elif isinstance(feature, typing.Sequence) and len(feature) == 2:
+                feature, direction = feature
+                yield Ordering.Direction(direction)(feature)
             else:
-                raise error.Syntax('Expecting pair of column and direction')
+                raise error.Syntax('Expecting pair of feature and direction')
 
 
-class Aliased(Column):
-    """Aliased column representation."""
+class Aliased(Feature):
+    """Aliased feature representation."""
 
     operable: Operable = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
 
-    def __new__(cls, column: Column, alias: str):
-        return super().__new__(cls, column.operable, alias)
+    def __new__(cls, feature: Feature, alias: str):
+        return super().__new__(cls, feature.operable, alias)
 
     def __repr__(self):
         return f'{self.name}=[{repr(self.operable)}]'
 
     @property
     def kind(self) -> kindmod.Any:
-        """Column type.
+        """Feature type.
 
         Returns:
-            Inner column type.
+            Inner feature type.
         """
         return self.operable.kind
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: Feature.Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -488,7 +494,7 @@ class Literal(Operable):
         """
         return None
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: Feature.Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -498,14 +504,14 @@ class Literal(Operable):
 
 
 class Element(Operable):
-    """Named column of particular origin (table or a reference)."""
+    """Named feature of particular origin (table or a reference)."""
 
     origin: 'framod.Origin' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
 
     def __new__(cls, source: 'framod.Origin', name: str):
-        if isinstance(source, framod.Table) and not issubclass(cls, Field):
-            return Field(source, name)
+        if isinstance(source, framod.Table) and not issubclass(cls, Column):
+            return Column(source, name)
         return super().__new__(cls, source, name)
 
     def __repr__(self):
@@ -515,7 +521,7 @@ class Element(Operable):
     def kind(self) -> kindmod.Any:
         return self.origin.schema[self.name].kind
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: Feature.Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -524,8 +530,8 @@ class Element(Operable):
         visitor.visit_element(self)
 
 
-class Field(Element):
-    """Special type of element is the schema field type."""
+class Column(Element):
+    """Special type of element is the table column type."""
 
     origin: 'framod.Table' = property(opermod.itemgetter(0))
 
@@ -547,7 +553,7 @@ class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-m
         """
         return None
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: Feature.Visitor) -> None:
         visitor.visit_expression(self)
 
 
@@ -613,12 +619,12 @@ class Predicate(metaclass=abc.ABCMeta):
     """Base class for Logical and Comparison operators."""
 
     class Factors(typing.Mapping['framod.Table', 'Factors']):
-        """Mapping (read-only) of predicate factors to their tables. Factor is pa predicate which is involving exactly
+        """Mapping (read-only) of predicate factors to their tables. Factor is a predicate which is involving exactly
         one and only table.
         """
 
         def __init__(self, *predicates: 'Predicate'):
-            items = {p: {f.origin for f in Field.dissect(p)} for p in predicates}
+            items = {p: {f.origin for f in Column.dissect(p)} for p in predicates}
             if collections.Counter(len(s) == 1 for s in items.values())[True] != len(predicates):
                 raise ValueError('Repeated or non-primitive predicates')
             self._items: typing.Mapping[framod.Table, Predicate] = types.MappingProxyType(
@@ -680,27 +686,27 @@ class Predicate(metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def ensure_is(cls: type[Operable], column: Operable) -> Operable:
-        """Ensure given column is a predicate. Since this mixin class is supposed to be used as a first base class of
-        its column implementors, this will mask the Column.ensure_is API. Here we add special implementation depending
-        on whether it is used directly on the Predicate class or its bare mixin subclasses or the actual Column
+    def ensure_is(cls: type[Operable], feature: Operable) -> Operable:
+        """Ensure given feature is a predicate. Since this mixin class is supposed to be used as a first base class of
+        its feature implementors, this will mask the Feature.ensure_is API. Here we add special implementation depending
+        on whether it is used directly on the Predicate class or its bare mixin subclasses or the actual Feature
         implementation using this mixin.
 
         Args:
-            column: Column instance to be checked for its compliance.
+            feature: Feature instance to be checked for its compliance.
 
         Returns:
-            Column instance.
+            Feature instance.
         """
-        column = Operable.ensure_is(column)
+        feature = Operable.ensure_is(feature)
         if cls is Predicate:  # bare Predicate - accept anything of a boolean kind.
-            kindmod.Boolean.ensure(column.kind)
-        elif not issubclass(cls, Column):  # bare Predicate mixin subclasses
-            if not isinstance(column, cls):
-                raise error.Syntax(f'{column} not an instance of a {cls.__name__}')
-        else:  # defer to the column's .ensure_is implementation
-            column = next(b for b in cls.__bases__ if issubclass(b, Column)).ensure_is(column)
-        return column
+            kindmod.Boolean.ensure(feature.kind)
+        elif not issubclass(cls, Feature):  # bare Predicate mixin subclasses
+            if not isinstance(feature, cls):
+                raise error.Syntax(f'{feature} not an instance of a {cls.__name__}')
+        else:  # defer to the feature's .ensure_is implementation
+            feature = next(b for b in cls.__bases__ if issubclass(b, Feature)).ensure_is(feature)
+        return feature
 
 
 class Logical(Predicate, metaclass=abc.ABCMeta):
@@ -770,14 +776,14 @@ class Comparison(Predicate):
 
         @property
         def name(self) -> typing.Optional[str]:
-            raise RuntimeError('Pythonic comparison proxy used as a column')
+            raise RuntimeError('Pythonic comparison proxy used as a feature')
 
         @property
         def kind(self) -> kindmod.Any:
-            raise RuntimeError('Pythonic comparison proxy used as a column')
+            raise RuntimeError('Pythonic comparison proxy used as a feature')
 
-        def accept(self, visitor: Visitor) -> None:
-            raise RuntimeError('Pythonic comparison proxy used as a column')
+        def accept(self, visitor: Feature.Visitor) -> None:
+            raise RuntimeError('Pythonic comparison proxy used as a feature')
 
         @property
         def operable(self) -> Infix:
@@ -798,7 +804,7 @@ class Comparison(Predicate):
     @property
     @functools.lru_cache
     def factors(self: 'Comparison') -> Predicate.Factors:
-        return Predicate.Factors(self) if len({f.origin for f in Field.dissect(self)}) == 1 else Predicate.Factors()
+        return Predicate.Factors(self) if len({f.origin for f in Column.dissect(self)}) == 1 else Predicate.Factors()
 
 
 class LessThan(Comparison, Infix):
@@ -831,7 +837,7 @@ class Equal(Comparison, Infix):
     symbol = '=='
 
     def __bool__(self):
-        """Since this instance is also returned when python internally compares two Column instances for equality (ie
+        """Since this instance is also returned when python internally compares two Feature instances for equality (ie
         when the instance is stored within a hash-based container), we want to evaluate the boolean value for python
         perspective of the objects (rather than just the ETL perspective of the data).
 
@@ -914,7 +920,7 @@ class Cumulative(Expression, metaclass=abc.ABCMeta):
 
 
 class Window(Cumulative):
-    """Window type column representation."""
+    """Window type feature representation."""
 
     function: 'Window.Function' = property(opermod.itemgetter(0))
     partition: tuple[Operable] = property(opermod.itemgetter(1))
@@ -957,14 +963,14 @@ class Window(Cumulative):
                 frame: Sliding window specification.
 
             Returns:
-                Windowed column instance.
+                Windowed feature instance.
             """
             return Window(self, partition, ordering, frame)
 
     def __new__(
         cls,
         function: 'Window.Function',
-        partition: typing.Sequence[Column],
+        partition: typing.Sequence[Feature],
         ordering: typing.Optional[
             typing.Sequence[
                 typing.Union[
@@ -991,7 +997,7 @@ class Window(Cumulative):
     def kind(self) -> kindmod.Any:
         return self.function.kind
 
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: Feature.Visitor) -> None:
         """Visitor acceptor.
 
         Args:
@@ -1001,4 +1007,4 @@ class Window(Cumulative):
 
 
 class Aggregate(Cumulative, Window.Function, metaclass=abc.ABCMeta):
-    """Base class for column aggregation functions."""
+    """Base class for feature aggregation functions."""

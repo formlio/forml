@@ -19,8 +19,8 @@
 Dag composition utilities frontend API module.
 """
 
-from ._wrapped import Class, Function, Adapter
-from ._simple import Mapper, Consumer, Labeler
-
+from ._simple import Consumer, Labeler, Mapper
+from ._wrapped.actor import Class, Function
+from ._wrapped.operator import Adapter
 
 __all__ = ['Class', 'Function', 'Adapter', 'Mapper', 'Consumer', 'Labeler']

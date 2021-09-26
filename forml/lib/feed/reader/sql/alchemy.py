@@ -27,13 +27,14 @@ import typing
 import pandas
 import sqlalchemy
 from pyhive import sqlalchemy_trino as trino
-from sqlalchemy import sql, func, types as sqltypes
+from sqlalchemy import func, sql
+from sqlalchemy import types as sqltypes
 from sqlalchemy.dialects.sqlite import base as sqlite
 from sqlalchemy.engine import interfaces
 
-from forml.io import payload
-from forml.io.dsl import parser as parsmod, function, error
-from forml.io.dsl.struct import series, frame, kind as kindmod
+from forml.io import dsl, layout
+from forml.io.dsl import error, function
+from forml.io.dsl import parser as parsmod
 from forml.io.feed import extract
 
 LOGGER = logging.getLogger(__name__)
@@ -110,17 +111,17 @@ class DateTime(Type[datetime.datetime]):
 class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: disable=unsubscriptable-object
     """Frame DSL parser producing SQLAlchemy select expression."""
 
-    KIND: typing.Mapping[kindmod.Any, sql.ColumnElement] = {
-        kindmod.Boolean(): sqltypes.Boolean(),
-        kindmod.Integer(): sqltypes.Integer(),
-        kindmod.Float(): sqltypes.Float(),
-        kindmod.Decimal(): sqltypes.DECIMAL(),
-        kindmod.String(): sqltypes.Unicode(),
-        kindmod.Date(): Date(),
-        kindmod.Timestamp(): DateTime(),
+    KIND: typing.Mapping[dsl.Any, sql.ColumnElement] = {
+        dsl.Boolean(): sqltypes.Boolean(),
+        dsl.Integer(): sqltypes.Integer(),
+        dsl.Float(): sqltypes.Float(),
+        dsl.Decimal(): sqltypes.DECIMAL(),
+        dsl.String(): sqltypes.Unicode(),
+        dsl.Date(): Date(),
+        dsl.Timestamp(): DateTime(),
     }
 
-    EXPRESSION: typing.Mapping[type[series.Expression], typing.Callable[..., sql.ColumnElement]] = {
+    EXPRESSION: typing.Mapping[type[dsl.Expression], typing.Callable[..., sql.ColumnElement]] = {
         function.Addition: operator.add,
         function.Subtraction: operator.sub,
         function.Multiplication: operator.mul,
@@ -149,20 +150,20 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         function.Floor: func.floor,
     }
 
-    def resolve_column(self, column: series.Column) -> sql.ColumnElement:
+    def resolve_feature(self, feature: dsl.Feature) -> sql.ColumnElement:
         """Resolver falling back to a field name in case of no explicit mapping.
 
         Args:
-            column: Column to be resolved.
+            feature: Feature to be resolved.
 
         Returns:
-            Resolved column.
+            Resolved feature.
         """
         try:
-            return super().resolve_column(column)
+            return super().resolve_feature(feature)
         except error.Mapping as err:
-            if isinstance(column, series.Element):
-                return sql.column(column.name)
+            if isinstance(feature, dsl.Element):
+                return sql.column(feature.name)
             raise err
 
     def generate_element(
@@ -179,19 +180,21 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         """
         return sql.column(element.name, _selectable=origin)
 
-    def generate_alias(self, column: sql.ColumnElement, alias: str) -> sql.ColumnElement:  # pylint: disable=no-self-use
-        """Generate column alias code.
+    def generate_alias(
+        self, feature: sql.ColumnElement, alias: str
+    ) -> sql.ColumnElement:  # pylint: disable=no-self-use
+        """Generate feature alias code.
 
         Args:
-            column: Column value.
-            alias: Alias to be used for given column.
+            feature: Feature value.
+            alias: Alias to be used for given feature.
 
         Returns:
-            Aliased column.
+            Aliased feature.
         """
-        return column.label(alias)
+        return feature.label(alias)
 
-    def generate_literal(self, value: typing.Any, kind: kindmod.Any) -> sql.ColumnElement:
+    def generate_literal(self, value: typing.Any, kind: dsl.Any) -> sql.ColumnElement:
         """Generate a literal value.
 
         Args:
@@ -207,7 +210,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
             raise error.Unsupported(f'Unsupported literal kind: {kind}') from err
 
     def generate_expression(
-        self, expression: type[series.Expression], arguments: typing.Sequence[typing.Any]
+        self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]
     ) -> sql.ColumnElement:
         """Expression of given arguments.
 
@@ -223,14 +226,14 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         except KeyError as err:
             raise error.Unsupported(f'Unsupported expression: {expression}') from err
 
-    SET: typing.Mapping[frame.Set.Kind, typing.Callable[[sql.Selectable, sql.Selectable], sql.Selectable]] = {
-        frame.Set.Kind.UNION: sql.Select.union,
-        frame.Set.Kind.INTERSECTION: sql.Select.intersect,
-        frame.Set.Kind.DIFFERENCE: sql.Select.except_,
+    SET: typing.Mapping[dsl.Set.Kind, typing.Callable[[sql.Selectable, sql.Selectable], sql.Selectable]] = {
+        dsl.Set.Kind.UNION: sql.Select.union,
+        dsl.Set.Kind.INTERSECTION: sql.Select.intersect,
+        dsl.Set.Kind.DIFFERENCE: sql.Select.except_,
     }
-    ORDER: typing.Mapping[series.Ordering.Direction, typing.Callable[[sql.ColumnElement], sql.ColumnElement]] = {
-        series.Ordering.Direction.ASCENDING: sql.ColumnElement.asc,
-        series.Ordering.Direction.DESCENDING: sql.ColumnElement.desc,
+    ORDER: typing.Mapping[dsl.Ordering.Direction, typing.Callable[[sql.ColumnElement], sql.ColumnElement]] = {
+        dsl.Ordering.Direction.ASCENDING: sql.ColumnElement.asc,
+        dsl.Ordering.Direction.DESCENDING: sql.ColumnElement.desc,
     }
 
     def generate_join(
@@ -238,7 +241,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         left: sql.Selectable,
         right: sql.Selectable,
         condition: typing.Optional[sql.ColumnElement],
-        kind: frame.Join.Kind,
+        kind: dsl.Join.Kind,
     ) -> sql.Selectable:
         """Generate target code for a join operation using the left/right terms, condition and a join type.
 
@@ -254,15 +257,15 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         opts = {
             'onclause': condition if condition is not None else sql.literal(True)
         }  # onclause=literal(True) -> CROSS JOIN
-        if kind in {frame.Join.Kind.FULL, frame.Join.Kind.CROSS}:
+        if kind in {dsl.Join.Kind.FULL, dsl.Join.Kind.CROSS}:
             opts['full'] = True
-        elif kind is not frame.Join.Kind.INNER:
+        elif kind is not dsl.Join.Kind.INNER:
             opts['isouter'] = True
-            if kind is frame.Join.Kind.RIGHT:
+            if kind is dsl.Join.Kind.RIGHT:
                 left, right = right, left
         return left.join(right, **opts)
 
-    def generate_set(self, left: sql.Selectable, right: sql.Selectable, kind: frame.Set.Kind) -> sql.Selectable:
+    def generate_set(self, left: sql.Selectable, right: sql.Selectable, kind: dsl.Set.Kind) -> sql.Selectable:
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -278,18 +281,18 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
     def generate_query(
         self,
         source: sql.Selectable,
-        columns: typing.Sequence[sql.ColumnElement],  # pylint: disable=no-self-use
+        features: typing.Sequence[sql.ColumnElement],  # pylint: disable=no-self-use
         where: typing.Optional[sql.ColumnElement],
         groupby: typing.Sequence[sql.ColumnElement],
         having: typing.Optional[sql.ColumnElement],
-        orderby: typing.Sequence[tuple[sql.ColumnElement, series.Ordering.Direction]],
-        rows: typing.Optional[frame.Rows],
+        orderby: typing.Sequence[tuple[sql.ColumnElement, dsl.Ordering.Direction]],
+        rows: typing.Optional[dsl.Rows],
     ) -> sql.Selectable:
         """Generate query statement code.
 
         Args:
             source: Source.
-            columns: Sequence of selected columns.
+            features: Sequence of selected features.
             where: Where condition.
             groupby: Sequence of grouping specifiers.
             having: Having condition.
@@ -299,8 +302,8 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         Returns:
             Query.
         """
-        assert columns, 'Expecting columns'
-        query = sql.select(columns).select_from(source)
+        assert features, 'Expecting features'
+        query = sql.select(features).select_from(source)
         if where is not None:
             query = query.where(where)
         if groupby:
@@ -336,35 +339,35 @@ class Reader(extract.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
 
     def __init__(
         self,
-        sources: typing.Mapping[frame.Source, parsmod.Source],
-        columns: typing.Mapping[series.Column, parsmod.Column],
+        sources: typing.Mapping[dsl.Source, parsmod.Source],
+        features: typing.Mapping[dsl.Feature, parsmod.Feature],
         connection: typing.Union[str, interfaces.Connectable],
         **kwargs,
     ):
         if isinstance(connection, str):
             connection = sqlalchemy.create_engine(connection)
-        super().__init__(sources, columns, **{**kwargs, 'con': connection})
+        super().__init__(sources, features, **{**kwargs, 'con': connection})
 
     @classmethod
     def parser(
         cls,
-        sources: typing.Mapping[frame.Source, sql.Selectable],
-        columns: typing.Mapping[series.Column, sql.ColumnElement],
+        sources: typing.Mapping[dsl.Source, sql.Selectable],
+        features: typing.Mapping[dsl.Feature, sql.ColumnElement],
     ) -> Parser:
         """Return the parser instance of this reader.
 
         Args:
             sources: Source mappings to be used by the parser.
-            columns: Column mappings to be used by the parser.
+            features: Feature mappings to be used by the parser.
 
         Returns:
             Parser instance.
         """
-        return Parser(sources, columns)
+        return Parser(sources, features)
 
     @classmethod
-    def format(cls, data: pandas.DataFrame) -> payload.ColumnMajor:
-        """Pandas is already columnar - just return the underlying array.
+    def format(cls, data: pandas.DataFrame) -> layout.ColumnMajor:
+        """Pandas is already featurear - just return the underlying array.
 
         Args:
             data: Pandas dataframe.

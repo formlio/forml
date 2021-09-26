@@ -26,7 +26,8 @@ import typing
 from collections import abc
 
 from forml import conf, error, flow
-from forml.project import component as compmod, distribution, importer
+from forml.project import component as compmod
+from forml.project import distribution, importer
 from forml.runtime import launcher
 from forml.runtime.asset import persistent
 

@@ -26,7 +26,8 @@ import typing
 import dask
 
 from forml import runtime
-from forml.io import feed as feedmod, sink as sinkmod
+from forml.io import feed as feedmod
+from forml.io import sink as sinkmod
 from forml.runtime import code
 from forml.runtime.asset import access
 

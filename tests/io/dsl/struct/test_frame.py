@@ -26,8 +26,8 @@ import typing
 import cloudpickle
 import pytest
 
-from forml.io.dsl import function, error, struct
-from forml.io.dsl.struct import series, frame, kind
+from forml.io.dsl import _struct, error, function
+from forml.io.dsl._struct import frame, kind, series
 
 
 class Source(metaclass=abc.ABCMeta):
@@ -47,9 +47,9 @@ class Source(metaclass=abc.ABCMeta):
         """Test source serializability."""
         assert cloudpickle.loads(cloudpickle.dumps(source)) == source
 
-    def test_columns(self, source: frame.Source, student: frame.Table):
-        """Test the reported column."""
-        assert student.surname in source.columns
+    def test_features(self, source: frame.Source, student: frame.Table):
+        """Test the reported feature."""
+        assert student.surname in source.features
         assert source.surname == student.surname
         assert source['surname'] == student['surname']
         assert source.birthday == student.birthday
@@ -61,7 +61,7 @@ class Source(metaclass=abc.ABCMeta):
 
     def test_schema(self, source: frame.Source):
         """Test the reported schema."""
-        assert issubclass(source.schema, struct.Schema)
+        assert issubclass(source.schema, _struct.Schema)
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
@@ -84,7 +84,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert source.select(source.score).selection[0] == source.score
         assert source.select(source.score, source.surname).selection == (source.score, source.surname)
         with pytest.raises(error.Syntax):
-            source.select(source.reference().score)  # not subset of source columns
+            source.select(source.reference().score)  # not subset of source features
 
     @classmethod
     def _expression(
@@ -110,7 +110,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         cls._expression(source, handler, target)
         with pytest.raises(error.Syntax):
             handler(source, source.score + 1)  # not logical
-        with pytest.raises(error.Syntax):  # not subset of source columns
+        with pytest.raises(error.Syntax):  # not subset of source features
             handler(source, source.reference().score == 'foo')
 
     @classmethod
@@ -174,7 +174,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             (source.score, series.Ordering.Direction.DESCENDING),
             (source.surname, series.Ordering.Direction.ASCENDING),
         )
-        self._expression(source, lambda s, e: s.orderby(e), lambda q: q.ordering[0].column)
+        self._expression(source, lambda s, e: s.orderby(e), lambda q: q.ordering[0].feature)
 
     def test_limit(self, source: frame.Queryable):
         """Limit test."""
@@ -185,8 +185,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 class Tangible(Queryable, metaclass=abc.ABCMeta):
     """Base class for tangible frames."""
 
-    def test_columns(self, source: frame.Origin, student: frame.Table):
-        assert all(isinstance(c, series.Element) for c in source.columns)
+    def test_features(self, source: frame.Origin, student: frame.Table):
+        assert all(isinstance(c, series.Element) for c in source.features)
         assert student.dob.name == 'birthday'
         assert student.score.name == 'score'
 
@@ -196,23 +196,23 @@ class TestSchema:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def schema(student: frame.Table) -> type['struct.Schema']:
+    def schema(student: frame.Table) -> type['_struct.Schema']:
         """Schema fixture."""
         return student.schema
 
-    def test_identity(self, schema: type['struct.Schema'], student: frame.Table):
+    def test_identity(self, schema: type['_struct.Schema'], student: frame.Table):
         """Schema identity tests."""
         other = student.query.schema
         assert schema is not other
         assert len({schema, other}) == 1
 
-    def test_colliding(self, schema: type['struct.Schema']):
+    def test_colliding(self, schema: type['_struct.Schema']):
         """Test schema with colliding field names."""
 
-        class Base(struct.Schema):
+        class Base(_struct.Schema):
             """Another schema also having the birthday field."""
 
-            birthday = struct.Field(kind.Integer())
+            birthday = _struct.Field(kind.Integer())
 
         with pytest.raises(error.Syntax, match='Colliding base classes'):
 
@@ -226,18 +226,18 @@ class TestSchema:
             class FieldCollision(schema):
                 """Schema with colliding field names."""
 
-                birthday = struct.Field(kind.Integer())
+                birthday = _struct.Field(kind.Integer())
 
             _ = FieldCollision
 
         class Override(schema):
             """Schema with overridden field kind."""
 
-            school = struct.Field(kind.String())
+            school = _struct.Field(kind.String())
 
         assert schema.school.kind == kind.Integer() and Override.school.kind == kind.String()
 
-    def test_access(self, schema: type['struct.Schema']):
+    def test_access(self, schema: type['_struct.Schema']):
         """Test the schema access methods."""
         assert tuple(f.name for f in schema) == ('surname', 'birthday', 'level', 'score', 'school')
         assert schema.dob.name == 'birthday'
@@ -247,17 +247,17 @@ class TestSchema:
     def test_ordering(self):
         """Test the field ordering rules in schema inheritance."""
 
-        class Base(struct.Schema):
+        class Base(_struct.Schema):
             """Base schema."""
 
-            first = struct.Field(kind.Integer())
-            fixme = struct.Field(kind.Float(), name='old')
+            first = _struct.Field(kind.Integer())
+            fixme = _struct.Field(kind.Float(), name='old')
 
         class Child(Base):
             """Child schema - adding a field "last" plus overriding kind of the "fixme" field."""
 
-            last = struct.Field(kind.Integer())
-            fixme = struct.Field(kind.String(), name='new')
+            last = _struct.Field(kind.Integer())
+            fixme = _struct.Field(kind.String(), name='new')
 
         assert tuple(f.name for f in Child.schema) == ('first', 'new', 'last')  # pylint: disable=not-an-iterable
         assert Child.fixme.kind == kind.String()
@@ -284,9 +284,9 @@ class TestTable(Tangible):
     def source(student: frame.Table) -> frame.Table:
         return student
 
-    def test_columns(self, source: frame.Origin, student: frame.Table):
-        Queryable.test_columns(self, source, student)
-        Tangible.test_columns(self, source, student)
+    def test_features(self, source: frame.Origin, student: frame.Table):
+        Queryable.test_features(self, source, student)
+        Tangible.test_features(self, source, student)
 
 
 class TestQuery(Queryable):

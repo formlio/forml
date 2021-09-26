@@ -20,7 +20,8 @@ Wrapped actor unit tests.
 """
 # pylint: disable=no-self-use
 import pytest
-from forml.flow import _task
+
+from forml import flow
 from forml.lib.pipeline import topology
 
 
@@ -29,7 +30,7 @@ class TestFunction:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def actor() -> _task.Actor:
+    def actor() -> flow.Actor:
         """Actor fixture."""
 
         @topology.Function.actor
@@ -39,12 +40,12 @@ class TestFunction:
 
         return replace
 
-    def test_signature(self, actor: _task.Actor):
+    def test_signature(self, actor: flow.Actor):
         """Test the actor signature."""
         with pytest.raises(TypeError):
             actor(foo='bar')
         actor(old='asd')
 
-    def test_apply(self, actor: _task.Actor):
+    def test_apply(self, actor: flow.Actor):
         """Actor applying test."""
         assert actor(old='baz', new='foo').apply('baz bar') == 'foo bar'

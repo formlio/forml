@@ -24,9 +24,10 @@ import typing
 
 from forml import runtime
 from forml.conf.parsed import provider as provcfg
-from forml.io import feed as feedmod, sink as sinkmod  # pylint: disable=unused-import
-from forml.io import payload
-from forml.io.dsl.struct import kind
+from forml.io import dsl
+from forml.io import feed as feedmod  # pylint: disable=unused-import
+from forml.io import layout
+from forml.io import sink as sinkmod
 from forml.lib.registry import virtual
 from forml.project import distribution
 from forml.runtime.asset import persistent
@@ -53,7 +54,7 @@ class Virtual:
                     """Sink writer."""
 
                     @classmethod
-                    def write(cls, data: payload.Native, queue: multiprocessing.Queue) -> None:
+                    def write(cls, data: layout.Native, queue: multiprocessing.Queue) -> None:
                         queue.put(data, block=False)
 
             def __init__(self, builder: 'Virtual.Builder', mode: property):
@@ -61,7 +62,7 @@ class Virtual:
                 self._mode: property = mode
 
             def __call__(
-                self, lower: typing.Optional[kind.Native] = None, upper: typing.Optional[kind.Native] = None
+                self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
             ) -> typing.Any:
                 with multiprocessing.Manager() as manager:
                     output = manager.Queue()
@@ -115,7 +116,7 @@ class Virtual:
         """
         return self(runner)
 
-    def __getattr__(self, mode: str) -> 'Virtual.Builder.Mode.Handler':
+    def __getattr__(self, mode: str) -> 'Virtual.Builder.Handler':
         """Convenient shortcut for accessing the particular launcher mode using the `launcher.train()` syntax.
 
         Args:

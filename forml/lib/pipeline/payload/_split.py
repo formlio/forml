@@ -24,14 +24,13 @@ import typing
 import pandas
 from sklearn import model_selection
 
-from forml.flow import _task
+from forml import flow
 from forml.lib.pipeline.payload import _format
-
 
 LOGGER = logging.getLogger(__name__)
 
 
-class CVFolds(_task.Actor):
+class CVFolds(flow.Actor):
     """Train-test splitter generation n-folds of train-test splits based on the provided crossvalidator.
 
     The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to

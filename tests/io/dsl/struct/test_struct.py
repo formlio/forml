@@ -21,7 +21,7 @@ Struct tests.
 # pylint: disable=no-self-use
 import cloudpickle
 
-from forml.io.dsl.struct import frame
+from forml.io.dsl._struct import frame
 
 
 class TestField:

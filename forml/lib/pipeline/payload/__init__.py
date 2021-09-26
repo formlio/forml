@@ -19,9 +19,8 @@
 Transformation utilities frontend API module.
 """
 
-from ._format import to_pandas, pandas_params
-from ._common import Concat, Apply, ColumnExtractor, LabelMerger
+from ._common import Apply, ColumnExtractor, Concat, LabelMerger
+from ._format import pandas_params, to_pandas
 from ._split import CVFolds
-
 
 __all__ = ['to_pandas', 'pandas_params', 'Concat', 'Apply', 'ColumnExtractor', 'LabelMerger', 'CVFolds']

@@ -22,24 +22,25 @@ import collections
 import typing
 import uuid
 
+from .._graph import node as nodemod
+from .._graph import span
 from . import clean
-from .. import _graph
 
 
 class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
     """Structure for holding related flow parts of different modes."""
 
-    apply: _graph.Path
-    train: _graph.Path
-    label: _graph.Path
+    apply: span.Path
+    train: span.Path
+    label: span.Path
 
     def __new__(
         cls,
-        apply: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
-        train: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
-        label: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
+        apply: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
+        train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
+        label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
     ):
-        def init(mode: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]]) -> _graph.Path:
+        def init(mode: typing.Optional[typing.Union[span.Path, nodemod.Atomic]]) -> span.Path:
             """Apply default cleaning to the mode segment.
 
             Args:
@@ -49,18 +50,18 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
                 Cleaned mode path.
             """
             if not mode:
-                mode = _graph.Future()
-            if isinstance(mode, _graph.Atomic):
-                mode = _graph.Path(mode)
+                mode = nodemod.Future()
+            if isinstance(mode, nodemod.Atomic):
+                mode = span.Path(mode)
             return mode
 
         return super().__new__(cls, init(apply), init(train), init(label))
 
     def extend(
         self,
-        apply: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
-        train: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
-        label: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
+        apply: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
+        train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
+        label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
     ) -> 'Trunk':
         """Helper for creating new Segment with specified paths extended by provided values.
 
@@ -80,9 +81,9 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 
     def use(
         self,
-        apply: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
-        train: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
-        label: typing.Optional[typing.Union[_graph.Path, _graph.Atomic]] = None,
+        apply: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
+        train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
+        label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
     ) -> 'Trunk':
         """Helper for creating new Segment with specified paths replaced by provided values.
 
@@ -100,10 +101,10 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 class Composition(collections.namedtuple('Composition', 'apply, train')):
     """Structure for holding related flow parts of different modes."""
 
-    apply: _graph.Path
-    train: _graph.Path
+    apply: span.Path
+    train: span.Path
 
-    class Stateful(_graph.Visitor, typing.Iterable):
+    class Stateful(span.Visitor, typing.Iterable):
         """Visitor that cumulates gids of stateful nodes."""
 
         def __init__(self):
@@ -112,7 +113,7 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         def __iter__(self) -> typing.Iterator[uuid.UUID]:
             return iter(self._gids)
 
-        def visit_node(self, node: _graph.Worker) -> None:
+        def visit_node(self, node: nodemod.Worker) -> None:
             if node.stateful and node.gid not in self._gids:
                 self._gids.append(node.gid)
 

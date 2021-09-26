@@ -23,11 +23,11 @@ import functools
 import logging
 import typing
 
-from forml import flow, error, provider as provmod
+from forml import error, flow
+from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
-from forml.io import payload
+from forml.io import dsl, layout
 from forml.io.dsl import parser
-from forml.io.dsl.struct import series, kind as kindmod, frame
 from forml.io.feed import extract
 from forml.project import component
 
@@ -36,12 +36,12 @@ LOGGER = logging.getLogger(__name__)
 
 class Provider(
     provmod.Interface,
-    typing.Generic[parser.Source, parser.Column],
+    typing.Generic[parser.Source, parser.Feature],
     path=provcfg.Feed.path,  # pylint: disable=no-member
 ):
     """Feed is the implementation of a specific datasource provider."""
 
-    class Reader(extract.Reader[parser.Source, parser.Column, payload.Native], metaclass=abc.ABCMeta):
+    class Reader(extract.Reader[parser.Source, parser.Feature, layout.Native], metaclass=abc.ABCMeta):
         """Abstract reader of the feed."""
 
     def __init__(self, **readerkw):
@@ -50,8 +50,8 @@ class Provider(
     def load(
         self,
         source: 'component.Source',
-        lower: typing.Optional['kindmod.Native'] = None,
-        upper: typing.Optional['kindmod.Native'] = None,
+        lower: typing.Optional['dsl.Native'] = None,
+        upper: typing.Optional['dsl.Native'] = None,
     ) -> flow.Trunk:
         """Provide a pipeline composable segment implementing the etl actions.
 
@@ -64,7 +64,7 @@ class Provider(
             Pipeline segment.
         """
 
-        def formatter(provider: typing.Callable[..., payload.ColumnMajor]) -> typing.Callable[..., typing.Any]:
+        def formatter(provider: typing.Callable[..., layout.ColumnMajor]) -> typing.Callable[..., typing.Any]:
             """Creating a closure around the provider with the custom formatting to be applied on the provider output.
 
             Args:
@@ -89,7 +89,7 @@ class Provider(
 
             return wrapper
 
-        def actor(handler: typing.Callable[..., typing.Any], spec: 'frame.Query') -> flow.Spec:
+        def actor(handler: typing.Callable[..., typing.Any], spec: 'dsl.Query') -> flow.Spec:
             """Helper for creating the reader actor spec for given query.
 
             Args:
@@ -103,18 +103,20 @@ class Provider(
                 handler, extract.Statement.prepare(spec, source.extract.ordinal, lower, upper)
             )
 
-        reader = self.reader(self.sources, self.columns, **self._readerkw)
-        query: 'frame.Query' = source.extract.train
+        reader = self.reader(self.sources, self.features, **self._readerkw)
+        query: 'dsl.Query' = source.extract.train
         label: typing.Optional[flow.Spec] = None
         if source.extract.labels:  # trainset/label formatting is applied only after label extraction
-            query = query.select(*(*source.extract.train.columns, *source.extract.labels))
+            query = query.select(*(*source.extract.train.features, *source.extract.labels))
             label = extract.Slicer.Actor.spec(
-                formatter(self.slicer(query.columns, self.columns)), source.extract.train.columns, source.extract.labels
+                formatter(self.slicer(query.features, self.features)),
+                source.extract.train.features,
+                source.extract.labels,
             )
         else:  # testset formatting is applied straight away
             reader = formatter(reader)
         train = actor(reader, query)
-        apply = actor(formatter(self.reader(self.sources, self.columns, **self._readerkw)), source.extract.apply)
+        apply = actor(formatter(self.reader(self.sources, self.features, **self._readerkw)), source.extract.apply)
         loader: flow.Composable = extract.Operator(apply, train, label)
         if source.transform:
             loader >>= source.transform
@@ -123,42 +125,42 @@ class Provider(
     @classmethod
     def reader(
         cls,
-        sources: typing.Mapping['frame.Source', parser.Source],
-        columns: typing.Mapping['series.Column', parser.Column],
+        sources: typing.Mapping['dsl.Source', parser.Source],
+        features: typing.Mapping['dsl.Feature', parser.Feature],
         **kwargs: typing.Any,
-    ) -> typing.Callable[['frame.Query'], payload.ColumnMajor]:
+    ) -> typing.Callable[['dsl.Query'], layout.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
             sources: Source mappings to be used by the reader.
-            columns: Column mappings to be used by the reader.
+            features: Column mappings to be used by the reader.
             kwargs: Optional reader keyword arguments.
 
         Returns:
             Reader instance.
         """
-        return cls.Reader(sources, columns, **kwargs)  # pylint: disable=abstract-class-instantiated
+        return cls.Reader(sources, features, **kwargs)  # pylint: disable=abstract-class-instantiated
 
     @classmethod
     def slicer(
-        cls, schema: typing.Sequence['series.Column'], columns: typing.Mapping['series.Column', parser.Column]
-    ) -> typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
-        """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise.
+        cls, schema: typing.Sequence['dsl.Feature'], features: typing.Mapping['dsl.Feature', parser.Feature]
+    ) -> typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor]:
+        """Return the slicer instance of this feed, that is able to split the loaded dataset feature-wise.
 
         This default slicer is plain positional sequence slicer.
 
         Args:
-            schema: List of expected columns to be sliced from.
-            columns: Column mappings to be used by the selector.
+            schema: List of expected features to be sliced from.
+            features: Column mappings to be used by the selector.
 
         Returns:
             Slicer instance.
         """
-        return extract.Slicer(schema, columns)
+        return extract.Slicer(schema, features)
 
     @classmethod
-    def format(cls, data: payload.ColumnMajor) -> typing.Any:
-        """Optional post-formatting to be applied upon obtaining the columnar data from the raw reader.
+    def format(cls, data: layout.ColumnMajor) -> typing.Any:
+        """Optional post-formatting to be applied upon obtaining the featurear data from the raw reader.
 
         Args:
             data: Input Columnar data to be formatted.
@@ -170,7 +172,7 @@ class Provider(
 
     @property
     @abc.abstractmethod
-    def sources(self) -> typing.Mapping['frame.Source', parser.Source]:
+    def sources(self) -> typing.Mapping['dsl.Source', parser.Source]:
         """The explicit sources mapping implemented by this feed to be used by the query parser.
 
         Returns:
@@ -178,11 +180,11 @@ class Provider(
         """
 
     @property
-    def columns(self) -> typing.Mapping['series.Column', parser.Column]:
-        """The explicit columns mapping implemented by this feed to be used by the query parser.
+    def features(self) -> typing.Mapping['dsl.Feature', parser.Feature]:
+        """The explicit features mapping implemented by this feed to be used by the query parser.
 
         Returns:
-            Columns mapping.
+            Features mapping.
         """
         return {}
 
@@ -233,36 +235,36 @@ class Pool:
                 self._instance = Provider[self._descriptor.reference](**self._descriptor.params)
             return self._instance
 
-    class Matcher(frame.Visitor):
+    class Matcher(dsl.Source.Visitor):
         """Visitor that can be used to determine whether the accepting Frame can be constructed using the provided
         sources. The logic is based on traversing the Frame tree and if hitting a Table (tree leaf) that's not among the
         defined sources it resolves as not matching.
         """
 
-        def __init__(self, sources: typing.Iterable['frame.Source']):
-            self._sources: frozenset['frame.Source'] = frozenset(sources)
+        def __init__(self, sources: typing.Iterable['dsl.Source']):
+            self._sources: frozenset['dsl.Source'] = frozenset(sources)
             self._matches: bool = True
 
         def __bool__(self):
             return self._matches
 
-        def visit_reference(self, source: 'frame.Reference') -> None:
+        def visit_reference(self, source: 'dsl.Reference') -> None:
             if self and source not in self._sources:
                 super().visit_reference(source)
 
-        def visit_join(self, source: 'frame.Join') -> None:
+        def visit_join(self, source: 'dsl.Join') -> None:
             if self and source not in self._sources:
                 super().visit_join(source)
 
-        def visit_set(self, source: 'frame.Set') -> None:
+        def visit_set(self, source: 'dsl.Set') -> None:
             if self and source not in self._sources:
                 super().visit_set(source)
 
-        def visit_query(self, source: 'frame.Query') -> None:
+        def visit_query(self, source: 'dsl.Query') -> None:
             if self and source not in self._sources:
                 super().visit_query(source)
 
-        def visit_table(self, source: 'frame.Table') -> None:
+        def visit_table(self, source: 'dsl.Table') -> None:
             if source not in self._sources:
                 self._matches = False
 
@@ -273,7 +275,7 @@ class Pool:
         for feed in self._feeds:
             yield feed.instance
 
-    def match(self, source: 'frame.Source') -> Provider:
+    def match(self, source: 'dsl.Source') -> Provider:
         """Select a feed that can provide for (be used to construct) the given source.
 
         Args:

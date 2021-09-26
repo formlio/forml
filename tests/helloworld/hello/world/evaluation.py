@@ -18,9 +18,9 @@
 """
 Dummy project evaluation.
 """
-from sklearn import model_selection, metrics
+from sklearn import metrics, model_selection
 
-from forml.lib.pipeline.evaluation import metric, method
+from forml.lib.pipeline.evaluation import method, metric
 from forml.project import component
 
 INSTANCE = component.Evaluation(

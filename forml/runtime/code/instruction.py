@@ -23,7 +23,7 @@ import logging
 import typing
 import uuid
 
-from forml.flow import _task
+from forml import flow
 from forml.runtime import code
 from forml.runtime.asset import access, directory
 
@@ -115,20 +115,20 @@ class Functor(code.Instruction):
 
         def __init__(
             self,
-            consumer: typing.Callable[[_task.Actor, typing.Any], None],
-            objective: typing.Callable[[_task.Actor, typing.Sequence[typing.Any]], typing.Any],
+            consumer: typing.Callable[[flow.Actor, typing.Any], None],
+            objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any],
         ):
-            self._consumer: typing.Callable[[_task.Actor, typing.Any], None] = consumer
-            self._objective: typing.Callable[[_task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
+            self._consumer: typing.Callable[[flow.Actor, typing.Any], None] = consumer
+            self._objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
 
-        def __call__(self, actor: _task.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
+        def __call__(self, actor: flow.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
             LOGGER.debug('Shifting functor %s left with %d arguments ', actor, len(args))
             if first:
                 self._consumer(actor, first)
             return self._objective(actor, *args)
 
         @staticmethod
-        def state(actor: _task.Actor, state: bytes) -> None:
+        def state(actor: flow.Actor, state: bytes) -> None:
             """Predefined shifting for state taking objective.
 
             Args:
@@ -142,7 +142,7 @@ class Functor(code.Instruction):
             actor.set_state(state)
 
         @staticmethod
-        def params(actor: _task.Actor, params: typing.Mapping[str, typing.Any]) -> None:
+        def params(actor: flow.Actor, params: typing.Mapping[str, typing.Any]) -> None:
             """Predefined shifting for params taking objective.
 
             Args:
@@ -156,11 +156,11 @@ class Functor(code.Instruction):
             actor.set_params(**params)
 
     def __init__(
-        self, spec: _task.Spec, objective: typing.Callable[[_task.Actor, typing.Sequence[typing.Any]], typing.Any]
+        self, spec: flow.Spec, objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any]
     ):
-        self._spec: _task.Spec = spec
-        self._objective: typing.Callable[[_task.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
-        self._instance: typing.Optional[_task.Actor] = None  # transient
+        self._spec: flow.Spec = spec
+        self._objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
+        self._instance: typing.Optional[flow.Actor] = None  # transient
 
     def __reduce__(self):
         return Functor, (self._spec, self._objective)
@@ -168,7 +168,7 @@ class Functor(code.Instruction):
     def __repr__(self):
         return repr(self._spec)
 
-    def shiftby(self, consumer: typing.Callable[[_task.Actor, typing.Any], None]) -> 'Functor':
+    def shiftby(self, consumer: typing.Callable[[flow.Actor, typing.Any], None]) -> 'Functor':
         """Create new functor with its objective prepended by an extra consumer.
 
         Args:
@@ -180,7 +180,7 @@ class Functor(code.Instruction):
         return Functor(self._spec, self.Shifting(consumer, self._objective))
 
     @property
-    def _actor(self) -> _task.Actor:
+    def _actor(self) -> flow.Actor:
         """Internal cached actor instance.
 
         Returns:
@@ -197,12 +197,12 @@ class Functor(code.Instruction):
 class Functional(Functor, metaclass=abc.ABCMeta):
     """Base class for mapper and consumer functors."""
 
-    def __init__(self, spec: _task.Spec):
+    def __init__(self, spec: flow.Spec):
         super().__init__(spec, self._function)
 
     @staticmethod
     @abc.abstractmethod
-    def _function(actor: _task.Actor, *args) -> typing.Any:
+    def _function(actor: flow.Actor, *args) -> typing.Any:
         """Delegated actor objective.
 
         Args:
@@ -218,7 +218,7 @@ class Mapper(Functional):
     """Mapper (transformer) functor."""
 
     @staticmethod
-    def _function(actor: _task.Actor, *args) -> typing.Any:
+    def _function(actor: flow.Actor, *args) -> typing.Any:
         """Mapper objective is the apply method.
 
         Args:
@@ -237,7 +237,7 @@ class Consumer(Functional):
     """Consumer (ie trainer) functor."""
 
     @staticmethod
-    def _function(actor: _task.Actor, *args) -> bytes:
+    def _function(actor: flow.Actor, *args) -> bytes:
         """Consumer objective is the train method.
 
         Args:

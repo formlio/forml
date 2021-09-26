@@ -28,10 +28,9 @@ import sys
 import types
 import typing
 
-from forml import flow, error
-from forml.io.dsl.struct import series, frame
-from forml.project import importer
-from forml.project import product
+from forml import error, flow
+from forml.io import dsl
+from forml.project import importer, product
 from forml.project.component import virtual
 from forml.runtime.mode import evaluation
 
@@ -50,41 +49,41 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
 class Source(typing.NamedTuple):
     """Feed independent data source descriptor."""
 
-    extract: 'Source.Separate'
+    extract: 'Source.Extract'
     transform: typing.Optional[flow.Composable] = None
 
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
 
-        train: frame.Query
-        apply: frame.Query
-        labels: tuple[series.Column]
-        ordinal: typing.Optional[series.Operable]
+        train: dsl.Query
+        apply: dsl.Query
+        labels: tuple[dsl.Feature]
+        ordinal: typing.Optional[dsl.Operable]
 
         def __new__(
             cls,
-            train: frame.Queryable,
-            apply: frame.Queryable,
-            labels: typing.Sequence[series.Column],
-            ordinal: typing.Optional[series.Operable],
+            train: dsl.Queryable,
+            apply: dsl.Queryable,
+            labels: typing.Sequence[dsl.Feature],
+            ordinal: typing.Optional[dsl.Operable],
         ):
             train = train.query
             apply = apply.query
-            if {c.operable for c in train.columns}.intersection(c.operable for c in labels):
+            if {c.operable for c in train.features}.intersection(c.operable for c in labels):
                 raise error.Invalid('Label-feature overlap')
             if train.schema != apply.schema:
                 raise error.Invalid('Train-apply schema mismatch')
             if ordinal:
-                ordinal = series.Operable.ensure_is(ordinal)
+                ordinal = dsl.Operable.ensure_is(ordinal)
             return super().__new__(cls, train, apply, tuple(labels), ordinal)
 
     @classmethod
     def query(
         cls,
-        features: frame.Queryable,
-        *labels: series.Column,
-        apply: typing.Optional[frame.Queryable] = None,
-        ordinal: typing.Optional[series.Operable] = None,
+        features: dsl.Queryable,
+        *labels: dsl.Feature,
+        apply: typing.Optional[dsl.Queryable] = None,
+        ordinal: typing.Optional[dsl.Operable] = None,
     ) -> 'Source':
         """Create new source descriptor with the given parameters. All parameters are the DSL objects - either queries
         or columns.

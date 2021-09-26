@@ -24,9 +24,10 @@ import typing
 
 import pytest
 
-from forml.io.dsl.struct import series, frame
+from forml.io import dsl
 from forml.lib.feed.reader.sql import dbapi
-from . import Parser, Scenario, Case
+
+from . import Case, Parser, Scenario
 
 
 class TestParser(Parser):
@@ -34,28 +35,28 @@ class TestParser(Parser):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def sources(student: frame.Table, school: frame.Table) -> typing.Mapping[frame.Source, str]:
+    def sources(student: dsl.Table, school: dsl.Table) -> typing.Mapping[dsl.Source, str]:
         """Sources mapping fixture."""
         return types.MappingProxyType({student: 'student', school: 'school'})
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def columns(student: frame.Table) -> typing.Mapping[series.Column, str]:
+    def features(student: dsl.Table) -> typing.Mapping[dsl.Feature, str]:
         """Columns mapping fixture."""
         return types.MappingProxyType({student.level: 'class'})
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def parser(sources: typing.Mapping[frame.Source, str], columns: typing.Mapping[series.Column, str]) -> dbapi.Parser:
+    def parser(sources: typing.Mapping[dsl.Source, str], features: typing.Mapping[dsl.Feature, str]) -> dbapi.Parser:
         """Parser fixture."""
-        return dbapi.Parser(sources, columns)
+        return dbapi.Parser(sources, features)
 
     class TestSubquery(Scenario):
         """SQL parser subquery unit test."""
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: frame.Table, school: frame.Table) -> Case:
-            query = frame.Query(student.select(student.surname, student.score)).select(student.surname)
+        def case(student: dsl.Table, school: dsl.Table) -> Case:
+            query = dsl.Query(student.select(student.surname, student.score)).select(student.surname)
             expected = 'SELECT "student"."surname" FROM (SELECT "student"."surname", "student"."score" FROM "student")'
             return Case(query, expected)

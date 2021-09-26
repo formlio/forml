@@ -22,13 +22,14 @@ Setuptools script for ForML package.
 
 import setuptools
 
-
 EXTRAS_DASK = {'cloudpickle', 'dask'}
 
 EXTRAS_DEV = {
     'black',
     'flake8-colors',
+    'isort',
     'pre-commit',
+    'pycln',
     'pytest-cov',
     'pytest-flake8',
     'pytest-pylint',

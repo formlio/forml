@@ -23,7 +23,7 @@ import typing
 
 from forml import cli, error, runtime
 from forml.conf.parsed import provider as provcfg
-from forml.io.dsl.struct import kind
+from forml.io import dsl
 
 
 class Parser(cli.Parser, description='Lifecycle Management for Datascience Projects'):
@@ -98,8 +98,8 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         registry: typing.Optional[str],
         feed: typing.Optional[typing.Sequence[str]],
         sink: typing.Optional[str],
-        lower: typing.Optional[kind.Native],
-        upper: typing.Optional[kind.Native],
+        lower: typing.Optional[dsl.Native],
+        upper: typing.Optional[dsl.Native],
     ) -> None:
         """Tune mode execution.
 
@@ -135,8 +135,8 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         registry: typing.Optional[str],
         feed: typing.Optional[typing.Sequence[str]],
         sink: typing.Optional[str],
-        lower: typing.Optional[kind.Native],
-        upper: typing.Optional[kind.Native],
+        lower: typing.Optional[dsl.Native],
+        upper: typing.Optional[dsl.Native],
     ) -> None:
         """Train mode execution.
 
@@ -174,8 +174,8 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         registry: typing.Optional[str],
         feed: typing.Optional[typing.Sequence[str]],
         sink: typing.Optional[str],
-        lower: typing.Optional[kind.Native],
-        upper: typing.Optional[kind.Native],
+        lower: typing.Optional[dsl.Native],
+        upper: typing.Optional[dsl.Native],
     ) -> None:
         """Apply mode execution.
 
@@ -211,8 +211,8 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         registry: typing.Optional[str],
         feed: typing.Optional[typing.Sequence[str]],
         sink: typing.Optional[str],
-        lower: typing.Optional[kind.Native],
-        upper: typing.Optional[kind.Native],
+        lower: typing.Optional[dsl.Native],
+        upper: typing.Optional[dsl.Native],
     ) -> None:
         """Eval mode execution.
 

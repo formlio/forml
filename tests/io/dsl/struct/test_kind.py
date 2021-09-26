@@ -26,7 +26,7 @@ import typing
 
 import pytest
 
-from forml.io.dsl.struct import kind as kindmod
+from forml.io.dsl._struct import kind as kindmod
 
 
 def test_reflect():

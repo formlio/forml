@@ -24,9 +24,7 @@ import uuid
 
 from forml import flow
 from forml.conf.parsed import provider as provcfg
-from forml.io import payload, feed
-from forml.io.dsl import struct
-from forml.io.dsl.struct import series, frame, kind
+from forml.io import dsl, feed, layout
 from forml.project import component
 from forml.runtime import launcher
 from forml.testing import spec
@@ -34,14 +32,14 @@ from forml.testing import spec
 LOGGER = logging.getLogger(__name__)
 
 
-class DataSet(struct.Schema):
+class DataSet(dsl.Schema):
     """Testing schema.
 
     The actual fields are irrelevant.
     """
 
-    feature: struct.Field = struct.Field(kind.Integer())
-    label: struct.Field = struct.Field(kind.Float())
+    feature: dsl.Field = dsl.Field(dsl.Integer())
+    label: dsl.Field = dsl.Field(dsl.Float())
 
 
 class Feed(feed.Provider[None, typing.Any], alias='testing'):
@@ -54,11 +52,11 @@ class Feed(feed.Provider[None, typing.Any], alias='testing'):
     # pylint: disable=unused-argument
     @classmethod
     def reader(
-        cls, sources: typing.Mapping[frame.Source, None], columns: typing.Mapping[series.Column, typing.Any], **kwargs
-    ) -> typing.Callable[[frame.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
+        cls, sources: typing.Mapping[dsl.Source, None], features: typing.Mapping[dsl.Feature, typing.Any], **kwargs
+    ) -> typing.Callable[[dsl.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
 
-        def read(query: frame.Query) -> typing.Any:
+        def read(query: dsl.Query) -> typing.Any:
             """Reader callback.
 
             Args:
@@ -67,25 +65,25 @@ class Feed(feed.Provider[None, typing.Any], alias='testing'):
             Returns:
                 Data.
             """
-            return columns[DataSet.label] if DataSet.label in query.columns else columns[DataSet.feature]
+            return features[DataSet.label] if DataSet.label in query.features else features[DataSet.feature]
 
         return read
 
     @classmethod
     def slicer(
-        cls, schema: typing.Sequence[series.Column], columns: typing.Mapping[series.Column, typing.Any]
-    ) -> typing.Callable[[payload.ColumnMajor, typing.Union[slice, int]], payload.ColumnMajor]:
+        cls, schema: typing.Sequence[dsl.Feature], features: typing.Mapping[dsl.Feature, typing.Any]
+    ) -> typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor]:
         """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise."""
         return lambda c, s: c[s][0]
 
     @property
-    def sources(self) -> typing.Mapping[frame.Source, None]:
+    def sources(self) -> typing.Mapping[dsl.Source, None]:
         """The explicit sources mapping implemented by this feed to be used by the query parser."""
         return {DataSet: None}
 
     @property
-    def columns(self) -> typing.Mapping[series.Column, typing.Any]:
-        """The explicit columns mapping implemented by this feed to be used by the query parser."""
+    def features(self) -> typing.Mapping[dsl.Feature, typing.Any]:
+        """The explicit features mapping implemented by this feed to be used by the query parser."""
         return {DataSet.label: (self._scenario.train, [self._scenario.label]), DataSet.feature: self._scenario.apply}
 
 
