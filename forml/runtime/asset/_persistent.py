@@ -30,9 +30,8 @@ from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-impo
 
 if typing.TYPE_CHECKING:
     from forml import project as prj
-    from forml.runtime.asset.directory import generation as genmod
-    from forml.runtime.asset.directory import lineage as lngmod
-    from forml.runtime.asset.directory import project as prjmod  # noqa: F401
+
+    from ._directory import level
 
 LOGGER = logging.getLogger(__name__)
 TMPDIR = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
@@ -72,7 +71,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other._staging == self._staging
 
-    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Artifact':
+    def mount(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key') -> 'prj.Artifact':
         """Take given project/lineage package and return it as artifact instance.
 
         Args:
@@ -86,7 +85,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         return package.install(self._staging / package.manifest.name / str(package.manifest.version))
 
     @abc.abstractmethod
-    def projects(self) -> typing.Iterable[typing.Union[str, 'prjmod.Level.Key']]:
+    def projects(self) -> typing.Iterable[typing.Union[str, 'level.Project.Key']]:
         """List projects in given repository.
 
         Returns:
@@ -95,7 +94,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def lineages(self, project: 'prjmod.Level.Key') -> typing.Iterable[typing.Union[str, 'lngmod.Level.Key']]:
+    def lineages(self, project: 'level.Project.Key') -> typing.Iterable[typing.Union[str, 'level.Lineage.Key']]:
         """List the lineages of given prj.
 
         Args:
@@ -108,8 +107,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
 
     @abc.abstractmethod
     def generations(
-        self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key'
-    ) -> typing.Iterable[typing.Union[str, int, 'genmod.Level.Key']]:
+        self, project: 'level.Project.Key', lineage: 'level.Lineage.Key'
+    ) -> typing.Iterable[typing.Union[str, int, 'level.Generation.Key']]:
         """List the generations of given lineage.
 
         Args:
@@ -122,7 +121,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Package':
+    def pull(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key') -> 'prj.Package':
         """Return the package of given lineage.
 
         Args:
@@ -145,7 +144,11 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
 
     @abc.abstractmethod
     def read(
-        self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key', sid: uuid.UUID
+        self,
+        project: 'level.Project.Key',
+        lineage: 'level.Lineage.Key',
+        generation: 'level.Generation.Key',
+        sid: uuid.UUID,
     ) -> bytes:
         """Load the state based on provided id.
 
@@ -161,7 +164,7 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def write(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', sid: uuid.UUID, state: bytes) -> None:
+    def write(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key', sid: uuid.UUID, state: bytes) -> None:
         """Dump an unbound state under given state id.
 
         Args:
@@ -174,8 +177,8 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
 
     @abc.abstractmethod
     def open(
-        self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key', generation: 'genmod.Level.Key'
-    ) -> 'genmod.Tag':
+        self, project: 'level.Project.Key', lineage: 'level.Lineage.Key', generation: 'level.Generation.Key'
+    ) -> 'level.Tag':
         """Return the metadata tag of given generation.
 
         Args:
@@ -191,10 +194,10 @@ class Registry(provider.Interface, default=provcfg.Registry.default, path=provcf
     @abc.abstractmethod
     def close(
         self,
-        project: 'prjmod.Level.Key',
-        lineage: 'lngmod.Level.Key',
-        generation: 'genmod.Level.Key',
-        tag: 'genmod.Tag',
+        project: 'level.Project.Key',
+        lineage: 'level.Lineage.Key',
+        generation: 'level.Generation.Key',
+        tag: 'level.Tag',
     ) -> None:
         """Seal new generation by storing its metadata tag.
 

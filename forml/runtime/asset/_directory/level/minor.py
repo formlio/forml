@@ -27,11 +27,12 @@ import typing
 import uuid
 
 from forml.io import dsl
-from forml.runtime.asset import directory, persistent
+
+from ... import _directory, _persistent
 
 if typing.TYPE_CHECKING:
-    from forml.runtime.asset.directory import lineage as lngmod
-    from forml.runtime.asset.directory import project as prjmod
+    from . import case as prjmod
+    from . import major as lngmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -200,20 +201,20 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
 
 
 NOTAG = Tag()
-TAGS = directory.Cache(persistent.Registry.open)
-STATES = directory.Cache(persistent.Registry.read)
+TAGS = _directory.Cache(_persistent.Registry.open)
+STATES = _directory.Cache(_persistent.Registry.read)
 
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Level(directory.Level):
+class Generation(_directory.Level):
     """Snapshot of project states in its particular training iteration."""
 
-    class Key(directory.Level.Key, int):
+    class Key(_directory.Level.Key, int):
         """Generation key."""
 
         MIN = 1
 
-        def __new__(cls, key: typing.Optional[typing.Union[str, int, 'Level.Key']] = MIN):
+        def __new__(cls, key: typing.Optional[typing.Union[str, int, 'Generation.Key']] = MIN):
             try:
                 instance = super().__new__(cls, str(key))
             except ValueError as err:
@@ -223,14 +224,16 @@ class Level(directory.Level):
             return instance
 
         @property
-        def next(self) -> 'Level.Key':
+        def next(self) -> 'Generation.Key':
             return self.__class__(self + 1)
 
-    def __init__(self, lineage: 'lngmod.Level', key: typing.Optional[typing.Union[str, int, 'Level.Key']] = None):
+    def __init__(
+        self, lineage: 'lngmod.Lineage', key: typing.Optional[typing.Union[str, int, 'Generation.Key']] = None
+    ):
         super().__init__(key, parent=lineage)
 
     @property
-    def project(self) -> 'prjmod.Level':
+    def project(self) -> 'prjmod.Project':
         """Get the project of this generation.
 
         Returns:
@@ -239,7 +242,7 @@ class Level(directory.Level):
         return self.lineage.project
 
     @property
-    def lineage(self) -> 'lngmod.Level':
+    def lineage(self) -> 'lngmod.Lineage':
         """Get the lineage key of this generation.
 
         Returns:
@@ -265,7 +268,7 @@ class Level(directory.Level):
             return NOTAG
         return TAGS(self.registry, project, lineage, generation)
 
-    def list(self) -> directory.Level.Listing:
+    def list(self) -> _directory.Level.Listing:
         """Return the listing of this level.
 
         Returns:
@@ -287,6 +290,6 @@ class Level(directory.Level):
         if isinstance(key, int):
             key = self.tag.states[key]
         if key not in self.tag.states:
-            raise Level.Invalid(f'Unknown state reference for {self}: {key}')
+            raise Generation.Invalid(f'Unknown state reference for {self}: {key}')
         LOGGER.debug('%s: Getting state %s', self, key)
         return STATES(self.registry, self.project.key, self.lineage.key, self.key, key)

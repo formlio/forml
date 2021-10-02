@@ -26,10 +26,9 @@ import typing
 from collections import abc
 
 from forml import conf, error, flow
-from forml.runtime.asset import persistent
+from forml.runtime import asset
 
-from . import _component as compmod
-from . import _distribution, _importer
+from . import _component, _distribution, _importer
 
 if typing.TYPE_CHECKING:
     from forml.runtime import launcher as launchmod
@@ -40,9 +39,9 @@ LOGGER = logging.getLogger(__name__)
 class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluation')):
     """Top level ForML project descriptor holding the implementations of individual project components."""
 
-    source: 'compmod.Source'
+    source: '_component.Source'
     pipeline: flow.Composable
-    evaluation: typing.Optional['compmod.Evaluation']
+    evaluation: typing.Optional['_component.Evaluation']
 
     class Builder(abc.Set):
         """Descriptor builder allowing to setup attributes one by one."""
@@ -85,15 +84,15 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
 
     def __new__(
         cls,
-        source: 'compmod.Source',
+        source: '_component.Source',
         pipeline: flow.Composable,
-        evaluation: typing.Optional['compmod.Evaluation'] = None,
+        evaluation: typing.Optional['_component.Evaluation'] = None,
     ):
         if not isinstance(pipeline, flow.Composable):
             raise error.Invalid('Invalid pipeline')
-        if not isinstance(source, compmod.Source):
+        if not isinstance(source, _component.Source):
             raise error.Invalid('Invalid source')
-        if evaluation and not isinstance(evaluation, compmod.Evaluation):
+        if evaluation and not isinstance(evaluation, _component.Evaluation):
             raise error.Invalid('Invalid evaluation')
         return super().__new__(cls, source, pipeline, evaluation)
 
@@ -125,7 +124,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
             if '.' not in mod:
                 mod = package + mod
             try:
-                setter(compmod.load(mod, path))
+                setter(_component.load(mod, path))
             except ModuleNotFoundError as err:
                 LOGGER.warning('Project %s error: %s', component, err)
         return builder.build()
@@ -145,7 +144,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         prefix = package or conf.PRJNAME
         for key, value in modules.items():
             if not isinstance(value, str):  # component provided as true instance rather than module path
-                modules[key] = compmod.Virtual(value, f'{prefix}.{key}').path
+                modules[key] = _component.Virtual(value, f'{prefix}.{key}').path
         return super().__new__(cls, path, package, types.MappingProxyType(modules))
 
     def __getnewargs_ex__(self):
@@ -188,4 +187,4 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
         with _importer.context(Manifest()):
             # dummy package forced to load our fake manifest
-            return launchmod.Virtual(_distribution.Package(self.path or persistent.mkdtemp(prefix='dummy-')))
+            return launchmod.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))

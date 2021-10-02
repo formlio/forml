@@ -25,10 +25,7 @@ import pytest
 
 import forml
 from forml import project as prj
-from forml.runtime.asset import directory as dirmod
-from forml.runtime.asset.directory import lineage as lngmod
-from forml.runtime.asset.directory import project as prjmod
-from forml.runtime.asset.directory import root as rootmod
+from forml.runtime import asset
 
 from . import Level
 
@@ -38,11 +35,11 @@ class TestVersion:
 
     def test_parse(self):
         """Parsing test."""
-        ver = lngmod.Level.Key('0.1.dev2')
-        lngmod.Level.Key(ver)
-        lngmod.Level.Key(forml.__version__)
-        with pytest.raises(lngmod.Level.Key.Invalid):
-            lngmod.Level.Key('foobar')
+        ver = asset.Lineage.Key('0.1.dev2')
+        asset.Lineage.Key(ver)
+        asset.Lineage.Key(forml.__version__)
+        with pytest.raises(asset.Lineage.Key.Invalid):
+            asset.Lineage.Key('foobar')
 
 
 class TestLevel(Level):
@@ -51,46 +48,48 @@ class TestLevel(Level):
     @staticmethod
     @pytest.fixture(scope='function')
     def parent(
-        directory: rootmod.Level, project_name: prjmod.Level.Key
-    ) -> typing.Callable[[typing.Optional[lngmod.Level.Key]], lngmod.Level]:
+        directory: asset.Directory, project_name: asset.Project.Key
+    ) -> typing.Callable[[typing.Optional[asset.Lineage.Key]], asset.Lineage]:
         """Parent fixture."""
         return lambda lineage: directory.get(project_name).get(lineage)
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def valid_level(populated_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
+    def valid_level(populated_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
         """Level fixture."""
         return populated_lineage
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def last_level(last_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
+    def last_level(last_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
         """Level fixture."""
         return last_lineage
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_level(last_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
+    def invalid_level(last_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
         """Level fixture."""
-        return lngmod.Level.Key(f'{last_lineage.release[0] + 1}')
+        return asset.Lineage.Key(f'{last_lineage.release[0] + 1}')
 
     def test_empty(
         self,
-        parent: typing.Callable[[typing.Optional[lngmod.Level.Key]], lngmod.Level],
-        empty_lineage: lngmod.Level.Key,
+        parent: typing.Callable[[typing.Optional[asset.Lineage.Key]], asset.Lineage],
+        empty_lineage: asset.Lineage.Key,
     ):
         """Test default empty lineage generation retrieval."""
         generation = parent(empty_lineage).get()
-        with pytest.raises(dirmod.Level.Listing.Empty):
+        with pytest.raises(asset.Level.Listing.Empty):
             _ = generation.key
         assert not generation.tag.states
 
-    def test_artifact(self, directory: rootmod.Level, project_name: prjmod.Level.Key, invalid_level: lngmod.Level.Key):
+    def test_artifact(
+        self, directory: asset.Directory, project_name: asset.Project.Key, invalid_level: asset.Lineage.Key
+    ):
         """Registry take unit test."""
-        with pytest.raises(dirmod.Level.Invalid):
+        with pytest.raises(asset.Level.Invalid):
             _ = directory.get(project_name).get(invalid_level).artifact
 
-    def test_put(self, directory: rootmod.Level, project_name: prjmod.Level.Key, project_package: prj.Package):
+    def test_put(self, directory: asset.Directory, project_name: asset.Project.Key, project_package: prj.Package):
         """Registry put unit test."""
-        with pytest.raises(dirmod.Level.Invalid):  # lineage already exists
+        with pytest.raises(asset.Level.Invalid):  # lineage already exists
             directory.get(project_name).put(project_package)

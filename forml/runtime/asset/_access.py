@@ -22,14 +22,12 @@ import typing
 import uuid
 
 from forml import conf, error
-from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import root
+
+from . import _persistent
+from ._directory import level
 
 if typing.TYPE_CHECKING:
     from forml import project as prj
-    from forml.runtime.asset.directory import generation as genmod
-    from forml.runtime.asset.directory import lineage as lngmod
-    from forml.runtime.asset.directory import project as prjmod  # noqa: F401
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,11 +36,14 @@ class State:
     """State persistence accessor."""
 
     def __init__(
-        self, generation: 'genmod.Level', nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['genmod.Tag'] = None
+        self,
+        generation: 'level.Generation',
+        nodes: typing.Sequence[uuid.UUID],
+        tag: typing.Optional['level.Tag'] = None,
     ):
-        self._generation: 'genmod.Level' = generation
+        self._generation: 'level.Generation' = generation
         self._nodes: tuple[uuid.UUID] = tuple(nodes)
-        self._tag: typing.Optional['genmod.Tag'] = tag
+        self._tag: typing.Optional['level.Tag'] = tag
 
     def __contains__(self, gid: uuid.UUID) -> bool:
         """Check whether given node is persistent (on our state list).
@@ -105,19 +106,19 @@ class State:
         self._generation = self._generation.lineage.put(tag.replace(states=states))
 
 
-class Assets:
+class Instance:
     """Persistent assets IO for loading and dumping models."""
 
     def __init__(
         self,
-        project: typing.Union[str, 'prjmod.Level.Key'] = conf.PRJNAME,
-        lineage: typing.Optional[typing.Union[str, 'lngmod.Level.Key']] = None,
-        generation: typing.Optional[typing.Union[str, int, 'genmod.Level.Key']] = None,
-        registry: typing.Optional['root.Level'] = None,
+        project: typing.Union[str, 'level.Project.Key'] = conf.PRJNAME,
+        lineage: typing.Optional[typing.Union[str, 'level.Lineage.Key']] = None,
+        generation: typing.Optional[typing.Union[str, int, 'level.Generation.Key']] = None,
+        registry: typing.Optional['level.Directory'] = None,
     ):
         if not registry:
-            registry = root.Level(persistent.Registry())
-        self._generation: 'genmod.Level' = registry.get(project).get(lineage).get(generation)
+            registry = level.Directory(_persistent.Registry())
+        self._generation: 'level.Generation' = registry.get(project).get(lineage).get(generation)
 
     @property
     def project(self) -> 'prj.Descriptor':
@@ -129,7 +130,7 @@ class Assets:
         return self._generation.lineage.artifact.descriptor
 
     @property
-    def tag(self) -> 'genmod.Tag':
+    def tag(self) -> 'level.Tag':
         """Get the generation tag.
 
         Returns:
@@ -137,7 +138,7 @@ class Assets:
         """
         return self._generation.tag
 
-    def state(self, nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['genmod.Tag'] = None) -> State:
+    def state(self, nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['level.Tag'] = None) -> State:
         """Get the state persistence accessor wrapped in a context manager.
 
         Args:

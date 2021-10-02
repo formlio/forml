@@ -31,9 +31,7 @@ from forml import flow, io, project
 from forml.io import dsl
 from forml.io.dsl import function, parser
 from forml.lib.pipeline import topology
-from forml.runtime.asset.directory import generation as genmod
-from forml.runtime.asset.directory import lineage as lngmod
-from forml.runtime.asset.directory import project as prjmod
+from forml.runtime import asset
 
 
 class WrappedActor:
@@ -149,21 +147,21 @@ def project_artifact(project_package: project.Package, project_path: str) -> pro
 
 
 @pytest.fixture(scope='session')
-def project_name(project_manifest: project.Manifest) -> prjmod.Level.Key:
+def project_name(project_manifest: project.Manifest) -> asset.Project.Key:
     """Test project name fixture."""
     return project_manifest.name
 
 
 @pytest.fixture(scope='session')
-def project_lineage(project_manifest: project.Manifest) -> lngmod.Level.Key:
+def project_lineage(project_manifest: project.Manifest) -> asset.Lineage.Key:
     """Test project lineage fixture."""
     return project_manifest.version
 
 
 @pytest.fixture(scope='session')
-def valid_generation() -> genmod.Level.Key:
+def valid_generation() -> asset.Generation.Key:
     """Generation fixture."""
-    return genmod.Level.Key(1)
+    return asset.Generation.Key(1)
 
 
 @pytest.fixture(scope='function')
@@ -179,11 +177,11 @@ def states(nodes) -> typing.Mapping[uuid.UUID, bytes]:
 
 
 @pytest.fixture(scope='function')
-def tag(states: typing.Mapping[uuid.UUID, bytes]) -> genmod.Tag:
+def tag(states: typing.Mapping[uuid.UUID, bytes]) -> asset.Tag:
     """Tag fixture."""
-    return genmod.Tag(
-        training=genmod.Tag.Training(datetime.datetime(2019, 4, 1), 123),
-        tuning=genmod.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
+    return asset.Tag(
+        training=asset.Tag.Training(datetime.datetime(2019, 4, 1), 123),
+        tuning=asset.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
         states=states.keys(),
     )
 

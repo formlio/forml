@@ -27,7 +27,7 @@ import typing
 import uuid
 
 from forml import flow
-from forml.runtime.asset import access
+from forml.runtime import asset
 
 from . import _target
 
@@ -168,8 +168,8 @@ class Table(flow.Visitor, typing.Iterable):
             del self._instructions[orig]
             return self.set(instruction, new)
 
-    def __init__(self, assets: typing.Optional[access.State]):
-        self._assets: typing.Optional[access.State] = assets
+    def __init__(self, assets: typing.Optional[asset.State]):
+        self._assets: typing.Optional[asset.State] = assets
         self._linkage: Table.Linkage = self.Linkage()
         self._index: Table.Index = self.Index()
         self._committer: typing.Optional[uuid.UUID] = None
@@ -257,7 +257,7 @@ class Table(flow.Visitor, typing.Iterable):
         self.add(node)
 
 
-def generate(path: flow.Path, assets: typing.Optional[access.State] = None) -> typing.Sequence[_target.Symbol]:
+def generate(path: flow.Path, assets: typing.Optional[asset.State] = None) -> typing.Sequence[_target.Symbol]:
     """Generate the symbol code based on given flow path.
 
     Args:

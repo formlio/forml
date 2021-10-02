@@ -24,11 +24,7 @@ import uuid
 
 import pytest
 
-from forml.runtime.asset import directory as dirmod
-from forml.runtime.asset.directory import generation as genmod
-from forml.runtime.asset.directory import lineage as lngmod
-from forml.runtime.asset.directory import project as prjmod
-from forml.runtime.asset.directory import root as rootmod
+from forml.runtime import asset
 
 from . import Level
 
@@ -39,65 +35,65 @@ class TestLevel(Level):
     @staticmethod
     @pytest.fixture(scope='function')
     def parent(
-        directory: rootmod.Level, project_name: str, populated_lineage: lngmod.Level.Key
-    ) -> typing.Callable[[typing.Optional[genmod.Level.Key]], genmod.Level]:
+        directory: asset.Directory, project_name: str, populated_lineage: asset.Lineage.Key
+    ) -> typing.Callable[[typing.Optional[asset.Generation.Key]], asset.Generation]:
         """Parent fixture."""
         return lambda generation: directory.get(project_name).get(populated_lineage).get(generation)
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def valid_level(valid_generation: genmod.Level.Key) -> genmod.Level.Key:
+    def valid_level(valid_generation: asset.Generation.Key) -> asset.Generation.Key:
         """Level fixture."""
         return valid_generation
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def last_level(last_generation: genmod.Level.Key) -> genmod.Level.Key:
+    def last_level(last_generation: asset.Generation.Key) -> asset.Generation.Key:
         """Level fixture."""
         return last_generation
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_level(last_generation: genmod.Level.Key) -> genmod.Level.Key:
+    def invalid_level(last_generation: asset.Generation.Key) -> asset.Generation.Key:
         """Level fixture."""
         return last_generation + 1
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_lineage(last_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
+    def invalid_lineage(last_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
         """Level fixture."""
-        return lngmod.Level.Key(f'{last_lineage.release[0] + 1}')
+        return asset.Lineage.Key(f'{last_lineage.release[0] + 1}')
 
     def test_tag(
         self,
-        directory: rootmod.Level,
-        project_name: prjmod.Level.Key,
-        project_lineage: lngmod.Level.Key,
-        empty_lineage: lngmod.Level.Key,
-        valid_generation: genmod.Level.Key,
-        tag: genmod.Tag,
+        directory: asset.Directory,
+        project_name: asset.Project.Key,
+        project_lineage: asset.Lineage.Key,
+        empty_lineage: asset.Lineage.Key,
+        valid_generation: asset.Generation.Key,
+        tag: asset.Tag,
     ):
         """Registry checkout unit test."""
         project = directory.get(project_name)
-        with pytest.raises(dirmod.Level.Invalid):
+        with pytest.raises(asset.Level.Invalid):
             _ = project.get(empty_lineage).get(valid_generation).tag
         assert project.get(project_lineage).get(valid_generation).tag == tag
-        assert project.get(empty_lineage).get(None).tag == genmod.Tag()
+        assert project.get(empty_lineage).get(None).tag == asset.Tag()
 
     def test_read(
         self,
-        directory: rootmod.Level,
-        project_name: prjmod.Level.Key,
-        project_lineage: lngmod.Level.Key,
-        invalid_lineage: lngmod.Level.Key,
-        valid_generation: genmod.Level.Key,
+        directory: asset.Directory,
+        project_name: asset.Project.Key,
+        project_lineage: asset.Lineage.Key,
+        invalid_lineage: asset.Lineage.Key,
+        valid_generation: asset.Generation.Key,
         states: typing.Mapping[uuid.UUID, bytes],
     ):
         """Registry load unit test."""
         project = directory.get(project_name)
-        with pytest.raises(dirmod.Level.Invalid):
+        with pytest.raises(asset.Level.Invalid):
             project.get(invalid_lineage).get(None).get(None)
-        with pytest.raises(dirmod.Level.Invalid):
+        with pytest.raises(asset.Level.Invalid):
             project.get(project_lineage).get(valid_generation).get(None)
         for sid, value in states.items():
             assert project.get(project_lineage).get(valid_generation).get(sid) == value
@@ -106,7 +102,7 @@ class TestLevel(Level):
 class TestTag:
     """Generation tag unit tests."""
 
-    def test_replace(self, tag: genmod.Tag):
+    def test_replace(self, tag: asset.Tag):
         """Test replace strategies."""
         assert tag.replace(states=(1, 2, 3)).states == (1, 2, 3)
         with pytest.raises(ValueError):
@@ -120,7 +116,7 @@ class TestTag:
         with pytest.raises(TypeError):
             tag.training.replace(invalid=123)
 
-    def test_trigger(self, tag: genmod.Tag):
+    def test_trigger(self, tag: asset.Tag):
         """Test triggering."""
         trained = tag.training.trigger()
         assert trained.training.timestamp > tag.training.timestamp
@@ -131,12 +127,12 @@ class TestTag:
 
     def test_bool(self):
         """Test the boolean mode values."""
-        empty = genmod.Tag()
+        empty = asset.Tag()
         assert not empty.training
         assert not empty.tuning
         assert empty.training.trigger().training
         assert empty.tuning.trigger().tuning
 
-    def test_dumpload(self, tag: genmod.Tag):
+    def test_dumpload(self, tag: asset.Tag):
         """Test tag serialization."""
-        assert genmod.Tag.loads(tag.dumps()) == tag
+        assert asset.Tag.loads(tag.dumps()) == tag

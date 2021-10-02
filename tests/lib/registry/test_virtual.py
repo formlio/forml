@@ -24,7 +24,7 @@ import typing
 import pytest
 
 from forml.lib.registry import virtual
-from forml.runtime.asset import persistent
+from forml.runtime import asset
 
 from . import Registry
 
@@ -34,5 +34,5 @@ class TestRegistry(Registry):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def constructor() -> typing.Callable[[], persistent.Registry]:
+    def constructor() -> typing.Callable[[], asset.Registry]:
         return virtual.Registry

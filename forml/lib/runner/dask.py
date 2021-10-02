@@ -26,8 +26,7 @@ import typing
 import dask
 
 from forml import io, runtime
-from forml.runtime import code
-from forml.runtime.asset import access
+from forml.runtime import asset, code
 
 LOGGER = logging.getLogger(__name__)
 
@@ -88,12 +87,12 @@ class Runner(runtime.Runner, alias='dask'):
 
     def __init__(
         self,
-        assets: typing.Optional[access.Assets] = None,
+        instance: typing.Optional[asset.Instance] = None,
         feed: typing.Optional[io.Feed] = None,
         sink: typing.Optional[io.Sink] = None,
         scheduler: typing.Optional[str] = None,
     ):
-        super().__init__(assets, feed, sink)
+        super().__init__(instance, feed, sink)
         self._scheduler: str = scheduler or self.SCHEDULER
 
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:

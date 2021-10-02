@@ -24,12 +24,10 @@ import tempfile
 import typing
 
 from forml.lib.registry import filesystem
-from forml.runtime.asset import persistent
+from forml.runtime import asset
 
 if typing.TYPE_CHECKING:
     from forml import project as prj
-    from forml.runtime.asset.directory import lineage as lngmod
-    from forml.runtime.asset.directory import project as prjmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,23 +39,23 @@ class Registry(filesystem.Registry, alias='virtual'):
 
     def __init__(self):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
-            prefix='registry-virtual-', dir=persistent.TMPDIR.name
+            prefix='registry-virtual-', dir=asset.TMPDIR.name
         )
-        self._artifacts: dict['prjmod.Level.Key', dict['lngmod.Level.Key', 'prj.Artifact']] = collections.defaultdict(
+        self._artifacts: dict['asset.Project.Key', dict['asset.Lineage.Key', 'prj.Artifact']] = collections.defaultdict(
             dict
         )
         super().__init__(self._storage.name)
 
-    def projects(self) -> typing.Iterable['prjmod.Level.Key']:
+    def projects(self) -> typing.Iterable['asset.Project.Key']:
         return iter(self._artifacts.keys())
 
-    def lineages(self, project: 'prjmod.Level.Key') -> typing.Iterable['lngmod.Level.Key']:
+    def lineages(self, project: 'asset.Project.Key') -> typing.Iterable['asset.Lineage.Key']:
         return iter(self._artifacts[project].keys())
 
-    def mount(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Artifact':
+    def mount(self, project: 'asset.Project.Key', lineage: 'asset.Lineage.Key') -> 'prj.Artifact':
         return self._artifacts[project][lineage]
 
-    def pull(self, project: 'prjmod.Level.Key', lineage: 'lngmod.Level.Key') -> 'prj.Package':
+    def pull(self, project: 'asset.Project.Key', lineage: 'asset.Lineage.Key') -> 'prj.Package':
         raise NotImplementedError('No packages in virtual repository')
 
     def push(self, package: 'prj.Package') -> None:

@@ -24,8 +24,7 @@ import typing
 import graphviz as grviz
 
 from forml import conf, io, runtime
-from forml.runtime import code
-from forml.runtime.asset import access
+from forml.runtime import asset, code
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,13 +36,13 @@ class Runner(runtime.Runner, alias='graphviz'):
 
     def __init__(
         self,
-        assets: typing.Optional[access.Assets] = None,
+        instance: typing.Optional[asset.Instance] = None,
         feed: typing.Optional[io.Feed] = None,
         sink: typing.Optional[io.Sink] = None,
         filepath: typing.Optional[str] = None,
         **gvkw: typing.Any,
     ):
-        super().__init__(assets, feed, sink)
+        super().__init__(instance, feed, sink)
         self._filepath: str = filepath or self.FILEPATH
         self._gvkw: typing.Mapping[str, typing.Any] = gvkw
 

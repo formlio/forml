@@ -26,7 +26,7 @@ import typing
 import uuid
 
 from forml import error, flow
-from forml.runtime.asset import access, directory
+from forml.runtime import asset
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,8 +79,8 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
 class Loader(Instruction):
     """Registry based state loader."""
 
-    def __init__(self, assets: access.State, key: typing.Union[int, uuid.UUID]):
-        self._assets: access.State = assets
+    def __init__(self, assets: asset.State, key: typing.Union[int, uuid.UUID]):
+        self._assets: asset.State = assets
         self._key: typing.Union[int, uuid.UUID] = key
 
     def execute(self) -> typing.Optional[bytes]:  # pylint: disable=arguments-differ
@@ -91,7 +91,7 @@ class Loader(Instruction):
         """
         try:
             return self._assets.load(self._key)
-        except directory.Level.Listing.Empty:
+        except asset.Level.Listing.Empty:
             LOGGER.warning('No previous generations found - node #%d defaults to no state', self._key)
             return None
 
@@ -99,8 +99,8 @@ class Loader(Instruction):
 class Dumper(Instruction):
     """Registry based state dumper."""
 
-    def __init__(self, assets: access.State):
-        self._assets: access.State = assets
+    def __init__(self, assets: asset.State):
+        self._assets: asset.State = assets
 
     def execute(self, state: bytes) -> uuid.UUID:  # pylint: disable=arguments-differ
         """Instruction functionality.
@@ -138,8 +138,8 @@ class Getter(Instruction):
 class Committer(Instruction):
     """Commit a new lineage generation."""
 
-    def __init__(self, assets: access.State):
-        self._assets: access.State = assets
+    def __init__(self, assets: asset.State):
+        self._assets: asset.State = assets
 
     def execute(self, *states: uuid.UUID) -> None:
         """Instruction functionality.

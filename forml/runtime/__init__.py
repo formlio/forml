@@ -25,9 +25,7 @@ from forml import error, flow, io
 from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
-from forml.runtime import code
-from forml.runtime.asset import access, directory, persistent
-from forml.runtime.asset.directory import root
+from forml.runtime import asset, code
 from forml.runtime.mode import evaluation
 
 if typing.TYPE_CHECKING:
@@ -39,12 +37,12 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
 
     def __init__(
         self,
-        assets: typing.Optional[access.Assets] = None,
+        instance: typing.Optional[asset.Instance] = None,
         feed: typing.Optional['io.Feed'] = None,
         sink: typing.Optional['io.Feed'] = None,
         **_,
     ):
-        self._assets: access.Assets = assets or access.Assets()
+        self._instance: asset.Instance = instance or asset.Instance()
         self._feed: io.Feed = feed or io.Feed()
         self._sink: typing.Optional[io.Sink] = sink
 
@@ -55,8 +53,8 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._build(lower or self._assets.tag.training.ordinal, upper, self._assets.project.pipeline)
-        self._exec(composition.train, self._assets.state(composition.shared, self._assets.tag.training.trigger()))
+        composition = self._build(lower or self._instance.tag.training.ordinal, upper, self._instance.project.pipeline)
+        self._exec(composition.train, self._instance.state(composition.shared, self._instance.tag.training.trigger()))
 
     def apply(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         """Run the applying code.
@@ -65,8 +63,8 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._build(lower, upper, self._assets.project.pipeline)
-        self._exec(composition.apply, self._assets.state(composition.shared))
+        composition = self._build(lower, upper, self._instance.project.pipeline)
+        self._exec(composition.apply, self._instance.state(composition.shared))
 
     def tune(  # pylint: disable=no-self-use
         self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
@@ -86,12 +84,12 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        spec = self._assets.project.evaluation
+        spec = self._instance.project.evaluation
         if not spec:
             raise error.Missing('Project not evaluable')
 
         composition = self._build(
-            lower, upper, self._assets.project.pipeline >> evaluation.Score(spec.method, spec.metric)
+            lower, upper, self._instance.project.pipeline >> evaluation.Score(spec.method, spec.metric)
         )
         self._exec(composition.train)
 
@@ -109,12 +107,12 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             Assembled flow pipeline.
         """
         return flow.Composition(
-            self._feed.load(self._assets.project.source, lower, upper),
+            self._feed.load(self._instance.project.source, lower, upper),
             *(b.expand() for b in blocks),
             self._sink.publish(),
         )
 
-    def _exec(self, path: flow.Path, assets: typing.Optional[access.State] = None) -> None:
+    def _exec(self, path: flow.Path, assets: typing.Optional[asset.State] = None) -> None:
         """Execute the given path and assets.
 
         Args:
@@ -145,10 +143,10 @@ class Platform:
         """Runner handle."""
 
         def __init__(
-            self, provider: provcfg.Runner, assets: access.Assets, feeds: 'Platform.Feeds', sink: 'io.Exporter'
+            self, provider: provcfg.Runner, assets: asset.Instance, feeds: 'Platform.Feeds', sink: 'io.Exporter'
         ):
             self._provider: provcfg.Runner = provider
-            self._assets: access.Assets = assets
+            self._assets: asset.Instance = assets
             self._feeds: Platform.Feeds = feeds
             self._sink: io.Exporter = sink
 
@@ -196,14 +194,14 @@ class Platform:
     class Registry:
         """Registry util handle."""
 
-        def __init__(self, registry: typing.Union[provcfg.Registry, persistent.Registry]):
+        def __init__(self, registry: typing.Union[provcfg.Registry, asset.Registry]):
             if isinstance(registry, provcfg.Registry):
-                registry = persistent.Registry[registry.reference](**registry.params)
-            self._root: root.Level = root.Level(registry)
+                registry = asset.Registry[registry.reference](**registry.params)
+            self._asset: asset.Directory = asset.Directory(registry)
 
         def assets(
             self, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str]
-        ) -> access.Assets:
+        ) -> asset.Instance:
             """Create the assets instance of given registry item.
 
             Args:
@@ -214,7 +212,7 @@ class Platform:
             Returns:
                 Asset instance.
             """
-            return access.Assets(project, lineage, generation, self._root)
+            return asset.Instance(project, lineage, generation, self._asset)
 
         def publish(self, project: str, package: 'prj.Package') -> None:
             """Publish new package into the registry.
@@ -223,11 +221,11 @@ class Platform:
                 project: Name of project to publish the package into.
                 package: Package to be published.
             """
-            self._root.get(project).put(package)
+            self._asset.get(project).put(package)
 
         def list(
             self, project: typing.Optional[str], lineage: typing.Optional[str]
-        ) -> typing.Iterable['directory.Level.Key']:
+        ) -> typing.Iterable['asset.Level.Key']:
             """Repository listing subcommand.
 
             Args:
@@ -237,7 +235,7 @@ class Platform:
             Returns:
                 Listing of given registry level.
             """
-            level = self._root
+            level = self._asset
             if project:
                 level = level.get(project)
                 if lineage:
@@ -271,7 +269,7 @@ class Platform:
     def __init__(
         self,
         runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
-        registry: typing.Optional[typing.Union[provcfg.Registry, persistent.Registry]] = None,
+        registry: typing.Optional[typing.Union[provcfg.Registry, asset.Registry]] = None,
         feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'io.Feed']]] = None,
         sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, 'io.Sink']] = None,
     ):

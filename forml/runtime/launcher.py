@@ -28,8 +28,7 @@ from forml import runtime
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
 from forml.lib.registry import virtual
-from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import root
+from forml.runtime import asset
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,12 +78,12 @@ class Virtual:
         def __init__(
             self,
             runner: typing.Optional[provcfg.Runner],
-            registry: persistent.Registry,
+            registry: asset.Registry,
             feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'io.Feed']]],
             project: str,
         ):
             self._runner: typing.Optional[provcfg.Runner] = runner
-            self._registry: persistent.Registry = registry
+            self._registry: asset.Registry = registry
             self._feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, 'io.Feed']]] = feeds
             self._project: str = project
 
@@ -93,8 +92,8 @@ class Virtual:
 
     def __init__(self, package: prj.Package):
         self._project: str = package.manifest.name
-        self._registry: persistent.Registry = virtual.Registry()
-        root.Level(self._registry).get(self._project).put(package)
+        self._registry: asset.Registry = virtual.Registry()
+        asset.Directory(self._registry).get(self._project).put(package)
 
     def __call__(
         self,

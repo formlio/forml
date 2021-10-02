@@ -19,18 +19,13 @@
 ForML persistent unit tests.
 """
 # pylint: disable=no-self-use
-from forml.runtime.asset import persistent
-from forml.runtime.asset.directory import lineage as lngmod
-from forml.runtime.asset.directory import project as prjmod
-from forml.runtime.asset.directory import root as rootmod
+from forml.runtime import asset
 
 
 class TestRegistry:
     """Registry unit tests."""
 
-    def test_get(
-        self, registry: persistent.Registry, project_name: prjmod.Level.Key, populated_lineage: lngmod.Level.Key
-    ):
+    def test_get(self, registry: asset.Registry, project_name: asset.Project.Key, populated_lineage: asset.Lineage.Key):
         """Test lineage get."""
-        lineage = rootmod.Level(registry).get(project_name).get(populated_lineage)
+        lineage = asset.Directory(registry).get(project_name).get(populated_lineage)
         assert lineage.key == populated_lineage

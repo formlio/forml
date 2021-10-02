@@ -20,19 +20,19 @@
 import logging
 import typing
 
-from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import project as prjmod
+from ... import _directory, _persistent
+from . import case as prjmod
 
 LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Level(directory.Level):
+class Directory(_directory.Level):
     """Sequence of projects."""
 
-    def __init__(self, registry: 'persistent.Registry'):  # pylint: disable=useless-super-delegation
+    def __init__(self, registry: '_persistent.Registry'):  # pylint: disable=useless-super-delegation
         super().__init__()
-        self._registry: persistent.Registry = registry
+        self._registry: _persistent.Registry = registry
 
     def __hash__(self):
         return hash(self.registry)
@@ -44,7 +44,7 @@ class Level(directory.Level):
         return repr(self._registry)
 
     @property
-    def registry(self) -> 'persistent.Registry':
+    def registry(self) -> '_persistent.Registry':
         """Registry instance.
 
         Returns:
@@ -52,15 +52,15 @@ class Level(directory.Level):
         """
         return self._registry
 
-    def list(self) -> directory.Level.Listing:
+    def list(self) -> _directory.Level.Listing:
         """List the content of this level.
 
         Returns:
             Level content listing.
         """
-        return self.Listing(prjmod.Level.Key(k) for k in self.registry.projects())
+        return self.Listing(prjmod.Project.Key(k) for k in self.registry.projects())
 
-    def get(self, key: typing.Union[str, prjmod.Level.Key]) -> 'prjmod.Level':
+    def get(self, key: typing.Union[str, prjmod.Project.Key]) -> 'prjmod.Project':
         """Get a project instance by its name.
 
         Args:
@@ -69,7 +69,7 @@ class Level(directory.Level):
         Returns:
             Project instance.
         """
-        return prjmod.Level(self, key)
+        return prjmod.Project(self, key)
 
     @property
     def key(self) -> None:

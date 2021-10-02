@@ -16,25 +16,12 @@
 # under the License.
 
 """
-ForML persistent unit tests.
+ForML assets directory levels.
 """
-# pylint: disable=no-self-use
-import pathlib
-import tempfile
-import typing
 
-import pytest
+from .case import Project
+from .major import Lineage
+from .minor import Generation, Tag
+from .root import Directory
 
-from forml.lib.registry import filesystem
-from forml.runtime import asset
-
-from . import Registry
-
-
-class TestRegistry(Registry):
-    """Registry unit tests."""
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def constructor(tmp_path: pathlib.Path) -> typing.Callable[[], asset.Registry]:
-        return lambda: filesystem.Registry(tempfile.mkdtemp(dir=tmp_path))
+__all__ = ['Project', 'Lineage', 'Generation', 'Tag', 'Directory']

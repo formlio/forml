@@ -23,10 +23,7 @@ import logging
 import typing
 
 from forml import error  # pylint: disable=unused-import; # noqa: F401
-from forml.runtime.asset import persistent
-
-if typing.TYPE_CHECKING:
-    from forml.runtime.asset.directory import lineage as lngmod  # noqa: F401
+from forml.runtime.asset import _persistent
 
 LOGGER = logging.getLogger(__name__)
 
@@ -89,7 +86,7 @@ class Level(metaclass=abc.ABCMeta):
         return isinstance(other, self.__class__) and other._parent == self._parent and other.key == self.key
 
     @property
-    def registry(self) -> 'persistent.Registry':
+    def registry(self) -> '_persistent.Registry':
         """Registry instance.
 
         Returns:
@@ -143,7 +140,7 @@ class Cache:
         return repr(self.info)
 
     @functools.lru_cache
-    def __call__(self, registry: 'persistent.Registry', *args, **kwargs):
+    def __call__(self, registry: '_persistent.Registry', *args, **kwargs):
         return getattr(registry, self._method)(*args, **kwargs)
 
     def clear(self) -> None:

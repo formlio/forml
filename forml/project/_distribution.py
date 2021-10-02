@@ -33,8 +33,7 @@ import typing
 import zipfile
 
 from forml import error
-from forml.runtime.asset.directory import lineage as lngmod
-from forml.runtime.asset.directory import project as prjmod
+from forml.runtime import asset
 
 from . import _importer, _product
 
@@ -163,8 +162,8 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
     """Distribution manifest implementation."""
 
-    name: prjmod.Level.Key
-    version: lngmod.Level.Key
+    name: asset.Project.Key
+    version: asset.Lineage.Key
     package: str
     modules: typing.Mapping[str, str]
 
@@ -182,13 +181,13 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
 
     def __new__(
         cls,
-        name: typing.Union[str, prjmod.Level.Key],
-        version: typing.Union[str, lngmod.Level.Key],
+        name: typing.Union[str, asset.Project.Key],
+        version: typing.Union[str, asset.Lineage.Key],
         package: str,
         **modules: str,
     ):
         return super().__new__(
-            cls, prjmod.Level.Key(name), lngmod.Level.Key(version), package, types.MappingProxyType(modules)
+            cls, asset.Project.Key(name), asset.Lineage.Key(version), package, types.MappingProxyType(modules)
         )
 
     def __getnewargs_ex__(self):
