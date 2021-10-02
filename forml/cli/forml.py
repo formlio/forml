@@ -151,9 +151,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        result = cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).train(lower, upper)
-        if result is not None:
-            print(result)
+        cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).train(lower, upper)
 
     @cli.Command(help='apply given (or default) generation', description='Apply mode execution')
     @cli.Param('project', help='project to be applied')
@@ -190,7 +188,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        print(cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).apply(lower, upper))
+        cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).apply(lower, upper)
 
     @cli.Command(help='evaluate predictions of given (or default) generation', description='Eval mode execution')
     @cli.Param('project', help='project to be applied')
@@ -227,6 +225,4 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        print(
-            cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).apply_eval(lower, upper)
-        )
+        cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).apply_eval(lower, upper)

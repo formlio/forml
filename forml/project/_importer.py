@@ -136,11 +136,11 @@ def context(module: types.ModuleType) -> typing.Iterable[None]:
                 del sys.modules[name]
             name, _ = re.match(r'(?:(.*)\.)?(.*)', name).groups()  # different from name.rsplit('.', 1)
 
-    original = list(sys.meta_path)
-    sys.meta_path[:0] = Finder.create(module)
+    sys.meta_path[:0] = finders = Finder.create(module)
     unload()
     yield
-    sys.meta_path = original
+    finders = set(finders)
+    sys.meta_path = [f for f in sys.meta_path if f not in finders]
     unload()
 
 

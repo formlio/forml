@@ -118,8 +118,10 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             try:
                 __import__(self.value, fromlist=['*'])
             except ModuleNotFoundError as err:
+                if not self.value.startswith(err.name):
+                    raise err
                 if self.explicit:
-                    raise error.Failed(f'Explicit preload ({self.value}) failed ({err})') from err
+                    raise error.Missing(f'Explicit preload {self.value} not found') from err
                 return
 
     def __new__(cls):

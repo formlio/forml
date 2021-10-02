@@ -44,7 +44,7 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
     Args:
         instance: Component instance to be registered.
     """
-    LOGGER.warning('Setup accessed outside of a Context')
+    LOGGER.debug('Setup accessed outside of a Context')
 
 
 class Source(typing.NamedTuple):

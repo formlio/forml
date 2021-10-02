@@ -126,7 +126,9 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
             try:
                 setter(_component.load(mod, path))
             except ModuleNotFoundError as err:
-                LOGGER.warning('Project %s error: %s', component, err)
+                if not mod.startswith(err.name):
+                    raise err
+                LOGGER.debug('Component %s not found', component)
         return builder.build()
 
 
