@@ -109,9 +109,9 @@ class TestPath:
 
     def test_subpath(self, path: span.Path, superpath: span.Path):
         """Testing subpath checking."""
-        assert path.issubpath(path)
-        assert not superpath.issubpath(path)
-        assert path.issubpath(superpath)
+        assert path.is_subpath(path)
+        assert not superpath.is_subpath(path)
+        assert path.is_subpath(superpath)
 
     def test_root(self, path: span.Path, superpath: span.Path):
         """Test the root path selector."""

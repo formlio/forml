@@ -77,8 +77,10 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         """
         raise error.Missing('Not yet supported')
 
-    def eval(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
-        """Run the development model evaluation.
+    def train_eval(
+        self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
+    ) -> None:
+        """Run the development mode evaluation (based on training model from scratch).
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
@@ -89,9 +91,25 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             raise error.Missing('Project not evaluable')
 
         composition = self._build(
-            lower, upper, self._instance.project.pipeline >> evaluation.Score(spec.method, spec.metric)
+            lower, upper, self._instance.project.pipeline >> evaluation.TrainScore(spec.metric, spec.method)
         )
         self._exec(composition.train)
+
+    def apply_eval(
+        self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
+    ) -> None:
+        """Run the production mode evaluation (predictions of already trained model).
+
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper: Ordinal value as the upper bound for the ETL cycle.
+        """
+        spec = self._instance.project.evaluation
+        if not spec:
+            raise error.Missing('Project not evaluable')
+
+        composition = self._build(lower, upper, self._instance.project.pipeline >> evaluation.ApplyScore(spec.metric))
+        self._exec(composition.apply)
 
     def _build(
         self, lower: typing.Optional['dsl.Native'], upper: typing.Optional['dsl.Native'], *blocks: flow.Composable
@@ -169,13 +187,22 @@ class Platform:
             return self(self._assets.project.source.extract.apply, self._sink.apply).apply
 
         @property
-        def eval(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
+        def train_eval(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
             """Return the eval handler.
 
             Returns:
                 Eval runner.
             """
-            return self(self._assets.project.source.extract.train, self._sink.eval).eval
+            return self(self._assets.project.source.extract.train, self._sink.eval).train_eval
+
+        @property
+        def apply_eval(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
+            """Return the eval handler.
+
+            Returns:
+                Eval runner.
+            """
+            return self(self._assets.project.source.extract.train, self._sink.eval).apply_eval
 
         @property
         def tune(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:

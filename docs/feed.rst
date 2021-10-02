@@ -36,5 +36,5 @@ Reader
 API
 ---
 
-.. autoclass:: forml.io.feed.Provider
+.. autoclass:: forml.io.Feed
     :members:

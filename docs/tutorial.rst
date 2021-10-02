@@ -50,12 +50,12 @@ dataset within:
 
 Create a python file under ``~/.forml/tutorial.py`` with the following content::
 
-    from forml.io import feed
+    from forml import io
     from forml.lib.feed.reader.sql import alchemy
     from openschema.kaggle import titanic
     import sqlalchemy
 
-    class Feed(feed.Provider):
+    class Feed(io.Feed):
         """Tutorial feed."""
 
         class Reader(alchemy.Reader):

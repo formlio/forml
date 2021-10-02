@@ -63,9 +63,9 @@ project component structure wrapped within the python application layout might l
 
 
 The individual project components defined in the specific modules described below need to be hooked up into the ForML
-framework using the ``component.setup()`` as shown in the examples below.
+framework using the ``project.setup()`` as shown in the examples below.
 
-.. autofunction:: forml.project.component.setup
+.. autofunction:: forml.project.setup
 
 
 Setup.py
@@ -75,15 +75,17 @@ This is the standard :doc:`Setuptools <setuptools>` module with few extra featur
 customization and integration of the *Research lifecycle* as described in :doc:`lifecycle` sections (ie the ``eval`` or
 ``upload`` commands).
 
-To hook in this extra functionality, the ``setup.py`` just needs to import ``forml.project.setuptools`` instead of the
-original ``setuptools``. The rest is the usual ``setup.py`` content::
+To hook in this extra functionality, the ``setup.py`` just needs to use the ``forml.project.Distribution`` as the
+custom setupttols ``disctlass`` . The rest is the usual ``setup.py`` content::
 
-    from forml.project import setuptools
+    from forml import project
 
     setuptools.setup(name='forml-example-titanic',
                      version='0.1.dev0',
                      packages=setuptools.find_packages(include=['titanic*']),
-                     install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'])
+                     setup_requires=['forml'],
+                     install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
+                     distclass=project.Distribution)
 
 .. note:: The specified ``version`` value will become the *lineage* identifier upon *uploading* (as part of the
           *Research lifecycle*) thus needs to be a valid :pep:`440` version.
@@ -112,13 +114,13 @@ The pipeline is specified in terms of the *workflow expression API* which is in 
 :doc:`workflow` sections.
 
 Same as for the other project components, the final pipeline expression defined in the ``pipeline.py`` needs to be
-exposed to the framework via the ``component.setup()`` handler::
+exposed to the framework via the ``project.setup()`` handler::
 
-    from forml.project import component
+    from forml import project
     from titanic.pipeline import preprocessing, model
 
     FLOW = preprocessing.NaNImputer() >> model.LR(random_state=42, solver='lbfgs')
-    component.setup(FLOW)
+    project.setup(FLOW)
 
 
 .. _project-source:
@@ -140,10 +142,10 @@ example below or documented in the :ref:`Source Descriptor Reference <io-source-
 Part of the dataset specification can also be a reference to the *ordinal* column (used for determining data ranges for
 splitting or incremental operations) and *label* columns for supervised learning/evaluation.
 
-The Source descriptor again needs to be submitted to the framework using the ``component.setup()`` handler::
+The Source descriptor again needs to be submitted to the framework using the ``project.setup()`` handler::
 
-    from forml.lib.flow import payload
-    from forml.project import component
+    from forml import project
+    from forml.lib.pipeline import payload
     from openschema.kaggle import titanic as schema
 
     FEATURES = schema.Passenger.select(
@@ -159,8 +161,8 @@ The Source descriptor again needs to be submitted to the framework using the ``c
         schema.Passenger.Embarked,
     )
 
-    ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
-    component.setup(ETL)
+    ETL = project.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
+    project.setup(ETL)
 
 
 .. _project-evaluation:
@@ -174,17 +176,17 @@ Definition of the model evaluation strategy for both the development (backtestin
 .. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
 .roadmap.
 
-The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
+The evaluation strategy again needs to be submitted to the framework using the ``project.setup()`` handler::
 
     from sklearn import model_selection, metrics
-    from forml.lib.flow.evaluation import metric, method
-    from forml.project import component
+    from forml import project
+    from forml.lib.pipeline.evaluation import metric, method
 
-    EVAL = component.Evaluation(
+    EVAL = project.Evaluation(
             metric.Function(metrics.log_loss),
             method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
     )
-    component.setup(EVAL)
+    project.setup(EVAL)
 
 
 .. _project-tuning:

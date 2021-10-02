@@ -66,17 +66,17 @@ itself.
 The system doesn't care what is the particular internal processing functionality of any actors, all that matters is
 their interconnection determining the task graph topology.
 
-The actor API is defined using an abstract class of ``task.Actor``. For user-defined actors it's best to
+The actor API is defined using an abstract class of ``flow.Actor``. For user-defined actors it's best to
 simply extend this class filling in the abstract methods with the desired functionality. The API looks like this:
 
-.. autoclass:: forml.flow.task.Actor
+.. autoclass:: forml.flow.Actor
    :members: apply, train, get_params, set_params, get_state, set_state
 
 
 Native Actors
 .............
 
-The basic mechanism for declaring custom actors is implementing the ``task.Actor`` interface.
+The basic mechanism for declaring custom actors is implementing the ``flow.Actor`` interface.
 
 Example of a user-defined native actor::
 

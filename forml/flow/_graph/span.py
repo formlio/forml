@@ -207,7 +207,7 @@ class Path(tuple):
             raise error.Topology('Simple tail required')
         return super().__new__(cls, (head, tail))
 
-    def issubpath(self, other: 'Path') -> bool:
+    def is_subpath(self, other: 'Path') -> bool:
         """Check this is a sub-path of the other.
 
         It is a sub-path if our head is found anywhere on the other path.
@@ -256,9 +256,9 @@ class Path(tuple):
             Returns:
                 Root path of the two.
             """
-            if left.issubpath(right):
+            if left.is_subpath(right):
                 return right
-            if right.issubpath(left):
+            if right.is_subpath(left):
                 return left
             raise error.Topology('Unrelated paths.')
 
@@ -299,8 +299,10 @@ class Path(tuple):
             tail = Traversal(self._tail).tail().current
         return Path(self._head, tail)
 
-    def subscribe(self, publisher: port.Publishable) -> None:
+    def subscribe(self, publisher: typing.Union[port.Publishable, 'Path']) -> None:
         """Subscribe head node to given publisher."""
+        if isinstance(publisher, Path):
+            publisher = publisher.publisher
         self._head[0].subscribe(publisher)
 
     @property

@@ -72,7 +72,7 @@ class Virtual:
 
         train = property(lambda self: Virtual.Builder.Handler(self, runtime.Platform.Launcher.train))
         apply = property(lambda self: Virtual.Builder.Handler(self, runtime.Platform.Launcher.apply))
-        eval = property(lambda self: Virtual.Builder.Handler(self, runtime.Platform.Launcher.eval))
+        eval = property(lambda self: Virtual.Builder.Handler(self, runtime.Platform.Launcher.train_eval))
         tune = property(lambda self: Virtual.Builder.Handler(self, runtime.Platform.Launcher.tune))
 
         def __init__(

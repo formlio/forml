@@ -69,6 +69,6 @@ ForML projects specify their input data requirements (mainly the ETL :doc:`DSL <
 with other transforming operators) in form of a *source descriptor* (supplied within the :doc:`project structure
 <project>` using the :ref:`source.py <project-source>` component).
 
-This descriptor is created using the ``forml.project.component.Source.query()`` class method:
+This descriptor is created using the ``forml.project.Source.query()`` class method:
 
-.. automethod:: forml.project.component.Source.query
+.. automethod:: forml.project.Source.query

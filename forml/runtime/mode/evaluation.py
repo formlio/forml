@@ -79,15 +79,30 @@ class Method(abc.ABC):
         return f'{self.__class__.__name__}Method'
 
 
-class Score(flow.Operator):
-    """Evaluation result value operator."""
+class TrainScore(flow.Operator):
+    """Development evaluation result value operator."""
 
-    def __init__(self, method: Method, metric: Metric):
-        self._method: Method = method
+    def __init__(self, metric: Metric, method: Method):
         self._metric: Metric = metric
+        self._method: Method = method
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
         outcomes = self._method.produce(left, head.train.publisher, head.label.publisher)
         value = self._metric.score(*outcomes)
         return head.use(train=head.train.extend(tail=value))
+
+
+class ApplyScore(flow.Operator):
+    """Production evaluation result value operator."""
+
+    def __init__(self, metric: Metric):
+        self._metric: Metric = metric
+
+    def compose(self, left: flow.Composable) -> flow.Trunk:
+        head: flow.Trunk = flow.Trunk()
+        pipeline: flow.Trunk = left.expand()
+        pipeline.label.subscribe(head.label)
+        pipeline.apply.subscribe(head.train)
+        value = self._metric.score(Outcome(pipeline.label.publisher, pipeline.apply.publisher))
+        return head.use(apply=head.train.extend(tail=value))

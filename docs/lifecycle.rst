@@ -46,9 +46,10 @@ Test
         $ python3 setup.py test
 
 Evaluate
-    Perform a backtesting evaluation based on the specs defined in ``evaluation.py`` and return the metrics. This can be
-    defined either as cross-validation or hold-out training. One of the potential use-cases might be a CI integration
-    to continuously monitor (evaluate) the changes in the project development.
+    Perform a backtesting evaluation based on the specs defined in ``evaluation.py`` and report the metrics. The
+    predicted outcomes are first derived using the user-configured method implementing techniques such as
+    cross-validation or hold-out training. One of the potential use-cases might be a CI integration to continuously
+    monitor (evaluate) the changes in the project development.
 
     Example::
 
@@ -129,7 +130,7 @@ Apply
         forml apply titanic
 
 Evaluate
-    Measure the actual performance of the model based on the definitions in ``evaluation.py`` (not implemented yet).
+    Measure the actual performance of the model as predictions against the (previously unseen) true labelled data.
 
     Example::
 

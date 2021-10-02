@@ -25,7 +25,6 @@ import operator
 import typing
 
 import pandas
-import sqlalchemy
 from pyhive import sqlalchemy_trino as trino
 from sqlalchemy import func, sql
 from sqlalchemy import types as sqltypes
@@ -344,8 +343,6 @@ class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
         connection: typing.Union[str, interfaces.Connectable],
         **kwargs,
     ):
-        if isinstance(connection, str):
-            connection = sqlalchemy.create_engine(connection)
         super().__init__(sources, features, **{**kwargs, 'con': connection})
 
     @classmethod
@@ -367,7 +364,7 @@ class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
 
     @classmethod
     def format(cls, data: pandas.DataFrame) -> layout.ColumnMajor:
-        """Pandas is already featurear - just return the underlying array.
+        """Pandas is already feature - just return the underlying array.
 
         Args:
             data: Pandas dataframe.

@@ -26,5 +26,5 @@ Sink is a :doc:`runtime platform <platform>` component responsible for consuming
 API
 ---
 
-.. autoclass:: forml.io.sink.Provider
+.. autoclass:: forml.io.Sink
     :members:

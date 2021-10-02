@@ -21,7 +21,7 @@ Titanic project.
 
 import setuptools
 
-from forml.project import _setuptools as forml
+from forml import project
 
 setuptools.setup(
     name='forml-example-titanic',
@@ -29,5 +29,5 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['titanic*']),
     setup_requires=['forml', 'pytest-runner'],
     install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
-    distclass=forml.Distribution,
+    distclass=project.Distribution,
 )
