@@ -70,7 +70,7 @@ class Virtual:
                     try:
                         return output.get(block=False)
                     except quemod.Empty:
-                        LOGGER.warning('Runner finished but sink queue empty')
+                        LOGGER.debug('Runner finished but sink queue empty')
                         return None
 
         train = property(lambda self: Virtual.Builder.Handler(self, Platform.Launcher.train))
@@ -222,11 +222,11 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         Returns:
             Assembled flow pipeline.
         """
-        return flow.Composition(
-            self._feed.load(self._instance.project.source, lower, upper),
-            *(b.expand() for b in blocks),
-            self._sink.publish(),
-        )
+        segments = [self._feed.load(self._instance.project.source, lower, upper)]
+        segments.extend(b.expand() for b in blocks)
+        if self._sink:
+            segments.append(self._sink.publish())
+        return flow.Composition(*segments)
 
     def _exec(self, path: flow.Path, assets: typing.Optional[asset.State] = None) -> None:
         """Execute the given path and assets.
@@ -311,7 +311,7 @@ class Platform:
             """
             raise NotImplementedError()
 
-        def __call__(self, query: 'dsl.Query', sink: 'io.Feed') -> Runner:
+        def __call__(self, query: 'dsl.Query', sink: 'io.Sink') -> Runner:
             return Runner[self._provider.reference](
                 self._assets, self._feeds.match(query), sink, **self._provider.params
             )
