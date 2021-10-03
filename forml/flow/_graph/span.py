@@ -42,14 +42,19 @@ class Visitor(nodemod.Visitor):
         """
 
 
-class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
+class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
     """Graph traversal helper."""
+
+    pivot: nodemod.Atomic
+    """Focal node of this traversal."""
+    members: typing.AbstractSet[nodemod.Atomic]
+    """All nodes belonging to this traversal (including the 'pivot' node)."""
 
     class Cyclic(error.Topology):
         """Cyclic graph error."""
 
-    def __new__(cls, current: nodemod.Atomic, predecessors: typing.AbstractSet[nodemod.Atomic] = frozenset()):
-        return super().__new__(cls, current, frozenset(predecessors | {current}))
+    def __new__(cls, pivot: nodemod.Atomic, members: typing.AbstractSet[nodemod.Atomic] = frozenset()):
+        return super().__new__(cls, pivot, frozenset(members | {pivot}))
 
     def directs(
         self, *extras: nodemod.Atomic, mask: typing.Optional[typing.Callable[[nodemod.Atomic], bool]] = None
@@ -66,14 +71,14 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         """
         seen = set()
         for node in itertools.chain(
-            (s.node for p in self.current.output for s in p), (e for e in extras if e and e.subscribed(self.current))
+            (s.node for p in self.pivot.output for s in p), (e for e in extras if e and e.subscribed(self.pivot))
         ):
             if node in seen or mask and not mask(node):
                 continue
-            if node in self.predecessors:
+            if node in self.members:
                 raise self.Cyclic(f'Cyclic flow near {node}')
             seen.add(node)
-            yield self.__class__(node, self.predecessors)
+            yield self.__class__(node, self.members)
 
     def mappers(self, *extras: nodemod.Atomic) -> typing.Iterator['Traversal']:
         """Return subscribers with specific mask to pass only mapper (not trained) nodes.
@@ -96,17 +101,17 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         Returns:
             Tail traversal of the flow.
         """
-        if expected and self.current == expected:
+        if expected and self.pivot == expected:
             return self
         endings = set()
         for node in self.mappers(expected):
             tail = node.tail(expected)
-            if expected and tail.current == expected:
+            if expected and tail.pivot == expected:
                 return tail
             endings.add(tail)
         if not any(endings):
             return self
-        if len(self.predecessors) == 1 and (expected or len(endings) > 1):
+        if len(self.members) == 1 and (expected or len(endings) > 1):
             raise error.Topology('Ambiguous tail')
         return endings.pop()
 
@@ -116,7 +121,7 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
         Potential tail Future node is ignored.
 
         Args:
-            tail: Optional traversion breakpoint.
+            tail: Optional traversal breakpoint.
             acceptor: Acceptor to call for each unique node.
         """
 
@@ -131,23 +136,32 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             """
             return node not in seen
 
+        def unseen_trained(node: nodemod.Atomic) -> bool:
+            """Mask for trained non-recurrent node.
+
+            Args:
+                node: Node instance to be checked.
+
+            Returns:
+                True if not recurrent and trained.
+            """
+            return unseen(node) and isinstance(node, nodemod.Worker) and node.trained
+
         def traverse(traversal: Traversal) -> None:
             """Recursive path scan.
 
             Args:
                 traversal: Node to be processed.
             """
-            mask = unseen
-            if traversal.current == tail:
-                mask = lambda n: unseen(n) and n.trained
-            if isinstance(traversal.current, nodemod.Worker) or traversal.current != tail:
-                acceptor(traversal.current)
-            seen.add(traversal.current)
+            mask = unseen_trained if traversal.pivot == tail else unseen
+            if isinstance(traversal.pivot, nodemod.Worker) or traversal.pivot != tail:
+                acceptor(traversal.pivot)
+            seen.add(traversal.pivot)
             for node in traversal.directs(tail, mask=mask):
                 traverse(node)
 
-        seen = set()
-        traverse(Traversal(self.current))
+        seen: set[nodemod.Atomic] = set()
+        traverse(Traversal(self.pivot))
 
     def copy(self, tail: nodemod.Atomic) -> typing.Mapping[nodemod.Atomic, nodemod.Atomic]:
         """Make a copy of the apply path topology. Any nodes not on path are ignored.
@@ -161,39 +175,35 @@ class Traversal(collections.namedtuple('Traversal', 'current, predecessors')):
             Copy of the apply path.
         """
 
-        def traverse(traversal: Traversal) -> None:
-            """Recursive path copy.
-
-            Args:
-                traversal: Node to be copied.
-
-            Returns:
-                Copy of the publisher node with all of it's subscriptions resolved.
-            """
-            if traversal.current == tail:
-                for orig in traversal.predecessors:
-                    pub = copies.get(orig) or copies.setdefault(orig, orig.fork())
-                    for index, subscription in (
-                        (i, s) for i, p in enumerate(orig.output) for s in p if s.node in traversal.predecessors
-                    ):
-                        sub = copies.get(subscription.node) or copies.setdefault(
-                            subscription.node, subscription.node.fork()
-                        )
-                        sub[subscription.port].subscribe(pub[index])
+        def paths(traversal: Traversal) -> typing.Iterable[Traversal]:
+            """Generator of all paths between the current traversal and the tail."""
+            if traversal.pivot == tail:
+                yield traversal
             else:
                 for node in traversal.mappers(tail):
-                    traverse(node)
+                    yield from paths(node)
 
-        copies = {}
-        traverse(self)
+        def get(node: nodemod.Atomic) -> nodemod.Atomic:
+            """Get the copy of the given node."""
+            return copies.get(node) or copies.setdefault(node, node.fork())
+
+        seen: set[tuple[nodemod.Atomic, int, port.Subscription]] = set()
+        copies: dict[nodemod.Atomic, nodemod.Atomic] = {}
+        for pub, sub in (
+            (get(o)[i], get(s.node)[s.port])
+            for t in paths(self)
+            for o in t.members
+            for i, p in enumerate(o.output)
+            for s in p
+            if s.node in t.members and (o, i, s) not in seen and not seen.add((o, i, s))
+        ):
+            sub.subscribe(pub)
         return copies
 
 
 class Path(tuple):
     """Representing acyclic apply path(s) between two nodes - a sub-graph with single head and tail node each with
     at most one apply input/output port.
-
-    This is a base and factory class for creating specific path instances.
     """
 
     _head: nodemod.Atomic = property(operator.itemgetter(0))
@@ -202,7 +212,7 @@ class Path(tuple):
     def __new__(cls, head: nodemod.Atomic, tail: typing.Optional[nodemod.Atomic] = None):
         if head.szin > 1:
             raise error.Topology('Simple head required')
-        tail = Traversal(head).tail(tail).current
+        tail = Traversal(head).tail(tail).pivot
         if tail.szout > 1:
             raise error.Topology('Simple tail required')
         return super().__new__(cls, (head, tail))
@@ -227,7 +237,7 @@ class Path(tuple):
                 node: Graph node to check for being this head.
             """
             nonlocal result
-            if node is self._head:
+            if not result and node is self._head:
                 result = True
 
         result = False
@@ -296,7 +306,7 @@ class Path(tuple):
             if not tail:
                 tail = right._tail
         elif not tail:
-            tail = Traversal(self._tail).tail().current
+            tail = Traversal(self._tail).tail().pivot
         return Path(self._head, tail)
 
     def subscribe(self, publisher: typing.Union[port.Publishable, 'Path']) -> None:

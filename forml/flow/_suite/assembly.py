@@ -19,6 +19,7 @@
 ForML pipeline composition logic.
 """
 import collections
+import functools
 import typing
 import uuid
 
@@ -132,8 +133,13 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         return super().__new__(cls, apply, train)
 
     @property
-    def shared(self) -> typing.Sequence[uuid.UUID]:
-        """Get the set of nodes with state shared between the apply/train modes.
+    @functools.lru_cache
+    def persistent(self) -> typing.Sequence[uuid.UUID]:
+        """Get the set of nodes with state that needs to be carried over between the apply/train modes.
+
+        The states used within the apply path are expected to be subset of the states used in the train path (since not
+        all the stateful workers engaged during training are necessarily used during apply and hence don't need
+        persisting and we can ignore them).
 
         Returns:
             Set of nodes sharing state between pipeline modes.

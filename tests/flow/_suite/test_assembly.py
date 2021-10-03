@@ -50,6 +50,6 @@ class TestComposition:
 
         assembly.Composition((origin >> operator).expand())
 
-    def test_shared(self, composition: assembly.Composition):
-        """Test the composition shared nodes."""
-        assert any(composition.shared)
+    def test_persistent(self, composition: assembly.Composition):
+        """Test the composition persistent nodes."""
+        assert any(composition.persistent)

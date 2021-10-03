@@ -53,7 +53,10 @@ class Visitor:
 
 
 class Port(typing.Iterable):
-    """Output port subscriptions as an ordered set."""
+    """Output port subscriptions as an ordered set.
+
+    The ordering is a dependency for the equality comparison of two nodes.
+    """
 
     def __init__(self):
         self._subscriptions: dict[port.Subscription, None] = collections.OrderedDict()

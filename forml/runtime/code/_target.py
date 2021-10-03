@@ -25,8 +25,10 @@ import time
 import typing
 import uuid
 
-from forml import error, flow
+from forml import flow
 from forml.runtime import asset
+
+from .. import _exception
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +71,7 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
         if arguments is None:
             arguments = []
         if not all(arguments):
-            raise error.Missing('All arguments required')
+            raise _exception.CodeError('All arguments required')
         return super().__new__(cls, instruction, tuple(arguments))
 
     def __repr__(self):

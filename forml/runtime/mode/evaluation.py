@@ -80,7 +80,11 @@ class Method(abc.ABC):
 
 
 class TrainScore(flow.Operator):
-    """Development evaluation result value operator."""
+    """Development evaluation result value operator.
+
+    This assumes no pre-existing state - pipeline is trained in scope of the evaluation.
+    Only the train path of the composed trunk is expected to be used.
+    """
 
     def __init__(self, metric: Metric, method: Method):
         self._metric: Metric = metric
@@ -94,7 +98,13 @@ class TrainScore(flow.Operator):
 
 
 class ApplyScore(flow.Operator):
-    """Production evaluation result value operator."""
+    """Production evaluation result value operator.
+
+    This assumes pre-existing state of the pipeline trained previously.
+
+    Only the train path of the composed trunk is expected to be used (apply path still needs to present all persistent
+    nodes so that the states can be loaded).
+    """
 
     def __init__(self, metric: Metric):
         self._metric: Metric = metric
@@ -102,7 +112,7 @@ class ApplyScore(flow.Operator):
     def compose(self, left: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
         pipeline: flow.Trunk = left.expand()
-        pipeline.label.subscribe(head.label)
+        pipeline.apply.copy().subscribe(head.apply)  # all persistent nodes must be reachable via the apply path
         pipeline.apply.subscribe(head.train)
-        value = self._metric.score(Outcome(pipeline.label.publisher, pipeline.apply.publisher))
-        return head.use(apply=head.train.extend(tail=value))
+        value = self._metric.score(Outcome(head.label.publisher, pipeline.apply.publisher))
+        return head.use(train=head.train.extend(tail=value))

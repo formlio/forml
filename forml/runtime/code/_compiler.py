@@ -29,6 +29,7 @@ import uuid
 from forml import flow
 from forml.runtime import asset
 
+from .. import _exception
 from . import _target
 
 LOGGER = logging.getLogger(__name__)
@@ -209,8 +210,11 @@ class Table(flow.Visitor, typing.Iterable):
             if instruction in stubs:
                 LOGGER.debug('Pruning stub getter %s', instruction)
                 continue
-            arguments = functools.reduce(merge, (self._linkage[k] for k in keys))
-            yield _target.Symbol(instruction, tuple(self._index[a] for a in arguments))
+            try:
+                arguments = tuple(self._index[a] for a in functools.reduce(merge, (self._linkage[k] for k in keys)))
+            except KeyError as err:
+                raise _exception.CodeError(f'Argument mismatch for instruction {instruction}') from err
+            yield _target.Symbol(instruction, arguments)
 
     def add(self, node: flow.Worker) -> None:
         """Populate the symbol table to implement the logical flow of given node.
@@ -227,7 +231,8 @@ class Table(flow.Visitor, typing.Iterable):
         if node.stateful:
             state = node.gid
             persistent = self._assets and state in self._assets
-            assert persistent or any(n.trained for n in node.group), 'Non-persistent stateful node without training'
+            if not persistent and not any(n.trained for n in node.group):
+                raise _exception.CodeError(f'Stateful node {node} neither persisted nor trained')
             if persistent and state not in self._index:
                 self._index.set(_target.Loader(self._assets, state), state)
             if node.trained:

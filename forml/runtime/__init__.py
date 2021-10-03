@@ -28,6 +28,10 @@ from forml.io import dsl
 from forml.runtime import asset, code
 from forml.runtime.mode import evaluation
 
+from ._exception import CodeError
+
+__all__ = ['CodeError', 'Runner', 'Platform']
+
 if typing.TYPE_CHECKING:
     from forml import project as prj
 
@@ -54,7 +58,9 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             upper:  Ordinal value as the upper bound for the ETL cycle.
         """
         composition = self._build(lower or self._instance.tag.training.ordinal, upper, self._instance.project.pipeline)
-        self._exec(composition.train, self._instance.state(composition.shared, self._instance.tag.training.trigger()))
+        self._exec(
+            composition.train, self._instance.state(composition.persistent, self._instance.tag.training.trigger())
+        )
 
     def apply(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         """Run the applying code.
@@ -64,7 +70,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             upper:  Ordinal value as the upper bound for the ETL cycle.
         """
         composition = self._build(lower, upper, self._instance.project.pipeline)
-        self._exec(composition.apply, self._instance.state(composition.shared))
+        self._exec(composition.apply, self._instance.state(composition.persistent))
 
     def tune(  # pylint: disable=no-self-use
         self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
@@ -109,7 +115,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
             raise error.Missing('Project not evaluable')
 
         composition = self._build(lower, upper, self._instance.project.pipeline >> evaluation.ApplyScore(spec.metric))
-        self._exec(composition.apply)
+        self._exec(composition.train, self._instance.state(composition.persistent))
 
     def _build(
         self, lower: typing.Optional['dsl.Native'], upper: typing.Optional['dsl.Native'], *blocks: flow.Composable
