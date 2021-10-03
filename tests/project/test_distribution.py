@@ -24,7 +24,8 @@ import pathlib
 
 import pytest
 
-from forml import error, project
+import forml
+from forml import project
 
 
 @pytest.fixture(scope='session')
@@ -45,12 +46,12 @@ class TestManifest:
         """Test invalid manifests."""
         path = os.path.join(tmp_path, f'{project.Manifest.MODULE}.py')
         os.open(path, os.O_CREAT)
-        with pytest.raises(error.Invalid):  # Invalid manifest
+        with pytest.raises(forml.InvalidError):  # Invalid manifest
             project.Manifest.read(tmp_path)
         os.remove(path)
-        with pytest.raises(error.Missing):  # Unknown manifest
+        with pytest.raises(forml.MissingError):  # Unknown manifest
             project.Manifest.read(tmp_path)
-        with pytest.raises(error.Invalid):
+        with pytest.raises(forml.InvalidError):
             project.Manifest('foo', 'invalid.version', 'project')
 
 

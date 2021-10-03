@@ -23,7 +23,6 @@ Graph unit tests.
 import pytest
 
 from forml import flow
-from forml.flow import error
 from forml.flow._graph import port, span
 
 
@@ -93,7 +92,7 @@ class TestPath:
 
     def test_invalid(self, multi: flow.Worker):
         """Testing invalid path."""
-        with pytest.raises(error.Topology):  # not a simple edge node
+        with pytest.raises(flow.TopologyError):  # not a simple edge node
             span.Path(multi)
 
     def test_copy(self, path: span.Path):

@@ -23,7 +23,8 @@ import typing
 
 import pytest
 
-from forml import error, flow, project
+import forml
+from forml import flow, project
 from forml.lib.pipeline import topology
 from forml.project import _importer
 
@@ -68,7 +69,7 @@ class TestBuilder:
         evaluation: project.Evaluation,
     ):
         """Testing build."""
-        with pytest.raises(error.Invalid):
+        with pytest.raises(forml.InvalidError):
             builder.build()
         handlers = dict(builder)
         handlers['source'](source)
@@ -109,7 +110,7 @@ class TestDescriptor:
 
     def test_invalid(self):
         """Testing with invalid types."""
-        with pytest.raises(error.Invalid):
+        with pytest.raises(forml.InvalidError):
             project.Descriptor('foo', 'bar', 'baz')
 
     def test_load(
@@ -120,9 +121,9 @@ class TestDescriptor:
         evaluation: project.Evaluation,
     ):
         """Testing the descriptor loader."""
-        with pytest.raises(error.Unexpected):
+        with pytest.raises(forml.UnexpectedError):
             project.Descriptor.load(foo='bar')
-        with pytest.raises(error.Invalid):
+        with pytest.raises(forml.InvalidError):
             project.Descriptor.load('foo')
         descriptor = project.Descriptor.load(project_package.manifest.package, project_package.path)
         assert repr(descriptor.pipeline) == repr(pipeline)

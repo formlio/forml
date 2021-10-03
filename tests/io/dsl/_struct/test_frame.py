@@ -26,7 +26,8 @@ import typing
 import cloudpickle
 import pytest
 
-from forml.io.dsl import _struct, error, function
+from forml.io import dsl
+from forml.io.dsl import _struct, function
 from forml.io.dsl._struct import frame, kind, series
 
 
@@ -83,7 +84,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Select test."""
         assert source.select(source.score).selection[0] == source.score
         assert source.select(source.score, source.surname).selection == (source.score, source.surname)
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             source.select(source.reference().score)  # not subset of source features
 
     @classmethod
@@ -95,7 +96,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     ):
         """Common element testing routine."""
         score = source.query.source.score
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             handler(source, (score > 2).alias('foobar'))  # aliased
         assert target(handler(source, score > 2)) == function.GreaterThan(score, series.Literal(2))
 
@@ -108,9 +109,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     ):
         """Common condition testing routine."""
         cls._expression(source, handler, target)
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             handler(source, source.score + 1)  # not logical
-        with pytest.raises(error.Syntax):  # not subset of source features
+        with pytest.raises(dsl.GrammarError):  # not subset of source features
             handler(source, source.reference().score == 'foo')
 
     @classmethod
@@ -129,7 +130,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def test_where(self, source: frame.Queryable):
         """Where test."""
         self._subcondition(source, lambda s, e: s.where(e), lambda q: q.prefilter)
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             source.where(function.Count(source.score) > 2)  # aggregation filter
 
     def test_having(self, source: frame.Queryable):
@@ -145,7 +146,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert joined.source.right == school
         assert joined.source.condition == function.Equal(school.sid, source.school)
         self._condition(source, lambda s, e: s.join(school, e), lambda q: q.source.condition)
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             source.join(school, function.Count(source.score) > 2)  # aggregation filter
 
     def test_groupby(self, source: frame.Queryable):
@@ -155,9 +156,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             source.score,
             source.surname,
         )
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             source.select(source.score, source.surname).groupby(source.score)  # surname neither aggregate nor group
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             source.select(function.Count(source.score)).groupby(function.Count(source.score))  # grouping by aggregation
         assert source.select(source.score, function.Count(source.surname)).groupby(source.score)
         assert source.select(source.score, function.Count(source.surname) + 1).groupby(source.score)
@@ -214,14 +215,14 @@ class TestSchema:
 
             birthday = _struct.Field(kind.Integer())
 
-        with pytest.raises(error.Syntax, match='Colliding base classes'):
+        with pytest.raises(dsl.GrammarError, match='Colliding base classes'):
 
             class BaseCollision(schema, Base.schema):  # pylint: disable=inherit-non-class
                 """Schema with colliding base classes."""
 
             _ = BaseCollision
 
-        with pytest.raises(error.Syntax, match='Colliding field name'):
+        with pytest.raises(dsl.GrammarError, match='Colliding field name'):
 
             class FieldCollision(schema):
                 """Schema with colliding field names."""

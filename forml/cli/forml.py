@@ -21,9 +21,11 @@ Main cli frontend.
 # pylint: disable=no-self-argument, no-self-use
 import typing
 
-from forml import cli, error, runtime
+import forml
+from forml import cli
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
+from forml.runtime import facility
 
 
 class Parser(cli.Parser, description='Lifecycle Management for Datascience Projects'):
@@ -37,7 +39,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         Args:
             name: Project name to create.
         """
-        raise error.Missing(f'Creating project {name}... not implemented')
+        raise forml.MissingError(f'Creating project {name}... not implemented')
 
     @cli.Command(help='show the content of the selected registry', description='Persistent registry listing')
     @cli.Param('project', nargs='?', help='project to be listed')
@@ -60,7 +62,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         registry: typing.Optional[str] = None,
         feed: typing.Optional[typing.Sequence[str]] = None,
         sink: typing.Optional[str] = None,
-    ) -> runtime.Platform:
+    ) -> facility.Platform:
         """Common helper for train/apply methods.
 
         Args:
@@ -72,7 +74,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         Returns:
             Platform instance.
         """
-        return runtime.Platform(
+        return facility.Platform(
             provcfg.Runner.resolve(runner),
             provcfg.Registry.resolve(registry),
             provcfg.Feed.resolve(feed),
@@ -114,7 +116,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        raise error.Missing(f'Tuning project {project}... not implemented')
+        raise forml.MissingError(f'Tuning project {project}... not implemented')
 
     @cli.Command(help='train new generation of given (or default) project lineage', description='Train mode execution')
     @cli.Param('project', help='project to be trained')

@@ -26,7 +26,8 @@ import typing
 
 import pytest
 
-from forml import error, project
+import forml
+from forml import project
 from forml.io import dsl
 from forml.project import _component, _importer
 
@@ -90,7 +91,7 @@ class TestSource:
 
     def test_query(self, schema: dsl.Table):
         """Test the query setup."""
-        with pytest.raises(error.Invalid):
+        with pytest.raises(forml.InvalidError):
             project.Source.query(schema, schema.age)
         query = project.Source.query(schema)
         assert isinstance(query.extract.train, dsl.Query)

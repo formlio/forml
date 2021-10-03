@@ -24,8 +24,8 @@ import typing
 
 import pytest
 
-from forml import error
-from forml import provider as provmod
+import forml
+from forml import _provider as provmod
 
 
 @pytest.fixture(scope='session')
@@ -104,12 +104,12 @@ class TestInterface:
         assert interface[alias] is provider
         assert provider[alias] is provider
         assert interface(val=100) == provider(val=100, **params)
-        with pytest.raises(error.Missing):
+        with pytest.raises(forml.MissingError):
             assert provider['miss']
 
     def test_collision(self, provider: type[provmod.Interface], alias: str):  # pylint: disable=unused-argument
         """Test a colliding provider key."""
-        with pytest.raises(error.Unexpected):
+        with pytest.raises(forml.UnexpectedError):
 
             class Colliding(provider, alias=alias):
                 """colliding implementation."""

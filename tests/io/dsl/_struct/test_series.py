@@ -27,7 +27,7 @@ import typing
 import cloudpickle
 import pytest
 
-from forml.io.dsl import error
+from forml.io import dsl
 from forml.io.dsl._struct import frame, kind, series
 
 
@@ -176,12 +176,12 @@ class Predicate(Operable, metaclass=abc.ABCMeta):
     ):
         """Logical operators tests."""
         assert isinstance(operation(feature, True), operator)
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             operation(1, feature)
         if isinstance(operation, series.Bivariate):
             assert isinstance(operation(False, feature), operator)
             assert isinstance(operation(feature, feature), operator)
-            with pytest.raises(error.Syntax):
+            with pytest.raises(dsl.GrammarError):
                 operation(feature, 1)
 
     def test_predicate(self, feature: series.Predicate, student: frame.Table):
@@ -288,7 +288,7 @@ class TestArithmetic(Operable):
         assert isinstance(operation(feature, 1), operator)
         assert isinstance(operation(1, feature), operator)
         assert isinstance(operation(feature, feature), operator)
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             operation(feature, 'foo')
-        with pytest.raises(error.Syntax):
+        with pytest.raises(dsl.GrammarError):
             operation(True, feature)

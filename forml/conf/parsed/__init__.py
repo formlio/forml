@@ -23,7 +23,8 @@ import operator
 import types
 import typing
 
-from forml import conf, error
+import forml
+from forml import conf
 
 
 class Meta(abc.ABCMeta):
@@ -72,7 +73,7 @@ class Section(metaclass=Meta):
         try:
             kwargs = conf.PARSER[cls.GROUP][reference]  # pylint: disable=no-member
         except KeyError as err:
-            raise error.Missing(f'Config section not found: [{cls.GROUP}.{reference}]') from err
+            raise forml.MissingError(f'Config section not found: [{cls.GROUP}.{reference}]') from err
         args, kwargs = cls._extract(reference, kwargs)
         return super().__new__(cls, [*args, types.MappingProxyType(dict(kwargs))])
 
@@ -117,7 +118,7 @@ class Section(metaclass=Meta):
         """
         reference = reference or conf.PARSER.get(cls.INDEX, {}).get(cls.SELECTOR)
         if not reference:
-            raise error.Missing(f'No default reference [{cls.INDEX}].{cls.SELECTOR}')
+            raise forml.MissingError(f'No default reference [{cls.INDEX}].{cls.SELECTOR}')
         return cls._lookup(reference)
 
     def __hash__(self):

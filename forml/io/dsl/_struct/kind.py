@@ -24,9 +24,8 @@ import decimal
 import inspect
 import operator
 import typing
-from collections import abc as colabc
 
-from forml.io.dsl import error
+from .. import _exception
 
 
 class Meta(abc.ABCMeta):
@@ -132,7 +131,7 @@ class Any(metaclass=Meta):
             Original kind if instance of our type or raising otherwise.
         """
         if not cls.match(kind):
-            raise error.Syntax(f'{kind} not an instance of a {cls.__name__}')
+            raise _exception.GrammarError(f'{kind} not an instance of a {cls.__name__}')
         return kind
 
 
@@ -282,9 +281,9 @@ def reflect(value: typing.Any) -> Any:
         if isinstance(value, primitive.__native__):
             return primitive()
     if value:
-        if isinstance(value, colabc.Sequence):
+        if isinstance(value, typing.Sequence):
             return Array(reflect(value[0]))
-        if isinstance(value, colabc.Mapping):
+        if isinstance(value, typing.Mapping):
             keys = tuple(value.keys())
             vals = tuple(value.values())
             if same(keys):

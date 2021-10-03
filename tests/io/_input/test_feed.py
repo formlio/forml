@@ -22,7 +22,8 @@ Feed utils unit tests.
 
 import pytest
 
-from forml import error, io
+import forml
+from forml import io
 from forml.conf.parsed import provider as conf
 from forml.io import dsl
 
@@ -49,5 +50,5 @@ class TestImporter:
         instance = feed(identity='instance')
         pool = io.Importer(instance)
         assert pool.match(query) is instance
-        with pytest.raises(error.Missing):
+        with pytest.raises(forml.MissingError):
             pool.match(person)

@@ -21,7 +21,8 @@ Set of generic operator skeletons that can be simply used as wrappers about rele
 import abc
 import typing
 
-from forml import error, flow
+import forml
+from forml import flow
 
 
 class Base(flow.Operator, metaclass=abc.ABCMeta):
@@ -118,7 +119,7 @@ class Consumer(Base):
 
     def __init__(self, spec: flow.Spec):
         if not spec.actor.is_stateful():
-            raise error.Invalid('Stateless actor invalid for a consumer')
+            raise forml.InvalidError('Stateless actor invalid for a consumer')
         super().__init__(spec)
 
     def apply(self, applier: flow.Worker, left: flow.Trunk) -> flow.Trunk:

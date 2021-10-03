@@ -24,7 +24,8 @@ import inspect
 import itertools
 import typing
 
-from forml import error, flow
+import forml
+from forml import flow
 
 Target = typing.Union[str, typing.Callable[..., typing.Any]]
 ValueT = typing.TypeVar('ValueT')
@@ -161,7 +162,7 @@ class Class(Mapping[type]):
                 return cls
             for target in {t for s, t in mapping.items() if s != flow.Actor.train.__name__ and not callable(t)}:
                 if not callable(getattr(cls, target, None)):
-                    raise error.Missing(f'Wrapped actor missing required {target} implementation')
+                    raise forml.MissingError(f'Wrapped actor missing required {target} implementation')
             return Class(cls, mapping)
 
         if cls:

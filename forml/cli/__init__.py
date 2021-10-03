@@ -26,7 +26,8 @@ import shutil
 import sys
 import typing
 
-from forml import conf, error
+import forml
+from forml import conf
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ class Handler:
             LOGGER.debug('Running command with params: %s', params)
             try:
                 self._handler(parser, **params)
-            except error.Error as err:
+            except forml.AnyError as err:
                 print(err, file=sys.stderr)
 
         return call
@@ -87,7 +88,7 @@ class Builder:
             command: Command to be used.
         """
         if self._command:
-            raise error.Unexpected('Command already provided')
+            raise forml.UnexpectedError('Command already provided')
         self._command = command
 
     def __call__(self, name: str, parser: argparse._SubParsersAction) -> Handler:

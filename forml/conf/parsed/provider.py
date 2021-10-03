@@ -20,7 +20,8 @@ ForML provider configs.
 """
 import typing
 
-from forml import conf, error
+import forml
+from forml import conf
 from forml.conf import parsed as parsmod
 
 
@@ -135,9 +136,11 @@ class Sink(Section):
                     apply = conf.PARSER[cls.INDEX].get(conf.OPT_APPLY, default)
                     evaluate = conf.PARSER[cls.INDEX].get(conf.OPT_EVAL, default)
                 except KeyError as err:
-                    raise error.Missing(f'Index section not found: [{cls.INDEX}]') from err
+                    raise forml.MissingError(f'Index section not found: [{cls.INDEX}]') from err
                 if not train or not apply or not evaluate:
-                    raise error.Missing(f'Missing default or explicit train/apply/eval sink references: [{cls.INDEX}]')
+                    raise forml.MissingError(
+                        f'Missing default or explicit train/apply/eval sink references: [{cls.INDEX}]'
+                    )
             else:
                 train = apply = evaluate = reference
             return cls([Sink.resolve(train), Sink.resolve(apply), Sink.resolve(evaluate)])

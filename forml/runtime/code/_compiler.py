@@ -213,7 +213,7 @@ class Table(flow.Visitor, typing.Iterable):
             try:
                 arguments = tuple(self._index[a] for a in functools.reduce(merge, (self._linkage[k] for k in keys)))
             except KeyError as err:
-                raise _exception.CodeError(f'Argument mismatch for instruction {instruction}') from err
+                raise _exception.AssemblyError(f'Argument mismatch for instruction {instruction}') from err
             yield _target.Symbol(instruction, arguments)
 
     def add(self, node: flow.Worker) -> None:
@@ -232,7 +232,7 @@ class Table(flow.Visitor, typing.Iterable):
             state = node.gid
             persistent = self._assets and state in self._assets
             if not persistent and not any(n.trained for n in node.group):
-                raise _exception.CodeError(f'Stateful node {node} neither persisted nor trained')
+                raise _exception.AssemblyError(f'Stateful node {node} neither persisted nor trained')
             if persistent and state not in self._index:
                 self._index.set(_target.Loader(self._assets, state), state)
             if node.trained:

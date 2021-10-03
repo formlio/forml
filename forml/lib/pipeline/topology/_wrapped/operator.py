@@ -21,7 +21,8 @@ Generic operators.
 import abc
 import typing
 
-from forml import error, flow
+import forml
+from forml import flow
 
 
 class Adapter(flow.Operator, metaclass=abc.ABCMeta):
@@ -145,7 +146,7 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
     ):
         for mode in apply, train, label:
             if mode and mode.actor.is_stateful():
-                raise error.Invalid('Stateful actor invalid for an adapter')
+                raise forml.InvalidError('Stateful actor invalid for an adapter')
         self._apply: typing.Optional[flow.Spec] = apply
         self._train: typing.Optional[flow.Spec] = train
         self._label: typing.Optional[flow.Spec] = label

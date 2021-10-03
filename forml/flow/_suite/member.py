@@ -21,8 +21,7 @@ Flow members represent partial pipeline blocks during pipeline assembly.
 import abc
 import weakref
 
-from forml.flow import error
-
+from .. import _exception
 from . import assembly
 
 
@@ -101,7 +100,7 @@ class Compound(Composable):
             if not isinstance(term, Composable):
                 raise ValueError(f'{type(term)} not composable')
             if term in self._TERMS:
-                raise error.Topology(f'Non-linear {term} composition')
+                raise _exception.TopologyError(f'Non-linear {term} composition')
             self._TERMS[term] = self
         self._right: Composable = right
         self._left: Composable = left

@@ -25,13 +25,13 @@ import types
 import typing
 from collections import abc
 
-from forml import conf, error, flow
-from forml.runtime import asset
+import forml
+from forml import conf, flow
 
 from . import _component, _distribution, _importer
 
 if typing.TYPE_CHECKING:
-    from forml.runtime import launcher as launchmod
+    from forml.runtime import facility
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
                 Descriptor instance.
             """
             if not all(self._handlers.values()):
-                LOGGER.warning('Incomplete builder (missing %s)', ', '.join(c for c, h in self if not h))
+                LOGGER.debug('Incomplete builder (missing %s)', ', '.join(c for c, h in self if not h))
             return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
 
     def __new__(
@@ -89,11 +89,11 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         evaluation: typing.Optional['_component.Evaluation'] = None,
     ):
         if not isinstance(pipeline, flow.Composable):
-            raise error.Invalid('Invalid pipeline')
+            raise forml.InvalidError('Invalid pipeline')
         if not isinstance(source, _component.Source):
-            raise error.Invalid('Invalid source')
+            raise forml.InvalidError('Invalid source')
         if evaluation and not isinstance(evaluation, _component.Evaluation):
-            raise error.Invalid('Invalid evaluation')
+            raise forml.InvalidError('Invalid evaluation')
         return super().__new__(cls, source, pipeline, evaluation)
 
     @classmethod
@@ -117,7 +117,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         """
         builder = cls.Builder()
         if any(c not in builder for c in modules):
-            raise error.Unexpected('Unexpected project component')
+            raise forml.UnexpectedError('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, setter in builder:
             mod = modules.get(component) or component
@@ -166,18 +166,17 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
     @property
     @functools.lru_cache
-    def launcher(self) -> 'launchmod.Virtual':
+    def launcher(self) -> 'facility.Virtual':
         """Return the launcher configured with a virtual registry preloaded with this artifact.
 
         Returns:
             Launcher instance.
         """
-        project = (self.package or conf.PRJNAME).replace('.', '-')
 
         class Manifest(types.ModuleType):
             """Fake manifest module."""
 
-            NAME = project
+            NAME = (self.package or conf.PRJNAME).replace('.', '-')
             VERSION = '0'
             PACKAGE = self.package
             MODULES = self.modules
@@ -185,8 +184,8 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             def __init__(self):
                 super().__init__(_distribution.Manifest.MODULE)
 
-        from forml.runtime import launcher as launchmod  # pylint: disable=import-outside-toplevel
+        from forml.runtime import asset, facility  # pylint: disable=import-outside-toplevel
 
         with _importer.context(Manifest()):
             # dummy package forced to load our fake manifest
-            return launchmod.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))
+            return facility.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))

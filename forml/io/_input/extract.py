@@ -22,7 +22,8 @@ import abc
 import logging
 import typing
 
-from forml import error, flow
+import forml
+from forml import flow
 from forml.io import dsl, layout
 from forml.io.dsl import parser as parsmod
 
@@ -52,7 +53,7 @@ class Statement(typing.NamedTuple):
                 if upper:
                     query = query.where(self.ordinal < upper)
             elif lower or upper:
-                raise error.Unexpected('Bounds provided but source not ordinal')
+                raise forml.UnexpectedError('Bounds provided but source not ordinal')
             return query
 
     @classmethod
@@ -95,7 +96,7 @@ class Operator(flow.Operator):
         self, apply: flow.Spec, train: typing.Optional[flow.Spec] = None, label: typing.Optional[flow.Spec] = None
     ):
         if apply.actor.is_stateful() or (train and train.actor.is_stateful()) or (label and label.actor.is_stateful()):
-            raise error.Invalid('Stateful actor invalid for an extractor')
+            raise forml.InvalidError('Stateful actor invalid for an extractor')
         self._apply: flow.Spec = apply
         self._train: flow.Spec = train or apply
         self._label: typing.Optional[flow.Spec] = label
@@ -107,7 +108,7 @@ class Operator(flow.Operator):
             Source segment track.
         """
         if not isinstance(left, flow.Origin):
-            raise error.Unexpected('Source not origin')
+            raise forml.UnexpectedError('Source not origin')
         apply: flow.Path = flow.Path(flow.Worker(self._apply, 0, 1))
         train: flow.Path = flow.Path(flow.Worker(self._train, 0, 1))
         label: typing.Optional[flow.Path] = None

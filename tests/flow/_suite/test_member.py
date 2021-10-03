@@ -23,7 +23,6 @@ Flow segment unit tests.
 import pytest
 
 from forml import flow
-from forml.flow import error
 from forml.flow._suite import member
 
 
@@ -42,13 +41,13 @@ class Composable:
 
     def test_self(self, composable: flow.Composable):
         """Testing self composition."""
-        with pytest.raises(error.Topology):
+        with pytest.raises(flow.TopologyError):
             _ = composable >> composable
 
     def test_nonlinear(self, composable: flow.Composable, operator: flow.Operator):
         """Testing nonlinear composition."""
         expression = composable >> operator
-        with pytest.raises(error.Topology):
+        with pytest.raises(flow.TopologyError):
             _ = expression >> operator
 
 

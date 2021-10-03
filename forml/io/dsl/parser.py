@@ -26,7 +26,7 @@ import types
 import typing
 
 from forml.io import dsl
-from forml.io.dsl import error, function
+from forml.io.dsl import function
 
 LOGGER = logging.getLogger(__name__)
 
@@ -210,7 +210,7 @@ def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing
             method(self, subject)
             try:
                 new = override(self, subject)
-            except error.Mapping:
+            except dsl.UnprovisionedError:
                 pass
             else:
                 old = self.context.symbols.pop()
@@ -248,7 +248,7 @@ class Visitor(
         try:
             return self._features[feature]
         except KeyError as err:
-            raise error.Mapping(f'Unknown mapping for feature {feature}') from err
+            raise dsl.UnprovisionedError(f'Unknown mapping for feature {feature}') from err
 
     @functools.lru_cache
     def generate_feature(self, feature: dsl.Feature) -> Feature:
@@ -349,7 +349,7 @@ class Visitor(
         try:
             return self._sources[source]
         except KeyError as err:
-            raise error.Mapping(f'Unknown mapping for source {source}') from err
+            raise dsl.UnprovisionedError(f'Unknown mapping for source {source}') from err
 
     def generate_table(  # pylint: disable=no-self-use
         self,

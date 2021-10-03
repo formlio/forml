@@ -24,7 +24,7 @@ import typing
 
 import pytest
 
-from forml import error
+import forml
 from forml.conf import parsed as parsmod
 
 
@@ -63,7 +63,7 @@ class Resolved(metaclass=abc.ABCMeta):
 
     def test_invalid(self, section: type['Resolved.Section'], invalid: str):
         """Test the invalid parsing references."""
-        with pytest.raises(error.Invalid):
+        with pytest.raises(forml.InvalidError):
             section.resolve(invalid)
 
     def test_default(self, section: type['Resolved.Section']):

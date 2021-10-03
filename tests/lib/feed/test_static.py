@@ -24,7 +24,6 @@ import typing
 import pytest
 
 from forml.io import dsl, layout
-from forml.io.dsl import error
 from forml.lib.feed import static
 
 
@@ -73,13 +72,13 @@ class TestFeed:
 
     def test_unsupported(self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], schema: dsl.Table):
         """Test unsuported operations."""
-        with pytest.raises(error.Unsupported):
+        with pytest.raises(dsl.UnsupportedError):
             reader(schema.where(schema.age > 1))
-        with pytest.raises(error.Unsupported):
+        with pytest.raises(dsl.UnsupportedError):
             reader(schema.having(schema.age > 1))
-        with pytest.raises(error.Unsupported):
+        with pytest.raises(dsl.UnsupportedError):
             reader(schema.orderby(schema.name))
-        with pytest.raises(error.Unsupported):
+        with pytest.raises(dsl.UnsupportedError):
             reader(schema.limit(1))
-        with pytest.raises(error.Unsupported):
+        with pytest.raises(dsl.UnsupportedError):
             reader(schema.select(schema.age + 1))

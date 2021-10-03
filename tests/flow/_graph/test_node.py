@@ -25,7 +25,6 @@ import abc
 import pytest
 
 from forml import flow
-from forml.flow import error
 from forml.flow._graph import port
 
 
@@ -46,7 +45,7 @@ class Atomic(metaclass=abc.ABCMeta):
         simple[0].subscribe(node[0])
         assert any(simple is s.node and s.port == port.Apply(0) for s in node.output[0])
         assert port.Apply(0) in simple.input
-        with pytest.raises(error.Topology):  # self subscription
+        with pytest.raises(flow.TopologyError):  # self subscription
             simple[0].subscribe(node[0])
 
     def test_publish(self, node: flow.Atomic, simple: flow.Worker):
@@ -54,13 +53,13 @@ class Atomic(metaclass=abc.ABCMeta):
         node[0].publish(simple, port.Train())
         assert any(simple is s.node and s.port is port.Train() for s in node.output[0])
         assert port.Train() in simple.input
-        with pytest.raises(error.Topology):  # already subscribed
+        with pytest.raises(flow.TopologyError):  # already subscribed
             node[0].publish(simple, port.Train())
-        with pytest.raises(error.Topology):  # self subscription
+        with pytest.raises(flow.TopologyError):  # self subscription
             node[0].publish(node, port.Apply(0))
-        with pytest.raises(error.Topology):  # apply-train collision
+        with pytest.raises(flow.TopologyError):  # apply-train collision
             node[0].publish(simple, port.Apply(0))
-        with pytest.raises(error.Topology):  # trained node publishing
+        with pytest.raises(flow.TopologyError):  # trained node publishing
             node[0].subscribe(simple[0])
 
 
@@ -79,9 +78,9 @@ class TestWorker(Atomic):
         assert any(node is s.node and s.port == port.Train() for s in multi.output[0])
         assert any(node is s.node and s.port == port.Label() for s in multi.output[1])
         assert node.trained
-        with pytest.raises(error.Topology):  # train-apply collision
+        with pytest.raises(flow.TopologyError):  # train-apply collision
             node[0].subscribe(simple[0])
-        with pytest.raises(error.Topology):  # publishing node trained
+        with pytest.raises(flow.TopologyError):  # publishing node trained
             multi.train(node[0], node[0])
 
     def test_fork(self, node: flow.Worker, multi: flow.Worker):
@@ -89,7 +88,7 @@ class TestWorker(Atomic):
         fork = node.fork()
         assert {node, fork} == node.group
         node.train(multi[0], multi[1])
-        with pytest.raises(error.Topology):  # Fork train non-exclusive
+        with pytest.raises(flow.TopologyError):  # Fork train non-exclusive
             fork.train(multi[0], multi[1])
 
     def test_stateful(self, node: flow.Worker):
@@ -119,5 +118,5 @@ class TestFuture(Atomic):
     def test_invalid(self, node: flow.Future, multi: flow.Worker):
         """Testing invalid future subscriptions."""
         node[0].publish(multi, port.Train())
-        with pytest.raises(error.Topology):  # trained node publishing
+        with pytest.raises(flow.TopologyError):  # trained node publishing
             node[0].subscribe(multi[0])

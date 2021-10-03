@@ -21,7 +21,8 @@ import logging
 import typing
 import uuid
 
-from forml import conf, error
+import forml
+from forml import conf
 
 from . import _persistent
 from ._directory import level
@@ -66,7 +67,7 @@ class State:
             Offset of given node.
         """
         if gid not in self._nodes:
-            raise error.Unexpected(f'Unknown node ({gid})')
+            raise forml.UnexpectedError(f'Unknown node ({gid})')
         return self._nodes.index(gid)
 
     def load(self, gid: uuid.UUID) -> bytes:

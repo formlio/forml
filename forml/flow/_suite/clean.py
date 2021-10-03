@@ -30,8 +30,7 @@ Graph topology validation.
 # * either both train and label or all apply inputs and outputs are active
 """
 
-from forml.flow import error
-
+from .. import _exception
 from .._graph import node as nodemod
 from .._graph import span
 
@@ -64,4 +63,4 @@ class Validator(span.Visitor):
             path: Path to be visited.
         """
         if self._futures:
-            raise error.Topology(f'Future nodes on path: {", ".join(str(f) for f in self._futures)}')
+            raise _exception.TopologyError(f'Future nodes on path: {", ".join(str(f) for f in self._futures)}')

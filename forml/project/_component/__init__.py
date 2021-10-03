@@ -28,7 +28,8 @@ import sys
 import types
 import typing
 
-from forml import error, flow
+import forml
+from forml import flow
 from forml.io import dsl
 from forml.runtime.mode import evaluation
 
@@ -71,9 +72,9 @@ class Source(typing.NamedTuple):
             train = train.query
             apply = apply.query
             if {c.operable for c in train.features}.intersection(c.operable for c in labels):
-                raise error.Invalid('Label-feature overlap')
+                raise forml.InvalidError('Label-feature overlap')
             if train.schema != apply.schema:
-                raise error.Invalid('Train-apply schema mismatch')
+                raise forml.InvalidError('Train-apply schema mismatch')
             if ordinal:
                 ordinal = dsl.Operable.ensure_is(ordinal)
             return super().__new__(cls, train, apply, tuple(labels), ordinal)
@@ -186,7 +187,7 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
             LOGGER.debug('Component setup using %s', component)
             nonlocal result
             if result:
-                raise error.Unexpected('Repeated call to component setup')
+                raise forml.UnexpectedError('Repeated call to component setup')
             result = component
 
     result = None

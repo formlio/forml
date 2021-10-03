@@ -27,7 +27,7 @@ import typing
 
 import toml
 
-from forml import error
+import forml
 from forml.lib import registry, runner, sink
 
 
@@ -120,7 +120,7 @@ class Parser(dict):
         except PermissionError as err:  # soft error (warn)
             self._errors[path] = err
         except ValueError as err:  # hard error (abort)
-            raise error.Invalid(f'Invalid config file {path}: {err}') from err
+            raise forml.InvalidError(f'Invalid config file {path}: {err}') from err
         else:
             self._sources.append(path)
 

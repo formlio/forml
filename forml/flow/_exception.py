@@ -18,8 +18,8 @@
 """
 Customized flow errors.
 """
-from forml import error
+import forml
 
 
-class Topology(error.Invalid):
+class TopologyError(forml.InvalidError):
     """Flow topology exception."""

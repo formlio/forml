@@ -29,9 +29,7 @@ import random
 import string
 import typing
 
-from forml.io.dsl import error
-
-from .. import _struct
+from .. import _exception, _struct
 from . import series
 
 LOGGER = logging.getLogger(__name__)
@@ -198,10 +196,12 @@ class Join(Source):
         kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
         if condition is not None:
             if kind is cls.Kind.CROSS:
-                raise error.Syntax('Illegal use of condition for cross-join')
+                raise _exception.GrammarError('Illegal use of condition for cross-join')
             condition = series.Cumulative.ensure_notin(series.Predicate.ensure_is(condition))
             if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.features, *right.features)):
-                raise error.Syntax(f'({condition}) not a subset of source features ({left.features}, {right.features})')
+                raise _exception.GrammarError(
+                    f'({condition}) not a subset of source features ({left.features}, {right.features})'
+                )
         return super().__new__(cls, left, right, condition, kind)
 
     def __repr__(self):
@@ -483,14 +483,14 @@ class Table(Origin):
                 )
             )
             if existing and len(existing.maps) > len(existing):
-                raise error.Syntax(f'Colliding base classes in schema {name}')
+                raise _exception.GrammarError(f'Colliding base classes in schema {name}')
             for key, field in namespace.items():
                 if not isinstance(field, _struct.Field):
                     continue
                 if not field.name:
                     namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
                 if field.name in existing and existing[field.name] != key:
-                    raise error.Syntax(f'Colliding field name {field.name} in schema {name}')
+                    raise _exception.GrammarError(f'Colliding field name {field.name} in schema {name}')
                 existing[field.name] = key
             return super().__new__(mcs, name, bases, namespace)
 
@@ -594,7 +594,7 @@ class Query(Queryable):
                 Original list of features if all valid.
             """
             if not series.Element.dissect(*features).issubset(superset):
-                raise error.Syntax(f'{features} not a subset of source features: {superset}')
+                raise _exception.GrammarError(f'{features} not a subset of source features: {superset}')
             return features
 
         superset = series.Element.dissect(*source.features)

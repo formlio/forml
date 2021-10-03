@@ -27,7 +27,7 @@ import unittest
 
 from forml import flow
 from forml.conf.parsed import provider as provcfg
-from forml.runtime import launcher as launchmod
+from forml.runtime import facility as launchmod
 from forml.testing import _facility, _spec
 
 LOGGER = logging.getLogger(__name__)

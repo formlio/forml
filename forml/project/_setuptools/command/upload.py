@@ -22,8 +22,9 @@ import typing
 
 import setuptools
 
-from forml import error, runtime
+import forml
 from forml.conf.parsed import provider as provcfg
+from forml.runtime import facility
 
 from ... import _distribution
 from . import bdist
@@ -49,10 +50,10 @@ class Registry(setuptools.Command):
         """Trigger the deployment process."""
         packages = [_distribution.Package(f) for c, _, f in self.distribution.dist_files if c == bdist.Package.COMMAND]
         if not packages:
-            raise error.Invalid(
+            raise forml.InvalidError(
                 'Must create and upload files in one command ' f'(e.g. setup.py {bdist.Package.COMMAND} upload)'
             )
         project = self.distribution.get_name()
-        platform = runtime.Platform(registry=provcfg.Registry.resolve(self.registry))
+        platform = facility.Platform(registry=provcfg.Registry.resolve(self.registry))
         for pkg in packages:
             platform.registry.publish(project, pkg)

@@ -25,13 +25,13 @@ import typing
 
 import dask
 
-from forml import io, runtime
-from forml.runtime import asset, code
+from forml import io
+from forml.runtime import asset, code, facility
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(runtime.Runner, alias='dask'):
+class Runner(facility.Runner, alias='dask'):
     """Dask based runner implementation."""
 
     class Dag(dict):

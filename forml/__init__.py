@@ -23,4 +23,8 @@ __author__ = 'ForML Authors'
 
 from forml.conf import logging
 
+from ._exception import AnyError, FailedError, InvalidError, MissingError, UnexpectedError
+
+__all__ = ['AnyError', 'InvalidError', 'MissingError', 'UnexpectedError', 'FailedError']
+
 logging.setup()

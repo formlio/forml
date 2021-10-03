@@ -26,7 +26,7 @@ import typing
 
 from forml import io
 from forml.io import dsl, layout
-from forml.io.dsl import error, function
+from forml.io.dsl import function
 from forml.io.dsl import parser as parsmod
 
 LOGGER = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         """
         try:
             return super().resolve_feature(feature)
-        except error.Mapping as err:
+        except dsl.UnprovisionedError as err:
             if isinstance(feature, dsl.Element):
                 return feature.name
             raise err
@@ -174,7 +174,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
             return f"DATE '{value.strftime(self.DATE)}'"
         if isinstance(kind, dsl.Array):
             return f"ARRAY[{', '.join(self.generate_literal(v, kind.element) for v in value)}]"
-        raise error.Unsupported(f'Unsupported literal kind: {kind}')
+        raise dsl.UnsupportedError(f'Unsupported literal kind: {kind}')
 
     def generate_expression(self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]) -> str:
         """Expression of given arguments.
@@ -189,7 +189,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         try:
             return self.EXPRESSION[expression](*arguments)
         except KeyError as err:
-            raise error.Unsupported(f'Unsupported expression: {expression}') from err
+            raise dsl.UnsupportedError(f'Unsupported expression: {expression}') from err
 
     JOIN: typing.Mapping[dsl.Join.Kind, str] = {
         dsl.Join.Kind.LEFT: 'LEFT OUTER JOIN',

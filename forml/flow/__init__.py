@@ -19,6 +19,7 @@
 ForML flow composition logic.
 """
 
+from ._exception import TopologyError
 from ._graph.node import Atomic, Future, Worker
 from ._graph.port import Publishable, Subscriptable
 from ._graph.span import Path, Visitor
@@ -42,4 +43,5 @@ __all__ = [
     'Trunk',
     'Visitor',
     'Worker',
+    'TopologyError',
 ]

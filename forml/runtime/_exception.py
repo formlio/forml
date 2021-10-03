@@ -18,8 +18,8 @@
 """
 Customized runtime errors.
 """
-from forml import error
+import forml
 
 
-class CodeError(error.Invalid):
-    """Code exception."""
+class AssemblyError(forml.InvalidError):
+    """Code generation exception."""

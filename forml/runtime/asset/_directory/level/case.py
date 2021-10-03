@@ -20,7 +20,7 @@
 import logging
 import typing
 
-from forml import error  # pylint: disable=unused-import; # noqa: F401
+import forml
 
 from ... import _directory
 from . import major as lngmod
@@ -79,7 +79,7 @@ class Project(_directory.Level):
             LOGGER.debug('No previous lineage for %s-%s', project, lineage)
         else:
             if project != self.key:
-                raise error.Invalid('Project key mismatch')
+                raise forml.InvalidError('Project key mismatch')
             if not lineage > previous:
                 raise _directory.Level.Invalid(f'{project}-{lineage} not an increment from existing {previous}')
         self.registry.push(package)

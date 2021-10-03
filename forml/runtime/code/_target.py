@@ -71,7 +71,7 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
         if arguments is None:
             arguments = []
         if not all(arguments):
-            raise _exception.CodeError('All arguments required')
+            raise _exception.AssemblyError('All arguments required')
         return super().__new__(cls, instruction, tuple(arguments))
 
     def __repr__(self):

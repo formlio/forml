@@ -24,7 +24,7 @@ import inspect
 import logging
 import typing
 
-from forml import error
+import forml
 
 LOGGER = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
                 if not self.value.startswith(err.name):
                     raise err
                 if self.explicit:
-                    raise error.Missing(f'Explicit preload {self.value} not found') from err
+                    raise forml.MissingError(f'Explicit preload {self.value} not found') from err
                 return
 
     def __new__(cls):
@@ -142,7 +142,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             if ref in self.provider:
                 if provider == self.provider[ref]:
                     continue
-                raise error.Unexpected(f'Provider reference collision ({ref})')
+                raise forml.UnexpectedError(f'Provider reference collision ({ref})')
         self.paths.update(paths)
         if isabstract(provider):
             return
@@ -191,7 +191,7 @@ class Meta(abc.ABCMeta):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         if default:
             if not isabstract(cls):
-                raise error.Unexpected('Defaults provided but class not abstract')
+                raise forml.UnexpectedError('Defaults provided but class not abstract')
             DEFAULTS[cls] = default
         return cls
 
@@ -208,7 +208,7 @@ class Meta(abc.ABCMeta):
             return REGISTRY[cls].get(Reference(reference))
         except KeyError as err:
             known = ', '.join(str(c) for c in cls)  # pylint: disable=not-an-iterable
-            raise error.Missing(
+            raise forml.MissingError(
                 f'No {cls.__name__} provider registered as {reference} (known providers: {known})'
             ) from err
 
@@ -243,7 +243,7 @@ class Interface(metaclass=Meta):
         super().__init_subclass__()
         if alias:
             if isabstract(cls):
-                raise error.Unexpected(f'Provider reference ({alias}) illegal on abstract class')
+                raise forml.UnexpectedError(f'Provider reference ({alias}) illegal on abstract class')
             alias = Alias(alias)
         path = {Registry.Path(p, explicit=True) for p in path or []}
         for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):

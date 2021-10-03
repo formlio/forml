@@ -32,7 +32,7 @@ import types
 import typing
 import zipfile
 
-from forml import error
+import forml
 from forml.runtime import asset
 
 from . import _importer, _product
@@ -128,7 +128,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                 if Manifest.read(path) == self.manifest:
                     LOGGER.debug('Package %s already installed', self.path)
                     return False
-            except error.Invalid:
+            except forml.InvalidError:
                 pass
             if path.exists():
                 LOGGER.warning('Deleting existing content at %s', path)
@@ -238,9 +238,9 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
             module = _importer.isolated(cls.MODULE, path)
             manifest = cls(module.NAME, module.VERSION, module.PACKAGE, **module.MODULES)
         except ModuleNotFoundError as err:
-            raise error.Missing(f'Unknown manifest ({err})')
+            raise forml.MissingError(f'Unknown manifest ({err})')
         except AttributeError as err:
-            raise error.Invalid(f'Invalid manifest ({err})')
+            raise forml.InvalidError(f'Invalid manifest ({err})')
         finally:
             if cls.MODULE in sys.modules:
                 del sys.modules[cls.MODULE]

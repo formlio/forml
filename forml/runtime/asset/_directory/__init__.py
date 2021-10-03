@@ -22,7 +22,7 @@ import functools
 import logging
 import typing
 
-from forml import error  # pylint: disable=unused-import; # noqa: F401
+import forml
 from forml.runtime.asset import _persistent
 
 LOGGER = logging.getLogger(__name__)
@@ -31,13 +31,13 @@ LOGGER = logging.getLogger(__name__)
 class Level(metaclass=abc.ABCMeta):
     """Abstract directory level."""
 
-    class Invalid(error.Invalid):
+    class Invalid(forml.InvalidError):
         """Indication of an invalid level."""
 
     class Key(metaclass=abc.ABCMeta):
         """Level key type."""
 
-        class Invalid(error.Invalid, TypeError):
+        class Invalid(forml.InvalidError, TypeError):
             """Invalid key type."""
 
         @property
@@ -52,7 +52,7 @@ class Level(metaclass=abc.ABCMeta):
     class Listing(tuple):
         """Helper class representing a registry listing."""
 
-        class Empty(error.Missing):
+        class Empty(forml.MissingError):
             """Exception indicating empty listing."""
 
         def __new__(cls, items: typing.Iterable['Level.Key']):

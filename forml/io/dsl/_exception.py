@@ -18,16 +18,19 @@
 """
 Customized DSL errors.
 """
-from forml import error
+import forml
 
 
-class Mapping(error.Missing):
-    """Source/Column mapping exception."""
+class UnprovisionedError(forml.MissingError):
+    """Source/Column mapping exception.
+
+    Expected to be raised by DSL parsers/feeds when unable to resolve the resource mapping for given feed.
+    """
 
 
-class Unsupported(error.Missing):
-    """Indicating feature unsupported by certain parser."""
+class UnsupportedError(forml.MissingError):
+    """Indicating unsupported DSL feature by the given parser."""
 
 
-class Syntax(error.Invalid):
+class GrammarError(forml.InvalidError):
     """Indicating syntactical error."""

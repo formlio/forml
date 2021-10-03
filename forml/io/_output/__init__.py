@@ -21,8 +21,8 @@ IO sink utils.
 import abc
 import typing
 
+from forml import _provider as provmod
 from forml import flow
-from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
 from forml.io import layout
 

@@ -23,8 +23,9 @@ import functools
 import logging
 import typing
 
-from forml import error, flow
-from forml import provider as provmod
+import forml
+from forml import _provider as provmod
+from forml import flow
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
 from forml.io.dsl import parser
@@ -293,5 +294,7 @@ class Importer:
             if matcher:
                 break
         else:
-            raise error.Missing(f'None of the {len(self._feeds)} available feeds provide all of the required sources')
+            raise forml.MissingError(
+                f'None of the {len(self._feeds)} available feeds provide all of the required sources'
+            )
         return feed  # pylint: disable=undefined-loop-variable

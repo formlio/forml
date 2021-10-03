@@ -33,7 +33,7 @@ from sqlalchemy.engine import interfaces
 
 from forml import io
 from forml.io import dsl, layout
-from forml.io.dsl import error, function
+from forml.io.dsl import function
 from forml.io.dsl import parser as parsmod
 
 LOGGER = logging.getLogger(__name__)
@@ -160,7 +160,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         """
         try:
             return super().resolve_feature(feature)
-        except error.Mapping as err:
+        except dsl.UnprovisionedError as err:
             if isinstance(feature, dsl.Element):
                 return sql.column(feature.name)
             raise err
@@ -206,7 +206,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         try:
             return sql.bindparam(None, value, self.KIND[kind])
         except KeyError as err:
-            raise error.Unsupported(f'Unsupported literal kind: {kind}') from err
+            raise dsl.UnsupportedError(f'Unsupported literal kind: {kind}') from err
 
     def generate_expression(
         self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]
@@ -223,7 +223,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         try:
             return self.EXPRESSION[expression](*arguments)
         except KeyError as err:
-            raise error.Unsupported(f'Unsupported expression: {expression}') from err
+            raise dsl.UnsupportedError(f'Unsupported expression: {expression}') from err
 
     SET: typing.Mapping[dsl.Set.Kind, typing.Callable[[sql.Selectable, sql.Selectable], sql.Selectable]] = {
         dsl.Set.Kind.UNION: sql.Select.union,

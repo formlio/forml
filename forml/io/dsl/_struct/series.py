@@ -28,8 +28,7 @@ import operator as opermod
 import types
 import typing
 
-from forml.io.dsl import error
-
+from .. import _exception
 from . import frame as framod
 from . import kind as kindmod
 
@@ -204,7 +203,7 @@ class Feature(tuple, metaclass=abc.ABCMeta):
         """
         feature = cast(feature)
         if not isinstance(feature, cls):
-            raise error.Syntax(f'{feature} not an instance of a {cls.__name__}')
+            raise _exception.GrammarError(f'{feature} not an instance of a {cls.__name__}')
         return feature
 
     @classmethod
@@ -218,7 +217,7 @@ class Feature(tuple, metaclass=abc.ABCMeta):
             Original feature if containing our type or raising otherwise.
         """
         if not cls.dissect(feature):
-            raise error.Syntax(f'No {cls.__name__} instance(s) found in {feature}')
+            raise _exception.GrammarError(f'No {cls.__name__} instance(s) found in {feature}')
         return feature
 
     @classmethod
@@ -232,7 +231,7 @@ class Feature(tuple, metaclass=abc.ABCMeta):
             Original feature if not of our type or raising otherwise.
         """
         if cls.dissect(feature):
-            raise error.Syntax(f'{cls.__name__} instance(s) found in {feature}')
+            raise _exception.GrammarError(f'{cls.__name__} instance(s) found in {feature}')
         return feature
 
 
@@ -437,7 +436,7 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
                 feature, direction = feature
                 yield Ordering.Direction(direction)(feature)
             else:
-                raise error.Syntax('Expecting pair of feature and direction')
+                raise _exception.GrammarError('Expecting pair of feature and direction')
 
 
 class Aliased(Feature):
@@ -703,7 +702,7 @@ class Predicate(metaclass=abc.ABCMeta):
             kindmod.Boolean.ensure(feature.kind)
         elif not issubclass(cls, Feature):  # bare Predicate mixin subclasses
             if not isinstance(feature, cls):
-                raise error.Syntax(f'{feature} not an instance of a {cls.__name__}')
+                raise _exception.GrammarError(f'{feature} not an instance of a {cls.__name__}')
         else:  # defer to the feature's .ensure_is implementation
             feature = next(b for b in cls.__bases__ if issubclass(b, Feature)).ensure_is(feature)
         return feature
@@ -799,7 +798,7 @@ class Comparison(Predicate):
         if not (
             all(kindmod.Numeric.match(o.kind) for o in operands) or all(o.kind == operands[0].kind for o in operands)
         ):
-            raise error.Syntax(f'Invalid operands for {self} comparison')
+            raise _exception.GrammarError(f'Invalid operands for {self} comparison')
 
     @property
     @functools.lru_cache
@@ -870,7 +869,7 @@ class Arithmetic:
     def __init__(self, *operands: Operable):
         operands = [Operable.ensure_is(o) for o in operands]
         if not all(kindmod.Numeric.match(o.kind) for o in operands):
-            raise error.Syntax(f'Invalid arithmetic operands for {self}')
+            raise _exception.GrammarError(f'Invalid arithmetic operands for {self}')
 
     @property
     def kind(self) -> kindmod.Numeric:

@@ -22,7 +22,6 @@ import typing
 
 from forml import io
 from forml.io import dsl, layout
-from forml.io.dsl import error
 
 
 class Feed(io.Feed[None, layout.Vector]):
@@ -57,11 +56,11 @@ class Feed(io.Feed[None, layout.Vector]):
                 Data.
             """
             if query.prefilter or query.postfilter or query.ordering or query.rows:
-                raise error.Unsupported('Query not supported by static feed')
+                raise dsl.UnsupportedError('Query not supported by static feed')
             try:
                 return [features[c] for c in query.features]
             except KeyError as err:
-                raise error.Unsupported(f'Column not supported by static feed: {err}')
+                raise dsl.UnsupportedError(f'Column not supported by static feed: {err}')
 
         return read
 

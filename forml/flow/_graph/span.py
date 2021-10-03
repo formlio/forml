@@ -25,8 +25,7 @@ import itertools
 import operator
 import typing
 
-from forml.flow import error
-
+from .. import _exception
 from . import node as nodemod
 from . import port
 
@@ -50,7 +49,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
     members: typing.AbstractSet[nodemod.Atomic]
     """All nodes belonging to this traversal (including the 'pivot' node)."""
 
-    class Cyclic(error.Topology):
+    class Cyclic(_exception.TopologyError):
         """Cyclic graph error."""
 
     def __new__(cls, pivot: nodemod.Atomic, members: typing.AbstractSet[nodemod.Atomic] = frozenset()):
@@ -112,7 +111,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         if not any(endings):
             return self
         if len(self.members) == 1 and (expected or len(endings) > 1):
-            raise error.Topology('Ambiguous tail')
+            raise _exception.TopologyError('Ambiguous tail')
         return endings.pop()
 
     def each(self, tail: nodemod.Atomic, acceptor: typing.Callable[[nodemod.Atomic], None]) -> None:
@@ -211,10 +210,10 @@ class Path(tuple):
 
     def __new__(cls, head: nodemod.Atomic, tail: typing.Optional[nodemod.Atomic] = None):
         if head.szin > 1:
-            raise error.Topology('Simple head required')
+            raise _exception.TopologyError('Simple head required')
         tail = Traversal(head).tail(tail).pivot
         if tail.szout > 1:
-            raise error.Topology('Simple tail required')
+            raise _exception.TopologyError('Simple tail required')
         return super().__new__(cls, (head, tail))
 
     def is_subpath(self, other: 'Path') -> bool:
@@ -270,7 +269,7 @@ class Path(tuple):
                 return right
             if right.is_subpath(left):
                 return left
-            raise error.Topology('Unrelated paths.')
+            raise _exception.TopologyError('Unrelated paths.')
 
         return functools.reduce(choose, others, first)
 

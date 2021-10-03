@@ -21,8 +21,7 @@ Graph node port functionality.
 import collections
 import typing
 
-from forml.flow import error
-
+from .. import _exception
 from . import node as nodemod  # pylint: disable=unused-import
 
 
@@ -81,15 +80,15 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 
     def __new__(cls, subscriber: 'nodemod.Atomic', port: Type):
         if port in cls._PORTS[subscriber]:
-            raise error.Topology('Double subscription')
+            raise _exception.TopologyError('Double subscription')
         if cls._PORTS[subscriber] and (
             isinstance(port, Apply) ^ any(isinstance(s, Apply) for s in cls._PORTS[subscriber])
         ):
-            raise error.Topology('Apply/Train collision')
+            raise _exception.TopologyError('Apply/Train collision')
         if isinstance(port, (Train, Label)) and any(subscriber.output):
-            raise error.Topology('Publishing node trained')
+            raise _exception.TopologyError('Publishing node trained')
         if isinstance(subscriber, nodemod.Future):
-            raise error.Topology('Future node subscribing')
+            raise _exception.TopologyError('Future node subscribing')
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
 

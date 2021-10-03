@@ -22,7 +22,8 @@ import abc
 import logging
 import typing
 
-from forml import error, flow
+import forml
+from forml import flow
 from forml.io import layout
 
 LOGGER = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class Operator(flow.Operator):
 
     def __init__(self, writer: flow.Spec):
         if writer.actor.is_stateful():
-            raise error.Invalid('Stateful actor invalid for a publisher')
+            raise forml.InvalidError('Stateful actor invalid for a publisher')
         self._writer: flow.Spec = writer
 
     def compose(self, left: flow.Composable) -> flow.Trunk:

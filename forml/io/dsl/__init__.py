@@ -19,6 +19,7 @@
 ForML IO DSL implementation.
 """
 
+from ._exception import GrammarError, UnprovisionedError, UnsupportedError
 from ._struct import Field, Schema
 from ._struct.frame import Join, Origin, Query, Queryable, Reference, Rows, Set, Source, Table
 from ._struct.kind import (
@@ -84,4 +85,7 @@ __all__ = [
     'Map',
     'Struct',
     'Native',
+    'UnsupportedError',
+    'UnprovisionedError',
+    'GrammarError',
 ]
