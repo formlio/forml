@@ -80,8 +80,6 @@ class Runner:
             return self.Outcome(apply=self._scenario.output.apply)
         if self._scenario.outcome is testing.Scenario.Outcome.STATETRAIN_RAISES:
             return self.Outcome(train=self._scenario.exception)
-        if self._scenario.outcome is testing.Scenario.Outcome.STATETRAIN_RETURNS:
-            return self.Outcome(train=self._scenario.output.train)
         raise RuntimeError('Invalid scenario')
 
 
@@ -150,15 +148,6 @@ class TestStateTrainRaises(Routine):
     @pytest.fixture(scope='session')
     def scenario(statetrain_raises: testing.Scenario) -> testing.Scenario:  # pylint: disable=arguments-renamed
         return statetrain_raises
-
-
-class TestStateTrainReturns(Routine):
-    """Routine test."""
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def scenario(statetrain_returns: testing.Scenario) -> testing.Scenario:  # pylint: disable=arguments-renamed
-        return statetrain_returns
 
 
 class TestStateApplyRaises(Routine):

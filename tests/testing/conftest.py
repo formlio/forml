@@ -79,16 +79,6 @@ def label_input() -> str:
 
 
 @pytest.fixture(scope='session')
-def train_output() -> str:
-    """IO fixture.
-
-    Returns:
-        String value.
-    """
-    return 'baz'
-
-
-@pytest.fixture(scope='session')
 def init_raises(hyperparams: typing.Mapping[str, int], exception: testing.Scenario.Exception) -> testing.Scenario:
     """Scenario fixture."""
     return testing.Case(**hyperparams).raises(exception.kind, exception.message)
@@ -114,14 +104,6 @@ def statetrain_raises(
 ) -> testing.Scenario:
     """Scenario fixture."""
     return testing.Case(**hyperparams).train(train_input, label_input).raises(exception.kind, exception.message)
-
-
-@pytest.fixture(scope='session')
-def statetrain_returns(
-    hyperparams: typing.Mapping[str, int], train_input: str, label_input: str, train_output: str
-) -> testing.Scenario:
-    """Scenario fixture."""
-    return testing.Case(**hyperparams).train(train_input, label_input).returns(train_output)
 
 
 @pytest.fixture(scope='session')

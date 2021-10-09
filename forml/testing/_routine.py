@@ -181,10 +181,6 @@ class StateTrainTest(Test):
         return launcher.train()
 
 
-class TestStateTrainReturns(ReturnableTest, StateTrainTest):
-    """Test composite."""
-
-
 class TestStateTrainRaises(RaisableTest, StateTrainTest):
     """Test composite."""
 
@@ -238,8 +234,6 @@ class Case:
             return TestStateApplyRaises(launcher, scenario.exception)
         if scenario.outcome is _spec.Scenario.Outcome.PLAINAPPLY_RETURNS:
             return TestPlainApplyReturns(launcher, scenario.output)
-        if scenario.outcome is _spec.Scenario.Outcome.STATETRAIN_RETURNS:
-            return TestStateTrainReturns(launcher, scenario.output)
         if scenario.outcome is _spec.Scenario.Outcome.STATEAPPLY_RETURNS:
             return TestStateApplyReturns(launcher, scenario.output)
         raise RuntimeError('Unexpected scenario outcome')
