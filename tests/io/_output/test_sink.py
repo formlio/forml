@@ -38,10 +38,9 @@ class TestExporter:
     @pytest.fixture(scope='session')
     def modal(self, reference: str) -> io.Exporter:
         """Sink.Mode based handle fixture."""
-        train = self.Conf(reference, 'train')
         apply = self.Conf(reference, 'apply')
         eval_ = self.Conf(reference, 'eval')
-        return io.Exporter(conf.Sink.Mode([train, apply, eval_]))
+        return io.Exporter(conf.Sink.Mode([apply, eval_]))
 
     @pytest.fixture(scope='session')
     def instant(self, sink: type[io.Sink]) -> io.Exporter:
@@ -50,9 +49,7 @@ class TestExporter:
 
     def test_getter(self, modal: io.Exporter, instant: io.Exporter):
         """Test the handle getters."""
-        assert modal.train.identity == 'train'
         assert modal.apply.identity == 'apply'
         assert modal.eval.identity == 'eval'
-        assert instant.train.identity == 'instant'
         assert instant.apply.identity == 'instant'
         assert instant.eval.identity == 'instant'

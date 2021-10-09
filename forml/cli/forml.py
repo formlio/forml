@@ -88,7 +88,6 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
     @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
-    @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower tuneset ordinal')
     @cli.Param('--upper', help='upper tuneset ordinal')
     def tune(
@@ -99,7 +98,6 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         runner: typing.Optional[str],
         registry: typing.Optional[str],
         feed: typing.Optional[typing.Sequence[str]],
-        sink: typing.Optional[str],
         lower: typing.Optional[dsl.Native],
         upper: typing.Optional[dsl.Native],
     ) -> None:
@@ -112,7 +110,6 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             runner: Optional runner reference.
             registry: Optional registry reference.
             feed: Optional feed references.
-            sink: Optional sink reference.
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
@@ -125,7 +122,6 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
     @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
     @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
     @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
-    @cli.Param('-O', '--sink', type=str, help='output sink reference')
     @cli.Param('--lower', help='lower trainset ordinal')
     @cli.Param('--upper', help='upper trainset ordinal')
     def train(
@@ -136,7 +132,6 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         runner: typing.Optional[str],
         registry: typing.Optional[str],
         feed: typing.Optional[typing.Sequence[str]],
-        sink: typing.Optional[str],
         lower: typing.Optional[dsl.Native],
         upper: typing.Optional[dsl.Native],
     ) -> None:
@@ -149,11 +144,10 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             runner: Optional runner reference.
             registry: Optional registry reference.
             feed: Optional feed references.
-            sink: Optional sink reference.
             lower: Lower ordinal.
             upper: Upper ordinal.
         """
-        cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).train(lower, upper)
+        cls._platform(runner, registry, feed).launcher(project, lineage, generation).train(lower, upper)
 
     @cli.Command(help='apply given (or default) generation', description='Apply mode execution')
     @cli.Param('project', help='project to be applied')

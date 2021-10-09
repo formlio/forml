@@ -15,58 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-foobar = "baz"
+"""
+Runtime launching subsystem.
+"""
 
-[RESOLVED]
-single = "bar"
-multi = ["foo", "bar"]
+from ._agent import Runner
+from ._pad import Platform
+from ._pseudo import Virtual
 
-[SINGLE.bar]
-blah = "single"
-foo = "baz"
-params = {blah = "bar", bar = "blah"}
-
-[MULTI.bar]
-foo = "baz"
-
-[MULTI.foo]
-baz = "foo"
-
-
-
-
-[RUNNER]
-default = "bar"
-
-[RUNNER.bar]
-provider = "bar"
-
-
-[REGISTRY]
-default = "bar"
-
-[REGISTRY.bar]
-provider = "bar"
-
-
-[FEED]
-default = ["bar"]
-
-[FEED.bar]
-provider = "bar"
-priority = 100
-
-
-[SINK]
-default = "foo"
-apply = "bar"
-eval = "baz"
-
-[SINK.foo]
-provider = "foo"
-
-[SINK.bar]
-provider = "bar"
-
-[SINK.baz]
-provider = "baz"
+__all__ = ['Platform', 'Runner', 'Virtual']

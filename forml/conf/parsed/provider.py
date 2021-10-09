@@ -110,12 +110,11 @@ class Sink(Section):
 
         [SINK]
         default = <default-sink-reference>
-        train = <train-sink-reference>
         apply = <apply-sink-reference>
         eval = <eval-sink-reference>
         """
 
-        FIELDS: tuple[str] = ('train', 'apply', 'eval')
+        FIELDS: tuple[str] = ('apply', 'eval')
         INDEX: str = conf.SECTION_SINK
         GROUP: str = conf.SECTION_SINK
 
@@ -129,18 +128,15 @@ class Sink(Section):
             Returns:
                 Sink.Mode tuple with selected Sink config instances for the particular modes.
             """
-            if not reference:
+            if reference:
+                apply = evaluate = reference
+            else:
                 try:
                     default = conf.PARSER[cls.INDEX].get(conf.OPT_DEFAULT)
-                    train = conf.PARSER[cls.INDEX].get(conf.OPT_TRAIN, default)
                     apply = conf.PARSER[cls.INDEX].get(conf.OPT_APPLY, default)
                     evaluate = conf.PARSER[cls.INDEX].get(conf.OPT_EVAL, default)
                 except KeyError as err:
                     raise forml.MissingError(f'Index section not found: [{cls.INDEX}]') from err
-                if not train or not apply or not evaluate:
-                    raise forml.MissingError(
-                        f'Missing default or explicit train/apply/eval sink references: [{cls.INDEX}]'
-                    )
-            else:
-                train = apply = evaluate = reference
-            return cls([Sink.resolve(train), Sink.resolve(apply), Sink.resolve(evaluate)])
+                if not apply or not evaluate:
+                    raise forml.MissingError(f'Missing default or explicit apply/eval sink references: [{cls.INDEX}]')
+            return cls([Sink.resolve(apply), Sink.resolve(evaluate)])

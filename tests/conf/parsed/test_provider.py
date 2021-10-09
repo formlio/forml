@@ -116,7 +116,7 @@ class TestSink(Section):
     @pytest.fixture(scope='session')
     def default() -> str:
         """Default values."""
-        return 'bar'
+        return 'foo'
 
 
 class TestSinkMode:
@@ -125,7 +125,6 @@ class TestSinkMode:
     def test_default(self):
         """Default modes parsing."""
         mode = provcfg.Sink.Mode.default
-        assert mode.train.reference == 'foo'
         assert mode.apply.reference == 'bar'
         assert mode.eval.reference == 'baz'
 
@@ -133,6 +132,5 @@ class TestSinkMode:
         """Explicit modes parsing."""
         mode = provcfg.Sink.Mode.resolve('foo')
         # pylint: disable=no-member
-        assert mode.train.reference == 'foo'
         assert mode.apply.reference == 'foo'
         assert mode.eval.reference == 'foo'
