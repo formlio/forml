@@ -16,23 +16,24 @@
 # under the License.
 
 """
-Main cli frontend.
+Main command.
 """
 # pylint: disable=no-self-argument, no-self-use
 import typing
 
 import forml
-from forml import cli
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
 from forml.runtime import facility
 
+from . import _api
 
-class Parser(cli.Parser, description='Lifecycle Management for Datascience Projects'):
+
+class Forml(_api.Parser, description='Lifecycle Management for Datascience Projects'):
     """ForML command parser."""
 
-    @cli.Command(help='create skeleton for a new project', description='New project setup')
-    @cli.Param('name', help='name of a project to be created')
+    @_api.Command(help='create skeleton for a new project', description='New project setup')
+    @_api.Param('name', help='name of a project to be created')
     def init(cls, name: str) -> None:
         """New project setup.
 
@@ -41,10 +42,10 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         """
         raise forml.MissingError(f'Creating project {name}... not implemented')
 
-    @cli.Command(help='show the content of the selected registry', description='Persistent registry listing')
-    @cli.Param('project', nargs='?', help='project to be listed')
-    @cli.Param('lineage', nargs='?', help='lineage to be listed')
-    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @_api.Command(help='show the content of the selected registry', description='Persistent registry listing')
+    @_api.Param('project', nargs='?', help='project to be listed')
+    @_api.Param('lineage', nargs='?', help='lineage to be listed')
+    @_api.Param('-P', '--registry', type=str, help='persistent registry reference')
     def list(cls, project: typing.Optional[str], lineage: typing.Optional[str], registry: typing.Optional[str]) -> None:
         """Repository listing subcommand.
 
@@ -53,7 +54,7 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             lineage: Lineage version to be listed.
             registry: Optional registry reference.
         """
-        cli.lprint(cls._platform(registry=registry).registry.list(project, lineage))
+        _api.lprint(cls._platform(registry=registry).registry.list(project, lineage))
 
     @classmethod
     def _platform(
@@ -81,15 +82,15 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
             provcfg.Sink.Mode.resolve(sink),
         )
 
-    @cli.Command(help='tune new generation of given (or default) project lineage', description='Tune mode execution')
-    @cli.Param('project', help='project to be tuned')
-    @cli.Param('lineage', nargs='?', help='lineage to be tuned')
-    @cli.Param('generation', nargs='?', help='generation to be tuned')
-    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
-    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
-    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
-    @cli.Param('--lower', help='lower tuneset ordinal')
-    @cli.Param('--upper', help='upper tuneset ordinal')
+    @_api.Command(help='tune new generation of given (or default) project lineage', description='Tune mode execution')
+    @_api.Param('project', help='project to be tuned')
+    @_api.Param('lineage', nargs='?', help='lineage to be tuned')
+    @_api.Param('generation', nargs='?', help='generation to be tuned')
+    @_api.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @_api.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @_api.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
+    @_api.Param('--lower', help='lower tuneset ordinal')
+    @_api.Param('--upper', help='upper tuneset ordinal')
     def tune(
         cls,
         project: typing.Optional[str],
@@ -115,15 +116,15 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         """
         raise forml.MissingError(f'Tuning project {project}... not implemented')
 
-    @cli.Command(help='train new generation of given (or default) project lineage', description='Train mode execution')
-    @cli.Param('project', help='project to be trained')
-    @cli.Param('lineage', nargs='?', help='lineage to be trained')
-    @cli.Param('generation', nargs='?', help='generation to be trained')
-    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
-    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
-    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
-    @cli.Param('--lower', help='lower trainset ordinal')
-    @cli.Param('--upper', help='upper trainset ordinal')
+    @_api.Command(help='train new generation of given (or default) project lineage', description='Train mode execution')
+    @_api.Param('project', help='project to be trained')
+    @_api.Param('lineage', nargs='?', help='lineage to be trained')
+    @_api.Param('generation', nargs='?', help='generation to be trained')
+    @_api.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @_api.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @_api.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
+    @_api.Param('--lower', help='lower trainset ordinal')
+    @_api.Param('--upper', help='upper trainset ordinal')
     def train(
         cls,
         project: typing.Optional[str],
@@ -149,16 +150,16 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         """
         cls._platform(runner, registry, feed).launcher(project, lineage, generation).train(lower, upper)
 
-    @cli.Command(help='apply given (or default) generation', description='Apply mode execution')
-    @cli.Param('project', help='project to be applied')
-    @cli.Param('lineage', nargs='?', help='lineage to be applied')
-    @cli.Param('generation', nargs='?', help='generation to be applied')
-    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
-    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
-    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
-    @cli.Param('-O', '--sink', type=str, help='output sink reference')
-    @cli.Param('--lower', help='lower testset ordinal')
-    @cli.Param('--upper', help='upper testset ordinal')
+    @_api.Command(help='apply given (or default) generation', description='Apply mode execution')
+    @_api.Param('project', help='project to be applied')
+    @_api.Param('lineage', nargs='?', help='lineage to be applied')
+    @_api.Param('generation', nargs='?', help='generation to be applied')
+    @_api.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @_api.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @_api.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
+    @_api.Param('-O', '--sink', type=str, help='output sink reference')
+    @_api.Param('--lower', help='lower testset ordinal')
+    @_api.Param('--upper', help='upper testset ordinal')
     def apply(
         cls,
         project: typing.Optional[str],
@@ -186,16 +187,16 @@ class Parser(cli.Parser, description='Lifecycle Management for Datascience Proje
         """
         cls._platform(runner, registry, feed, sink).launcher(project, lineage, generation).apply(lower, upper)
 
-    @cli.Command(help='evaluate predictions of given (or default) generation', description='Eval mode execution')
-    @cli.Param('project', help='project to be applied')
-    @cli.Param('lineage', nargs='?', help='lineage to be applied')
-    @cli.Param('generation', nargs='?', help='generation to be applied')
-    @cli.Param('-R', '--runner', type=str, help='runtime runner reference')
-    @cli.Param('-P', '--registry', type=str, help='persistent registry reference')
-    @cli.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
-    @cli.Param('-O', '--sink', type=str, help='output sink reference')
-    @cli.Param('--lower', help='lower testset ordinal')
-    @cli.Param('--upper', help='upper testset ordinal')
+    @_api.Command(help='evaluate predictions of given (or default) generation', description='Eval mode execution')
+    @_api.Param('project', help='project to be applied')
+    @_api.Param('lineage', nargs='?', help='lineage to be applied')
+    @_api.Param('generation', nargs='?', help='generation to be applied')
+    @_api.Param('-R', '--runner', type=str, help='runtime runner reference')
+    @_api.Param('-P', '--registry', type=str, help='persistent registry reference')
+    @_api.Param('-I', '--feed', nargs='*', type=str, help='input feed references')
+    @_api.Param('-O', '--sink', type=str, help='output sink reference')
+    @_api.Param('--lower', help='lower testset ordinal')
+    @_api.Param('--upper', help='upper testset ordinal')
     def eval(
         cls,
         project: typing.Optional[str],

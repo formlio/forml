@@ -40,12 +40,12 @@ def test_parse(cfg_file: pathlib.Path):
     """Fixture for the forml.conf module."""
     # pylint: disable=import-outside-toplevel
     with mock.patch(
-        'forml.cli.argparse.ArgumentParser.parse_known_args',
+        'forml.cli._api.argparse.ArgumentParser.parse_known_args',
         return_value=(argparse.Namespace(config=cfg_file.open('r')), []),
     ):
-        from forml import cli
+        from forml.cli import _api
 
-        importlib.reload(cli)
+        importlib.reload(_api)
 
-    del sys.modules[cli.__name__]
+    del sys.modules[_api.__name__]
     assert str(cfg_file) in conf.PARSER.sources

@@ -70,7 +70,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'forml = forml.cli.forml:Parser',
+            'forml = forml.cli:Forml',
         ]
     },
     python_requires='>=3.8',

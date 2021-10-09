@@ -118,7 +118,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
-            *blocks: Additional block to assemble.
+            *blocks: Additional block to assemble (each with its own composition domain).
 
         Returns:
             Assembled flow pipeline.

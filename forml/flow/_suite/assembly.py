@@ -29,7 +29,7 @@ from . import clean
 
 
 class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
-    """Structure for holding related flow parts of different modes."""
+    """Structure for holding three main related paths."""
 
     apply: span.Path
     train: span.Path
@@ -105,7 +105,7 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
     apply: span.Path
     train: span.Path
 
-    class Stateful(span.Visitor, typing.Iterable):
+    class Stateful(span.Visitor, typing.Iterable[uuid.UUID]):
         """Visitor that cumulates gids of stateful nodes."""
 
         def __init__(self):
