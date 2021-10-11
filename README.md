@@ -23,7 +23,7 @@ ForML
 [![GitHub Build](https://github.com/formlio/forml/workflows/CI%20Build/badge.svg)](https://github.com/formlio/forml/actions/)
 [![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/main.svg)](https://codecov.io/github/formlio/forml?branch=main)
 [![Code Style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-![Lines of Code](https://img.shields.io/tokei/lines/github.com/formlio/forml.svg)
+[![Lines of Code](https://img.shields.io/tokei/lines/github.com/formlio/forml.svg)](https://github.com/formlio/forml)
 
 [![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://docs.forml.io/en/latest/)
 [![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
