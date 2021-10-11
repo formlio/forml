@@ -21,8 +21,8 @@ ForML asset directory unit tests.
 # pylint: disable=no-self-use
 import pytest
 
-from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
+from forml.runtime import asset
+from forml.runtime.asset import _directory
 
 
 class TestCache:
@@ -30,20 +30,20 @@ class TestCache:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def cache() -> directory.Cache:
+    def cache() -> _directory.Cache:
         """Cache fixture."""
-        instance = directory.Cache(persistent.Registry.open)
+        instance = _directory.Cache(asset.Registry.open)
         instance.clear()
         return instance
 
     def test_cycle(
         self,
-        cache: directory.Cache,
-        registry: persistent.Registry,
-        project_name: prjmod.Level.Key,
-        populated_lineage: lngmod.Level.Key,
-        valid_generation: genmod.Level.Key,
-        tag: genmod.Tag,
+        cache: _directory.Cache,
+        registry: asset.Registry,
+        project_name: asset.Project.Key,
+        populated_lineage: asset.Lineage.Key,
+        valid_generation: asset.Generation.Key,
+        tag: asset.Tag,
     ):
         """Test the cache lifecycle."""
         assert cache.info.currsize == 0

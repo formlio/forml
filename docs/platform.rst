@@ -16,12 +16,13 @@
 Platform Setup
 ==============
 
-Platform is a configuration-driven selection of particular *providers* implementing four abstract concepts:
+Platform is a configuration-driven selection of particular *providers* implementing a number of abstract concepts:
 
 * :doc:`runner/index`
 * :doc:`registry/index`
 * :doc:`feed`
 * :doc:`sink`
+* :ref:`Serving components <serving-components>`
 
 ForML uses an internal *bank* of available provider implementations of the different possible types. Provider instances
 are registered in this bank using one of two possible *references*:
@@ -112,16 +113,16 @@ For example, the following feed implementation stored under ``~/.forml/tutorial.
 file simply as ``tutorial:Feed``::
 
     from forml.io import feed
-    from forml.lib.reader import sqlite
-    from forml.lib.schema.kaggle import titanic
-
+    from forml.lib.feed.reader.sql import alchemy
+    from openschema.kaggle import titanic
+    import sqlalchemy
 
     class Feed(feed.Provider):
-        class Reader(sqlite.Reader):
+        class Reader(alchemy.Reader):
+
         @property
         def sources(self):
-            return {titanic.Passenger: 'passenger'}
-
+            return {titanic.Passenger: sqlalchemy.table('passenger')}
 
 Logging
 -------
@@ -134,8 +135,8 @@ using a config file specified in the top-level ``logcfg`` option in the main `co
 CLI
 ---
 
-The production :doc:`lifecycle <lifecycle>` management can be fully operated from command-line using the following
-syntax:
+The production :doc:`lifecycle <lifecycle>` management can be fully operated in a batch mode from command-line using
+the following syntax:
 
 .. code-block:: none
 

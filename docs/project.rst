@@ -51,7 +51,9 @@ project component structure wrapped within the python application layout might l
       │          │    ├── <moduleX>.py  # arbitrary user defined module
       │          │    └── <moduleY>.py
       │          ├── source.py
-      │          └── evaluation.py  # here the component is just a module
+      │          ├── evaluation.py  # here the component is just a module
+      │          ├── schedule.py
+      │          └── tuning.py
       ├── tests
       │    ├── __init__.py
       │    ├── test_pipeline.py
@@ -61,9 +63,9 @@ project component structure wrapped within the python application layout might l
 
 
 The individual project components defined in the specific modules described below need to be hooked up into the ForML
-framework using the ``component.setup()`` as shown in the examples below.
+framework using the ``project.setup()`` as shown in the examples below.
 
-.. autofunction:: forml.project.component.setup
+.. autofunction:: forml.project.setup
 
 
 Setup.py
@@ -73,15 +75,17 @@ This is the standard :doc:`Setuptools <setuptools>` module with few extra featur
 customization and integration of the *Research lifecycle* as described in :doc:`lifecycle` sections (ie the ``eval`` or
 ``upload`` commands).
 
-To hook in this extra functionality, the ``setup.py`` just needs to import ``forml.project.setuptools`` instead of the
-original ``setuptools``. The rest is the usual ``setup.py`` content::
+To hook in this extra functionality, the ``setup.py`` just needs to use the ``forml.project.Distribution`` as the
+custom setupttols ``disctlass`` . The rest is the usual ``setup.py`` content::
 
-    from forml.project import setuptools
+    from forml import project
 
     setuptools.setup(name='forml-example-titanic',
                      version='0.1.dev0',
                      packages=setuptools.find_packages(include=['titanic*']),
-                     install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'])
+                     setup_requires=['forml'],
+                     install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
+                     distclass=project.Distribution)
 
 .. note:: The specified ``version`` value will become the *lineage* identifier upon *uploading* (as part of the
           *Research lifecycle*) thus needs to be a valid :pep:`440` version.
@@ -98,8 +102,8 @@ the custom locations of its project components using the ``component`` parameter
 
 .. _project-pipeline:
 
-Pipeline (``pipeline.py``)
-''''''''''''''''''''''''''
+Pipeline Topology (``pipeline.py``)
+'''''''''''''''''''''''''''''''''''
 
 Pipeline definition is the heart of the project component structure. The framework needs to understand the
 pipeline as a *Directed Acyclic Task Dependency Graph*. For this purpose, it comes with a concept of *Operators* that
@@ -110,40 +114,19 @@ The pipeline is specified in terms of the *workflow expression API* which is in 
 :doc:`workflow` sections.
 
 Same as for the other project components, the final pipeline expression defined in the ``pipeline.py`` needs to be
-exposed to the framework via the ``component.setup()`` handler::
+exposed to the framework via the ``project.setup()`` handler::
 
-    from forml.project import component
+    from forml import project
     from titanic.pipeline import preprocessing, model
 
     FLOW = preprocessing.NaNImputer() >> model.LR(random_state=42, solver='lbfgs')
-    component.setup(FLOW)
-
-.. _project-evaluation:
-
-Evaluation (``evaluation.py``)
-''''''''''''''''''''''''''''''
-
-Definition of the model evaluation strategy for both the development and production lifecycle.
-
-.. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
-.roadmap.
-
-The evaluation strategy again needs to be submitted to the framework using the ``component.setup()`` handler::
-
-    from sklearn import model_selection, metrics
-    from forml.project import component
-    from forml.lib.flow.operator.folding import evaluation
-
-    EVAL = evaluation.MergingScorer(
-        crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
-        metric=metrics.log_loss)
-    component.setup(EVAL)
+    project.setup(FLOW)
 
 
 .. _project-source:
 
-Source (``source.py``)
-''''''''''''''''''''''
+Dataset Specification (``source.py``)
+'''''''''''''''''''''''''''''''''''''
 
 This component is a fundamental part of the :doc:`IO concept<io>`. A project can define the ETL process of sourcing
 data into the pipeline using the :doc:`DSL <dsl>` referring to some :ref:`catalogized schemas
@@ -156,11 +139,14 @@ example below or documented in the :ref:`Source Descriptor Reference <io-source-
           composition domain is separate from the main pipeline so adding an operator to the source composition vs
           pipeline composition might have a different effect.
 
-The Source descriptor again needs to be submitted to the framework using the ``component.setup()`` handler::
+Part of the dataset specification can also be a reference to the *ordinal* column (used for determining data ranges for
+splitting or incremental operations) and *label* columns for supervised learning/evaluation.
 
-    from forml.lib.flow.operator import cast
-    from forml.lib.schema.kaggle import titanic as schema
-    from forml.project import component
+The Source descriptor again needs to be submitted to the framework using the ``project.setup()`` handler::
+
+    from forml import project
+    from forml.lib.pipeline import payload
+    from openschema.kaggle import titanic as schema
 
     FEATURES = schema.Passenger.select(
         schema.Passenger.Pclass,
@@ -175,8 +161,45 @@ The Source descriptor again needs to be submitted to the framework using the ``c
         schema.Passenger.Embarked,
     )
 
-    ETL = component.Source.query(FEATURES, schema.Passenger.Survived) >> cast.ndframe(FEATURES.schema)
-    component.setup(ETL)
+    ETL = project.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
+    project.setup(ETL)
+
+
+.. _project-evaluation:
+
+Evaluation Strategy (``evaluation.py``)
+'''''''''''''''''''''''''''''''''''''''
+
+Definition of the model evaluation strategy for both the development (backtesting) and production
+:doc:`lifecycle <lifecycle>`.
+
+.. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
+.roadmap.
+
+The evaluation strategy again needs to be submitted to the framework using the ``project.setup()`` handler::
+
+    from sklearn import model_selection, metrics
+    from forml import project
+    from forml.lib.pipeline.evaluation import metric, method
+
+    EVAL = project.Evaluation(
+            metric.Function(metrics.log_loss),
+            method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    )
+    project.setup(EVAL)
+
+
+.. _project-tuning:
+
+Hyperparameter Tuning Strategy (``tuning.py``)
+''''''''''''''''''''''''''''''''''''''''''''''
+
+
+.. _project-schedule:
+
+Scheduling Rules (``schedule.py``)
+''''''''''''''''''''''''''''''''''
+
 
 
 Tests

@@ -26,20 +26,20 @@ Schema
 ------
 
 Schema is the abstract description of the particular datasource structure in terms of its column attributes (currently
-a *name* and a *kind*). A schema is simply declared by extending the schema base class ``forml.io.dsl.struct.Schema``
-and defining its fields as class attributes with values represented by ``forml.io.dsl.struct.Field``. For example::
+a *name* and a *kind*). A schema is simply declared by extending the schema base class ``forml.io.dsl.Schema``
+and defining its fields as class attributes with values represented by ``forml.io.dsl.Field``. For example::
 
-    class Person(struct.Schema):
+    class Person(dsl.Schema):
         """Base schema."""
 
-        surname = struct.Field(kind.String())
-        dob = struct.Field(kind.Date(), 'birthday')
+        surname = dsl.Field(dsl.String())
+        dob = dsl.Field(dsl.Date(), 'birthday')
 
     class Student(Person):
         """Extended schema."""
 
-        level = struct.Field(kind.Integer())
-        score = struct.Field(kind.Float())
+        level = dsl.Field(dsl.Integer())
+        score = dsl.Field(dsl.Float())
 
 Here we defined schemas of two potential datasources - a generic ``Person`` with a *string* field called ``surname`` and
 a *date* field ``dob`` (aliased as ``birthday``) plus its extended version ``Student`` with two more fields -
@@ -70,16 +70,16 @@ Following is the list of types (aka *kinds*) that can be used in schema field de
 .. autosummary::
    :toctree: _auto
 
-   forml.io.dsl.struct.kind.Boolean
-   forml.io.dsl.struct.kind.Integer
-   forml.io.dsl.struct.kind.Float
-   forml.io.dsl.struct.kind.Decimal
-   forml.io.dsl.struct.kind.String
-   forml.io.dsl.struct.kind.Date
-   forml.io.dsl.struct.kind.Timestamp
-   forml.io.dsl.struct.kind.Array
-   forml.io.dsl.struct.kind.Map
-   forml.io.dsl.struct.kind.Struct
+   forml.io.dsl.Boolean
+   forml.io.dsl.Integer
+   forml.io.dsl.Float
+   forml.io.dsl.Decimal
+   forml.io.dsl.String
+   forml.io.dsl.Date
+   forml.io.dsl.Timestamp
+   forml.io.dsl.Array
+   forml.io.dsl.Map
+   forml.io.dsl.Struct
 
 
 Query
@@ -101,14 +101,14 @@ Example query might look like::
 
 Following is the list of the query API methods:
 
-.. autoattribute:: forml.io.dsl.struct.frame.Query.columns
-.. automethod:: forml.io.dsl.struct.frame.Query.select
-.. automethod:: forml.io.dsl.struct.frame.Query.join
-.. automethod:: forml.io.dsl.struct.frame.Query.groupby
-.. automethod:: forml.io.dsl.struct.frame.Query.having
-.. automethod:: forml.io.dsl.struct.frame.Query.where
-.. automethod:: forml.io.dsl.struct.frame.Query.limit
-.. automethod:: forml.io.dsl.struct.frame.Query.orderby
+.. autoattribute:: forml.io.dsl.Query.columns
+.. automethod:: forml.io.dsl.Query.select
+.. automethod:: forml.io.dsl.Query.join
+.. automethod:: forml.io.dsl.Query.groupby
+.. automethod:: forml.io.dsl.Query.having
+.. automethod:: forml.io.dsl.Query.where
+.. automethod:: forml.io.dsl.Query.limit
+.. automethod:: forml.io.dsl.Query.orderby
 
 
 Expressions
@@ -129,7 +129,7 @@ The native operators available directly on the field instances are:
 +--------------+-----------------------------------------------------------+
 | Arithmetical | ``+``, ``-``, ``*``, ``/``, ``%``                         |
 +--------------+-----------------------------------------------------------+
-| Alias        | .. automethod:: forml.io.dsl.struct.series.Operable.alias |
+| Alias        | .. automethod:: forml.io.dsl.Operable.alias |
 +--------------+-----------------------------------------------------------+
 
 

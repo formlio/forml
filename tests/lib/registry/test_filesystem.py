@@ -25,8 +25,9 @@ import typing
 
 import pytest
 
-from forml.runtime.asset import persistent
 from forml.lib.registry import filesystem
+from forml.runtime import asset
+
 from . import Registry
 
 
@@ -35,5 +36,5 @@ class TestRegistry(Registry):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def constructor(tmp_path: pathlib.Path) -> typing.Callable[[], persistent.Registry]:
+    def constructor(tmp_path: pathlib.Path) -> typing.Callable[[], asset.Registry]:
         return lambda: filesystem.Registry(tempfile.mkdtemp(dir=tmp_path))

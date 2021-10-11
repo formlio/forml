@@ -25,16 +25,15 @@ import uuid
 
 import pytest
 
-from forml.runtime.asset import access
-from forml.runtime.asset.directory import generation as genmod
+from forml.runtime import asset
 
 
-class TestAssets:
-    """Assets unit tests."""
+class TestInstance:
+    """Instance unit tests."""
 
-    def test_tag(self, valid_assets: access.Assets, tag: genmod.Tag):
+    def test_tag(self, valid_instance: asset.Instance, tag: asset.Tag):
         """Test default empty lineage generation retrieval."""
-        assert valid_assets.tag is tag
+        assert valid_instance.tag is tag
 
 
 class TestState:
@@ -42,13 +41,13 @@ class TestState:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def assets(valid_assets: access.Assets, nodes: typing.Sequence[uuid.UUID]) -> access.State:
+    def state(valid_instance: asset.Instance, nodes: typing.Sequence[uuid.UUID]) -> asset.State:
         """State fixture."""
-        return valid_assets.state(nodes)
+        return valid_instance.state(nodes)
 
     def test_load(
-        self, assets: access.State, nodes: typing.Sequence[uuid.UUID], states: typing.Mapping[uuid.UUID, bytes]
+        self, state: asset.State, nodes: typing.Sequence[uuid.UUID], states: typing.Mapping[uuid.UUID, bytes]
     ):
         """Test state loading."""
         for node, value in zip(nodes, states.values()):
-            assert assets.load(node) == value
+            assert state.load(node) == value

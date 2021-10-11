@@ -24,45 +24,44 @@ import uuid
 
 import pytest
 
-from forml.project import distribution
-from forml.runtime.asset import persistent, directory as dirmod, access
-from forml.runtime.asset.directory import root as rootmod, project as prjmod, lineage as lngmod, generation as genmod
+from forml import project as prj
+from forml.runtime import asset
 
 
 @pytest.fixture(scope='session')
-def populated_lineage(project_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
+def populated_lineage(project_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
     """Lineage fixture."""
     return project_lineage
 
 
 @pytest.fixture(scope='session')
-def empty_lineage() -> lngmod.Level.Key:
+def empty_lineage() -> asset.Lineage.Key:
     """Lineage fixture."""
-    return lngmod.Level.Key('2')
+    return asset.Lineage.Key('2')
 
 
 @pytest.fixture(scope='session')
-def last_lineage(empty_lineage: lngmod.Level.Key) -> lngmod.Level.Key:
+def last_lineage(empty_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
     """Lineage fixture."""
     return empty_lineage
 
 
 @pytest.fixture(scope='session')
-def last_generation(valid_generation: genmod.Level.Key) -> genmod.Level.Key:
+def last_generation(valid_generation: asset.Generation.Key) -> asset.Generation.Key:
     """Generation fixture."""
     return valid_generation
 
 
 @pytest.fixture(scope='function')
 def registry(
-    project_name: prjmod.Level.Key,
-    populated_lineage: lngmod.Level.Key,
-    empty_lineage: lngmod.Level.Key,
-    valid_generation: genmod.Level.Key,
-    tag: genmod.Tag,
+    project_name: asset.Project.Key,
+    populated_lineage: asset.Lineage.Key,
+    empty_lineage: asset.Lineage.Key,
+    valid_generation: asset.Generation.Key,
+    tag: asset.Tag,
     states: typing.Mapping[uuid.UUID, bytes],
-    project_package: distribution.Package,
-) -> persistent.Registry:
+    project_package: prj.Package,
+) -> asset.Registry:
     """Registry fixture."""
     content = {
         project_name: {
@@ -71,50 +70,58 @@ def registry(
         }
     }
 
-    class Registry(persistent.Registry):
+    class Registry(asset.Registry):
         """Fixture registry implementation"""
 
         def projects(self) -> typing.Iterable[str]:
             return content.keys()
 
-        def lineages(self, project: prjmod.Level.Key) -> typing.Iterable[lngmod.Level.Key]:
+        def lineages(self, project: asset.Project.Key) -> typing.Iterable[asset.Lineage.Key]:
             return content[project].keys()
 
         def generations(
-            self, project: prjmod.Level.Key, lineage: lngmod.Level.Key
-        ) -> typing.Iterable[genmod.Level.Key]:
+            self, project: asset.Project.Key, lineage: asset.Lineage.Key
+        ) -> typing.Iterable[asset.Generation.Key]:
             try:
                 return content[project][lineage][1].keys()
             except KeyError as err:
-                raise dirmod.Level.Invalid(f'Invalid lineage ({lineage})') from err
+                raise asset.Level.Invalid(f'Invalid lineage ({lineage})') from err
 
-        def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> distribution.Package:
+        def pull(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> prj.Package:
             return content[project][lineage][0]
 
-        def push(self, package: distribution.Package) -> None:
+        def push(self, package: prj.Package) -> None:
             raise NotImplementedError()
 
         def read(
-            self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key, sid: uuid.UUID
+            self,
+            project: asset.Project.Key,
+            lineage: asset.Lineage.Key,
+            generation: asset.Generation.Key,
+            sid: uuid.UUID,
         ) -> bytes:
             if sid not in content[project][lineage][1][generation][0].states:
-                raise dirmod.Level.Invalid(f'Invalid state id ({sid})')
+                raise asset.Level.Invalid(f'Invalid state id ({sid})')
             idx = content[project][lineage][1][generation][0].states.index(sid)
             return content[project][lineage][1][generation][1][idx]
 
-        def write(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, sid: uuid.UUID, state: bytes) -> None:
+        def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
             raise NotImplementedError()
 
         def open(
-            self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key
-        ) -> genmod.Tag:
+            self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+        ) -> asset.Tag:
             try:
                 return content[project][lineage][1][generation][0]
             except KeyError as err:
-                raise dirmod.Level.Invalid(f'Invalid generation ({lineage}.{generation})') from err
+                raise asset.Level.Invalid(f'Invalid generation ({lineage}.{generation})') from err
 
         def close(
-            self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key, tag: genmod.Tag
+            self,
+            project: asset.Project.Key,
+            lineage: asset.Lineage.Key,
+            generation: asset.Generation.Key,
+            tag: asset.Tag,
         ) -> None:
             raise NotImplementedError()
 
@@ -122,17 +129,17 @@ def registry(
 
 
 @pytest.fixture(scope='function')
-def directory(registry: persistent.Registry) -> rootmod.Level:
+def directory(registry: asset.Registry) -> asset.Directory:
     """Directory root fixture."""
-    return rootmod.Level(registry)
+    return asset.Directory(registry)
 
 
 @pytest.fixture(scope='function')
-def valid_assets(
-    project_name: prjmod.Level.Key,
-    populated_lineage: lngmod.Level.Key,
-    valid_generation: genmod.Level.Key,
-    directory: rootmod.Level,
-) -> access.Assets:
+def valid_instance(
+    project_name: asset.Project.Key,
+    populated_lineage: asset.Lineage.Key,
+    valid_generation: asset.Generation.Key,
+    directory: asset.Directory,
+) -> asset.Instance:
     """Lineage fixture."""
-    return access.Assets(project_name, populated_lineage, valid_generation, directory)
+    return asset.Instance(project_name, populated_lineage, valid_generation, directory)

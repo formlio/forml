@@ -16,5 +16,6 @@ htmlcov/
 .idea
 .ipynb_checkpoints/
 .pytest_cache/
+.venv/
 coverage.xml
 junit.xml

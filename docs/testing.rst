@@ -66,26 +66,19 @@ STATETRAIN_RAISES
 
         mytest4 = testing.Case(arg1='bar').train('baz').raises(ValueError, 'wrong baz')
 
-STATETRAIN_RETURNS
-    compares the output value of the successfully completed *train* mode with the expected value.
-
-    Synopsis::
-
-        mytest5 = testing.Case(arg1='bar').train('foo').returns('baz')
-
 STATEAPPLY_RAISES
     asserts an exception to be raised from the *apply* mode when executed after previous successful *train* mode.
 
     Synopsis::
 
-        mytest6 = testing.Case(arg1='bar').train('foo').apply('baz').raises(ValueError, 'wrong baz')
+        mytest5 = testing.Case(arg1='bar').train('foo').apply('baz').raises(ValueError, 'wrong baz')
 
 STATEAPPLY_RETURNS
     is a scenario, where the *apply* mode executed after previous successful *train* mode returns the expected value.
 
     Synopsis::
 
-        mytest7 = testing.Case(arg1='bar').train('foo').apply('bar').returns('baz')
+        mytest6 = testing.Case(arg1='bar').train('foo').apply('bar').returns('baz')
 
 
 Operator Test Suite

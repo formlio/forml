@@ -29,12 +29,12 @@ Reader
 
 .. autosummary::
 
-   forml.lib.reader.presto
-   forml.lib.reader.sqlite
+   forml.lib.feed.reader.sql.alchemy
+   forml.lib.feed.reader.sql.dbapi
 
 
 API
 ---
 
-.. autoclass:: forml.io.feed.Provider
+.. autoclass:: forml.io.Feed
     :members:

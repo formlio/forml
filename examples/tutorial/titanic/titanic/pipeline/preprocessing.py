@@ -33,20 +33,21 @@ import category_encoders
 import numpy as np
 import pandas as pd
 
-from forml.flow import task
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
+from forml import flow
+from forml.lib.pipeline import topology
 
 
-@simple.Mapper.operator
-class NaNImputer(task.Actor):
+@topology.Mapper.operator
+class NaNImputer(flow.Actor):
     """Imputer for missing values implemented as native ForML actor."""
 
     def __init__(self):
         self._fill: typing.Optional[pd.Series] = None
 
     def train(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the actor by learning the median for each numeric column and finding the most common value for strings."""
+        """Train the actor by learning the median for each numeric column and finding the most common value for
+        strings.
+        """
         self._fill = pd.Series(
             [X[c].value_counts().index[0] if X[c].dtype == np.dtype('O') else X[c].median() for c in X], index=X.columns
         )
@@ -56,8 +57,8 @@ class NaNImputer(task.Actor):
         return X.fillna(self._fill)
 
 
-@simple.Mapper.operator
-@wrapped.Function.actor
+@topology.Mapper.operator
+@topology.Function.actor
 def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
     """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
 
@@ -72,4 +73,6 @@ def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
 
 
 # 3rd party transformer wrapped as an actor into a mapper operator:
-ENCODER = simple.Mapper.operator(wrapped.Class.actor(category_encoders.HashingEncoder, train='fit', apply='transform'))
+ENCODER = topology.Mapper.operator(
+    topology.Class.actor(category_encoders.HashingEncoder, train='fit', apply='transform')
+)

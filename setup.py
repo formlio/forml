@@ -22,13 +22,15 @@ Setuptools script for ForML package.
 
 import setuptools
 
-
 EXTRAS_DASK = {'cloudpickle', 'dask'}
 
 EXTRAS_DEV = {
     'black',
     'flake8-colors',
+    'isort',
+    'pip-tools',
     'pre-commit',
+    'pycln',
     'pytest-cov',
     'pytest-flake8',
     'pytest-pylint',
@@ -41,14 +43,14 @@ EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
-EXTRAS_PRESTO = {'pyhive'}
+EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
-EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_PRESTO
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
 
 setuptools.setup(
     name='forml',
     description='Lifecycle management framework for Data science projects',
-    long_description=open('README.md', 'r').read(),
+    long_description=open('README.md', encoding='utf8').read(),  # pylint: disable=consider-using-with
     long_description_content_type='text/markdown',
     url='https://github.com/formlio/forml',
     maintainer='ForML Development Team',
@@ -65,14 +67,14 @@ setuptools.setup(
         'doc': EXTRAS_DOC,
         'flow': EXTRAS_FLOW,
         'graphviz': EXTRAS_GRAPHVIZ,
-        'presto': EXTRAS_PRESTO,
+        'sql': EXTRAS_SQL,
     },
     entry_points={
         'console_scripts': [
-            'forml = forml.cli.forml:Parser',
+            'forml = forml.cli:Forml',
         ]
     },
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',

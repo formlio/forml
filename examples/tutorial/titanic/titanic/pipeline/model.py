@@ -26,18 +26,29 @@ Here we just create couple of forml operators that implement particular classifi
 from sklearn import ensemble as estimator
 from sklearn import linear_model
 
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
+from forml.lib.pipeline import topology
+
+
+def predict_proba(classifier, *args, **kwargs):
+    """Apply decorator that calls predict_proba on the actor, transposes the output and returns the last columns
+    (one-class probability).
+    """
+    return classifier.predict_proba(*args, **kwargs).transpose()[-1]
+
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-RFC = simple.Consumer.operator(
-    wrapped.Class.actor(estimator.RandomForestClassifier, train='fit', apply='predict_proba')
+RFC = topology.Consumer.operator(
+    topology.Class.actor(estimator.RandomForestClassifier, train='fit', apply=predict_proba)
 )
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-GBC = simple.Consumer.operator(
-    wrapped.Class.actor(estimator.GradientBoostingClassifier, train='fit', apply='predict_proba')
+GBC = topology.Consumer.operator(
+    topology.Class.actor(
+        estimator.GradientBoostingClassifier,
+        train='fit',
+        apply=predict_proba,
+    )
 )
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-LR = simple.Consumer.operator(wrapped.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba'))
+LR = topology.Consumer.operator(topology.Class.actor(linear_model.LogisticRegression, train='fit', apply=predict_proba))

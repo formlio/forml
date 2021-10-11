@@ -17,16 +17,16 @@
 
 import typing
 
+import demos
 import numpy as np
 import pandas as pd
 
-import demos
-from forml.flow import task
-from forml.lib.flow.operator.generic import simple
+from forml import flow
+from forml.lib.pipeline import topology
 
 
-@simple.Mapper.operator
-class NaNImputer(task.Actor):
+@topology.Mapper.operator
+class NaNImputer(flow.Actor):
     """Custom NaN imputation logic."""
 
     def train(self, features: pd.DataFrame, label: pd.DataFrame):
@@ -42,18 +42,19 @@ class NaNImputer(task.Actor):
 
     def apply(self, df: pd.DataFrame) -> pd.DataFrame:
         """Filling the NaNs."""
-        return df.fillna(self.fill)
+        return df.fillna(self._fill)
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         """Mandatory get params."""
         return {}
 
-    def set_params(self, params: typing.Dict[str, typing.Any]) -> None:
+    def set_params(self, params: dict[str, typing.Any]) -> None:
         """Mandatory set params."""
-        pass
 
 
-PIPELINE = NaNImputer() >> demos.LR(max_iter=3, solver='lbfgs')
+PIPELINE = NaNImputer() >> demos.LR(
+    max_iter=3, solver='lbfgs'
+)  # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
 
 PROJECT = demos.SOURCE.bind(PIPELINE)
 

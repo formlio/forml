@@ -22,40 +22,38 @@ ForML compiler unit tests.
 
 import pytest
 
-from forml.flow import task
-from forml.flow.graph import node, view
-from forml.runtime.asset import access
-from forml.runtime.code import compiler
+from forml import flow
+from forml.runtime import asset, code
 
 
 @pytest.fixture(scope='session')
-def node1(spec: task.Spec) -> node.Worker:
+def node1(spec: flow.Spec) -> flow.Worker:
     """Node fixture."""
-    return node.Worker(spec, 1, 1)
+    return flow.Worker(spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node2(spec: task.Spec) -> node.Worker:
+def node2(spec: flow.Spec) -> flow.Worker:
     """Node fixture."""
-    return node.Worker(spec, 1, 1)
+    return flow.Worker(spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node3(spec: task.Spec) -> node.Worker:
+def node3(spec: flow.Spec) -> flow.Worker:
     """Node fixture."""
-    return node.Worker(spec, 1, 1)
+    return flow.Worker(spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def path(node1: node.Worker, node2: node.Worker, node3: node.Worker):
+def path(node1: flow.Worker, node2: flow.Worker, node3: flow.Worker):
     """Path fixture."""
     node2[0].subscribe(node1[0])
     node3[0].subscribe(node2[0])
-    return view.Path(node1)
+    return flow.Path(node1)
 
 
 def test_generate(
-    path: view.Path, valid_assets: access.Assets, node1: node.Worker, node2: node.Worker, node3: node.Worker
+    path: flow.Path, valid_instance: asset.Instance, node1: flow.Worker, node2: flow.Worker, node3: flow.Worker
 ):
     """Compiler generate test."""
-    compiler.generate(path, valid_assets.state((node1.gid, node2.gid, node3.gid)))
+    code.generate(path, valid_instance.state((node1.gid, node2.gid, node3.gid)))

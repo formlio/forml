@@ -15,45 +15,50 @@
 # specific language governing permissions and limitations
 # under the License.
 
+"""
+Forml demos.
+"""
+
 import typing
 
 import pandas as pd
-from forml.lib.flow.operator import cast
+from sklearn import ensemble, feature_extraction, impute, linear_model, naive_bayes, preprocessing
 
-from forml.io.dsl import struct
-from forml.io.dsl.struct import kind
+from forml import flow
+from forml.io import dsl
 from forml.lib.feed import static
+from forml.lib.pipeline import payload, topology
+from forml.project import _component
 
-from forml.project import component
-from sklearn import ensemble, linear_model, impute, preprocessing, feature_extraction, naive_bayes
+SimpleImputer = topology.Mapper.operator(topology.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
 
-from forml.flow import task
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
-
-SimpleImputer = simple.Mapper.operator(wrapped.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
-
-OneHotEncoder = simple.Mapper.operator(wrapped.Class.actor(preprocessing.OneHotEncoder, train='fit', apply='transform'))
-
-Binarizer = simple.Mapper.operator(wrapped.Class.actor(preprocessing.Binarizer, train='fit', apply='transform'))
-
-FeatureHasher = simple.Mapper.operator(
-    wrapped.Class.actor(feature_extraction.FeatureHasher, train='fit', apply='transform')
+OneHotEncoder = topology.Mapper.operator(
+    topology.Class.actor(preprocessing.OneHotEncoder, train='fit', apply='transform')
 )
 
-RFC = simple.Consumer.operator(wrapped.Class.actor(ensemble.RandomForestClassifier, train='fit', apply='predict_proba'))
+Binarizer = topology.Mapper.operator(topology.Class.actor(preprocessing.Binarizer, train='fit', apply='transform'))
 
-GBC = simple.Consumer.operator(
-    wrapped.Class.actor(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba')
+FeatureHasher = topology.Mapper.operator(
+    topology.Class.actor(feature_extraction.FeatureHasher, train='fit', apply='transform')
 )
 
-LR = simple.Consumer.operator(wrapped.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba'))
+RFC = topology.Consumer.operator(
+    topology.Class.actor(ensemble.RandomForestClassifier, train='fit', apply='predict_proba')
+)
 
-Bayes = simple.Consumer.operator(wrapped.Class.actor(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
+GBC = topology.Consumer.operator(
+    topology.Class.actor(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba')
+)
+
+LR = topology.Consumer.operator(
+    topology.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba')
+)
+
+Bayes = topology.Consumer.operator(topology.Class.actor(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
 
 
-@simple.Labeler.operator
-class Extractor(task.Actor):
+@topology.Labeler.operator
+class Extractor(flow.Actor):
     """Here we just create a custom actor that simply expects the label to be a specific column in the input dataset and
     returns two objects - a dataframe without the label column and a series with just the labels.
     """
@@ -61,28 +66,28 @@ class Extractor(task.Actor):
     def __init__(self, column: str = 'label'):
         self._column: str = column
 
-    def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
+    def apply(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
         return df.drop(columns=self._column), df[self._column]
 
-    def get_params(self) -> typing.Dict[str, typing.Any]:
+    def get_params(self) -> dict[str, typing.Any]:
         return {'column': self._column}
 
     def set_params(self, column: str) -> None:
         self._column = column
 
 
-@simple.Mapper.operator
-@wrapped.Function.actor
+@topology.Mapper.operator
+@topology.Function.actor
 def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     """Simple stateless transformer create from a plain function."""
     return df.dropna()
 
 
-class Demo(struct.Schema):
+class Demo(dsl.Schema):
     """Demo schema representation."""
 
-    Label = struct.Field(kind.Integer())
-    Age = struct.Field(kind.Integer())
+    Label = dsl.Field(dsl.Integer())
+    Age = dsl.Field(dsl.Integer())
 
 
 DATA = [[1, 1, 1, 0, 0, 0], [10, 11, 12, 13, 14, 15]]
@@ -96,4 +101,4 @@ class Feed(static.Feed):
 
 
 FEED = Feed()
-SOURCE = component.Source.query(Demo.select(Demo.Age), Demo.Label) >> cast.ndframe(columns=['Age'])
+SOURCE = _component.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.to_pandas(columns=['Age'])

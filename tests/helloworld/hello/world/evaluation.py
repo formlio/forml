@@ -18,16 +18,13 @@
 """
 Dummy project evaluation.
 """
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
-from forml.project import component
+from sklearn import metrics, model_selection
 
+from forml import project
+from forml.lib.pipeline.evaluation import method, metric
 
-@simple.Mapper.operator
-@wrapped.Function.actor
-def evaluate():
-    """Dummy evaluator."""
-
-
-INSTANCE = evaluate()
-component.setup(INSTANCE)
+INSTANCE = project.Evaluation(
+    metric.Function(metrics.log_loss),
+    method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+)
+project.setup(INSTANCE)

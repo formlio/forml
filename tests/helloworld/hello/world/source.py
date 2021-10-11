@@ -18,16 +18,15 @@
 """
 Dummy project source.
 """
-from forml.io.dsl import struct
-from forml.io.dsl.struct import kind
-from forml.project import component
+from forml import project
+from forml.io import dsl
 
 
-class HelloWorld(struct.Schema):
+class HelloWorld(dsl.Schema):
     """Base table."""
 
-    name = struct.Field(kind.String())
+    name = dsl.Field(dsl.String())
 
 
-INSTANCE = component.Source.query(HelloWorld.select(HelloWorld.name))
-component.setup(INSTANCE)
+INSTANCE = project.Source.query(HelloWorld.select(HelloWorld.name))
+project.setup(INSTANCE)
