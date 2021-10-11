@@ -74,7 +74,7 @@ setuptools.setup(
             'forml = forml.cli:Forml',
         ]
     },
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',
