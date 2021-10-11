@@ -18,7 +18,7 @@
 version: 2
 formats: []
 python:
-    version: 3.9
+    version: testing
     install:
         - method: pip
           path: .
