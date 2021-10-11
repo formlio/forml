@@ -42,7 +42,6 @@ provider = "filesystem"
 
 [SINK]
 default = "stdout"
-train = "stdout"
 apply = "stdout"
 eval = "stdout"
 

@@ -19,25 +19,54 @@
 ETL expression language.
 """
 
-from forml.io.dsl.struct.series import (  # noqa: F401
+from .._struct.series import (  # noqa: F401
     Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-    Modulus,
-    LessThan,
-    LessEqual,
-    GreaterThan,
-    GreaterEqual,
-    Equal,
-    NotEqual,
-    IsNull,
-    NotNull,
     And,
-    Or,
+    Division,
+    Equal,
+    GreaterEqual,
+    GreaterThan,
+    IsNull,
+    LessEqual,
+    LessThan,
+    Modulus,
+    Multiplication,
     Not,
+    NotEqual,
+    NotNull,
+    Or,
+    Subtraction,
 )
-from forml.io.dsl.function.aggregate import Avg, Count, Min, Max, Sum  # noqa: F401
-from forml.io.dsl.function.conversion import Cast  # noqa: F401
-from forml.io.dsl.function.datetime import Year  # noqa: F401
-from forml.io.dsl.function.math import Abs, Ceil, Floor  # noqa: F401
+from ._aggregate import Avg, Count, Max, Min, Sum  # noqa: F401
+from ._conversion import Cast  # noqa: F401
+from ._datetime import Year  # noqa: F401
+from ._math import Abs, Ceil, Floor  # noqa: F401
+
+__all__ = [
+    'Addition',
+    'Subtraction',
+    'Multiplication',
+    'Division',
+    'Modulus',
+    'LessThan',
+    'LessEqual',
+    'GreaterThan',
+    'GreaterEqual',
+    'Equal',
+    'NotEqual',
+    'IsNull',
+    'NotNull',
+    'And',
+    'Or',
+    'Not',
+    'Avg',
+    'Count',
+    'Min',
+    'Max',
+    'Sum',
+    'Cast',
+    'Year',
+    'Abs',
+    'Ceil',
+    'Floor',
+]

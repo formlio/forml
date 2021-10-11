@@ -16,9 +16,11 @@
 # under the License.
 ---
 version: 2
+build:
+  image: testing
 formats: []
 python:
-    version: 3.8
+    version: 3.9
     install:
         - method: pip
           path: .

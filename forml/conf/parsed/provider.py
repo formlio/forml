@@ -20,7 +20,8 @@ ForML provider configs.
 """
 import typing
 
-from forml import conf, error
+import forml
+from forml import conf
 from forml.conf import parsed as parsmod
 
 
@@ -40,13 +41,13 @@ class Meta(parsmod.Meta):
 class Section(parsmod.Section, metaclass=Meta):
     """Special sections of forml providers config options."""
 
-    FIELDS: typing.Tuple[str] = ('reference', 'params')
+    FIELDS: tuple[str] = ('reference', 'params')
     SELECTOR = conf.OPT_DEFAULT
 
     @classmethod
     def _extract(
         cls, reference: str, kwargs: typing.Mapping[str, typing.Any]
-    ) -> typing.Tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+    ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
         kwargs = dict(kwargs)
         provider = kwargs.pop(conf.OPT_PROVIDER, reference)
         _, kwargs = super()._extract(reference, kwargs)
@@ -81,12 +82,12 @@ class Feed(parsmod.Multi, Section):
 
     INDEX: str = conf.SECTION_FEED
     GROUP: str = conf.SECTION_FEED
-    FIELDS: typing.Tuple[str] = ('reference', 'priority', 'params')
+    FIELDS: tuple[str] = ('reference', 'priority', 'params')
 
     @classmethod
     def _extract(
         cls, reference: str, kwargs: typing.Mapping[str, typing.Any]
-    ) -> typing.Tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+    ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
         kwargs = dict(kwargs)
         priority = kwargs.pop(conf.OPT_PRIORITY, 0)
         [reference], kwargs = super()._extract(reference, kwargs)
@@ -109,12 +110,11 @@ class Sink(Section):
 
         [SINK]
         default = <default-sink-reference>
-        train = <train-sink-reference>
         apply = <apply-sink-reference>
         eval = <eval-sink-reference>
         """
 
-        FIELDS: typing.Tuple[str] = ('train', 'apply', 'eval')
+        FIELDS: tuple[str] = ('apply', 'eval')
         INDEX: str = conf.SECTION_SINK
         GROUP: str = conf.SECTION_SINK
 
@@ -128,16 +128,15 @@ class Sink(Section):
             Returns:
                 Sink.Mode tuple with selected Sink config instances for the particular modes.
             """
-            if not reference:
+            if reference:
+                apply = evaluate = reference
+            else:
                 try:
                     default = conf.PARSER[cls.INDEX].get(conf.OPT_DEFAULT)
-                    train = conf.PARSER[cls.INDEX].get(conf.OPT_TRAIN, default)
                     apply = conf.PARSER[cls.INDEX].get(conf.OPT_APPLY, default)
                     evaluate = conf.PARSER[cls.INDEX].get(conf.OPT_EVAL, default)
                 except KeyError as err:
-                    raise error.Missing(f'Index section not found: [{cls.INDEX}]') from err
-                if not train or not apply or not evaluate:
-                    raise error.Missing(f'Missing default or explicit train/apply/eval sink references: [{cls.INDEX}]')
-            else:
-                train = apply = evaluate = reference
-            return cls([Sink.resolve(train), Sink.resolve(apply), Sink.resolve(evaluate)])
+                    raise forml.MissingError(f'Index section not found: [{cls.INDEX}]') from err
+                if not apply or not evaluate:
+                    raise forml.MissingError(f'Missing default or explicit apply/eval sink references: [{cls.INDEX}]')
+            return cls([Sink.resolve(apply), Sink.resolve(evaluate)])

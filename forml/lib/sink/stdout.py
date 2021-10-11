@@ -20,16 +20,17 @@ Stdout writer sink implementation.
 """
 import typing
 
-from forml.io import payload, sink
+from forml import io
+from forml.io import layout
 
 
-class Sink(sink.Provider, alias='stdout'):
+class Sink(io.Sink, alias='stdout'):
     """Stdout sink."""
 
-    class Writer(sink.Provider.Writer):
+    class Writer(io.Sink.Writer):
         """Sink writer implementation."""
 
         @classmethod
-        def write(cls, data: typing.Optional[payload.Native], **kwargs: typing.Any) -> None:
+        def write(cls, data: typing.Optional[layout.Native], **kwargs: typing.Any) -> None:
             if data is not None:
                 print(data)

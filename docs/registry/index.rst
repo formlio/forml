@@ -33,3 +33,12 @@ API
 
 .. autoclass:: forml.runtime.asset.persistent.Registry
     :members:
+
+
+Providers
+---------
+
+.. toctree::
+    :maxdepth: 2
+
+    filesystem

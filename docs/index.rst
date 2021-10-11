@@ -89,10 +89,11 @@ Content
 
 .. toctree::
     :maxdepth: 2
-    :caption: Runtime Manual
+    :caption: Operations Manual
 
     platform
     feed
     registry/index
     runner/index
     sink
+    serving

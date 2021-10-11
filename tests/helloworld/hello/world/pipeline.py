@@ -18,16 +18,15 @@
 """
 Dummy project pipeline.
 """
-from forml.lib.flow.actor import wrapped
-from forml.lib.flow.operator.generic import simple
-from forml.project import component
+from forml import project
+from forml.lib.pipeline import topology
 
 
-@simple.Mapper.operator
-@wrapped.Function.actor
+@topology.Mapper.operator
+@topology.Function.actor
 def noop():
     """Dummy transformer."""
 
 
 INSTANCE = noop()
-component.setup(INSTANCE)
+project.setup(INSTANCE)

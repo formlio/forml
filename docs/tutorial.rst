@@ -50,23 +50,23 @@ dataset within:
 
 Create a python file under ``~/.forml/tutorial.py`` with the following content::
 
-    from forml.io import feed
-    from forml.lib.reader import sqlite
+    from forml import io
+    from forml.lib.feed.reader.sql import alchemy
     from openschema.kaggle import titanic
+    import sqlalchemy
 
-
-    class Feed(feed.Provider):
+    class Feed(io.Feed):
         """Tutorial feed."""
 
-        class Reader(sqlite.Reader):
-            """Using a SQLite reader."""
+        class Reader(alchemy.Reader):
+            """Using the SQL Alchemy reader."""
 
         @property
         def sources(self):
             """This feed can serve just one and only dataset - the titanic passenger table mapped to
                the titanic.Passenger schema."""
 
-            return {titanic.Passenger: 'passenger'}
+            return {titanic.Passenger: sqlalchemy.table('passenger')}
 
 
 Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add the following content to your
@@ -95,7 +95,7 @@ Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add
 
     [FEED.tutorial]
     provider = "tutorial:Feed"
-    database = "/tmp/tutorial.db"
+    connection = "sqlite:////tmp/tutorial.db"
 
     [SINK]
     default = "print"

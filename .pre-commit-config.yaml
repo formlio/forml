@@ -20,7 +20,7 @@ default_language_version:
   python: python3
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v3.3.0
+  rev: v4.0.1
   hooks:
   - id: check-added-large-files
   - id: check-ast
@@ -34,13 +34,32 @@ repos:
   - id: mixed-line-ending
   - id: trailing-whitespace
 - repo: https://github.com/psf/black
-  rev: 20.8b1
+  rev: 21.9b0
   hooks:
   - id: black
     name: Black
     args: [--config=./pyproject.toml]
+- repo: https://github.com/asottile/pyupgrade
+  rev: v2.29.0
+  hooks:
+    - id: pyupgrade
+      name: Python syntax upgrade
+      args: [--py39-plus]
+- repo: https://github.com/hadialqattan/pycln
+  rev: v1.0.3
+  hooks:
+  - id: pycln
+    name: Remove unused import statements
+    args: [--config=pyproject.toml]
+- repo: https://github.com/pycqa/isort
+  rev: 5.9.3
+  hooks:
+  - id: isort
+    name: Sort import statements
+    files: "\\.(py)$"
+    args: [--settings-path=pyproject.toml]
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.1.9
+  rev: v1.1.10
   hooks:
   - id: forbid-tabs
   - id: insert-license
@@ -99,16 +118,15 @@ repos:
   hooks:
   - id: pylint
     name: Pylint
-    entry: pylint
-    args:
-    - --ignore-imports=yes
-    - -E
-    exclude: examples
-    language: python
-    types: [python]
+    exclude: ^examples/.*$
+    entry: "env PYTHONPATH=. pylint"
+    language: system
+    files: \.py$
+    pass_filenames: true
+    require_serial: true
   - id: flake8
     name: Flake8
     entry: flake8
-    language: python
-    types: [python]
-    require_serial: true
+    language: system
+    files: \.py$
+    pass_filenames: true

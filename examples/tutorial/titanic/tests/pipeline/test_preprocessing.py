@@ -21,9 +21,9 @@ Preprocessing unit tests.
 We are thoroughly testing our preprocessing transformers.
 """
 import pandas
+from titanic.pipeline import preprocessing
 
 from forml import testing
-from titanic.pipeline import preprocessing
 
 
 def dataframe_equals(expected: pandas.DataFrame, actual: pandas.DataFrame) -> bool:

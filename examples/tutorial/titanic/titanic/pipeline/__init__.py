@@ -26,14 +26,14 @@ All the submodules of this packages have no semantic meaning for ForML - they ar
 created just for structuring the project code base splitting it into these particular parts with arbitrary names.
 """
 from sklearn import model_selection
+from titanic.pipeline import model, preprocessing
 
-from forml.lib.flow.operator.folding import ensemble
-from forml.project import component
-from titanic.pipeline import preprocessing, model
+from forml import project
+from forml.lib.pipeline import ensemble
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
-STACK = ensemble.FullStacker(
+STACK = ensemble.FullStack(
     bases=(model.RFC(n_estimators=10, random_state=42), model.GBC(random_state=42)),
     crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
 )
@@ -49,4 +49,4 @@ FLOW = (
 )
 
 # And the final step is registering the pipeline instance as the forml component:
-component.setup(FLOW)
+project.setup(FLOW)

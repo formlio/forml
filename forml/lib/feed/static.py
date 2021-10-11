@@ -20,34 +20,33 @@ Static feed implementation.
 import types
 import typing
 
-from forml.io import feed, payload
-from forml.io.dsl import error
-from forml.io.dsl.struct import frame, series
+from forml import io
+from forml.io import dsl, layout
 
 
-class Feed(feed.Provider[None, payload.Vector]):
+class Feed(io.Feed[None, layout.Vector]):
     """Static feed is initialized with actual data which can only be returned in primitive column-wise fashion. No
     advanced ETL can be applied.
     """
 
-    def __init__(self, data: typing.Mapping[frame.Table, payload.ColumnMajor]):
+    def __init__(self, data: typing.Mapping[dsl.Table, layout.ColumnMajor]):
         super().__init__()
-        self._sources: typing.Mapping[frame.Source, None] = types.MappingProxyType({f: None for f in data})
-        self._columns: typing.Mapping[series.Column, payload.Vector] = types.MappingProxyType(
-            {c: s for t, f in data.items() for c, s in zip(t.columns, f)}
+        self._sources: typing.Mapping[dsl.Source, None] = types.MappingProxyType({f: None for f in data})
+        self._features: typing.Mapping[dsl.Feature, layout.Vector] = types.MappingProxyType(
+            {c: s for t, f in data.items() for c, s in zip(t.features, f)}
         )
 
     #  pylint: disable=unused-argument
     @classmethod
     def reader(
         cls,
-        sources: typing.Mapping[frame.Source, None],
-        columns: typing.Mapping[series.Column, payload.Vector],
+        sources: typing.Mapping[dsl.Source, None],
+        features: typing.Mapping[dsl.Feature, layout.Vector],
         **kwargs: typing.Any,
-    ) -> typing.Callable[[frame.Query], payload.ColumnMajor]:
+    ) -> typing.Callable[[dsl.Query], layout.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
 
-        def read(query: frame.Query) -> payload.ColumnMajor:
+        def read(query: dsl.Query) -> layout.ColumnMajor:
             """Reader callback.
 
             Args:
@@ -57,20 +56,20 @@ class Feed(feed.Provider[None, payload.Vector]):
                 Data.
             """
             if query.prefilter or query.postfilter or query.ordering or query.rows:
-                raise error.Unsupported('Query not supported by static feed')
+                raise dsl.UnsupportedError('Query not supported by static feed')
             try:
-                return [columns[c] for c in query.columns]
+                return [features[c] for c in query.features]
             except KeyError as err:
-                raise error.Unsupported(f'Column not supported by static feed: {err}')
+                raise dsl.UnsupportedError(f'Column not supported by static feed: {err}')
 
         return read
 
     @property
-    def sources(self) -> typing.Mapping[frame.Source, None]:
+    def sources(self) -> typing.Mapping[dsl.Source, None]:
         """The explicit sources mapping implemented by this feed to be used by the query parser."""
         return self._sources
 
     @property
-    def columns(self) -> typing.Mapping[series.Column, payload.Vector]:
-        """The explicit columns mapping implemented by this feed to be used by the query parser."""
-        return self._columns
+    def features(self) -> typing.Mapping[dsl.Feature, layout.Vector]:
+        """The explicit features mapping implemented by this feed to be used by the query parser."""
+        return self._features

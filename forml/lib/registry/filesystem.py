@@ -27,9 +27,8 @@ import typing
 import uuid
 
 from forml import conf
-from forml.project import distribution
-from forml.runtime.asset import directory, persistent
-from forml.runtime.asset.directory import project as prjmod, lineage as lngmod, generation as genmod
+from forml import project as prj
+from forml.runtime import asset
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
         @staticmethod
         @abc.abstractmethod
-        def constructor(key: str) -> 'directory.Level.Key':
+        def constructor(key: str) -> asset.Level.Key:
             """Level key constructor.
 
             Args:
@@ -105,37 +104,37 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     class Project(Matcher):
         """Project matcher."""
 
-        constructor = staticmethod(prjmod.Level.Key)
+        constructor = staticmethod(asset.Project.Key)
 
         @staticmethod
-        def content(root: pathlib.Path) -> bool:
-            return any(Path.Lineage.valid(i) for i in root.iterdir())
+        def content(level: pathlib.Path) -> bool:
+            return any(Path.Lineage.valid(i) for i in level.iterdir())
 
     class Lineage(Matcher):
         """Lineage matcher."""
 
-        constructor = staticmethod(lngmod.Level.Key)
+        constructor = staticmethod(asset.Lineage.Key)
 
         @staticmethod
-        def content(root: pathlib.Path) -> bool:
-            return (root / Path.PKGFILE).exists()
+        def content(level: pathlib.Path) -> bool:
+            return (level / Path.PKGFILE).exists()
 
     class Generation(Matcher):
         """Generation matcher."""
 
-        constructor = staticmethod(genmod.Level.Key)
+        constructor = staticmethod(asset.Generation.Key)
 
         @staticmethod
-        def content(root: pathlib.Path) -> bool:
-            return (root / Path.TAGFILE).exists()
+        def content(level: pathlib.Path) -> bool:
+            return (level / Path.TAGFILE).exists()
 
     STAGEDIR = '.stage'
     STATESFX = 'bin'
     TAGFILE = 'tag.json'
-    PKGFILE = f'package.{distribution.Package.FORMAT}'
+    PKGFILE = f'package.{prj.Package.FORMAT}'
 
-    @functools.lru_cache()
-    def project(self, project: prjmod.Level.Key) -> pathlib.Path:
+    @functools.lru_cache
+    def project(self, project: asset.Project.Key) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
@@ -146,8 +145,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self / project
 
-    @functools.lru_cache()
-    def lineage(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> pathlib.Path:
+    @functools.lru_cache
+    def lineage(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
@@ -159,9 +158,9 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.project(project) / str(lineage)
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def generation(
-        self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key
+        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
         """Get the project directory path.
 
@@ -175,8 +174,8 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.lineage(project, lineage) / str(generation)
 
-    @functools.lru_cache()
-    def package(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> pathlib.Path:
+    @functools.lru_cache
+    def package(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> pathlib.Path:
         """Package file path of given project name/lineage.
 
         Args:
@@ -188,13 +187,13 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.lineage(project, lineage) / self.PKGFILE
 
-    @functools.lru_cache()
+    @functools.lru_cache
     def state(
         self,
         sid: uuid.UUID,
-        project: prjmod.Level.Key,
-        lineage: lngmod.Level.Key,
-        generation: typing.Optional[genmod.Level.Key] = None,
+        project: asset.Project.Key,
+        lineage: asset.Lineage.Key,
+        generation: typing.Optional[asset.Generation.Key] = None,
     ) -> pathlib.Path:
         """State file path of given sid an project name.
 
@@ -211,8 +210,10 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             generation = self.STAGEDIR
         return self.generation(project, lineage, generation) / f'{sid}.{self.STATESFX}'
 
-    @functools.lru_cache()
-    def tag(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key) -> pathlib.Path:
+    @functools.lru_cache
+    def tag(
+        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+    ) -> pathlib.Path:
         """Tag file path of given project name.
 
         Args:
@@ -226,7 +227,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.generation(project, lineage, generation) / self.TAGFILE
 
 
-class Registry(persistent.Registry, alias='filesystem'):
+class Registry(asset.Registry, alias='filesystem'):
     """Filesystem registry is a locally-accessible file based hierarchy."""
 
     def __init__(
@@ -239,7 +240,7 @@ class Registry(persistent.Registry, alias='filesystem'):
         self._path: Path = Path(path)
 
     @staticmethod
-    def _listing(path: pathlib.Path, matcher: typing.Type[Path.Matcher]) -> typing.Iterable:
+    def _listing(path: pathlib.Path, matcher: type[Path.Matcher]) -> typing.Iterable:
         """Helper for listing given repository level.
 
         Args:
@@ -252,23 +253,25 @@ class Registry(persistent.Registry, alias='filesystem'):
         try:
             return [matcher.constructor(p.name) for p in path.iterdir() if matcher.valid(p)]
         except NotADirectoryError as err:
-            raise directory.Level.Invalid(f'Path {path} is not a valid registry component') from err
+            raise asset.Level.Invalid(f'Path {path} is not a valid registry component') from err
         except FileNotFoundError:
             return tuple()
 
-    def projects(self) -> typing.Iterable[prjmod.Level.Key]:
+    def projects(self) -> typing.Iterable[asset.Project.Key]:
         return self._listing(self._path, Path.Project)
 
-    def lineages(self, project: prjmod.Level.Key) -> typing.Iterable[lngmod.Level.Key]:
+    def lineages(self, project: asset.Project.Key) -> typing.Iterable[asset.Lineage.Key]:
         return self._listing(self._path.project(project), Path.Lineage)
 
-    def generations(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> typing.Iterable[genmod.Level.Key]:
+    def generations(
+        self, project: asset.Project.Key, lineage: asset.Lineage.Key
+    ) -> typing.Iterable[asset.Generation.Key]:
         return self._listing(self._path.lineage(project, lineage), Path.Generation)
 
-    def pull(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key) -> 'distribution.Package':
-        return distribution.Package(self._path.package(project, lineage))
+    def pull(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> 'prj.Package':
+        return prj.Package(self._path.package(project, lineage))
 
-    def push(self, package: 'distribution.Package') -> None:
+    def push(self, package: 'prj.Package') -> None:
         project = package.manifest.name
         lineage = package.manifest.version
         path = self._path.package(project, lineage)
@@ -280,12 +283,16 @@ class Registry(persistent.Registry, alias='filesystem'):
             path.write_bytes(package.path.read_bytes())
 
     def read(
-        self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key, sid: uuid.UUID
+        self,
+        project: asset.Project.Key,
+        lineage: asset.Lineage.Key,
+        generation: asset.Generation.Key,
+        sid: uuid.UUID,
     ) -> bytes:
         path = self._path.state(sid, project, lineage, generation)
         LOGGER.debug('Reading state from %s', path)
         if not path.parent.exists():
-            raise directory.Level.Invalid(f'Invalid registry component {project}/{lineage}/{generation}')
+            raise asset.Level.Invalid(f'Invalid registry component {project}/{lineage}/{generation}')
         try:
             with path.open('rb') as statefile:
                 return statefile.read()
@@ -293,23 +300,29 @@ class Registry(persistent.Registry, alias='filesystem'):
             LOGGER.warning('No state %s under %s', sid, path)
             return bytes()
 
-    def write(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, sid: uuid.UUID, state: bytes) -> None:
+    def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
         path = self._path.state(sid, project, lineage)
         LOGGER.debug('Staging state of %d bytes to %s', len(state), path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open('wb') as statefile:
             statefile.write(state)
 
-    def open(self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key) -> 'genmod.Tag':
+    def open(
+        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+    ) -> asset.Tag:
         path = self._path.tag(project, lineage, generation)
         try:
             with path.open('rb') as tagfile:
-                return genmod.Tag.loads(tagfile.read())
+                return asset.Tag.loads(tagfile.read())
         except FileNotFoundError as err:
-            raise directory.Level.Listing.Empty(f'No tag under {path}') from err
+            raise asset.Level.Listing.Empty(f'No tag under {path}') from err
 
     def close(
-        self, project: prjmod.Level.Key, lineage: lngmod.Level.Key, generation: genmod.Level.Key, tag: 'genmod.Tag'
+        self,
+        project: asset.Project.Key,
+        lineage: asset.Lineage.Key,
+        generation: asset.Generation.Key,
+        tag: asset.Tag,
     ) -> None:
         path = self._path.tag(project, lineage, generation)
         LOGGER.debug('Committing states of tag %s as %s', tag, path)
@@ -317,7 +330,7 @@ class Registry(persistent.Registry, alias='filesystem'):
         for sid in tag.states:
             source = self._path.state(sid, project, lineage)
             if not source.exists():
-                raise directory.Level.Invalid(f'State {sid} not staged')
+                raise asset.Level.Invalid(f'State {sid} not staged')
             target = self._path.state(sid, project, lineage, generation)
             source.rename(target)
         with path.open('wb') as tagfile:

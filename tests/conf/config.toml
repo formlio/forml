@@ -58,11 +58,9 @@ priority = 100
 
 
 [SINK]
-default = "bar"
-train = "foo"
+default = "foo"
 apply = "bar"
 eval = "baz"
-
 
 [SINK.foo]
 provider = "foo"

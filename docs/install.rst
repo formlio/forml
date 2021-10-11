@@ -27,10 +27,20 @@ To install the pre-packaged version of ForML simply use ``pip``::
 ForML has a number of optional features with their own dependencies which can be pulled in during the installation like
 this::
 
-    pip install 'forml[presto,dask]'
+    pip install 'forml[sql,dask]'
 
 Some of the features might have their own binary dependencies that need to be resolved using a system-dependant way
 (ie using the OS package manager).
+
+Dependency Constraints
+----------------------
+
+The ForML distribution package comes with unpinned dependencies to leave the control over it to the target applications.
+For reproducibility, there is a ``constraints.txt`` provided to offer a known-to-be-working combination of all of the
+dependencies used by ForML. To install ForML using these dependencies, simply add the ``--constraints`` to (any of the
+mentioned) ``pip install`` commands::
+
+    pip install --constraints https://raw.githubusercontent.com/formlio/forml/main/constraints.txt forml
 
 Extra Features
 --------------
@@ -50,5 +60,5 @@ Extra Features
 +----------+---------------------------------------+----------------------------------------------------------------+
 | graphviz | ``pip install 'forml[graphviz]'``     | The Graphviz pseudo-runner (also requires ``graphviz`` binary) |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| presto   | ``pip install 'forml[presto]'``       | The PrestoDB reader                                            |
+| sql      | ``pip install 'forml[sql]'``          | SQL reader dependencies                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+
