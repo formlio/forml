@@ -16,12 +16,16 @@
 # under the License.
 ---
 codecov:
-  require_ci_to_pass: yes
+  require_ci_to_pass: true
 
 coverage:
   precision: 2
   round: down
   range: "70...100"
+  status:
+    patch:
+      default:
+        informational: true
 
 parsers:
   gcov:
@@ -34,4 +38,4 @@ parsers:
 comment:
   layout: "reach,diff,flags,files,footer"
   behavior: default
-  require_changes: no
+  require_changes: false

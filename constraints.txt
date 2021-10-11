@@ -27,6 +27,7 @@ charset-normalizer==2.0.6
 click==7.1.2
     # via
     #   black
+    #   pip-tools
     #   typer
 cloudpickle==2.0.0
     # via
@@ -115,6 +116,10 @@ pathspec==0.8.1
     # via
     #   black
     #   pycln
+pep517==0.11.0
+    # via pip-tools
+pip-tools==6.3.1
+    # via forml (setup.py)
 platformdirs==2.4.0
     # via
     #   pylint
@@ -226,6 +231,7 @@ tomli==1.2.1
     # via
     #   black
     #   coverage
+    #   pep517
 toolz==0.11.1
     # via
     #   dask
@@ -244,6 +250,8 @@ urllib3==1.26.7
     # via requests
 virtualenv==20.8.1
     # via pre-commit
+wheel==0.37.0
+    # via pip-tools
 wrapt==1.12.1
     # via astroid
 

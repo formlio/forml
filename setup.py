@@ -28,6 +28,7 @@ EXTRAS_DEV = {
     'black',
     'flake8-colors',
     'isort',
+    'pip-tools',
     'pre-commit',
     'pycln',
     'pytest-cov',

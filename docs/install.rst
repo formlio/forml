@@ -32,6 +32,16 @@ this::
 Some of the features might have their own binary dependencies that need to be resolved using a system-dependant way
 (ie using the OS package manager).
 
+Dependency Constraints
+----------------------
+
+The ForML distribution package comes with unpinned dependencies to leave the control over it to the target applications.
+For reproducibility, there is a ``constraints.txt`` provided to offer a known-to-be-working combination of all of the
+dependencies used by ForML. To install ForML using these dependencies, simply add the ``--constraints`` to (any of the
+mentioned) ``pip install`` command::
+
+    pip install --constraints https://github.com/formlio/forml/blob/master/constraints.txt forml
+
 Extra Features
 --------------
 
