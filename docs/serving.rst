@@ -95,13 +95,13 @@ event are:
 * prediction result
 * latency
 
-Metrics DB
-''''''''''
+PerfDB
+''''''
 
 Another storage service for aggregating the performance metric as time series derived from both the metadata pushed via
 *query logbus* as well as the main *feedback loop* and produced by the *offline agent* processing.
 
-The Metric DB is a crucial source of information not only for any sorts of operational monitoring/reporting but
+The PerfDB is a crucial source of information not only for any sorts of operational monitoring/reporting but
 especially for the dynamic model generation selection performed by the online agent according to the rollout strategy
 when serving the actual event queries.
 

@@ -19,4 +19,4 @@
 Registry implementations.
 """
 
-__all__ = ['virtual', 'filesystem']
+__all__ = ['filesystem']
