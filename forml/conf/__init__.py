@@ -28,7 +28,8 @@ import typing
 import toml
 
 import forml
-from forml.lib import registry, runner, sink
+from forml.lib import runner, sink
+from forml.lib.registry import filesystem
 
 
 class Parser(dict):
@@ -149,7 +150,7 @@ OPT_EVAL = 'eval'
 DEFAULTS = {
     # all static defaults should go rather to the ./config.toml (in this package)
     OPT_TMPDIR: tempfile.gettempdir(),
-    SECTION_REGISTRY: {OPT_PATH: [registry.__name__]},
+    SECTION_REGISTRY: {OPT_PATH: [filesystem.__name__]},
     SECTION_RUNNER: {OPT_PATH: [runner.__name__]},
     SECTION_FEED: {OPT_PATH: []},
     SECTION_SINK: {OPT_PATH: [sink.__name__]},
