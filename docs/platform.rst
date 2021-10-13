@@ -79,7 +79,7 @@ Example ForML platform configuration::
     provider = "virtual"
 
     [REGISTRY.homedir]
-    provider = "filesystem"
+    provider = "posix"
     #path = ~/.forml/registry
 
 

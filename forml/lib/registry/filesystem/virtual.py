@@ -23,7 +23,7 @@ import logging
 import tempfile
 import typing
 
-from forml.lib.registry import filesystem
+from forml.lib.registry.filesystem import posix
 from forml.runtime import asset
 
 if typing.TYPE_CHECKING:
@@ -32,7 +32,7 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Registry(filesystem.Registry, alias='virtual'):
+class Registry(posix.Registry, alias='virtual'):
     """Virtual registry implementation provided as a non-distributed global registry persistent only during its
     lifetime.
     """

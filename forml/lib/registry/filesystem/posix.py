@@ -227,7 +227,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self.generation(project, lineage, generation) / self.TAGFILE
 
 
-class Registry(asset.Registry, alias='filesystem'):
+class Registry(asset.Registry, alias='posix'):
     """Filesystem registry is a locally-accessible file based hierarchy."""
 
     def __init__(

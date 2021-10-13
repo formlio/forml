@@ -19,11 +19,13 @@
 ForML persistent unit tests.
 """
 # pylint: disable=no-self-use
+import pathlib
+import tempfile
 import typing
 
 import pytest
 
-from forml.lib.registry import virtual
+from forml.lib.registry.filesystem import posix
 from forml.runtime import asset
 
 from . import Registry
@@ -34,5 +36,5 @@ class TestRegistry(Registry):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def constructor() -> typing.Callable[[], asset.Registry]:
-        return virtual.Registry
+    def constructor(tmp_path: pathlib.Path) -> typing.Callable[[], asset.Registry]:
+        return lambda: posix.Registry(tempfile.mkdtemp(dir=tmp_path))

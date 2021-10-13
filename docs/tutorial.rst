@@ -87,7 +87,7 @@ Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add
     default = "tutorial"
 
     [REGISTRY.tutorial]
-    provider = "filesystem"
+    provider = "posix"
     path = "/tmp/forml-tutorial"
 
     [FEED]
@@ -192,7 +192,7 @@ before executing the commands.
 
 4. Run the ``apply`` mode alternatively on the ``graphviz`` runner to explore its task graph::
 
-    $ forml -R visual apply forml-example-titanic
+    $ forml apply -R visual forml-example-titanic
 
 .. image:: images/titanic-apply.png
 

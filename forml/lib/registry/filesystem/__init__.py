@@ -15,35 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-logcfg = "logging.ini"
+"""
+Filesystem registry implementations.
+"""
 
-[RUNNER]
-default = "dask"
-
-[RUNNER.dask]
-provider = "dask"
-scheduler = "multiprocessing"
-
-[RUNNER.graphviz]
-provider = "graphviz"
-format = "png"
-
-
-[REGISTRY]
-default = "homedir"
-
-[REGISTRY.virtual]
-provider = "virtual"
-
-[REGISTRY.homedir]
-provider = "posix"
-#path = ~/.forml/registry
-
-
-[SINK]
-default = "stdout"
-apply = "stdout"
-eval = "stdout"
-
-[SINK.stdout]
-provider = "stdout"
+__all__ = ['virtual', 'posix']
