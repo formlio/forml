@@ -22,51 +22,13 @@ There is a complete ForML project available under ``examples/tutorial/titanic/``
 Before you start, please make sure to install ForML as per the :doc:`installation instructions <install>` and ideally
 also familiarize yourself with the :doc:`ForML concepts <concept>`.
 
-Setup
------
-
-Datasource Preparation
-''''''''''''''''''''''
-
-ForML uses :doc:`feeds <feed>` to supply data into your projects. We need to register the Titanic dataset to our
-:doc:`platform <platform>`:
-
-1. Let's start with fetching the Titanic dataset from Kaggle (assuming you have the `kaggle API
-   <https://www.kaggle.com/docs/api>`_ CLI tool installed and configured)::
-
-    $ kaggle competitions download -p /tmp -f train.csv titanic
-
-2. Convert the dataset to sqlite DB::
-
-    import pandas as pd
-    import sqlite3
-    pd.read_csv('/tmp/train.csv').to_sql('passenger', sqlite3.connect('/tmp/tutorial.db'), index=False)
-
 Platform Setup
-''''''''''''''
+--------------
 
-Assuming you have no existing :doc:`feeds <feed>` configured in your system yet, let's create one and register the
-dataset within:
+Assuming you have no existing :doc:`feeds <feed>` configured in your system yet, let's install the
+:doc:`Opendata feed<opendata:install>`:
 
-Create a python file under ``~/.forml/tutorial.py`` with the following content::
-
-    from forml import io
-    from forml.lib.feed.reader.sql import alchemy
-    from openschema.kaggle import titanic
-    import sqlalchemy
-
-    class Feed(io.Feed):
-        """Tutorial feed."""
-
-        class Reader(alchemy.Reader):
-            """Using the SQL Alchemy reader."""
-
-        @property
-        def sources(self):
-            """This feed can serve just one and only dataset - the titanic passenger table mapped to
-               the titanic.Passenger schema."""
-
-            return {titanic.Passenger: sqlalchemy.table('passenger')}
+    pip install --constraints https://raw.githubusercontent.com/formlio/opendata/main/constraints.txt opendata
 
 
 Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add the following content to your
@@ -91,11 +53,10 @@ Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add
     path = "/tmp/forml-tutorial"
 
     [FEED]
-    default = ["tutorial"]
+    default = ["opendata"]
 
-    [FEED.tutorial]
-    provider = "tutorial:Feed"
-    connection = "sqlite:////tmp/tutorial.db"
+    [FEED.opendata]
+    provider = "opendata:Lite"
 
     [SINK]
     default = "print"

@@ -129,18 +129,15 @@ The native operators available directly on the field instances are:
 +--------------+-----------------------------------------------------------+
 | Arithmetical | ``+``, ``-``, ``*``, ``/``, ``%``                         |
 +--------------+-----------------------------------------------------------+
-| Alias        | .. automethod:: forml.io.dsl.Operable.alias |
+| Alias        | .. automethod:: forml.io.dsl.Operable.alias               |
 +--------------+-----------------------------------------------------------+
 
 
-There is also a bunch of functions available to be used within the query expressions. They are grouped into the
-following categories:
+Functions
+^^^^^^^^^
 
-.. autosummary::
-   :recursive:
-   :toctree: _auto
+There is also a bunch of functions available to be used within the query expressions:
 
-   forml.io.dsl.function.aggregate
-   forml.io.dsl.function.conversion
-   forml.io.dsl.function.datetime
-   forml.io.dsl.function.math
+.. automodule:: forml.io.dsl.function
+   :imported-members:
+   :members:

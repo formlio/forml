@@ -16,7 +16,7 @@
 # under the License.
 
 """
-SQLAlchemy based ETL feed.
+SQLAlchemy based ETL reader.
 """
 import datetime
 import inspect

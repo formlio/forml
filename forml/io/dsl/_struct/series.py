@@ -113,7 +113,6 @@ class Feature(tuple, metaclass=abc.ABCMeta):
         def __init__(self, *types: type):
             self._types: frozenset[type] = frozenset(types)
             self._match: set['Feature'] = set()
-            self._seen: set['Feature'] = set()
 
         def __call__(self, *feature: 'Feature') -> frozenset['Feature']:
             """Apply this dissector to the given features.
