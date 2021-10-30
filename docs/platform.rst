@@ -109,20 +109,8 @@ configuration and the whole feed needs to be implemented as code. For this purpo
 configuration directories are also potentially searched by the provider importer so that the custom feeds can be placed
 there.
 
-For example, the following feed implementation stored under ``~/.forml/tutorial.py`` can be referenced from the config
-file simply as ``tutorial:Feed``::
-
-    from forml.io import feed
-    from forml.lib.feed.reader.sql import alchemy
-    from openschema.kaggle import titanic
-    import sqlalchemy
-
-    class Feed(feed.Provider):
-        class Reader(alchemy.Reader):
-
-        @property
-        def sources(self):
-            return {titanic.Passenger: sqlalchemy.table('passenger')}
+For the special case of the public datasets described using the :doc:`Openschema catalog<openschema>`, there is a
+lightweight feed provided in form of the installable :doc:`Opendata package<opendata:install>`.
 
 Logging
 -------

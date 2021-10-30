@@ -66,10 +66,10 @@ templates_path = ['templates']
 exclude_patterns = ['_build']
 
 intersphinx_mapping = {
-    'dask': ('https://docs.dask.org/en/latest/', None),
     'setuptools': ('https://setuptools.readthedocs.io/en/latest/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'python': ('https://docs.python.org/3/', None),
+    'openschema': ('https://openschema.readthedocs.org/en/latest/', None),
+    'opendata': ('https://opendata.readthedocs.org/en/latest/', None),
 }
 
 # -- Options for HTML output -------------------------------------------------

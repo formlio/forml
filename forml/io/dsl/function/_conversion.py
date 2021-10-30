@@ -27,10 +27,13 @@ from .._struct import series
 class Cast(series.Expression):
     """Explicitly cast value as given kind.
 
-    This can be used to cast a varchar to a numeric value type and vice versa."""
+    This can be used to cast a varchar to a numeric value type and vice versa.
+    """
 
     value: series.Operable = property(operator.itemgetter(0))
+    """Value to be cast to the given type."""
     kind: kindmod.Any = property(operator.itemgetter(1))
+    """Type to cast to."""
 
     def __new__(cls, value: series.Operable, kind: kindmod.Any):
         return super().__new__(cls, value, kind)

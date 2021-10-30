@@ -20,8 +20,10 @@ Feed is a :doc:`runtime platform <platform>` component responsible for resolving
 :doc:`ETL query <dsl>` providing the requested data.
 
 .. autosummary::
+   :toctree: _auto
 
-   forml.lib.feed.static
+   forml.lib.feed.static.Feed
+   opendata.Lite
 
 
 Reader
@@ -37,4 +39,4 @@ API
 ---
 
 .. autoclass:: forml.io.Feed
-    :members:
+   :members:

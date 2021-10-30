@@ -146,22 +146,22 @@ The Source descriptor again needs to be submitted to the framework using the ``p
 
     from forml import project
     from forml.lib.pipeline import payload
-    from openschema.kaggle import titanic as schema
+    from openschema import kaggle as schema
 
-    FEATURES = schema.Passenger.select(
-        schema.Passenger.Pclass,
-        schema.Passenger.Name,
-        schema.Passenger.Sex,
-        schema.Passenger.Age,
-        schema.Passenger.SibSp,
-        schema.Passenger.Parch,
-        schema.Passenger.Ticket,
-        schema.Passenger.Fare,
-        schema.Passenger.Cabin,
-        schema.Passenger.Embarked,
+    FEATURES = schema.Titanic.select(
+        schema.Titanic.Pclass,
+        schema.Titanic.Name,
+        schema.Titanic.Sex,
+        schema.Titanic.Age,
+        schema.Titanic.SibSp,
+        schema.Titanic.Parch,
+        schema.Titanic.Ticket,
+        schema.Titanic.Fare,
+        schema.Titanic.Cabin,
+        schema.Titanic.Embarked,
     )
 
-    ETL = project.Source.query(FEATURES, schema.Passenger.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
+    ETL = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
     project.setup(ETL)
 
 
