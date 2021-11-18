@@ -33,9 +33,21 @@ class Manifest(abc.ABC):
         """Encode the application response into a raw bytes to be passed back by the engine."""
 
     @abc.abstractmethod
-    def select(self, registry: typing.Optional[asset.Registry] = None, **kwargs) -> asset.Instance:
+    def select(self, registry: asset.Registry, **kwargs) -> asset.Instance:
         """Select the model to be used for serving the request."""
 
 
-class Inventory(provmod.Interface):
-    """Application manifest storage."poklop0
+class Inventory(provmod.Interface, metaclass=abc.ABCMeta):
+    """Application manifest storage."""
+
+    @abc.abstractmethod
+    def list(self) -> typing.Iterable[str]:
+        """List the application names."""
+
+    @abc.abstractmethod
+    def get(self, app: str) -> Manifest:
+        """Retrieve the manifest for the given application."""
+
+    @abc.abstractmethod
+    def put(self, app: str, manifest: Manifest) -> None:
+        """Store the application manifest into the inventory."""

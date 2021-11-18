@@ -17,7 +17,8 @@
 import collections
 import typing
 
-from forml.runtime import facility
+from forml.runtime import facility, asset
+from . import _app
 
 
 class Request(collections.namedtuple('Request', 'payload, mime, accept')):
@@ -35,10 +36,24 @@ class Response(typing.NamedTuple):
 
 
 class Engine:
-    def __init__(self, runner: facility.Runner):
-        self._roster = ...
-        self._manifests: dict[str] = dict()
-        self._runner: facility.Runner = runner
+    def __init__(
+        self,
+        runner: typing.Optional[facility.Runner] = None,
+        inventory: typing.Optional[_app.Inventory] = None,
+        registry: typing.Optional[asset.Registry] = None,
+    ):
+        self._inventory: _app.Inventory = inventory or _app.Inventory()
+        self._manifests: dict[str, _app.Manifest] = dict()
+        self._runner: facility.Runner = runner or facility.Runner()
+        self._registry: typing.Optional[asset.Registry] = registry
 
     async def apply(self, app: str, request: Request) -> Response:
         """Engine predict entrypoint."""
+        if app not in self._manifests:
+            self._manifests[app] = self._inventory.get(app)
+        manifest = self._manifests[app]
+        instance = manifest.select(self._registry)
+
+        runner.apply()
+
+        content = manifest.decode(request.payload, request.mime)
