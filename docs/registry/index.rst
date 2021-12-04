@@ -26,6 +26,7 @@ ForML can use multiple registries built upon different technologies. The availab
 
    forml.lib.registry.filesystem.posix
    forml.lib.registry.filesystem.virtual
+   forml.lib.registry.mlflow
 
 
 API
@@ -42,3 +43,4 @@ Providers
     :maxdepth: 2
 
     filesystem
+    mlflow

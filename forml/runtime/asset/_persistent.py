@@ -19,12 +19,15 @@
 ForML assets persistence.
 """
 import abc
+import atexit
 import logging
 import pathlib
+import shutil
 import tempfile
 import typing
 import uuid
 
+import forml
 from forml import _provider, conf
 from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
 
@@ -34,9 +37,8 @@ if typing.TYPE_CHECKING:
     from ._directory import level
 
 LOGGER = logging.getLogger(__name__)
-TMPDIR = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
-    prefix=f'{conf.APPNAME}-persistent-', dir=conf.tmpdir
-)
+TMPDIR = tempfile.mkdtemp(prefix=f'{conf.APPNAME}-persistent-', dir=conf.tmpdir)
+atexit.register(lambda: shutil.rmtree(TMPDIR, ignore_errors=True))
 
 
 def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = None) -> pathlib.Path:
@@ -49,7 +51,7 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
     Returns:
         Temp dir as pathlib path.
     """
-    return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR.name))
+    return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR))
 
 
 class Registry(_provider.Interface, default=provcfg.Registry.default, path=provcfg.Registry.path):
@@ -82,7 +84,10 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
             Product artifact.
         """
         package = self.pull(project, lineage)
-        return package.install(self._staging / package.manifest.name / str(package.manifest.version))
+        try:
+            return package.install(self._staging / package.manifest.name / str(package.manifest.version))
+        except FileNotFoundError as err:
+            raise forml.MissingError(f'Package artifact {project}-{lineage} not found') from err
 
     @abc.abstractmethod
     def projects(self) -> typing.Iterable[typing.Union[str, 'level.Project.Key']]:
@@ -122,7 +127,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
 
     @abc.abstractmethod
     def pull(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key') -> 'prj.Package':
-        """Return the package of given lineage.
+        """Return the package of the given existing lineage.
 
         Args:
             project: Project of which the lineage artifact is to be returned.
@@ -135,7 +140,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
 
     @abc.abstractmethod
     def push(self, package: 'prj.Package') -> None:
-        """Start new lineage of a project based on given artifact.
+        """Start new lineage of a (possibly new) project based on the given artifact.
 
         Args:
             package: Distribution package to be persisted.
@@ -150,7 +155,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
         generation: 'level.Generation.Key',
         sid: uuid.UUID,
     ) -> bytes:
-        """Load the state based on provided id.
+        """Load the state from existing generation based on the provided id.
 
         Args:
             project: Project to read the state from.
@@ -165,7 +170,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
 
     @abc.abstractmethod
     def write(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key', sid: uuid.UUID, state: bytes) -> None:
-        """Dump an unbound state under given state id.
+        """Dump a generation-unbound state within an existing lineage under the given state id.
 
         Args:
             project: Project to store the state into.
@@ -179,7 +184,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
     def open(
         self, project: 'level.Project.Key', lineage: 'level.Lineage.Key', generation: 'level.Generation.Key'
     ) -> 'level.Tag':
-        """Return the metadata tag of given generation.
+        """Return the metadata tag of the given existing generation.
 
         Args:
             project: Project to read the metadata from.
@@ -199,7 +204,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
         generation: 'level.Generation.Key',
         tag: 'level.Tag',
     ) -> None:
-        """Seal new generation by storing its metadata tag.
+        """Seal a new - sofar unbound - generation within existing lineage by storing its metadata tag.
 
         Args:
             project: Project to store the metadata into.

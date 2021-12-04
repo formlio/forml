@@ -39,7 +39,7 @@ class Registry(posix.Registry, alias='virtual'):
 
     def __init__(self):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
-            prefix='registry-virtual-', dir=asset.TMPDIR.name
+            prefix='registry-virtual-', dir=asset.TMPDIR
         )
         self._artifacts: dict['asset.Project.Key', dict['asset.Lineage.Key', 'prj.Artifact']] = collections.defaultdict(
             dict
