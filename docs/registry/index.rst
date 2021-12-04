@@ -24,14 +24,14 @@ ForML can use multiple registries built upon different technologies. The availab
 
 .. autosummary::
 
-   forml.lib.registry.virtual
-   forml.lib.registry.filesystem
+   forml.lib.registry.filesystem.posix
+   forml.lib.registry.filesystem.virtual
 
 
 API
 ---
 
-.. autoclass:: forml.runtime.asset.persistent.Registry
+.. autoclass:: forml.runtime.asset.Registry
     :members:
 
 
