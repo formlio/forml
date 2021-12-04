@@ -43,9 +43,11 @@ EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
+EXTRAS_MLFLOW = {'mlflow'}
+
 EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
-EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
 
 setuptools.setup(
     name='forml',
@@ -67,6 +69,7 @@ setuptools.setup(
         'doc': EXTRAS_DOC,
         'flow': EXTRAS_FLOW,
         'graphviz': EXTRAS_GRAPHVIZ,
+        'mlflow': EXTRAS_MLFLOW,
         'sql': EXTRAS_SQL,
     },
     entry_points={
