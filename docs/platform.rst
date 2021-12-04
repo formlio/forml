@@ -110,7 +110,7 @@ configuration directories are also potentially searched by the provider importer
 there.
 
 For the special case of the public datasets described using the :doc:`Openschema catalog<openschema>`, there is a
-lightweight feed provided in form of the installable :doc:`Opendata package<opendata:install>`.
+lightweight feed provided in form of the installable :doc:`Openlake package<openlake:install>`.
 
 Logging
 -------
