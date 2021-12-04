@@ -26,9 +26,9 @@ Platform Setup
 --------------
 
 Assuming you have no existing :doc:`feeds <feed>` configured in your system yet, let's install the
-:doc:`Opendata feed<opendata:install>`:
+:doc:`Openlake feed<openlake:install>`:
 
-    pip install --constraints https://raw.githubusercontent.com/formlio/opendata/main/constraints.txt opendata
+    pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt openlake
 
 
 Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add the following content to your
@@ -53,10 +53,10 @@ Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add
     path = "/tmp/forml-tutorial"
 
     [FEED]
-    default = ["opendata"]
+    default = ["openlake"]
 
-    [FEED.opendata]
-    provider = "opendata:Lite"
+    [FEED.openlake]
+    provider = "openlake:Local"
 
     [SINK]
     default = "print"

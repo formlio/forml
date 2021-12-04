@@ -22,7 +22,7 @@ Feed is a :doc:`runtime platform <platform>` component responsible for resolving
 .. autosummary::
 
    forml.lib.feed.static.Feed
-   opendata.Lite
+   openlake.Local
 
 
 Reader
