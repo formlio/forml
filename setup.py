@@ -32,12 +32,9 @@ EXTRAS_DEV = {
     'pre-commit',
     'pycln',
     'pytest-cov',
-    'pytest-flake8',
-    'pytest-pylint',
-    'pytest-xdist',
 }
 
-EXTRAS_DOC = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx_rtd_theme'}
+EXTRAS_DOCS = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx_rtd_theme'}
 
 EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 
@@ -47,7 +44,7 @@ EXTRAS_MLFLOW = {'mlflow'}
 
 EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
-EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOC | EXTRAS_FLOW | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOCS | EXTRAS_FLOW | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
 
 setuptools.setup(
     name='forml',
@@ -66,7 +63,7 @@ setuptools.setup(
         'all': EXTRAS_ALL,
         'dask': EXTRAS_DASK,
         'dev': EXTRAS_DEV,
-        'doc': EXTRAS_DOC,
+        'docs': EXTRAS_DOCS,
         'flow': EXTRAS_FLOW,
         'graphviz': EXTRAS_GRAPHVIZ,
         'mlflow': EXTRAS_MLFLOW,

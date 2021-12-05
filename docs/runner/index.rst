@@ -31,7 +31,7 @@ The available runner implementations are:
 API
 ---
 
-.. autoclass:: forml.runtime.Runner
+.. autoclass:: forml.runtime.facility.Runner
     :members:
 
 

@@ -54,7 +54,7 @@ Extra Features
 +----------+---------------------------------------+----------------------------------------------------------------+
 | dev      | ``pip install 'forml[dev]'``          | ForML development tools                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| doc      | ``pip install 'forml[doc]'``          | Documentation publishing dependencies                          |
+| docs     | ``pip install 'forml[docs]'``         | Documentation publishing dependencies                          |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | flow     | ``pip install 'forml[flow]'``         | The standard operator and actor library shipped with ForML     |
 +----------+---------------------------------------+----------------------------------------------------------------+
