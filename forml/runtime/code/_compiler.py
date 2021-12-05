@@ -31,6 +31,7 @@ from forml.runtime import asset
 
 from .. import _exception
 from . import _target
+from ._target import system, user
 
 LOGGER = logging.getLogger(__name__)
 
@@ -205,7 +206,7 @@ class Table(flow.Visitor, typing.Iterable):
 
             return (pick(a, b) for a, b in itertools.zip_longest(value, element))
 
-        stubs = {s for s in (self._index[n] for n in self._linkage.leaves) if isinstance(s, _target.Getter)}
+        stubs = {s for s in (self._index[n] for n in self._linkage.leaves) if isinstance(s, system.Getter)}
         for instruction, keys in self._index.instructions:
             if instruction in stubs:
                 LOGGER.debug('Pruning stub getter %s', instruction)
@@ -226,7 +227,7 @@ class Table(flow.Visitor, typing.Iterable):
         assert isinstance(node, flow.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
-        functor = _target.Mapper().functor(node.spec)
+        functor = user.Mapper().functor(node.spec)
         aliases = [node.uid]
         if node.stateful:
             state = node.gid
@@ -234,14 +235,14 @@ class Table(flow.Visitor, typing.Iterable):
             if not persistent and not any(n.trained for n in node.group):
                 raise _exception.AssemblyError(f'Stateful node {node} neither persisted nor trained')
             if persistent and state not in self._index:
-                self._index.set(_target.Loader(self._assets, state), state)
+                self._index.set(system.Loader(self._assets, state), state)
             if node.trained:
-                functor = _target.Trainer().functor(node.spec)
+                functor = user.Trainer().functor(node.spec)
                 aliases.append(state)
                 if persistent:
                     if not self._committer:
-                        self._committer = self._index.set(_target.Committer(self._assets))
-                    dumper = self._index.set(_target.Dumper(self._assets))
+                        self._committer = self._index.set(system.Committer(self._assets))
+                    dumper = self._index.set(system.Dumper(self._assets))
                     self._linkage.insert(dumper, node.uid)
                     self._linkage.insert(self._committer, dumper, self._assets.offset(state))
                     state = self._index.reset(state)  # re-register loader under it's own id
@@ -251,7 +252,7 @@ class Table(flow.Visitor, typing.Iterable):
         for key in aliases:
             self._index.set(functor, key)
         if not node.trained:
-            self._linkage.update(node, lambda index: self._index.set(_target.Getter(index)))
+            self._linkage.update(node, lambda index: self._index.set(system.Getter(index)))
 
     def visit_node(self, node: flow.Worker) -> None:
         """Visitor entrypoint.

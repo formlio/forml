@@ -26,7 +26,7 @@ import typing
 import pytest
 
 from forml import flow
-from forml.runtime.code import _target
+from forml.runtime.code._target import user
 
 
 class Functor(metaclass=abc.ABCMeta):
@@ -34,15 +34,15 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(spec: flow.Spec) -> _target.Functor:
+    def functor(spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
 
-    def test_serializable(self, functor: _target.Functor, state: bytes, args: typing.Sequence):
+    def test_serializable(self, functor: user.Functor, state: bytes, args: typing.Sequence):
         """Test functor serializability."""
         functor = functor.preset_state()
         output = functor(state, *args)
         clone = pickle.loads(pickle.dumps(functor))
-        assert isinstance(clone, _target.Functor)
+        assert isinstance(clone, user.Functor)
         assert functor(state, *args) == output
 
 
@@ -51,9 +51,9 @@ class TestMapper(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> _target.Functor:
+    def functor(spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
-        return _target.Mapper().functor(spec)
+        return user.Mapper().functor(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -61,7 +61,7 @@ class TestMapper(Functor):
         """Functor args fixture."""
         return [testset]
 
-    def test_call(self, functor: _target.Functor, state: bytes, hyperparams, testset, prediction):
+    def test_call(self, functor: user.Functor, state: bytes, hyperparams, testset, prediction):
         """Test the functor call."""
         with pytest.raises(ValueError):
             functor(testset)
@@ -76,9 +76,9 @@ class TestTrainer(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> _target.Functor:
+    def functor(spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
-        return _target.Trainer().functor(spec)
+        return user.Trainer().functor(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -86,7 +86,7 @@ class TestTrainer(Functor):
         """Functor args fixture."""
         return [trainset, testset]
 
-    def test_call(self, functor: _target.Functor, state: bytes, hyperparams, trainset):
+    def test_call(self, functor: user.Functor, state: bytes, hyperparams, trainset):
         """Test the functor call."""
         assert functor(*trainset) == state
         functor = functor.preset_params()
