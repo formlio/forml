@@ -28,7 +28,7 @@ Platform Setup
 Assuming you have no existing :doc:`feeds <feed>` configured in your system yet, let's install the
 :doc:`Openlake feed<openlake:install>`:
 
-    pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt openlake
+    pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
 
 
 Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add the following content to your
