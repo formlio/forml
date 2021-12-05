@@ -20,6 +20,7 @@ Code instructions.
 """
 import abc
 import collections
+import functools
 import logging
 import time
 import typing
@@ -152,126 +153,76 @@ class Committer(Instruction):
         self._assets.commit(states)
 
 
-class Functor(Instruction):
-    """Special instruction for wrapping task actors.
+class Action(abc.ABC):
+    """Functor action handler."""
 
-    Functor object must be serializable.
-    """
-
-    class Shifting:
-        """Extra functionality to be prepended to the main objective."""
-
-        def __init__(
-            self,
-            consumer: typing.Callable[[flow.Actor, typing.Any], None],
-            objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any],
-        ):
-            self._consumer: typing.Callable[[flow.Actor, typing.Any], None] = consumer
-            self._objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
-
-        def __call__(self, actor: flow.Actor, first: typing.Any, *args: typing.Any) -> typing.Any:
-            LOGGER.debug('Shifting functor %s left with %d arguments ', actor, len(args))
-            if first:
-                self._consumer(actor, first)
-            return self._objective(actor, *args)
-
-        @staticmethod
-        def state(actor: flow.Actor, state: bytes) -> None:
-            """Predefined shifting for state taking objective.
-
-            Args:
-                actor: Target actor to run the objective on.
-                state: Actor state to be used.
-
-            Returns:
-                Actor instance.
-            """
-            LOGGER.debug('%s receiving state (%d bytes)', actor, len(state))
-            actor.set_state(state)
-
-        @staticmethod
-        def params(actor: flow.Actor, params: typing.Mapping[str, typing.Any]) -> None:
-            """Predefined shifting for params taking objective.
-
-            Args:
-                actor: Target actor to run the objective on.
-                params: Actor params to be used.
-
-            Returns:
-                Actor instance.
-            """
-            LOGGER.debug('%s receiving params (%s)', actor, params)
-            actor.set_params(**params)
-
-    def __init__(
-        self, spec: flow.Spec, objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any]
-    ):
-        self._spec: flow.Spec = spec
-        self._objective: typing.Callable[[flow.Actor, typing.Sequence[typing.Any]], typing.Any] = objective
-        self._instance: typing.Optional[flow.Actor] = None  # transient
-
-    def __reduce__(self):
-        return Functor, (self._spec, self._objective)
-
-    def __repr__(self):
-        return repr(self._spec)
-
-    def shiftby(self, consumer: typing.Callable[[flow.Actor, typing.Any], None]) -> 'Functor':
-        """Create new functor with its objective prepended by an extra consumer.
-
-        Args:
-            consumer: Callable taking the target actor and eating its first argument.
-
-        Returns:
-            New Functor instance with the objective updated.
-        """
-        return Functor(self._spec, self.Shifting(consumer, self._objective))
-
-    @property
-    def _actor(self) -> flow.Actor:
-        """Internal cached actor instance.
-
-        Returns:
-            Actor instance.
-        """
-        if not self._instance:
-            self._instance = self._spec()
-        return self._instance
-
-    def execute(self, *args) -> typing.Any:
-        return self._objective(self._actor, *args)
-
-
-class Functional(Functor, metaclass=abc.ABCMeta):
-    """Base class for mapper and consumer functors."""
-
-    def __init__(self, spec: flow.Spec):
-        super().__init__(spec, self._function)
-
-    @staticmethod
     @abc.abstractmethod
-    def _function(actor: flow.Actor, *args) -> typing.Any:
-        """Delegated actor objective.
+    def __call__(self, actor: flow.Actor, *args: typing.Any) -> typing.Any:
+        """Action function."""
+
+    def functor(self, spec: flow.Spec) -> 'Functor':
+        """Helper method for creating functor instance for this action.
 
         Args:
-            actor: Target actor to run the objective on.
-            *args: List of arguments to be passed to the actor objective.
+            spec: Actor spec instance.
 
         Returns:
-            Anything the actor objective returns.
+            Functor instance.
+        """
+        return Functor(spec, self)
+
+
+ValueT = typing.TypeVar('ValueT')
+
+
+class Preset(typing.Generic[ValueT], collections.namedtuple('Preset', 'action'), Action, metaclass=abc.ABCMeta):
+    """Composite action that presets the actor using the first parameter as value."""
+
+    action: Action
+    """Wrapped action."""
+
+    def __call__(self, actor: flow.Actor, *args: typing.Any) -> typing.Any:
+        value, *args = args
+        LOGGER.debug('Pre-setting actor %s with %d arguments ', actor, len(args))
+        if value:
+            self.set(actor, value)
+        return self.action(actor, *args)
+
+    @abc.abstractmethod
+    def set(self, actor: flow.Actor, value: ValueT) -> None:
+        """Set operation.
+
+        Args:
+            actor: Actor to set the value on.
+            value: Value to be set.
         """
 
 
-class Mapper(Functional):
-    """Mapper (transformer) functor."""
+class State(Preset[bytes]):
+    """State preset action."""
 
-    @staticmethod
-    def _function(actor: flow.Actor, *args) -> typing.Any:
-        """Mapper objective is the apply method.
+    def set(self, actor: flow.Actor, value: bytes) -> None:
+        LOGGER.debug('%s receiving state (%d bytes)', actor, len(value))
+        actor.set_state(value)
+
+
+class Params(Preset[typing.Mapping[str, typing.Any]]):
+    """Params preset action."""
+
+    def set(self, actor: flow.Actor, value: typing.Mapping[str, typing.Any]) -> None:
+        LOGGER.debug('%s receiving params (%s)', actor, value)
+        actor.set_params(**value)
+
+
+class Mapper(Action):
+    """Mapper (transformer) functor action."""
+
+    def __call__(self, actor: flow.Actor, *args) -> typing.Any:
+        """Mapper action is the apply method.
 
         Args:
-            actor: Target actor to run the objective on.
-            *args: List of arguments to be passed to the actor objective.
+            actor: Target actor to run the action on.
+            *args: List of arguments to be passed to the actor action.
 
         Returns:
             Output of the apply method.
@@ -281,19 +232,51 @@ class Mapper(Functional):
         return result
 
 
-class Consumer(Functional):
-    """Consumer (ie trainer) functor."""
+class Trainer(Action):
+    """Trainer functor action."""
 
-    @staticmethod
-    def _function(actor: flow.Actor, *args) -> bytes:
-        """Consumer objective is the train method.
+    def __call__(self, actor: flow.Actor, *args) -> bytes:
+        """Trainer action is the train method.
 
         Args:
-            actor: Target actor to run the objective on.
-            *args: List of arguments to be passed to the actor objective.
+            actor: Target actor to run the action on.
+            *args: List of arguments to be passed to the actor action.
 
         Returns:
             New actor state.
         """
         actor.train(*args)
         return actor.get_state()
+
+
+class Functor(collections.namedtuple('Functor', 'spec, action'), Instruction):
+    """Special instruction for wrapping task actors.
+
+    Functor object must be serializable.
+    """
+
+    spec: flow.Spec
+    action: Action
+
+    def __repr__(self):
+        return repr(self.spec)
+
+    def preset_state(self) -> 'Functor':
+        """Helper method for returning new functor that prepends the arguments with a state setter."""
+        return Functor(self.spec, State(self.action))
+
+    def preset_params(self) -> 'Functor':
+        """Helper method for returning new functor that prepends the arguments with a param setter."""
+        return Functor(self.spec, Params(self.action))
+
+    @functools.cached_property
+    def _actor(self) -> flow.Actor:
+        """Cached actor instance.
+
+        Returns:
+            Actor instance.
+        """
+        return self.spec()
+
+    def execute(self, *args) -> typing.Any:
+        return self.action(self._actor, *args)

@@ -34,53 +34,12 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(spec: flow.Spec) -> _target.Functional:
+    def functor(spec: flow.Spec) -> _target.Functor:
         """Functor fixture."""
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def shifting() -> typing.Callable[[flow.Actor, typing.Any], flow.Actor]:
-        """Functor fixture."""
-
-        class Shifter:
-            """Shifting mock."""
-
-            def __init__(self):
-                self.captured = None
-                self.called = False
-
-            def __call__(self, actor: flow.Actor, first: typing.Any) -> flow.Actor:
-                self.captured = first
-                return actor
-
-            def __bool__(self):
-                return self.called
-
-            def __eq__(self, other):
-                return other == self.captured
-
-            def __hash__(self):
-                return hash(self.captured)
-
-        return Shifter()
-
-    def test_shiftby(
-        self,
-        functor: _target.Functor,
-        shifting: typing.Callable[[flow.Actor, typing.Any], flow.Actor],
-        state: bytes,
-        args: typing.Sequence,
-    ):
-        """Test shiftby."""
-        functor = functor.shiftby(shifting).shiftby(_target.Functor.Shifting.state)
-        functor(state, None, *args)
-        assert not shifting
-        functor(state, 'foobar', *args)
-        assert shifting == 'foobar'
 
     def test_serializable(self, functor: _target.Functor, state: bytes, args: typing.Sequence):
         """Test functor serializability."""
-        functor = functor.shiftby(_target.Functor.Shifting.state)
+        functor = functor.preset_state()
         output = functor(state, *args)
         clone = pickle.loads(pickle.dumps(functor))
         assert isinstance(clone, _target.Functor)
@@ -92,9 +51,9 @@ class TestMapper(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> _target.Mapper:
+    def functor(spec: flow.Spec) -> _target.Functor:
         """Functor fixture."""
-        return _target.Mapper(spec)
+        return _target.Mapper().functor(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -106,20 +65,20 @@ class TestMapper(Functor):
         """Test the functor call."""
         with pytest.raises(ValueError):
             functor(testset)
-        functor = functor.shiftby(_target.Functor.Shifting.state)
+        functor = functor.preset_state()
         assert functor(state, testset) == prediction
-        functor = functor.shiftby(_target.Functor.Shifting.params)
+        functor = functor.preset_params()
         assert functor(hyperparams, state, testset) == prediction
 
 
-class TestConsumer(Functor):
-    """Consumer functor unit tests."""
+class TestTrainer(Functor):
+    """Trainer functor unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> _target.Consumer:
+    def functor(spec: flow.Spec) -> _target.Functor:
         """Functor fixture."""
-        return _target.Consumer(spec)
+        return _target.Trainer().functor(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -130,5 +89,5 @@ class TestConsumer(Functor):
     def test_call(self, functor: _target.Functor, state: bytes, hyperparams, trainset):
         """Test the functor call."""
         assert functor(*trainset) == state
-        functor = functor.shiftby(_target.Functor.Shifting.params)
+        functor = functor.preset_params()
         assert functor(hyperparams, *trainset) == state
