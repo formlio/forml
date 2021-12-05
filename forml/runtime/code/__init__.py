@@ -20,6 +20,7 @@ ForML runtime task graph assembly logic.
 """
 
 from ._compiler import generate
-from ._target import Functor, Instruction, Symbol
+from ._target import Instruction, Symbol
+from ._target.user import Functor, Preset
 
-__all__ = ['generate', 'Symbol', 'Instruction', 'Functor']
+__all__ = ['generate', 'Symbol', 'Instruction', 'Functor', 'Preset']
