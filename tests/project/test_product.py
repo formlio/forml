@@ -24,7 +24,7 @@ import typing
 import pytest
 
 import forml
-from forml import flow, project
+from forml import flow, io, project
 from forml.lib.pipeline import topology
 from forml.project import _importer
 
@@ -120,6 +120,6 @@ class TestArtifact:
         assert repr(project_artifact.descriptor.source) == repr(project_descriptor.source)
         assert repr(project_artifact.descriptor.evaluation) == repr(project_descriptor.evaluation)
 
-    def test_launcher(self, project_artifact: project.Artifact):
+    def test_launcher(self, project_artifact: project.Artifact, feed_instance: io.Feed):
         """Testing launcher access."""
-        assert project_artifact.launcher
+        assert project_artifact.launcher('pyfunc', [feed_instance]).apply()

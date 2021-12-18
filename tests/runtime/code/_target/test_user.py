@@ -54,7 +54,7 @@ class TestMapper(Functor):
     @pytest.fixture(scope='session')
     def functor(spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
-        return user.Mapper().functor(spec)
+        return user.Apply().functor(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -86,7 +86,7 @@ class TestTrainer(Functor):
     @pytest.fixture(scope='session')
     def functor(spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
-        return user.Trainer().functor(spec)
+        return user.Train().functor(spec)
 
     @staticmethod
     @pytest.fixture(scope='session')

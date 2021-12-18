@@ -67,7 +67,7 @@ class HelloWorld(flow.Actor):
         return struct.pack(self.FMT, self._magic)
 
     def set_state(self, state: bytes) -> None:
-        self._magic = struct.unpack(self.FMT, state)
+        self._magic = struct.unpack(self.FMT, state)[0]
 
 
 class Branches(flow.Operator):

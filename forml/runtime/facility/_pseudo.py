@@ -69,7 +69,7 @@ class ReturnHandler(CallHandler):
             output = manager.Queue()
             self._mode.fget(self._builder(self.Sink(queue=output)))(lower, upper)
             try:
-                return output.get(block=False)
+                return output.get_nowait()
             except quemod.Empty:
                 LOGGER.warning('Runner finished but sink queue empty')
                 return None

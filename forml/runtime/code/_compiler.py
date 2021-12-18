@@ -227,7 +227,7 @@ class Table(flow.Visitor, typing.Iterable):
         assert isinstance(node, flow.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
-        functor = user.Mapper().functor(node.spec)
+        functor = user.Apply().functor(node.spec)
         aliases = [node.uid]
         if node.stateful:
             state = node.gid
@@ -237,7 +237,7 @@ class Table(flow.Visitor, typing.Iterable):
             if persistent and state not in self._index:
                 self._index.set(system.Loader(self._assets, state), state)
             if node.trained:
-                functor = user.Trainer().functor(node.spec)
+                functor = user.Train().functor(node.spec)
                 aliases.append(state)
                 if persistent:
                     if not self._committer:

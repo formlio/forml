@@ -127,18 +127,24 @@ class Operator(flow.Operator):
 class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], metaclass=abc.ABCMeta):
     """Base class for reader implementation."""
 
+    RequestT = typing.Mapping[str, layout.Vector]
+
     class Actor(flow.Actor):
         """Data extraction actor using the provided reader and statement to load the data."""
 
-        def __init__(self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], statement: Statement):
-            self._reader: typing.Callable[[dsl.Query], layout.ColumnMajor] = reader
+        def __init__(
+            self,
+            reader: typing.Callable[[dsl.Query, typing.Optional['Reader.RequestT']], layout.ColumnMajor],
+            statement: Statement,
+        ):
+            self._reader: typing.Callable[[dsl.Query, typing.Optional['Reader.RequestT']], layout.ColumnMajor] = reader
             self._statement: Statement = statement
 
         def __repr__(self):
             return f'{repr(self._reader)}({repr(self._statement)})'
 
-        def apply(self) -> typing.Any:
-            return self._reader(self._statement())
+        def apply(self, request: typing.Optional['Reader.RequestT'] = None) -> typing.Any:
+            return self._reader(self._statement(), request)
 
     def __init__(
         self,
@@ -153,30 +159,29 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(
-        self, query: dsl.Query, source: typing.Optional[typing.Mapping[str, layout.Vector]] = None
-    ) -> layout.ColumnMajor:
+    def __call__(self, query: dsl.Query, request: typing.Optional[RequestT] = None) -> layout.ColumnMajor:
         """Reader entrypoint.
 
         It operates in two possible modes:
             * extraction - when launched just using the query without the `source` parameter, it simply executes
               the query against the backend.
-            * augmentation - if `source` is provided, it is interpreted as the actual source to be returned but
+            * augmentation - if `request` is provided, it is interpreted as the actual source to be returned but
               potentially incomplete in terms of the expected schema; in which case the reader is supposed to just
               augment the partial data to meet the query schema.
 
         Args:
-            query: The query specifying the requested data.
-            source: Optional - potentially incomplete - labelled columns to be augmented according to the query.
+            query: The query DSL specifying the extracted data.
+            request: Optional - potentially incomplete - labelled literal columns to be augmented according
+                     to the query.
 
         Returns:
             Data extracted according to the query.
         """
-        if source:
+        if request:
             header = [f.name for f in query.features]
-            if any(h not in source for h in header):
+            if any(h not in request for h in header):
                 raise forml.InvalidError('Partial augmentation not supported')
-            return [source[h] for h in header]
+            return [request[h] for h in header]
 
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._features) as visitor:

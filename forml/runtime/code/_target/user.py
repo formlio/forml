@@ -38,6 +38,9 @@ class Action(abc.ABC):
     def __call__(self, actor: flow.Actor, *args: typing.Any) -> typing.Any:
         """Action function."""
 
+    def __repr__(self):
+        return self.__class__.__name__.lower()
+
     def functor(self, spec: flow.Spec) -> 'Functor':
         """Helper method for creating functor instance for this action.
 
@@ -73,6 +76,9 @@ class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
     def __init__(self, action: Action):
         self._action: Action = action
 
+    def __repr__(self):
+        return f'{self._action}.{self.__class__.__name__.lower()}'
+
     def __call__(self, actor: flow.Actor, *args: typing.Any) -> typing.Any:
         action, args = self.reduce(actor, *args)
         return action(actor, *args)
@@ -94,7 +100,7 @@ class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
         """
 
 
-class State(Preset[bytes]):
+class SetState(Preset[bytes]):
     """State preset action."""
 
     def set(self, actor: flow.Actor, value: bytes) -> None:
@@ -102,7 +108,7 @@ class State(Preset[bytes]):
         actor.set_state(value)
 
 
-class Params(Preset[typing.Mapping[str, typing.Any]]):
+class SetParams(Preset[typing.Mapping[str, typing.Any]]):
     """Params preset action."""
 
     def set(self, actor: flow.Actor, value: typing.Mapping[str, typing.Any]) -> None:
@@ -110,7 +116,7 @@ class Params(Preset[typing.Mapping[str, typing.Any]]):
         actor.set_params(**value)
 
 
-class Mapper(Action):
+class Apply(Action):
     """Mapper (transformer) functor action."""
 
     def __call__(self, actor: flow.Actor, *args) -> typing.Any:
@@ -128,7 +134,7 @@ class Mapper(Action):
         return result
 
 
-class Trainer(Action):
+class Train(Action):
     """Trainer functor action."""
 
     def __call__(self, actor: flow.Actor, *args) -> bytes:
@@ -155,15 +161,15 @@ class Functor(collections.namedtuple('Functor', 'spec, action'), _target.Instruc
     action: Action
 
     def __repr__(self):
-        return repr(self.spec)
+        return f'{self.spec}.{self.action}'
 
     def preset_state(self) -> 'Functor':
         """Helper method for returning new functor that prepends the arguments with a state setter."""
-        return Functor(self.spec, State(self.action))
+        return Functor(self.spec, SetState(self.action))
 
     def preset_params(self) -> 'Functor':
         """Helper method for returning new functor that prepends the arguments with a param setter."""
-        return Functor(self.spec, Params(self.action))
+        return Functor(self.spec, SetParams(self.action))
 
     @functools.cached_property
     def _actor(self) -> flow.Actor:

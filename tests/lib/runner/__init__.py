@@ -15,21 +15,30 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# import abc
-#
-# import pytest
-#
-# from forml import io
-# from forml.lib.runner import pyfunc
-# from forml.runtime import facility, asset
-#
-#
-# class Runner(abc.ABC):
-#     @staticmethod
-#     @abc.abstractmethod
-#     @pytest.fixture(scope='session')
-#     def runner(valid_instance: asset.Instance, feed: io.Feed, sink: io.Sink) -> facility.Runner:
-#         """Runner fixture."""
-#         return pyfunc.Runner(valid_instance, feed, sink)
-#
-#     def test_apply(self, testset: str, pred):
+"""
+Common runner implementations tests.
+"""
+# pylint: disable=no-self-use
+
+import abc
+import multiprocessing
+
+import pytest
+
+from forml import io
+from forml.runtime import asset, facility
+
+
+class Runner(abc.ABC):
+    """Runner tests base class."""
+
+    @staticmethod
+    @abc.abstractmethod
+    @pytest.fixture(scope='function')
+    def runner(valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> facility.Runner:
+        """Runner fixture."""
+
+    def test_apply(self, runner: facility.Runner, sink_output: multiprocessing.Queue):
+        """Test runner apply mode."""
+        runner.apply()
+        assert sink_output.get_nowait()

@@ -37,17 +37,17 @@ class TestImporter:
         def __new__(cls, reference: str, priority: float, identity: str):
             return tuple.__new__(cls, [reference, priority, {'identity': identity}])
 
-    def test_iter(self, feed: type[io.Feed], reference: str):
+    def test_iter(self, feed_type: type[io.Feed], io_reference: str):
         """Test the pool iterator."""
-        conf10 = self.Conf(reference, 10, 'conf10')
-        conf1000 = self.Conf(reference, 1000, 'conf1000')
-        instant = feed(identity='instant')
+        conf10 = self.Conf(io_reference, 10, 'conf10')
+        conf1000 = self.Conf(io_reference, 1000, 'conf1000')
+        instant = feed_type(identity='instant')
         pool = io.Importer(conf10, instant, conf1000)
         assert tuple(f.identity for f in pool) == ('instant', 'conf1000', 'conf10')
 
-    def test_match(self, feed: type[io.Feed], query: dsl.Query):
+    def test_match(self, feed_type: type[io.Feed], query: dsl.Query):
         """Feed matching test."""
-        instance = feed(identity='instance')
+        instance = feed_type(identity='instance')
         pool = io.Importer(instance)
         assert pool.match(query) is instance
         with pytest.raises(forml.MissingError):

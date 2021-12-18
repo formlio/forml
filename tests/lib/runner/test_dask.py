@@ -14,3 +14,26 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+"""
+Dask runner tests.
+"""
+# pylint: disable=no-self-use
+
+import pytest
+
+from forml import io
+from forml.lib.runner import dask
+from forml.runtime import asset
+
+from . import Runner
+
+
+class TestRunner(Runner):
+    """Runner tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='function', params=('threaded',))
+    def runner(request, valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> dask.Runner:
+        """Runner fixture."""
+        return dask.Runner(valid_instance, feed_instance, sink_instance, scheduler=request.param)

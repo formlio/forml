@@ -27,10 +27,11 @@ from forml.io import layout
 class Sink(io.Sink, alias='stdout'):
     """Stdout sink."""
 
-    class Writer(io.Sink.Writer):
+    class Writer(io.Sink.Writer[layout.Native]):
         """Sink writer implementation."""
 
         @classmethod
-        def write(cls, data: typing.Optional[layout.Native], **kwargs: typing.Any) -> None:
+        def write(cls, data: typing.Optional[layout.Native], **kwargs: typing.Any) -> layout.Native:
             if data is not None:
-                print(data)
+                print(data, **kwargs)
+            return data
