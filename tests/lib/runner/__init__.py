@@ -15,27 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""
-Dummy project source.
-"""
-import helloworld_schema as schema
-
-from forml import project
-from forml.io import dsl
-from forml.io.dsl import function
-
-school_ref = schema.School.reference('bar')
-QUERY = (
-    schema.Student.join(schema.Person, schema.Student.surname == schema.Person.surname)
-    .join(school_ref, schema.Student.school == school_ref.sid)
-    .select(
-        schema.Student.surname.alias('student'),
-        school_ref['name'],
-        function.Cast(schema.Student.score, dsl.Integer()).alias('score'),
-    )
-    .where(schema.Student.score < 2)
-    .orderby(schema.Student.level, schema.Student.score)
-    .limit(10)
-)
-INSTANCE = project.Source.query(QUERY, schema.Student.level)
-project.setup(INSTANCE)
+# import abc
+#
+# import pytest
+#
+# from forml import io
+# from forml.lib.runner import pyfunc
+# from forml.runtime import facility, asset
+#
+#
+# class Runner(abc.ABC):
+#     @staticmethod
+#     @abc.abstractmethod
+#     @pytest.fixture(scope='session')
+#     def runner(valid_instance: asset.Instance, feed: io.Feed, sink: io.Sink) -> facility.Runner:
+#         """Runner fixture."""
+#         return pyfunc.Runner(valid_instance, feed, sink)
+#
+#     def test_apply(self, testset: str, pred):

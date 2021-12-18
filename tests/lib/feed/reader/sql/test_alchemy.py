@@ -132,6 +132,6 @@ class TestReader:
             .sort_values(['level', 'score'])
             .set_index('school')
             .join(school_data.set_index('id'))[['surname', 'name', 'score']]
-            .apply(lambda s: s.apply(str))
+            .apply(lambda r: pandas.Series([r['surname'], r['name'], int(r['score'])]), axis='columns')
         ).values.transpose()
         assert numpy.array_equal(result, expected)

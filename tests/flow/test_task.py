@@ -25,6 +25,7 @@ import typing
 import pytest
 
 from forml import flow
+from forml.io import layout
 
 
 class TestActor:
@@ -36,10 +37,16 @@ class TestActor:
         """Instance fixture."""
         return spec()
 
-    def test_train(self, instance: flow.Actor, trainset, testset, prediction):
+    def test_train(
+        self,
+        instance: flow.Actor,
+        trainset: layout.ColumnMajor,
+        testset: layout.ColumnMajor,
+        prediction: layout.ColumnMajor,
+    ):
         """Test actor training."""
         assert instance.is_stateful()
-        instance.train(*trainset)
+        instance.train(trainset[:-1], trainset[-1])
         assert instance.apply(testset) == prediction
 
     def test_params(self, instance: flow.Actor, hyperparams):
@@ -50,9 +57,16 @@ class TestActor:
         instance.set_params(x=100)
         assert instance.get_params()['x'] == 100
 
-    def test_state(self, instance: flow.Actor, trainset, state, testset, prediction):
+    def test_state(
+        self,
+        instance: flow.Actor,
+        trainset: layout.ColumnMajor,
+        state,
+        testset: layout.ColumnMajor,
+        prediction: layout.ColumnMajor,
+    ):
         """Testing actor statefulness."""
-        instance.train(*trainset)
+        instance.train(trainset[:-1], trainset[-1])
         assert instance.predict(testset) == prediction
         assert instance.get_state() == state
         instance.train('foo', 'bar')  # retraining to change the state
@@ -66,9 +80,15 @@ class TestActor:
         """Test the spec creation of the actor class."""
         assert actor.spec(**hyperparams) == spec
 
-    def test_serializable(self, instance: flow.Actor, trainset, testset, prediction):
+    def test_serializable(
+        self,
+        instance: flow.Actor,
+        trainset: layout.ColumnMajor,
+        testset: layout.ColumnMajor,
+        prediction: layout.ColumnMajor,
+    ):
         """Test actor serializability."""
-        instance.train(*trainset)
+        instance.train(trainset[:-1], trainset[-1])
         assert pickle.loads(pickle.dumps(instance)).predict(testset) == prediction
 
 

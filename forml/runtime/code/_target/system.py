@@ -73,6 +73,15 @@ class Getter(_target.Instruction):
     def __init__(self, index: int):
         self._index: int = index
 
+    @property
+    def index(self) -> int:
+        """Index getter.
+
+        Returns:
+            Return the getter index value.
+        """
+        return self._index
+
     def __repr__(self):
         return super().__repr__() + f'#{self._index}'
 

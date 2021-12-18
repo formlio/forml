@@ -25,7 +25,7 @@ from forml.runtime import asset
 class TestRegistry:
     """Registry unit tests."""
 
-    def test_get(self, registry: asset.Registry, project_name: asset.Project.Key, populated_lineage: asset.Lineage.Key):
+    def test_get(self, registry: asset.Registry, project_name: asset.Project.Key, project_lineage: asset.Lineage.Key):
         """Test lineage get."""
-        lineage = asset.Directory(registry).get(project_name).get(populated_lineage)
-        assert lineage.key == populated_lineage
+        lineage = asset.Directory(registry).get(project_name).get(project_lineage)
+        assert lineage.key == project_lineage

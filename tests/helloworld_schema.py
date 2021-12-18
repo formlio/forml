@@ -15,27 +15,28 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""
-Dummy project source.
-"""
-import helloworld_schema as schema
+"""Hello World schemas."""
 
-from forml import project
 from forml.io import dsl
-from forml.io.dsl import function
 
-school_ref = schema.School.reference('bar')
-QUERY = (
-    schema.Student.join(schema.Person, schema.Student.surname == schema.Person.surname)
-    .join(school_ref, schema.Student.school == school_ref.sid)
-    .select(
-        schema.Student.surname.alias('student'),
-        school_ref['name'],
-        function.Cast(schema.Student.score, dsl.Integer()).alias('score'),
-    )
-    .where(schema.Student.score < 2)
-    .orderby(schema.Student.level, schema.Student.score)
-    .limit(10)
-)
-INSTANCE = project.Source.query(QUERY, schema.Student.level)
-project.setup(INSTANCE)
+
+class Person(dsl.Schema):
+    """Base table."""
+
+    surname = dsl.Field(dsl.String())
+    dob = dsl.Field(dsl.Date(), 'birthday')
+
+
+class Student(Person):
+    """Extended table."""
+
+    level = dsl.Field(dsl.Integer())
+    score = dsl.Field(dsl.Float())
+    school = dsl.Field(dsl.Integer())
+
+
+class School(dsl.Schema):
+    """School table."""
+
+    sid = dsl.Field(dsl.Integer(), 'id')
+    name = dsl.Field(dsl.String())

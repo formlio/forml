@@ -58,7 +58,7 @@ class Feed(io.Feed[None, layout.Vector]):
             if query.prefilter or query.postfilter or query.ordering or query.rows:
                 raise dsl.UnsupportedError('Query not supported by static feed')
             try:
-                return [features[c] for c in query.features]
+                return tuple(features[c] for c in query.features)
             except KeyError as err:
                 raise dsl.UnsupportedError(f'Column not supported by static feed: {err}')
 

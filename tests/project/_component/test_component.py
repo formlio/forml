@@ -89,9 +89,9 @@ def test_load():
 class TestSource:
     """Source unit tests."""
 
-    def test_query(self, schema: dsl.Table):
+    def test_query(self, student: dsl.Table):
         """Test the query setup."""
         with pytest.raises(forml.InvalidError):
-            project.Source.query(schema, schema.age)
-        query = project.Source.query(schema)
+            project.Source.query(student, student.score)
+        query = project.Source.query(student)
         assert isinstance(query.extract.train, dsl.Query)

@@ -259,7 +259,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         return Query(self)
 
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
-        """Use a independent reference to this Source (ie for self-join conditions).
+        """Use an independent reference to this Source (ie for self-join conditions).
 
         Args:
             name: Optional alias to be used for this reference.

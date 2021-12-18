@@ -55,9 +55,9 @@ class TestLevel(Level):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def valid_level(populated_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
+    def valid_level(project_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
         """Level fixture."""
-        return populated_lineage
+        return project_lineage
 
     @staticmethod
     @pytest.fixture(scope='session')

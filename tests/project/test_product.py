@@ -87,24 +87,6 @@ def load(package: project.Package, component: str) -> typing.Any:
     return _importer.isolated(module, package.path).INSTANCE
 
 
-@pytest.fixture(scope='session')
-def pipeline(project_package: project.Package) -> flow.Composable:
-    """Pipeline fixture."""
-    return load(project_package, 'pipeline')
-
-
-@pytest.fixture(scope='session')
-def source(project_package: project.Package) -> flow.Composable:
-    """Source fixture."""
-    return load(project_package, 'source')
-
-
-@pytest.fixture(scope='session')
-def evaluation(project_package: project.Package) -> project.Evaluation:
-    """Evaluation fixture."""
-    return load(project_package, 'evaluation')
-
-
 class TestDescriptor:
     """Descriptor unit tests."""
 
@@ -116,9 +98,7 @@ class TestDescriptor:
     def test_load(
         self,
         project_package: project.Package,
-        source: project.Source,
-        pipeline: flow.Composable,
-        evaluation: project.Evaluation,
+        project_descriptor: project.Descriptor,
     ):
         """Testing the descriptor loader."""
         with pytest.raises(forml.UnexpectedError):
@@ -126,21 +106,19 @@ class TestDescriptor:
         with pytest.raises(forml.InvalidError):
             project.Descriptor.load('foo')
         descriptor = project.Descriptor.load(project_package.manifest.package, project_package.path)
-        assert repr(descriptor.pipeline) == repr(pipeline)
-        assert repr(descriptor.source) == repr(source)
-        assert repr(descriptor.evaluation) == repr(evaluation)
+        assert repr(descriptor.pipeline) == repr(project_descriptor.pipeline)
+        assert repr(descriptor.source) == repr(project_descriptor.source)
+        assert repr(descriptor.evaluation) == repr(project_descriptor.evaluation)
 
 
 class TestArtifact:
     """Artifact unit tests."""
 
-    def test_descriptor(
-        self, project_artifact, source: project.Source, pipeline: flow.Composable, evaluation: project.Evaluation
-    ):
+    def test_descriptor(self, project_artifact, project_descriptor: project.Descriptor):
         """Testing descriptor access."""
-        assert repr(project_artifact.descriptor.pipeline) == repr(pipeline)
-        assert repr(project_artifact.descriptor.source) == repr(source)
-        assert repr(project_artifact.descriptor.evaluation) == repr(evaluation)
+        assert repr(project_artifact.descriptor.pipeline) == repr(project_descriptor.pipeline)
+        assert repr(project_artifact.descriptor.source) == repr(project_descriptor.source)
+        assert repr(project_artifact.descriptor.evaluation) == repr(project_descriptor.evaluation)
 
     def test_launcher(self, project_artifact: project.Artifact):
         """Testing launcher access."""

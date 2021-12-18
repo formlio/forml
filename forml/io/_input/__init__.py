@@ -132,7 +132,7 @@ class Feed(
         sources: typing.Mapping['dsl.Source', parser.Source],
         features: typing.Mapping['dsl.Feature', parser.Feature],
         **kwargs: typing.Any,
-    ) -> typing.Callable[['dsl.Query'], layout.ColumnMajor]:
+    ) -> typing.Callable[['dsl.Query', typing.Optional[typing.Mapping[str, layout.Vector]]], layout.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
@@ -164,7 +164,7 @@ class Feed(
 
     @classmethod
     def format(cls, data: layout.ColumnMajor) -> typing.Any:
-        """Optional post-formatting to be applied upon obtaining the featurear data from the raw reader.
+        """Optional post-formatting to be applied upon obtaining the feature data from the raw reader.
 
         Args:
             data: Input Columnar data to be formatted.
@@ -292,9 +292,5 @@ class Importer:
             matcher = self.Matcher(feed.sources)
             source.accept(matcher)
             if matcher:
-                break
-        else:
-            raise forml.MissingError(
-                f'None of the {len(self._feeds)} available feeds provide all of the required sources'
-            )
-        return feed  # pylint: disable=undefined-loop-variable
+                return feed
+        raise forml.MissingError(f'None of the {len(self._feeds)} available feeds provide all of the required sources')
