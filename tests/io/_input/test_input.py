@@ -45,10 +45,10 @@ class TestImporter:
         pool = io.Importer(conf10, instant, conf1000)
         assert tuple(f.identity for f in pool) == ('instant', 'conf1000', 'conf10')
 
-    def test_match(self, feed: type[io.Feed], query: dsl.Query, person: dsl.Table):
+    def test_match(self, feed: type[io.Feed], query: dsl.Query):
         """Feed matching test."""
         instance = feed(identity='instance')
         pool = io.Importer(instance)
         assert pool.match(query) is instance
         with pytest.raises(forml.MissingError):
-            pool.match(person)
+            pool.match(dsl.Table(query.schema))

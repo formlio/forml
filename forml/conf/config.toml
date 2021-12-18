@@ -28,6 +28,9 @@ scheduler = "multiprocessing"
 provider = "graphviz"
 format = "png"
 
+[RUNNER.pyfunc]
+provider = "pyfunc"
+
 
 [REGISTRY]
 default = "homedir"

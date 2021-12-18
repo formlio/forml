@@ -19,12 +19,10 @@
 Forml demos.
 """
 
-import typing
 
 import pandas as pd
 from sklearn import ensemble, feature_extraction, impute, linear_model, naive_bayes, preprocessing
 
-from forml import flow
 from forml.io import dsl
 from forml.lib.feed import static
 from forml.lib.pipeline import payload, topology
@@ -55,25 +53,6 @@ LR = topology.Consumer.operator(
 )
 
 Bayes = topology.Consumer.operator(topology.Class.actor(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
-
-
-@topology.Labeler.operator
-class Extractor(flow.Actor):
-    """Here we just create a custom actor that simply expects the label to be a specific column in the input dataset and
-    returns two objects - a dataframe without the label column and a series with just the labels.
-    """
-
-    def __init__(self, column: str = 'label'):
-        self._column: str = column
-
-    def apply(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-        return df.drop(columns=self._column), df[self._column]
-
-    def get_params(self) -> dict[str, typing.Any]:
-        return {'column': self._column}
-
-    def set_params(self, column: str) -> None:
-        self._column = column
 
 
 @topology.Mapper.operator

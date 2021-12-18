@@ -119,7 +119,7 @@ repos:
   - id: pylint
     name: Pylint
     exclude: ^examples/.*$
-    entry: "env PYTHONPATH=. pylint"
+    entry: "env PYTHONPATH=.:tests pylint"
     language: system
     files: \.py$
     pass_filenames: true

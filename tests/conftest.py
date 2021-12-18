@@ -22,6 +22,7 @@ Global ForML unit tests fixtures.
 import collections
 import datetime
 import pathlib
+import struct
 import typing
 import uuid
 
@@ -178,13 +179,13 @@ def valid_generation() -> asset.Generation.Key:
 @pytest.fixture(scope='function')
 def nodes() -> typing.Sequence[uuid.UUID]:
     """Persistent nodes GID fixture."""
-    return uuid.UUID(bytes=b'\x00' * 16), uuid.UUID(bytes=b'\x01' * 16), uuid.UUID(bytes=b'\x02' * 16)
+    return uuid.UUID(bytes=b'\x00' * 16), uuid.UUID(bytes=b'\x01' * 16)
 
 
 @pytest.fixture(scope='function')
-def states(nodes) -> typing.Mapping[uuid.UUID, bytes]:
+def states(nodes: typing.Sequence[uuid.UUID]) -> typing.Mapping[uuid.UUID, bytes]:
     """State IDs to state values mapping fixture."""
-    return collections.OrderedDict((n, n.bytes) for n in nodes)
+    return collections.OrderedDict((n, struct.pack('!Q', i)) for i, n in enumerate(nodes, start=1))
 
 
 @pytest.fixture(scope='function')
@@ -337,7 +338,7 @@ def feed(
 ) -> type[io.Feed]:
     """Dummy feed fixture."""
 
-    class Dummy(io.Feed, alias=reference):
+    class Dummy(io.Feed[str, str], alias=reference):
         """Dummy feed for unit-testing purposes."""
 
         class Reader(io.Feed.Reader):
@@ -347,10 +348,10 @@ def feed(
                 """Dummy parser that returns string keyword of `trainset` or `testset` depending on the number
                 of projected columns."""
 
-                # pylint: disable=abstract-method
-                def __getattr__(self, item: str) -> typing.Callable[..., str]:
-                    """Fake implementation of the remaining `generate_*(...)` methods."""
-                    return lambda *_: ''
+                resolve_feature = (
+                    generate_alias
+                ) = generate_expression = generate_join = generate_literal = generate_set = lambda *_: ''
+                generate_reference = lambda *_: ('', '')
 
                 def generate_element(self, origin: str, element: str) -> str:
                     return f'{origin}-{element}'
@@ -388,6 +389,7 @@ def feed(
             """Abstract method implementation."""
             return {
                 student.join(person, student.surname == person.surname).source: 'pupil',
+                person: 'person',
                 student: 'student',
                 school: 'school',
             }
