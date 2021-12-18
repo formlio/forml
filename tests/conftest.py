@@ -27,11 +27,14 @@ import uuid
 
 import pytest
 
-from forml import flow, io, project
-from forml.io import dsl
-from forml.io.dsl import function, parser
+from forml import flow, io
+from forml import project as prj
+from forml.io import dsl, layout
+from forml.io.dsl import parser as parsmod
 from forml.lib.pipeline import topology
 from forml.runtime import asset
+
+from . import helloworld_schema
 
 
 class WrappedActor:
@@ -40,16 +43,18 @@ class WrappedActor:
     def __init__(self, **params):
         self._model = []
         self._params = params
+        self._hash: int = 0
 
     def train(self, features, labels) -> None:
         """Train to-be handler."""
         self._model.append((features, labels))
 
-    def predict(self, features) -> int:
+    def predict(self, features: typing.Sequence[typing.Any]) -> typing.Sequence[typing.Any]:
         """Apply to-be handler."""
         if not self._model:
             raise ValueError('Not Fitted')
-        return hash(features) ^ hash(tuple(self._model)) ^ hash(tuple(sorted(self._params.items())))
+        model = hash(tuple(self._model)) ^ hash(tuple(sorted(self._params.items())))
+        return tuple(hash(f) ^ model for f in features)
 
     def get_params(self) -> typing.Mapping[str, typing.Any]:
         """Get hyper-parameters of this actor."""
@@ -95,27 +100,27 @@ def spec(actor: type[flow.Actor], hyperparams):
 
 
 @pytest.fixture(scope='session')
-def trainset() -> tuple[str, str]:
+def trainset() -> layout.ColumnMajor:
     """Trainset fixture."""
-    return '123', 'xyz'
+    return ('smith', 'black', 'harris'), ('oxford', 'cambridge', 'stanford'), (1, 2, 3), (1, 1, 3)
 
 
 @pytest.fixture(scope='session')
-def testset(trainset) -> str:
+def testset(trainset: layout.ColumnMajor) -> layout.ColumnMajor:
     """Testset fixture."""
-    return trainset[0]
+    return trainset[:-1]
 
 
 @pytest.fixture(scope='session')
-def state(spec: flow.Spec, trainset) -> bytes:
+def state(spec: flow.Spec, trainset: layout.ColumnMajor) -> bytes:
     """Actor state fixture."""
     actor = spec()
-    actor.train(*trainset)
+    actor.train(trainset[:-1], trainset[-1])
     return actor.get_state()
 
 
 @pytest.fixture(scope='session')
-def prediction(spec: flow.Spec, state: bytes, testset) -> int:
+def prediction(spec: flow.Spec, state: bytes, testset: layout.ColumnMajor) -> layout.ColumnMajor:
     """Prediction result fixture."""
     actor = spec()
     actor.set_state(state)
@@ -129,31 +134,37 @@ def project_path() -> pathlib.Path:
 
 
 @pytest.fixture(scope='session')
-def project_package(project_path: pathlib.Path) -> project.Package:
+def project_package(project_path: pathlib.Path) -> prj.Package:
     """Test project package fixture."""
-    return project.Package(project_path)
+    return prj.Package(project_path)
 
 
 @pytest.fixture(scope='session')
-def project_manifest(project_package: project.Package) -> project.Manifest:
+def project_manifest(project_package: prj.Package) -> prj.Manifest:
     """Test project manifest fixture."""
     return project_package.manifest
 
 
 @pytest.fixture(scope='session')
-def project_artifact(project_package: project.Package, project_path: str) -> project.Artifact:
+def project_artifact(project_package: prj.Package, project_path: str) -> prj.Artifact:
     """Test project artifact fixture."""
     return project_package.install(project_path)
 
 
 @pytest.fixture(scope='session')
-def project_name(project_manifest: project.Manifest) -> asset.Project.Key:
+def project_descriptor(project_artifact: prj.Artifact) -> prj.Descriptor:
+    """Test project artifact fixture."""
+    return project_artifact.descriptor
+
+
+@pytest.fixture(scope='session')
+def project_name(project_manifest: prj.Manifest) -> asset.Project.Key:
     """Test project name fixture."""
     return project_manifest.name
 
 
 @pytest.fixture(scope='session')
-def project_lineage(project_manifest: project.Manifest) -> asset.Lineage.Key:
+def project_lineage(project_manifest: prj.Manifest) -> asset.Lineage.Key:
     """Test project lineage fixture."""
     return project_manifest.version
 
@@ -187,76 +198,126 @@ def tag(states: typing.Mapping[uuid.UUID, bytes]) -> asset.Tag:
 
 
 @pytest.fixture(scope='session')
-def schema() -> dsl.Table:
-    """Schema fixture."""
+def empty_lineage(project_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
+    """Lineage fixture."""
+    return asset.Lineage.Key(f'{project_lineage}.1')
 
-    class Human(dsl.Schema):
-        """Human schema representation."""
 
-        name = dsl.Field(dsl.String())
-        age = dsl.Field(dsl.Integer())
+@pytest.fixture(scope='function')
+def registry(
+    project_name: asset.Project.Key,
+    project_lineage: asset.Lineage.Key,
+    empty_lineage: asset.Lineage.Key,
+    valid_generation: asset.Generation.Key,
+    tag: asset.Tag,
+    states: typing.Mapping[uuid.UUID, bytes],
+    project_package: prj.Package,
+) -> asset.Registry:
+    """Registry fixture."""
+    content = {
+        project_name: {
+            project_lineage: (project_package, {valid_generation: (tag, tuple(states.values()))}),
+            empty_lineage: (project_package, {}),
+        }
+    }
 
-    return Human
+    class Registry(asset.Registry):
+        """Fixture registry implementation"""
+
+        def projects(self) -> typing.Iterable[str]:
+            return content.keys()
+
+        def lineages(self, project: asset.Project.Key) -> typing.Iterable[asset.Lineage.Key]:
+            return content[project].keys()
+
+        def generations(
+            self, project: asset.Project.Key, lineage: asset.Lineage.Key
+        ) -> typing.Iterable[asset.Generation.Key]:
+            try:
+                return content[project][lineage][1].keys()
+            except KeyError as err:
+                raise asset.Level.Invalid(f'Invalid lineage ({lineage})') from err
+
+        def pull(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> prj.Package:
+            return content[project][lineage][0]
+
+        def push(self, package: prj.Package) -> None:
+            raise NotImplementedError()
+
+        def read(
+            self,
+            project: asset.Project.Key,
+            lineage: asset.Lineage.Key,
+            generation: asset.Generation.Key,
+            sid: uuid.UUID,
+        ) -> bytes:
+            if sid not in content[project][lineage][1][generation][0].states:
+                raise asset.Level.Invalid(f'Invalid state id ({sid})')
+            idx = content[project][lineage][1][generation][0].states.index(sid)
+            return content[project][lineage][1][generation][1][idx]
+
+        def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
+            raise NotImplementedError()
+
+        def open(
+            self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+        ) -> asset.Tag:
+            try:
+                return content[project][lineage][1][generation][0]
+            except KeyError as err:
+                raise asset.Level.Invalid(f'Invalid generation ({lineage}.{generation})') from err
+
+        def close(
+            self,
+            project: asset.Project.Key,
+            lineage: asset.Lineage.Key,
+            generation: asset.Generation.Key,
+            tag: asset.Tag,
+        ) -> None:
+            raise NotImplementedError()
+
+    return Registry()
+
+
+@pytest.fixture(scope='function')
+def directory(registry: asset.Registry) -> asset.Directory:
+    """Directory root fixture."""
+    return asset.Directory(registry)
+
+
+@pytest.fixture(scope='function')
+def valid_instance(
+    project_name: asset.Project.Key,
+    project_lineage: asset.Lineage.Key,
+    valid_generation: asset.Generation.Key,
+    directory: asset.Directory,
+) -> asset.Instance:
+    """Asset instance fixture."""
+    return asset.Instance(project_name, project_lineage, valid_generation, directory)
+
+
+@pytest.fixture(scope='session')
+def query(project_descriptor: prj.Descriptor) -> dsl.Query:
+    """Query fixture."""
+    return project_descriptor.source.extract.train
 
 
 @pytest.fixture(scope='session')
 def person() -> dsl.Table:
     """Base table fixture."""
-
-    class Person(dsl.Schema):
-        """Base table."""
-
-        surname = dsl.Field(dsl.String())
-        dob = dsl.Field(dsl.Date(), 'birthday')
-
-    return Person
+    return helloworld_schema.Person
 
 
 @pytest.fixture(scope='session')
-def student(person: dsl.Table) -> dsl.Table:
+def student() -> dsl.Table:
     """Extended table fixture."""
-
-    class Student(person):
-        """Extended table."""
-
-        level = dsl.Field(dsl.Integer())
-        score = dsl.Field(dsl.Float())
-        school = dsl.Field(dsl.Integer())
-
-    return Student
+    return helloworld_schema.Student
 
 
 @pytest.fixture(scope='session')
 def school() -> dsl.Table:
     """School table fixture."""
-
-    class School(dsl.Schema):
-        """School table."""
-
-        sid = dsl.Field(dsl.Integer(), 'id')
-        name = dsl.Field(dsl.String())
-
-    return School
-
-
-@pytest.fixture(scope='session')
-def school_ref(school: dsl.Table) -> dsl.Reference:
-    """School table reference fixture."""
-    return school.reference('bar')
-
-
-@pytest.fixture(scope='session')
-def query(person: dsl.Table, student: dsl.Table, school_ref: dsl.Reference) -> dsl.Query:
-    """Query fixture."""
-    query = (
-        student.join(person, student.surname == person.surname)
-        .join(school_ref, student.school == school_ref.sid)
-        .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, dsl.String()))
-        .where(student.score < 2)
-        .orderby(student.level, student.score)
-        .limit(10)
-    )
-    return query
+    return helloworld_schema.School
 
 
 @pytest.fixture(scope='session')
@@ -267,21 +328,69 @@ def reference() -> str:
 
 @pytest.fixture(scope='session')
 def feed(
-    reference: str, person: dsl.Table, student: dsl.Table, school: dsl.Table  # pylint: disable=unused-argument
+    reference: str,
+    person: dsl.Table,
+    student: dsl.Table,
+    school: dsl.Table,
+    trainset: layout.ColumnMajor,
+    testset: layout.ColumnMajor,  # pylint: disable=unused-argument
 ) -> type[io.Feed]:
     """Dummy feed fixture."""
 
     class Dummy(io.Feed, alias=reference):
         """Dummy feed for unit-testing purposes."""
 
+        class Reader(io.Feed.Reader):
+            """Dummy reader that returns either the trainset or testset fixtures."""
+
+            class Parser(parsmod.Visitor[str, str]):
+                """Dummy parser that returns string keyword of `trainset` or `testset` depending on the number
+                of projected columns."""
+
+                # pylint: disable=abstract-method
+                def __getattr__(self, item: str) -> typing.Callable[..., str]:
+                    """Fake implementation of the remaining `generate_*(...)` methods."""
+                    return lambda *_: ''
+
+                def generate_element(self, origin: str, element: str) -> str:
+                    return f'{origin}-{element}'
+
+                def generate_query(
+                    self,
+                    source: str,
+                    features: typing.Sequence[str],
+                    where: typing.Optional[str],
+                    groupby: typing.Sequence[str],
+                    having: typing.Optional[str],
+                    orderby: typing.Sequence[tuple[str, dsl.Ordering.Direction]],
+                    rows: typing.Optional[dsl.Rows],
+                ) -> str:
+                    return 'testset' if len(features) == len(testset) else 'trainset'
+
+            @classmethod
+            def parser(
+                cls,
+                sources: typing.Mapping[dsl.Source, parsmod.Source],
+                features: typing.Mapping[dsl.Feature, parsmod.Feature],
+            ) -> parsmod.Visitor:
+                return cls.Parser(sources, features)  # pylint: disable=abstract-class-instantiated
+
+            @classmethod
+            def read(cls, statement: str, **kwargs: typing.Any) -> layout.Native:
+                return testset if statement == 'testset' else trainset
+
         def __init__(self, identity: str, **readerkw):
             super().__init__(**readerkw)
             self.identity: str = identity
 
         @property
-        def sources(self) -> typing.Mapping[dsl.Source, parser.Source]:
+        def sources(self) -> typing.Mapping[dsl.Source, parsmod.Source]:
             """Abstract method implementation."""
-            return {student.join(person, student.surname == person.surname).source: None, student: None, school: None}
+            return {
+                student.join(person, student.surname == person.surname).source: 'pupil',
+                student: 'student',
+                school: 'school',
+            }
 
     return Dummy
 
@@ -292,6 +401,13 @@ def sink(reference: str) -> type[io.Sink]:  # pylint: disable=unused-argument
 
     class Dummy(io.Sink, alias=reference):
         """Dummy sink for unit-testing purposes."""
+
+        class Writer(io.Sink.Writer):
+            """Dummy black-hole sink writer."""
+
+            @classmethod
+            def write(cls, data: layout.Native, **kwargs: typing.Any) -> None:
+                """Do nothing."""
 
         def __init__(self, identity: str, **readerkw):
             super().__init__(**readerkw)

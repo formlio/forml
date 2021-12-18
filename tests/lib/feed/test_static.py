@@ -32,27 +32,15 @@ class TestFeed:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def name() -> layout.Vector:
-        """Feed column fixture."""
-        return ['a', 'b', 'c']
+    def table(query: dsl.Query) -> dsl.Table:
+        """Table fixture."""
+        return dsl.Table(query.schema)
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def age() -> layout.Vector:
-        """Feed column fixture."""
-        return [1, 2, 3]
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def data(name: layout.Vector, age: layout.Vector) -> layout.ColumnMajor:
-        """Data fixture."""
-        return [name, age]
-
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def feed(schema: dsl.Table, data: layout.ColumnMajor) -> static.Feed:
+    def feed(table: dsl.Table, testset: layout.ColumnMajor) -> static.Feed:
         """Feed fixture."""
-        return static.Feed({schema: data})
+        return static.Feed({table: testset})
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -61,24 +49,20 @@ class TestFeed:
         return feed.reader(feed.sources, feed.features)
 
     def test_query(
-        self,
-        reader: typing.Callable[[dsl.Query], layout.ColumnMajor],
-        schema: dsl.Table,
-        name: layout.Vector,
-        age: layout.Vector,
+        self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], table: dsl.Table, testset: layout.ColumnMajor
     ):
         """Test feed query."""
-        assert reader(schema.select(schema.age, schema.name)) == [age, name]
+        assert reader(table.query) == testset
 
-    def test_unsupported(self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], schema: dsl.Table):
+    def test_unsupported(self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], table: dsl.Table):
         """Test unsuported operations."""
         with pytest.raises(dsl.UnsupportedError):
-            reader(schema.where(schema.age > 1))
+            reader(table.where(table.score > 1))
         with pytest.raises(dsl.UnsupportedError):
-            reader(schema.having(schema.age > 1))
+            reader(table.having(table.score > 1))
         with pytest.raises(dsl.UnsupportedError):
-            reader(schema.orderby(schema.name))
+            reader(table.orderby(table.student))
         with pytest.raises(dsl.UnsupportedError):
-            reader(schema.limit(1))
+            reader(table.limit(1))
         with pytest.raises(dsl.UnsupportedError):
-            reader(schema.select(schema.age + 1))
+            reader(table.select(table.score + 1))

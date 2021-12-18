@@ -63,6 +63,9 @@ class Instruction(metaclass=abc.ABCMeta):
 class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
     """Main entity of the assembled code."""
 
+    instruction: Instruction
+    arguments: tuple[Instruction]
+
     def __new__(cls, instruction: Instruction, arguments: typing.Optional[typing.Sequence[Instruction]] = None):
         if arguments is None:
             arguments = []

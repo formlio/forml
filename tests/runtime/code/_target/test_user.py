@@ -26,6 +26,7 @@ import typing
 import pytest
 
 from forml import flow
+from forml.io import layout
 from forml.runtime.code._target import user
 
 
@@ -61,7 +62,14 @@ class TestMapper(Functor):
         """Functor args fixture."""
         return [testset]
 
-    def test_call(self, functor: user.Functor, state: bytes, hyperparams, testset, prediction):
+    def test_call(
+        self,
+        functor: user.Functor,
+        state: bytes,
+        hyperparams: typing.Mapping[str, str],
+        testset: layout.ColumnMajor,
+        prediction: layout.ColumnMajor,
+    ):
         """Test the functor call."""
         with pytest.raises(ValueError):
             functor(testset)
@@ -82,12 +90,14 @@ class TestTrainer(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def args(trainset, testset) -> typing.Sequence:
+    def args(trainset: layout.ColumnMajor, testset: layout.ColumnMajor) -> typing.Sequence:
         """Functor args fixture."""
         return [trainset, testset]
 
-    def test_call(self, functor: user.Functor, state: bytes, hyperparams, trainset):
+    def test_call(
+        self, functor: user.Functor, state: bytes, hyperparams: typing.Mapping[str, str], trainset: layout.ColumnMajor
+    ):
         """Test the functor call."""
-        assert functor(*trainset) == state
+        assert functor(trainset[:-1], trainset[-1]) == state
         functor = functor.preset_params()
-        assert functor(hyperparams, *trainset) == state
+        assert functor(hyperparams, trainset[:-1], trainset[-1]) == state

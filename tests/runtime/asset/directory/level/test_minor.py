@@ -35,10 +35,10 @@ class TestLevel(Level):
     @staticmethod
     @pytest.fixture(scope='function')
     def parent(
-        directory: asset.Directory, project_name: str, populated_lineage: asset.Lineage.Key
+        directory: asset.Directory, project_name: str, project_lineage: asset.Lineage.Key
     ) -> typing.Callable[[typing.Optional[asset.Generation.Key]], asset.Generation]:
         """Parent fixture."""
-        return lambda generation: directory.get(project_name).get(populated_lineage).get(generation)
+        return lambda generation: directory.get(project_name).get(project_lineage).get(generation)
 
     @staticmethod
     @pytest.fixture(scope='session')

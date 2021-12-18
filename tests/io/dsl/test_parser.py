@@ -135,6 +135,11 @@ class TestParser:
         """Parser fixture."""
         return Parser(sources, features)
 
+    @pytest.fixture(scope='session')
+    def school_ref(self, school: dsl.Table) -> dsl.Reference:
+        """School table reference fixture."""
+        return school.reference('bar')
+
     def test_parsing(
         self,
         query: dsl.Query,
@@ -150,7 +155,7 @@ class TestParser:
         assert result[1] == (
             (((student,), (student.surname,)), 'student'),
             (('bar',), (school_ref['name'],)),
-            (function.Cast, ((student,), (student.score,)), dsl.String()),
+            ((function.Cast, ((student,), (student.score,)), dsl.Integer()), 'score'),
         )
         assert result[5] == (
             (((student,), ('baz',)), dsl.Ordering.Direction.ASCENDING),

@@ -69,9 +69,11 @@ class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, data: layout.ColumnMajor) -> None:
+    def __call__(self, data: layout.ColumnMajor) -> layout.Native:
         LOGGER.debug('Starting to publish')
-        return self.write(self.format(data), **self._kwargs)
+        native = self.format(data)
+        self.write(native, **self._kwargs)
+        return native
 
     @classmethod
     def format(cls, data: layout.ColumnMajor) -> layout.Native:

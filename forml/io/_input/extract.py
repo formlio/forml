@@ -153,7 +153,31 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, query: dsl.Query) -> layout.ColumnMajor:
+    def __call__(
+        self, query: dsl.Query, source: typing.Optional[typing.Mapping[str, layout.Vector]] = None
+    ) -> layout.ColumnMajor:
+        """Reader entrypoint.
+
+        It operates in two possible modes:
+            * extraction - when launched just using the query without the `source` parameter, it simply executes
+              the query against the backend.
+            * augmentation - if `source` is provided, it is interpreted as the actual source to be returned but
+              potentially incomplete in terms of the expected schema; in which case the reader is supposed to just
+              augment the partial data to meet the query schema.
+
+        Args:
+            query: The query specifying the requested data.
+            source: Optional - potentially incomplete - labelled columns to be augmented according to the query.
+
+        Returns:
+            Data extracted according to the query.
+        """
+        if source:
+            header = [f.name for f in query.features]
+            if any(h not in source for h in header):
+                raise forml.InvalidError('Partial augmentation not supported')
+            return [source[h] for h in header]
+
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._features) as visitor:
             query.accept(visitor)
