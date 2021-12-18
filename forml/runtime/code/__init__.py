@@ -22,7 +22,7 @@ ForML runtime task graph assembly logic.
 from ._compiler import generate
 from ._target import Instruction, Symbol
 from ._target.system import Committer, Dumper, Getter, Loader
-from ._target.user import Functor, Mapper, Preset
+from ._target.user import Apply, Functor, Preset
 
 __all__ = [
     'generate',
@@ -34,5 +34,5 @@ __all__ = [
     'Committer',
     'Loader',
     'Getter',
-    'Mapper',
+    'Apply',
 ]

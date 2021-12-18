@@ -60,8 +60,8 @@ class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
         def __repr__(self):
             return repr(self._writer)
 
-        def apply(self, data: layout.ColumnMajor) -> None:
-            self._writer(data)
+        def apply(self, data: layout.ColumnMajor) -> layout.Native:
+            return self._writer(data)
 
     def __init__(self, **kwargs: typing.Any):
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs

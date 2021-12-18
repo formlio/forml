@@ -132,7 +132,7 @@ class Feed(
         sources: typing.Mapping['dsl.Source', parser.Source],
         features: typing.Mapping['dsl.Feature', parser.Feature],
         **kwargs: typing.Any,
-    ) -> typing.Callable[['dsl.Query', typing.Optional[typing.Mapping[str, layout.Vector]]], layout.ColumnMajor]:
+    ) -> typing.Callable[['dsl.Query', typing.Optional[extract.Reader.RequestT]], layout.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

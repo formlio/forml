@@ -21,6 +21,7 @@ Global ForML unit tests fixtures.
 # pylint: disable=no-self-use
 import collections
 import datetime
+import multiprocessing
 import pathlib
 import struct
 import typing
@@ -322,14 +323,14 @@ def school() -> dsl.Table:
 
 
 @pytest.fixture(scope='session')
-def reference() -> str:
+def io_reference() -> str:
     """Dummy feed/sink reference fixture"""
     return 'dummy'
 
 
 @pytest.fixture(scope='session')
-def feed(
-    reference: str,
+def feed_type(
+    io_reference: str,
     person: dsl.Table,
     student: dsl.Table,
     school: dsl.Table,
@@ -338,10 +339,10 @@ def feed(
 ) -> type[io.Feed]:
     """Dummy feed fixture."""
 
-    class Dummy(io.Feed[str, str], alias=reference):
+    class Feed(io.Feed[str, str], alias=io_reference):
         """Dummy feed for unit-testing purposes."""
 
-        class Reader(io.Feed.Reader):
+        class Reader(io.Feed.Reader[str, str, layout.ColumnMajor]):
             """Dummy reader that returns either the trainset or testset fixtures."""
 
             class Parser(parsmod.Visitor[str, str]):
@@ -377,7 +378,7 @@ def feed(
                 return cls.Parser(sources, features)  # pylint: disable=abstract-class-instantiated
 
             @classmethod
-            def read(cls, statement: str, **kwargs: typing.Any) -> layout.Native:
+            def read(cls, statement: str, **kwargs: typing.Any) -> layout.ColumnMajor:
                 return testset if statement == 'testset' else trainset
 
         def __init__(self, identity: str, **readerkw):
@@ -394,25 +395,48 @@ def feed(
                 school: 'school',
             }
 
-    return Dummy
+    return Feed
 
 
 @pytest.fixture(scope='session')
-def sink(reference: str) -> type[io.Sink]:  # pylint: disable=unused-argument
+def feed_instance(feed_type: type[io.Feed]) -> io.Feed:
+    """Feed instance fixture"""
+    return feed_type(identity='test')
+
+
+@pytest.fixture(scope='session')
+def sink_type(io_reference) -> type[io.Sink]:  # pylint: disable=unused-argument
     """Dummy sink fixture."""
 
-    class Dummy(io.Sink, alias=reference):
+    class Sink(io.Sink, alias=io_reference):
         """Dummy sink for unit-testing purposes."""
 
-        class Writer(io.Sink.Writer):
+        class Writer(io.Sink.Writer[layout.ColumnMajor]):
             """Dummy black-hole sink writer."""
 
             @classmethod
-            def write(cls, data: layout.Native, **kwargs: typing.Any) -> None:
-                """Do nothing."""
+            def write(
+                cls, data: layout.ColumnMajor, queue: typing.Optional[multiprocessing.Queue] = None
+            ) -> layout.ColumnMajor:
+                if queue:
+                    queue.put(data)
+                return data
 
         def __init__(self, identity: str, **readerkw):
             super().__init__(**readerkw)
             self.identity: str = identity
 
-    return Dummy
+    return Sink
+
+
+@pytest.fixture(scope='function')
+def sink_output() -> multiprocessing.Queue:
+    """Sink output queue."""
+    with multiprocessing.Manager() as manager:
+        yield manager.Queue()
+
+
+@pytest.fixture(scope='function')
+def sink_instance(sink_type: type[io.Sink], sink_output: multiprocessing.Queue) -> io.Sink:
+    """Sink instance fixture"""
+    return sink_type(identity='test', queue=sink_output)

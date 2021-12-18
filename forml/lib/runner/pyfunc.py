@@ -42,12 +42,15 @@ class Term(abc.ABC):
 class Task(Term):
     """Term representing an actor action."""
 
-    def __init__(self, actor: flow.Actor, action: code.Mapper):
+    def __init__(self, actor: flow.Actor, action: code.Apply):
         self._actor: flow.Actor = actor
-        self._action: code.Mapper = action
+        self._action: code.Apply = action
 
-    def __call__(self, arg: typing.Any) -> typing.Any:
-        return self._action(self._actor, arg)
+    def __repr__(self):
+        return f'{self._actor}.{self._action}'
+
+    def __call__(self, *args: typing.Any) -> typing.Any:
+        return self._action(self._actor, *args)
 
 
 class Get(Term):
@@ -55,6 +58,9 @@ class Get(Term):
 
     def __init__(self, index: int):
         self._index: int = index
+
+    def __repr__(self):
+        return f'[{self._index}]'
 
     def __call__(self, arg: typing.Any) -> typing.Any:
         return arg[self._index]
@@ -67,6 +73,9 @@ class Chain(Term):
         self._right: Term = right
         self._left: Term = left
 
+    def __repr__(self):
+        return f'{self._right}({self._left})'
+
     def __call__(self, arg: typing.Any) -> typing.Any:
         return self._right(self._left(arg))
 
@@ -74,38 +83,26 @@ class Chain(Term):
 class Zip(Term):
     """Term involving multiple inputs."""
 
-    class Push(Term):
-        """Helper term for producing value replicas to make them available in parallel branches."""
-
-        def __init__(self, queue: collections.deque[typing.Any], replicas: int):
-            assert replicas > 0
-            self._queue: collections.deque[typing.Any] = queue
-            self._replicas: int = replicas
-
-        def __call__(self, arg: typing.Any) -> typing.Any:
-            assert not self._queue, 'Outstanding elements'
-            for _ in range(self._replicas):
-                self._queue.append(arg)  # assuming we are duplicating just the reference
-            return arg
-
-    class Pop(Term):
-        """Helper term of accessing the replicated values created in parallel branch."""
-
-        def __init__(self, queue: collections.deque[typing.Any]):
-            self._queue: collections.deque[typing.Any] = queue
-
-        def __call__(self, arg: typing.Any) -> typing.Any:
-            return self._queue.popleft()
-
-        def __del__(self):
-            assert not self._queue, 'Outstanding elements'
-
     def __init__(self, instruction: code.Instruction, *branches: Term):
         self._instruction: code.Instruction = instruction
         self._branches: tuple[Term] = branches
 
+    def __repr__(self):
+        return f'{self._instruction}({", ".join(repr(b) for b in self._branches)})'
+
     def __call__(self, arg: typing.Any) -> typing.Any:
         return self._instruction(*(b(arg) for b in self._branches))
+
+
+class Branch(Term, metaclass=abc.ABCMeta):
+    """Base class for branch terms."""
+
+    def __init__(self, queue: collections.deque[typing.Any], name: str):
+        self._queue: collections.deque[typing.Any] = queue
+        self._name: str = name
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}[{self._name}]'
 
     @classmethod
     def fork(cls, term: Term, szout: int = 1) -> typing.Iterable[Term]:
@@ -113,8 +110,35 @@ class Zip(Term):
         if szout > 1:
             replicas = szout - 1
             queue = collections.deque(maxlen=replicas)
-            return [cls.Push(queue, replicas), *(cls.Pop(queue) for _ in range(replicas))]
+            return [Push(queue, term, replicas), *(Pop(queue, repr(term)) for _ in range(replicas))]
         return [term]
+
+
+class Push(Branch):
+    """Helper branch term for producing value replicas to make them available in parallel branches."""
+
+    def __init__(self, queue: collections.deque[typing.Any], term: Term, replicas: int):
+        assert replicas > 0
+        super().__init__(queue, repr(term))
+        self._term: Term = term
+        self._replicas: int = replicas
+
+    def __call__(self, arg: typing.Any) -> typing.Any:
+        assert not self._queue, 'Outstanding elements'
+        value = self._term(arg)
+        for _ in range(self._replicas):
+            self._queue.append(value)  # assuming we are duplicating just the reference
+        return value
+
+
+class Pop(Branch):
+    """Helper branch term for accessing the replicated values created in parallel branch."""
+
+    def __call__(self, arg: typing.Any) -> typing.Any:
+        return self._queue.popleft()
+
+    def __del__(self):
+        assert not self._queue, 'Outstanding elements'
 
 
 class Expression(Term):
@@ -130,19 +154,21 @@ class Expression(Term):
     def __init__(self, symbols: typing.Sequence[code.Symbol]):
         dag = self._build(symbols)
         assert len(dag) > 0 and dag[-1].szout == 0 and not dag[0].args, 'Invalid DAG'
-        providers: typing.Mapping[Term, collections.deque[Term]] = collections.defaultdict(
-            collections.deque, {dag[0].term: collections.deque([dag[0].term])}
-        )
-        for node in dag:
+        providers: typing.Mapping[Term, collections.deque[Term]] = {n.term: collections.deque([n.term]) for n in dag}
+
+        for node in dag[1:]:
             args = [providers[a].popleft() for a in node.args]
             term = (Zip if len(args) > 1 else Chain)(providers[node.term].popleft(), *args)
-            providers[node.term].extend(Zip.fork(term, node.szout))
+            providers[node.term].extend(Branch.fork(term, node.szout))
         assert len(providers[dag[-1].term]) == 1
-        self._expression: Term = providers[dag[-1].term].popleft()
+        self._term: Term = providers[dag[-1].term].popleft()
         assert not any(providers.values()), 'Outstanding providers'
 
     def __call__(self, arg: typing.Any) -> typing.Any:
-        return self._expression(arg)
+        return self._term(arg)
+
+    def __repr__(self):
+        return repr(self._term)
 
     @staticmethod
     def _order(
