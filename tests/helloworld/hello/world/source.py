@@ -21,15 +21,16 @@ Dummy project source.
 import helloworld_schema as schema
 
 from forml import project
-from forml.io import dsl
+from forml.io import dsl, layout
 from forml.io.dsl import function
+from forml.lib.pipeline import topology
 
 school_ref = schema.School.reference('bar')
 QUERY = (
     schema.Student.join(schema.Person, schema.Student.surname == schema.Person.surname)
     .join(school_ref, schema.Student.school == school_ref.sid)
     .select(
-        schema.Student.surname.alias('student'),
+        schema.Student.surname.alias('student'),  # pylint: disable=no-member
         school_ref['name'],
         function.Cast(schema.Student.score, dsl.Integer()).alias('score'),
     )
@@ -37,5 +38,9 @@ QUERY = (
     .orderby(schema.Student.level, schema.Student.score)
     .limit(10)
 )
-INSTANCE = project.Source.query(QUERY, schema.Student.level)
+
+TRANSPOSE = topology.Mapper.operator(topology.Function.actor(layout.transpose))
+
+
+INSTANCE = project.Source.query(QUERY, schema.Student.level) >> TRANSPOSE()  # pylint: disable=no-value-for-parameter
 project.setup(INSTANCE)

@@ -170,6 +170,8 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
         Source = Source
         Evaluation = Evaluation
 
+        __path__ = globals()['__path__']
+
         def __init__(self):
             super().__init__(__name__)
 

@@ -100,20 +100,71 @@ class Finder(abc.MetaPathFinder):
         Returns:
             Sequence of necessary finders.
         """
-        result = []
-        *parents, _ = module.__name__.split('.')
-        path = ''
-        for subpath in parents:
-            path += subpath
+
+        def virtualize(name: str) -> bool:
+            """Check the given package is a real one (can be imported) or create a virtual instance of it.
+
+            Args:
+                name: Package name.
+
+            Returns:
+                True if virtualized, otherwise False to stop the walk.
+            """
             try:
-                importlib.import_module(path)
+                importlib.import_module(name)
+                return False
             except ModuleNotFoundError:
-                subpkg = types.ModuleType(path)
-                subpkg.__path__ = path  # to make it a package it needs a __path__
-                result.append(cls(subpkg))
-            path += '.'
+                level = types.ModuleType(name)
+                level.__path__ = [name]  # to make it a package it needs a __path__
+                result.append(cls(level))
+                return True
+
+        result = []
+        if package := _parent(module.__name__):
+            _walkup(package, virtualize)
         result.append(cls(module, onexec))
         return tuple(result)
+
+
+def _parent(name: str) -> typing.Optional[str]:
+    """Get parent path of the given module or package path.
+
+    Args:
+        name: Module or package path to get the parent for.
+
+    Returns:
+        Parent package path.
+    """
+    result, _ = re.match(r'(?:(.*)\.)?(.*)', name).groups()  # different from module.rsplit('.', 1)
+    return result
+
+
+def _walkup(name: str, handler: typing.Callable[[str], bool]) -> None:
+    """Walk the module name parents and call the handler for each until it either returns False or the root is
+    reached.
+
+    Args:
+        name: Qualified module name.
+        handler: Function to be called with each parent - returning False signalizes to stop the walk.
+    """
+    assert name
+    if handler(name) and (name := _parent(name)):
+        _walkup(name, handler)
+
+
+def _unload(module: str) -> None:
+    """Unload the current module instance and all of its parent modules.
+
+    Args:
+        module: to be unloaded.
+    """
+
+    def rmmod(level: str) -> bool:
+        if level in sys.modules:
+            del sys.modules[level]
+        return True
+
+    _walkup(module, rmmod)
 
 
 @contextlib.contextmanager
@@ -127,21 +178,13 @@ def context(module: types.ModuleType) -> typing.Iterable[None]:
     Returns:
         Context manager.
     """
-
-    def unload() -> None:
-        """Unload the current module instance and all of its parent modules."""
-        name = module.__name__
-        while name:
-            if name in sys.modules:
-                del sys.modules[name]
-            name, _ = re.match(r'(?:(.*)\.)?(.*)', name).groups()  # different from name.rsplit('.', 1)
-
     sys.meta_path[:0] = finders = Finder.create(module)
-    unload()
+    name = module.__name__
+    _unload(name)
     yield
     finders = set(finders)
     sys.meta_path = [f for f in sys.meta_path if f not in finders]
-    unload()
+    _unload(name)
 
 
 def search(*paths: typing.Union[str, pathlib.Path]) -> None:
@@ -184,12 +227,11 @@ def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] =
         Imported module.
     """
     with searched(*([path] if path else [])):
-        if name in sys.modules:
-            del sys.modules[name]
+        _unload(name)
         importlib.invalidate_caches()
         module = importlib.import_module(name)
     if not isinstance(module.__loader__, Finder.Loader):
         source = getattr(module, '__file__', None)
         if bool(path) ^ bool(source) or (path and not source.startswith(str(pathlib.Path(path).resolve()))):
-            raise ModuleNotFoundError(f'No module named {name}: {path}, {source}')
+            raise ModuleNotFoundError(f'No module named {name}')
     return module

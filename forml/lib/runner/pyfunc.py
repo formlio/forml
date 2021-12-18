@@ -193,6 +193,17 @@ class Expression(Term):
             szout[target] += 1
             return target
 
+        def evaluate(arg: code.Instruction) -> typing.Any:
+            """Attempt to evaluate given instruction if possible, else return the instruction.
+
+            Args:
+                arg: Instruction to be evaluated.
+
+            Returns:
+                Evaluated or original instruction.
+            """
+            return arg() if isinstance(arg, code.Loader) else arg
+
         upstream: dict[code.Instruction, tuple[code.Instruction]] = dict(symbols)
         i2t: dict[code.Instruction, Term] = {}
         dag: list[tuple[Term, tuple[Term]]] = []
@@ -201,7 +212,7 @@ class Expression(Term):
             assert not isinstance(instruction, (code.Dumper, code.Committer)), f'Unexpected instruction: {instruction}'
             if isinstance(instruction, code.Loader):
                 assert not upstream[instruction], f'Dependent loader: {instruction}'
-                continue  # just ignore the instruction as we are going to reduce it
+                continue  # just ignore the instruction as we are going to condense it
             if isinstance(instruction, code.Getter):
                 args = upstream[instruction]
                 term = Get(instruction.index)
@@ -209,7 +220,7 @@ class Expression(Term):
                 assert isinstance(instruction, code.Functor), f'Not a functor: {instruction}'
                 spec, action = instruction
                 actor = spec()
-                action, args = action.reduce(actor, *upstream[instruction])
+                action, args = action.reduce(actor, *(evaluate(a) for a in upstream[instruction]))
                 term = Task(actor, action)
             dag.append((term, tuple(resolve(a) for a in args)))
             i2t[instruction] = term
