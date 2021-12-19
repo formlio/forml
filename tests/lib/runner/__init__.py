@@ -26,6 +26,7 @@ import multiprocessing
 import pytest
 
 from forml import io
+from forml.io import layout
 from forml.runtime import asset, facility
 
 
@@ -38,10 +39,12 @@ class Runner(abc.ABC):
     def runner(valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> facility.Runner:
         """Runner fixture."""
 
-    def test_apply(self, runner: facility.Runner, sink_output: multiprocessing.Queue):
+    def test_apply(
+        self, runner: facility.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Vector
+    ):
         """Test runner apply mode."""
         runner.apply()
-        assert sink_output.get_nowait()
+        assert tuple(sink_output.get_nowait()) == generation_prediction
 
     def test_train(self, runner: facility.Runner):
         """Test runner train mode."""

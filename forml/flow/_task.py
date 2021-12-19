@@ -169,14 +169,15 @@ class Actor(metaclass=abc.ABCMeta):
 class Spec(collections.namedtuple('Spec', 'actor, args, kwargs')):
     """Wrapper of actor class and init params."""
 
+    actor: type[Actor]
+    args: tuple[typing.Any]
+    kwargs: typing.Mapping[str, typing.Any]
+
     def __new__(cls, actor: type[Actor], *args: typing.Any, **kwargs: typing.Any):
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 
     def __repr__(self):
         return name(self.actor, *self.args, **self.kwargs)
-
-    def __hash__(self):
-        return hash(self.actor) ^ hash(self.args) ^ hash(tuple(sorted(self.kwargs.items())))
 
     def __getnewargs_ex__(self):
         return (self.actor, *self.args), dict(self.kwargs)

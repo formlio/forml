@@ -163,6 +163,9 @@ class Functor(collections.namedtuple('Functor', 'spec, action'), _target.Instruc
     def __repr__(self):
         return f'{self.spec}.{self.action}'
 
+    def __hash__(self):
+        return id(self)
+
     def preset_state(self) -> 'Functor':
         """Helper method for returning new functor that prepends the arguments with a state setter."""
         return Functor(self.spec, SetState(self.action))

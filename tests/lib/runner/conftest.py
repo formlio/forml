@@ -16,24 +16,14 @@
 # under the License.
 
 """
-Dask runner tests.
+Runner tests fixtures.
 """
-# pylint: disable=no-self-use
-
 import pytest
 
-from forml import io
-from forml.lib.runner import dask
-from forml.runtime import asset
-
-from . import Runner
+from forml.io import layout
 
 
-class TestRunner(Runner):
-    """Runner tests."""
-
-    @staticmethod
-    @pytest.fixture(scope='function', params=('threaded', 'multiprocessing'))
-    def runner(request, valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> dask.Runner:
-        """Runner fixture."""
-        return dask.Runner(valid_instance, feed_instance, sink_instance, scheduler=request.param)
+@pytest.fixture(scope='session')
+def generation_prediction() -> layout.Vector:
+    """Stateful prediction fixture."""
+    return 3, 6, 9

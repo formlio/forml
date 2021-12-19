@@ -54,6 +54,9 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
         path = pathlib.Path(path)
         return super().__new__(cls, path.resolve(), Manifest.read(path))
 
+    def __getnewargs__(self):
+        return tuple([self.path])
+
     @classmethod
     def create(
         cls, source: typing.Union[str, pathlib.Path], manifest: 'Manifest', path: typing.Union[str, pathlib.Path]
