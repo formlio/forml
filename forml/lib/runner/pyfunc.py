@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Pyfunc runner.
+Low-latency function runner suitable for apply-mode serving.
 """
 import abc
 import collections

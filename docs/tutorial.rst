@@ -145,11 +145,12 @@ before executing the commands.
 3. Apply the trained generation of the project to get the predictions::
 
     $ forml apply forml-example-titanic
-    [[0.59180614 0.40819386]
-    [0.60498469 0.39501531]
+    [0.38717846 0.37779938 0.38008973 0.37771585 0.3873835  0.38832168
+    0.38671783 0.38736506 0.38115396 0.37622997 0.37642134 0.37965842
     ...
-    [0.61020908 0.38979092]
-    [0.64064548 0.35935452]]
+    0.3824376  0.38695502 0.38891135 0.38688363 0.38726499 0.37714804
+    0.3860998  0.38041917 0.3885712 ]
+
 
 4. Run the ``apply`` mode alternatively on the ``graphviz`` runner to explore its task graph::
 

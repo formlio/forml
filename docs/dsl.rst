@@ -101,7 +101,8 @@ Example query might look like::
 
 Following is the list of the query API methods:
 
-.. autoattribute:: forml.io.dsl.Query.columns
+.. autoattribute:: forml.io.dsl.Query.features
+.. autoattribute:: forml.io.dsl.Query.schema
 .. automethod:: forml.io.dsl.Query.select
 .. automethod:: forml.io.dsl.Query.join
 .. automethod:: forml.io.dsl.Query.groupby

@@ -77,7 +77,7 @@ class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
         self._action: Action = action
 
     def __repr__(self):
-        return f'{self._action}.{self.__class__.__name__.lower()}'
+        return f'{self.__class__.__name__.lower()}.{self._action}'
 
     def __call__(self, actor: flow.Actor, *args: typing.Any) -> typing.Any:
         action, args = self.reduce(actor, *args)
