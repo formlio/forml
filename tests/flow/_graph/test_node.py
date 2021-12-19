@@ -33,7 +33,7 @@ class Atomic(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def node(spec: flow.Spec) -> flow.Atomic:
+    def node(actor_spec: flow.Spec) -> flow.Atomic:
         """Node fixture."""
 
     def test_copy(self, node: flow.Atomic):
@@ -68,9 +68,9 @@ class TestWorker(Atomic):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def node(spec: flow.Spec) -> flow.Worker:
+    def node(actor_spec: flow.Spec) -> flow.Worker:
         """Node fixture."""
-        return flow.Worker(spec, 1, 1)
+        return flow.Worker(actor_spec, 1, 1)
 
     def test_train(self, node: flow.Worker, simple: flow.Worker, multi: flow.Worker):
         """Test train subscription"""
@@ -95,9 +95,9 @@ class TestWorker(Atomic):
         """Test the node statefulness."""
         assert node.stateful
 
-    def test_spec(self, node: flow.Worker, spec: flow.Spec):
+    def test_spec(self, node: flow.Worker, actor_spec: flow.Spec):
         """Test the node spec."""
-        assert node.spec is spec
+        assert node.spec is actor_spec
 
 
 class TestFuture(Atomic):
@@ -105,7 +105,7 @@ class TestFuture(Atomic):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def node(spec: flow.Spec) -> flow.Future:
+    def node(actor_spec: flow.Spec) -> flow.Future:  # pylint: disable=unused-argument
         """Node fixture."""
         return flow.Future()
 

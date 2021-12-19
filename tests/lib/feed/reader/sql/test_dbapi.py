@@ -35,15 +35,15 @@ class TestParser(Parser):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def sources(student: dsl.Table, school: dsl.Table) -> typing.Mapping[dsl.Source, str]:
+    def sources(student_table: dsl.Table, school_table: dsl.Table) -> typing.Mapping[dsl.Source, str]:
         """Sources mapping fixture."""
-        return types.MappingProxyType({student: 'student', school: 'school'})
+        return types.MappingProxyType({student_table: 'student', school_table: 'school'})
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def features(student: dsl.Table) -> typing.Mapping[dsl.Feature, str]:
+    def features(student_table: dsl.Table) -> typing.Mapping[dsl.Feature, str]:
         """Columns mapping fixture."""
-        return types.MappingProxyType({student.level: 'class'})
+        return types.MappingProxyType({student_table.level: 'class'})
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -56,7 +56,9 @@ class TestParser(Parser):
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: dsl.Table, school: dsl.Table) -> Case:
-            query = dsl.Query(student.select(student.surname, student.score)).select(student.surname)
+        def case(student_table: dsl.Table, school_table: dsl.Table) -> Case:
+            query = dsl.Query(student_table.select(student_table.surname, student_table.score)).select(
+                student_table.surname
+            )
             expected = 'SELECT "student"."surname" FROM (SELECT "student"."surname", "student"."score" FROM "student")'
             return Case(query, expected)

@@ -35,26 +35,26 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(spec: flow.Spec) -> user.Functor:
+    def functor(actor_spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
 
-    def test_serializable(self, functor: user.Functor, state: bytes, args: typing.Sequence):
+    def test_serializable(self, functor: user.Functor, actor_state: bytes, args: typing.Sequence):
         """Test functor serializability."""
         functor = functor.preset_state()
-        output = functor(state, *args)
+        output = functor(actor_state, *args)
         clone = pickle.loads(pickle.dumps(functor))
         assert isinstance(clone, user.Functor)
-        assert functor(state, *args) == output
+        assert functor(actor_state, *args) == output
 
 
-class TestMapper(Functor):
+class TestApply(Functor):
     """Mapper functor unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> user.Functor:
+    def functor(actor_spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
-        return user.Apply().functor(spec)
+        return user.Apply().functor(actor_spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -65,28 +65,28 @@ class TestMapper(Functor):
     def test_call(
         self,
         functor: user.Functor,
-        state: bytes,
+        actor_state: bytes,
         hyperparams: typing.Mapping[str, str],
         testset: layout.ColumnMajor,
-        prediction: layout.ColumnMajor,
+        actor_prediction: layout.ColumnMajor,
     ):
         """Test the functor call."""
         with pytest.raises(ValueError):
             functor(testset)
         functor = functor.preset_state()
-        assert functor(state, testset) == prediction
+        assert functor(actor_state, testset) == actor_prediction
         functor = functor.preset_params()
-        assert functor(hyperparams, state, testset) == prediction
+        assert functor(hyperparams, actor_state, testset) == actor_prediction
 
 
-class TestTrainer(Functor):
+class TestTrain(Functor):
     """Trainer functor unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(spec: flow.Spec) -> user.Functor:
+    def functor(actor_spec: flow.Spec) -> user.Functor:
         """Functor fixture."""
-        return user.Train().functor(spec)
+        return user.Train().functor(actor_spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -95,9 +95,13 @@ class TestTrainer(Functor):
         return [trainset, testset]
 
     def test_call(
-        self, functor: user.Functor, state: bytes, hyperparams: typing.Mapping[str, str], trainset: layout.ColumnMajor
+        self,
+        functor: user.Functor,
+        actor_state: bytes,
+        hyperparams: typing.Mapping[str, str],
+        trainset: layout.ColumnMajor,
     ):
         """Test the functor call."""
-        assert functor(trainset[:-1], trainset[-1]) == state
+        assert functor(trainset[:-1], trainset[-1]) == actor_state
         functor = functor.preset_params()
-        assert functor(hyperparams, trainset[:-1], trainset[-1]) == state
+        assert functor(hyperparams, trainset[:-1], trainset[-1]) == actor_state

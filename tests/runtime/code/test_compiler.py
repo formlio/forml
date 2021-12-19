@@ -27,21 +27,21 @@ from forml.runtime import asset, code
 
 
 @pytest.fixture(scope='session')
-def node1(spec: flow.Spec) -> flow.Worker:
+def node1(actor_spec: flow.Spec) -> flow.Worker:
     """Node fixture."""
-    return flow.Worker(spec, 1, 1)
+    return flow.Worker(actor_spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node2(spec: flow.Spec) -> flow.Worker:
+def node2(actor_spec: flow.Spec) -> flow.Worker:
     """Node fixture."""
-    return flow.Worker(spec, 1, 1)
+    return flow.Worker(actor_spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node3(spec: flow.Spec) -> flow.Worker:
+def node3(actor_spec: flow.Spec) -> flow.Worker:
     """Node fixture."""
-    return flow.Worker(spec, 1, 1)
+    return flow.Worker(actor_spec, 1, 1)
 
 
 @pytest.fixture(scope='session')

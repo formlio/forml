@@ -31,9 +31,9 @@ class TestMapper:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def operator(actor: type[flow.Actor]):
+    def operator(actor_type: type[flow.Actor]):
         """Operator fixture."""
-        return topology.Mapper.operator(actor)()  # pylint: disable=no-value-for-parameter
+        return topology.Mapper.operator(actor_type)()  # pylint: disable=no-value-for-parameter
 
     def test_compose(self, operator: flow.Operator):
         """Operator composition test."""

@@ -43,7 +43,7 @@ class Scenario(abc.ABC):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def case(student: dsl.Table, school: dsl.Table) -> Case:
+    def case(student_table: dsl.Table, school_table: dsl.Table) -> Case:
         """Test case query and expected result."""
 
     @pytest.fixture(scope='session')
@@ -100,9 +100,9 @@ class Parser(metaclass=abc.ABCMeta):
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: dsl.Table, school: dsl.Table) -> Case:
+        def case(student_table: dsl.Table, school_table: dsl.Table) -> Case:
             return Case(
-                student.select(student.surname.alias('student'), student.score),
+                student_table.select(student_table.surname.alias('student'), student_table.score),
                 'SELECT "student"."surname" AS "student", "student"."score" FROM "student"',
             )
 
@@ -119,8 +119,8 @@ class Parser(metaclass=abc.ABCMeta):
                 Case(datetime.datetime(2020, 7, 9, 7, 38, 21, 123456), "TIMESTAMP '2020-07-09 07:38:21.123456'"),
             ),
         )
-        def case(request, student: dsl.Table, school: dsl.Table) -> Case:
-            query = student.select(dsl.Literal(request.param.query).alias('literal'))
+        def case(request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+            query = student_table.select(dsl.Literal(request.param.query).alias('literal'))
             expected = f'SELECT {request.param.expected} AS "literal" FROM "student"'
             return Case(query, expected)
 
@@ -147,8 +147,8 @@ class Parser(metaclass=abc.ABCMeta):
                 ),
             ),
         )
-        def case(request, student: dsl.Table, school: dsl.Table) -> Case:
-            query = student.select(request.param.query)
+        def case(request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+            query = student_table.select(request.param.query)
             expected = f'SELECT {request.param.expected} FROM "student"'
             return Case(query, expected)
 
@@ -176,9 +176,11 @@ class Parser(metaclass=abc.ABCMeta):
                 dsl.Join.Kind.CROSS,
             ),
         )
-        def case(cls, request, student: dsl.Table, school: dsl.Table) -> Case:
-            dsl, sql = cls.condition(request.param, student, school)
-            query = student.join(school, dsl, kind=request.param).select(student.surname, school.name)
+        def case(cls, request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+            dsl, sql = cls.condition(request.param, student_table, school_table)
+            query = student_table.join(school_table, dsl, kind=request.param).select(
+                student_table.surname, school_table.name
+            )
             expected = f'SELECT "student"."surname", "school"."name" FROM {cls.join(request.param)}{sql}'
             return Case(query, expected)
 
@@ -208,8 +210,10 @@ class Parser(metaclass=abc.ABCMeta):
                 Case(dsl.Ordering.Direction.DESCENDING, 'DESC'),
             ),
         )
-        def case(request, student: dsl.Table, school: dsl.Table) -> Case:
-            query = student.select(student.score).orderby(dsl.Ordering(student.score, request.param.query))
+        def case(request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+            query = student_table.select(student_table.score).orderby(
+                dsl.Ordering(student_table.score, request.param.query)
+            )
             expected = f'SELECT "student"."score" FROM "student" ORDER BY "student"."score" {request.param.expected}'
             return Case(query, expected)
 
@@ -218,14 +222,14 @@ class Parser(metaclass=abc.ABCMeta):
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: dsl.Table, school: dsl.Table) -> Case:
+        def case(student_table: dsl.Table, school_table: dsl.Table) -> Case:
             query = (
-                student.join(school, school.sid == student.school)
-                .select(student.surname.alias('student'), function.Count(school.name).alias('num'))
-                .groupby(student.surname)
-                .having(function.Count(school.name) > 1)
-                .where(student.score < 2)
-                .orderby(student.level, student.score, 'descending')
+                student_table.join(school_table, school_table.sid == student_table.school)
+                .select(student_table.surname.alias('student'), function.Count(school_table.name).alias('num'))
+                .groupby(student_table.surname)
+                .having(function.Count(school_table.name) > 1)
+                .where(student_table.score < 2)
+                .orderby(student_table.level, student_table.score, 'descending')
                 .limit(10)
             )
             expected = (
@@ -242,11 +246,11 @@ class Parser(metaclass=abc.ABCMeta):
 
         @staticmethod
         @pytest.fixture(scope='session')
-        def case(student: dsl.Table, school: dsl.Table) -> Case:
-            student = student.reference('foo')
+        def case(student_table: dsl.Table, school_table: dsl.Table) -> Case:
+            student_table = student_table.reference('foo')
             subquery = (
-                student.join(school, school.sid == student.school)
-                .select(student.surname.alias('student'), school.name.alias('school'))
+                student_table.join(school_table, school_table.sid == student_table.school)
+                .select(student_table.surname.alias('student'), school_table.name.alias('school'))
                 .reference('bar')
             )
             query = subquery.select(subquery.student)

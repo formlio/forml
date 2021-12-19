@@ -40,9 +40,9 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def pipeline(spec) -> flow.Composable:
+    def pipeline(actor_spec: flow.Spec) -> flow.Composable:
         """Pipeline fixture."""
-        return topology.Consumer(spec)
+        return topology.Consumer(actor_spec)
 
     @staticmethod
     @pytest.fixture(scope='function')

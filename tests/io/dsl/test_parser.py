@@ -101,27 +101,29 @@ class TestParser:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def sources(person: dsl.Table, student: dsl.Table, school: dsl.Table) -> typing.Mapping[dsl.Source, tuple]:
+    def sources(
+        person_table: dsl.Table, student_table: dsl.Table, school_table: dsl.Table
+    ) -> typing.Mapping[dsl.Source, tuple]:
         """Sources mapping fixture."""
         return types.MappingProxyType(
             {
-                dsl.Join(student, person, student.surname == person.surname): tuple(['foo']),
-                person: tuple([person]),
-                student: tuple([student]),
-                school: tuple([school]),
+                dsl.Join(student_table, person_table, student_table.surname == person_table.surname): tuple(['foo']),
+                person_table: tuple([person_table]),
+                student_table: tuple([student_table]),
+                school_table: tuple([school_table]),
             }
         )
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def features(student: dsl.Table) -> typing.Mapping[dsl.Feature, tuple]:
+    def features(student_table: dsl.Table) -> typing.Mapping[dsl.Feature, tuple]:
         """Features mapping fixture."""
 
         class Features:
             """Features mapping."""
 
             def __getitem__(self, feature: dsl.Feature) -> tuple:
-                if feature == student.level:
+                if feature == student_table.level:
                     return tuple(['baz'])
                 if isinstance(feature, dsl.Element):
                     return tuple([feature])
@@ -136,28 +138,28 @@ class TestParser:
         return Parser(sources, features)
 
     @pytest.fixture(scope='session')
-    def school_ref(self, school: dsl.Table) -> dsl.Reference:
+    def school_ref(self, school_table: dsl.Table) -> dsl.Reference:
         """School table reference fixture."""
-        return school.reference('bar')
+        return school_table.reference('bar')
 
     def test_parsing(
         self,
-        query: dsl.Query,
-        student: dsl.Table,
+        source_query: dsl.Query,
+        student_table: dsl.Table,
         school_ref: dsl.Reference,
         parser: parsmod.Visitor,
     ):
         """Parsing test."""
         with parser:
-            query.accept(parser)
+            source_query.accept(parser)
             result = parser.fetch()
         assert result[0][0] == ('foo',)
         assert result[1] == (
-            ((student,), (student.surname,)),
+            ((student_table,), (student_table.surname,)),
             ((('bar',), (school_ref['name'],)), 'school'),
-            ((function.Cast, ((student,), (student.score,)), dsl.Integer()), 'score'),
+            ((function.Cast, ((student_table,), (student_table.score,)), dsl.Integer()), 'score'),
         )
         assert result[5] == (
-            (((student,), (student.updated,)), dsl.Ordering.Direction.ASCENDING),
-            (((student,), (student.surname,)), dsl.Ordering.Direction.ASCENDING),
+            (((student_table,), (student_table.updated,)), dsl.Ordering.Direction.ASCENDING),
+            (((student_table,), (student_table.surname,)), dsl.Ordering.Direction.ASCENDING),
         )

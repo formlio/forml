@@ -40,25 +40,25 @@ class Source(metaclass=abc.ABCMeta):
     def source() -> frame.Queryable:
         """Undertest source."""
 
-    def test_identity(self, source: frame.Source, school: frame.Table):
+    def test_identity(self, source: frame.Source, school_table: frame.Table):
         """Test source identity."""
-        assert len({source, source, school}) == 2
+        assert len({source, source, school_table}) == 2
 
     def test_serilizable(self, source: frame.Source):
         """Test source serializability."""
         assert cloudpickle.loads(cloudpickle.dumps(source)) == source
 
-    def test_features(self, source: frame.Source, student: frame.Table):
+    def test_features(self, source: frame.Source, student_table: frame.Table):
         """Test the reported feature."""
-        assert student.surname in source.features
-        assert source.surname == student.surname
-        assert source['surname'] == student['surname']
-        assert source.birthday == student.birthday
-        assert source['birthday'] == student['birthday']
+        assert student_table.surname in source.features
+        assert source.surname == student_table.surname
+        assert source['surname'] == student_table['surname']
+        assert source.birthday == student_table.birthday
+        assert source['birthday'] == student_table['birthday']
         with pytest.raises(AttributeError):
-            _ = student.xyz
+            _ = student_table.xyz
         with pytest.raises(KeyError):
-            _ = student['xyz']
+            _ = student_table['xyz']
 
     def test_schema(self, source: frame.Source):
         """Test the reported schema."""
@@ -72,9 +72,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Test query conversion."""
         assert isinstance(source.query, frame.Query)
 
-    def test_instance(self, source: frame.Source, student: frame.Table):
+    def test_instance(self, source: frame.Source, student_table: frame.Table):
         """Test the queryable instance."""
-        assert source.instance.query == student.query
+        assert source.instance.query == student_table.query
 
     def test_reference(self, source: frame.Queryable):
         """Test the queryable reference."""
@@ -138,16 +138,16 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         self._subcondition(source, lambda s, e: s.having(e), lambda q: q.postfilter)
         assert source.having(function.Count(source.score) > 2)  # aggregation filtering is valid for having
 
-    def test_join(self, source: frame.Queryable, school: frame.Table):
+    def test_join(self, source: frame.Queryable, school_table: frame.Table):
         """Join test."""
-        joined = source.join(school, school.sid == source.school)
+        joined = source.join(school_table, school_table.sid == source.school)
         assert isinstance(joined.source, frame.Join)
         assert joined.source.kind == frame.Join.Kind.INNER
-        assert joined.source.right == school
-        assert joined.source.condition == function.Equal(school.sid, source.school)
-        self._condition(source, lambda s, e: s.join(school, e), lambda q: q.source.condition)
+        assert joined.source.right == school_table
+        assert joined.source.condition == function.Equal(school_table.sid, source.school)
+        self._condition(source, lambda s, e: s.join(school_table, e), lambda q: q.source.condition)
         with pytest.raises(dsl.GrammarError):
-            source.join(school, function.Count(source.score) > 2)  # aggregation filter
+            source.join(school_table, function.Count(source.score) > 2)  # aggregation filter
 
     def test_groupby(self, source: frame.Queryable):
         """Groupby test."""
@@ -186,10 +186,10 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 class Tangible(Queryable, metaclass=abc.ABCMeta):
     """Base class for tangible frames."""
 
-    def test_features(self, source: frame.Origin, student: frame.Table):
+    def test_features(self, source: frame.Origin, student_table: frame.Table):
         assert all(isinstance(c, series.Element) for c in source.features)
-        assert student.dob.name == 'birthday'
-        assert student.score.name == 'score'
+        assert student_table.dob.name == 'birthday'
+        assert student_table.score.name == 'score'
 
 
 class TestSchema:
@@ -197,13 +197,13 @@ class TestSchema:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def schema(student: frame.Table) -> type['_struct.Schema']:
+    def schema(student_table: dsl.Table) -> type['_struct.Schema']:
         """Schema fixture."""
-        return student.schema
+        return student_table.schema
 
-    def test_identity(self, schema: type['_struct.Schema'], student: frame.Table):
+    def test_identity(self, schema: type['_struct.Schema'], student_table: dsl.Table):
         """Schema identity tests."""
-        other = student.query.schema
+        other = student_table.query.schema
         assert schema is not other
         assert len({schema, other}) == 1
 
@@ -273,8 +273,8 @@ class TestReference(Tangible):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def source(student: frame.Table) -> frame.Reference:
-        return student.reference()
+    def source(student_table: dsl.Table) -> frame.Reference:
+        return student_table.reference()
 
 
 class TestTable(Tangible):
@@ -282,12 +282,12 @@ class TestTable(Tangible):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def source(student: frame.Table) -> frame.Table:
-        return student
+    def source(student_table: dsl.Table) -> frame.Table:
+        return student_table
 
-    def test_features(self, source: frame.Origin, student: frame.Table):
-        Queryable.test_features(self, source, student)
-        Tangible.test_features(self, source, student)
+    def test_features(self, source: frame.Origin, student_table: dsl.Table):
+        Queryable.test_features(self, source, student_table)
+        Tangible.test_features(self, source, student_table)
 
 
 class TestQuery(Queryable):
@@ -295,6 +295,6 @@ class TestQuery(Queryable):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def source(student: frame.Table) -> frame.Query:
+    def source(student_table: dsl.Table) -> frame.Query:
         """Source fixture."""
-        return student.query
+        return student_table.query

@@ -71,13 +71,13 @@ class TestLevel(Level):
         project_lineage: asset.Lineage.Key,
         empty_lineage: asset.Lineage.Key,
         valid_generation: asset.Generation.Key,
-        tag: asset.Tag,
+        generation_tag: asset.Tag,
     ):
         """Registry checkout unit test."""
         project = directory.get(project_name)
         with pytest.raises(asset.Level.Invalid):
             _ = project.get(empty_lineage).get(valid_generation).tag
-        assert project.get(project_lineage).get(valid_generation).tag == tag
+        assert project.get(project_lineage).get(valid_generation).tag == generation_tag
         assert project.get(empty_lineage).get(None).tag == asset.Tag()
 
     def test_read(
@@ -87,7 +87,7 @@ class TestLevel(Level):
         project_lineage: asset.Lineage.Key,
         invalid_lineage: asset.Lineage.Key,
         valid_generation: asset.Generation.Key,
-        states: typing.Mapping[uuid.UUID, bytes],
+        generation_states: typing.Mapping[uuid.UUID, bytes],
     ):
         """Registry load unit test."""
         project = directory.get(project_name)
@@ -95,35 +95,35 @@ class TestLevel(Level):
             project.get(invalid_lineage).get(None).get(None)
         with pytest.raises(asset.Level.Invalid):
             project.get(project_lineage).get(valid_generation).get(None)
-        for sid, value in states.items():
+        for sid, value in generation_states.items():
             assert project.get(project_lineage).get(valid_generation).get(sid) == value
 
 
 class TestTag:
     """Generation tag unit tests."""
 
-    def test_replace(self, tag: asset.Tag):
+    def test_replace(self, generation_tag: asset.Tag):
         """Test replace strategies."""
-        assert tag.replace(states=(1, 2, 3)).states == (1, 2, 3)
+        assert generation_tag.replace(states=(1, 2, 3)).states == (1, 2, 3)
         with pytest.raises(ValueError):
-            tag.replace(invalid=123)
+            generation_tag.replace(invalid=123)
         with pytest.raises(ValueError):
-            tag.replace(training=123)
+            generation_tag.replace(training=123)
         with pytest.raises(ValueError):
-            tag.replace(tuning=123)
-        assert tag.training.replace(ordinal=123).training.ordinal == 123
-        assert tag.tuning.replace(score=123).tuning.score == 123
+            generation_tag.replace(tuning=123)
+        assert generation_tag.training.replace(ordinal=123).training.ordinal == 123
+        assert generation_tag.tuning.replace(score=123).tuning.score == 123
         with pytest.raises(TypeError):
-            tag.training.replace(invalid=123)
+            generation_tag.training.replace(invalid=123)
 
-    def test_trigger(self, tag: asset.Tag):
+    def test_trigger(self, generation_tag: asset.Tag):
         """Test triggering."""
-        trained = tag.training.trigger()
-        assert trained.training.timestamp > tag.training.timestamp
-        assert trained.tuning == tag.tuning
-        tuned = tag.tuning.trigger()
-        assert tuned.tuning.timestamp > tag.tuning.timestamp
-        assert tuned.training == tag.training
+        trained = generation_tag.training.trigger()
+        assert trained.training.timestamp > generation_tag.training.timestamp
+        assert trained.tuning == generation_tag.tuning
+        tuned = generation_tag.tuning.trigger()
+        assert tuned.tuning.timestamp > generation_tag.tuning.timestamp
+        assert tuned.training == generation_tag.training
 
     def test_bool(self):
         """Test the boolean mode values."""
@@ -133,6 +133,6 @@ class TestTag:
         assert empty.training.trigger().training
         assert empty.tuning.trigger().tuning
 
-    def test_dumpload(self, tag: asset.Tag):
+    def test_dumpload(self, generation_tag: asset.Tag):
         """Test tag serialization."""
-        assert asset.Tag.loads(tag.dumps()) == tag
+        assert asset.Tag.loads(generation_tag.dumps()) == generation_tag

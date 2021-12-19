@@ -26,6 +26,7 @@ The available runner implementations are:
 
    forml.lib.runner.dask
    forml.lib.runner.graphviz
+   forml.lib.runner.pyfunc
 
 
 API
@@ -43,3 +44,4 @@ Providers
 
     dask
     graphviz
+    pyfunc
