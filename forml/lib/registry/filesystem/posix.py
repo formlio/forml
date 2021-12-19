@@ -130,7 +130,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
     STAGEDIR = '.stage'
     STATESFX = 'bin'
-    TAGFILE = 'tag.json'
+    TAGFILE = 'tag.toml'
     PKGFILE = f'package.{prj.Package.FORMAT}'
 
     @functools.lru_cache

@@ -193,7 +193,7 @@ def states(nodes: typing.Sequence[uuid.UUID]) -> typing.Mapping[uuid.UUID, bytes
 def tag(states: typing.Mapping[uuid.UUID, bytes]) -> asset.Tag:
     """Tag fixture."""
     return asset.Tag(
-        training=asset.Tag.Training(datetime.datetime(2019, 4, 1), 123),
+        training=asset.Tag.Training(datetime.datetime(2019, 4, 1), datetime.datetime(2019, 1, 2)),
         tuning=asset.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
         states=states.keys(),
     )
@@ -222,6 +222,7 @@ def registry(
             empty_lineage: (project_package, {}),
         }
     }
+    unbound: dict[uuid.UUID, bytes] = {}
 
     class Registry(asset.Registry):
         """Fixture registry implementation"""
@@ -259,7 +260,7 @@ def registry(
             return content[project][lineage][1][generation][1][idx]
 
         def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
-            raise NotImplementedError()
+            unbound[sid] = state
 
         def open(
             self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
@@ -276,7 +277,11 @@ def registry(
             generation: asset.Generation.Key,
             tag: asset.Tag,
         ) -> None:
-            raise NotImplementedError()
+            nonlocal unbound
+            assert set(tag.states).issubset(unbound)
+            assert project in content and lineage in content[project] and generation not in content[project][lineage][1]
+            content[project][lineage][1][generation] = (tag, tuple(unbound[k] for k in tag.states))
+            unbound = {}
 
     return Registry()
 

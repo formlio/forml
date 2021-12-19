@@ -128,8 +128,8 @@ class TestReader:
         """Test the read operation."""
         result = reader(query)
         expected = (
-            student_data[student_data['score'] < 2]
-            .sort_values(['level', 'score'])
+            student_data[student_data['score'] > 0]
+            .sort_values(['updated', 'surname'])
             .set_index('school')
             .join(school_data.set_index('id'))[['surname', 'name', 'score']]
             .apply(lambda r: pandas.Series([r['surname'], r['name'], int(r['score'])]), axis='columns')

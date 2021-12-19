@@ -22,10 +22,11 @@ Pyfunc runner tests.
 
 import pytest
 
+import forml
 from forml import io
 from forml.io import dsl, layout
 from forml.lib.runner import pyfunc
-from forml.runtime import asset
+from forml.runtime import asset, facility
 
 from . import Runner
 
@@ -44,6 +45,11 @@ class TestRunner(Runner):
     def input_request(testset: layout.ColumnMajor, query: dsl.Query) -> io.Feed.Reader.RequestT:
         """Request fixture."""
         return dict(zip((f.name for f in query.features), testset))
+
+    def test_train(self, runner: facility.Runner):
+        """Overridden train test."""
+        with pytest.raises(forml.InvalidError, match='Invalid runner mode'):
+            super().test_train(runner)
 
     def test_call(self, runner: pyfunc.Runner, input_request: io.Feed.Reader.RequestT):
         """Pyfunc call mode test."""

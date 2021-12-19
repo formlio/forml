@@ -32,9 +32,9 @@ def student_data(student: dsl.Table) -> pandas.DataFrame:
     """Student table fixture."""
     return pandas.DataFrame(
         [
-            ['smith', datetime.date(2012, 8, 20), 3, 1.1, 1],
-            ['brown', datetime.date(2014, 3, 11), 2, 1.4, 1],
-            ['white', datetime.date(2017, 1, 1), 1, 3.3, 2],
+            ['smith', datetime.date(2012, 8, 20), 3, 1.1, 1, datetime.datetime(2019, 4, 3)],
+            ['brown', datetime.date(2014, 3, 11), 2, 1.4, 1, datetime.datetime(2019, 4, 5)],
+            ['white', datetime.date(2017, 1, 1), 1, -3, 2, datetime.datetime(2019, 4, 1)],
         ],
         columns=(c.name for c in student.features),
     )

@@ -33,6 +33,7 @@ class Student(Person):
     level = dsl.Field(dsl.Integer())
     score = dsl.Field(dsl.Float())
     school = dsl.Field(dsl.Integer())
+    updated = dsl.Field(dsl.Timestamp())
 
 
 class School(dsl.Schema):

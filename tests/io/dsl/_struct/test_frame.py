@@ -240,7 +240,7 @@ class TestSchema:
 
     def test_access(self, schema: type['_struct.Schema']):
         """Test the schema access methods."""
-        assert tuple(f.name for f in schema) == ('surname', 'birthday', 'level', 'score', 'school')
+        assert tuple(f.name for f in schema) == ('surname', 'birthday', 'level', 'score', 'school', 'updated')
         assert schema.dob.name == 'birthday'
         assert schema['dob'].name == 'birthday'
         assert schema['birthday'].name == 'birthday'

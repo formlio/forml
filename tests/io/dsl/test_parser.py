@@ -153,11 +153,11 @@ class TestParser:
             result = parser.fetch()
         assert result[0][0] == ('foo',)
         assert result[1] == (
-            (((student,), (student.surname,)), 'student'),
-            (('bar',), (school_ref['name'],)),
+            ((student,), (student.surname,)),
+            ((('bar',), (school_ref['name'],)), 'school'),
             ((function.Cast, ((student,), (student.score,)), dsl.Integer()), 'score'),
         )
         assert result[5] == (
-            (((student,), ('baz',)), dsl.Ordering.Direction.ASCENDING),
-            (((student,), (student.score,)), dsl.Ordering.Direction.ASCENDING),
+            (((student,), (student.updated,)), dsl.Ordering.Direction.ASCENDING),
+            (((student,), (student.surname,)), dsl.Ordering.Direction.ASCENDING),
         )

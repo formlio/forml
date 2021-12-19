@@ -19,12 +19,13 @@
 """
 import collections
 import datetime
-import json
 import logging
 import operator
 import types
 import typing
 import uuid
+
+import toml
 
 from forml.io import dsl
 
@@ -171,13 +172,12 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         Returns:
             String of bytes representation.
         """
-        return json.dumps(
+        return toml.dumps(
             {
-                'training': {'timestamp': self._strftime(self.training.timestamp), 'ordinal': self.training.ordinal},
-                'tuning': {'timestamp': self._strftime(self.tuning.timestamp), 'score': self.tuning.score},
+                'training': {'timestamp': self.training.timestamp, 'ordinal': self.training.ordinal},
+                'tuning': {'timestamp': self.tuning.timestamp, 'score': self.tuning.score},
                 'states': [str(s) for s in self.states],
             },
-            indent=4,
         ).encode('utf-8')
 
     @classmethod
@@ -190,12 +190,10 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         Returns:
             Tag instance.
         """
-        meta = json.loads(raw.decode('utf-8'))
+        meta = toml.loads(raw.decode('utf-8'))
         return cls(
-            training=cls.Training(
-                timestamp=cls._strptime(meta['training']['timestamp']), ordinal=meta['training']['ordinal']
-            ),
-            tuning=cls.Tuning(timestamp=cls._strptime(meta['tuning']['timestamp']), score=meta['tuning']['score']),
+            training=cls.Training(timestamp=meta['training']['timestamp'], ordinal=meta['training']['ordinal']),
+            tuning=cls.Tuning(timestamp=meta['tuning']['timestamp'], score=meta['tuning']['score']),
             states=(uuid.UUID(s) for s in meta['states']),
         )
 
