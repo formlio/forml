@@ -32,9 +32,9 @@ class TestFeed:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def table(query: dsl.Query) -> dsl.Table:
+    def table(source_query: dsl.Query) -> dsl.Table:
         """Table fixture."""
-        return dsl.Table(query.schema)
+        return dsl.Table(source_query.schema)
 
     @staticmethod
     @pytest.fixture(scope='function')

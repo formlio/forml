@@ -52,15 +52,15 @@ class Registry(metaclass=abc.ABCMeta):
         project_name: asset.Project.Key,
         project_lineage: asset.Lineage.Key,
         valid_generation: asset.Generation.Key,
-        states: typing.Mapping[uuid.UUID, bytes],
-        tag: asset.Tag,
+        generation_states: typing.Mapping[uuid.UUID, bytes],
+        generation_tag: asset.Tag,
     ) -> asset.Registry:
         """Populated registry fixture."""
         registry = constructor()
         registry.push(project_package)
-        for sid, value in states.items():
+        for sid, value in generation_states.items():
             registry.write(project_name, project_lineage, sid, value)
-        registry.close(project_name, project_lineage, valid_generation, tag)
+        registry.close(project_name, project_lineage, valid_generation, generation_tag)
         return registry
 
     def test_projects(self, empty: asset.Registry, populated: asset.Registry, project_name: asset.Project.Key):
@@ -111,10 +111,10 @@ class Registry(metaclass=abc.ABCMeta):
         project_name: asset.Project.Key,
         project_lineage: asset.Lineage.Key,
         valid_generation: asset.Generation.Key,
-        states: typing.Mapping[uuid.UUID, bytes],
+        generation_states: typing.Mapping[uuid.UUID, bytes],
     ):
         """Registry load unit test."""
-        for sid, value in states.items():
+        for sid, value in generation_states.items():
             assert populated.read(project_name, project_lineage, valid_generation, sid) == value
 
     def test_open(
@@ -123,7 +123,7 @@ class Registry(metaclass=abc.ABCMeta):
         project_name: asset.Project.Key,
         project_lineage: asset.Lineage.Key,
         valid_generation: asset.Generation.Key,
-        tag: asset.Tag,
+        generation_tag: asset.Tag,
     ):
         """Registry checkout unit test."""
-        assert populated.open(project_name, project_lineage, valid_generation) == tag
+        assert populated.open(project_name, project_lineage, valid_generation) == generation_tag

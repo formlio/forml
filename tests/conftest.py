@@ -84,7 +84,7 @@ def train_decorator(actor, *args, **kwargs):
     scope='session',
     params=(NativeActor, topology.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
 )
-def actor(request) -> type[flow.Actor]:
+def actor_type(request) -> type[flow.Actor]:
     """Stateful actor fixture."""
     return request.param
 
@@ -96,9 +96,9 @@ def hyperparams() -> typing.Mapping[str, int]:
 
 
 @pytest.fixture(scope='session')
-def spec(actor: type[flow.Actor], hyperparams):
+def actor_spec(actor_type: type[flow.Actor], hyperparams: typing.Mapping[str, int]) -> flow.Spec:
     """Task spec fixture."""
-    return flow.Spec(actor, **hyperparams)
+    return flow.Spec(actor_type, **hyperparams)
 
 
 @pytest.fixture(scope='session')
@@ -114,18 +114,18 @@ def testset(trainset: layout.ColumnMajor) -> layout.ColumnMajor:
 
 
 @pytest.fixture(scope='session')
-def state(spec: flow.Spec, trainset: layout.ColumnMajor) -> bytes:
+def actor_state(actor_spec: flow.Spec, trainset: layout.ColumnMajor) -> bytes:
     """Actor state fixture."""
-    actor = spec()
+    actor = actor_spec()
     actor.train(trainset[:-1], trainset[-1])
     return actor.get_state()
 
 
 @pytest.fixture(scope='session')
-def prediction(spec: flow.Spec, state: bytes, testset: layout.ColumnMajor) -> layout.ColumnMajor:
+def actor_prediction(actor_spec: flow.Spec, actor_state: bytes, testset: layout.ColumnMajor) -> layout.ColumnMajor:
     """Prediction result fixture."""
-    actor = spec()
-    actor.set_state(state)
+    actor = actor_spec()
+    actor.set_state(actor_state)
     return actor.apply(testset)
 
 
@@ -178,24 +178,24 @@ def valid_generation() -> asset.Generation.Key:
 
 
 @pytest.fixture(scope='function')
-def nodes() -> typing.Sequence[uuid.UUID]:
+def stateful_nodes() -> typing.Sequence[uuid.UUID]:
     """Persistent nodes GID fixture."""
     return uuid.UUID(bytes=b'\x00' * 16), uuid.UUID(bytes=b'\x01' * 16)
 
 
 @pytest.fixture(scope='function')
-def states(nodes: typing.Sequence[uuid.UUID]) -> typing.Mapping[uuid.UUID, bytes]:
+def generation_states(stateful_nodes: typing.Sequence[uuid.UUID]) -> typing.Mapping[uuid.UUID, bytes]:
     """State IDs to state values mapping fixture."""
-    return collections.OrderedDict((n, struct.pack('!Q', i)) for i, n in enumerate(nodes, start=1))
+    return collections.OrderedDict((n, struct.pack('!Q', i)) for i, n in enumerate(stateful_nodes, start=1))
 
 
 @pytest.fixture(scope='function')
-def tag(states: typing.Mapping[uuid.UUID, bytes]) -> asset.Tag:
+def generation_tag(generation_states: typing.Mapping[uuid.UUID, bytes]) -> asset.Tag:
     """Tag fixture."""
     return asset.Tag(
         training=asset.Tag.Training(datetime.datetime(2019, 4, 1), datetime.datetime(2019, 1, 2)),
         tuning=asset.Tag.Tuning(datetime.datetime(2019, 4, 5), 3.3),
-        states=states.keys(),
+        states=generation_states.keys(),
     )
 
 
@@ -211,14 +211,14 @@ def registry(
     project_lineage: asset.Lineage.Key,
     empty_lineage: asset.Lineage.Key,
     valid_generation: asset.Generation.Key,
-    tag: asset.Tag,
-    states: typing.Mapping[uuid.UUID, bytes],
+    generation_tag: asset.Tag,
+    generation_states: typing.Mapping[uuid.UUID, bytes],
     project_package: prj.Package,
 ) -> asset.Registry:
     """Registry fixture."""
     content = {
         project_name: {
-            project_lineage: (project_package, {valid_generation: (tag, tuple(states.values()))}),
+            project_lineage: (project_package, {valid_generation: (generation_tag, tuple(generation_states.values()))}),
             empty_lineage: (project_package, {}),
         }
     }
@@ -304,41 +304,41 @@ def valid_instance(
 
 
 @pytest.fixture(scope='session')
-def query(project_descriptor: prj.Descriptor) -> dsl.Query:
+def source_query(project_descriptor: prj.Descriptor) -> dsl.Query:
     """Query fixture."""
     return project_descriptor.source.extract.train
 
 
 @pytest.fixture(scope='session')
-def person() -> dsl.Table:
+def person_table() -> dsl.Table:
     """Base table fixture."""
     return helloworld_schema.Person
 
 
 @pytest.fixture(scope='session')
-def student() -> dsl.Table:
+def student_table() -> dsl.Table:
     """Extended table fixture."""
     return helloworld_schema.Student
 
 
 @pytest.fixture(scope='session')
-def school() -> dsl.Table:
+def school_table() -> dsl.Table:
     """School table fixture."""
     return helloworld_schema.School
 
 
 @pytest.fixture(scope='session')
 def io_reference() -> str:
-    """Dummy feed/sink reference fixture"""
+    """Dummy feed/sink reference fixture."""
     return 'dummy'
 
 
 @pytest.fixture(scope='session')
 def feed_type(
     io_reference: str,
-    person: dsl.Table,
-    student: dsl.Table,
-    school: dsl.Table,
+    person_table: dsl.Table,
+    student_table: dsl.Table,
+    school_table: dsl.Table,
     trainset: layout.ColumnMajor,
     testset: layout.ColumnMajor,  # pylint: disable=unused-argument
 ) -> type[io.Feed]:
@@ -394,10 +394,10 @@ def feed_type(
         def sources(self) -> typing.Mapping[dsl.Source, parsmod.Source]:
             """Abstract method implementation."""
             return {
-                student.join(person, student.surname == person.surname).source: 'pupil',
-                person: 'person',
-                student: 'student',
-                school: 'school',
+                student_table.join(person_table, student_table.surname == person_table.surname).source: 'pupil',
+                person_table: 'person',
+                student_table: 'student',
+                school_table: 'school',
             }
 
     return Feed

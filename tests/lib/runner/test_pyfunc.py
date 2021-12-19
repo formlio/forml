@@ -42,9 +42,9 @@ class TestRunner(Runner):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def input_request(testset: layout.ColumnMajor, query: dsl.Query) -> io.Feed.Reader.RequestT:
+    def input_request(testset: layout.ColumnMajor, source_query: dsl.Query) -> io.Feed.Reader.RequestT:
         """Request fixture."""
-        return dict(zip((f.name for f in query.features), testset))
+        return dict(zip((f.name for f in source_query.features), testset))
 
     def test_train(self, runner: facility.Runner):
         """Overridden train test."""

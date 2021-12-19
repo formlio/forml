@@ -37,23 +37,25 @@ from . import Parser
 
 
 @pytest.fixture(scope='session')
-def sources(student: dsl.Table, school: dsl.Table, person: dsl.Table) -> typing.Mapping[dsl.Source, sql.Selectable]:
+def sources(
+    student_table: dsl.Table, school_table: dsl.Table, person_table: dsl.Table
+) -> typing.Mapping[dsl.Source, sql.Selectable]:
     """Sources mapping fixture."""
-    student_table = sql.table('student')
+    sql_student = sql.table('student')
     return types.MappingProxyType(
         {
-            student: student_table,
-            school: sql.table('school'),
-            dsl.Join(student, person, student.surname == person.surname): student_table,
-            person: sql.table('person'),
+            student_table: sql_student,
+            school_table: sql.table('school'),
+            dsl.Join(student_table, person_table, student_table.surname == person_table.surname): sql_student,
+            person_table: sql.table('person'),
         }
     )
 
 
 @pytest.fixture(scope='session')
-def features(student: dsl.Table) -> typing.Mapping[dsl.Feature, sql.ColumnElement]:
+def features(student_table: dsl.Table) -> typing.Mapping[dsl.Feature, sql.ColumnElement]:
     """Columns mapping fixture."""
-    return types.MappingProxyType({student.level: sql.column('class')})
+    return types.MappingProxyType({student_table.level: sql.column('class')})
 
 
 class TestParser(Parser):
@@ -123,10 +125,14 @@ class TestReader:
         return alchemy.Reader(sources, features, connection)
 
     def test_read(
-        self, reader: alchemy.Reader, query: dsl.Query, student_data: pandas.DataFrame, school_data: pandas.DataFrame
+        self,
+        reader: alchemy.Reader,
+        source_query: dsl.Query,
+        student_data: pandas.DataFrame,
+        school_data: pandas.DataFrame,
     ):
         """Test the read operation."""
-        result = reader(query)
+        result = reader(source_query)
         expected = (
             student_data[student_data['score'] > 0]
             .sort_values(['updated', 'surname'])

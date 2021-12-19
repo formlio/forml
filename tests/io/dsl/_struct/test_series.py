@@ -34,27 +34,27 @@ from forml.io.dsl._struct import frame, kind, series
 class TestOrdering:
     """Ordering unit tests."""
 
-    def test_ordering(self, student: frame.Table):
+    def test_ordering(self, student_table: dsl.Table):
         """Ordering setup tests."""
         assert (
-            series.Ordering(student.score)
-            == series.Ordering(student.score, series.Ordering.Direction.ASCENDING)
-            == series.Ordering.Direction.ASCENDING(student.score)
-            == tuple(series.Ordering.make([student.score]))[0]
-            == tuple(series.Ordering.make([student.score, 'ascending']))[0]
-            == (student.score, series.Ordering.Direction.ASCENDING)
+            series.Ordering(student_table.score)
+            == series.Ordering(student_table.score, series.Ordering.Direction.ASCENDING)
+            == series.Ordering.Direction.ASCENDING(student_table.score)
+            == tuple(series.Ordering.make([student_table.score]))[0]
+            == tuple(series.Ordering.make([student_table.score, 'ascending']))[0]
+            == (student_table.score, series.Ordering.Direction.ASCENDING)
         )
         assert (
-            tuple(series.Ordering.make([student.score, 'asc', student.surname, 'DESC']))
-            == tuple(series.Ordering.make([student.score, (student.surname, 'DESCENDING')]))
+            tuple(series.Ordering.make([student_table.score, 'asc', student_table.surname, 'DESC']))
+            == tuple(series.Ordering.make([student_table.score, (student_table.surname, 'DESCENDING')]))
             == tuple(
                 series.Ordering.make(
-                    [student.score, series.Ordering(student.surname, series.Ordering.Direction.DESCENDING)]
+                    [student_table.score, series.Ordering(student_table.surname, series.Ordering.Direction.DESCENDING)]
                 )
             )
             == (
-                (student.score, series.Ordering.Direction.ASCENDING),
-                (student.surname, series.Ordering.Direction.DESCENDING),
+                (student_table.score, series.Ordering.Direction.ASCENDING),
+                (student_table.surname, series.Ordering.Direction.DESCENDING),
             )
         )
 
@@ -76,10 +76,12 @@ class Feature(metaclass=abc.ABCMeta):
         """Test the feature dissection."""
         assert feature in feature.dissect(feature)
 
-    def test_identity(self, feature: series.Feature, school: frame.Table):
+    def test_identity(self, feature: series.Feature, school_table: frame.Table):
         """Test the identity (hashability, equality, sorting)."""
-        assert len({feature, feature, school.sid}) == 2
-        assert sorted((feature, school.sid)) == sorted((feature, school.sid), key=lambda c: repr(c.operable))
+        assert len({feature, feature, school_table.sid}) == 2
+        assert sorted((feature, school_table.sid)) == sorted(
+            (feature, school_table.sid), key=lambda c: repr(c.operable)
+        )
 
     def test_serilizable(self, feature: series.Feature):
         """Test source serializability."""
@@ -142,9 +144,9 @@ class TestElement(Operable):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def feature(student: frame.Table) -> series.Element:
+    def feature(student_table: dsl.Table) -> series.Element:
         """Element fixture."""
-        return student.reference().surname
+        return student_table.reference().surname
 
 
 class TestColumn(TestElement):
@@ -152,13 +154,13 @@ class TestColumn(TestElement):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def feature(student: frame.Table) -> series.Column:
+    def feature(student_table: dsl.Table) -> series.Column:
         """Column fixture."""
-        return student.surname
+        return student_table.surname
 
-    def test_table(self, feature: series.Element, student: frame.Table):
+    def test_table(self, feature: series.Element, student_table: dsl.Table):
         """Test the feature table reference."""
-        assert feature.origin == student
+        assert feature.origin == student_table
 
 
 class Predicate(Operable, metaclass=abc.ABCMeta):
@@ -184,14 +186,14 @@ class Predicate(Operable, metaclass=abc.ABCMeta):
             with pytest.raises(dsl.GrammarError):
                 operation(feature, 1)
 
-    def test_predicate(self, feature: series.Predicate, student: frame.Table):
+    def test_predicate(self, feature: series.Predicate, student_table: frame.Table):
         """Test predicate features."""
         factors = feature.factors
         assert factors & factors | factors == factors
         for table, expression in factors.items():
             series.Predicate.ensure_is(expression)
             assert len({f.origin for f in series.Column.dissect(expression)}) == 1
-            assert table == student
+            assert table == student_table
 
 
 class TestLogical(Predicate):
@@ -199,11 +201,11 @@ class TestLogical(Predicate):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(series.And, series.Or, series.Not))
-    def feature(request, student: frame.Table) -> series.Logical:
+    def feature(request, student_table: dsl.Table) -> series.Logical:
         """Logical fixture."""
         if issubclass(request.param, series.Bivariate):
-            return request.param(student.score > 1, student.surname != 'foo')
-        return request.param(student.level > 1)
+            return request.param(student_table.score > 1, student_table.surname != 'foo')
+        return request.param(student_table.level > 1)
 
 
 class TestComparison(Predicate):
@@ -223,11 +225,11 @@ class TestComparison(Predicate):
             series.NotNull,
         ),
     )
-    def feature(request, student: frame.Table) -> series.Comparison:
+    def feature(request, student_table: dsl.Table) -> series.Comparison:
         """Comparison fixture."""
         if issubclass(request.param, series.Bivariate):
-            return request.param(student.score, 1)
-        return request.param(student.surname)
+            return request.param(student_table.score, 1)
+        return request.param(student_table.surname)
 
     @pytest.mark.parametrize(
         'operation, operator',
@@ -250,10 +252,10 @@ class TestComparison(Predicate):
         self,
         operation: typing.Callable[[typing.Any, typing.Any], series.Logical],
         operator: type[series.Logical],
-        student: frame.Table,
+        student_table: dsl.Table,
     ):
         """Comparison operators tests."""
-        assert isinstance(operation(student.score, 1).operable, operator)
+        assert isinstance(operation(student_table.score, 1).operable, operator)
 
 
 class TestArithmetic(Operable):
@@ -264,9 +266,9 @@ class TestArithmetic(Operable):
         scope='session',
         params=(series.Addition, series.Subtraction, series.Division, series.Multiplication, series.Modulus),
     )
-    def feature(request, student: frame.Table) -> series.Arithmetic:
+    def feature(request, student_table: dsl.Table) -> series.Arithmetic:
         """Arithmetic fixture."""
-        return request.param(student.score, 1)
+        return request.param(student_table.score, 1)
 
     @pytest.mark.parametrize(
         'operation, operator',

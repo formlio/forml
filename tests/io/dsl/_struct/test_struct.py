@@ -21,21 +21,21 @@ Struct tests.
 # pylint: disable=no-self-use
 import cloudpickle
 
-from forml.io.dsl._struct import frame
+from forml.io import dsl
 
 
 class TestField:
     """Field unit tests."""
 
-    def test_renamed(self, student: frame.Table):
+    def test_renamed(self, student_table: dsl.Table):
         """Test the field renaming."""
-        assert student.schema.dob.renamed('foo').name == 'foo'
+        assert student_table.schema.dob.renamed('foo').name == 'foo'
 
 
 class TestSchema:
     """Schema unit tests."""
 
-    def test_serilizable(self, student: frame.Table):
+    def test_serilizable(self, student_table: dsl.Table):
         """Test schema serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(student.schema)) == student.schema
-        assert cloudpickle.loads(cloudpickle.dumps(student)) == student
+        assert cloudpickle.loads(cloudpickle.dumps(student_table.schema)) == student_table.schema
+        assert cloudpickle.loads(cloudpickle.dumps(student_table)) == student_table

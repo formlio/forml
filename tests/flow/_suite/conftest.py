@@ -26,7 +26,7 @@ from forml import flow
 
 
 @pytest.fixture(scope='function')
-def operator(spec: flow.Spec) -> flow.Operator:
+def operator(actor_spec: flow.Spec) -> flow.Operator:
     """Operator fixture."""
 
     class Operator(flow.Operator):
@@ -35,9 +35,9 @@ def operator(spec: flow.Spec) -> flow.Operator:
         def compose(self, left: flow.Composable) -> flow.Trunk:
             """Dummy composition."""
             track = left.expand()
-            trainer = flow.Worker(spec, 1, 1)
+            trainer = flow.Worker(actor_spec, 1, 1)
             applier = trainer.fork()
-            extractor = flow.Worker(spec, 1, 1)
+            extractor = flow.Worker(actor_spec, 1, 1)
             trainer.train(track.train.publisher, extractor[0])
             return track.use(label=track.train.extend(extractor)).extend(applier)
 
@@ -45,7 +45,7 @@ def operator(spec: flow.Spec) -> flow.Operator:
 
 
 @pytest.fixture(scope='function')
-def origin(spec: flow.Spec) -> flow.Operator:
+def origin(actor_spec: flow.Spec) -> flow.Operator:
     """Origin operator fixture."""
 
     class Operator(flow.Operator):
@@ -53,7 +53,7 @@ def origin(spec: flow.Spec) -> flow.Operator:
 
         def compose(self, left: flow.Composable) -> flow.Trunk:
             """Dummy composition."""
-            trainer = flow.Worker(spec, 1, 1)
+            trainer = flow.Worker(actor_spec, 1, 1)
             applier = trainer.fork()
             return flow.Trunk(applier, trainer)
 

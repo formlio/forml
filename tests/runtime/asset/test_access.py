@@ -31,9 +31,9 @@ from forml.runtime import asset
 class TestInstance:
     """Instance unit tests."""
 
-    def test_tag(self, valid_instance: asset.Instance, tag: asset.Tag):
+    def test_tag(self, valid_instance: asset.Instance, generation_tag):
         """Test default empty lineage generation retrieval."""
-        assert valid_instance.tag is tag
+        assert valid_instance.tag is generation_tag
 
 
 class TestState:
@@ -41,13 +41,16 @@ class TestState:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def state(valid_instance: asset.Instance, nodes: typing.Sequence[uuid.UUID]) -> asset.State:
+    def state(valid_instance: asset.Instance, stateful_nodes: typing.Sequence[uuid.UUID]) -> asset.State:
         """State fixture."""
-        return valid_instance.state(nodes)
+        return valid_instance.state(stateful_nodes)
 
     def test_load(
-        self, state: asset.State, nodes: typing.Sequence[uuid.UUID], states: typing.Mapping[uuid.UUID, bytes]
+        self,
+        state: asset.State,
+        stateful_nodes: typing.Sequence[uuid.UUID],
+        generation_states: typing.Mapping[uuid.UUID, bytes],
     ):
         """Test state loading."""
-        for node, value in zip(nodes, states.values()):
+        for node, value in zip(stateful_nodes, generation_states.values()):
             assert state.load(node) == value

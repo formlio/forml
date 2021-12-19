@@ -65,21 +65,21 @@ class TestPath:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def head(spec: flow.Spec) -> flow.Worker:
+    def head(actor_spec: flow.Spec) -> flow.Worker:
         """Path head fixture."""
-        return flow.Worker(spec, 1, 1)
+        return flow.Worker(actor_spec, 1, 1)
 
     @staticmethod
     @pytest.fixture(scope='function', params=(False, True))
-    def path(request, head: flow.Worker, spec: flow.Spec) -> span.Path:
+    def path(request, head: flow.Worker, actor_spec: flow.Spec) -> span.Path:
         """Path fixture."""
-        flow1 = flow.Worker(spec, 1, 2)
-        flow2 = flow.Worker(spec, 2, 1)
+        flow1 = flow.Worker(actor_spec, 1, 2)
+        flow2 = flow.Worker(actor_spec, 2, 1)
         flow1[0].subscribe(head[0])
         flow2[0].subscribe(flow1[0])
         flow2[1].subscribe(flow1[1])
         if request.param:  # stateful
-            flow3 = flow.Worker(spec, 1, 1)
+            flow3 = flow.Worker(actor_spec, 1, 1)
             flow2[0].publish(flow3, port.Train())
         return span.Path(head)
 
