@@ -95,10 +95,6 @@ class TestActor:
 class TestSpec:
     """Task spec unit tests."""
 
-    def test_hashable(self, actor_spec: flow.Spec):
-        """Test spec hashability."""
-        assert actor_spec in {actor_spec}
-
     def test_serializable(self, actor_spec: flow.Spec, actor_type: type[flow.Actor]):
         """Test spec serializability."""
         assert pickle.loads(pickle.dumps(actor_spec)).actor == actor_type

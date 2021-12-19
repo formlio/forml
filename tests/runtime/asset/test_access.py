@@ -31,9 +31,9 @@ from forml.runtime import asset
 class TestInstance:
     """Instance unit tests."""
 
-    def test_tag(self, valid_instance: asset.Instance, generation_tag):
+    def test_tag(self, valid_instance: asset.Instance, generation_tag: asset.Tag):
         """Test default empty lineage generation retrieval."""
-        assert valid_instance.tag is generation_tag
+        assert valid_instance.tag == generation_tag
 
 
 class TestState:

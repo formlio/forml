@@ -215,34 +215,31 @@ def registry(
     generation_states: typing.Mapping[uuid.UUID, bytes],
     project_package: prj.Package,
 ) -> asset.Registry:
-    """Registry fixture."""
-    content = {
-        project_name: {
-            project_lineage: (project_package, {valid_generation: (generation_tag, tuple(generation_states.values()))}),
-            empty_lineage: (project_package, {}),
-        }
-    }
-    unbound: dict[uuid.UUID, bytes] = {}
+    """Registry fixture (multiprocess/thread safe)."""
 
     class Registry(asset.Registry):
-        """Fixture registry implementation"""
+        """Fixture registry implementation."""
 
         def projects(self) -> typing.Iterable[str]:
-            return content.keys()
+            with lock:
+                return content.keys()
 
         def lineages(self, project: asset.Project.Key) -> typing.Iterable[asset.Lineage.Key]:
-            return content[project].keys()
+            with lock:
+                return content[project].keys()
 
         def generations(
             self, project: asset.Project.Key, lineage: asset.Lineage.Key
         ) -> typing.Iterable[asset.Generation.Key]:
             try:
-                return content[project][lineage][1].keys()
+                with lock:
+                    return content[project][lineage][1].keys()
             except KeyError as err:
                 raise asset.Level.Invalid(f'Invalid lineage ({lineage})') from err
 
         def pull(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> prj.Package:
-            return content[project][lineage][0]
+            with lock:
+                return content[project][lineage][0]
 
         def push(self, package: prj.Package) -> None:
             raise NotImplementedError()
@@ -254,19 +251,22 @@ def registry(
             generation: asset.Generation.Key,
             sid: uuid.UUID,
         ) -> bytes:
-            if sid not in content[project][lineage][1][generation][0].states:
-                raise asset.Level.Invalid(f'Invalid state id ({sid})')
-            idx = content[project][lineage][1][generation][0].states.index(sid)
-            return content[project][lineage][1][generation][1][idx]
+            with lock:
+                if sid not in content[project][lineage][1][generation][0].states:
+                    raise asset.Level.Invalid(f'Invalid state id ({sid})')
+                idx = content[project][lineage][1][generation][0].states.index(sid)
+                return content[project][lineage][1][generation][1][idx]
 
         def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
-            unbound[sid] = state
+            with lock:
+                unbound[sid] = state
 
         def open(
             self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
         ) -> asset.Tag:
             try:
-                return content[project][lineage][1][generation][0]
+                with lock:
+                    return content[project][lineage][1][generation][0]
             except KeyError as err:
                 raise asset.Level.Invalid(f'Invalid generation ({lineage}.{generation})') from err
 
@@ -277,13 +277,31 @@ def registry(
             generation: asset.Generation.Key,
             tag: asset.Tag,
         ) -> None:
-            nonlocal unbound
-            assert set(tag.states).issubset(unbound)
-            assert project in content and lineage in content[project] and generation not in content[project][lineage][1]
-            content[project][lineage][1][generation] = (tag, tuple(unbound[k] for k in tag.states))
-            unbound = {}
+            with lock:
+                assert set(tag.states).issubset(unbound.keys())
+                assert (
+                    project in content
+                    and lineage in content[project]
+                    and generation not in content[project][lineage][1]
+                )
+                content[project][lineage][1][generation] = (tag, tuple(unbound[k] for k in tag.states))
+                unbound.clear()
 
-    return Registry()
+    with multiprocessing.Manager() as manager:
+        lock = manager.RLock()
+        content = manager.dict(
+            {
+                project_name: {
+                    project_lineage: (
+                        project_package,
+                        {valid_generation: (generation_tag, tuple(generation_states.values()))},
+                    ),
+                    empty_lineage: (project_package, {}),
+                }
+            }
+        )
+        unbound: dict[uuid.UUID, bytes] = manager.dict()
+        yield Registry()
 
 
 @pytest.fixture(scope='function')
