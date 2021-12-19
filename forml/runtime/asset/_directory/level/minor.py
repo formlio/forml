@@ -192,8 +192,8 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         """
         meta = toml.loads(raw.decode('utf-8'))
         return cls(
-            training=cls.Training(timestamp=meta['training']['timestamp'], ordinal=meta['training']['ordinal']),
-            tuning=cls.Tuning(timestamp=meta['tuning']['timestamp'], score=meta['tuning']['score']),
+            training=cls.Training(timestamp=meta['training']['timestamp'], ordinal=meta['training'].get('ordinal')),
+            tuning=cls.Tuning(timestamp=meta['tuning'].get('timestamp'), score=meta['tuning'].get('score')),
             states=(uuid.UUID(s) for s in meta['states']),
         )
 

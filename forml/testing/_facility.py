@@ -52,14 +52,15 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
     @classmethod
     def reader(
         cls, sources: typing.Mapping[dsl.Source, None], features: typing.Mapping[dsl.Feature, typing.Any], **kwargs
-    ) -> typing.Callable[[dsl.Query], typing.Sequence[typing.Sequence[typing.Any]]]:
+    ) -> typing.Callable[['dsl.Query', typing.Optional[io.Feed.Reader.RequestT]], layout.ColumnMajor]:
         """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
 
-        def read(query: dsl.Query) -> typing.Any:
+        def read(query: dsl.Query, request: typing.Optional[io.Feed.Reader.RequestT] = None) -> typing.Any:
             """Reader callback.
 
             Args:
                 query: Input query instance.
+                request: Input request data.
 
             Returns:
                 Data.
