@@ -30,17 +30,20 @@ QUERY = (
     schema.Student.join(schema.Person, schema.Student.surname == schema.Person.surname)
     .join(school_ref, schema.Student.school == school_ref.sid)
     .select(
-        schema.Student.surname.alias('student'),  # pylint: disable=no-member
-        school_ref['name'],
+        schema.Student.surname,  # pylint: disable=no-member
+        school_ref['name'].alias('school'),
         function.Cast(schema.Student.score, dsl.Integer()).alias('score'),
     )
-    .where(schema.Student.score < 2)
-    .orderby(schema.Student.level, schema.Student.score)
+    .where(schema.Student.score > 0)
+    .orderby(schema.Student.updated, schema.Student['surname'])
     .limit(10)
 )
 
 TRANSPOSE = topology.Mapper.operator(topology.Function.actor(layout.transpose))
 
 
-INSTANCE = project.Source.query(QUERY, schema.Student.level) >> TRANSPOSE()  # pylint: disable=no-value-for-parameter
+INSTANCE = (
+    project.Source.query(QUERY, schema.Student.level, ordinal=schema.Student.updated)
+    >> TRANSPOSE()  # pylint: disable=no-value-for-parameter
+)
 project.setup(INSTANCE)

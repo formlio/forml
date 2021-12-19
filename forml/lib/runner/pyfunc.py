@@ -267,10 +267,10 @@ class Runner(facility.Runner, alias='pyfunc'):
         self._expression = Expression(code.generate(composition.apply, self._instance.state(composition.persistent)))
 
     def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
-        raise forml.InvalidError('Training not supported by this runner')
+        raise forml.InvalidError('Invalid runner mode')
 
     def tune(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
-        raise forml.InvalidError('Tuning not supported by this runner')
+        raise forml.InvalidError('Invalid runner mode')
 
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         Expression(symbols)(None)

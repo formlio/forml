@@ -61,7 +61,7 @@ class TestFeed:
         with pytest.raises(dsl.UnsupportedError):
             reader(table.having(table.score > 1))
         with pytest.raises(dsl.UnsupportedError):
-            reader(table.orderby(table.student))
+            reader(table.orderby(table.surname))
         with pytest.raises(dsl.UnsupportedError):
             reader(table.limit(1))
         with pytest.raises(dsl.UnsupportedError):

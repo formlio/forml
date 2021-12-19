@@ -42,3 +42,7 @@ class Runner(abc.ABC):
         """Test runner apply mode."""
         runner.apply()
         assert sink_output.get_nowait()
+
+    def test_train(self, runner: facility.Runner):
+        """Test runner train mode."""
+        runner.train()

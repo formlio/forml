@@ -185,7 +185,7 @@ class Registry(asset.Registry, alias='mlflow'):
     LEVEL_LINEAGE = 'lineage'
     LEVEL_GENERATION = 'generation'
     STATESFX = 'bin'
-    TAGFILE = 'tag.json'
+    TAGFILE = 'tag.toml'
     PKGFILE = f'package.{prj.Package.FORMAT}'
 
     def __init__(
