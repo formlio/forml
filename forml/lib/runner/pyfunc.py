@@ -97,8 +97,8 @@ class Zip(Term):
 class Branch(Term, metaclass=abc.ABCMeta):
     """Base class for branch terms."""
 
-    def __init__(self, queue: collections.deque[typing.Any], name: str):
-        self._queue: collections.deque[typing.Any] = queue
+    def __init__(self, queue: typing.Deque[typing.Any], name: str):
+        self._queue: typing.Deque[typing.Any] = queue
         self._name: str = name
 
     def __repr__(self):
@@ -117,7 +117,7 @@ class Branch(Term, metaclass=abc.ABCMeta):
 class Push(Branch):
     """Helper branch term for producing value replicas to make them available in parallel branches."""
 
-    def __init__(self, queue: collections.deque[typing.Any], term: Term, replicas: int):
+    def __init__(self, queue: typing.Deque[typing.Any], term: Term, replicas: int):
         assert replicas > 0
         super().__init__(queue, repr(term))
         self._term: Term = term
@@ -154,7 +154,7 @@ class Expression(Term):
     def __init__(self, symbols: typing.Sequence[code.Symbol]):
         dag = self._build(symbols)
         assert len(dag) > 0 and dag[-1].szout == 0 and not dag[0].args, 'Invalid DAG'
-        providers: typing.Mapping[Term, collections.deque[Term]] = {n.term: collections.deque([n.term]) for n in dag}
+        providers: typing.Mapping[Term, typing.Deque[Term]] = {n.term: collections.deque([n.term]) for n in dag}
 
         for node in dag[1:]:
             args = [providers[a].popleft() for a in node.args]
@@ -275,13 +275,13 @@ class Runner(facility.Runner, alias='pyfunc'):
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         Expression(symbols)(None)
 
-    def call(self, source: layout.ColumnMajor) -> layout.ColumnMajor:
+    def call(self, request: io.Feed.Reader.RequestT) -> layout.ColumnMajor:
         """Func exec entrypoint.
 
         Args:
-            source: Input to be sent to the pipeline.
+            request: Input to be sent to the pipeline.
 
         Returns:
             Pipeline output.
         """
-        return self._expression(source)
+        return self._expression(request)

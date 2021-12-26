@@ -31,9 +31,23 @@ from forml.runtime import asset
 class TestInstance:
     """Instance unit tests."""
 
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def clone(valid_instance: asset.Instance) -> asset.Instance:
+        """Instance clone fixture."""
+        generation: asset.Generation = valid_instance._generation  # pylint: disable=protected-access
+        return asset.Instance(
+            generation.project.key, generation.lineage.key, generation.key, asset.Directory(generation.registry)
+        )
+
     def test_tag(self, valid_instance: asset.Instance, generation_tag: asset.Tag):
         """Test default empty lineage generation retrieval."""
         assert valid_instance.tag == generation_tag
+
+    def test_equal(self, valid_instance: asset.Instance, clone: asset.Instance):
+        """Test instance equality."""
+        assert hash(valid_instance) == hash(clone)
+        assert valid_instance == clone
 
 
 class TestState:
