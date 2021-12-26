@@ -121,6 +121,12 @@ class Instance:
             registry = level.Directory(_persistent.Registry())
         self._generation: 'level.Generation' = registry.get(project).get(lineage).get(generation)
 
+    def __hash__(self):
+        return hash(self._generation)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and other._generation == self._generation
+
     @property
     def project(self) -> 'prj.Descriptor':
         """Get the project descriptor.
@@ -140,7 +146,7 @@ class Instance:
         return self._generation.tag
 
     def state(self, nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['level.Tag'] = None) -> State:
-        """Get the state persistence accessor wrapped in a context manager.
+        """Get the state persistence accessor.
 
         Args:
             nodes: List of expected persisted stateful nodes.
