@@ -89,7 +89,7 @@ class Test:
         Returns:
             an assertRaises context manager.
         """
-        return contextlib.suppress()  # or contextlib.nullcontext() in python3.7
+        return contextlib.nullcontext()
 
     def matches(self, suite: Suite, value: typing.Any) -> None:
         """Context manager for wrapping raising assertions.

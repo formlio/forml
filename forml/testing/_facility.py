@@ -44,40 +44,64 @@ class DataSet(dsl.Schema):
 class Feed(io.Feed[None, typing.Any], alias='testing'):
     """Special feed to input the test cases."""
 
-    def __init__(self, scenario: _spec.Scenario.Input, **kwargs):
-        super().__init__(**kwargs)
-        self._scenario: _spec.Scenario.Input = scenario
+    class Operator(flow.Operator):
+        """Loading operator that just returns the data provided for the scenario."""
 
-    # pylint: disable=unused-argument
-    @classmethod
-    def producer(
-        cls, sources: typing.Mapping[dsl.Source, None], features: typing.Mapping[dsl.Feature, typing.Any], **kwargs
-    ) -> io.Producer:
-        """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
+        class Apply(flow.Actor[None, None, typing.Any]):
+            """Actor returning the provided testset."""
 
-        def read(query: dsl.Query, request: typing.Optional[io.Request] = None) -> typing.Any:
-            """Reader callback.
+            def __init__(self, features: typing.Any):
+                self._features: typing.Any = features
 
-            Args:
-                query: Input query instance.
-                request: Input request data.
+            def apply(self) -> typing.Any:
+                return self._features
+
+        class Train(flow.Actor[None, None, tuple[typing.Any, typing.Any]]):
+            """Actor returning the provided trainset."""
+
+            def __init__(self, features: typing.Any, labels: typing.Any):
+                self._features: typing.Any = features
+                self._labels: typing.Any = labels
+
+            def apply(self) -> tuple[typing.Any, typing.Any]:
+                return self._features, self._labels
+
+        def __init__(self, scenario: _spec.Scenario.Input):
+            self._testset: flow.Spec[None, None, typing.Any] = self.Apply.spec(scenario.apply)
+            self._trainset: flow.Spec[None, None, tuple[typing.Any, typing.Any]] = self.Train.spec(
+                scenario.train, scenario.label
+            )
+
+        def compose(self, left: flow.Composable) -> flow.Trunk:
+            """Compose the source segment track.
 
             Returns:
-                Data.
+                Source segment track.
             """
-            return features[DataSet.label] if DataSet.label in query.features else features[DataSet.feature]
+            testset = flow.Worker(self._testset, 0, 1)
+            trainset = flow.Worker(self._trainset, 0, 2)
+            train = flow.Future()
+            train[0].subscribe(trainset[0])
+            label = flow.Future()
+            label[0].subscribe(trainset[1])
+            return flow.Trunk(testset, flow.Path(trainset, train), flow.Path(trainset, label))
 
-        return read
+    def __init__(self, scenario: _spec.Scenario.Input, **kwargs):
+        super().__init__(**kwargs)
+        self._operator: flow.Operator = self.Operator(scenario)
+
+    def load(
+        self,
+        source: 'project.Source',
+        lower: typing.Optional['dsl.Native'] = None,
+        upper: typing.Optional['dsl.Native'] = None,
+    ) -> flow.Trunk:
+        return self._operator.expand()
 
     @property
     def sources(self) -> typing.Mapping[dsl.Source, None]:
         """The explicit sources mapping implemented by this feed to be used by the query parser."""
         return {DataSet: None}
-
-    @property
-    def features(self) -> typing.Mapping[dsl.Feature, typing.Any]:
-        """The explicit features mapping implemented by this feed to be used by the query parser."""
-        return {DataSet.label: (self._scenario.train, [self._scenario.label]), DataSet.feature: self._scenario.apply}
 
 
 class Launcher:
