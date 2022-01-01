@@ -182,18 +182,26 @@ class Slicer(flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowM
             return dataset.to_columns()[labels]
 
         self._features: typing.Sequence[int] = features
-        self._label: typing.Callable[[layout.Tabular], layout.RowMajor] = (
+        self._labels: typing.Callable[[layout.Tabular], layout.RowMajor] = (
             from_vector if isinstance(labels, typing.Sequence) else from_scalar
         )
 
     def apply(self, dataset: layout.Tabular) -> tuple[layout.RowMajor, layout.RowMajor]:
-        return dataset.take_columns(self._features).to_rows(), self._label(dataset)
+        return dataset.take_columns(self._features).to_rows(), self._labels(dataset)
 
     @classmethod
     def from_columns(
         cls, features: typing.Sequence[dsl.Feature], labels: typing.Union[dsl.Feature, typing.Sequence[dsl.Feature]]
-    ) -> tuple[typing.Sequence[dsl.Feature], 'Slicer']:
-        """Helper method for creating the slicer and the combined set of columns"""
+    ) -> tuple[typing.Sequence[dsl.Feature], flow.Spec[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]]:
+        """Helper method for creating the slicer and the combined set of columns.
+
+        Args:
+            features: Sequence of feature columns.
+            labels: Single label column or sequence of label columns.
+
+        Returns:
+            Sequence of combined feature+label columns and the Slicer actor instance.
+        """
         fstop = len(features)
         if isinstance(labels, dsl.Feature):
             lslice = fstop
