@@ -25,6 +25,7 @@ import pytest
 
 import forml
 from forml import flow, io, project
+from forml.io import layout
 from forml.lib.pipeline import topology
 from forml.project import _importer
 
@@ -40,7 +41,7 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def pipeline(actor_spec: flow.Spec) -> flow.Composable:
+    def pipeline(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Composable:
         """Pipeline fixture."""
         return topology.Consumer(actor_spec)
 

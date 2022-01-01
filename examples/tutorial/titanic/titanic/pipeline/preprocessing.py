@@ -38,7 +38,7 @@ from forml.lib.pipeline import topology
 
 
 @topology.Mapper.operator
-class NaNImputer(flow.Actor):
+class NaNImputer(flow.Actor[pd.DataFrame, pd.Series, pd.DataFrame]):
     """Imputer for missing values implemented as native ForML actor."""
 
     def __init__(self):

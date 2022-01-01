@@ -47,7 +47,7 @@ def select(rows: typing.Sequence[tuple[str, str, int]]) -> typing.Sequence[int]:
 
 
 @topology.Consumer.operator
-class HelloWorld(flow.Actor):
+class HelloWorld(flow.Actor[typing.Sequence[int], typing.Sequence[int], typing.Sequence[int]]):
     """Stateful transformer."""
 
     FMT = '!Q'
@@ -55,9 +55,9 @@ class HelloWorld(flow.Actor):
     def __init__(self):
         self._magic = 1
 
-    def train(self, features: typing.Sequence[int], label: typing.Sequence[int]):
+    def train(self, features: typing.Sequence[int], labels: typing.Sequence[int]):
         """Impute missing values using the median for numeric columns and the most common value for string columns."""
-        self._magic += sum(label)
+        self._magic += sum(labels)
 
     def apply(self, rows: typing.Sequence[int]) -> typing.Sequence[int]:
         """Filling the NaNs."""

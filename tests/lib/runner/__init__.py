@@ -40,7 +40,7 @@ class Runner(abc.ABC):
         """Runner fixture."""
 
     def test_apply(
-        self, runner: facility.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Vector
+        self, runner: facility.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Array
     ):
         """Test runner apply mode."""
         runner.apply()

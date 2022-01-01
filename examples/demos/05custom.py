@@ -26,7 +26,7 @@ from forml.lib.pipeline import topology
 
 
 @topology.Mapper.operator
-class NaNImputer(flow.Actor):
+class NaNImputer(flow.Actor[pd.DataFrame, pd.DataFrame, pd.DataFrame]):
     """Custom NaN imputation logic."""
 
     def train(self, features: pd.DataFrame, label: pd.DataFrame):

@@ -18,6 +18,7 @@
 """
 Dummy project source.
 """
+
 import helloworld_schema as schema
 
 from forml import project
@@ -39,11 +40,16 @@ QUERY = (
     .limit(10)
 )
 
-TRANSPOSE = topology.Mapper.operator(topology.Function.actor(layout.transpose))
+
+@topology.Mapper.operator
+@topology.Function.actor
+def as_tuple(data: layout.RowMajor) -> layout.RowMajor:
+    """Tuple transformation operator."""
+    return tuple(tuple(r) for r in data)
 
 
 INSTANCE = (
     project.Source.query(QUERY, schema.Student.level, ordinal=schema.Student.updated)
-    >> TRANSPOSE()  # pylint: disable=no-value-for-parameter
+    >> as_tuple()  # pylint: disable=no-value-for-parameter
 )
 project.setup(INSTANCE)

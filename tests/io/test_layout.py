@@ -19,10 +19,43 @@
 Payload tests.
 """
 # pylint: disable=no-self-use
+import numpy
+import pytest
+
 from forml.io import layout
 
 
-def test_transpose():
-    """Transposition unit test."""
-    assert layout.transpose([]) == []
-    assert layout.transpose([[1, 2, 3], [4, 5, 6]]) == [[1, 4], [2, 5], [3, 6]]
+class TestDense:
+    """Dense layout unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session', params=([[1, 2, 'a'], [4, 5, 'b'], [7, 8, 'c']], ['x', 0, None], []))
+    def rows(request) -> layout.Array:
+        """Rows fixture."""
+        return request.param
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def columns(rows: layout.Array) -> layout.Array:
+        """Rows fixture."""
+        return rows if not rows or not isinstance(rows[0], list) else [list(c) for c in zip(*rows)]
+
+    @staticmethod
+    @pytest.fixture()
+    def table(rows: layout.Array) -> layout.Dense:
+        """Dense table fixture."""
+        return layout.Dense.from_rows(rows)
+
+    def test_rows(self, table: layout.Dense, rows: layout.Array):
+        """Row operations tests."""
+        assert table.to_rows().tolist() == rows
+        assert numpy.array_equal(layout.Dense.from_rows(rows).to_rows(), table.to_rows())
+        if rows:
+            assert table.take_rows([0]).to_rows().tolist() == [rows[0]]
+
+    def test_columns(self, table: layout.Dense, columns: numpy.ndarray):
+        """Column operations tests."""
+        assert table.to_columns().tolist() == columns
+        assert numpy.array_equal(layout.Dense.from_columns(columns).to_columns(), table.to_columns())
+        if columns:
+            assert table.take_columns([0]).to_columns().tolist() == [columns[0]]

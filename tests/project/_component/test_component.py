@@ -27,8 +27,8 @@ import typing
 import pytest
 
 import forml
-from forml import project
-from forml.io import dsl
+from forml import flow, project
+from forml.io import dsl, layout
 from forml.project import _component, _importer
 
 
@@ -89,9 +89,30 @@ def test_load():
 class TestSource:
     """Source unit tests."""
 
-    def test_query(self, student_table: dsl.Table):
-        """Test the query setup."""
-        with pytest.raises(forml.InvalidError):
+    @staticmethod
+    @pytest.fixture(scope='session', params=('vector', 'table', 'actor', None))
+    def label(
+        request, student_table: dsl.Table, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]
+    ) -> typing.Optional[project.Source.Labels]:
+        """Component fixture."""
+        if request.param == 'vector':
+            return student_table.level
+        if request.param == 'table':
+            return student_table.level, student_table.level
+        if request.param == 'actor':
+            return actor_spec
+        return None
+
+    def test_invalid(self, student_table: dsl.Table, school_table: dsl.Table):
+        """Test invalid query."""
+        with pytest.raises(forml.InvalidError, match='Label-feature overlap'):
             project.Source.query(student_table, student_table.score)
-        query = project.Source.query(student_table)
+        with pytest.raises(forml.InvalidError, match='Train-apply schema mismatch'):
+            project.Source.query(student_table, apply=school_table)
+
+    def test_query(self, source_query: dsl.Query, label: typing.Optional[project.Source.Labels]):
+        """Test the query setup."""
+        query = project.Source.query(source_query, label)
         assert isinstance(query.extract.train, dsl.Query)
+        assert query.extract.apply == query.extract.train == source_query
+        assert query.extract.labels == label

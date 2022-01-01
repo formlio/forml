@@ -67,7 +67,9 @@ class Ensembler(flow.Operator):
             """
 
     def __init__(self, bases: typing.Sequence[flow.Composable], crossvalidator: model_selection.BaseCrossValidator):
-        self._splitter: flow.Spec = payload.CVFolds.spec(crossvalidator=crossvalidator)
+        self._splitter: flow.Spec[
+            pandas.DataFrame, pandas.Series, typing.Sequence[pandas.DataFrame]
+        ] = payload.CVFolds.spec(crossvalidator=crossvalidator)
         self._stacker: Ensembler.Stacker = self.Stacker(bases)  # pylint: disable=abstract-class-instantiated
 
     @property

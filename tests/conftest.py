@@ -47,16 +47,16 @@ class WrappedActor:
         self._params = params
         self._hash: int = 0
 
-    def train(self, features, labels) -> None:
+    def train(self, features: layout.RowMajor, labels: layout.Array) -> None:
         """Train to-be handler."""
-        self._model.append((features, labels))
+        self._model.append((tuple(tuple(r) for r in features), tuple(labels)))
 
-    def predict(self, features: typing.Sequence[typing.Any]) -> typing.Sequence[typing.Any]:
+    def predict(self, features: layout.RowMajor) -> layout.RowMajor:
         """Apply to-be handler."""
         if not self._model:
             raise ValueError('Not Fitted')
         model = hash(tuple(self._model)) ^ hash(tuple(sorted(self._params.items())))
-        return tuple(hash(f) ^ model for f in features)
+        return tuple(hash(tuple(f)) ^ model for f in features)
 
     def get_params(self) -> typing.Mapping[str, typing.Any]:
         """Get hyper-parameters of this actor."""
@@ -67,10 +67,10 @@ class WrappedActor:
         self._params.update(params)
 
 
-class NativeActor(WrappedActor, flow.Actor):
+class NativeActor(WrappedActor, flow.Actor[layout.RowMajor, None, layout.RowMajor]):
     """Actor implementation."""
 
-    def apply(self, *features: typing.Any) -> typing.Any:
+    def apply(self, *features: layout.RowMajor) -> layout.RowMajor:
         """Native apply method."""
         return self.predict(features[0])
 
@@ -96,33 +96,57 @@ def hyperparams() -> typing.Mapping[str, int]:
 
 
 @pytest.fixture(scope='session')
-def actor_spec(actor_type: type[flow.Actor], hyperparams: typing.Mapping[str, int]) -> flow.Spec:
+def actor_spec(
+    actor_type: type[flow.Actor], hyperparams: typing.Mapping[str, int]
+) -> flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]:
     """Task spec fixture."""
     return flow.Spec(actor_type, **hyperparams)
 
 
 @pytest.fixture(scope='session')
-def trainset() -> layout.ColumnMajor:
+def trainset() -> layout.RowMajor:
     """Trainset fixture."""
-    return ('smith', 'black', 'harris'), ('oxford', 'cambridge', 'stanford'), (1, 2, 3), (1, 1, 3)
+    return (
+        ('smith', 'oxford', 1, 1),
+        ('black', 'cambridge', 2, 1),
+        ('harris', 'stanford', 3, 3),
+    )
 
 
 @pytest.fixture(scope='session')
-def testset(trainset: layout.ColumnMajor) -> layout.ColumnMajor:
+def trainset_features(trainset: layout.RowMajor) -> layout.RowMajor:
+    """Trainset features fixture."""
+    return layout.Dense.from_rows(trainset).take_columns([0, 1, 2]).to_rows()
+
+
+@pytest.fixture(scope='session')
+def trainset_labels(trainset: layout.RowMajor) -> layout.Array:
+    """Trainset labels fixture."""
+    return layout.Dense.from_rows(trainset).to_columns()[-1]
+
+
+@pytest.fixture(scope='session')
+def testset(trainset_features: layout.RowMajor) -> layout.RowMajor:
     """Testset fixture."""
-    return trainset[:-1]
+    return trainset_features
 
 
 @pytest.fixture(scope='session')
-def actor_state(actor_spec: flow.Spec, trainset: layout.ColumnMajor) -> bytes:
+def actor_state(
+    actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor],
+    trainset_features: layout.RowMajor,
+    trainset_labels: layout.Array,
+) -> bytes:
     """Actor state fixture."""
     actor = actor_spec()
-    actor.train(trainset[:-1], trainset[-1])
+    actor.train(trainset_features, trainset_labels)
     return actor.get_state()
 
 
 @pytest.fixture(scope='session')
-def actor_prediction(actor_spec: flow.Spec, actor_state: bytes, testset: layout.ColumnMajor) -> layout.ColumnMajor:
+def actor_prediction(
+    actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor], actor_state: bytes, testset: layout.RowMajor
+) -> layout.RowMajor:
     """Prediction result fixture."""
     actor = actor_spec()
     actor.set_state(actor_state)
@@ -357,15 +381,15 @@ def feed_type(
     person_table: dsl.Table,
     student_table: dsl.Table,
     school_table: dsl.Table,
-    trainset: layout.ColumnMajor,
-    testset: layout.ColumnMajor,  # pylint: disable=unused-argument
+    trainset: layout.RowMajor,
+    testset: layout.RowMajor,  # pylint: disable=unused-argument
 ) -> type[io.Feed]:
     """Dummy feed fixture."""
 
     class Feed(io.Feed[str, str], alias=io_reference):
         """Dummy feed for unit-testing purposes."""
 
-        class Reader(io.Feed.Reader[str, str, layout.ColumnMajor]):
+        class Reader(io.Feed.Reader[str, str, layout.RowMajor]):
             """Dummy reader that returns either the trainset or testset fixtures."""
 
             class Parser(parsmod.Visitor[str, str]):
@@ -390,7 +414,7 @@ def feed_type(
                     orderby: typing.Sequence[tuple[str, dsl.Ordering.Direction]],
                     rows: typing.Optional[dsl.Rows],
                 ) -> str:
-                    return 'testset' if len(features) == len(testset) else 'trainset'
+                    return 'testset' if len(features) == len(testset[0]) else 'trainset'
 
             @classmethod
             def parser(
@@ -401,7 +425,7 @@ def feed_type(
                 return cls.Parser(sources, features)  # pylint: disable=abstract-class-instantiated
 
             @classmethod
-            def read(cls, statement: str, **kwargs: typing.Any) -> layout.ColumnMajor:
+            def read(cls, statement: str, **kwargs: typing.Any) -> layout.RowMajor:
                 return testset if statement == 'testset' else trainset
 
         def __init__(self, identity: str, **readerkw):
@@ -428,22 +452,19 @@ def feed_instance(feed_type: type[io.Feed]) -> io.Feed:
 
 
 @pytest.fixture(scope='session')
-def sink_type(io_reference) -> type[io.Sink]:  # pylint: disable=unused-argument
+def sink_type(io_reference: str) -> type[io.Sink]:  # pylint: disable=unused-argument
     """Dummy sink fixture."""
 
     class Sink(io.Sink, alias=io_reference):
         """Dummy sink for unit-testing purposes."""
 
-        class Writer(io.Sink.Writer[layout.ColumnMajor]):
+        class Writer(io.Sink.Writer[layout.RowMajor]):
             """Dummy black-hole sink writer."""
 
             @classmethod
-            def write(
-                cls, data: layout.ColumnMajor, queue: typing.Optional[multiprocessing.Queue] = None
-            ) -> layout.ColumnMajor:
+            def write(cls, data: layout.RowMajor, queue: typing.Optional[multiprocessing.Queue] = None) -> None:
                 if queue:
                     queue.put(data)
-                return data
 
         def __init__(self, identity: str, **readerkw):
             super().__init__(**readerkw)

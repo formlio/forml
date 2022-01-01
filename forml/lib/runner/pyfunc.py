@@ -275,7 +275,7 @@ class Runner(facility.Runner, alias='pyfunc'):
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         Expression(symbols)(None)
 
-    def call(self, request: io.Feed.Reader.RequestT) -> layout.ColumnMajor:
+    def call(self, request: io.Request) -> layout.RowMajor:
         """Func exec entrypoint.
 
         Args:

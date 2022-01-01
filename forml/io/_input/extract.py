@@ -25,7 +25,6 @@ import typing
 import forml
 from forml import flow
 from forml.io import dsl, layout
-from forml.io.dsl import parser as parsmod
 
 LOGGER = logging.getLogger(__name__)
 
@@ -73,7 +72,7 @@ class Statement(typing.NamedTuple):
             upper:  Optional upper ordinal value.
 
         Returns:
-            prepared statement binding.
+            Prepared statement binding.
         """
         return cls(cls.Prepared(query, ordinal), lower, upper)  # pylint: disable=no-member
 
@@ -93,13 +92,16 @@ class Operator(flow.Operator):
     """
 
     def __init__(
-        self, apply: flow.Spec, train: typing.Optional[flow.Spec] = None, label: typing.Optional[flow.Spec] = None
+        self,
+        apply: flow.Spec[layout.Tabular, None, layout.RowMajor],
+        train: typing.Optional[flow.Spec[layout.Tabular, None, layout.Tabular]],
+        label: typing.Optional[flow.Spec[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]] = None,
     ):
         if apply.actor.is_stateful() or (train and train.actor.is_stateful()) or (label and label.actor.is_stateful()):
             raise forml.InvalidError('Stateful actor invalid for an extractor')
-        self._apply: flow.Spec = apply
-        self._train: flow.Spec = train or apply
-        self._label: typing.Optional[flow.Spec] = label
+        self._apply: flow.Spec[layout.Tabular, None, layout.RowMajor] = apply
+        self._train: flow.Spec[layout.Tabular, None, layout.Tabular] = train
+        self._label: typing.Optional[flow.Spec[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]] = label
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         """Compose the source segment track.
@@ -124,143 +126,80 @@ class Operator(flow.Operator):
         return flow.Trunk(apply, train, label)
 
 
-class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], metaclass=abc.ABCMeta):
-    """Base class for reader implementation."""
+Request = tuple[dsl.Schema, layout.Tabular]
+Producer = typing.Callable[[dsl.Query, typing.Optional[Request]], layout.Tabular]
+Output = typing.TypeVar('Output')
 
-    RequestT = typing.Mapping[str, layout.Vector]
 
-    class Actor(flow.Actor):
-        """Data extraction actor using the provided reader and statement to load the data."""
+class Driver(typing.Generic[Output], flow.Actor[typing.Optional[Request], None, Output], metaclass=abc.ABCMeta):
+    """Data extraction actor using the provided reader and statement to load the data."""
 
-        def __init__(
-            self,
-            reader: typing.Callable[[dsl.Query, typing.Optional['Reader.RequestT']], layout.ColumnMajor],
-            statement: Statement,
-        ):
-            self._reader: typing.Callable[[dsl.Query, typing.Optional['Reader.RequestT']], layout.ColumnMajor] = reader
-            self._statement: Statement = statement
+    def __init__(self, producer: Producer, statement: Statement):
+        self._producer: Producer = producer
+        self._statement: Statement = statement
 
-        def __repr__(self):
-            return f'{repr(self._reader)}({repr(self._statement)})'
+    def __repr__(self):
+        return f'{repr(self._producer)}({repr(self._statement)})'
 
-        def apply(self, request: typing.Optional['Reader.RequestT'] = None) -> typing.Any:
-            return self._reader(self._statement(), request)
+    def _read(self, request: typing.Optional[Request]) -> layout.Tabular:
+        """Read handler.
+
+        Args:
+            request: Producer request.
+
+        Returns:
+            Tabular dataset.
+        """
+        return self._producer(self._statement(), request)
+
+
+class TableDriver(Driver[layout.Tabular]):
+    """Actor that returns the data in the layout.Tabular format."""
+
+    def apply(self, request: typing.Optional[Request] = None) -> layout.Tabular:
+        return self._read(request)
+
+
+class RowDriver(Driver[layout.RowMajor]):
+    """Specialized version of the actor that returns the data already converted to layout.RowMajor format."""
+
+    def apply(self, request: typing.Optional[Request] = None) -> layout.RowMajor:
+        return self._read(request).to_rows()
+
+
+class Slicer(flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]):
+    """Positional column extraction."""
 
     def __init__(
         self,
-        sources: typing.Mapping[dsl.Source, parsmod.Source],
-        features: typing.Mapping[dsl.Feature, parsmod.Feature],
-        **kwargs: typing.Any,
+        features: typing.Sequence[int],
+        labels: typing.Union[typing.Sequence[int], int],
     ):
-        self._sources: typing.Mapping[dsl.Source, parsmod.Source] = sources
-        self._features: typing.Mapping[dsl.Feature, parsmod.Feature] = features
-        self._kwargs: typing.Mapping[str, typing.Any] = kwargs
+        def from_vector(dataset: layout.Tabular) -> layout.RowMajor:
+            return dataset.take_columns(labels).to_rows()
 
-    def __repr__(self):
-        return flow.name(self.__class__, **self._kwargs)
+        def from_scalar(dataset: layout.Tabular) -> layout.RowMajor:
+            return dataset.to_columns()[labels]
 
-    def __call__(self, query: dsl.Query, request: typing.Optional[RequestT] = None) -> layout.ColumnMajor:
-        """Reader entrypoint.
+        self._features: typing.Sequence[int] = features
+        self._label: typing.Callable[[layout.Tabular], layout.RowMajor] = (
+            from_vector if isinstance(labels, typing.Sequence) else from_scalar
+        )
 
-        It operates in two possible modes:
-            * extraction - when launched just using the query without the `source` parameter, it simply executes
-              the query against the backend.
-            * augmentation - if `request` is provided, it is interpreted as the actual source to be returned but
-              potentially incomplete in terms of the expected schema; in which case the reader is supposed to just
-              augment the partial data to meet the query schema.
-
-        Args:
-            query: The query DSL specifying the extracted data.
-            request: Optional - potentially incomplete - labelled literal columns to be augmented according
-                     to the query.
-
-        Returns:
-            Data extracted according to the query.
-        """
-        if request:
-            header = [f.name for f in query.features]
-            if any(h not in request for h in header):
-                raise forml.InvalidError('Partial augmentation not supported')
-            return [request[h] for h in header]
-
-        LOGGER.debug('Parsing ETL query')
-        with self.parser(self._sources, self._features) as visitor:
-            query.accept(visitor)
-            result = visitor.fetch()
-        LOGGER.debug('Starting ETL read using: %s', result)
-        return self.format(self.read(result, **self._kwargs))
+    def apply(self, dataset: layout.Tabular) -> tuple[layout.RowMajor, layout.RowMajor]:
+        return dataset.take_columns(self._features).to_rows(), self._label(dataset)
 
     @classmethod
-    @abc.abstractmethod
-    def parser(
-        cls,
-        sources: typing.Mapping[dsl.Source, parsmod.Source],
-        features: typing.Mapping[dsl.Feature, parsmod.Feature],
-    ) -> parsmod.Visitor:
-        """Return the parser instance of this reader.
-
-        Args:
-            sources: Source mappings to be used by the parser.
-            features: Feature mappings to be used by the parser.
-
-        Returns:
-            Parser instance.
-        """
-
-    @classmethod
-    def format(cls, data: layout.Native) -> layout.ColumnMajor:
-        """Format the input data into the required payload.ColumnMajor format.
-
-        Args:
-            data: Input data.
-
-        Returns:
-            Data formatted into layout.ColumnMajor format.
-        """
-        return data
-
-    @classmethod
-    @abc.abstractmethod
-    def read(cls, statement: parsmod.Source, **kwargs: typing.Any) -> layout.Native:
-        """Perform the read operation with the given statement.
-
-        Args:
-            statement: Query statement in the reader's native syntax.
-            kwargs: Optional reader keyword args.
-
-        Returns:
-            Data provided by the reader.
-        """
-
-
-class Slicer:
-    """Base class for slicer implementation."""
-
-    class Actor(flow.Actor):
-        """Column extraction actor using the provided slicer to separate features from labels."""
-
-        def __init__(
-            self,
-            slicer: typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor],
-            features: typing.Sequence[dsl.Feature],
-            labels: typing.Sequence[dsl.Feature],
-        ):
-            self._slicer: typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor] = slicer
-            fstop = len(features)
-            lcount = len(labels)
-            self._features: slice = slice(fstop)
-            self._label: typing.Union[slice, int] = slice(fstop, fstop + lcount) if lcount > 1 else fstop
-
-        def apply(self, features: layout.ColumnMajor) -> tuple[typing.Any, typing.Any]:
-            assert len(features) == (
-                self._label.stop if isinstance(self._label, slice) else self._label + 1
-            ), 'Unexpected number of features for splitting'
-            return self._slicer(features, self._features), self._slicer(features, self._label)
-
-    def __init__(self, schema: typing.Sequence[dsl.Feature], features: typing.Mapping[dsl.Feature, parsmod.Feature]):
-        self._schema: typing.Sequence[dsl.Feature] = schema
-        self._features: typing.Mapping[dsl.Feature, parsmod.Feature] = features
-
-    def __call__(self, source: layout.ColumnMajor, selection: typing.Union[slice, int]) -> layout.ColumnMajor:
-        LOGGER.debug('Selecting features: %s', self._schema[selection])
-        return source[selection]
+    def from_columns(
+        cls, features: typing.Sequence[dsl.Feature], labels: typing.Union[dsl.Feature, typing.Sequence[dsl.Feature]]
+    ) -> tuple[typing.Sequence[dsl.Feature], 'Slicer']:
+        """Helper method for creating the slicer and the combined set of columns"""
+        fstop = len(features)
+        if isinstance(labels, dsl.Feature):
+            lslice = fstop
+            lseq = [labels]
+        else:
+            assert isinstance(labels, typing.Sequence), 'Expecting a sequence of DSL features.'
+            lslice = range(fstop, fstop + len(labels))
+            lseq = labels
+        return (*features, *lseq), cls.spec(range(fstop), lslice)

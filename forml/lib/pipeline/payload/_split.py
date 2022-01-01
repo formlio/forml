@@ -30,7 +30,7 @@ from forml.lib.pipeline.payload import _format
 LOGGER = logging.getLogger(__name__)
 
 
-class CVFolds(flow.Actor):
+class CVFolds(flow.Actor[pandas.DataFrame, pandas.Series, typing.Sequence[pandas.DataFrame]]):
     """Train-test splitter generation n-folds of train-test splits based on the provided crossvalidator.
 
     The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to
@@ -45,13 +45,13 @@ class CVFolds(flow.Actor):
         self.crossvalidator: model_selection.BaseCrossValidator = crossvalidator
         self._indices: typing.Optional[tuple[tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
 
-    def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
+    def train(self, features: pandas.DataFrame, labels: pandas.Series) -> None:
         """Train the splitter on the provided data.
         Args:
             features: X table.
-            label: Y series.
+            labels: Y series.
         """
-        self._indices = tuple(self.crossvalidator.split(features, label))  # tuple it so it can be pickled
+        self._indices = tuple(self.crossvalidator.split(features, labels))  # tuple it so it can be pickled
 
     @_format.pandas_params
     def apply(self, source: pandas.DataFrame) -> typing.Sequence[pandas.DataFrame]:  # pylint: disable=arguments-differ

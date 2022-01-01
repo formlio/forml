@@ -23,6 +23,8 @@ import os
 import secrets
 import typing
 
+import pandas
+
 from forml import flow
 from forml.lib.pipeline import payload
 
@@ -33,7 +35,9 @@ class Return(flow.Operator):
     """
 
     def __init__(self, label: str = 'label'):
-        self.inserter: flow.Spec = payload.LabelMerger.spec(column=label)
+        self.inserter: flow.Spec[pandas.DataFrame, pandas.Series, pandas.DataFrame] = payload.LabelMerger.spec(
+            column=label
+        )
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         """Composition implementation.
@@ -109,14 +113,14 @@ class TrainDumper(Dumper):
         return features
 
     @payload.pandas_params
-    def train(self, features: typing.Any, label: typing.Any) -> None:
+    def train(self, features: typing.Any, labels: typing.Any) -> None:
         """Dump the features along with labels.
 
         Args:
             features: X table.
-            label: Y series.
+            labels: Y series.
         """
-        features.set_index(label.rename(self.label)).reset_index().to_csv(self.path, index=False)
+        features.set_index(labels.rename(self.label)).reset_index().to_csv(self.path, index=False)
 
     def get_state(self) -> bytes:
         """We aren't really stateful.

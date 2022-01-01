@@ -31,7 +31,7 @@ class Sink(io.Sink, alias='stdout'):
         """Sink writer implementation."""
 
         @classmethod
-        def write(cls, data: typing.Optional[layout.Native], **kwargs: typing.Any) -> layout.Native:
+        def write(cls, data: layout.Native, **kwargs: typing.Any) -> None:
             if data is not None:
                 print(data, **kwargs)
             return data

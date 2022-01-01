@@ -18,7 +18,6 @@
 """Publish utilities.
 """
 
-import abc
 import logging
 import typing
 
@@ -32,10 +31,10 @@ LOGGER = logging.getLogger(__name__)
 class Operator(flow.Operator):
     """Basic publisher operator."""
 
-    def __init__(self, writer: flow.Spec):
+    def __init__(self, writer: flow.Spec[layout.RowMajor, None, layout.Native]):
         if writer.actor.is_stateful():
             raise forml.InvalidError('Stateful actor invalid for a publisher')
-        self._writer: flow.Spec = writer
+        self._writer: flow.Spec[layout.RowMajor, None, layout.Native] = writer
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         """Compose the publisher segment track.
@@ -48,51 +47,17 @@ class Operator(flow.Operator):
         return left.expand().extend(apply, train)
 
 
-class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
-    """Base class for writer implementation."""
+Consumer = typing.Callable[[layout.RowMajor], layout.Native]
 
-    class Actor(flow.Actor):
-        """Data publishing actor using the provided writer to store the data."""
 
-        def __init__(self, writer: typing.Callable[[layout.ColumnMajor], None]):
-            self._writer: typing.Callable[[layout.ColumnMajor], None] = writer
+class Driver(flow.Actor[layout.RowMajor, None, layout.Native]):
+    """Data publishing actor using the provided writer to store the data."""
 
-        def __repr__(self):
-            return repr(self._writer)
-
-        def apply(self, data: layout.ColumnMajor) -> layout.Native:
-            return self._writer(data)
-
-    def __init__(self, **kwargs: typing.Any):
-        self._kwargs: typing.Mapping[str, typing.Any] = kwargs
+    def __init__(self, consumer: Consumer):
+        self._consumer: Consumer = consumer
 
     def __repr__(self):
-        return flow.name(self.__class__, **self._kwargs)
+        return repr(self._consumer)
 
-    def __call__(self, data: layout.ColumnMajor) -> layout.Native:
-        LOGGER.debug('Starting to publish')
-        native = self.format(data)
-        self.write(native, **self._kwargs)
-        return native
-
-    @classmethod
-    def format(cls, data: layout.ColumnMajor) -> layout.Native:
-        """Format the output data into the required payload.Native format.
-
-        Args:
-            data: Output data.
-
-        Returns:
-            Data formatted into payload.Native format.
-        """
-        return data
-
-    @classmethod
-    @abc.abstractmethod
-    def write(cls, data: layout.Native, **kwargs: typing.Any) -> None:
-        """Perform the write operation with the given data.
-
-        Args:
-            data: Output data in the writer's native format.
-            kwargs: Optional writer keyword args.
-        """
+    def apply(self, data: layout.RowMajor) -> layout.Native:
+        return self._consumer(data)

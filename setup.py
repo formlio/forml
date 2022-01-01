@@ -58,7 +58,7 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['forml*']),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
     setup_requires=['setuptools', 'wheel', 'toml'],
-    install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml'],
+    install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
     extras_require={
         'all': EXTRAS_ALL,
         'dask': EXTRAS_DASK,
