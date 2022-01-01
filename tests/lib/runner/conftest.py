@@ -24,6 +24,6 @@ from forml.io import layout
 
 
 @pytest.fixture(scope='session')
-def generation_prediction() -> layout.Vector:
+def generation_prediction() -> layout.Array:
     """Stateful prediction fixture."""
     return 3, 6, 9

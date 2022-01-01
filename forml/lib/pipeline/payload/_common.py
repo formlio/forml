@@ -25,13 +25,13 @@ import typing
 import pandas
 from pandas.core import generic as pdtype
 
-from forml.flow import _task
+from forml import flow
 from forml.lib.pipeline.payload import _format
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Concat(_task.Actor):
+class Concat(flow.Actor[pdtype.NDFrame, None, pandas.DataFrame]):
     """Concatenate objects received on the input ports into single dataframe."""
 
     def __init__(self, axis: str = 'index'):
@@ -50,7 +50,7 @@ class Concat(_task.Actor):
         return pandas.concat(source, axis=self.axis, ignore_index=True)
 
 
-class Apply(_task.Actor):
+class Apply(flow.Actor[pdtype.NDFrame, None, pdtype.NDFrame]):
     """Generic source apply actor."""
 
     def __init__(self, function: typing.Callable[[pdtype.NDFrame], pdtype.NDFrame]):
@@ -69,7 +69,7 @@ class Apply(_task.Actor):
         return self.function(*source)
 
 
-class ColumnExtractor(_task.Actor):
+class ColumnExtractor(flow.Actor[pandas.DataFrame, None, tuple[pandas.DataFrame, pandas.DataFrame]]):
     """Column based label-extraction actor with 1:2 shape."""
 
     def __init__(self, column: str = 'label'):
@@ -106,7 +106,7 @@ class ColumnExtractor(_task.Actor):
         self.column = column
 
 
-class LabelMerger(_task.Actor):
+class LabelMerger(flow.Actor[pandas.DataFrame, pandas.Series, pandas.DataFrame]):
     """Label-extraction inversion - inserting a label as a new column to the feature set."""
 
     def __init__(self, column: str = 'label'):
@@ -114,13 +114,13 @@ class LabelMerger(_task.Actor):
         self._label: typing.Optional[pandas.Series] = None
 
     @_format.pandas_params
-    def train(self, features: pandas.DataFrame, label: pandas.Series) -> None:
+    def train(self, features: pandas.DataFrame, labels: pandas.Series) -> None:
         """Train the inserter by remembering the labels.
         Args:
             features: X table.
-            label: Y series.
+            labels: Y series.
         """
-        self._label = label
+        self._label = labels
 
     @_format.pandas_params
     def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:  # pylint: disable=arguments-differ

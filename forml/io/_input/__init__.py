@@ -19,7 +19,6 @@
 IO feed utils.
 """
 import abc
-import functools
 import logging
 import typing
 
@@ -30,7 +29,7 @@ from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
 from forml.io.dsl import parser
 
-from . import extract
+from . import _producer, extract
 
 if typing.TYPE_CHECKING:
     from forml import project
@@ -45,8 +44,7 @@ class Feed(
 ):
     """Feed is the implementation of a specific datasource provider."""
 
-    class Reader(extract.Reader[parser.Source, parser.Feature, layout.Native], metaclass=abc.ABCMeta):
-        """Abstract reader of the feed."""
+    Reader = _producer.Reader
 
     def __init__(self, **readerkw):
         self._readerkw: dict[str, typing.Any] = readerkw
@@ -68,72 +66,50 @@ class Feed(
             Pipeline segment.
         """
 
-        def formatter(provider: typing.Callable[..., layout.ColumnMajor]) -> typing.Callable[..., typing.Any]:
-            """Creating a closure around the provider with the custom formatting to be applied on the provider output.
+        def actor(
+            driver: type[extract.Driver], query: dsl.Query
+        ) -> flow.Spec[typing.Optional[extract.Request], None, extract.Operator]:
+            """Helper for creating the reader actor spec for the given query.
 
             Args:
-                provider: Original provider whose output is to be formatted.
-
-            Returns:
-                Wrapper that applies formatting upon calling the provider.
-            """
-
-            @functools.wraps(provider)
-            def wrapper(*args, **kwargs) -> typing.Any:
-                """Wrapped provider with custom formatting.
-
-                Args:
-                    *args: Original args.
-                    **kwargs: Original kwargs.
-
-                Returns:
-                    Formatted data.
-                """
-                return self.format(provider(*args, **kwargs))
-
-            return wrapper
-
-        def actor(handler: typing.Callable[..., typing.Any], spec: 'dsl.Query') -> flow.Spec:
-            """Helper for creating the reader actor spec for given query.
-
-            Args:
-                handler: Reading handler.
-                spec: Data loading statement.
+                driver: Driver class.
+                query: Data loading query.
 
             Returns:
                 Reader actor spec.
             """
-            return extract.Reader.Actor.spec(
-                handler, extract.Statement.prepare(spec, source.extract.ordinal, lower, upper)
-            )
+            return driver.spec(producer, extract.Statement.prepare(query, source.extract.ordinal, lower, upper))
 
-        reader = self.reader(self.sources, self.features, **self._readerkw)
-        query: 'dsl.Query' = source.extract.train
-        label: typing.Optional[flow.Spec] = None
-        if source.extract.labels:  # trainset/label formatting is applied only after label extraction
-            query = query.select(*(*source.extract.train.features, *source.extract.labels))
-            label = extract.Slicer.Actor.spec(
-                formatter(self.slicer(query.features, self.features)),
-                source.extract.train.features,
-                source.extract.labels,
-            )
-        else:  # testset formatting is applied straight away
-            reader = formatter(reader)
-        train = actor(reader, query)
-        apply = actor(formatter(self.reader(self.sources, self.features, **self._readerkw)), source.extract.apply)
-        loader: flow.Composable = extract.Operator(apply, train, label)
+        producer = self.producer(self.sources, self.features, **self._readerkw)
+        apply_actor: flow.Spec[typing.Optional[extract.Request], None, layout.RowMajor] = actor(
+            extract.RowDriver, source.extract.apply
+        )
+        label_actor: typing.Optional[flow.Spec] = None
+        train_query: dsl.Query = source.extract.train
+        train_driver = extract.RowDriver
+        if source.extract.labels:
+            train_driver = extract.TableDriver
+            if isinstance(source.extract.labels, flow.Spec):
+                label_actor = source.extract.labels
+            else:
+                columns, label_actor = extract.Slicer.from_columns(train_query.features, source.extract.labels)
+                train_query = train_query.select(*columns)
+        train_actor: flow.Spec[typing.Optional[extract.Request], None, extract.Operator] = actor(
+            train_driver, train_query
+        )
+        loader: flow.Composable = extract.Operator(apply_actor, train_actor, label_actor)
         if source.transform:
             loader >>= source.transform
         return loader.expand()
 
     @classmethod
-    def reader(
+    def producer(
         cls,
         sources: typing.Mapping['dsl.Source', parser.Source],
         features: typing.Mapping['dsl.Feature', parser.Feature],
         **kwargs: typing.Any,
-    ) -> typing.Callable[['dsl.Query', typing.Optional[extract.Reader.RequestT]], layout.ColumnMajor]:
-        """Return the reader instance of this feed (any callable, presumably extract.Reader).
+    ) -> extract.Producer:
+        """Return the producer instance of this feed (any callable, presumably _producer.Reader).
 
         Args:
             sources: Source mappings to be used by the reader.
@@ -141,38 +117,9 @@ class Feed(
             kwargs: Optional reader keyword arguments.
 
         Returns:
-            Reader instance.
+            Producer instance.
         """
         return cls.Reader(sources, features, **kwargs)  # pylint: disable=abstract-class-instantiated
-
-    @classmethod
-    def slicer(
-        cls, schema: typing.Sequence['dsl.Feature'], features: typing.Mapping['dsl.Feature', parser.Feature]
-    ) -> typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor]:
-        """Return the slicer instance of this feed, that is able to split the loaded dataset feature-wise.
-
-        This default slicer is plain positional sequence slicer.
-
-        Args:
-            schema: List of expected features to be sliced from.
-            features: Column mappings to be used by the selector.
-
-        Returns:
-            Slicer instance.
-        """
-        return extract.Slicer(schema, features)
-
-    @classmethod
-    def format(cls, data: layout.ColumnMajor) -> typing.Any:
-        """Optional post-formatting to be applied upon obtaining the feature data from the raw reader.
-
-        Args:
-            data: Input Columnar data to be formatted.
-
-        Returns:
-            Formatted data.
-        """
-        return data
 
     @property
     @abc.abstractmethod
@@ -194,12 +141,12 @@ class Feed(
 
 
 class Importer:
-    """Pool of (possibly) lazily instantiated feeds. If configured without any explicit feeds, all of the feeds
+    """Pool of (possibly) lazily instantiated feeds. If configured without any explicit feeds, all the feeds
     registered in the provider cache are added.
 
-    The pool is used to provide a feed instance that can satisfy particular DSL query (can provide datasource for all of
-    the schemas used in that query). Feed instances can have priority in which case the first feed with highest priority
-    that's capable of supplying the data is returned.
+    The pool is used to provide a feed instance that can satisfy particular DSL query (can provide datasource for all
+    the schemas used in that query). Feed instances can have priority in which case the first feed with the highest
+    priority that's capable of supplying the data is returned.
 
     TO-DO: This logic should be extended to also probe the available data range so that feed without the expected data
     range is not prioritized over another feed that has the range but has a lower priority.

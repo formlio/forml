@@ -20,6 +20,8 @@ ETL layer.
 """
 
 from ._input import Feed, Importer
+from ._input.extract import Producer, Request
 from ._output import Exporter, Sink
+from ._output.publish import Consumer
 
-__all__ = ['Feed', 'Sink', 'Importer', 'Exporter']
+__all__ = ['Feed', 'Sink', 'Importer', 'Exporter', 'Consumer', 'Producer', 'Request']

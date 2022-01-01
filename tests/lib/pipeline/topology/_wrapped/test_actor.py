@@ -30,7 +30,7 @@ class TestFunction:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def actor() -> flow.Actor:
+    def actor() -> flow.Actor[str, None, str]:
         """Actor fixture."""
 
         @topology.Function.actor
@@ -40,12 +40,12 @@ class TestFunction:
 
         return replace
 
-    def test_signature(self, actor: flow.Actor):
+    def test_signature(self, actor: flow.Actor[str, None, str]):
         """Test the actor signature."""
         with pytest.raises(TypeError):
             actor(foo='bar')
         actor(old='asd')
 
-    def test_apply(self, actor: flow.Actor):
+    def test_apply(self, actor: flow.Actor[str, None, str]):
         """Actor applying test."""
         assert actor(old='baz', new='foo').apply('baz bar') == 'foo bar'

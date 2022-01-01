@@ -18,39 +18,109 @@
 """
 Payload utilities.
 """
+import abc
 import typing
 
-Vector = typing.Sequence[typing.Any]  # Sequence of generic items
-ColumnMajor = typing.Sequence[typing.Any]  # Sequence of columns of any type (columnar, column-wise semantic)
-RowMajor = typing.Sequence[typing.Any]  # Sequence of rows of any type (row-wise semantic)
+import numpy
+
+Array = typing.Sequence[typing.Any]  # Sequence of items (n-dimensional but only the top one need to be accessible)
+ColumnMajor = Array  # Sequence of columns of any type (columnar, column-wise semantic)
+RowMajor = Array  # Sequence of rows of any type (row-wise semantic)
 Native = typing.TypeVar('Native')
 
 
-def transpose(data: typing.Sequence[Vector]) -> typing.Sequence[Vector]:
-    """Primitive helper for transposing between row and column oriented generic matrices.
+class Tabular:
+    """Dataset interface providing both row/column oriented representation of the underlying data."""
 
-    Note this performs badly compared to implementations available on specific data formats like numpy ndarray.
-
-    Args:
-        data: Input matrix.
-
-    Returns:
-        Transposed output matrix.
-    """
-
-    def col(idx: int) -> Vector:
-        """Create a vector for given column index.
-
-        Args:
-            idx: Index of column to be generated.
+    @abc.abstractmethod
+    def to_columns(self) -> ColumnMajor:
+        """Get the dataset in a column oriented structure.
 
         Returns:
-            Vector for given column.
+            Column-wise dataset representation.
         """
-        return [data[r][idx] for r in range(nrows)]
 
-    if data:
-        nrows = len(data)
-        ncols = len(data[0])
-        data = [col(c) for c in range(ncols)]
-    return data
+    @abc.abstractmethod
+    def to_rows(self) -> RowMajor:
+        """Get the dataset in a row oriented structure.
+
+        Returns:
+            Row-wise dataset representation.
+        """
+
+    @abc.abstractmethod
+    def take_rows(self, indices: typing.Sequence[int]) -> 'Tabular':
+        """Slice the table returning new instance with just the selected rows.
+
+        Args:
+            indices: Column indices to take.
+
+        Returns:
+            New Tabular instance with just the given rows taken.
+        """
+
+    @abc.abstractmethod
+    def take_columns(self, indices: typing.Sequence[int]) -> 'Tabular':
+        """Slice the table returning new instance with just the selected columns.
+
+        Args:
+            indices: Column indices to take.
+
+        Returns:
+            New Tabular instance with just the given columns taken.
+        """
+
+
+class Dense(Tabular):
+    """Simple Tabular implementation backed by numpy array."""
+
+    def __init__(self, rows: numpy.ndarray):
+        self._rows = rows
+
+    @staticmethod
+    def _to_ndarray(data: Array) -> numpy.ndarray:
+        """Helper for creating a ndarray instance.
+
+        Args:
+            data: Input array.
+
+        Returns:
+            NDArray instance.
+        """
+        return data if isinstance(data, numpy.ndarray) else numpy.array(data, dtype=object)
+
+    @classmethod
+    def from_columns(cls, columns: ColumnMajor) -> 'Dense':
+        """Helper for creating Tabular from sequence of columns.
+
+        Args:
+            columns: Sequence of columns to use.
+
+        Returns:
+            Dense instance representing the columnar data.
+        """
+        return cls(cls._to_ndarray(columns).T)
+
+    @classmethod
+    def from_rows(cls, rows: RowMajor) -> 'Dense':
+        """Helper for creating Tabular from sequence of rows.
+
+        Args:
+            rows: Sequence of rows to use.
+
+        Returns:
+            Dense instance representing the row data.
+        """
+        return cls(cls._to_ndarray(rows))
+
+    def to_columns(self) -> ColumnMajor:
+        return self._rows.T
+
+    def to_rows(self) -> RowMajor:
+        return self._rows
+
+    def take_rows(self, indices: typing.Sequence[int]) -> 'Dense':
+        return self.from_rows(self._rows.take(indices, axis=0))
+
+    def take_columns(self, indices: typing.Sequence[int]) -> 'Dense':
+        return self.from_columns(self._rows.T.take(indices, axis=0))

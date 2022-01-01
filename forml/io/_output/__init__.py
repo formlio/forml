@@ -18,46 +18,45 @@
 """
 IO sink utils.
 """
-import abc
 import typing
 
 from forml import _provider as provmod
 from forml import flow
 from forml.conf.parsed import provider as provcfg
-from forml.io import layout
 
-from . import publish
+from .. import dsl
+from . import _consumer, publish
 
 
 class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.path):
     """Sink is an implementation of a specific data consumer."""
 
-    class Writer(publish.Writer[layout.Native], metaclass=abc.ABCMeta):
-        """Abstract sink writer."""
+    Writer = _consumer.Writer
 
     def __init__(self, **writerkw):
         self._writerkw: dict[str, typing.Any] = writerkw
 
-    def publish(self) -> flow.Trunk:
+    def save(self, schema: dsl.Schema) -> flow.Trunk:
         """Provide a pipeline composable segment implementing the publish action.
 
         Returns:
             Pipeline segment.
         """
-        publisher: flow.Composable = publish.Operator(publish.Writer.Actor.spec(self.writer(**self._writerkw)))
+        publisher: flow.Composable = publish.Operator(publish.Driver.spec(self.consumer(schema, **self._writerkw)))
         return publisher.expand()
 
     @classmethod
-    def writer(cls, **kwargs: typing.Any) -> typing.Callable[[layout.ColumnMajor], layout.Native]:
+    def consumer(cls, schema: dsl.Schema, **kwargs: typing.Any) -> publish.Consumer:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:
+            schema: Product schema.
             kwargs: Optional writer keyword arguments.
 
         Returns:
-            Writer instance.
+            Consumer instance.
         """
-        return cls.Writer(**kwargs)  # pylint: disable=abstract-class-instantiated
+        return cls.Writer(schema, **kwargs)  # pylint: disable=abstract-class-instantiated
 
 
 class Exporter:

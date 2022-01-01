@@ -55,7 +55,7 @@ class ReturnHandler(CallHandler):
     class Sink(io.Sink):
         """Special sink to forward the output to a multiprocessing.Queue."""
 
-        class Writer(io.Sink.Writer):
+        class Writer(io.Sink.Writer[layout.Native]):
             """Sink writer."""
 
             @classmethod

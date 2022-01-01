@@ -139,5 +139,5 @@ class TestReader:
             .set_index('school')
             .join(school_data.set_index('id'))[['surname', 'name', 'score']]
             .apply(lambda r: pandas.Series([r['surname'], r['name'], int(r['score'])]), axis='columns')
-        ).values.transpose()
-        assert numpy.array_equal(result, expected)
+        ).values
+        assert numpy.array_equal(result.to_rows(), expected)

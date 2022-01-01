@@ -23,10 +23,11 @@ Flow unit tests fixtures.
 import pytest
 
 from forml import flow
+from forml.io import layout
 
 
 @pytest.fixture(scope='function')
-def operator(actor_spec: flow.Spec) -> flow.Operator:
+def operator(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Operator:
     """Operator fixture."""
 
     class Operator(flow.Operator):
@@ -45,7 +46,7 @@ def operator(actor_spec: flow.Spec) -> flow.Operator:
 
 
 @pytest.fixture(scope='function')
-def origin(actor_spec: flow.Spec) -> flow.Operator:
+def origin(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Operator:
     """Origin operator fixture."""
 
     class Operator(flow.Operator):

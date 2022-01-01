@@ -126,7 +126,7 @@ class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Run
         segments = [self._feed.load(self._instance.project.source, lower, upper)]
         segments.extend(b.expand() for b in blocks)
         if self._sink:
-            segments.append(self._sink.publish())
+            segments.append(self._sink.save(None))  # TODO: fixme
         return flow.Composition(*segments)
 
     def _exec(self, path: flow.Path, assets: typing.Optional[asset.State] = None) -> None:

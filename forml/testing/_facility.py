@@ -24,7 +24,7 @@ import uuid
 
 from forml import flow, io, project
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl, layout
+from forml.io import dsl
 from forml.runtime import facility
 from forml.testing import _spec
 
@@ -50,12 +50,12 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
 
     # pylint: disable=unused-argument
     @classmethod
-    def reader(
+    def producer(
         cls, sources: typing.Mapping[dsl.Source, None], features: typing.Mapping[dsl.Feature, typing.Any], **kwargs
-    ) -> typing.Callable[['dsl.Query', typing.Optional[io.Feed.Reader.RequestT]], layout.ColumnMajor]:
+    ) -> io.Producer:
         """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
 
-        def read(query: dsl.Query, request: typing.Optional[io.Feed.Reader.RequestT] = None) -> typing.Any:
+        def read(query: dsl.Query, request: typing.Optional[io.Request] = None) -> typing.Any:
             """Reader callback.
 
             Args:
@@ -68,13 +68,6 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
             return features[DataSet.label] if DataSet.label in query.features else features[DataSet.feature]
 
         return read
-
-    @classmethod
-    def slicer(
-        cls, schema: typing.Sequence[dsl.Feature], features: typing.Mapping[dsl.Feature, typing.Any]
-    ) -> typing.Callable[[layout.ColumnMajor, typing.Union[slice, int]], layout.ColumnMajor]:
-        """Return the slicer instance of this feed, that is able to split the loaded dataset column-wise."""
-        return lambda c, s: c[s][0]
 
     @property
     def sources(self) -> typing.Mapping[dsl.Source, None]:

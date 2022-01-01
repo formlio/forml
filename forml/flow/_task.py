@@ -63,11 +63,16 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
     return value
 
 
-class Actor(metaclass=abc.ABCMeta):
+Features = typing.TypeVar('Features')
+Labels = typing.TypeVar('Labels')
+Result = typing.TypeVar('Result')
+
+
+class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
     """Abstract interface of an actor."""
 
     @classmethod
-    def spec(cls, *args, **kwargs: typing.Any) -> 'Spec':
+    def spec(cls, *args, **kwargs: typing.Any) -> 'Spec[Features, Labels, Result]':
         """Shortcut for creating a spec of this actor.
 
         Args:
@@ -89,19 +94,19 @@ class Actor(metaclass=abc.ABCMeta):
         """
         return cls.train.__code__ is not Actor.train.__code__
 
-    def train(self, features: typing.Any, label: typing.Any) -> None:  # pylint: disable=no-self-use
+    def train(self, features: Features, labels: Labels) -> None:  # pylint: disable=no-self-use
         """Train the actor using the provided features and label.
 
         Optional method engaging the *Train* (``features``) and *Label* (``label``) ports on stateful actors.
 
         Args:
             features: Table of feature vectors.
-            label: Table of labels.
+            labels: Table of labels.
         """
         raise RuntimeError('Stateless actor')
 
     @abc.abstractmethod
-    def apply(self, *features: typing.Any) -> typing.Union[typing.Any, typing.Sequence[typing.Any]]:
+    def apply(self, *features: Features) -> Result:
         """Pass features through the apply function (typically transform or predict).
 
         Mandatory M:N input-output *Apply* ports.
@@ -166,10 +171,10 @@ class Actor(metaclass=abc.ABCMeta):
         return name(self.__class__, **self.get_params())
 
 
-class Spec(collections.namedtuple('Spec', 'actor, args, kwargs')):
+class Spec(typing.Generic[Features, Labels, Result], collections.namedtuple('Spec', 'actor, args, kwargs')):
     """Wrapper of actor class and init params."""
 
-    actor: type[Actor]
+    actor: type[Actor[Features, Labels, Result]]
     args: tuple[typing.Any]
     kwargs: typing.Mapping[str, typing.Any]
 
@@ -182,5 +187,5 @@ class Spec(collections.namedtuple('Spec', 'actor, args, kwargs')):
     def __getnewargs_ex__(self):
         return (self.actor, *self.args), dict(self.kwargs)
 
-    def __call__(self, *args, **kwargs) -> Actor:
+    def __call__(self, *args, **kwargs) -> Actor[Features, Labels, Result]:
         return self.actor(*(args or self.args), **self.kwargs | kwargs)

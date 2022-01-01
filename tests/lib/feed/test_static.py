@@ -19,10 +19,11 @@ Static feed unit tests.
 """
 # pylint: disable=no-self-use
 
-import typing
 
+import numpy
 import pytest
 
+from forml import io
 from forml.io import dsl, layout
 from forml.lib.feed import static
 
@@ -38,23 +39,21 @@ class TestFeed:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def feed(table: dsl.Table, testset: layout.ColumnMajor) -> static.Feed:
+    def feed(table: dsl.Table, testset: layout.RowMajor) -> static.Feed:
         """Feed fixture."""
-        return static.Feed({table: testset})
+        return static.Feed({table: layout.Dense.from_rows(testset).to_columns()})
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def reader(feed: static.Feed) -> typing.Callable[[dsl.Query], layout.ColumnMajor]:
+    def reader(feed: static.Feed) -> io.Feed.Reader:
         """Feed reader fixture."""
-        return feed.reader(feed.sources, feed.features)
+        return feed.producer(feed.sources, feed.features)
 
-    def test_query(
-        self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], table: dsl.Table, testset: layout.ColumnMajor
-    ):
+    def test_query(self, reader: io.Feed.Reader, table: dsl.Table, testset: layout.RowMajor):
         """Test feed query."""
-        assert reader(table.query) == testset
+        assert numpy.array_equal(reader(table.query).to_rows(), testset)
 
-    def test_unsupported(self, reader: typing.Callable[[dsl.Query], layout.ColumnMajor], table: dsl.Table):
+    def test_unsupported(self, reader: io.Feed.Reader, table: dsl.Table):
         """Test unsuported operations."""
         with pytest.raises(dsl.UnsupportedError):
             reader(table.where(table.score > 1))

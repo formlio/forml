@@ -23,23 +23,24 @@ ForML compiler unit tests.
 import pytest
 
 from forml import flow
+from forml.io import layout
 from forml.runtime import asset, code
 
 
 @pytest.fixture(scope='session')
-def node1(actor_spec: flow.Spec) -> flow.Worker:
+def node1(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
     """Node fixture."""
     return flow.Worker(actor_spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node2(actor_spec: flow.Spec) -> flow.Worker:
+def node2(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
     """Node fixture."""
     return flow.Worker(actor_spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node3(actor_spec: flow.Spec) -> flow.Worker:
+def node3(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
     """Node fixture."""
     return flow.Worker(actor_spec, 1, 1)
 

@@ -30,7 +30,7 @@ import typing
 
 import forml
 from forml import flow
-from forml.io import dsl
+from forml.io import dsl, layout
 from forml.runtime.mode import evaluation
 
 from .. import _importer, _product
@@ -54,36 +54,48 @@ class Source(typing.NamedTuple):
     extract: 'Source.Extract'
     transform: typing.Optional[flow.Composable] = None
 
+    Labels = typing.Union[
+        dsl.Feature,
+        typing.Sequence[dsl.Feature],
+        flow.Spec[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]],
+    ]
+    """Label type - either single column, multiple columns or generic label extracting actor (with two output ports)."""
+
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
 
         train: dsl.Query
         apply: dsl.Query
-        labels: tuple[dsl.Feature]
+        labels: typing.Optional['Source.Labels']
         ordinal: typing.Optional[dsl.Operable]
 
         def __new__(
             cls,
             train: dsl.Queryable,
             apply: dsl.Queryable,
-            labels: typing.Sequence[dsl.Feature],
+            labels: typing.Optional['Source.Labels'],
             ordinal: typing.Optional[dsl.Operable],
         ):
             train = train.query
             apply = apply.query
-            if {c.operable for c in train.features}.intersection(c.operable for c in labels):
-                raise forml.InvalidError('Label-feature overlap')
+            if labels is not None and not isinstance(labels, flow.Spec):
+                if isinstance(labels, dsl.Feature):
+                    lseq = [labels]
+                else:
+                    lseq = labels = tuple(labels)
+                if {c.operable for c in train.features}.intersection(c.operable for c in lseq):
+                    raise forml.InvalidError('Label-feature overlap')
             if train.schema != apply.schema:
                 raise forml.InvalidError('Train-apply schema mismatch')
             if ordinal:
                 ordinal = dsl.Operable.ensure_is(ordinal)
-            return super().__new__(cls, train, apply, tuple(labels), ordinal)
+            return super().__new__(cls, train, apply, labels, ordinal)
 
     @classmethod
     def query(
         cls,
         features: dsl.Queryable,
-        *labels: dsl.Feature,
+        labels: typing.Optional['Source.Labels'] = None,
         apply: typing.Optional[dsl.Queryable] = None,
         ordinal: typing.Optional[dsl.Operable] = None,
     ) -> 'Source':
@@ -92,7 +104,7 @@ class Source(typing.NamedTuple):
 
         Args:
             features: Query defining the train (and if same also the ``apply``) features.
-            labels: Sequence of training label columns.
+            labels: (Sequence of) training label column(s) or label extraction actor spec.
             apply: Optional query defining the apply features (if different from train ones). If provided, it must
                    result in the same schema as the main provided via ``features``.
             ordinal: Optional specification of an ordinal column.

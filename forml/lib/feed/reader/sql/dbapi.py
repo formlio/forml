@@ -361,18 +361,6 @@ class Reader(io.Feed.Reader[str, str, layout.RowMajor], metaclass=abc.ABCMeta):
         return Parser(sources, features)
 
     @classmethod
-    def format(cls, data: layout.RowMajor) -> layout.ColumnMajor:
-        """PEP249 assumes row oriented results, we need featurear so let's transpose here.
-
-        Args:
-            data: Row oriented input.
-
-        Returns:
-            Columnar output.
-        """
-        return layout.transpose(data)
-
-    @classmethod
     def read(cls, statement: str, **kwargs) -> layout.RowMajor:
         """Perform the read operation with the given statement.
 

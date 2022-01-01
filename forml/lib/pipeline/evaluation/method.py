@@ -20,6 +20,7 @@ Data splitting functionality.
 """
 import typing
 
+import pandas
 from sklearn import model_selection
 
 from forml import flow
@@ -31,7 +32,9 @@ class CrossVal(evaluation.Method):
     """Cross validation ytrue/ypred dataset producer."""
 
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
-        self._splitter: flow.Spec = payload.CVFolds.spec(crossvalidator=crossvalidator)
+        self._splitter: flow.Spec[
+            pandas.DataFrame, pandas.Series, typing.Sequence[pandas.DataFrame]
+        ] = payload.CVFolds.spec(crossvalidator=crossvalidator)
 
     @property
     def nsplits(self) -> int:

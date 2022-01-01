@@ -19,7 +19,6 @@
 Dataframe conversion tools.
 """
 import functools
-import itertools
 import logging
 import typing
 
@@ -44,11 +43,9 @@ def _ndf(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None
         Converted pandas object.
     """
 
-    def from_columns() -> pandas.DataFrame:
-        """Helper conversion from list of columns."""
-        return pandas.concat(
-            (pandas.Series(d, name=n) for d, n in itertools.zip_longest(data, columns or [])), axis='columns'
-        ).infer_objects()
+    def from_rows() -> pandas.DataFrame:
+        """Helper conversion from list of rows."""
+        return pandas.DataFrame(data, columns=columns).infer_objects()
 
     def from_vector() -> pandas.Series:
         """Helper conversion for a single series."""
@@ -57,9 +54,9 @@ def _ndf(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None
     if isinstance(data, pdtype.NDFrame):
         return data
     if isinstance(data, numpy.ndarray):
-        return from_vector() if data.ndim == 1 else from_columns()
+        return from_vector() if data.ndim == 1 else from_rows()
     if isinstance(data, (tuple, list)):
-        return from_vector() if data and not isinstance(data[0], (tuple, list)) else from_columns()
+        return from_vector() if data and not isinstance(data[0], (tuple, list)) else from_rows()
     LOGGER.warning('Unknown NDFrame conversion strategy for %s: %.1024s', type(data), data)
     return data
 

@@ -24,7 +24,7 @@ from forml import io
 from forml.io import dsl, layout
 
 
-class Feed(io.Feed[None, layout.Vector]):
+class Feed(io.Feed[None, layout.Array]):
     """Static feed is initialized with actual data which can only be returned in primitive column-wise fashion. No
     advanced ETL can be applied.
     """
@@ -32,21 +32,21 @@ class Feed(io.Feed[None, layout.Vector]):
     def __init__(self, data: typing.Mapping[dsl.Table, layout.ColumnMajor]):
         super().__init__()
         self._sources: typing.Mapping[dsl.Source, None] = types.MappingProxyType({f: None for f in data})
-        self._features: typing.Mapping[dsl.Feature, layout.Vector] = types.MappingProxyType(
+        self._features: typing.Mapping[dsl.Feature, layout.Array] = types.MappingProxyType(
             {c: s for t, f in data.items() for c, s in zip(t.features, f)}
         )
 
     #  pylint: disable=unused-argument
     @classmethod
-    def reader(
+    def producer(
         cls,
         sources: typing.Mapping[dsl.Source, None],
-        features: typing.Mapping[dsl.Feature, layout.Vector],
+        features: typing.Mapping[dsl.Feature, layout.Array],
         **kwargs: typing.Any,
-    ) -> typing.Callable[[dsl.Query], layout.ColumnMajor]:
+    ) -> io.Producer:
         """Return the reader instance of this feed (any callable, presumably extract.Reader)."""
 
-        def read(query: dsl.Query) -> layout.ColumnMajor:
+        def read(query: dsl.Query) -> layout.Tabular:
             """Reader callback.
 
             Args:
@@ -58,7 +58,7 @@ class Feed(io.Feed[None, layout.Vector]):
             if query.prefilter or query.postfilter or query.ordering or query.rows:
                 raise dsl.UnsupportedError('Query not supported by static feed')
             try:
-                return tuple(features[c] for c in query.features)
+                return layout.Dense.from_columns([features[c] for c in query.features])
             except KeyError as err:
                 raise dsl.UnsupportedError(f'Column not supported by static feed: {err}')
 
@@ -70,6 +70,6 @@ class Feed(io.Feed[None, layout.Vector]):
         return self._sources
 
     @property
-    def features(self) -> typing.Mapping[dsl.Feature, layout.Vector]:
+    def features(self) -> typing.Mapping[dsl.Feature, layout.Array]:
         """The explicit features mapping implemented by this feed to be used by the query parser."""
         return self._features

@@ -35,7 +35,7 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(actor_spec: flow.Spec) -> user.Functor:
+    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> user.Functor:
         """Functor fixture."""
 
     def test_serializable(self, functor: user.Functor, actor_state: bytes, args: typing.Sequence):
@@ -52,7 +52,7 @@ class TestApply(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec) -> user.Functor:
+    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> user.Functor:
         """Functor fixture."""
         return user.Apply().functor(actor_spec)
 
@@ -67,8 +67,8 @@ class TestApply(Functor):
         functor: user.Functor,
         actor_state: bytes,
         hyperparams: typing.Mapping[str, str],
-        testset: layout.ColumnMajor,
-        actor_prediction: layout.ColumnMajor,
+        testset: layout.RowMajor,
+        actor_prediction: layout.RowMajor,
     ):
         """Test the functor call."""
         with pytest.raises(ValueError):
@@ -84,24 +84,25 @@ class TestTrain(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec) -> user.Functor:
+    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> user.Functor:
         """Functor fixture."""
         return user.Train().functor(actor_spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def args(trainset: layout.ColumnMajor, testset: layout.ColumnMajor) -> typing.Sequence:
+    def args(trainset_features: layout.RowMajor, trainset_labels: layout.Array) -> typing.Sequence:
         """Functor args fixture."""
-        return [trainset, testset]
+        return trainset_features, trainset_labels
 
     def test_call(
         self,
         functor: user.Functor,
         actor_state: bytes,
         hyperparams: typing.Mapping[str, str],
-        trainset: layout.ColumnMajor,
+        trainset_features: layout.RowMajor,
+        trainset_labels: layout.Array,
     ):
         """Test the functor call."""
-        assert functor(trainset[:-1], trainset[-1]) == actor_state
+        assert functor(trainset_features, trainset_labels) == actor_state
         functor = functor.preset_params()
-        assert functor(hyperparams, trainset[:-1], trainset[-1]) == actor_state
+        assert functor(hyperparams, trainset_features, trainset_labels) == actor_state

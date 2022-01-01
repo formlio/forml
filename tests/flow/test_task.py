@@ -33,23 +33,30 @@ class TestActor:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def instance(actor_spec: flow.Spec) -> flow.Actor:
+    def instance(
+        actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]
+    ) -> flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]:
         """Instance fixture."""
         return actor_spec()
 
     def test_train(
         self,
-        instance: flow.Actor,
-        trainset: layout.ColumnMajor,
-        testset: layout.ColumnMajor,
-        actor_prediction: layout.ColumnMajor,
+        instance: flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor],
+        trainset_features: layout.RowMajor,
+        trainset_labels: layout.Array,
+        testset: layout.RowMajor,
+        actor_prediction: layout.RowMajor,
     ):
         """Test actor training."""
         assert instance.is_stateful()
-        instance.train(trainset[:-1], trainset[-1])
+        instance.train(trainset_features, trainset_labels)
         assert instance.apply(testset) == actor_prediction
 
-    def test_params(self, instance: flow.Actor, hyperparams):
+    def test_params(
+        self,
+        instance: flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor],
+        hyperparams: typing.Mapping[str, str],
+    ):
         """Params setter/getter tests."""
         orig = instance.get_params()
         assert orig == hyperparams
@@ -59,14 +66,15 @@ class TestActor:
 
     def test_state(
         self,
-        instance: flow.Actor,
-        trainset: layout.ColumnMajor,
+        instance: flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor],
+        trainset_features: layout.RowMajor,
+        trainset_labels: layout.Array,
         actor_state: bytes,
-        testset: layout.ColumnMajor,
-        actor_prediction: layout.ColumnMajor,
+        testset: layout.RowMajor,
+        actor_prediction: layout.RowMajor,
     ):
         """Testing actor statefulness."""
-        instance.train(trainset[:-1], trainset[-1])
+        instance.train(trainset_features, trainset_labels)
         assert instance.predict(testset) == actor_prediction
         assert instance.get_state() == actor_state
         instance.train('foo', 'bar')  # retraining to change the state
@@ -76,29 +84,37 @@ class TestActor:
         instance.set_state(actor_state)
         assert instance.get_params()['x'] == 100  # state shouldn't override parameter setting
 
-    def test_spec(self, actor_type: type[flow.Actor], hyperparams: typing.Mapping[str, int], actor_spec: flow.Spec):
+    def test_spec(
+        self,
+        actor_type: type[flow.Actor],
+        hyperparams: typing.Mapping[str, int],
+        actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor],
+    ):
         """Test the spec creation of the actor class."""
         assert actor_type.spec(**hyperparams) == actor_spec
 
     def test_serializable(
         self,
-        instance: flow.Actor,
-        trainset: layout.ColumnMajor,
-        testset: layout.ColumnMajor,
-        actor_prediction: layout.ColumnMajor,
+        instance: flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor],
+        trainset_features: layout.RowMajor,
+        trainset_labels: layout.Array,
+        testset: layout.RowMajor,
+        actor_prediction: layout.RowMajor,
     ):
         """Test actor serializability."""
-        instance.train(trainset[:-1], trainset[-1])
+        instance.train(trainset_features, trainset_labels)
         assert pickle.loads(pickle.dumps(instance)).predict(testset) == actor_prediction
 
 
 class TestSpec:
     """Task spec unit tests."""
 
-    def test_serializable(self, actor_spec: flow.Spec, actor_type: type[flow.Actor]):
+    def test_serializable(
+        self, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor], actor_type: type[flow.Actor]
+    ):
         """Test spec serializability."""
         assert pickle.loads(pickle.dumps(actor_spec)).actor == actor_type
 
-    def test_instantiate(self, actor_spec: flow.Spec):
+    def test_instantiate(self, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]):
         """Testing specto actor instantiation."""
         assert actor_spec(b=3).get_params() == {**actor_spec.kwargs, 'b': 3}
