@@ -50,7 +50,7 @@ class Visitor:
         """
 
 
-class Port(typing.Iterable):
+class Port(typing.Iterable[port.Subscription]):
     """Output port subscriptions as an ordered set.
 
     The ordering is a dependency for the equality comparison of two nodes.
@@ -388,7 +388,8 @@ class Future(Atomic):
         Returns:
             True if we are given node's subscriber.
         """
-        return any(p._node.subscribed(publisher) for p in self._proxy)  # pylint: disable=protected-access
+        # pylint: disable=protected-access
+        return any(p._node is publisher or p._node.subscribed(publisher) for p in self._proxy)
 
     def _sync(self) -> None:
         """Callback for interconnecting proxied registrations."""

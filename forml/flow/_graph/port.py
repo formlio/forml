@@ -144,6 +144,9 @@ class Publishable(Applicable):
             subscriber: node to publish to
             port: port to publish to
         """
+        if isinstance(subscriber, nodemod.Future) and subscriber is not self._node:
+            subscriber[port].subscribe(self)
+            return
         subscription = Subscription(subscriber, port)
         try:
             self.republish(subscription)
