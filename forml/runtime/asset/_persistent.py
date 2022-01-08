@@ -213,3 +213,31 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
             tag: Generation metadata to be stored.
         """
         raise NotImplementedError()
+
+
+class Inventory(_provider.Interface, metaclass=abc.ABCMeta):
+    """Application descriptor storage."""
+
+    @abc.abstractmethod
+    def list(self) -> typing.Iterable[str]:
+        """List the unique application names."""
+
+    @abc.abstractmethod
+    def get(self, application: str) -> 'prj.Descriptor':
+        """Retrieve the descriptor for the given application.
+
+        Args:
+            application:Unique application name.
+
+        Returns:
+            Application descriptor.
+        """
+
+    @abc.abstractmethod
+    def put(self, application: str, descriptor: 'prj.Descriptor') -> None:
+        """Store the application descriptor into the inventory.
+
+        Args:
+            application: Unique application name.
+            descriptor: Application descriptor.
+        """

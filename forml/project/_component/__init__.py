@@ -49,7 +49,7 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
 
 
 class Source(typing.NamedTuple):
-    """Feed independent data source descriptor."""
+    """Feed independent data source component."""
 
     extract: 'Source.Extract'
     transform: typing.Optional[flow.Composable] = None
@@ -99,7 +99,7 @@ class Source(typing.NamedTuple):
         apply: typing.Optional[dsl.Queryable] = None,
         ordinal: typing.Optional[dsl.Operable] = None,
     ) -> 'Source':
-        """Create new source descriptor with the given parameters. All parameters are the DSL objects - either queries
+        """Create new source component with the given parameters. All parameters are the DSL objects - either queries
         or columns.
 
         Args:
@@ -110,7 +110,7 @@ class Source(typing.NamedTuple):
             ordinal: Optional specification of an ordinal column.
 
         Returns:
-            Source descriptor instance.
+            Source component instance.
         """
         return cls(cls.Extract(features, apply or features, labels, ordinal))  # pylint: disable=no-member
 
@@ -131,7 +131,7 @@ class Source(typing.NamedTuple):
 
 
 class Evaluation(typing.NamedTuple):
-    """Evaluation descriptor."""
+    """Evaluation component."""
 
     metric: evaluation.Metric
     """Loss/Score function."""

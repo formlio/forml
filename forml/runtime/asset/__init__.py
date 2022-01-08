@@ -22,7 +22,7 @@ Specific metadata types used by the execution layer.
 from ._access import Instance, State
 from ._directory import Level
 from ._directory.level import Directory, Generation, Project, Release, Tag
-from ._persistent import TMPDIR, Registry, mkdtemp
+from ._persistent import TMPDIR, Inventory, Registry, mkdtemp
 
 __all__ = [
     'Level',
@@ -36,4 +36,5 @@ __all__ = [
     'Tag',
     'TMPDIR',
     'mkdtemp',
+    'Inventory',
 ]

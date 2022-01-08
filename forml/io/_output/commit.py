@@ -47,10 +47,10 @@ class Operator(flow.Operator):
         return left.expand().extend(apply, train)
 
 
-Consumer = typing.Callable[[layout.RowMajor], layout.Native]
+Consumer = typing.Callable[[layout.RowMajor], layout.Result]
 
 
-class Driver(flow.Actor[layout.RowMajor, None, layout.Native]):
+class Driver(flow.Actor[layout.RowMajor, None, layout.Result]):
     """Data publishing actor using the provided writer to store the data."""
 
     def __init__(self, consumer: Consumer):
@@ -59,5 +59,5 @@ class Driver(flow.Actor[layout.RowMajor, None, layout.Native]):
     def __repr__(self):
         return repr(self._consumer)
 
-    def apply(self, data: layout.RowMajor) -> layout.Native:
+    def apply(self, data: layout.RowMajor) -> layout.Result:
         return self._consumer(data)

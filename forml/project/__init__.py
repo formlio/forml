@@ -21,12 +21,24 @@ Project management mechanics.
 import pathlib
 import typing
 
+from ._application import Descriptor
 from ._component import Evaluation, Source, setup
 from ._distribution import Manifest, Package
-from ._product import Artifact, Descriptor
+from ._product import Artifact, Components
 from ._setuptools import Distribution
 
-__all__ = ['open', 'setup', 'Source', 'Evaluation', 'Descriptor', 'Artifact', 'Distribution', 'Manifest', 'Package']
+__all__ = [
+    'open',
+    'setup',
+    'Source',
+    'Evaluation',
+    'Components',
+    'Artifact',
+    'Distribution',
+    'Manifest',
+    'Package',
+    'Descriptor',
+]
 
 
 def open(  # pylint: disable=redefined-builtin

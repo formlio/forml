@@ -37,7 +37,7 @@ class TestBuilder:
     @pytest.fixture(scope='function')
     def builder():
         """Builder fixture."""
-        return project.Descriptor.Builder()
+        return project.Components.Builder()
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -57,14 +57,14 @@ class TestBuilder:
         """Evaluation fixture."""
         return project.Evaluation(None, None)
 
-    def test_api(self, builder: project.Descriptor.Builder):
+    def test_api(self, builder: project.Components.Builder):
         """Testing the builder API."""
-        assert len(builder) == len(project.Descriptor._fields)
-        assert all(f in builder for f in project.Descriptor._fields)
+        assert len(builder) == len(project.Components._fields)
+        assert all(f in builder for f in project.Components._fields)
 
     def test_build(
         self,
-        builder: project.Descriptor.Builder,
+        builder: project.Components.Builder,
         source: project.Source,
         pipeline: flow.Composable,
         evaluation: project.Evaluation,
@@ -76,10 +76,10 @@ class TestBuilder:
         handlers['source'](source)
         handlers['pipeline'](pipeline)
         handlers['evaluation'](evaluation)
-        descriptor = builder.build()
-        assert descriptor.source == source
-        assert descriptor.pipeline == pipeline
-        assert descriptor.evaluation == evaluation
+        components = builder.build()
+        assert components.source == source
+        assert components.pipeline == pipeline
+        assert components.evaluation == evaluation
 
 
 def load(package: project.Package, component: str) -> typing.Any:
@@ -94,32 +94,32 @@ class TestDescriptor:
     def test_invalid(self):
         """Testing with invalid types."""
         with pytest.raises(forml.InvalidError):
-            project.Descriptor('foo', 'bar', 'baz')
+            project.Components('foo', 'bar', 'baz')
 
     def test_load(
         self,
         project_package: project.Package,
-        project_descriptor: project.Descriptor,
+        project_components: project.Components,
     ):
-        """Testing the descriptor loader."""
+        """Testing the components loader."""
         with pytest.raises(forml.UnexpectedError):
-            project.Descriptor.load(foo='bar')
+            project.Components.load(foo='bar')
         with pytest.raises(forml.InvalidError):
-            project.Descriptor.load('foo')
-        descriptor = project.Descriptor.load(project_package.manifest.package, project_package.path)
-        assert repr(descriptor.pipeline) == repr(project_descriptor.pipeline)
-        assert repr(descriptor.source) == repr(project_descriptor.source)
-        assert repr(descriptor.evaluation) == repr(project_descriptor.evaluation)
+            project.Components.load('foo')
+        components = project.Components.load(project_package.manifest.package, project_package.path)
+        assert repr(components.pipeline) == repr(project_components.pipeline)
+        assert repr(components.source) == repr(project_components.source)
+        assert repr(components.evaluation) == repr(project_components.evaluation)
 
 
 class TestArtifact:
     """Artifact unit tests."""
 
-    def test_descriptor(self, project_artifact, project_descriptor: project.Descriptor):
+    def test_components(self, project_artifact: project.Artifact, project_components: project.Components):
         """Testing descriptor access."""
-        assert repr(project_artifact.descriptor.pipeline) == repr(project_descriptor.pipeline)
-        assert repr(project_artifact.descriptor.source) == repr(project_descriptor.source)
-        assert repr(project_artifact.descriptor.evaluation) == repr(project_descriptor.evaluation)
+        assert repr(project_artifact.components.pipeline) == repr(project_components.pipeline)
+        assert repr(project_artifact.components.source) == repr(project_components.source)
+        assert repr(project_artifact.components.evaluation) == repr(project_components.evaluation)
 
     def test_launcher(self, project_artifact: project.Artifact, feed_instance: io.Feed):
         """Testing launcher access."""

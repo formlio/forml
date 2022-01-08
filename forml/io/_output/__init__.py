@@ -25,7 +25,7 @@ from forml import flow
 from forml.conf.parsed import provider as provcfg
 
 from .. import dsl
-from . import _consumer, publish
+from . import _consumer, commit
 
 
 class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.path):
@@ -42,11 +42,11 @@ class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.pa
         Returns:
             Pipeline segment.
         """
-        publisher: flow.Composable = publish.Operator(publish.Driver.spec(self.consumer(schema, **self._writerkw)))
+        publisher: flow.Composable = commit.Operator(commit.Driver.spec(self.consumer(schema, **self._writerkw)))
         return publisher.expand()
 
     @classmethod
-    def consumer(cls, schema: dsl.Schema, **kwargs: typing.Any) -> publish.Consumer:
+    def consumer(cls, schema: dsl.Schema, **kwargs: typing.Any) -> commit.Consumer:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

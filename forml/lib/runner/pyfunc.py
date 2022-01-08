@@ -275,13 +275,13 @@ class Runner(facility.Runner, alias='pyfunc'):
     def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
         Expression(symbols)(None)
 
-    def call(self, request: io.Request) -> layout.RowMajor:
+    def call(self, entry: layout.Entry) -> layout.Result:
         """Func exec entrypoint.
 
         Args:
-            request: Input to be sent to the pipeline.
+            entry: Input to be sent to the pipeline.
 
         Returns:
             Pipeline output.
         """
-        return self._expression(request)
+        return self._expression(entry)

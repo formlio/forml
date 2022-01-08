@@ -23,7 +23,6 @@ import uuid
 
 import forml
 from forml import conf
-
 from . import _persistent
 from ._directory import level
 
@@ -128,13 +127,13 @@ class Instance:
         return isinstance(other, self.__class__) and other._generation == self._generation
 
     @property
-    def project(self) -> 'prj.Descriptor':
-        """Get the project descriptor.
+    def project(self) -> 'prj.Components':
+        """Get the project components.
 
         Returns:
-            Project descriptor.
+            Project components.
         """
-        return self._generation.release.artifact.descriptor
+        return self._generation.release.artifact.components
 
     @property
     def tag(self) -> 'level.Tag':

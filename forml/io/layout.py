@@ -19,14 +19,18 @@
 Payload utilities.
 """
 import abc
+import collections
 import typing
 
 import numpy
+
+from forml.io import dsl
 
 Array = typing.Sequence[typing.Any]  # Sequence of items (n-dimensional but only the top one need to be accessible)
 ColumnMajor = Array  # Sequence of columns of any type (columnar, column-wise semantic)
 RowMajor = Array  # Sequence of rows of any type (row-wise semantic)
 Native = typing.TypeVar('Native')
+Encoding = str  # Media type encoding
 
 
 class Tabular:
@@ -75,7 +79,7 @@ class Dense(Tabular):
     """Simple Tabular implementation backed by numpy array."""
 
     def __init__(self, rows: numpy.ndarray):
-        self._rows = rows
+        self._rows: numpy.ndarray = rows
 
     @staticmethod
     def _to_ndarray(data: Array) -> numpy.ndarray:
@@ -124,3 +128,35 @@ class Dense(Tabular):
 
     def take_columns(self, indices: typing.Sequence[int]) -> 'Dense':
         return self.from_columns(self._rows.T.take(indices, axis=0))
+
+
+Entry = tuple[dsl.Schema, Tabular]
+"""Product level input type."""
+Result = tuple[dsl.Schema, RowMajor]
+"""Product level output type."""
+
+
+class Request(collections.namedtuple('Request', 'payload, encoding, accept')):
+    """Application level request object."""
+
+    payload: bytes
+    """Encoded payload."""
+
+    encoding: Encoding
+    """Encoding media type."""
+
+    accept: tuple[Encoding]
+    """Accepted response media type."""
+
+    def __new__(cls, payload: bytes, encoding: Encoding, accept: typing.Optional[typing.Sequence[Encoding]] = None):
+        return super().__new__(cls, payload, encoding, tuple(accept or [encoding]))
+
+
+class Response(typing.NamedTuple):
+    """Application level response object."""
+
+    payload: bytes
+    """Encoded payload."""
+
+    encoding: Encoding
+    """Encoding media type."""

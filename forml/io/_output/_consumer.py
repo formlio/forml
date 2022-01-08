@@ -39,11 +39,10 @@ class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, data: layout.RowMajor) -> layout.Native:
+    def __call__(self, data: layout.RowMajor) -> layout.Result:
         LOGGER.debug('Starting to publish')
-        native = self.format(data, self._schema)
-        self.write(native, **self._kwargs)
-        return native
+        self.write(self.format(data, self._schema), **self._kwargs)
+        return self._schema, data
 
     @classmethod
     def format(cls, data: layout.RowMajor, schema: dsl.Schema) -> layout.Native:  # pylint: disable=unused-argument
@@ -54,7 +53,7 @@ class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
             schema: Product schema.
 
         Returns:
-            Data formatted into payload.Native format.
+            Data formatted into layout.Native format.
         """
         return data
 

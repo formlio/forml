@@ -58,7 +58,7 @@ class Feed(
         """Provide a pipeline composable segment implementing the etl actions.
 
         Args:
-            source: Independent datasource descriptor.
+            source: Independent datasource component.
             lower: Optional ordinal lower bound.
             upper: Optional ordinal upper bound.
 
@@ -68,7 +68,7 @@ class Feed(
 
         def actor(
             driver: type[extract.Driver], query: dsl.Query
-        ) -> flow.Spec[typing.Optional[extract.Request], None, extract.Operator]:
+        ) -> flow.Spec[typing.Optional[layout.Entry], None, extract.Operator]:
             """Helper for creating the reader actor spec for the given query.
 
             Args:
@@ -81,7 +81,7 @@ class Feed(
             return driver.spec(producer, extract.Statement.prepare(query, source.extract.ordinal, lower, upper))
 
         producer = self.producer(self.sources, self.features, **self._readerkw)
-        apply_actor: flow.Spec[typing.Optional[extract.Request], None, layout.RowMajor] = actor(
+        apply_actor: flow.Spec[typing.Optional[layout.Entry], None, layout.RowMajor] = actor(
             extract.RowDriver, source.extract.apply
         )
         label_actor: typing.Optional[flow.Spec] = None
@@ -94,9 +94,7 @@ class Feed(
             else:
                 columns, label_actor = extract.Slicer.from_columns(train_query.features, source.extract.labels)
                 train_query = train_query.select(*columns)
-        train_actor: flow.Spec[typing.Optional[extract.Request], None, extract.Operator] = actor(
-            train_driver, train_query
-        )
+        train_actor: flow.Spec[typing.Optional[layout.Entry], None, extract.Operator] = actor(train_driver, train_query)
         loader: flow.Composable = extract.Operator(apply_actor, train_actor, label_actor)
         if source.transform:
             loader >>= source.transform

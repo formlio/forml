@@ -36,8 +36,8 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluation')):
-    """Top level ForML project descriptor holding the implementations of individual project components."""
+class Components(collections.namedtuple('Components', 'source, pipeline, evaluation')):
+    """Top level ForML project components holding the implementations of individual project components."""
 
     source: '_component.Source'
     pipeline: flow.Composable
@@ -59,8 +59,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
                 return self.value is not None
 
         def __init__(self):
-            self._handlers: typing.Mapping[str, Descriptor.Builder.Handler] = {
-                c: self.Handler() for c in Descriptor._fields
+            self._handlers: typing.Mapping[str, Components.Builder.Handler] = {
+                c: self.Handler() for c in Components._fields
             }
 
         def __iter__(self) -> typing.Iterator[tuple[str, typing.Callable[[typing.Any], None]]]:
@@ -72,15 +72,15 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         def __contains__(self, item):
             return item in self._handlers.keys()
 
-        def build(self) -> 'Descriptor':
-            """Create the descriptor.
+        def build(self) -> 'Components':
+            """Create the components.
 
             Returns:
                 Descriptor instance.
             """
             if not all(self._handlers.values()):
                 LOGGER.debug('Incomplete builder (missing %s)', ', '.join(c for c, h in self if not h))
-            return Descriptor(*(self._handlers[c].value for c in Descriptor._fields))
+            return Components(*(self._handlers[c].value for c in Components._fields))
 
     def __new__(
         cls,
@@ -102,8 +102,8 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
         package: typing.Optional[str] = None,
         path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
         **modules,
-    ) -> 'Descriptor':
-        """Setup the descriptor based on provider package and/or individual modules.
+    ) -> 'Components':
+        """Setup the components based on provider package and/or individual modules.
 
             Either package is provided and all individual modules without dot in their names are considered as
             relative to that package or each module must be specified absolutely.
@@ -113,7 +113,7 @@ class Descriptor(collections.namedtuple('Descriptor', 'source, pipeline, evaluat
             package: Base package to be considered as a root for all component modules.
             **modules: Component module mappings.
         Returns:
-            Project descriptor.
+            Project components.
         """
         builder = cls.Builder()
         if any(c not in builder for c in modules):
@@ -156,13 +156,13 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         return hash(self.path) ^ hash(self.package) ^ hash(tuple(sorted(self.modules.items())))
 
     @property
-    def descriptor(self) -> Descriptor:
-        """Extracting the project descriptor from this artifact.
+    def components(self) -> Components:
+        """Extracting the project components from this artifact.
 
         Returns:
-            Project descriptor.
+            Project components.
         """
-        return Descriptor.load(self.package, self.path, **self.modules)
+        return Components.load(self.package, self.path, **self.modules)
 
     @property
     @functools.lru_cache

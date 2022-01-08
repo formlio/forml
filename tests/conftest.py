@@ -178,9 +178,9 @@ def project_artifact(project_package: prj.Package, project_path: str) -> prj.Art
 
 
 @pytest.fixture(scope='session')
-def project_descriptor(project_artifact: prj.Artifact) -> prj.Descriptor:
-    """Test project artifact fixture."""
-    return project_artifact.descriptor
+def project_components(project_artifact: prj.Artifact) -> prj.Components:
+    """Test project components fixture."""
+    return project_artifact.components
 
 
 @pytest.fixture(scope='session')
@@ -346,9 +346,9 @@ def valid_instance(
 
 
 @pytest.fixture(scope='session')
-def source_query(project_descriptor: prj.Descriptor) -> dsl.Query:
+def source_query(project_components) -> dsl.Query:
     """Query fixture."""
-    return project_descriptor.source.extract.train
+    return project_components.source.extract.train
 
 
 @pytest.fixture(scope='session')

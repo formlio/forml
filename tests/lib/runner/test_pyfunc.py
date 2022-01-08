@@ -42,7 +42,7 @@ class TestRunner(Runner):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def input_request(testset: layout.RowMajor, source_query: dsl.Query) -> io.Request:
+    def input_request(testset: layout.RowMajor, source_query: dsl.Query) -> layout.Entry:
         """Request fixture."""
         return source_query.schema, layout.Dense.from_rows(testset)
 
@@ -51,6 +51,6 @@ class TestRunner(Runner):
         with pytest.raises(forml.InvalidError, match='Invalid runner mode'):
             super().test_train(runner)
 
-    def test_call(self, runner: pyfunc.Runner, input_request: io.Request, generation_prediction: layout.Array):
+    def test_call(self, runner: pyfunc.Runner, input_request: layout.Entry, generation_prediction: layout.Array):
         """Pyfunc call mode test."""
-        assert tuple(runner.call(input_request)) == generation_prediction
+        assert tuple(runner.call(input_request)[1]) == generation_prediction

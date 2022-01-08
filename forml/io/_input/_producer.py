@@ -20,6 +20,7 @@ Producer implementation.
 """
 import abc
 import functools
+import itertools
 import logging
 import typing
 
@@ -27,8 +28,6 @@ import forml
 from forml import flow
 from forml.io import dsl, layout
 from forml.io.dsl import parser as parsmod
-
-from . import extract
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,31 +48,31 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, query: dsl.Query, request: typing.Optional[extract.Request] = None) -> layout.Tabular:
+    def __call__(self, query: dsl.Query, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
         """Reader entrypoint.
 
         It operates in two possible modes:
-            * extraction - when launched just using the query without the `request` parameter, it simply executes
+            * extraction - when launched just using the query without the `entry` parameter, it simply executes
               the query against the backend.
-            * augmentation - if `request` is provided, it is interpreted as the actual source to be returned but
+            * augmentation - if `entry` is provided, it is interpreted as the actual source to be returned but
               potentially incomplete in terms of the expected schema; in which case the reader is supposed to just
               augment the partial data to meet the query schema.
 
         Args:
             query: The query DSL specifying the extracted data.
-            request: Optional - potentially incomplete - labelled literal columns to be augmented according
+            entry: Optional - potentially incomplete - labelled literal columns to be augmented according
                      to the query.
 
         Returns:
             Data extracted according to the query.
         """
-        if request:
-            schema, data = request
-            complete, indices = self._match_request(query.schema, schema)
+        if entry:
+            schema, data = entry
+            complete, indices = self._match_entry(query.schema, schema)
             if not complete:
                 # here we would go into augmentation mode - when implemented
-                raise forml.InvalidError('Augmentation not supported')
-            return data.take_columns(indices)
+                raise forml.InvalidError('Augmentation not yet supported')
+            return data.take_columns(indices) if indices else data
 
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._features) as visitor:
@@ -83,30 +82,40 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
         return self.format(self.read(result, **self._kwargs), query.schema)
 
     @functools.lru_cache
-    def _match_request(  # pylint: disable=no-self-use
-        self, query: dsl.Schema, request: dsl.Schema
+    def _match_entry(  # pylint: disable=no-self-use
+        self, query: dsl.Schema, entry: dsl.Schema
     ) -> tuple[bool, typing.Optional[typing.Sequence[int]]]:
-        """Match the request schema against the query.
+        """Match the entry schema against the query.
 
-        Return True if the request is a proper subset of the query (containing all fields of the query) in which case
+        Return True if the entry is a proper subset of the query (containing all fields of the query) in which case
         also return the indices matching the ordering of the query.
 
         Args:
             query: Schema of the master ETL query.
-            request: Schema of the explicitly provided (partial) input data.
+            entry: Schema of the explicitly provided (partial) input data.
 
         Returns:
-            Tuple of a boolean indicating a proper request subset and its position-wise indexing in relation to the
-            query.
+            Tuple of a boolean indicating a proper entry subset and its position-wise indexing in relation to the
+            query if not identical.
         """
 
         def names(schema: dsl.Schema) -> typing.Iterable[str]:
             """Extract the schema field names."""
             return (f.name for f in schema)
 
-        source = {c: i for i, c in enumerate(names(request))}
+        query_names = tuple(names(query))
+        source = {}
+        identical = True
+        for index, (demand, supply) in enumerate(itertools.zip_longest(query_names, names(entry))):
+            source[supply] = index
+            if not supply and demand not in source:
+                return False, None
+            if identical and supply != demand:
+                identical = False
+        if identical:
+            return True, None
         indices = []
-        for column in names(query):
+        for column in query_names:
             if column not in source:
                 return False, None
             indices.append(source[column])

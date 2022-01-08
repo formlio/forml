@@ -202,6 +202,10 @@ class Platform:
         """
         return Launcher(self._runner, self._registry.assets(project, release, generation), self._feeds, self._sink)
 
+    #
+    # def server(self) -> Server:
+    #     return Server()
+
     @property
     def registry(self) -> Registry:
         """Registry handle getter.
