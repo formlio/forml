@@ -42,7 +42,7 @@ class Engine:
     """How many runner instances to hold in cache."""
 
     def __init__(
-        self, inventory: asset.Inventory, registry: asset.Registry, feeds: io.Importer, runner_slots: int = 32
+        self, inventory: asset.Inventory, registry: asset.Directory, feeds: io.Importer, runner_slots: int = 32
     ):
         @functools.lru_cache(runner_slots)
         def get_runner_cached(instance: asset.Instance) -> pyfunc.Runner:
@@ -58,7 +58,7 @@ class Engine:
 
         sink: Sink = Sink()
         self._inventory: asset.Inventory = inventory
-        self._registry: asset.Registry = registry
+        self._registry: asset.Directory = registry
         self._get_runner: typing.Callable[[asset.Instance], pyfunc.Runner] = get_runner_cached
 
     @functools.lru_cache
@@ -84,6 +84,7 @@ class Engine:
             Serving result response.
         """
         descriptor = self._get_descriptor(application)
-        instance = descriptor.select(self._registry)
-        result = self._get_runner(instance).call(descriptor.decode(request))
-        return descriptor.encode(result, request.accept)
+        entry = descriptor.decode(request)
+        instance = descriptor.select(self._registry, entry)
+        result = self._get_runner(instance).call(entry)
+        return descriptor.encode(result, entry, request.accept)

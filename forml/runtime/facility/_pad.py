@@ -27,7 +27,7 @@ from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
 from forml.runtime import asset
 
-from . import _agent
+from . import _agent, _service
 
 LOGGER = logging.getLogger(__name__)
 
@@ -130,7 +130,7 @@ class Launcher:
         """Return the apply handler.
 
         Returns:
-            Train handler.
+            Apply handler.
         """
         return self(self._assets.project.source.extract.apply, self._sink.apply).apply
 
@@ -202,9 +202,8 @@ class Platform:
         """
         return Launcher(self._runner, self._registry.assets(project, release, generation), self._feeds, self._sink)
 
-    #
-    # def server(self) -> Server:
-    #     return Server()
+    def engine(self) -> _service.Engine:
+        return _service.Engine()
 
     @property
     def registry(self) -> Registry:

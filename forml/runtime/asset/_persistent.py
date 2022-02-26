@@ -221,23 +221,26 @@ class Inventory(_provider.Interface, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def list(self) -> typing.Iterable[str]:
         """List the unique application names."""
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get(self, application: str) -> 'prj.Descriptor':
         """Retrieve the descriptor for the given application.
 
         Args:
-            application:Unique application name.
+            application: Unique application name.
 
         Returns:
             Application descriptor.
         """
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    def put(self, application: str, descriptor: 'prj.Descriptor') -> None:
+    def put(self, application: str, descriptor: 'prj.Descriptor.Handle') -> None:
         """Store the application descriptor into the inventory.
 
         Args:
             application: Unique application name.
-            descriptor: Application descriptor.
+            descriptor: Application descriptor handle.
         """
+        raise NotImplementedError()

@@ -135,8 +135,7 @@ def _parent(name: str) -> typing.Optional[str]:
     Returns:
         Parent package path.
     """
-    result, _ = re.match(r'(?:(.*)\.)?(.*)', name).groups()  # different from module.rsplit('.', 1)
-    return result
+    return re.match(r'(?:(.*)\.)?(.*)', name).group(1)  # different from module.rsplit('.', 1)
 
 
 def _walkup(name: str, handler: typing.Callable[[str], bool]) -> None:
@@ -169,7 +168,7 @@ def _unload(module: str) -> None:
 
 @contextlib.contextmanager
 def context(module: types.ModuleType) -> typing.Iterable[None]:
-    """Context manager that adds a importlib.MetaPathFinder to sys._meta_path while in the context faking imports
+    """Context manager that adds an importlib.MetaPathFinder to sys._meta_path while in the context faking imports
     of forml.project.component to a virtual fabricated module.
 
     Args:
