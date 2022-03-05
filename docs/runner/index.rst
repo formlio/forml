@@ -16,9 +16,9 @@
 Pipeline Runner
 ===============
 
-The main point of the :doc:`runtime platform <platform>` is to run the :doc:`projects <project>`. The specific
-implementation of a system that can :ref:`execute <concept-execution>` the project :doc:`lifecycle <lifecycle>` based on
-its description (its *Task Dependency Graph* in particular) is called the *Runner*.
+The main point of the :doc:`runtime platform <../platform>` is to run the :doc:`projects <../project>`. The specific
+implementation of a system that can :ref:`execute <concept-execution>` the project :doc:`lifecycle <../lifecycle>`
+based on its description (its *Task Dependency Graph* in particular) is called the *Runner*.
 
 The available runner implementations are:
 

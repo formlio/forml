@@ -50,7 +50,7 @@ class Registry(metaclass=abc.ABCMeta):
         constructor: typing.Callable[[], asset.Registry],
         project_package: prj.Package,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
         valid_generation: asset.Generation.Key,
         generation_states: typing.Mapping[uuid.UUID, bytes],
         generation_tag: asset.Tag,
@@ -59,8 +59,8 @@ class Registry(metaclass=abc.ABCMeta):
         registry = constructor()
         registry.push(project_package)
         for sid, value in generation_states.items():
-            registry.write(project_name, project_lineage, sid, value)
-        registry.close(project_name, project_lineage, valid_generation, generation_tag)
+            registry.write(project_name, project_release, sid, value)
+        registry.close(project_name, project_release, valid_generation, generation_tag)
         return registry
 
     def test_projects(self, empty: asset.Registry, populated: asset.Registry, project_name: asset.Project.Key):
@@ -68,28 +68,28 @@ class Registry(metaclass=abc.ABCMeta):
         assert not any(empty.projects())
         assert list(populated.projects()) == [project_name]
 
-    def test_lineages(
+    def test_releases(
         self,
         empty: asset.Registry,
         populated: asset.Registry,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
     ):
-        """Registry lineages unit test."""
-        assert not any(empty.lineages(project_name))
-        assert list(populated.lineages(project_name)) == [project_lineage]
+        """Registry releases unit test."""
+        assert not any(empty.releases(project_name))
+        assert list(populated.releases(project_name)) == [project_release]
 
     def test_generations(
         self,
         empty: asset.Registry,
         populated: asset.Registry,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
         valid_generation: asset.Generation.Key,
     ):
         """Registry generations unit test."""
-        assert not any(empty.lineages(project_name))
-        assert list(populated.generations(project_name, project_lineage)) == [valid_generation]
+        assert not any(empty.releases(project_name))
+        assert list(populated.generations(project_name, project_release)) == [valid_generation]
 
     def test_push(self, empty: asset.Registry, project_package: prj.Package):
         """Registry put unit test."""
@@ -99,31 +99,31 @@ class Registry(metaclass=abc.ABCMeta):
         self,
         populated: asset.Registry,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
         project_package: prj.Package,
     ):
         """Registry take unit test."""
-        assert populated.mount(project_name, project_lineage).package == project_package.manifest.package
+        assert populated.mount(project_name, project_release).package == project_package.manifest.package
 
     def test_read(
         self,
         populated: asset.Registry,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
         valid_generation: asset.Generation.Key,
         generation_states: typing.Mapping[uuid.UUID, bytes],
     ):
         """Registry load unit test."""
         for sid, value in generation_states.items():
-            assert populated.read(project_name, project_lineage, valid_generation, sid) == value
+            assert populated.read(project_name, project_release, valid_generation, sid) == value
 
     def test_open(
         self,
         populated: asset.Registry,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
         valid_generation: asset.Generation.Key,
         generation_tag: asset.Tag,
     ):
         """Registry checkout unit test."""
-        assert populated.open(project_name, project_lineage, valid_generation) == generation_tag
+        assert populated.open(project_name, project_release, valid_generation) == generation_tag

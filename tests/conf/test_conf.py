@@ -40,7 +40,7 @@ def test_src(cfg_file: pathlib.Path):
 
 def test_get():
     """Test the get value matches the test config.toml"""
-    assert getattr(conf, 'foobar') == conf.foobar == 'baz'
+    assert conf.foobar == 'baz'
 
 
 class TestParser:

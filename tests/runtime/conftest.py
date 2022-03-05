@@ -26,9 +26,9 @@ from forml.runtime import asset
 
 
 @pytest.fixture(scope='session')
-def last_lineage(empty_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
-    """Lineage fixture."""
-    return empty_lineage
+def last_release(empty_release: asset.Release.Key) -> asset.Release.Key:
+    """Release fixture."""
+    return empty_release
 
 
 @pytest.fixture(scope='session')

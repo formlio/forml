@@ -41,7 +41,7 @@ class Registry(posix.Registry, alias='virtual'):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
             prefix='registry-virtual-', dir=asset.TMPDIR
         )
-        self._artifacts: dict['asset.Project.Key', dict['asset.Lineage.Key', 'prj.Artifact']] = collections.defaultdict(
+        self._artifacts: dict['asset.Project.Key', dict['asset.Release.Key', 'prj.Artifact']] = collections.defaultdict(
             dict
         )
         super().__init__(self._storage.name)
@@ -49,13 +49,13 @@ class Registry(posix.Registry, alias='virtual'):
     def projects(self) -> typing.Iterable['asset.Project.Key']:
         return iter(self._artifacts.keys())
 
-    def lineages(self, project: 'asset.Project.Key') -> typing.Iterable['asset.Lineage.Key']:
+    def releases(self, project: 'asset.Project.Key') -> typing.Iterable['asset.Release.Key']:
         return iter(self._artifacts[project].keys())
 
-    def mount(self, project: 'asset.Project.Key', lineage: 'asset.Lineage.Key') -> 'prj.Artifact':
-        return self._artifacts[project][lineage]
+    def mount(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'prj.Artifact':
+        return self._artifacts[project][release]
 
-    def pull(self, project: 'asset.Project.Key', lineage: 'asset.Lineage.Key') -> 'prj.Package':
+    def pull(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'prj.Package':
         raise NotImplementedError('No packages in virtual repository')
 
     def push(self, package: 'prj.Package') -> None:

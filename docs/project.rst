@@ -87,7 +87,7 @@ custom setupttols ``disctlass`` . The rest is the usual ``setup.py`` content::
                      install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
                      distclass=project.Distribution)
 
-.. note:: The specified ``version`` value will become the *lineage* identifier upon *uploading* (as part of the
+.. note:: The specified ``version`` value will become the *release* identifier upon *uploading* (as part of the
           *Research lifecycle*) thus needs to be a valid :pep:`440` version.
 
 The project should carefully specify all of its dependencies using the ``install_requires`` parameter as these will be

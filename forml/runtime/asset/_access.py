@@ -93,7 +93,7 @@ class State:
             Associated absolute state ID.
         """
         LOGGER.debug('Dumping state (%d bytes)', len(state))
-        return self._generation.lineage.dump(state)
+        return self._generation.release.dump(state)
 
     def commit(self, states: typing.Sequence[uuid.UUID]) -> None:
         """Create new generation by committing its previously dumped states.
@@ -104,7 +104,7 @@ class State:
         LOGGER.debug('Committing %d states %s', len(states), states)
         assert len(states) == len(self._nodes), 'Committed number of states not matching the number of nodes'
         tag = self._tag or self._generation.tag
-        self._generation = self._generation.lineage.put(tag.replace(states=states))
+        self._generation = self._generation.release.put(tag.replace(states=states))
 
 
 class Instance:
@@ -113,13 +113,13 @@ class Instance:
     def __init__(
         self,
         project: typing.Union[str, 'level.Project.Key'] = conf.PRJNAME,
-        lineage: typing.Optional[typing.Union[str, 'level.Lineage.Key']] = None,
+        release: typing.Optional[typing.Union[str, 'level.Release.Key']] = None,
         generation: typing.Optional[typing.Union[str, int, 'level.Generation.Key']] = None,
         registry: typing.Optional['level.Directory'] = None,
     ):
         if not registry:
             registry = level.Directory(_persistent.Registry())
-        self._generation: 'level.Generation' = registry.get(project).get(lineage).get(generation)
+        self._generation: 'level.Generation' = registry.get(project).get(release).get(generation)
 
     def __hash__(self):
         return hash(self._generation)
@@ -134,7 +134,7 @@ class Instance:
         Returns:
             Project descriptor.
         """
-        return self._generation.lineage.artifact.descriptor
+        return self._generation.release.artifact.descriptor
 
     @property
     def tag(self) -> 'level.Tag':

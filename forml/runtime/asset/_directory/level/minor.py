@@ -226,9 +226,9 @@ class Generation(_directory.Level):
             return self.__class__(self + 1)
 
     def __init__(
-        self, lineage: 'lngmod.Lineage', key: typing.Optional[typing.Union[str, int, 'Generation.Key']] = None
+        self, release: 'lngmod.Release', key: typing.Optional[typing.Union[str, int, 'Generation.Key']] = None
     ):
-        super().__init__(key, parent=lineage)
+        super().__init__(key, parent=release)
 
     @property
     def project(self) -> 'prjmod.Project':
@@ -237,34 +237,34 @@ class Generation(_directory.Level):
         Returns:
             Project of this generation.
         """
-        return self.lineage.project
+        return self.release.project
 
     @property
-    def lineage(self) -> 'lngmod.Lineage':
-        """Get the lineage key of this generation.
+    def release(self) -> 'lngmod.Release':
+        """Get the release key of this generation.
 
         Returns:
-            Lineage key of this generation.
+            Release key of this generation.
         """
         return self._parent
 
     @property
     def tag(self) -> 'Tag':
-        """Generation metadata. In case of implicit generation and empty lineage this returns a "null" tag (a Tag object
+        """Generation metadata. In case of implicit generation and empty release this returns a "null" tag (a Tag object
         with all fields empty).
 
         Returns:
             Generation tag (metadata) object.
         """
-        # project/lineage must exist so let's fetch it outside of try-except
+        # project/release must exist so let's fetch it outside of try-except
         project = self.project.key
-        lineage = self.lineage.key
+        release = self.release.key
         try:
             generation = self.key
         except self.Listing.Empty:  # generation doesn't exist
             LOGGER.debug('No previous generations found - using a null tag')
             return NOTAG
-        return TAGS(self.registry, project, lineage, generation)
+        return TAGS(self.registry, project, release, generation)
 
     def list(self) -> _directory.Level.Listing:
         """Return the listing of this level.
@@ -290,4 +290,4 @@ class Generation(_directory.Level):
         if key not in self.tag.states:
             raise Generation.Invalid(f'Unknown state reference for {self}: {key}')
         LOGGER.debug('%s: Getting state %s', self, key)
-        return STATES(self.registry, self.project.key, self.lineage.key, self.key, key)
+        return STATES(self.registry, self.project.key, self.release.key, self.key, key)

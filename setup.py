@@ -27,6 +27,7 @@ EXTRAS_DASK = {'cloudpickle', 'dask'}
 EXTRAS_DEV = {
     'black',
     'flake8-colors',
+    'flake8-bugbear',
     'isort',
     'pip-tools',
     'pre-commit',
@@ -58,7 +59,7 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['forml*']),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
     setup_requires=['setuptools', 'wheel', 'toml'],
-    install_requires=['joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
+    install_requires=['click', 'joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
     extras_require={
         'all': EXTRAS_ALL,
         'dask': EXTRAS_DASK,
@@ -71,7 +72,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'forml = forml.cli:Forml',
+            'forml = forml.cli:main',
         ]
     },
     python_requires='>=3.9',

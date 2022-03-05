@@ -35,10 +35,10 @@ class TestLevel(Level):
     @staticmethod
     @pytest.fixture(scope='function')
     def parent(
-        directory: asset.Directory, project_name: str, project_lineage: asset.Lineage.Key
+        directory: asset.Directory, project_name: str, project_release: asset.Release.Key
     ) -> typing.Callable[[typing.Optional[asset.Generation.Key]], asset.Generation]:
         """Parent fixture."""
-        return lambda generation: directory.get(project_name).get(project_lineage).get(generation)
+        return lambda generation: directory.get(project_name).get(project_release).get(generation)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -60,43 +60,43 @@ class TestLevel(Level):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_lineage(last_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
+    def invalid_release(last_release: asset.Release.Key) -> asset.Release.Key:
         """Level fixture."""
-        return asset.Lineage.Key(f'{last_lineage.release[0] + 1}')
+        return asset.Release.Key(f'{last_release.release[0] + 1}')
 
     def test_tag(
         self,
         directory: asset.Directory,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
-        empty_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
+        empty_release: asset.Release.Key,
         valid_generation: asset.Generation.Key,
         generation_tag: asset.Tag,
     ):
         """Registry checkout unit test."""
         project = directory.get(project_name)
         with pytest.raises(asset.Level.Invalid):
-            _ = project.get(empty_lineage).get(valid_generation).tag
-        assert project.get(project_lineage).get(valid_generation).tag == generation_tag
-        assert project.get(empty_lineage).get(None).tag == asset.Tag()
+            _ = project.get(empty_release).get(valid_generation).tag
+        assert project.get(project_release).get(valid_generation).tag == generation_tag
+        assert project.get(empty_release).get(None).tag == asset.Tag()
 
     def test_read(
         self,
         directory: asset.Directory,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
-        invalid_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
+        invalid_release: asset.Release.Key,
         valid_generation: asset.Generation.Key,
         generation_states: typing.Mapping[uuid.UUID, bytes],
     ):
         """Registry load unit test."""
         project = directory.get(project_name)
         with pytest.raises(asset.Level.Invalid):
-            project.get(invalid_lineage).get(None).get(None)
+            project.get(invalid_release).get(None).get(None)
         with pytest.raises(asset.Level.Invalid):
-            project.get(project_lineage).get(valid_generation).get(None)
+            project.get(project_release).get(valid_generation).get(None)
         for sid, value in generation_states.items():
-            assert project.get(project_lineage).get(valid_generation).get(sid) == value
+            assert project.get(project_release).get(valid_generation).get(sid) == value
 
 
 class TestTag:

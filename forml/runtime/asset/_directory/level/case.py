@@ -35,7 +35,7 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
 class Project(_directory.Level):
-    """Sequence of lineages based on same project."""
+    """Sequence of releases based on same project."""
 
     class Key(_directory.Level.Key, str):  # pylint: disable=abstract-method
         """Project level key."""
@@ -49,38 +49,38 @@ class Project(_directory.Level):
         Returns:
             Level content listing.
         """
-        return self.Listing(lngmod.Lineage.Key(n) for n in self.registry.lineages(self.key))
+        return self.Listing(lngmod.Release.Key(n) for n in self.registry.releases(self.key))
 
-    def get(self, key: typing.Optional[typing.Union[str, lngmod.Lineage.Key]] = None) -> lngmod.Lineage:
-        """Get a lineage instance by its id.
+    def get(self, key: typing.Optional[typing.Union[str, lngmod.Release.Key]] = None) -> lngmod.Release:
+        """Get a release instance by its id.
 
         Args:
-            key: Lineage version.
+            key: Release version.
 
         Returns:
-            Lineage instance.
+            Release instance.
         """
-        return lngmod.Lineage(self, key)
+        return lngmod.Release(self, key)
 
-    def put(self, package: 'prj.Package') -> lngmod.Lineage:
-        """Publish new lineage to the repository based on provided package.
+    def put(self, package: 'prj.Package') -> lngmod.Release:
+        """Publish new release to the repository based on provided package.
 
         Args:
             package: Distribution package to be persisted.
 
         Returns:
-            new lineage instance based on the package.
+            new release instance based on the package.
         """
         project = package.manifest.name
-        lineage = package.manifest.version
+        release = package.manifest.version
         try:
             previous = self.list().last
         except (_directory.Level.Invalid, _directory.Level.Listing.Empty):
-            LOGGER.debug('No previous lineage for %s-%s', project, lineage)
+            LOGGER.debug('No previous release for %s-%s', project, release)
         else:
             if project != self.key:
                 raise forml.InvalidError('Project key mismatch')
-            if not lineage > previous:
-                raise _directory.Level.Invalid(f'{project}-{lineage} not an increment from existing {previous}')
+            if not release > previous:
+                raise _directory.Level.Invalid(f'{project}-{release} not an increment from existing {previous}')
         self.registry.push(package)
-        return self.get(lineage)
+        return self.get(release)

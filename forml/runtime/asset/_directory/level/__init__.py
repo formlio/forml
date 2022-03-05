@@ -20,8 +20,8 @@ ForML assets directory levels.
 """
 
 from .case import Project
-from .major import Lineage
+from .major import Release
 from .minor import Generation, Tag
 from .root import Directory
 
-__all__ = ['Project', 'Lineage', 'Generation', 'Tag', 'Directory']
+__all__ = ['Project', 'Release', 'Generation', 'Tag', 'Directory']

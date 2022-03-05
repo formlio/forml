@@ -16,8 +16,8 @@
 Model Registry
 ==============
 
-At :doc:`runtime <platform>`, the :ref:`production lifecycle <lifecycle-production>` uses the model registry for storing
-:ref:`artifacts <concept-persistence>` of project *lineages* as well as the models of its *generations*.
+At :doc:`runtime <../platform>`, the :ref:`production lifecycle <lifecycle-production>` uses the model registry for storing
+:ref:`artifacts <concept-persistence>` of project *releases* as well as the models of its *generations*.
 
 ForML can use multiple registries built upon different technologies. The available registry implementations are:
 

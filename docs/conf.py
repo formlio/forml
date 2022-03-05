@@ -66,10 +66,10 @@ templates_path = ['templates']
 exclude_patterns = ['_build']
 
 intersphinx_mapping = {
-    'setuptools': ('https://setuptools.readthedocs.io/en/latest/', None),
+    'setuptools': ('https://setuptools.pypa.io/en/latest/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'openschema': ('https://openschema.readthedocs.org/en/latest/', None),
-    'openlake': ('https://openlake.readthedocs.org/en/latest/', None),
+    'openschema': ('https://openschema.readthedocs.io/en/latest/', None),
+    'openlake': ('https://openlake.readthedocs.io/en/latest/', None),
 }
 
 # -- Options for HTML output -------------------------------------------------

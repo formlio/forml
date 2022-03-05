@@ -114,7 +114,7 @@ Development Lifecycle Actions
     $ python3 setup.py bdist_4ml upload
 
    This should publish the project into your local filesystem forml registry making it available for the production
-   lifecycle. This becomes the first published :ref:`lineage <concept-persistence>` of this project versioned (according
+   lifecycle. This becomes the first published :ref:`release <concept-persistence>` of this project versioned (according
    to the version from :ref:setup.py `<project-setup>` as ``0.1.dev0``)
 
 Production Lifecycle Actions
@@ -123,28 +123,28 @@ Production Lifecycle Actions
 Production lifecycles doesn't need the project working copy so feel free to change the directory to another location
 before executing the commands.
 
-1. List the local registry confirming the project has been published its first lineage::
+1. List the local registry confirming the project has been published its first release::
 
-    $ forml list
+    $ forml registry list
     forml-example-titanic
-    $ forml list forml-example-titanic
+    $ forml registry list forml-example-titanic
     0.1.dev0
-    $ forml list forml-example-titanic 0.1.dev0
+    $ forml registry list forml-example-titanic 0.1.dev0
 
-   The output shows the project artifact is available in the registry as a lineage ``0.1.dev0`` not having any
+   The output shows the project artifact is available in the registry as a release ``0.1.dev0`` not having any
    generation yet (the last command not producing any output).
 
 2. Train the project to create the first generation of its models and list the registry to confirm it got persisted::
 
-    $ forml train forml-example-titanic
-    $ forml list forml-example-titanic 0.1.dev0
+    $ forml model train forml-example-titanic
+    $ forml registry list forml-example-titanic 0.1.dev0
     1
 
    Now we have our first generation of the titanic models available in the registry.
 
 3. Apply the trained generation of the project to get the predictions::
 
-    $ forml apply forml-example-titanic
+    $ forml model apply forml-example-titanic
     [0.38717846 0.37779938 0.38008973 0.37771585 0.3873835  0.38832168
     0.38671783 0.38736506 0.38115396 0.37622997 0.37642134 0.37965842
     ...
@@ -154,7 +154,7 @@ before executing the commands.
 
 4. Run the ``apply`` mode alternatively on the ``graphviz`` runner to explore its task graph::
 
-    $ forml apply -R visual forml-example-titanic
+    $ forml model -R visual apply forml-example-titanic
 
 .. image:: images/titanic-apply.png
 

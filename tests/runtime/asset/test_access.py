@@ -37,11 +37,11 @@ class TestInstance:
         """Instance clone fixture."""
         generation: asset.Generation = valid_instance._generation  # pylint: disable=protected-access
         return asset.Instance(
-            generation.project.key, generation.lineage.key, generation.key, asset.Directory(generation.registry)
+            generation.project.key, generation.release.key, generation.key, asset.Directory(generation.registry)
         )
 
     def test_tag(self, valid_instance: asset.Instance, generation_tag: asset.Tag):
-        """Test default empty lineage generation retrieval."""
+        """Test default empty release generation retrieval."""
         assert valid_instance.tag == generation_tag
 
     def test_equal(self, valid_instance: asset.Instance, clone: asset.Instance):

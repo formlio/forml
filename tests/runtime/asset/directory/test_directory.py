@@ -41,16 +41,16 @@ class TestCache:
         cache: _directory.Cache,
         registry: asset.Registry,
         project_name: asset.Project.Key,
-        project_lineage: asset.Lineage.Key,
+        project_release: asset.Release.Key,
         valid_generation: asset.Generation.Key,
         generation_tag: asset.Tag,
     ):
         """Test the cache lifecycle."""
         assert cache.info.currsize == 0
-        assert cache(registry, project_name, project_lineage, valid_generation) == generation_tag
+        assert cache(registry, project_name, project_release, valid_generation) == generation_tag
         assert cache.info.misses == 1
         assert cache.info.currsize == 1
-        assert cache(registry, project_name, project_lineage, valid_generation) == generation_tag
+        assert cache(registry, project_name, project_release, valid_generation) == generation_tag
         assert cache.info.hits == 1
         cache.clear()
         assert cache.info.currsize == 0

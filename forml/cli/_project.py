@@ -18,30 +18,32 @@
 """
 ForML command line interface.
 """
-
 import typing
 
 import click
+from click import core
 
-from forml import conf
-
-from . import _model, _project, _registry
-
-
-@click.group(name='forml')
-@click.option('--config', '-C', type=click.Path(exists=True, file_okay=True), help='Additional config file.')
-@click.option(
-    '--loglevel',
-    '-L',
-    type=click.Choice(['debug', 'info', 'warning', 'error'], case_sensitive=False),
-    help='Global loglevel to use.',
-)
-def main(config: typing.Optional[str], loglevel: typing.Optional[str]):  # pylint: disable=unused-argument
-    """Lifecycle Management for Datascience Projects."""
-    if config:
-        conf.PARSER.read(config)
+import forml
 
 
-main.add_command(_model.main)
-main.add_command(_project.main)
-main.add_command(_registry.main)
+class Project(typing.NamedTuple):
+    """Case class for holding the partial command config."""
+
+    path: typing.Optional[str]
+
+
+@click.group(name='project')
+@click.option('--path', type=click.Path(exists=True, dir_okay=True), help='Project root directory.')
+@click.pass_context
+def main(context: core.Context, path: typing.Optional[str]):
+    """Project command group."""
+    context.obj = Project(path)
+
+
+@main.command()
+@click.argument('name', required=True)
+@click.option('--package', type=str, help='Full python package path to be used.')
+@click.pass_obj
+def init(project: Project, name: str) -> None:
+    """Create skeleton for a new project."""
+    raise forml.MissingError(f'Creating project {name}... not implemented')
