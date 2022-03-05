@@ -32,6 +32,7 @@ EXTRAS_DEV = {
     'pip-tools',
     'pre-commit',
     'pycln',
+    'pylint',
     'pytest-cov',
 }
 
