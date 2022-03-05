@@ -19,6 +19,7 @@
 """
 Setuptools script for ForML package.
 """
+import os
 
 import setuptools
 
@@ -57,7 +58,7 @@ setuptools.setup(
     maintainer='ForML Development Team',
     maintainer_email='forml-dev@googlegroups.com',
     license='Apache License 2.0',
-    packages=setuptools.find_packages(include=['forml*']),
+    packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
     setup_requires=['setuptools', 'wheel', 'toml'],
     install_requires=['click', 'joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],

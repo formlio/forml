@@ -21,6 +21,7 @@ Customized setuptools.
 import inspect
 import logging
 import os
+import sys
 import typing
 
 import setuptools
@@ -43,21 +44,31 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
         'upload': upload.Registry,
     }
 
-    def __init__(self, attrs=None):
+    def __init__(
+        self,
+        attrs: typing.Optional[typing.Mapping[str, typing.Any]] = None,
+        project_dir: str = os.path.dirname(sys.argv[0]),  # noqa: B008
+    ):
         # mapping between standard forml components and their implementing modules within the project
         self.component: typing.Mapping[str, str] = {}
         attrs = dict(attrs or ())
         attrs.setdefault('cmdclass', {}).update(self.COMMANDS)
         super().__init__(attrs)
+        package_dir = self.package_dir or {}  # pylint: disable=access-member-before-definition
+        package_dir.setdefault('', '.')
+        self.package_dir = {p: os.path.join(project_dir, d) for p, d in package_dir.items()}
 
     def run_commands(self):
         """Overriding the default functionality to allow bypassing the execution if not called from setup.py:setup.
 
         This is to avoid fork looping ie when using Dask multiprocessing runner.
         """
-        if inspect.currentframe().f_back.f_back.f_back.f_back.f_globals.get('__name__') != '__main__':
-            return
-        super().run_commands()
+        frame = inspect.currentframe()
+        while frame:
+            if frame.f_globals.get('__name__') == '__main__':
+                super().run_commands()
+                break
+            frame = frame.f_back
 
     @property
     def artifact(self) -> _product.Artifact:
@@ -75,5 +86,4 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
                     break
             else:
                 package = self.packages[0]
-        pkgdir = self.package_dir or {'': '.'}
-        return _product.Artifact(pkgdir[''], package=package, **modules)
+        return _product.Artifact(self.package_dir[''], package=package, **modules)
