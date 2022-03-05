@@ -41,19 +41,19 @@ class Registry:
         self._asset: asset.Directory = asset.Directory(registry)
 
     def assets(
-        self, project: typing.Optional[str], lineage: typing.Optional[str], generation: typing.Optional[str]
+        self, project: typing.Optional[str], release: typing.Optional[str], generation: typing.Optional[str]
     ) -> asset.Instance:
         """Create the assets instance of given registry item.
 
         Args:
             project: Item's project.
-            lineage: Item's lineage.
+            release: Item's release.
             generation: Item's generation.
 
         Returns:
             Asset instance.
         """
-        return asset.Instance(project, lineage, generation, self._asset)
+        return asset.Instance(project, release, generation, self._asset)
 
     def publish(self, project: str, package: prj.Package) -> None:
         """Publish new package into the registry.
@@ -64,12 +64,12 @@ class Registry:
         """
         self._asset.get(project).put(package)
 
-    def list(self, project: typing.Optional[str], lineage: typing.Optional[str]) -> typing.Iterable[asset.Level.Key]:
+    def list(self, project: typing.Optional[str], release: typing.Optional[str]) -> typing.Iterable[asset.Level.Key]:
         """Repository listing subcommand.
 
         Args:
             project: Name of project to be listed.
-            lineage: Lineage version to be listed.
+            release: Release version to be listed.
 
         Returns:
             Listing of the given registry level.
@@ -77,8 +77,8 @@ class Registry:
         level = self._asset
         if project:
             level = level.get(project)
-            if lineage:
-                level = level.get(lineage)
+            if release:
+                level = level.get(release)
         return level.list()
 
 
@@ -187,20 +187,20 @@ class Platform:
     def launcher(
         self,
         project: typing.Optional[str],
-        lineage: typing.Optional[str] = None,
+        release: typing.Optional[str] = None,
         generation: typing.Optional[str] = None,
     ) -> Launcher:
-        """Get a runner handle for given project/lineage/generation.
+        """Get a runner handle for given project/release/generation.
 
         Args:
             project: Project to run.
-            lineage: Lineage to run.
+            release: Release to run.
             generation: Generation to run.
 
         Returns:
             Runner handle.
         """
-        return Launcher(self._runner, self._registry.assets(project, lineage, generation), self._feeds, self._sink)
+        return Launcher(self._runner, self._registry.assets(project, release, generation), self._feeds, self._sink)
 
     @property
     def registry(self) -> Registry:

@@ -98,7 +98,7 @@ class Getter(_target.Instruction):
 
 
 class Committer(_target.Instruction):
-    """Commit a new lineage generation."""
+    """Commit a new release generation."""
 
     def __init__(self, assets: asset.State):
         self._assets: asset.State = assets

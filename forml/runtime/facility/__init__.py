@@ -20,7 +20,7 @@ Runtime launching subsystem.
 """
 
 from ._agent import Runner
-from ._pad import Platform
+from ._pad import Launcher, Platform, Registry
 from ._pseudo import Virtual
 
-__all__ = ['Platform', 'Runner', 'Virtual']
+__all__ = ['Platform', 'Launcher', 'Registry', 'Runner', 'Virtual']

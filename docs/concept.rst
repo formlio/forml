@@ -115,9 +115,9 @@ Data Providers & Result Consumers
 Persistence
     A fundamental aspect of a project lifecycle is the pipeline state transition occurring during *train* and/or *tune*
     modes. Each of these transitions produces a new *Generation*. Generations based on the same build of a project
-    belong to one *Lineage*.
+    belong to one *Release*.
 
-    Both Lineages and Generations are *project artifacts* that require persistent runtime storage called *Registry*
+    Both Releases and Generations are *project artifacts* that require persistent runtime storage called *Registry*
     that allows publishing, locating and fetching these entities. See the :doc:`registry/index` section for the list of
     existing registry implementations and their configurations.
 

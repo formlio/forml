@@ -55,7 +55,7 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
 
         This is to avoid fork looping ie when using Dask multiprocessing runner.
         """
-        if inspect.currentframe().f_back.f_back.f_back.f_globals.get('__name__') != '__main__':
+        if inspect.currentframe().f_back.f_back.f_back.f_back.f_globals.get('__name__') != '__main__':
             return
         super().run_commands()
 

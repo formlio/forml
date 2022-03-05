@@ -19,15 +19,12 @@
 ForML cli unit tests.
 """
 # pylint: disable=no-self-use
-import argparse
-import importlib
 import pathlib
-import sys
-from unittest import mock
 
 import pytest
+from click import testing
 
-from forml import conf
+from forml import cli, conf
 
 
 @pytest.fixture(scope='session')
@@ -36,16 +33,8 @@ def cfg_file() -> pathlib.Path:
     return pathlib.Path(__file__).parent / conf.APPCFG
 
 
-def test_parse(cfg_file: pathlib.Path):
-    """Fixture for the forml.conf module."""
-    # pylint: disable=import-outside-toplevel
-    with mock.patch(
-        'forml.cli._api.argparse.ArgumentParser.parse_known_args',
-        return_value=(argparse.Namespace(config=cfg_file.open('r')), []),
-    ):
-        from forml.cli import _api
-
-        importlib.reload(_api)
-
-    del sys.modules[_api.__name__]
-    assert str(cfg_file) in conf.PARSER.sources
+def test_main(cfg_file: pathlib.Path):
+    """Basic cli test."""
+    runner = testing.CliRunner()
+    result = runner.invoke(cli.main, ['--config', str(cfg_file), 'project'])
+    assert result.exit_code == 0

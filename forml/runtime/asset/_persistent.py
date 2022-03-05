@@ -73,21 +73,21 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other._staging == self._staging
 
-    def mount(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key') -> 'prj.Artifact':
-        """Take given project/lineage package and return it as artifact instance.
+    def mount(self, project: 'level.Project.Key', release: 'level.Release.Key') -> 'prj.Artifact':
+        """Take given project/release package and return it as artifact instance.
 
         Args:
             project: Name of the project to work with.
-            lineage: Lineage to be loaded.
+            release: Release to be loaded.
 
         Returns:
             Product artifact.
         """
-        package = self.pull(project, lineage)
+        package = self.pull(project, release)
         try:
             return package.install(self._staging / package.manifest.name / str(package.manifest.version))
         except FileNotFoundError as err:
-            raise forml.MissingError(f'Package artifact {project}-{lineage} not found') from err
+            raise forml.MissingError(f'Package artifact {project}-{release} not found') from err
 
     @abc.abstractmethod
     def projects(self) -> typing.Iterable[typing.Union[str, 'level.Project.Key']]:
@@ -99,26 +99,26 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def lineages(self, project: 'level.Project.Key') -> typing.Iterable[typing.Union[str, 'level.Lineage.Key']]:
-        """List the lineages of given prj.
+    def releases(self, project: 'level.Project.Key') -> typing.Iterable[typing.Union[str, 'level.Release.Key']]:
+        """List the releases of given prj.
 
         Args:
             project: Project to be listed.
 
         Returns:
-            Lineages listing.
+            Releases listing.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def generations(
-        self, project: 'level.Project.Key', lineage: 'level.Lineage.Key'
+        self, project: 'level.Project.Key', release: 'level.Release.Key'
     ) -> typing.Iterable[typing.Union[str, int, 'level.Generation.Key']]:
-        """List the generations of given lineage.
+        """List the generations of given release.
 
         Args:
-            project: Project of which the lineage is to be listed.
-            lineage: Lineage of the project to be listed.
+            project: Project of which the release is to be listed.
+            release: Release of the project to be listed.
 
         Returns:
             Generations listing.
@@ -126,12 +126,12 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def pull(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key') -> 'prj.Package':
-        """Return the package of the given existing lineage.
+    def pull(self, project: 'level.Project.Key', release: 'level.Release.Key') -> 'prj.Package':
+        """Return the package of the given existing release.
 
         Args:
-            project: Project of which the lineage artifact is to be returned.
-            lineage: Lineage of the project to return the artifact of.
+            project: Project of which the release artifact is to be returned.
+            release: Release of the project to return the artifact of.
 
         Returns:
             Project artifact object.
@@ -140,7 +140,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
 
     @abc.abstractmethod
     def push(self, package: 'prj.Package') -> None:
-        """Start new lineage of a (possibly new) project based on the given artifact.
+        """Start new release of a (possibly new) project based on the given artifact.
 
         Args:
             package: Distribution package to be persisted.
@@ -151,7 +151,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
     def read(
         self,
         project: 'level.Project.Key',
-        lineage: 'level.Lineage.Key',
+        release: 'level.Release.Key',
         generation: 'level.Generation.Key',
         sid: uuid.UUID,
     ) -> bytes:
@@ -159,7 +159,7 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
 
         Args:
             project: Project to read the state from.
-            lineage: Lineage of the project to read the state from.
+            release: Release of the project to read the state from.
             generation: Generation of the project to read the state from.
             sid: Id of the state object to be loaded.
 
@@ -169,12 +169,12 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def write(self, project: 'level.Project.Key', lineage: 'level.Lineage.Key', sid: uuid.UUID, state: bytes) -> None:
-        """Dump a generation-unbound state within an existing lineage under the given state id.
+    def write(self, project: 'level.Project.Key', release: 'level.Release.Key', sid: uuid.UUID, state: bytes) -> None:
+        """Dump a generation-unbound state within an existing release under the given state id.
 
         Args:
             project: Project to store the state into.
-            lineage: Lineage of the project to store the state into.
+            release: Release of the project to store the state into.
             sid: state id to associate the payload with.
             state: Serialized state to be persisted.
         """
@@ -182,13 +182,13 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
 
     @abc.abstractmethod
     def open(
-        self, project: 'level.Project.Key', lineage: 'level.Lineage.Key', generation: 'level.Generation.Key'
+        self, project: 'level.Project.Key', release: 'level.Release.Key', generation: 'level.Generation.Key'
     ) -> 'level.Tag':
         """Return the metadata tag of the given existing generation.
 
         Args:
             project: Project to read the metadata from.
-            lineage: Lineage of the project to read the metadata from.
+            release: Release of the project to read the metadata from.
             generation: Generation of the project to read the metadata from.
 
         Returns:
@@ -200,15 +200,15 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
     def close(
         self,
         project: 'level.Project.Key',
-        lineage: 'level.Lineage.Key',
+        release: 'level.Release.Key',
         generation: 'level.Generation.Key',
         tag: 'level.Tag',
     ) -> None:
-        """Seal a new - sofar unbound - generation within existing lineage by storing its metadata tag.
+        """Seal a new - sofar unbound - generation within existing release by storing its metadata tag.
 
         Args:
             project: Project to store the metadata into.
-            lineage: Lineage of the project to store the metadata into.
+            release: Release of the project to store the metadata into.
             generation: Generation of the project to store the metadata into.
             tag: Generation metadata to be stored.
         """

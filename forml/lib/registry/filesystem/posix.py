@@ -108,12 +108,12 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
         @staticmethod
         def content(level: pathlib.Path) -> bool:
-            return any(Path.Lineage.valid(i) for i in level.iterdir())
+            return any(Path.Release.valid(i) for i in level.iterdir())
 
-    class Lineage(Matcher):
-        """Lineage matcher."""
+    class Release(Matcher):
+        """Release matcher."""
 
-        constructor = staticmethod(asset.Lineage.Key)
+        constructor = staticmethod(asset.Release.Key)
 
         @staticmethod
         def content(level: pathlib.Path) -> bool:
@@ -146,60 +146,60 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         return self / project
 
     @functools.lru_cache
-    def lineage(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> pathlib.Path:
+    def release(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
             project: Name of the project.
-            lineage: Lineage key.
+            release: Release key.
 
         Returns:
             Project directory path.
         """
-        return self.project(project) / str(lineage)
+        return self.project(project) / str(release)
 
     @functools.lru_cache
     def generation(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
         """Get the project directory path.
 
         Args:
             project: Name of the project.
-            lineage: Lineage key.
+            release: Release key.
             generation: Generation key.
 
         Returns:
             Project directory path.
         """
-        return self.lineage(project, lineage) / str(generation)
+        return self.release(project, release) / str(generation)
 
     @functools.lru_cache
-    def package(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> pathlib.Path:
-        """Package file path of given project name/lineage.
+    def package(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
+        """Package file path of given project name/release.
 
         Args:
             project: Name of the project.
-            lineage: Lineage key.
+            release: Release key.
 
         Returns:
             Package file path.
         """
-        return self.lineage(project, lineage) / self.PKGFILE
+        return self.release(project, release) / self.PKGFILE
 
     @functools.lru_cache
     def state(
         self,
         sid: uuid.UUID,
         project: asset.Project.Key,
-        lineage: asset.Lineage.Key,
+        release: asset.Release.Key,
         generation: typing.Optional[asset.Generation.Key] = None,
     ) -> pathlib.Path:
         """State file path of given sid an project name.
 
         Args:
             project: Name of the project.
-            lineage: Lineage key.
+            release: Release key.
             generation: Generation key.
             sid: State id.
 
@@ -208,23 +208,23 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         if generation is None:
             generation = self.STAGEDIR
-        return self.generation(project, lineage, generation) / f'{sid}.{self.STATESFX}'
+        return self.generation(project, release, generation) / f'{sid}.{self.STATESFX}'
 
     @functools.lru_cache
     def tag(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
         """Tag file path of given project name.
 
         Args:
             project: Name of the project.
-            lineage: Lineage key.
+            release: Release key.
             generation: Generation key.
 
         Returns:
             Tag file path.
         """
-        return self.generation(project, lineage, generation) / self.TAGFILE
+        return self.generation(project, release, generation) / self.TAGFILE
 
 
 class Registry(asset.Registry, alias='posix'):
@@ -260,21 +260,21 @@ class Registry(asset.Registry, alias='posix'):
     def projects(self) -> typing.Iterable[asset.Project.Key]:
         return self._listing(self._path, Path.Project)
 
-    def lineages(self, project: asset.Project.Key) -> typing.Iterable[asset.Lineage.Key]:
-        return self._listing(self._path.project(project), Path.Lineage)
+    def releases(self, project: asset.Project.Key) -> typing.Iterable[asset.Release.Key]:
+        return self._listing(self._path.project(project), Path.Release)
 
     def generations(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key
+        self, project: asset.Project.Key, release: asset.Release.Key
     ) -> typing.Iterable[asset.Generation.Key]:
-        return self._listing(self._path.lineage(project, lineage), Path.Generation)
+        return self._listing(self._path.release(project, release), Path.Generation)
 
-    def pull(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> 'prj.Package':
-        return prj.Package(self._path.package(project, lineage))
+    def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> 'prj.Package':
+        return prj.Package(self._path.package(project, release))
 
     def push(self, package: 'prj.Package') -> None:
         project = package.manifest.name
-        lineage = package.manifest.version
-        path = self._path.package(project, lineage)
+        release = package.manifest.version
+        path = self._path.package(project, release)
         path.parent.mkdir(parents=True, exist_ok=True)
         if package.path.is_dir():
             shutil.copytree(package.path, path, ignore=lambda *_: {'__pycache__'})
@@ -285,14 +285,14 @@ class Registry(asset.Registry, alias='posix'):
     def read(
         self,
         project: asset.Project.Key,
-        lineage: asset.Lineage.Key,
+        release: asset.Release.Key,
         generation: asset.Generation.Key,
         sid: uuid.UUID,
     ) -> bytes:
-        path = self._path.state(sid, project, lineage, generation)
+        path = self._path.state(sid, project, release, generation)
         LOGGER.debug('Reading state from %s', path)
         if not path.parent.exists():
-            raise asset.Level.Invalid(f'Invalid registry component {project}/{lineage}/{generation}')
+            raise asset.Level.Invalid(f'Invalid registry component {project}/{release}/{generation}')
         try:
             with path.open('rb') as statefile:
                 return statefile.read()
@@ -300,17 +300,17 @@ class Registry(asset.Registry, alias='posix'):
             LOGGER.warning('No state %s under %s', sid, path)
             return bytes()
 
-    def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
-        path = self._path.state(sid, project, lineage)
+    def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
+        path = self._path.state(sid, project, release)
         LOGGER.debug('Staging state of %d bytes to %s', len(state), path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open('wb') as statefile:
             statefile.write(state)
 
     def open(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> asset.Tag:
-        path = self._path.tag(project, lineage, generation)
+        path = self._path.tag(project, release, generation)
         try:
             with path.open('rb') as tagfile:
                 return asset.Tag.loads(tagfile.read())
@@ -320,18 +320,18 @@ class Registry(asset.Registry, alias='posix'):
     def close(
         self,
         project: asset.Project.Key,
-        lineage: asset.Lineage.Key,
+        release: asset.Release.Key,
         generation: asset.Generation.Key,
         tag: asset.Tag,
     ) -> None:
-        path = self._path.tag(project, lineage, generation)
+        path = self._path.tag(project, release, generation)
         LOGGER.debug('Committing states of tag %s as %s', tag, path)
         path.parent.mkdir(parents=True, exist_ok=True)
         for sid in tag.states:
-            source = self._path.state(sid, project, lineage)
+            source = self._path.state(sid, project, release)
             if not source.exists():
                 raise asset.Level.Invalid(f'State {sid} not staged')
-            target = self._path.state(sid, project, lineage, generation)
+            target = self._path.state(sid, project, release, generation)
             source.rename(target)
         with path.open('wb') as tagfile:
             tagfile.write(tag.dumps())

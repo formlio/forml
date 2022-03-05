@@ -31,59 +31,59 @@ from . import Level
 
 
 class TestVersion:
-    """Lineage version unit tests."""
+    """Release version unit tests."""
 
     def test_parse(self):
         """Parsing test."""
-        ver = asset.Lineage.Key('0.1.dev2')
-        asset.Lineage.Key(ver)
-        asset.Lineage.Key(forml.__version__)
-        with pytest.raises(asset.Lineage.Key.Invalid):
-            asset.Lineage.Key('foobar')
+        ver = asset.Release.Key('0.1.dev2')
+        asset.Release.Key(ver)
+        asset.Release.Key(forml.__version__)
+        with pytest.raises(asset.Release.Key.Invalid):
+            asset.Release.Key('foobar')
 
 
 class TestLevel(Level):
-    """Lineage unit tests."""
+    """Release unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='function')
     def parent(
         directory: asset.Directory, project_name: asset.Project.Key
-    ) -> typing.Callable[[typing.Optional[asset.Lineage.Key]], asset.Lineage]:
+    ) -> typing.Callable[[typing.Optional[asset.Release.Key]], asset.Release]:
         """Parent fixture."""
-        return lambda lineage: directory.get(project_name).get(lineage)
+        return lambda release: directory.get(project_name).get(release)
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def valid_level(project_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
+    def valid_level(project_release: asset.Release.Key) -> asset.Release.Key:
         """Level fixture."""
-        return project_lineage
+        return project_release
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def last_level(last_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
+    def last_level(last_release: asset.Release.Key) -> asset.Release.Key:
         """Level fixture."""
-        return last_lineage
+        return last_release
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def invalid_level(last_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
+    def invalid_level(last_release: asset.Release.Key) -> asset.Release.Key:
         """Level fixture."""
-        return asset.Lineage.Key(f'{last_lineage.release[0] + 1}')
+        return asset.Release.Key(f'{last_release.release[0] + 1}')
 
     def test_empty(
         self,
-        parent: typing.Callable[[typing.Optional[asset.Lineage.Key]], asset.Lineage],
-        empty_lineage: asset.Lineage.Key,
+        parent: typing.Callable[[typing.Optional[asset.Release.Key]], asset.Release],
+        empty_release: asset.Release.Key,
     ):
-        """Test default empty lineage generation retrieval."""
-        generation = parent(empty_lineage).get()
+        """Test default empty release generation retrieval."""
+        generation = parent(empty_release).get()
         with pytest.raises(asset.Level.Listing.Empty):
             _ = generation.key
         assert not generation.tag.states
 
     def test_artifact(
-        self, directory: asset.Directory, project_name: asset.Project.Key, invalid_level: asset.Lineage.Key
+        self, directory: asset.Directory, project_name: asset.Project.Key, invalid_level: asset.Release.Key
     ):
         """Registry take unit test."""
         with pytest.raises(asset.Level.Invalid):
@@ -91,5 +91,5 @@ class TestLevel(Level):
 
     def test_put(self, directory: asset.Directory, project_name: asset.Project.Key, project_package: prj.Package):
         """Registry put unit test."""
-        with pytest.raises(asset.Level.Invalid):  # lineage already exists
+        with pytest.raises(asset.Level.Invalid):  # release already exists
             directory.get(project_name).put(project_package)

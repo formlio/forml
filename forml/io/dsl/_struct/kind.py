@@ -140,7 +140,7 @@ class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
 
     def __new__(cls, *args, **kwargs):
         """This gets actually overwritten by metaclass."""
-        assert False, 'Expected to be replaced by metaclass'
+        raise AssertionError('Expected to be replaced by metaclass')
 
 
 class Numeric(Primitive, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method

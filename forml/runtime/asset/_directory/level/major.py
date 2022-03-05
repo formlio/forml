@@ -36,21 +36,21 @@ ARTIFACTS = _directory.Cache(_persistent.Registry.mount)
 
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
-class Lineage(_directory.Level):
+class Release(_directory.Level):
     """Sequence of generations based on same project artifact."""
 
     class Key(_directory.Level.Key, vermod.Version):  # pylint: disable=abstract-method
-        """Lineage key."""
+        """Release key."""
 
         MIN = '0'
 
-        def __init__(self, key: typing.Union[str, 'Lineage.Key'] = MIN):
+        def __init__(self, key: typing.Union[str, 'Release.Key'] = MIN):
             try:
                 super().__init__(str(key))
             except vermod.InvalidVersion as err:
                 raise self.Invalid(f'Invalid version {key} (not PEP 440 compliant)') from err
 
-    def __init__(self, project: 'prjmod.Project', key: typing.Optional[typing.Union[str, 'Lineage.Key']] = None):
+    def __init__(self, project: 'prjmod.Project', key: typing.Optional[typing.Union[str, 'Release.Key']] = None):
         super().__init__(key, parent=project)
 
     @property
@@ -64,7 +64,7 @@ class Lineage(_directory.Level):
 
     @property
     def artifact(self) -> 'prj.Artifact':
-        """Lineage artifact.
+        """Release artifact.
 
         Returns:
             Artifact object.
@@ -74,7 +74,7 @@ class Lineage(_directory.Level):
     def dump(self, state: bytes) -> uuid.UUID:
         """Dump an unbound state (not belonging to any project) under given state id.
 
-        An unbound state is expected to be committed later into a new generation of specific lineage.
+        An unbound state is expected to be committed later into a new generation of specific release.
 
         Args:
             state: Serialized state to be persisted.

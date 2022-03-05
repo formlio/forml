@@ -166,7 +166,7 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
     """Distribution manifest implementation."""
 
     name: asset.Project.Key
-    version: asset.Lineage.Key
+    version: asset.Release.Key
     package: str
     modules: typing.Mapping[str, str]
 
@@ -185,12 +185,12 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
     def __new__(
         cls,
         name: typing.Union[str, asset.Project.Key],
-        version: typing.Union[str, asset.Lineage.Key],
+        version: typing.Union[str, asset.Release.Key],
         package: str,
         **modules: str,
     ):
         return super().__new__(
-            cls, asset.Project.Key(name), asset.Lineage.Key(version), package, types.MappingProxyType(modules)
+            cls, asset.Project.Key(name), asset.Release.Key(version), package, types.MappingProxyType(modules)
         )
 
     def __getnewargs_ex__(self):

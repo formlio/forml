@@ -81,11 +81,11 @@ Package
         $ python3 setup.py bdist_4ml
 
 Upload
-    Build and wrap the project into a runnable *Artifact* producing a new *Lineage* (that can then be used within
+    Build and wrap the project into a runnable *Artifact* producing a new *Release* (that can then be used within
     the *Production Lifecycle*) and upload it to a persistent registry.
 
     .. note::
-       Each particular registry allows uploading only distinct monotonically increasing lineages per any given project,
+       Each particular registry allows uploading only distinct monotonically increasing releases per any given project,
        hence executing this stage twice against the same registry without incrementing the project version will fail.
 
     Example::
@@ -98,7 +98,7 @@ Upload
 Production Lifecycle
 --------------------
 
-After publishing a project lineage in to a registry using the ``upload`` mode of the *research lifecycle*, the project
+After publishing a project release in to a registry using the ``upload`` mode of the *research lifecycle*, the project
 becomes available for the *production lifecycle*. Contrary to the research, this production lifecycle no longer needs
 the project source code working copy as it operates solely on the published artifact plus potentially previously
 persisted model generations.
@@ -108,18 +108,18 @@ embedded within a :doc:`serving layer <serving>`. In any case, the stages of the
 
 Train
     Fit (incrementally) the stateful parts of the pipeline using new labelled data producing a new *Generation* of
-    the given lineage (unless explicit, the default lineage is the one with the highest version).
+    the given release (unless explicit, the default release is the one with the highest version).
 
     Example::
 
-        forml train titanic
+        forml model train titanic
 
 Tune
     Run hyper-parameter tuning of the selected pipeline and produce new *generation* (not implemented yet).
 
     Example::
 
-        forml tune titanic
+        forml model tune titanic
 
 Apply
     Run unlabelled data through a project *generation* (unless explicit, the default generation is the one with the
@@ -127,11 +127,11 @@ Apply
 
     Example::
 
-        forml apply titanic
+        forml model apply titanic
 
 Evaluate
     Measure the actual performance of the model as predictions against the (previously unseen) true labelled data.
 
     Example::
 
-        forml eval titanic
+        forml model eval titanic

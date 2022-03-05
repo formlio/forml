@@ -190,8 +190,8 @@ def project_name(project_manifest: prj.Manifest) -> asset.Project.Key:
 
 
 @pytest.fixture(scope='session')
-def project_lineage(project_manifest: prj.Manifest) -> asset.Lineage.Key:
-    """Test project lineage fixture."""
+def project_release(project_manifest: prj.Manifest) -> asset.Release.Key:
+    """Test project release fixture."""
     return project_manifest.version
 
 
@@ -224,16 +224,16 @@ def generation_tag(generation_states: typing.Mapping[uuid.UUID, bytes]) -> asset
 
 
 @pytest.fixture(scope='session')
-def empty_lineage(project_lineage: asset.Lineage.Key) -> asset.Lineage.Key:
-    """Lineage fixture."""
-    return asset.Lineage.Key(f'{project_lineage}.1')
+def empty_release(project_release: asset.Release.Key) -> asset.Release.Key:
+    """Release fixture."""
+    return asset.Release.Key(f'{project_release}.1')
 
 
 @pytest.fixture(scope='function')
 def registry(
     project_name: asset.Project.Key,
-    project_lineage: asset.Lineage.Key,
-    empty_lineage: asset.Lineage.Key,
+    project_release: asset.Release.Key,
+    empty_release: asset.Release.Key,
     valid_generation: asset.Generation.Key,
     generation_tag: asset.Tag,
     generation_states: typing.Mapping[uuid.UUID, bytes],
@@ -248,22 +248,22 @@ def registry(
             with lock:
                 return content.keys()
 
-        def lineages(self, project: asset.Project.Key) -> typing.Iterable[asset.Lineage.Key]:
+        def releases(self, project: asset.Project.Key) -> typing.Iterable[asset.Release.Key]:
             with lock:
                 return content[project].keys()
 
         def generations(
-            self, project: asset.Project.Key, lineage: asset.Lineage.Key
+            self, project: asset.Project.Key, release: asset.Release.Key
         ) -> typing.Iterable[asset.Generation.Key]:
             try:
                 with lock:
-                    return content[project][lineage][1].keys()
+                    return content[project][release][1].keys()
             except KeyError as err:
-                raise asset.Level.Invalid(f'Invalid lineage ({lineage})') from err
+                raise asset.Level.Invalid(f'Invalid release ({release})') from err
 
-        def pull(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> prj.Package:
+        def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prj.Package:
             with lock:
-                return content[project][lineage][0]
+                return content[project][release][0]
 
         def push(self, package: prj.Package) -> None:
             raise NotImplementedError()
@@ -271,33 +271,33 @@ def registry(
         def read(
             self,
             project: asset.Project.Key,
-            lineage: asset.Lineage.Key,
+            release: asset.Release.Key,
             generation: asset.Generation.Key,
             sid: uuid.UUID,
         ) -> bytes:
             with lock:
-                if sid not in content[project][lineage][1][generation][0].states:
+                if sid not in content[project][release][1][generation][0].states:
                     raise asset.Level.Invalid(f'Invalid state id ({sid})')
-                idx = content[project][lineage][1][generation][0].states.index(sid)
-                return content[project][lineage][1][generation][1][idx]
+                idx = content[project][release][1][generation][0].states.index(sid)
+                return content[project][release][1][generation][1][idx]
 
-        def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
+        def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
             with lock:
                 unbound[sid] = state
 
         def open(
-            self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+            self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
         ) -> asset.Tag:
             try:
                 with lock:
-                    return content[project][lineage][1][generation][0]
+                    return content[project][release][1][generation][0]
             except KeyError as err:
-                raise asset.Level.Invalid(f'Invalid generation ({lineage}.{generation})') from err
+                raise asset.Level.Invalid(f'Invalid generation ({release}.{generation})') from err
 
         def close(
             self,
             project: asset.Project.Key,
-            lineage: asset.Lineage.Key,
+            release: asset.Release.Key,
             generation: asset.Generation.Key,
             tag: asset.Tag,
         ) -> None:
@@ -305,10 +305,10 @@ def registry(
                 assert set(tag.states).issubset(unbound.keys())
                 assert (
                     project in content
-                    and lineage in content[project]
-                    and generation not in content[project][lineage][1]
+                    and release in content[project]
+                    and generation not in content[project][release][1]
                 )
-                content[project][lineage][1][generation] = (tag, tuple(unbound[k] for k in tag.states))
+                content[project][release][1][generation] = (tag, tuple(unbound[k] for k in tag.states))
                 unbound.clear()
 
     with multiprocessing.Manager() as manager:
@@ -316,11 +316,11 @@ def registry(
         content = manager.dict(
             {
                 project_name: {
-                    project_lineage: (
+                    project_release: (
                         project_package,
                         {valid_generation: (generation_tag, tuple(generation_states.values()))},
                     ),
-                    empty_lineage: (project_package, {}),
+                    empty_release: (project_package, {}),
                 }
             }
         )
@@ -337,12 +337,12 @@ def directory(registry: asset.Registry) -> asset.Directory:
 @pytest.fixture(scope='function')
 def valid_instance(
     project_name: asset.Project.Key,
-    project_lineage: asset.Lineage.Key,
+    project_release: asset.Release.Key,
     valid_generation: asset.Generation.Key,
     directory: asset.Directory,
 ) -> asset.Instance:
     """Asset instance fixture."""
-    return asset.Instance(project_name, project_lineage, valid_generation, directory)
+    return asset.Instance(project_name, project_release, valid_generation, directory)
 
 
 @pytest.fixture(scope='session')

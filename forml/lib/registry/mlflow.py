@@ -172,7 +172,7 @@ class Client:
 class Registry(asset.Registry, alias='mlflow'):
     """ForML registry implementation backed by MLFlow tracking server."""
 
-    TAG_LINEAGE_KEY = utils.MLFLOW_GIT_COMMIT
+    TAG_RELEASE_KEY = utils.MLFLOW_GIT_COMMIT
     TAG_GENERATION_KEY = utils.MLFLOW_GIT_COMMIT
     TAG_REPOID = 'forml.repoid'
     """Tag for identifying repository object belonging to same virtual repository."""
@@ -180,9 +180,9 @@ class Registry(asset.Registry, alias='mlflow'):
     """Default virtual repository id."""
     TAG_SESSION = 'forml.session'
     """Identifier used for tagging unbounded generations."""
-    TAG_LINEAGE_REF = utils.MLFLOW_PARENT_RUN_ID
+    TAG_RELEASE_REF = utils.MLFLOW_PARENT_RUN_ID
     TAG_LEVEL = 'forml.level'
-    LEVEL_LINEAGE = 'lineage'
+    LEVEL_RELEASE = 'release'
     LEVEL_GENERATION = 'generation'
     STATESFX = 'bin'
     TAGFILE = 'tag.toml'
@@ -199,8 +199,8 @@ class Registry(asset.Registry, alias='mlflow'):
         self._client = Client(tracking_uri, registry_uri, common_tags={self.TAG_REPOID: repoid})
         self._session: uuid.UUID = uuid.uuid4()
         self._projects: dict[asset.Project.Key, entities.Experiment] = {}
-        self._lineages: dict[tuple[asset.Project.Key, asset.Lineage.Key], entities.Run] = {}
-        self._generations: dict[tuple[asset.Project.Key, asset.Lineage.Key, asset.Generation.Key], entities.Run] = {}
+        self._releases: dict[tuple[asset.Project.Key, asset.Release.Key], entities.Run] = {}
+        self._generations: dict[tuple[asset.Project.Key, asset.Release.Key, asset.Generation.Key], entities.Run] = {}
         self._tmp: pathlib.Path = asset.mkdtemp()
 
     def projects(self) -> typing.Iterable[typing.Union[str, asset.Project.Key]]:
@@ -209,60 +209,60 @@ class Registry(asset.Registry, alias='mlflow'):
             self._projects[key] = experiment
             yield key
 
-    def lineages(self, project: asset.Project.Key) -> typing.Iterable[typing.Union[str, asset.Lineage.Key]]:
-        for run in self._client.list_runs(self._projects[project], **{self.TAG_LEVEL: self.LEVEL_LINEAGE}):
-            key = asset.Lineage.Key(run.data.tags[self.TAG_LINEAGE_KEY])
-            self._lineages[project, key] = run
+    def releases(self, project: asset.Project.Key) -> typing.Iterable[typing.Union[str, asset.Release.Key]]:
+        for run in self._client.list_runs(self._projects[project], **{self.TAG_LEVEL: self.LEVEL_RELEASE}):
+            key = asset.Release.Key(run.data.tags[self.TAG_RELEASE_KEY])
+            self._releases[project, key] = run
             yield key
 
     def generations(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key
+        self, project: asset.Project.Key, release: asset.Release.Key
     ) -> typing.Iterable[typing.Union[str, int, asset.Generation.Key]]:
         for run in self._client.list_runs(
             self._projects[project],
             **{
-                self.TAG_LINEAGE_REF: self._lineages[project, lineage].info.run_id,
+                self.TAG_RELEASE_REF: self._releases[project, release].info.run_id,
                 self.TAG_LEVEL: self.LEVEL_GENERATION,
             },
         ):
             if self.TAG_GENERATION_KEY not in run.data.tags:
                 continue  # unbounded generation
             key = asset.Generation.Key(run.data.tags[self.TAG_GENERATION_KEY])
-            self._generations[project, lineage, key] = run
+            self._generations[project, release, key] = run
             yield key
 
-    def pull(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> prj.Package:
+    def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prj.Package:
         return prj.Package(
             self._client.download_artifact(
-                self._lineages[project, lineage], self.PKGFILE, tempfile.mkdtemp(dir=self._tmp)
+                self._releases[project, release], self.PKGFILE, tempfile.mkdtemp(dir=self._tmp)
             )
         )
 
     def push(self, package: prj.Package) -> None:
         assert package.path.is_file(), 'Expecting file package'
         project = package.manifest.name
-        lineage = package.manifest.version
+        release = package.manifest.version
         with tempfile.TemporaryDirectory(dir=self._tmp) as tmp:
             path = pathlib.Path(tmp) / self.PKGFILE
             path.write_bytes(package.path.read_bytes())
-            self._client.upload_artifact(self._get_lineage(project, lineage), path)
+            self._client.upload_artifact(self._get_release(project, release), path)
 
     def read(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key, sid: uuid.UUID
+        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key, sid: uuid.UUID
     ) -> bytes:
         with tempfile.TemporaryDirectory(dir=self._tmp) as tmp:
             try:
                 artifact = self._client.download_artifact(
-                    self._generations[project, lineage, generation], f'{sid}.{self.STATESFX}', tmp
+                    self._generations[project, release, generation], f'{sid}.{self.STATESFX}', tmp
                 )
             except FileNotFoundError:
-                LOGGER.warning('No state %s under runid %s', sid, self._generations[project, lineage, generation])
+                LOGGER.warning('No state %s under runid %s', sid, self._generations[project, release, generation])
                 return bytes()
             with artifact.open('rb') as statefile:
                 return statefile.read()
 
-    def write(self, project: asset.Project.Key, lineage: asset.Lineage.Key, sid: uuid.UUID, state: bytes) -> None:
-        unbounded_generation = self._get_unbound_generation(project, lineage)
+    def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
+        unbounded_generation = self._get_unbound_generation(project, release)
         with tempfile.TemporaryDirectory(dir=self._tmp) as tmp:
             path = os.path.join(tmp, f'{sid}.{self.STATESFX}')
             with open(path, 'wb') as statefile:
@@ -270,55 +270,55 @@ class Registry(asset.Registry, alias='mlflow'):
             self._client.upload_artifact(unbounded_generation, path)
 
     def open(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key
+        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> asset.Tag:
         with tempfile.TemporaryDirectory(dir=self._tmp) as tmp:
             try:
                 artifact = self._client.download_artifact(
-                    self._generations[project, lineage, generation], self.TAGFILE, tmp
+                    self._generations[project, release, generation], self.TAGFILE, tmp
                 )
             except FileNotFoundError as err:
                 raise asset.Level.Listing.Empty(
-                    f'No tag under runid {self._generations[project, lineage, generation]}'
+                    f'No tag under runid {self._generations[project, release, generation]}'
                 ) from err
             with artifact.open('rb') as tagfile:
                 return asset.Tag.loads(tagfile.read())
 
     def close(
-        self, project: asset.Project.Key, lineage: asset.Lineage.Key, generation: asset.Generation.Key, tag: asset.Tag
+        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key, tag: asset.Tag
     ) -> None:
-        unbounded_generation = self._get_unbound_generation(project, lineage)
+        unbounded_generation = self._get_unbound_generation(project, release)
         with tempfile.TemporaryDirectory(dir=self._tmp) as tmp:
             path = os.path.join(tmp, self.TAGFILE)
             with open(path, 'wb') as tagfile:
                 tagfile.write(tag.dumps())
             self._client.upload_artifact(unbounded_generation, path)
-        self._generations[project, lineage, generation] = self._client.set_tag(
+        self._generations[project, release, generation] = self._client.set_tag(
             unbounded_generation, self.TAG_GENERATION_KEY, f'{generation}'
         )
 
-    def _get_lineage(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> entities.Run:
-        """Get the run instance for the lineage if exists or create a new one.
+    def _get_release(self, project: asset.Project.Key, release: asset.Release.Key) -> entities.Run:
+        """Get the run instance for the release if exists or create a new one.
 
         Args:
             project: Project key.
-            lineage: Lineage key.
+            release: Release key.
 
         Returns:
             Run entity instance.
         """
-        if (project, lineage) not in self._lineages:
-            self._lineages[project, lineage] = self._client.get_or_create_run(
-                project, **{self.TAG_LEVEL: self.LEVEL_LINEAGE, self.TAG_LINEAGE_KEY: lineage}
+        if (project, release) not in self._releases:
+            self._releases[project, release] = self._client.get_or_create_run(
+                project, **{self.TAG_LEVEL: self.LEVEL_RELEASE, self.TAG_RELEASE_KEY: release}
             )
-        return self._lineages[project, lineage]
+        return self._releases[project, release]
 
-    def _get_unbound_generation(self, project: asset.Project.Key, lineage: asset.Lineage.Key) -> entities.Run:
-        """Get the run instance for unbounded generation under the given lineage if exists or create a new one.
+    def _get_unbound_generation(self, project: asset.Project.Key, release: asset.Release.Key) -> entities.Run:
+        """Get the run instance for unbounded generation under the given release if exists or create a new one.
 
         Args:
             project: Project key.
-            lineage: Lineage key.
+            release: Release key.
 
         Returns:
             Run entity instance.
@@ -327,7 +327,7 @@ class Registry(asset.Registry, alias='mlflow'):
             project,
             **{
                 self.TAG_LEVEL: self.LEVEL_GENERATION,
-                self.TAG_LINEAGE_REF: self._get_lineage(project, lineage).info.run_id,
+                self.TAG_RELEASE_REF: self._get_release(project, release).info.run_id,
                 self.TAG_SESSION: self._session,
             },
         )

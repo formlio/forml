@@ -128,23 +128,19 @@ the following syntax:
 
 .. code-block:: none
 
-    usage: forml [-h] [-C CONFIG] [-L LOGLEVEL] {init,list,tune,train,apply,eval} ...
+    Usage: forml model [OPTIONS] COMMAND [ARGS]...
 
-    Lifecycle Management for Datascience Projects
+      Model command group.
 
-    positional arguments:
-      {init,list,tune,train,apply,eval}
-                            program subcommands (-h for individual description)
-        init                create skeleton for a new project
-        list                show the content of the selected registry
-        tune                tune new generation of given (or default) project lineage
-        train               train new generation of given (or default) project lineage
-        apply               apply given (or default) generation
-        eval                evaluate predictions of given (or default) generation
+    Options:
+      -R, --runner TEXT    Runtime runner reference.
+      -P, --registry TEXT  Persistent registry reference.
+      -I, --feed TEXT      Input feed references.
+      -O, --sink TEXT      Output sink reference.
+      --help               Show this message and exit.
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -C CONFIG, --config CONFIG
-                            additional config file
-      -L LOGLEVEL, --loglevel LOGLEVEL
-                            log with given level
+    Commands:
+      apply  Apply the given (or default) generation.
+      eval   Evaluate predictions of the given (or default) generation.
+      train  Train new generation of the given (or default) project release.
+      tune   Tune new generation of the given (or default) project release.
