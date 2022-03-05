@@ -64,7 +64,7 @@ class Model(typing.NamedTuple):
 @click.option('-I', '--feed', multiple=True, type=str, help='Input feed references.')
 @click.option('-O', '--sink', type=str, help='Output sink reference.')
 @click.pass_context
-def main(
+def group(
     context: core.Context,
     runner: typing.Optional[str],
     registry: typing.Optional[str],
@@ -75,7 +75,7 @@ def main(
     context.obj = Model(runner, registry, feed, sink)
 
 
-@main.command()
+@group.command()
 @click.argument('project', required=True)
 @click.argument('release', required=False)
 @click.argument('generation', required=False)
@@ -94,7 +94,7 @@ def tune(
     raise forml.MissingError(f'Tuning project {project}... not implemented')
 
 
-@main.command()
+@group.command()
 @click.argument('project', required=True)
 @click.argument('release', required=False)
 @click.argument('generation', required=False)
@@ -113,7 +113,7 @@ def train(
     model.launcher(project, release, generation).train(lower, upper)
 
 
-@main.command()
+@group.command()
 @click.argument('project', required=True)
 @click.argument('release', required=False)
 @click.argument('generation', required=False)
@@ -132,7 +132,7 @@ def apply(
     model.launcher(project, release, generation).apply(lower, upper)
 
 
-@main.command(name='eval')
+@group.command(name='eval')
 @click.argument('project', required=True)
 @click.argument('release', required=False)
 @click.argument('generation', required=False)

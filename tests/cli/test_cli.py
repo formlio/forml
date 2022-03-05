@@ -36,5 +36,5 @@ def cfg_file() -> pathlib.Path:
 def test_main(cfg_file: pathlib.Path):
     """Basic cli test."""
     runner = testing.CliRunner()
-    result = runner.invoke(cli.main, ['--config', str(cfg_file), 'project'])
+    result = runner.invoke(cli.group, ['--config', str(cfg_file), 'project'])
     assert result.exit_code == 0

@@ -35,15 +35,15 @@ class Project(typing.NamedTuple):
 @click.group(name='project')
 @click.option('--path', type=click.Path(exists=True, dir_okay=True), help='Project root directory.')
 @click.pass_context
-def main(context: core.Context, path: typing.Optional[str]):
+def group(context: core.Context, path: typing.Optional[str]):
     """Project command group."""
     context.obj = Project(path)
 
 
-@main.command()
+@group.command()
 @click.argument('name', required=True)
 @click.option('--package', type=str, help='Full python package path to be used.')
 @click.pass_obj
-def init(project: Project, name: str) -> None:
+def init(project: Project, name: str, package: typing.Optional[str]) -> None:
     """Create skeleton for a new project."""
     raise forml.MissingError(f'Creating project {name}... not implemented')
