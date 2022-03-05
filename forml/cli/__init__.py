@@ -18,11 +18,12 @@
 """
 ForML command line interface.
 """
-
+import sys
 import typing
 
 import click
 
+import forml
 from forml import conf
 
 from . import _model, _project, _registry
@@ -36,12 +37,20 @@ from . import _model, _project, _registry
     type=click.Choice(['debug', 'info', 'warning', 'error'], case_sensitive=False),
     help='Global loglevel to use.',
 )
-def main(config: typing.Optional[str], loglevel: typing.Optional[str]):  # pylint: disable=unused-argument
+def group(config: typing.Optional[str], loglevel: typing.Optional[str]):  # pylint: disable=unused-argument
     """Lifecycle Management for Datascience Projects."""
     if config:
         conf.PARSER.read(config)
 
 
-main.add_command(_model.main)
-main.add_command(_project.main)
-main.add_command(_registry.main)
+group.add_command(_model.group)
+group.add_command(_project.group)
+group.add_command(_registry.group)
+
+
+def main() -> None:
+    """Cli wrapper for handling ForML exceptions."""
+    try:
+        group()  # pylint: disable=no-value-for-parameter
+    except forml.AnyError as err:
+        print(err, file=sys.stderr)

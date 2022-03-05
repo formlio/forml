@@ -65,12 +65,12 @@ def lprint(listing: typing.Iterable[typing.Any]) -> None:
 @click.group(name='registry')
 @click.option('-P', '--provider', type=str, help='Persistent registry reference.')
 @click.pass_context
-def main(context: core.Context, provider: typing.Optional[str]):
+def group(context: core.Context, provider: typing.Optional[str]):
     """Model registry command group."""
     context.obj = Registry(provider)
 
 
-@main.command(name='list')
+@group.command(name='list')
 @click.argument('project', required=False)
 @click.argument('release', required=False)
 @click.pass_obj
