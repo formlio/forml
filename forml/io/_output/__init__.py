@@ -36,7 +36,7 @@ class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.pa
     def __init__(self, **writerkw):
         self._writerkw: dict[str, typing.Any] = writerkw
 
-    def save(self, schema: dsl.Schema) -> flow.Trunk:
+    def save(self, schema: dsl.Source.Schema) -> flow.Trunk:
         """Provide a pipeline composable segment implementing the publish action.
 
         Returns:
@@ -46,7 +46,7 @@ class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.pa
         return publisher.expand()
 
     @classmethod
-    def consumer(cls, schema: dsl.Schema, **kwargs: typing.Any) -> commit.Consumer:
+    def consumer(cls, schema: dsl.Source.Schema, **kwargs: typing.Any) -> commit.Consumer:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

@@ -83,7 +83,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
 
     @functools.lru_cache
     def _match_entry(  # pylint: disable=no-self-use
-        self, query: dsl.Schema, entry: dsl.Schema
+        self, query: dsl.Source.Schema, entry: dsl.Source.Schema
     ) -> tuple[bool, typing.Optional[typing.Sequence[int]]]:
         """Match the entry schema against the query.
 
@@ -99,7 +99,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
             query if not identical.
         """
 
-        def names(schema: dsl.Schema) -> typing.Iterable[str]:
+        def names(schema: dsl.Source.Schema) -> typing.Iterable[str]:
             """Extract the schema field names."""
             return (f.name for f in schema)
 
@@ -139,7 +139,9 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
         """
 
     @classmethod
-    def format(cls, data: layout.Native, schema: dsl.Schema) -> layout.Tabular:  # pylint: disable=unused-argument
+    def format(
+        cls, data: layout.Native, schema: dsl.Source.Schema  # pylint: disable=unused-argument
+    ) -> layout.Tabular:
         """Format the input data into the required layout.Tabular format.
 
         Args:

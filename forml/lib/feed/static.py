@@ -31,10 +31,13 @@ class Feed(io.Feed[None, layout.Array]):
 
     def __init__(self, data: typing.Mapping[dsl.Table, layout.ColumnMajor]):
         super().__init__()
-        self._sources: typing.Mapping[dsl.Source, None] = types.MappingProxyType({f: None for f in data})
+        self._sources: typing.Mapping[dsl.Source, None] = types.MappingProxyType({t: None for t in data})
         self._features: typing.Mapping[dsl.Feature, layout.Array] = types.MappingProxyType(
-            {c: s for t, f in data.items() for c, s in zip(t.features, f)}
+            {f: c for t, a in data.items() for f, c in zip(t.features, a)}
         )
+
+    def __reduce__(self):
+        return self.__class__, tuple([{t: [self._features[f] for f in t.features] for t in self._sources}])
 
     #  pylint: disable=unused-argument
     @classmethod

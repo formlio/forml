@@ -24,7 +24,7 @@ import pytest
 
 import forml
 from forml import io
-from forml.io import dsl, layout
+from forml.io import layout
 from forml.lib.runner import pyfunc
 from forml.runtime import asset, facility
 
@@ -40,17 +40,11 @@ class TestRunner(Runner):
         """Runner fixture."""
         return pyfunc.Runner(valid_instance, feed_instance, sink_instance)
 
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def input_request(testset: layout.RowMajor, source_query: dsl.Query) -> layout.Entry:
-        """Request fixture."""
-        return source_query.schema, layout.Dense.from_rows(testset)
-
     def test_train(self, runner: facility.Runner):
         """Overridden train test."""
         with pytest.raises(forml.InvalidError, match='Invalid runner mode'):
             super().test_train(runner)
 
-    def test_call(self, runner: pyfunc.Runner, input_request: layout.Entry, generation_prediction: layout.Array):
+    def test_call(self, runner: pyfunc.Runner, input_entry: layout.Entry, generation_prediction: layout.Array):
         """Pyfunc call mode test."""
-        assert tuple(runner.call(input_request)[1]) == generation_prediction
+        assert tuple(runner.call(input_entry)[1]) == generation_prediction

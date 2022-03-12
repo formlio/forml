@@ -32,20 +32,22 @@ LOGGER = logging.getLogger(__name__)
 class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
     """Base class for writer implementation."""
 
-    def __init__(self, schema: dsl.Schema, **kwargs: typing.Any):
-        self._schema: dsl.Schema = schema
+    def __init__(self, schema: dsl.Source.Schema, **kwargs: typing.Any):
+        self._schema: dsl.Source.Schema = schema
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, data: layout.RowMajor) -> layout.Result:
+    def __call__(self, data: layout.RowMajor) -> layout.Outcome:
         LOGGER.debug('Starting to publish')
         self.write(self.format(data, self._schema), **self._kwargs)
         return self._schema, data
 
     @classmethod
-    def format(cls, data: layout.RowMajor, schema: dsl.Schema) -> layout.Native:  # pylint: disable=unused-argument
+    def format(
+        cls, data: layout.RowMajor, schema: dsl.Source.Schema  # pylint: disable=unused-argument
+    ) -> layout.Native:
         """Format the output data into the required payload.Native format.
 
         Args:

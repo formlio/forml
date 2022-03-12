@@ -17,49 +17,55 @@
 """
 Runtime service facility.
 """
-
+import asyncio
 import functools
 import typing
 
 from forml import io, project
-from forml.io import dsl, layout
-from forml.lib.runner import pyfunc
+from forml.io import layout
 from forml.runtime import asset
 
+from . import worker
 
-class Sink(io.Sink):
-    """Dummy sink that only returns combo of the schema and the payload."""
 
-    @classmethod
-    def consumer(cls, schema: dsl.Schema, **kwargs: typing.Any) -> io.Consumer:
-        return lambda d: (schema, d)
+class Dispatcher:
+    """Caching executor dispatcher."""
+
+    def __init__(
+        self,
+        feeds: io.Importer,
+        processes: typing.Optional[int] = None,
+        loop: typing.Optional[asyncio.AbstractEventLoop] = None,
+    ):
+        self._feeds: io.Importer = feeds
+        self._processes: typing.Optional[int] = processes
+        self._loop: typing.Optional[asyncio.AbstractEventLoop] = loop
+        self._cache: dict[asset.Instance, worker.Executor] = {}
+
+    def __call__(self, instance: asset.Instance, entry: layout.Entry) -> asyncio.Future[layout.Outcome]:
+        if instance not in self._cache:
+            executor = worker.Executor(
+                instance, self._feeds.match(instance.project.source.extract.apply), self._processes
+            )
+            self._cache[instance] = executor
+        outcome = self._cache[instance].apply(entry)
+        return asyncio.wrap_future(outcome, loop=self._loop)
 
 
 class Engine:
     """Serving engine implementation."""
 
-    RUNNER_SLOTS = 32
-    """How many runner instances to hold in cache."""
-
     def __init__(
-        self, inventory: asset.Inventory, registry: asset.Directory, feeds: io.Importer, runner_slots: int = 32
+        self,
+        inventory: asset.Inventory,
+        registry: asset.Directory,
+        feeds: io.Importer,
+        processes: typing.Optional[int] = None,
+        loop: typing.Optional[asyncio.AbstractEventLoop] = None,
     ):
-        @functools.lru_cache(runner_slots)
-        def get_runner_cached(instance: asset.Instance) -> pyfunc.Runner:
-            """Helper for creating a runner for the given instance.
-
-            Args:
-                instance: Product assets.
-
-            Returns:
-                Instance of thePyFunc runner.
-            """
-            return pyfunc.Runner(instance, feeds.match(instance.project.source.extract.apply), sink)
-
-        sink: Sink = Sink()
         self._inventory: asset.Inventory = inventory
         self._registry: asset.Directory = registry
-        self._get_runner: typing.Callable[[asset.Instance], pyfunc.Runner] = get_runner_cached
+        self._dispatcher: Dispatcher = Dispatcher(feeds, processes, loop)
 
     @functools.lru_cache
     def _get_descriptor(self, application: str) -> project.Descriptor:
@@ -73,7 +79,7 @@ class Engine:
         """
         return self._inventory.get(application)
 
-    def apply(self, application: str, request: layout.Request) -> layout.Response:
+    async def apply(self, application: str, request: layout.Request) -> layout.Response:
         """Engine predict entrypoint.
 
         Args:
@@ -86,5 +92,5 @@ class Engine:
         descriptor = self._get_descriptor(application)
         entry = descriptor.decode(request)
         instance = descriptor.select(self._registry, entry)
-        result = self._get_runner(instance).call(entry)
+        result = await self._dispatcher(instance, entry)
         return descriptor.encode(result, entry, request.accept)

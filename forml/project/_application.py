@@ -74,12 +74,12 @@ class Descriptor(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def encode(
-        cls, result: layout.Result, entry: layout.Entry, encoding: typing.Sequence[layout.Encoding]
+        cls, outcome: layout.Outcome, entry: layout.Entry, encoding: typing.Sequence[layout.Encoding]
     ) -> layout.Response:
         """Encode the application result into a native response to be passed back by the engine.
 
         Args:
-            result: Output to be encoded.
+            outcome: Output to be encoded.
             entry: Decoded input query entry.
             encoding: Accepted encoding media types.
 

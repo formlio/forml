@@ -18,6 +18,7 @@
 """
 ForML asset access unit tests.
 """
+import pickle
 import typing
 
 # pylint: disable=no-self-use
@@ -48,6 +49,10 @@ class TestInstance:
         """Test instance equality."""
         assert hash(valid_instance) == hash(clone)
         assert valid_instance == clone
+
+    def test_serializable(self, valid_instance: asset.Instance):
+        """Test instance serializability."""
+        assert pickle.loads(pickle.dumps(valid_instance)) == valid_instance
 
 
 class TestState:

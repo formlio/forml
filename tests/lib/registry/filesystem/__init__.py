@@ -20,6 +20,7 @@ ForML persistent unit tests.
 """
 # pylint: disable=no-self-use
 import abc
+import pickle
 import typing
 import uuid
 
@@ -127,3 +128,7 @@ class Registry(metaclass=abc.ABCMeta):
     ):
         """Registry checkout unit test."""
         assert populated.open(project_name, project_release, valid_generation) == generation_tag
+
+    def test_serializable(self, populated: asset.Registry):
+        """Test registry serializability."""
+        assert pickle.loads(pickle.dumps(populated)) == populated

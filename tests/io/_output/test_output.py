@@ -36,10 +36,10 @@ class TestExporter:
             return tuple.__new__(cls, [reference, {'identity': identity}])
 
     @pytest.fixture(scope='session')
-    def modal(self, io_reference: str) -> io.Exporter:
+    def modal(self, sink_reference: str) -> io.Exporter:
         """Sink.Mode based handle fixture."""
-        apply = self.Conf(io_reference, 'apply')
-        eval_ = self.Conf(io_reference, 'eval')
+        apply = self.Conf(sink_reference, 'apply')
+        eval_ = self.Conf(sink_reference, 'eval')
         return io.Exporter(conf.Sink.Mode([apply, eval_]))
 
     @pytest.fixture(scope='session')

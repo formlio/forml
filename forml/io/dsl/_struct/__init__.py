@@ -43,6 +43,8 @@ class Field(typing.NamedTuple):
 
 
 class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
-    """Base class for table schema definitions. Note the meta class is actually going to turn it into an instance
-    of frame.Table.
+    """Base class for table schema definitions.
+
+    Note the meta class is actually going to turn it into an instance of frame.Table which itself has a ``.schema``
+    attribute derived from this class and represented using dsl.Source.Schema.
     """

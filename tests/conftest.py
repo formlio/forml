@@ -32,11 +32,10 @@ import pytest
 from forml import flow, io
 from forml import project as prj
 from forml.io import dsl, layout
-from forml.io.dsl import parser as parsmod
 from forml.lib.pipeline import topology
 from forml.runtime import asset
 
-from . import helloworld_schema
+from . import helloworld
 
 
 class WrappedActor:
@@ -106,29 +105,25 @@ def actor_spec(
 @pytest.fixture(scope='session')
 def trainset() -> layout.RowMajor:
     """Trainset fixture."""
-    return (
-        ('smith', 'oxford', 1, 1),
-        ('black', 'cambridge', 2, 1),
-        ('harris', 'stanford', 3, 3),
-    )
+    return helloworld.TRAINSET
 
 
 @pytest.fixture(scope='session')
-def trainset_features(trainset: layout.RowMajor) -> layout.RowMajor:
+def trainset_features() -> layout.RowMajor:
     """Trainset features fixture."""
-    return layout.Dense.from_rows(trainset).take_columns([0, 1, 2]).to_rows()
+    return helloworld.TRAINSET_FEATURES
 
 
 @pytest.fixture(scope='session')
-def trainset_labels(trainset: layout.RowMajor) -> layout.Array:
+def trainset_labels() -> layout.Array:
     """Trainset labels fixture."""
-    return layout.Dense.from_rows(trainset).to_columns()[-1]
+    return helloworld.TRAINSET_LABELS
 
 
 @pytest.fixture(scope='session')
-def testset(trainset_features: layout.RowMajor) -> layout.RowMajor:
+def testset() -> layout.RowMajor:
     """Testset fixture."""
-    return trainset_features
+    return helloworld.TESTSET
 
 
 @pytest.fixture(scope='session')
@@ -156,7 +151,7 @@ def actor_prediction(
 @pytest.fixture(scope='session')
 def project_path() -> pathlib.Path:
     """Test project path."""
-    return pathlib.Path(__file__).parent / 'helloworld'
+    return pathlib.Path(__file__).parent / 'helloworld.4ml'
 
 
 @pytest.fixture(scope='session')
@@ -240,77 +235,6 @@ def registry(
     project_package: prj.Package,
 ) -> asset.Registry:
     """Registry fixture (multiprocess/thread safe)."""
-
-    class Registry(asset.Registry):
-        """Fixture registry implementation."""
-
-        def projects(self) -> typing.Iterable[str]:
-            with lock:
-                return content.keys()
-
-        def releases(self, project: asset.Project.Key) -> typing.Iterable[asset.Release.Key]:
-            with lock:
-                return content[project].keys()
-
-        def generations(
-            self, project: asset.Project.Key, release: asset.Release.Key
-        ) -> typing.Iterable[asset.Generation.Key]:
-            try:
-                with lock:
-                    return content[project][release][1].keys()
-            except KeyError as err:
-                raise asset.Level.Invalid(f'Invalid release ({release})') from err
-
-        def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prj.Package:
-            with lock:
-                return content[project][release][0]
-
-        def push(self, package: prj.Package) -> None:
-            raise NotImplementedError()
-
-        def read(
-            self,
-            project: asset.Project.Key,
-            release: asset.Release.Key,
-            generation: asset.Generation.Key,
-            sid: uuid.UUID,
-        ) -> bytes:
-            with lock:
-                if sid not in content[project][release][1][generation][0].states:
-                    raise asset.Level.Invalid(f'Invalid state id ({sid})')
-                idx = content[project][release][1][generation][0].states.index(sid)
-                return content[project][release][1][generation][1][idx]
-
-        def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
-            with lock:
-                unbound[sid] = state
-
-        def open(
-            self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
-        ) -> asset.Tag:
-            try:
-                with lock:
-                    return content[project][release][1][generation][0]
-            except KeyError as err:
-                raise asset.Level.Invalid(f'Invalid generation ({release}.{generation})') from err
-
-        def close(
-            self,
-            project: asset.Project.Key,
-            release: asset.Release.Key,
-            generation: asset.Generation.Key,
-            tag: asset.Tag,
-        ) -> None:
-            with lock:
-                assert set(tag.states).issubset(unbound.keys())
-                assert (
-                    project in content
-                    and release in content[project]
-                    and generation not in content[project][release][1]
-                )
-                content[project][release][1][generation] = (tag, tuple(unbound[k] for k in tag.states))
-                unbound.clear()
-
     with multiprocessing.Manager() as manager:
         lock = manager.RLock()
         content = manager.dict(
@@ -325,7 +249,7 @@ def registry(
             }
         )
         unbound: dict[uuid.UUID, bytes] = manager.dict()
-        yield Registry()
+        yield helloworld.Registry(content, unbound, lock)
 
 
 @pytest.fixture(scope='function')
@@ -352,110 +276,64 @@ def source_query(project_components) -> dsl.Query:
 
 
 @pytest.fixture(scope='session')
+def input_entry(testset: layout.RowMajor, source_query: dsl.Query) -> layout.Entry:
+    """Entry fixture."""
+    return source_query.schema, layout.Dense.from_rows(testset)
+
+
+@pytest.fixture(scope='session')
+def generation_prediction() -> layout.Array:
+    """Stateful prediction fixture."""
+    return 3, 6, 9
+
+
+@pytest.fixture(scope='session')
 def person_table() -> dsl.Table:
     """Base table fixture."""
-    return helloworld_schema.Person
+    return helloworld.Person
 
 
 @pytest.fixture(scope='session')
 def student_table() -> dsl.Table:
     """Extended table fixture."""
-    return helloworld_schema.Student
+    return helloworld.Student
 
 
 @pytest.fixture(scope='session')
 def school_table() -> dsl.Table:
     """School table fixture."""
-    return helloworld_schema.School
+    return helloworld.School
 
 
 @pytest.fixture(scope='session')
-def io_reference() -> str:
-    """Dummy feed/sink reference fixture."""
-    return 'dummy'
-
-
-@pytest.fixture(scope='session')
-def feed_type(
-    io_reference: str,
-    person_table: dsl.Table,
-    student_table: dsl.Table,
-    school_table: dsl.Table,
-    trainset: layout.RowMajor,
-    testset: layout.RowMajor,  # pylint: disable=unused-argument
-) -> type[io.Feed]:
+def feed_type() -> type[io.Feed]:
     """Dummy feed fixture."""
-
-    class Feed(io.Feed[str, str], alias=io_reference):
-        """Dummy feed for unit-testing purposes."""
-
-        class Reader(io.Feed.Reader[str, str, layout.RowMajor]):
-            """Dummy reader that returns either the trainset or testset fixtures."""
-
-            class Parser(parsmod.Visitor[str, str]):
-                """Dummy parser that returns string keyword of `trainset` or `testset` depending on the number
-                of projected columns."""
-
-                resolve_feature = (
-                    generate_alias
-                ) = generate_expression = generate_join = generate_literal = generate_set = lambda *_: ''
-                generate_reference = lambda *_: ('', '')
-
-                def generate_element(self, origin: str, element: str) -> str:
-                    return f'{origin}-{element}'
-
-                def generate_query(
-                    self,
-                    source: str,
-                    features: typing.Sequence[str],
-                    where: typing.Optional[str],
-                    groupby: typing.Sequence[str],
-                    having: typing.Optional[str],
-                    orderby: typing.Sequence[tuple[str, dsl.Ordering.Direction]],
-                    rows: typing.Optional[dsl.Rows],
-                ) -> str:
-                    return 'testset' if len(features) == len(testset[0]) else 'trainset'
-
-            @classmethod
-            def parser(
-                cls,
-                sources: typing.Mapping[dsl.Source, parsmod.Source],
-                features: typing.Mapping[dsl.Feature, parsmod.Feature],
-            ) -> parsmod.Visitor:
-                return cls.Parser(sources, features)  # pylint: disable=abstract-class-instantiated
-
-            @classmethod
-            def read(cls, statement: str, **kwargs: typing.Any) -> layout.RowMajor:
-                return testset if statement == 'testset' else trainset
-
-        def __init__(self, identity: str, **readerkw):
-            super().__init__(**readerkw)
-            self.identity: str = identity
-
-        @property
-        def sources(self) -> typing.Mapping[dsl.Source, parsmod.Source]:
-            """Abstract method implementation."""
-            return {
-                student_table.join(person_table, student_table.surname == person_table.surname).source: 'pupil',
-                person_table: 'person',
-                student_table: 'student',
-                school_table: 'school',
-            }
-
-    return Feed
+    return helloworld.Feed
 
 
 @pytest.fixture(scope='session')
 def feed_instance(feed_type: type[io.Feed]) -> io.Feed:
-    """Feed instance fixture"""
+    """Feed instance fixture."""
     return feed_type(identity='test')
 
 
 @pytest.fixture(scope='session')
-def sink_type(io_reference: str) -> type[io.Sink]:  # pylint: disable=unused-argument
+def feed_reference(feed_type: type[io.Feed]) -> str:
+    """Feed instance reference fixture."""
+    return f'{feed_type.__module__}:{feed_type.__qualname__}'
+
+
+@pytest.fixture(scope='session')
+def sink_reference() -> str:
+    """Dummy sink reference fixture."""
+    return 'dummy'
+
+
+@pytest.fixture(scope='session')
+def sink_type(sink_reference: str) -> type[io.Sink]:  # pylint: disable=unused-argument
     """Dummy sink fixture."""
 
-    class Sink(io.Sink, alias=io_reference):
+    class Sink(io.Sink, alias=sink_reference):
         """Dummy sink for unit-testing purposes."""
 
         class Writer(io.Sink.Writer[layout.RowMajor]):

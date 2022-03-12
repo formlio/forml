@@ -19,7 +19,7 @@
 Dummy project source.
 """
 
-import helloworld_schema as schema
+import helloworld as schema
 
 from forml import project
 from forml.io import dsl, layout

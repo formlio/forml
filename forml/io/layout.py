@@ -130,9 +130,9 @@ class Dense(Tabular):
         return self.from_columns(self._rows.T.take(indices, axis=0))
 
 
-Entry = tuple[dsl.Schema, Tabular]
+Entry = tuple[dsl.Source.Schema, Tabular]
 """Product level input type."""
-Result = tuple[dsl.Schema, RowMajor]
+Outcome = tuple[dsl.Source.Schema, RowMajor]
 """Product level output type."""
 
 

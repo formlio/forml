@@ -18,7 +18,8 @@
 Static feed unit tests.
 """
 # pylint: disable=no-self-use
-
+import pickle
+import typing
 
 import numpy
 import pytest
@@ -54,7 +55,7 @@ class TestFeed:
         assert numpy.array_equal(reader(table.query).to_rows(), testset)
 
     def test_unsupported(self, reader: io.Feed.Reader, table: dsl.Table):
-        """Test unsuported operations."""
+        """Test unsupported operations."""
         with pytest.raises(dsl.UnsupportedError):
             reader(table.where(table.score > 1))
         with pytest.raises(dsl.UnsupportedError):
@@ -65,3 +66,13 @@ class TestFeed:
             reader(table.limit(1))
         with pytest.raises(dsl.UnsupportedError):
             reader(table.select(table.score + 1))
+
+    def test_serializable(self, feed: static.Feed):
+        """Test instance serializability."""
+
+        def flatten(features: typing.Mapping[dsl.Feature, layout.Array]) -> typing.Mapping[dsl.Feature, tuple]:
+            """Helper for flattening the features."""
+            return {f: tuple(c) for f, c in features.items()}
+
+        # pylint: disable=protected-access
+        assert flatten(pickle.loads(pickle.dumps(feed))._features) == flatten(feed._features)

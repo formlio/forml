@@ -20,6 +20,7 @@ ETL schema types.
 """
 import abc
 import collections
+import copyreg
 import enum
 import functools
 import inspect
@@ -47,6 +48,76 @@ class Rows(typing.NamedTuple):
 
 class Source(tuple, metaclass=abc.ABCMeta):
     """Source base class."""
+
+    class Schema(type):
+        """Meta class for schema type ensuring consistent hashing."""
+
+        def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
+            seen = set()
+            existing = collections.ChainMap(
+                *(
+                    {f.name: k}
+                    for b in bases
+                    if isinstance(b, Source.Schema)
+                    for c in reversed(inspect.getmro(b))
+                    for k, f in c.__dict__.items()
+                    if isinstance(f, _struct.Field) and k not in seen and not seen.add(k)
+                )
+            )
+            if existing and len(existing.maps) > len(existing):
+                raise _exception.GrammarError(f'Colliding base classes in schema {name}')
+            for key, field in namespace.items():
+                if not isinstance(field, _struct.Field):
+                    continue
+                if not field.name:
+                    namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
+                if field.name in existing and existing[field.name] != key:
+                    raise _exception.GrammarError(f'Colliding field name {field.name} in schema {name}')
+                existing[field.name] = key
+            cls = super().__new__(mcs, name, bases, namespace)
+            cls.__qualname__ = f'{name}.schema'
+            return cls
+
+        def __hash__(cls):
+            # pylint: disable=not-an-iterable
+            return functools.reduce(operator.xor, (hash(f) for f in cls), 0)
+
+        def __eq__(cls, other: 'Source.Schema'):
+            return len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
+
+        def __len__(cls):
+            return sum(1 for _ in cls)  # pylint: disable=not-an-iterable
+
+        def __repr__(cls):
+            return f'{cls.__module__}:{cls.__qualname__}'
+
+        @functools.lru_cache
+        def __getitem__(cls, name: str) -> '_struct.Field':
+            try:
+                return getattr(cls, name)
+            except AttributeError:
+                for field in cls:  # pylint: disable=not-an-iterable
+                    if name == field.name:
+                        return field
+            raise KeyError(f'Unknown field {name}')
+
+        def __iter__(cls) -> typing.Iterator['_struct.Field']:
+            return iter(
+                {
+                    k: f
+                    for c in reversed(inspect.getmro(cls))
+                    for k, f in c.__dict__.items()
+                    if isinstance(f, _struct.Field)
+                }.values()
+            )
+
+    copyreg.pickle(
+        Schema,
+        lambda s: (
+            Source.Schema,
+            (s.__name__, s.__bases__, {k: f for k, f in s.__dict__.items() if isinstance(f, _struct.Field)}),
+        ),
+    )
 
     class Visitor:
         """Source visitor."""
@@ -127,14 +198,14 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
     @property
     @functools.lru_cache
-    def schema(self) -> type['_struct.Schema']:
+    def schema(self) -> 'Source.Schema':
         """Get the schema type for this source.
 
         Returns:
             Schema type.
         """
-        return Table.Schema(
-            f'{self.__class__.__name__}Schema',
+        return self.Schema(
+            self.__class__.__name__,
             (_struct.Schema.schema,),
             {(c.name or f'_{i}'): _struct.Field(c.kind, c.name) for i, c in enumerate(self.features)},
         )
@@ -446,7 +517,7 @@ class Reference(Origin):
         return tuple(series.Element(self, c.name) for c in self.instance.features)
 
     @property
-    def schema(self) -> type['_struct.Schema']:
+    def schema(self) -> Source.Schema:
         return self.instance.schema
 
     def reference(self, name: typing.Optional[str] = None) -> 'Reference':
@@ -467,71 +538,11 @@ class Table(Origin):
     This type can be used either as metaclass or as a base class to inherit from.
     """
 
-    class Schema(type):
-        """Meta class for schema type ensuring consistent hashing."""
-
-        def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
-            seen = set()
-            existing = collections.ChainMap(
-                *(
-                    {f.name: k}
-                    for b in bases
-                    if isinstance(b, Table.Schema)
-                    for c in reversed(inspect.getmro(b))
-                    for k, f in c.__dict__.items()
-                    if isinstance(f, _struct.Field) and k not in seen and not seen.add(k)
-                )
-            )
-            if existing and len(existing.maps) > len(existing):
-                raise _exception.GrammarError(f'Colliding base classes in schema {name}')
-            for key, field in namespace.items():
-                if not isinstance(field, _struct.Field):
-                    continue
-                if not field.name:
-                    namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
-                if field.name in existing and existing[field.name] != key:
-                    raise _exception.GrammarError(f'Colliding field name {field.name} in schema {name}')
-                existing[field.name] = key
-            return super().__new__(mcs, name, bases, namespace)
-
-        def __hash__(cls):
-            # pylint: disable=not-an-iterable
-            return functools.reduce(operator.xor, (hash(f) for f in cls), 0)
-
-        def __eq__(cls, other: type['_struct.Schema']):
-            return len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
-
-        def __len__(cls):
-            return sum(1 for _ in cls)  # pylint: disable=not-an-iterable
-
-        def __repr__(cls):
-            return f'{cls.__module__}:{cls.__qualname__}'
-
-        @functools.lru_cache
-        def __getitem__(cls, name: str) -> '_struct.Field':
-            try:
-                return getattr(cls, name)
-            except AttributeError:
-                for field in cls:  # pylint: disable=not-an-iterable
-                    if name == field.name:
-                        return field
-            raise KeyError(f'Unknown field {name}')
-
-        def __iter__(cls) -> typing.Iterator['_struct.Field']:
-            return iter(
-                {
-                    k: f
-                    for c in reversed(inspect.getmro(cls))
-                    for k, f in c.__dict__.items()
-                    if isinstance(f, _struct.Field)
-                }.values()
-            )
-
-    schema: type['_struct.Schema'] = property(operator.itemgetter(0))
+    schema: Source.Schema = property(operator.itemgetter(0))
 
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
-        schema: typing.Union[str, type['_struct.Schema']],
+        schema: typing.Union[str, Source.Schema],
         bases: typing.Optional[tuple[type]] = None,
         namespace: typing.Optional[dict[str, typing.Any]] = None,
     ):
