@@ -110,6 +110,7 @@ class Pool(context.SpawnProcess):
 
         def run(self) -> None:
             """Worker loop."""
+            LOGGER.debug('Worker loop %s starting', self.name)
             while not self._stopped.is_set():
                 try:
                     task: Task = self._tasks.get(timeout=1)
@@ -121,6 +122,7 @@ class Pool(context.SpawnProcess):
                     self._results.put_nowait(task.failure(err))
                     self._stopped.set()
                     raise err
+            LOGGER.debug('Worker loop %s quiting', self.name)
 
     def __init__(
         self,
@@ -142,6 +144,7 @@ class Pool(context.SpawnProcess):
 
     def run(self) -> None:
         """Pool loop."""
+        LOGGER.debug('Worker pool %s starting', self.name)
         runner: pyfunc.Runner = pyfunc.Runner(self._instance, self._feed, self.Sink())
         pool: list[context.ForkProcess] = [
             self.Worker(runner, self._tasks, self._results, self._stopped, name=f'{self.name}:{i}')
@@ -154,6 +157,7 @@ class Pool(context.SpawnProcess):
             self._stopped.set()
         for worker in pool:
             worker.join()
+        LOGGER.debug('Worker pool %s quiting', self.name)
 
     def stop(self) -> None:
         """Stop the pool."""
@@ -182,6 +186,7 @@ class Executor(threading.Thread):
 
     def run(self) -> None:
         """Executor loop."""
+        LOGGER.debug('Executor loop %s starting', self.name)
         while self._pool.is_alive():
             if self._stopped.is_set():
                 break
@@ -196,6 +201,7 @@ class Executor(threading.Thread):
             del self._pending[result.id]
         else:
             self._stopped.set()
+        LOGGER.debug('Executor loop %s quiting', self.name)
 
     def apply(self, entry: layout.Entry) -> futures.Future[layout.Outcome]:
         """Submit the given entry data to the processing pool and return a future result instance.

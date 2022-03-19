@@ -236,11 +236,10 @@ class Inventory(_provider.Interface, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def put(self, application: str, descriptor: 'prj.Descriptor.Handle') -> None:
+    def put(self, descriptor: 'prj.Descriptor.Handle') -> None:
         """Store the application descriptor into the inventory.
 
         Args:
-            application: Unique application name.
             descriptor: Application descriptor handle.
         """
         raise NotImplementedError()

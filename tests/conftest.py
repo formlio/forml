@@ -149,15 +149,15 @@ def actor_prediction(
 
 
 @pytest.fixture(scope='session')
-def project_path() -> pathlib.Path:
-    """Test project path."""
-    return pathlib.Path(__file__).parent / 'helloworld.4ml'
+def project_package() -> prj.Package:
+    """Test project package fixture."""
+    return helloworld.PACKAGE
 
 
 @pytest.fixture(scope='session')
-def project_package(project_path: pathlib.Path) -> prj.Package:
-    """Test project package fixture."""
-    return prj.Package(project_path)
+def project_path(project_package: prj.Package) -> pathlib.Path:
+    """Test project path."""
+    return project_package.path
 
 
 @pytest.fixture(scope='session')
@@ -284,7 +284,7 @@ def input_entry(testset: layout.RowMajor, source_query: dsl.Query) -> layout.Ent
 @pytest.fixture(scope='session')
 def generation_prediction() -> layout.Array:
     """Stateful prediction fixture."""
-    return 3, 6, 9
+    return helloworld.GENERATION_PREDICTION
 
 
 @pytest.fixture(scope='session')
@@ -362,3 +362,27 @@ def sink_output() -> multiprocessing.Queue:
 def sink_instance(sink_type: type[io.Sink], sink_output: multiprocessing.Queue) -> io.Sink:
     """Sink instance fixture"""
     return sink_type(identity='test', queue=sink_output)
+
+
+@pytest.fixture(scope='session')
+def descriptor_handle() -> prj.Descriptor.Handle:
+    """Application descriptor handle fixture."""
+    return prj.Descriptor.Handle(helloworld.__file__)
+
+
+@pytest.fixture(scope='session')
+def descriptor(descriptor_handle: prj.Descriptor.Handle) -> type[prj.Descriptor]:
+    """Application descriptor fixture."""
+    return descriptor_handle.descriptor
+
+
+@pytest.fixture(scope='session')
+def application(descriptor: type[prj.Descriptor]) -> str:
+    """Application name fixture."""
+    return descriptor.application
+
+
+@pytest.fixture(scope='function')
+def inventory(descriptor: type[prj.Descriptor]) -> asset.Inventory:
+    """Inventory fixture."""
+    return helloworld.Inventory([descriptor])

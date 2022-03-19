@@ -42,8 +42,21 @@ class Field(typing.NamedTuple):
         return self if name == self.name else Field(self.kind, name)
 
 
+def schema(*fields: Field, name: typing.Optional[str] = None) -> frame.Source.Schema:
+    """Utility for programmatic schema assembly.
+
+    Args:
+        *fields: Schema field list.
+        name: Optional schema name.
+
+    Returns:
+        Assembled schema type.
+    """
+    return frame.Source.Schema(name or 'Schema', tuple(), {f'_{i}': f for i, f in enumerate(fields)})
+
+
 class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
-    """Base class for table schema definitions.
+    """Base class for table (schema) definitions.
 
     Note the meta class is actually going to turn it into an instance of frame.Table which itself has a ``.schema``
     attribute derived from this class and represented using dsl.Source.Schema.

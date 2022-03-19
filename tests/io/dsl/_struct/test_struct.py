@@ -32,6 +32,11 @@ class TestField:
         assert student_table.schema.dob.renamed('foo').name == 'foo'
 
 
+def test_schema(student_table: dsl.Table):
+    """Programmatic schema assembly test."""
+    assert dsl.schema(*student_table.schema) == student_table.schema
+
+
 class TestSchema:
     """Schema unit tests."""
 

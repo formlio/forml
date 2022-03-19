@@ -19,6 +19,8 @@
 Payload tests.
 """
 # pylint: disable=no-self-use
+import pickle
+
 import numpy
 import pytest
 
@@ -59,3 +61,17 @@ class TestDense:
         assert numpy.array_equal(layout.Dense.from_columns(columns).to_columns(), table.to_columns())
         if columns:
             assert table.take_columns([0]).to_columns().tolist() == [columns[0]]
+
+
+class TestRequest:
+    """Request unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def req() -> layout.Request:
+        """Request fixture."""
+        return layout.Request(b'foo', {'bar': 'baz'}, 'text')
+
+    def test_serializable(self, req: layout.Request):
+        """Request serializability test."""
+        assert pickle.loads(pickle.dumps(req)) == req

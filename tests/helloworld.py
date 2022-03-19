@@ -16,8 +16,9 @@
 # under the License.
 
 """Hello World schemas."""
-
+import json
 import multiprocessing
+import pathlib
 import typing
 import uuid
 
@@ -51,6 +52,7 @@ class School(dsl.Schema):
     name = dsl.Field(dsl.String())
 
 
+PACKAGE = prj.Package(pathlib.Path(__file__).parent / 'helloworld.4ml')
 TRAINSET = (
     ('smith', 'oxford', 1, 1),
     ('black', 'cambridge', 2, 1),
@@ -59,16 +61,25 @@ TRAINSET = (
 TRAINSET_FEATURES = layout.Dense.from_rows(TRAINSET).take_columns([0, 1, 2]).to_rows()
 TRAINSET_LABELS = layout.Dense.from_rows(TRAINSET).to_columns()[-1]
 TESTSET = TRAINSET_FEATURES
+GENERATION_PREDICTION = 3, 6, 9
 
 
 class Registry(asset.Registry):
     """Fixture registry implementation."""
 
-    def __init__(self, content: dict, unbound: dict, lock: multiprocessing.Lock):
+    ContentT = dict[
+        asset.Project.Key,
+        dict[
+            asset.Release.Key,
+            tuple[prj.Package, dict[asset.Generation.Key, tuple[asset.Tag, tuple[bytes]]]],
+        ],
+    ]
+
+    def __init__(self, content: ContentT, unbound: dict[uuid.UUID, bytes], lock: multiprocessing.Lock):
         super().__init__()
         self._lock: multiprocessing.Lock = lock
-        self._content: dict = content
-        self._unbound: dict = unbound
+        self._content: Registry.ContentT = content
+        self._unbound: dict[uuid.UUID, bytes] = unbound
 
     def projects(self) -> typing.Iterable[str]:
         with self._lock:
@@ -193,3 +204,46 @@ class Feed(io.Feed[str, str]):
             Student: 'student',
             School: 'school',
         }
+
+
+class HelloWorld(prj.Descriptor):
+    """Helloworld application descriptor."""
+
+    JSON = 'application/json'
+
+    @classmethod
+    def decode(cls, request: layout.Request) -> layout.Request.Decoded:
+        assert request.encoding == cls.JSON
+        data = json.loads(request.payload)
+        assert isinstance(data, typing.Mapping)
+        fields = (dsl.Field(dsl.reflect(v), name=k) for k, v in data.items())
+        return layout.Request.Decoded(dsl.schema(*fields), data)
+
+    @classmethod
+    def encode(
+        cls, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], meta: typing.Any
+    ) -> layout.Response:
+        assert cls.JSON in encoding
+        return layout.Response(json.dumps(outcome).encode('utf-8'), cls.JSON)
+
+    def select(self, registry: asset.Directory, meta: typing.Any, stats: layout.Stats) -> asset.Instance:
+        return asset.Instance(registry=registry, project=PACKAGE.manifest.name)
+
+
+prj.setup(HelloWorld)
+
+
+class Inventory(asset.Inventory):
+    """Fixture inventory implementation."""
+
+    def __init__(self, descriptors: typing.Iterable[type[prj.Descriptor]]):
+        self._content: dict[str, type[prj.Descriptor]] = {d.application: d for d in descriptors}
+
+    def list(self) -> typing.Iterable[str]:
+        return self._content.keys()
+
+    def get(self, application: str) -> type[prj.Descriptor]:
+        return self._content[application.lower()]
+
+    def put(self, descriptor: prj.Descriptor.Handle) -> None:
+        self._content[descriptor.descriptor.application] = descriptor.descriptor

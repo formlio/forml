@@ -29,7 +29,19 @@ from forml.runtime import asset
 from . import _component
 
 
-class Descriptor(abc.ABC):
+class Meta(abc.ABCMeta):
+    """Descriptor metaclass."""
+
+    def __call__(cls, *args, **kwargs):
+        raise TypeError('Descriptor not instantiable')
+
+    @property
+    def application(cls) -> str:
+        """Name of the application represented by this descriptor."""
+        return cls.__name__.lower()
+
+
+class Descriptor(metaclass=Meta):
     """Application descriptor."""
 
     class Handle(collections.namedtuple('Handle', 'path, descriptor')):
@@ -37,51 +49,51 @@ class Descriptor(abc.ABC):
 
         path: pathlib.Path
         """Filesystem path to the module containing the descriptor."""
-        descriptor: 'Descriptor'
-        """Actual descriptor instance."""
+        descriptor: type['Descriptor']
+        """Actual descriptor."""
 
         def __new__(cls, path: typing.Union[str, pathlib.Path]):
             path = pathlib.Path(path).resolve()
             if not path.is_file():
-                raise forml.InvalidError(f'Invalid descriptor module (plain file expected): {path}')
+                raise forml.InvalidError(f'Invalid descriptor module (file expected): {path}')
 
             descriptor = _component.load(path.with_suffix('').name, path.parent)
-            if not isinstance(descriptor, Descriptor):
-                raise forml.InvalidError('Invalid descriptor instance')
+            if not issubclass(descriptor, Descriptor):
+                raise forml.InvalidError(f'Invalid descriptor: {path}')
 
             return super().__new__(cls, path.resolve(), descriptor)
 
         def __getnewargs__(self):
             return tuple([self.path])
 
-    def serve(self, request: layout.Request, registry: asset.Directory) -> layout.Response:
-        entry = self.decode(request)
-        instance = self.select(registry, entry)
-
     @classmethod
     @abc.abstractmethod
-    def decode(cls, request: layout.Request) -> layout.Entry:
+    def decode(cls, request: layout.Request) -> layout.Request.Decoded:
         """Decode the raw payload into a format accepted by the application.
 
         Args:
             request: Native request format.
 
         Returns:
-            Decoded entry.
+            Decoded entry with optional custom (serializable!) metadata to be carried over into ``select`` and
+            ``encode``.
         """
         raise NotImplementedError()
 
     @classmethod
     @abc.abstractmethod
     def encode(
-        cls, outcome: layout.Outcome, entry: layout.Entry, encoding: typing.Sequence[layout.Encoding]
+        cls,
+        outcome: layout.Outcome,
+        encoding: typing.Sequence[layout.Encoding],
+        meta: typing.Any,
     ) -> layout.Response:
         """Encode the application result into a native response to be passed back by the engine.
 
         Args:
             outcome: Output to be encoded.
-            entry: Decoded input query entry.
             encoding: Accepted encoding media types.
+            meta: Optional metadata carried over from decode.
 
         Returns:
             Encoded native response.
@@ -89,12 +101,18 @@ class Descriptor(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def select(self, registry: asset.Directory, entry: layout.Entry, **kwargs) -> asset.Instance:
+    def select(
+        self,
+        registry: asset.Directory,
+        meta: typing.Any,
+        stats: layout.Stats,
+    ) -> asset.Instance:
         """Select the model instance to be used for serving the request.
 
         Args:
             registry: Model registry to select the model from.
-            entry: Decoded input query entry.
+            meta: Optional metadata carried over from decode.
+            stats: Application specific serving metrics.
 
         Returns:
             Model instance.

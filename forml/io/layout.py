@@ -20,6 +20,7 @@ Payload utilities.
 """
 import abc
 import collections
+import types
 import typing
 
 import numpy
@@ -136,11 +137,37 @@ Outcome = tuple[dsl.Source.Schema, RowMajor]
 """Product level output type."""
 
 
-class Request(collections.namedtuple('Request', 'payload, encoding, accept')):
+class Frame(collections.namedtuple('Frame', 'schema, data')):
+    """Bundle of a data and it's schema."""
+
+    schema: dsl.Source.Schema
+    data: Tabular
+
+
+class Request(collections.namedtuple('Request', 'payload, params, encoding, accept')):
     """Application level request object."""
+
+    class Decoded(collections.namedtuple('Decoded', 'entry, meta')):
+        """Decoded request case class."""
+
+        entry: Entry
+        """Input data."""
+
+        meta: typing.Any
+        """Custom (serializable!) metadata produced by (user-defined) decoder and carried through the system."""
+
+        def __new__(cls, schema: dsl.Source.Schema, data: Tabular, meta: typing.Any = None):
+            return super().__new__(cls, (schema, data), meta)
+
+        def __getnewargs__(self):
+            schema, data = self.entry
+            return schema, data, self.meta
 
     payload: bytes
     """Encoded payload."""
+
+    params: typing.Mapping[str, typing.Any]
+    """Optional application-level parameters."""
 
     encoding: Encoding
     """Encoding media type."""
@@ -148,8 +175,19 @@ class Request(collections.namedtuple('Request', 'payload, encoding, accept')):
     accept: tuple[Encoding]
     """Accepted response media type."""
 
-    def __new__(cls, payload: bytes, encoding: Encoding, accept: typing.Optional[typing.Sequence[Encoding]] = None):
-        return super().__new__(cls, payload, encoding, tuple(accept or [encoding]))
+    def __new__(
+        cls,
+        payload: bytes,
+        params: typing.Mapping[str, typing.Any],
+        encoding: Encoding,
+        accept: typing.Optional[typing.Sequence[Encoding]] = None,
+    ):
+        return super().__new__(
+            cls, payload, types.MappingProxyType(dict(params)), encoding, tuple(accept or [encoding])
+        )
+
+    def __getnewargs__(self):
+        return self.payload, dict(self.params), self.encoding, self.accept
 
 
 class Response(typing.NamedTuple):
@@ -160,3 +198,7 @@ class Response(typing.NamedTuple):
 
     encoding: Encoding
     """Encoding media type."""
+
+
+class Stats(typing.NamedTuple):
+    """Application specific serving metrics."""
