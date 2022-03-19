@@ -88,7 +88,7 @@ class TestWrapper:
         query = await wrapper.extract(application, testset_request, None)
         assert query.descriptor.application == application
         assert query.decoded.entry == testset_entry
-        assert query.instance.tag == valid_instance.tag
+        assert valid_instance == query.instance
 
     async def test_respond(
         self,
@@ -100,3 +100,18 @@ class TestWrapper:
         """Respond test."""
         response = await wrapper.respond(query, testset_outcome)
         assert tuple(v for r in json.loads(response.payload) for v in r.values()) == generation_prediction
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def frozen(registry: asset.Registry) -> dispatch.Wrapper.Frozen:
+        """Frozen registry fixture."""
+        return dispatch.Wrapper.Frozen(registry)
+
+    def test_frozen(self, frozen: dispatch.Wrapper.Frozen):
+        """Frozen registry tests."""
+        with pytest.raises(TypeError, match='Frozen registry is immutable'):
+            frozen.push(None)
+        with pytest.raises(TypeError, match='Frozen registry is immutable'):
+            frozen.write(None, None, None, None)
+        with pytest.raises(TypeError, match='Frozen registry is immutable'):
+            frozen.close(None, None, None, None)

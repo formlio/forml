@@ -34,59 +34,6 @@ from . import prediction
 LOGGER = logging.getLogger(__name__)
 
 
-class FrozenRegistry(asset.Registry):
-    """Registry proxy blocking all write attempts."""
-
-    ERROR = TypeError('FrozenRegistry is immutable')
-
-    def __init__(self, registry: asset.Registry):
-        super().__init__()
-        self._registry: asset.Registry = registry
-
-    def projects(self) -> typing.Iterable[typing.Union[str, asset.Project.Key]]:
-        return self._registry.projects()
-
-    def releases(self, project: asset.Project.Key) -> typing.Iterable[typing.Union[str, asset.Release.Key]]:
-        return self._registry.releases(project)
-
-    def generations(
-        self, project: asset.Project.Key, release: asset.Release.Key
-    ) -> typing.Iterable[typing.Union[str, int, asset.Generation.Key]]:
-        return self._registry.generations(project, release)
-
-    def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prjmod.Package:
-        return self._registry.pull(project, release)
-
-    def push(self, package: prjmod.Package) -> None:
-        raise self.ERROR
-
-    def read(
-        self,
-        project: asset.Project.Key,
-        release: asset.Release.Key,
-        generation: asset.Generation.Key,
-        sid: uuid.UUID,
-    ) -> bytes:
-        return self._registry.read(project, release, generation, sid)
-
-    def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
-        raise self.ERROR
-
-    def open(
-        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
-    ) -> asset.Tag:
-        return self._registry.open(project, release, generation)
-
-    def close(
-        self,
-        project: asset.Project.Key,
-        release: asset.Release.Key,
-        generation: asset.Generation.Key,
-        tag: asset.Tag,
-    ) -> None:
-        raise self.ERROR
-
-
 class Dealer:
     """Pool of prediction executors."""
 
@@ -122,6 +69,64 @@ class Dealer:
 class Wrapper:
     """(Un)Wrapper of engine requests and their responses."""
 
+    class Frozen(asset.Registry):
+        """Registry proxy blocking all write attempts."""
+
+        ERROR = TypeError('Frozen registry is immutable')
+
+        def __init__(self, registry: asset.Registry):
+            super().__init__()
+            self._registry: asset.Registry = registry
+
+        def __hash__(self):
+            return hash(self._registry)
+
+        def __eq__(self, other):
+            return self._registry == other
+
+        def projects(self) -> typing.Iterable[typing.Union[str, asset.Project.Key]]:
+            return self._registry.projects()
+
+        def releases(self, project: asset.Project.Key) -> typing.Iterable[typing.Union[str, asset.Release.Key]]:
+            return self._registry.releases(project)
+
+        def generations(
+            self, project: asset.Project.Key, release: asset.Release.Key
+        ) -> typing.Iterable[typing.Union[str, int, asset.Generation.Key]]:
+            return self._registry.generations(project, release)
+
+        def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prjmod.Package:
+            return self._registry.pull(project, release)
+
+        def push(self, package: prjmod.Package) -> None:
+            raise self.ERROR
+
+        def read(
+            self,
+            project: asset.Project.Key,
+            release: asset.Release.Key,
+            generation: asset.Generation.Key,
+            sid: uuid.UUID,
+        ) -> bytes:
+            return self._registry.read(project, release, generation, sid)
+
+        def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
+            raise self.ERROR
+
+        def open(
+            self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
+        ) -> asset.Tag:
+            return self._registry.open(project, release, generation)
+
+        def close(
+            self,
+            project: asset.Project.Key,
+            release: asset.Release.Key,
+            generation: asset.Generation.Key,
+            tag: asset.Tag,
+        ) -> None:
+            raise self.ERROR
+
     class Query(typing.NamedTuple):
         """Case class for holding query attributes."""
 
@@ -138,7 +143,7 @@ class Wrapper:
         loop: typing.Optional[asyncio.AbstractEventLoop] = None,
     ):
         self._inventory: asset.Inventory = inventory
-        self._registry: asset.Directory = asset.Directory(FrozenRegistry(registry))
+        self._registry: asset.Directory = asset.Directory(self.Frozen(registry))
         self._processes: futures.ProcessPoolExecutor = futures.ProcessPoolExecutor(max_workers)
         self._threads: futures.ThreadPoolExecutor = futures.ThreadPoolExecutor(max_workers)
         self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_running_loop()
