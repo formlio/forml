@@ -6,7 +6,7 @@
 #
 alabaster==0.7.12
     # via sphinx
-alembic==1.7.6
+alembic==1.7.7
     # via mlflow
 astroid==2.9.3
     # via pylint
@@ -40,7 +40,7 @@ cloudpickle==2.0.0
     #   mlflow
 coverage==6.3.2
     # via pytest-cov
-dask==2022.2.1
+dask==2022.3.0
     # via forml (setup.py)
 databricks-cli==0.16.4
     # via mlflow
@@ -82,13 +82,13 @@ greenlet==1.1.2
     # via sqlalchemy
 gunicorn==20.1.0
     # via mlflow
-identify==2.4.11
+identify==2.4.12
     # via pre-commit
 idna==3.3
     # via requests
 imagesize==1.3.0
     # via sphinx
-importlib-metadata==4.11.2
+importlib-metadata==4.11.3
     # via
     #   mlflow
     #   sphinx
@@ -98,7 +98,7 @@ isort==5.10.1
     # via
     #   forml (setup.py)
     #   pylint
-itsdangerous==2.1.0
+itsdangerous==2.1.1
     # via flask
 jinja2==3.0.3
     # via
@@ -114,9 +114,9 @@ libcst==0.3.23
     # via pycln
 locket==0.2.1
     # via partd
-mako==1.1.6
+mako==1.2.0
     # via alembic
-markupsafe==2.1.0
+markupsafe==2.1.1
     # via
     #   jinja2
     #   mako
@@ -179,7 +179,7 @@ protobuf==3.19.4
     # via mlflow
 py==1.11.0
     # via pytest
-pycln==1.2.4
+pycln==1.2.5
     # via forml (setup.py)
 pycodestyle==2.8.0
     # via flake8
@@ -193,15 +193,19 @@ pylint==2.12.2
     # via forml (setup.py)
 pyparsing==3.0.7
     # via packaging
-pytest==7.0.1
-    # via pytest-cov
+pytest==7.1.1
+    # via
+    #   pytest-asyncio
+    #   pytest-cov
+pytest-asyncio==0.18.2
+    # via forml (setup.py)
 pytest-cov==3.0.0
     # via forml (setup.py)
 python-dateutil==2.8.2
     # via
     #   pandas
     #   pyhive
-pytz==2021.3
+pytz==2022.1
     # via
     #   babel
     #   mlflow
@@ -297,9 +301,9 @@ typing-extensions==4.1.1
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-urllib3==1.26.8
+urllib3==1.26.9
     # via requests
-virtualenv==20.13.3
+virtualenv==20.13.4
     # via pre-commit
 websocket-client==1.3.1
     # via docker

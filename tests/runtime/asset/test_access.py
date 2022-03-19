@@ -18,10 +18,9 @@
 """
 ForML asset access unit tests.
 """
+# pylint: disable=no-self-use
 import pickle
 import typing
-
-# pylint: disable=no-self-use
 import uuid
 
 import pytest

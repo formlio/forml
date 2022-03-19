@@ -363,12 +363,12 @@ class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
         return Parser(sources, features)
 
     @classmethod
-    def format(cls, data: pandas.DataFrame, schema: dsl.Source.Schema) -> layout.Tabular:
+    def format(cls, schema: dsl.Source.Schema, data: pandas.DataFrame) -> layout.Tabular:
         """Pandas is already feature - just return the underlying array.
 
         Args:
-            data: Pandas dataframe.
             schema: Layout schema.
+            data: Pandas dataframe.
 
         Returns:
             Tabular output.

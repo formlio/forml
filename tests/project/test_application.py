@@ -20,6 +20,7 @@ Application descriptor tests.
 """
 # pylint: disable=no-self-use
 import pathlib
+import pickle
 
 import pytest
 
@@ -38,6 +39,10 @@ class TestDescriptor:
     def test_application(self, descriptor: type[project.Descriptor], application: str):
         """Test the retrieval of the descriptor application name."""
         assert descriptor.application == application
+
+    def test_serializable(self, descriptor: type[project.Descriptor]):
+        """Descriptor serializability test."""
+        assert pickle.loads(pickle.dumps(descriptor)) == descriptor
 
 
 class TestDescriptorHandle:

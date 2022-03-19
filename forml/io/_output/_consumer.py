@@ -41,18 +41,18 @@ class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
 
     def __call__(self, data: layout.RowMajor) -> layout.Outcome:
         LOGGER.debug('Starting to publish')
-        self.write(self.format(data, self._schema), **self._kwargs)
-        return self._schema, data
+        self.write(self.format(self._schema, data), **self._kwargs)
+        return layout.Outcome(self._schema, data)
 
     @classmethod
     def format(
-        cls, data: layout.RowMajor, schema: dsl.Source.Schema  # pylint: disable=unused-argument
+        cls, schema: dsl.Source.Schema, data: layout.RowMajor  # pylint: disable=unused-argument
     ) -> layout.Native:
         """Format the output data into the required payload.Native format.
 
         Args:
-            data: Output data.
             schema: Product schema.
+            data: Output data.
 
         Returns:
             Data formatted into layout.Native format.

@@ -100,9 +100,10 @@ class Descriptor(metaclass=Meta):
         """
         raise NotImplementedError()
 
+    @classmethod
     @abc.abstractmethod
     def select(
-        self,
+        cls,
         registry: asset.Directory,
         meta: typing.Any,
         stats: layout.Stats,

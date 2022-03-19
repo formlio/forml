@@ -276,15 +276,21 @@ def source_query(project_components) -> dsl.Query:
 
 
 @pytest.fixture(scope='session')
-def input_entry(testset: layout.RowMajor, source_query: dsl.Query) -> layout.Entry:
+def testset_entry(testset: layout.RowMajor, source_query: dsl.Query) -> layout.Entry:
     """Entry fixture."""
-    return source_query.schema, layout.Dense.from_rows(testset)
+    return layout.Entry(source_query.schema, layout.Dense.from_rows(testset))
 
 
 @pytest.fixture(scope='session')
 def generation_prediction() -> layout.Array:
     """Stateful prediction fixture."""
     return helloworld.GENERATION_PREDICTION
+
+
+@pytest.fixture(scope='session')
+def testset_outcome(generation_prediction: layout.Array) -> layout.Outcome:
+    """Outcome fixture."""
+    return layout.Outcome(dsl.schema(dsl.Field(dsl.Integer(), 'prediction')), generation_prediction)
 
 
 @pytest.fixture(scope='session')
@@ -386,3 +392,10 @@ def application(descriptor: type[prj.Descriptor]) -> str:
 def inventory(descriptor: type[prj.Descriptor]) -> asset.Inventory:
     """Inventory fixture."""
     return helloworld.Inventory([descriptor])
+
+
+@pytest.fixture(scope='session')
+def testset_request(descriptor: type[prj.Descriptor], testset_entry: layout.Entry) -> layout.Request:
+    """Request fixture."""
+    as_outcome = layout.Outcome(testset_entry.schema, testset_entry.data.to_rows())
+    return layout.Request(descriptor.encode(as_outcome, [descriptor.JSON], None).payload, descriptor.JSON)

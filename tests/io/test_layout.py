@@ -66,12 +66,6 @@ class TestDense:
 class TestRequest:
     """Request unit tests."""
 
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def req() -> layout.Request:
-        """Request fixture."""
-        return layout.Request(b'foo', {'bar': 'baz'}, 'text')
-
-    def test_serializable(self, req: layout.Request):
+    def test_serializable(self, testset_request: layout.Request):
         """Request serializability test."""
-        assert pickle.loads(pickle.dumps(req)) == req
+        assert pickle.loads(pickle.dumps(testset_request)) == testset_request

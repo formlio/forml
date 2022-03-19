@@ -88,7 +88,7 @@ class Pool(context.SpawnProcess):
 
         @classmethod
         def consumer(cls, schema: dsl.Source.Schema, **kwargs: typing.Any) -> io.Consumer:
-            return lambda d: (schema, d)
+            return lambda d: layout.Outcome(schema, d)
 
     class Worker(context.ForkProcess):
         """Pool worker implementation."""

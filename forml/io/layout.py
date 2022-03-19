@@ -82,6 +82,12 @@ class Dense(Tabular):
     def __init__(self, rows: numpy.ndarray):
         self._rows: numpy.ndarray = rows
 
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and numpy.array_equal(self._rows, other._rows)
+
+    def __hash__(self):
+        return hash(self._rows)
+
     @staticmethod
     def _to_ndarray(data: Array) -> numpy.ndarray:
         """Helper for creating a ndarray instance.
@@ -131,20 +137,21 @@ class Dense(Tabular):
         return self.from_columns(self._rows.T.take(indices, axis=0))
 
 
-Entry = tuple[dsl.Source.Schema, Tabular]
-"""Product level input type."""
-Outcome = tuple[dsl.Source.Schema, RowMajor]
-"""Product level output type."""
-
-
-class Frame(collections.namedtuple('Frame', 'schema, data')):
-    """Bundle of a data and it's schema."""
+class Entry(typing.NamedTuple):
+    """Product level input type."""
 
     schema: dsl.Source.Schema
     data: Tabular
 
 
-class Request(collections.namedtuple('Request', 'payload, params, encoding, accept')):
+class Outcome(typing.NamedTuple):
+    """Product level output type."""
+
+    schema: dsl.Source.Schema
+    data: RowMajor
+
+
+class Request(collections.namedtuple('Request', 'payload, encoding, params, accept')):
     """Application level request object."""
 
     class Decoded(collections.namedtuple('Decoded', 'entry, meta')):
@@ -157,20 +164,19 @@ class Request(collections.namedtuple('Request', 'payload, params, encoding, acce
         """Custom (serializable!) metadata produced by (user-defined) decoder and carried through the system."""
 
         def __new__(cls, schema: dsl.Source.Schema, data: Tabular, meta: typing.Any = None):
-            return super().__new__(cls, (schema, data), meta)
+            return super().__new__(cls, Entry(schema, data), meta)
 
         def __getnewargs__(self):
-            schema, data = self.entry
-            return schema, data, self.meta
+            return self.entry.schema, self.entry.data, self.meta
 
     payload: bytes
     """Encoded payload."""
 
-    params: typing.Mapping[str, typing.Any]
-    """Optional application-level parameters."""
-
     encoding: Encoding
     """Encoding media type."""
+
+    params: typing.Mapping[str, typing.Any]
+    """Optional application-level parameters."""
 
     accept: tuple[Encoding]
     """Accepted response media type."""
@@ -178,16 +184,16 @@ class Request(collections.namedtuple('Request', 'payload, params, encoding, acce
     def __new__(
         cls,
         payload: bytes,
-        params: typing.Mapping[str, typing.Any],
         encoding: Encoding,
+        params: typing.Optional[typing.Mapping[str, typing.Any]] = None,
         accept: typing.Optional[typing.Sequence[Encoding]] = None,
     ):
         return super().__new__(
-            cls, payload, types.MappingProxyType(dict(params)), encoding, tuple(accept or [encoding])
+            cls, payload, encoding, types.MappingProxyType(dict(params or {})), tuple(accept or [encoding])
         )
 
     def __getnewargs__(self):
-        return self.payload, dict(self.params), self.encoding, self.accept
+        return self.payload, self.encoding, dict(self.params), self.accept
 
 
 class Response(typing.NamedTuple):

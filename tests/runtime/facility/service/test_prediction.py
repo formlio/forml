@@ -25,7 +25,7 @@ import pytest
 from forml import io
 from forml.io import layout
 from forml.runtime import asset
-from forml.runtime.facility._service import worker
+from forml.runtime.facility._service import prediction
 
 
 class TestPool:
@@ -52,23 +52,23 @@ class TestPool:
         feed_instance: io.Feed,
         tasks: multiprocessing.Queue,
         results: multiprocessing.Queue,
-    ) -> worker.Pool:
+    ) -> prediction.Pool:
         """Pool fixture."""
         with multiprocessing.Manager() as manager:
-            yield worker.Pool(valid_instance, feed_instance, tasks, results, stopped=manager.Event(), processes=3)
+            yield prediction.Pool(valid_instance, feed_instance, tasks, results, stopped=manager.Event(), processes=3)
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def input_task(input_entry: layout.Entry) -> worker.Task:
+    def input_task(testset_entry: layout.Entry) -> prediction.Task:
         """Tasks fixture."""
-        return worker.Task(1, input_entry)
+        return prediction.Task(1, testset_entry)
 
     def test_work(
         self,
-        pool: worker.Pool,
+        pool: prediction.Pool,
         tasks: multiprocessing.Queue,
         results: multiprocessing.Queue,
-        input_task: worker.Task,
+        input_task: prediction.Task,
         generation_prediction: layout.Array,
     ):
         """Pool work unit testing."""
@@ -78,9 +78,9 @@ class TestPool:
         pool.start()
         assert pool.is_alive()
         tasks.put(input_task)
-        result: worker.Result = results.get()
+        result: prediction.Result = results.get()
         assert result.id == input_task.id
-        assert tuple(result.outcome[1]) == generation_prediction
+        assert tuple(result.outcome.data) == generation_prediction
         pool.stop()
         assert not pool.is_alive()
 
@@ -93,15 +93,17 @@ class TestExecutor:
     def executor(
         valid_instance: asset.Instance,
         feed_instance: io.Feed,
-    ) -> worker.Executor:
+    ) -> prediction.Executor:
         """Executor fixture."""
-        return worker.Executor(valid_instance, feed_instance, processes=3)
+        return prediction.Executor(valid_instance, feed_instance, processes=3)
 
-    def test_apply(self, executor: worker.Executor, input_entry: layout.Entry, generation_prediction: layout.Array):
+    def test_apply(
+        self, executor: prediction.Executor, testset_entry: layout.Entry, generation_prediction: layout.Array
+    ):
         """Apply unit test."""
         with pytest.raises(RuntimeError, match='Executor not running'):
-            executor.apply(input_entry)
+            executor.apply(testset_entry)
         executor.start()
-        outcome = executor.apply(input_entry)
-        assert tuple(outcome.result()[1]) == generation_prediction
+        outcome = executor.apply(testset_entry)
+        assert tuple(outcome.result().data) == generation_prediction
         executor.stop()

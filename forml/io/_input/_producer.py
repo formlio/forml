@@ -67,19 +67,18 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
             Data extracted according to the query.
         """
         if entry:
-            schema, data = entry
-            complete, indices = self._match_entry(query.schema, schema)
+            complete, indices = self._match_entry(query.schema, entry.schema)
             if not complete:
                 # here we would go into augmentation mode - when implemented
                 raise forml.InvalidError('Augmentation not yet supported')
-            return data.take_columns(indices) if indices else data
+            return entry.data.take_columns(indices) if indices else entry.data
 
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._features) as visitor:
             query.accept(visitor)
             result = visitor.fetch()
         LOGGER.debug('Starting ETL read using: %s', result)
-        return self.format(self.read(result, **self._kwargs), query.schema)
+        return self.format(query.schema, self.read(result, **self._kwargs))
 
     @functools.lru_cache
     def _match_entry(  # pylint: disable=no-self-use
@@ -140,13 +139,13 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
 
     @classmethod
     def format(
-        cls, data: layout.Native, schema: dsl.Source.Schema  # pylint: disable=unused-argument
+        cls, schema: dsl.Source.Schema, data: layout.Native  # pylint: disable=unused-argument
     ) -> layout.Tabular:
         """Format the input data into the required layout.Tabular format.
 
         Args:
-            data: Input data.
             schema: Data schema.
+            data: Input data.
 
         Returns:
             Data formatted into layout.Tabular format.

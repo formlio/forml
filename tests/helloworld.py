@@ -22,6 +22,8 @@ import pathlib
 import typing
 import uuid
 
+import numpy
+
 from forml import io
 from forml import project as prj
 from forml.io import dsl, layout
@@ -215,19 +217,42 @@ class HelloWorld(prj.Descriptor):
     def decode(cls, request: layout.Request) -> layout.Request.Decoded:
         assert request.encoding == cls.JSON
         data = json.loads(request.payload)
-        assert isinstance(data, typing.Mapping)
-        fields = (dsl.Field(dsl.reflect(v), name=k) for k, v in data.items())
-        return layout.Request.Decoded(dsl.schema(*fields), data)
+        first = tuple(data[0].items())
+        values = [[r[k] for k, _ in first] for r in data]
+        fields = (dsl.Field(dsl.reflect(v), name=k) for k, v in first)
+        return layout.Request.Decoded(dsl.schema(*fields), layout.Dense.from_rows(values))
 
     @classmethod
     def encode(
         cls, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], meta: typing.Any
     ) -> layout.Response:
         assert cls.JSON in encoding
-        return layout.Response(json.dumps(outcome).encode('utf-8'), cls.JSON)
+        if isinstance(outcome.data[0], (typing.Sequence, numpy.ndarray)):  # 2D
+            assert len(outcome.schema) == len(outcome.data[0])
+            values = [{f.name: v for f, v in zip(outcome.schema, r)} for r in outcome.data]
+        else:
+            assert len(outcome.schema) == 1
+            name = next(iter(outcome.schema)).name
+            values = [{name: r} for r in outcome.data]
+        return layout.Response(json.dumps(values).encode('utf-8'), cls.JSON)
 
-    def select(self, registry: asset.Directory, meta: typing.Any, stats: layout.Stats) -> asset.Instance:
-        return asset.Instance(registry=registry, project=PACKAGE.manifest.name)
+    @classmethod
+    def select(cls, registry: asset.Directory, meta: typing.Any, stats: layout.Stats) -> asset.Instance:
+        project = registry.get(PACKAGE.manifest.name)
+        for release in reversed(project.list()):
+            try:
+                generation = project.get(release).list().last
+            except asset.Level.Listing.Empty:
+                continue
+            break
+        else:
+            raise asset.Level.Listing.Empty(f'No models available for {project.key}')
+        return asset.Instance(
+            registry=registry,
+            project=project.key,
+            release=release,  # pylint: disable=undefined-loop-variable
+            generation=generation,
+        )
 
 
 prj.setup(HelloWorld)

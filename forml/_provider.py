@@ -125,7 +125,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
                 return
 
     def __new__(cls):
-        return super().__new__(cls, dict(), set())
+        return super().__new__(cls, dict(), set())  # pylint: disable=use-dict-literal
 
     def add(self, provider: type['Interface'], alias: typing.Optional[Alias], paths: set[Path]):
         """Push package to lazy loading stack.

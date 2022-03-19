@@ -35,6 +35,7 @@ EXTRAS_DEV = {
     'pycln',
     'pylint',
     'pytest-cov',
+    'pytest-asyncio',
 }
 
 EXTRAS_DOCS = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx_rtd_theme'}

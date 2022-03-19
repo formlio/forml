@@ -45,6 +45,6 @@ class TestRunner(Runner):
         with pytest.raises(forml.InvalidError, match='Invalid runner mode'):
             super().test_train(runner)
 
-    def test_call(self, runner: pyfunc.Runner, input_entry: layout.Entry, generation_prediction: layout.Array):
+    def test_call(self, runner: pyfunc.Runner, testset_entry: layout.Entry, generation_prediction: layout.Array):
         """Pyfunc call mode test."""
-        assert tuple(runner.call(input_entry)[1]) == generation_prediction
+        assert tuple(runner.call(testset_entry).data) == generation_prediction
