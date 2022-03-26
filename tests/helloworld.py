@@ -224,7 +224,7 @@ class HelloWorld(prj.Descriptor):
 
     @classmethod
     def encode(
-        cls, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], meta: typing.Any
+        cls, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], scope: typing.Any
     ) -> layout.Response:
         assert cls.JSON in encoding
         if isinstance(outcome.data[0], (typing.Sequence, numpy.ndarray)):  # 2D
@@ -237,7 +237,7 @@ class HelloWorld(prj.Descriptor):
         return layout.Response(json.dumps(values).encode('utf-8'), cls.JSON)
 
     @classmethod
-    def select(cls, registry: asset.Directory, meta: typing.Any, stats: layout.Stats) -> asset.Instance:
+    def select(cls, registry: asset.Directory, scope: typing.Any, stats: layout.Stats) -> asset.Instance:
         project = registry.get(PACKAGE.manifest.name)
         for release in reversed(project.list()):
             try:

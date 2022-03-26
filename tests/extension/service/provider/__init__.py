@@ -14,20 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-"""
-Service provider interface.
-"""
-import abc
-
-from forml import _provider as provmod
-
-from . import provider
-
-
-class Provider(provmod.Interface, path=[provider.__name__]):
-    """Service interface."""
-
-    @abc.abstractmethod
-    def serve(self) -> str:
-        """Just to make it abstract."""

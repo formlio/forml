@@ -140,3 +140,17 @@ class Sink(Section):
                 if not apply or not evaluate:
                     raise forml.MissingError(f'Missing default or explicit apply/eval sink references: [{cls.INDEX}]')
             return cls([Sink.resolve(apply), Sink.resolve(evaluate)])
+
+
+class Inventory(Section):
+    """Inventory provider."""
+
+    INDEX: str = conf.SECTION_INVENTORY
+    GROUP: str = conf.SECTION_INVENTORY
+
+
+class Gateway(Section):
+    """Gateway provider."""
+
+    INDEX: str = conf.SECTION_GATEWAY
+    GROUP: str = conf.SECTION_GATEWAY

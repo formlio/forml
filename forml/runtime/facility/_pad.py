@@ -18,27 +18,47 @@
 """
 Launch support components.
 """
+import functools
 import logging
 import typing
 
+import forml
 from forml import io
 from forml import project as prj
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
 from forml.runtime import asset
 
-from . import _agent
+from . import _agent, _service
 
 LOGGER = logging.getLogger(__name__)
+
+
+def ensure_instance(
+    config_or_instance: typing.Union[provcfg.Section, forml.Provider],
+    provider: type[forml.Provider],
+    *args,
+    **kwargs,
+) -> forml.Provider:
+    """Helper for returning a provider instance.
+
+    Args:
+        config_or_instance: Provider config or existing instance.
+        provider: Provider type.
+
+    Returns:
+        Provider instance.
+    """
+    if isinstance(config_or_instance, provcfg.Section):
+        config_or_instance = provider[config_or_instance.reference](*args, **(config_or_instance.params | kwargs))
+    return config_or_instance
 
 
 class Registry:
     """Registry util handle."""
 
     def __init__(self, registry: typing.Union[provcfg.Registry, asset.Registry]):
-        if isinstance(registry, provcfg.Registry):
-            registry = asset.Registry[registry.reference](**registry.params)
-        self._asset: asset.Directory = asset.Directory(registry)
+        self._asset: asset.Directory = asset.Directory(ensure_instance(registry, asset.Registry))
 
     def assets(
         self, project: typing.Optional[str], release: typing.Optional[str], generation: typing.Optional[str]
@@ -82,38 +102,13 @@ class Registry:
         return level.list()
 
 
-class Feeds:
-    """Feed pool and util handle."""
-
-    def __init__(self, *configs: typing.Union[provcfg.Feed, io.Feed]):
-        self._pool: io.Importer = io.Importer(*configs)
-
-    def match(self, query: dsl.Query) -> io.Feed:
-        """Select the feed that can provide for given query.
-
-        Args:
-            query: ETL query to be run against the required feed.
-
-        Returns:
-            Feed that's able to provide data for the given query.
-        """
-        return self._pool.match(query)
-
-    def list(self):
-        """List the sources provided by given feed.
-
-        Returns:
-        """
-        raise NotImplementedError()
-
-
 class Launcher:
     """Runner handle."""
 
-    def __init__(self, provider: provcfg.Runner, assets: asset.Instance, feeds: Feeds, sink: 'io.Exporter'):
-        self._provider: provcfg.Runner = provider
+    def __init__(self, runner: provcfg.Runner, assets: asset.Instance, feeds: io.Importer, sink: io.Exporter):
+        self._runner: provcfg.Runner = runner
         self._assets: asset.Instance = assets
-        self._feeds: Feeds = feeds
+        self._feeds: io.Importer = feeds
         self._sink: io.Exporter = sink
 
     @property
@@ -162,9 +157,26 @@ class Launcher:
         raise NotImplementedError()
 
     def __call__(self, query: dsl.Query, sink: typing.Optional[io.Sink] = None) -> _agent.Runner:
-        return _agent.Runner[self._provider.reference](
-            self._assets, self._feeds.match(query), sink, **self._provider.params
-        )
+        return ensure_instance(self._runner, _agent.Runner, self._assets, self._feeds.match(query), sink)
+
+
+class Service:
+    """Helper class for wrapping all requirements for a gateway service."""
+
+    def __init__(
+        self,
+        gateway: provcfg.Gateway,
+        inventory: typing.Union[provcfg.Inventory, asset.Inventory],
+        registry: typing.Union[provcfg.Registry, asset.Registry],
+        feeds: io.Importer,
+    ):
+        inventory: asset.Inventory = ensure_instance(inventory, asset.Inventory)
+        registry: asset.Registry = ensure_instance(registry, asset.Registry)
+        self._gateway: _service.Gateway = ensure_instance(gateway, _service.Gateway, inventory, registry, feeds)
+
+    def run(self) -> None:
+        """Launch the gateway service."""
+        self._gateway.main()
 
 
 class Platform:
@@ -176,13 +188,17 @@ class Platform:
         registry: typing.Optional[typing.Union[provcfg.Registry, asset.Registry]] = None,
         feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
         sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, io.Sink]] = None,
+        inventory: typing.Optional[typing.Union[provcfg.Inventory, asset.Inventory]] = None,
+        gateway: typing.Optional[provcfg.Gateway] = None,
     ):
         if isinstance(runner, str):
             runner = provcfg.Runner.resolve(runner)
         self._runner: provcfg.Runner = runner or provcfg.Runner.default
-        self._registry: Registry = Registry(registry or provcfg.Registry.default)
-        self._feeds: Feeds = Feeds(*(feeds or provcfg.Feed.default))
+        self._registry: typing.Union[provcfg.Registry, asset.Registry] = registry or provcfg.Registry.default
+        self._feeds: io.Importer = io.Importer(*(feeds or provcfg.Feed.default))
         self._sink: io.Exporter = io.Exporter(sink or provcfg.Sink.Mode.default)
+        self._inventory: typing.Union[provcfg.Inventory, asset.Inventory] = inventory or provcfg.Inventory.default
+        self._gateway: provcfg.Gateway = gateway or provcfg.Gateway.default
 
     def launcher(
         self,
@@ -200,22 +216,22 @@ class Platform:
         Returns:
             Runner handle.
         """
-        return Launcher(self._runner, self._registry.assets(project, release, generation), self._feeds, self._sink)
+        return Launcher(self._runner, self.registry.assets(project, release, generation), self._feeds, self._sink)
 
     @property
+    def service(self) -> Service:
+        """Service handle getter.
+
+        Returns:
+            Service handle.
+        """
+        return Service(self._gateway, self._inventory, self._registry, self._feeds)
+
+    @functools.cached_property
     def registry(self) -> Registry:
         """Registry handle getter.
 
         Returns:
             Registry handle.
         """
-        return self._registry
-
-    @property
-    def feeds(self) -> Feeds:
-        """Feeds handle getter.
-
-        Returns:
-            Feeds handle.
-        """
-        return self._feeds
+        return Registry(self._registry)

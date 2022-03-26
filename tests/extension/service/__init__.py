@@ -16,12 +16,18 @@
 # under the License.
 
 """
-Runtime launching subsystem.
+Service provider interface.
 """
+import abc
 
-from ._agent import Runner
-from ._pad import Launcher, Platform, Registry
-from ._pseudo import Virtual
-from ._service import Gateway
+import forml
 
-__all__ = ['Gateway', 'Platform', 'Launcher', 'Registry', 'Runner', 'Virtual']
+from . import provider
+
+
+class Provider(forml.Provider, path=[provider.__name__]):
+    """Service interface."""
+
+    @abc.abstractmethod
+    def serve(self) -> str:
+        """Just to make it abstract."""

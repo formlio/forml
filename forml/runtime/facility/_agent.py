@@ -23,7 +23,6 @@ import logging
 import typing
 
 import forml
-from forml import _provider as provmod
 from forml import flow, io
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
@@ -33,7 +32,7 @@ from forml.runtime.mode import evaluation
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(provmod.Interface, default=provcfg.Runner.default, path=provcfg.Runner.path):
+class Runner(forml.Provider, default=provcfg.Runner.default, path=provcfg.Runner.path):
     """Abstract base runner class to be extended by particular runner implementations."""
 
     def __init__(

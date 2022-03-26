@@ -16,14 +16,7 @@
 # under the License.
 
 """
-Dummy provider implementation.
+Gateway implementations.
 """
-from tests.provider import service
 
-
-class Provider(service.Provider, alias='dummy'):
-    """Provider implementation."""
-
-    def serve(self) -> str:
-        """No op."""
-        return 'dummy'
+__all__ = ['rest']

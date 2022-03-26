@@ -86,14 +86,14 @@ class Descriptor(metaclass=Meta):
         cls,
         outcome: layout.Outcome,
         encoding: typing.Sequence[layout.Encoding],
-        meta: typing.Any,
+        scope: typing.Any,
     ) -> layout.Response:
         """Encode the application result into a native response to be passed back by the engine.
 
         Args:
             outcome: Output to be encoded.
             encoding: Accepted encoding media types.
-            meta: Optional metadata carried over from decode.
+            scope: Optional metadata carried over from decode.
 
         Returns:
             Encoded native response.
@@ -105,14 +105,14 @@ class Descriptor(metaclass=Meta):
     def select(
         cls,
         registry: asset.Directory,
-        meta: typing.Any,
+        scope: typing.Any,
         stats: layout.Stats,
     ) -> asset.Instance:
         """Select the model instance to be used for serving the request.
 
         Args:
             registry: Model registry to select the model from.
-            meta: Optional metadata carried over from decode.
+            scope: Optional metadata carried over from decode.
             stats: Application specific serving metrics.
 
         Returns:

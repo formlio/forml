@@ -26,7 +26,7 @@ import click
 import forml
 from forml import conf
 
-from . import _model, _project, _registry
+from . import _application, _model, _project
 
 
 @click.group(name='forml')
@@ -45,7 +45,7 @@ def group(config: typing.Optional[str], loglevel: typing.Optional[str]):  # pyli
 
 group.add_command(_model.group)
 group.add_command(_project.group)
-group.add_command(_registry.group)
+group.add_command(_application.group)
 
 
 def main() -> None:

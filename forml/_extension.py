@@ -29,7 +29,7 @@ import forml
 LOGGER = logging.getLogger(__name__)
 
 
-def isabstract(cls: type['Interface']) -> bool:
+def isabstract(cls: type['Provider']) -> bool:
     """Extended version of inspect.isabstract that also considers any inner classes.
 
     Args:
@@ -44,7 +44,7 @@ def isabstract(cls: type['Interface']) -> bool:
 class Reference:
     """Provider reference base class/dispatcher."""
 
-    def __new__(cls, value: typing.Union[type['Interface'], str]):
+    def __new__(cls, value: typing.Union[type['Provider'], str]):
         if isinstance(value, str):
             if Qualifier.DELIMITER not in value:
                 return Alias(value)
@@ -127,7 +127,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
     def __new__(cls):
         return super().__new__(cls, dict(), set())  # pylint: disable=use-dict-literal
 
-    def add(self, provider: type['Interface'], alias: typing.Optional[Alias], paths: set[Path]):
+    def add(self, provider: type['Provider'], alias: typing.Optional[Alias], paths: set[Path]):
         """Push package to lazy loading stack.
 
         Args:
@@ -156,7 +156,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             )
             self.provider[ref] = provider
 
-    def get(self, reference: Reference) -> type['Interface']:
+    def get(self, reference: Reference) -> type['Provider']:
         """Get the registered provider or attempt to load all search paths packages that might be containing it.
 
         Args:
@@ -173,8 +173,8 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         return self.provider[reference]
 
 
-REGISTRY: dict[type['Interface'], Registry] = collections.defaultdict(Registry)
-DEFAULTS: dict[type['Interface'], tuple[str, typing.Mapping[str, typing.Any]]] = {}
+REGISTRY: dict[type['Provider'], Registry] = collections.defaultdict(Registry)
+DEFAULTS: dict[type['Provider'], tuple[str, typing.Mapping[str, typing.Any]]] = {}
 
 
 class Meta(abc.ABCMeta):
@@ -195,13 +195,13 @@ class Meta(abc.ABCMeta):
             DEFAULTS[cls] = default
         return cls
 
-    def __call__(cls, *args, **kwargs) -> 'Interface':
+    def __call__(cls, *args, **kwargs) -> 'Provider':
         if cls in DEFAULTS:
             reference, params = DEFAULTS[cls]
             return cls[reference](*args, **params | kwargs)  # pylint: disable=unsubscriptable-object
         return super().__call__(*args, **kwargs)
 
-    def __getitem__(cls, reference: typing.Any) -> type['Interface']:
+    def __getitem__(cls, reference: typing.Any) -> type['Provider']:
         if not isinstance(reference, str) and issubclass(cls, typing.Generic):
             return cls.__class_getitem__(reference)
         try:
@@ -228,7 +228,7 @@ class Meta(abc.ABCMeta):
         return hash(cls.__module__) ^ hash(cls.__qualname__)
 
 
-class Interface(metaclass=Meta):
+class Provider(metaclass=Meta):
     """Base class for service providers."""
 
     def __init_subclass__(cls, alias: typing.Optional[str] = None, path: typing.Optional[typing.Iterable[str]] = None):
@@ -246,5 +246,5 @@ class Interface(metaclass=Meta):
                 raise forml.UnexpectedError(f'Provider reference ({alias}) illegal on abstract class')
             alias = Alias(alias)
         path = {Registry.Path(p, explicit=True) for p in path or []}
-        for parent in (p for p in cls.__mro__ if issubclass(p, Interface) and p is not Interface):
+        for parent in (p for p in cls.__mro__ if issubclass(p, Provider) and p is not Provider):
             REGISTRY[parent].add(cls, alias, path)

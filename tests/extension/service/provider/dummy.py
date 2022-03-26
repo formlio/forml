@@ -16,12 +16,14 @@
 # under the License.
 
 """
-Runtime launching subsystem.
+Dummy provider implementation.
 """
+from tests.extension import service
 
-from ._agent import Runner
-from ._pad import Launcher, Platform, Registry
-from ._pseudo import Virtual
-from ._service import Gateway
 
-__all__ = ['Gateway', 'Platform', 'Launcher', 'Registry', 'Runner', 'Virtual']
+class Provider(service.Provider, alias='dummy'):
+    """Provider implementation."""
+
+    def serve(self) -> str:
+        """No op."""
+        return 'dummy'

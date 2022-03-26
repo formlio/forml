@@ -179,7 +179,7 @@ class Wrapper:
             Asset instance object and decoded version of the serving request.
         """
         decoded = descriptor.decode(request)
-        return descriptor.select(registry, decoded.meta, stats), decoded
+        return descriptor.select(registry, decoded.scope, stats), decoded
 
     async def extract(self, application: str, request: layout.Request, stats: layout.Stats) -> 'Wrapper.Query':
         """Extract the query parameters from the given request object belonging to the particular application.
@@ -213,7 +213,7 @@ class Wrapper:
             query.descriptor.encode,
             outcome,
             query.accept,
-            query.decoded.meta,
+            query.decoded.scope,
         )
 
     def shutdown(self) -> None:

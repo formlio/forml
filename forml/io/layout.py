@@ -154,20 +154,20 @@ class Outcome(typing.NamedTuple):
 class Request(collections.namedtuple('Request', 'payload, encoding, params, accept')):
     """Application level request object."""
 
-    class Decoded(collections.namedtuple('Decoded', 'entry, meta')):
+    class Decoded(collections.namedtuple('Decoded', 'entry, scope')):
         """Decoded request case class."""
 
         entry: Entry
         """Input data."""
 
-        meta: typing.Any
+        scope: typing.Any
         """Custom (serializable!) metadata produced by (user-defined) decoder and carried through the system."""
 
-        def __new__(cls, schema: dsl.Source.Schema, data: Tabular, meta: typing.Any = None):
-            return super().__new__(cls, Entry(schema, data), meta)
+        def __new__(cls, schema: dsl.Source.Schema, data: Tabular, scope: typing.Any = None):
+            return super().__new__(cls, Entry(schema, data), scope)
 
         def __getnewargs__(self):
-            return self.entry.schema, self.entry.data, self.meta
+            return self.entry.schema, self.entry.data, self.scope
 
     payload: bytes
     """Encoded payload."""

@@ -25,7 +25,7 @@ import typing
 import pytest
 
 import forml
-from forml import _provider as provmod
+from forml import _extension as extmod
 
 
 @pytest.fixture(scope='session')
@@ -49,11 +49,11 @@ def default(alias: str, params: typing.Mapping[str, typing.Any]) -> tuple[str, t
 @pytest.fixture(scope='session')
 def interface(
     default: tuple[str, typing.Mapping[str, typing.Any]]  # pylint: disable=unused-argument
-) -> type[provmod.Interface]:
+) -> type[forml.Provider]:
     """Provider fixture."""
     _T = typing.TypeVar('_T')
 
-    class Provider(provmod.Interface, typing.Generic[_T], default=default):
+    class Provider(forml.Provider, typing.Generic[_T], default=default):
         """Provider implementation."""
 
         def __init__(self, **kwargs):
@@ -70,9 +70,7 @@ def interface(
 
 
 @pytest.fixture(scope='session')
-def provider(
-    interface: type[provmod.Interface], alias: str  # pylint: disable=unused-argument
-) -> type[provmod.Interface]:
+def provider(interface: type[forml.Provider], alias: str) -> type[forml.Provider]:  # pylint: disable=unused-argument
     """Provider fixture."""
 
     class SubProvider(interface[set], alias=alias):
@@ -84,10 +82,10 @@ def provider(
     return SubProvider
 
 
-def test_isabstract(interface: type[provmod.Interface], provider: type[provmod.Interface]):
+def test_isabstract(interface: type[forml.Provider], provider: type[forml.Provider]):
     """Isabstract inspection unit test."""
-    assert provmod.isabstract(interface)
-    assert not provmod.isabstract(provider)
+    assert extmod.isabstract(interface)
+    assert not extmod.isabstract(provider)
 
 
 class TestInterface:
@@ -95,8 +93,8 @@ class TestInterface:
 
     def test_get(
         self,
-        interface: type[provmod.Interface],
-        provider: type[provmod.Interface],
+        interface: type[forml.Provider],
+        provider: type[forml.Provider],
         alias: str,
         params: typing.Mapping[str, typing.Any],
     ):
@@ -107,7 +105,7 @@ class TestInterface:
         with pytest.raises(forml.MissingError):
             assert provider['miss']
 
-    def test_collision(self, provider: type[provmod.Interface], alias: str):  # pylint: disable=unused-argument
+    def test_collision(self, provider: type[forml.Provider], alias: str):  # pylint: disable=unused-argument
         """Test a colliding provider key."""
         with pytest.raises(forml.UnexpectedError):
 

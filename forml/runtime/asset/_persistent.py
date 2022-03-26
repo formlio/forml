@@ -28,7 +28,7 @@ import typing
 import uuid
 
 import forml
-from forml import _provider, conf
+from forml import conf
 from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
 
 if typing.TYPE_CHECKING:
@@ -54,7 +54,7 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
     return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR))
 
 
-class Registry(_provider.Interface, default=provcfg.Registry.default, path=provcfg.Registry.path):
+class Registry(forml.Provider, default=provcfg.Registry.default, path=provcfg.Registry.path):
     """Top-level persistent registry abstraction."""
 
     def __init__(self, staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):
@@ -215,8 +215,8 @@ class Registry(_provider.Interface, default=provcfg.Registry.default, path=provc
         raise NotImplementedError()
 
 
-class Inventory(_provider.Interface, metaclass=abc.ABCMeta):
-    """Application descriptor storage."""
+class Inventory(forml.Provider, default=provcfg.Inventory.default, path=provcfg.Inventory.path):
+    """Application descriptor storage abstraction."""
 
     @abc.abstractmethod
     def list(self) -> typing.Iterable[str]:
