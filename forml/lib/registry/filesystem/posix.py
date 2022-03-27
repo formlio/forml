@@ -133,7 +133,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     TAGFILE = 'tag.toml'
     PKGFILE = f'package.{prj.Package.FORMAT}'
 
-    @functools.lru_cache
+    @functools.cache
     def project(self, project: asset.Project.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -145,7 +145,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self / project
 
-    @functools.lru_cache
+    @functools.cache
     def release(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -158,7 +158,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.project(project) / str(release)
 
-    @functools.lru_cache
+    @functools.cache
     def generation(
         self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
@@ -174,7 +174,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.release(project, release) / str(generation)
 
-    @functools.lru_cache
+    @functools.cache
     def package(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
         """Package file path of given project name/release.
 
@@ -187,7 +187,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.release(project, release) / self.PKGFILE
 
-    @functools.lru_cache
+    @functools.cache
     def state(
         self,
         sid: uuid.UUID,
@@ -210,7 +210,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             generation = self.STAGEDIR
         return self.generation(project, release, generation) / f'{sid}.{self.STATESFX}'
 
-    @functools.lru_cache
+    @functools.cache
     def tag(
         self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:

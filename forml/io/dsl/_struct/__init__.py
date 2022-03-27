@@ -23,6 +23,9 @@ import typing
 from . import frame
 from . import kind as kindmod
 
+if typing.TYPE_CHECKING:
+    from forml.io import layout
+
 
 class Field(typing.NamedTuple):
     """Schema field class."""
@@ -42,22 +45,38 @@ class Field(typing.NamedTuple):
         return self if name == self.name else Field(self.kind, name)
 
 
-def schema(*fields: Field, name: typing.Optional[str] = None) -> frame.Source.Schema:
-    """Utility for programmatic schema assembly.
-
-    Args:
-        *fields: Schema field list.
-        name: Optional schema name.
-
-    Returns:
-        Assembled schema type.
-    """
-    return frame.Source.Schema(name or 'Schema', tuple(), {f'_{i}': f for i, f in enumerate(fields)})
-
-
 class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     """Base class for table (schema) definitions.
 
     Note the meta class is actually going to turn it into an instance of frame.Table which itself has a ``.schema``
     attribute derived from this class and represented using dsl.Source.Schema.
     """
+
+    @staticmethod
+    def from_fields(*fields: Field, name: typing.Optional[str] = None) -> frame.Source.Schema:
+        """Utility for programmatic schema assembly.
+
+        Args:
+            *fields: Schema field list.
+            name: Optional schema name.
+
+        Returns:
+            Assembled schema.
+        """
+        return frame.Source.Schema(name or 'Schema', tuple(), {f'_{i}': f for i, f in enumerate(fields)})
+
+    @classmethod
+    def from_record(cls, record: 'layout.Native', name: typing.Optional[str] = None) -> frame.Source.Schema:
+        """Utility for programmatic schema inference.
+
+        Args:
+            record: Scalar or vector representing single record for which the schema should be inferred.
+            name: Optional schema name.
+
+        Returns:
+            Inferred schema.
+        """
+        if not hasattr(record, '__getitem__') or isinstance(record, (str, bytes)):  # wrap if scalar
+            record = [record]
+        fields = (Field(kindmod.reflect(v), name=f'c{i}') for i, v in enumerate(record))
+        return cls.from_fields(*fields, name)

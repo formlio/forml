@@ -139,7 +139,7 @@ class Cache:
     def __repr__(self):
         return repr(self.info)
 
-    @functools.lru_cache
+    @functools.cache
     def __call__(self, registry: '_persistent.Registry', *args, **kwargs):
         return getattr(registry, self._method)(*args, **kwargs)
 

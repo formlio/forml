@@ -220,13 +220,13 @@ class HelloWorld(prj.Descriptor):
         first = tuple(data[0].items())
         values = [[r[k] for k, _ in first] for r in data]
         fields = (dsl.Field(dsl.reflect(v), name=k) for k, v in first)
-        return layout.Request.Decoded(dsl.schema(*fields), layout.Dense.from_rows(values))
+        return layout.Request.Decoded(dsl.Schema.from_fields(*fields), layout.Dense.from_rows(values))
 
     @classmethod
     def encode(
         cls, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], scope: typing.Any
     ) -> layout.Response:
-        assert cls.JSON in encoding
+        assert {cls.JSON, '*/*'}.intersection(encoding)
         if isinstance(outcome.data[0], (typing.Sequence, numpy.ndarray)):  # 2D
             assert len(outcome.schema) == len(outcome.data[0])
             values = [{f.name: v for f, v in zip(outcome.schema, r)} for r in outcome.data]

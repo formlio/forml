@@ -40,6 +40,8 @@ QUERY = (
     .limit(10)
 )
 
+OUTPUT = dsl.Schema.from_fields()
+
 
 @topology.Mapper.operator
 @topology.Function.actor

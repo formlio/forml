@@ -133,7 +133,7 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         return super().__new__(cls, apply, train)
 
     @property
-    @functools.lru_cache
+    @functools.lru_cache(256)
     def persistent(self) -> typing.Sequence[uuid.UUID]:
         """Get the set of nodes with state that needs to be carried over between the apply/train modes.
 

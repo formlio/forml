@@ -47,12 +47,10 @@ class Engine:
         self._wrapper: dispatch.Wrapper = dispatch.Wrapper(inventory, registry, processes, loop)
         self._dealer: dispatch.Dealer = dispatch.Dealer(feeds, processes, loop)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def shutdown(self):
+        """Terminate the engine."""
         self._wrapper.shutdown()
-        self._dealer.discard()
+        self._dealer.shutdown()
 
     async def stats(self) -> layout.Stats:
         """Get the collected stats report."""
@@ -80,6 +78,8 @@ class Gateway(forml.Provider, default=provcfg.Gateway.default, path=provcfg.Gate
         inventory: typing.Optional[asset.Inventory] = None,
         registry: typing.Optional[asset.Registry] = None,
         feeds: typing.Optional[io.Importer] = None,
+        processes: typing.Optional[int] = None,
+        loop: typing.Optional[asyncio.AbstractEventLoop] = None,
         **_,
     ):
         if not inventory:
@@ -88,7 +88,14 @@ class Gateway(forml.Provider, default=provcfg.Gateway.default, path=provcfg.Gate
             registry = asset.Registry()
         if not feeds:
             feeds = io.Importer(io.Feed())
-        self._engine: Engine = Engine(inventory, registry, feeds)
+        self._engine: Engine = Engine(inventory, registry, feeds, processes=processes, loop=loop)
+
+    def __enter__(self):
+        self.run(self._engine.apply, self._engine.stats)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._engine.shutdown()
 
     @abc.abstractmethod
     def run(
@@ -100,5 +107,5 @@ class Gateway(forml.Provider, default=provcfg.Gateway.default, path=provcfg.Gate
 
     def main(self) -> None:
         """Frontend main method."""
-        with self._engine as engine:
-            self.run(engine.apply, engine.stats)
+        with self:
+            pass

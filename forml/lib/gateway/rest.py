@@ -17,6 +17,7 @@
 """
 Rest gateway provider.
 """
+import asyncio
 import cgi
 import functools
 import re
@@ -35,7 +36,7 @@ from forml.runtime import asset, facility
 _CSV = re.compile(r'\s*,\s*')
 
 
-@functools.lru_cache
+@functools.lru_cache(256)
 def parse_mime_header(value: str) -> typing.Sequence[str]:
     """Parse the mime header value.
 
@@ -111,10 +112,14 @@ class Gateway(facility.Gateway, alias='rest'):
         inventory: typing.Optional[asset.Inventory] = None,
         registry: typing.Optional[asset.Registry] = None,
         feeds: typing.Optional[io.Importer] = None,
-        **uvkw,
+        processes: typing.Optional[int] = None,
+        loop: typing.Optional[asyncio.AbstractEventLoop] = None,
+        server: typing.Callable[[applications.Starlette, ...], None] = uvicorn.run,
+        **kwargs,
     ):
-        super().__init__(inventory, registry, feeds)
-        self._uvkw = uvkw
+        super().__init__(inventory, registry, feeds, processes=processes, loop=loop)
+        self._server: typing.Callable[[applications.Starlette, ...], None] = server
+        self._kwargs = kwargs
 
     def run(
         self,
@@ -123,4 +128,4 @@ class Gateway(facility.Gateway, alias='rest'):
     ) -> None:
         routes = [Apply(apply), Stats(stats)]
         app = applications.Starlette(routes=routes, debug=True)
-        uvicorn.run(app, **self._uvkw)
+        self._server(app, **self._kwargs)

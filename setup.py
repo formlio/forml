@@ -29,6 +29,7 @@ EXTRAS_DEV = {
     'black',
     'flake8-colors',
     'flake8-bugbear',
+    'flake8-typing-imports',
     'isort',
     'pip-tools',
     'pre-commit',

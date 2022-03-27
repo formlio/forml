@@ -28,10 +28,6 @@ from forml.runtime import asset
 from forml.runtime.facility._service import dispatch
 
 
-class TestRegistry:
-    """Registry unit tests."""
-
-
 class TestDealer:
     """Dealer unit tests."""
 
@@ -41,7 +37,7 @@ class TestDealer:
         """Dealer fixture."""
         dealer = dispatch.Dealer(io.Importer(feed_instance), processes=3)
         yield dealer
-        dealer.discard()
+        dealer.shutdown()
 
     async def test_call(
         self,

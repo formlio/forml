@@ -721,7 +721,7 @@ class And(Logical, Infix):
     symbol = 'AND'
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def factors(self: 'And') -> 'Predicate.Factors':
         return self.left.factors & self.right.factors
 
@@ -732,7 +732,7 @@ class Or(Logical, Infix):
     symbol = 'OR'
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def factors(self: 'Or') -> 'Predicate.Factors':
         return self.left.factors | self.right.factors
 
@@ -800,7 +800,7 @@ class Comparison(Predicate):
             raise _exception.GrammarError(f'Invalid operands for {self} comparison')
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def factors(self: 'Comparison') -> Predicate.Factors:
         return Predicate.Factors(self) if len({f.origin for f in Column.dissect(self)}) == 1 else Predicate.Factors()
 

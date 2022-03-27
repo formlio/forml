@@ -59,7 +59,7 @@ class Dealer:
         outcome = self._cache[instance].apply(entry)
         return asyncio.wrap_future(outcome, loop=self._loop)
 
-    def discard(self) -> None:
+    def shutdown(self) -> None:
         """Stop and drop all the cached executors."""
         for executor in self._cache.values():
             executor.stop()
@@ -135,6 +135,22 @@ class Wrapper:
         accept: tuple[layout.Encoding]
         decoded: layout.Request.Decoded
 
+    class Executor:
+        """Helper for pool executor with lazy loop access."""
+
+        def __init__(self, pool: futures.Executor, loop: typing.Optional[asyncio.AbstractEventLoop]):
+            self._pool: futures.Executor = pool
+            self._loop: typing.Optional[asyncio.AbstractEventLoop] = loop
+
+        def __call__(self, *args) -> typing.Any:
+            if not self._loop:
+                self._loop = asyncio.get_running_loop()
+            return self._loop.run_in_executor(self._pool, *args)
+
+        def shutdown(self) -> None:
+            """Shut the executor down."""
+            self._pool.shutdown()
+
     def __init__(
         self,
         inventory: asset.Inventory,
@@ -144,11 +160,10 @@ class Wrapper:
     ):
         self._inventory: asset.Inventory = inventory
         self._registry: asset.Directory = asset.Directory(self.Frozen(registry))
-        self._processes: futures.ProcessPoolExecutor = futures.ProcessPoolExecutor(max_workers)
-        self._threads: futures.ThreadPoolExecutor = futures.ThreadPoolExecutor(max_workers)
-        self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_running_loop()
+        self._processes: Wrapper.Executor = self.Executor(futures.ProcessPoolExecutor(max_workers), loop)
+        self._threads: Wrapper.Executor = self.Executor(futures.ThreadPoolExecutor(max_workers), loop)
 
-    @functools.lru_cache
+    @functools.cache
     def _get_descriptor(self, application: str) -> prjmod.Descriptor:
         """Get the application descriptor.
 
@@ -192,10 +207,8 @@ class Wrapper:
         Returns:
             Extracted query parameters.
         """
-        descriptor = await self._loop.run_in_executor(self._threads, self._get_descriptor, application)
-        instance, decoded = await self._loop.run_in_executor(
-            self._processes, self._dispatch, descriptor, self._registry, request, stats
-        )
+        descriptor = await self._threads(self._get_descriptor, application)
+        instance, decoded = await self._processes(self._dispatch, descriptor, self._registry, request, stats)
         return self.Query(descriptor, instance, request.accept, decoded)
 
     async def respond(self, query: 'Wrapper.Query', outcome: layout.Outcome) -> layout.Response:
@@ -208,8 +221,7 @@ class Wrapper:
         Returns:
             Native encoded response.
         """
-        return await self._loop.run_in_executor(
-            self._processes,
+        return await self._processes(
             query.descriptor.encode,
             outcome,
             query.accept,

@@ -290,7 +290,7 @@ def generation_prediction() -> layout.Array:
 @pytest.fixture(scope='session')
 def testset_outcome(generation_prediction: layout.Array) -> layout.Outcome:
     """Outcome fixture."""
-    return layout.Outcome(dsl.schema(dsl.Field(dsl.Integer(), 'prediction')), generation_prediction)
+    return layout.Outcome(dsl.Schema.from_fields(dsl.Field(dsl.Integer(), 'prediction')), generation_prediction)
 
 
 @pytest.fixture(scope='session')

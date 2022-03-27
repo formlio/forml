@@ -32,14 +32,17 @@ LOGGER = logging.getLogger(__name__)
 class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
     """Base class for writer implementation."""
 
-    def __init__(self, schema: dsl.Source.Schema, **kwargs: typing.Any):
-        self._schema: dsl.Source.Schema = schema
+    def __init__(self, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any):
+        self._schema: typing.Optional[dsl.Source.Schema] = schema
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
     def __call__(self, data: layout.RowMajor) -> layout.Outcome:
+        if not self._schema:
+            LOGGER.warning('Inferring unknown output schema')
+            self._schema = dsl.Schema.from_record(data[0])
         LOGGER.debug('Starting to publish')
         self.write(self.format(self._schema, data), **self._kwargs)
         return layout.Outcome(self._schema, data)

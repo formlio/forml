@@ -32,7 +32,7 @@ class Function(evaluation.Metric):
     def __init__(
         self,
         metric: typing.Callable[[typing.Any, typing.Any], float],
-        reducer: typing.Callable[..., float] = lambda *m: statistics.mean(m),
+        reducer: typing.Callable[..., float] = lambda *m: statistics.mean(m),  # noqa: B008
     ):
         self._metric: flow.Spec = topology.Function.Actor.spec(function=metric)
         self._reducer: flow.Spec = topology.Function.Actor.spec(function=reducer)

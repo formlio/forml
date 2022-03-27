@@ -124,7 +124,7 @@ class Client:
         run.data.tags[key] = value
         return run
 
-    @functools.lru_cache
+    @functools.cache
     def get_or_create_experiment(self, name: str) -> entities.Experiment:
         """Get an experiment instance by name if exists or create a new one.
 
@@ -141,7 +141,7 @@ class Client:
             self._mlflow.restore_experiment(entity.experiment_id)
         return entity
 
-    @functools.lru_cache
+    @functools.cache
     def get_or_create_run(self, experiment: str, **tags: str) -> entities.Run:
         """Get a run instance matching the given tags if exists or create a new one.
 

@@ -34,7 +34,7 @@ repos:
   - id: mixed-line-ending
   - id: trailing-whitespace
 - repo: https://github.com/psf/black
-  rev: 22.1.0
+  rev: 22.3.0
   hooks:
   - id: black
     name: Black
@@ -58,6 +58,16 @@ repos:
     name: Sort import statements
     files: "\\.(py)$"
     args: [--settings-path=pyproject.toml]
+- repo: https://github.com/pycqa/pylint
+  rev: v2.13.4
+  hooks:
+  - id: pylint
+    args: ["--init-hook", "import sys; sys.path.insert(0, '.venv/lib/python3.9/site-packages/'), sys.path.insert(0, 'tests/')"]
+- repo: https://github.com/PyCQA/flake8
+  rev: 4.0.1
+  hooks:
+  - id: flake8
+    additional_dependencies: [flake8-bugbear, flake8-typing-imports]
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.1.13
   hooks:
@@ -114,19 +124,3 @@ repos:
     - --fuzzy-match-generates-todo
     files: >
       \.toml$|\.ini$|\.readthedocs$
-- repo: local
-  hooks:
-  - id: pylint
-    name: Pylint
-    exclude: ^examples/.*$
-    entry: "env PYTHONPATH=.:tests pylint"
-    language: system
-    files: \.py$
-    pass_filenames: true
-    require_serial: true
-  - id: flake8
-    name: Flake8
-    entry: flake8
-    language: system
-    files: \.py$
-    pass_filenames: true

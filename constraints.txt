@@ -12,7 +12,7 @@ anyio==3.5.0
     # via starlette
 asgiref==3.5.0
     # via uvicorn
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 attrs==21.4.0
     # via
@@ -20,7 +20,7 @@ attrs==21.4.0
     #   pytest
 babel==2.9.1
     # via sphinx
-black==22.1.0
+black==22.3.0
     # via forml (setup.py)
 certifi==2021.10.8
     # via requests
@@ -28,7 +28,7 @@ cfgv==3.3.1
     # via pre-commit
 charset-normalizer==2.0.12
     # via requests
-click==8.0.4
+click==8.1.2
     # via
     #   black
     #   databricks-cli
@@ -45,10 +45,12 @@ cloudpickle==2.0.0
     #   mlflow
 coverage==6.3.2
     # via pytest-cov
-dask==2022.3.0
+dask==2022.4.0
     # via forml (setup.py)
-databricks-cli==0.16.4
+databricks-cli==0.16.5
     # via mlflow
+dill==0.3.4
+    # via pylint
 distlib==0.3.4
     # via virtualenv
 docker==5.0.3
@@ -65,15 +67,18 @@ flake8==4.0.1
     # via
     #   flake8-bugbear
     #   flake8-colors
-flake8-bugbear==22.1.11
+    #   flake8-typing-imports
+flake8-bugbear==22.3.23
     # via forml (setup.py)
 flake8-colors==0.1.9
     # via forml (setup.py)
-flask==2.0.3
+flake8-typing-imports==1.12.0
+    # via forml (setup.py)
+flask==2.1.1
     # via
     #   mlflow
     #   prometheus-flask-exporter
-fsspec==2022.2.0
+fsspec==2022.3.0
     # via dask
 future==0.18.2
     # via pyhive
@@ -99,6 +104,7 @@ imagesize==1.3.0
     # via sphinx
 importlib-metadata==4.11.3
     # via
+    #   flask
     #   mlflow
     #   sphinx
 iniconfig==1.1.1
@@ -107,9 +113,9 @@ isort==5.10.1
     # via
     #   forml (setup.py)
     #   pylint
-itsdangerous==2.1.1
+itsdangerous==2.1.2
     # via flask
-jinja2==3.0.3
+jinja2==3.1.1
     # via
     #   flask
     #   sphinx
@@ -148,6 +154,8 @@ numpy==1.22.3
     #   pandas
     #   scikit-learn
     #   scipy
+oauthlib==3.2.0
+    # via databricks-cli
 packaging==21.3
     # via
     #   dask
@@ -198,7 +206,9 @@ pygments==2.11.2
     # via sphinx
 pyhive==0.6.5
     # via forml (setup.py)
-pylint==2.12.2
+pyjwt==2.3.0
+    # via databricks-cli
+pylint==2.13.4
     # via forml (setup.py)
 pyparsing==3.0.7
     # via packaging
@@ -206,7 +216,7 @@ pytest==7.1.1
     # via
     #   pytest-asyncio
     #   pytest-cov
-pytest-asyncio==0.18.2
+pytest-asyncio==0.18.3
     # via forml (setup.py)
 pytest-cov==3.0.0
     # via forml (setup.py)
@@ -254,7 +264,7 @@ sniffio==1.2.0
     # via anyio
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==4.4.0
+sphinx==4.5.0
     # via
     #   forml (setup.py)
     #   sphinx-rtd-theme
@@ -274,7 +284,7 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
-sqlalchemy==1.4.32
+sqlalchemy==1.4.34
     # via
     #   alembic
     #   forml (setup.py)
@@ -292,18 +302,18 @@ toml==0.10.2
     #   forml (setup.py)
     #   pre-commit
     #   pycln
-    #   pylint
 tomli==2.0.1
     # via
     #   black
     #   coverage
     #   pep517
+    #   pylint
     #   pytest
 toolz==0.11.2
     # via
     #   dask
     #   partd
-typer==0.4.0
+typer==0.4.1
     # via pycln
 typing-extensions==4.1.1
     # via
@@ -319,15 +329,15 @@ urllib3==1.26.9
     # via requests
 uvicorn==0.17.6
     # via forml (setup.py)
-virtualenv==20.13.4
+virtualenv==20.14.0
     # via pre-commit
-websocket-client==1.3.1
+websocket-client==1.3.2
     # via docker
-werkzeug==2.0.3
+werkzeug==2.1.1
     # via flask
 wheel==0.37.1
     # via pip-tools
-wrapt==1.13.3
+wrapt==1.14.0
     # via astroid
 zipp==3.7.0
     # via importlib-metadata

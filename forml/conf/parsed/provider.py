@@ -123,7 +123,7 @@ class Sink(Section):
             """Parse the SINK section returning the tuple of sink configs for the particular modes.
 
             Args:
-                reference: Optional sync reference - if provided, its used for all modes.
+                reference: Optional sync reference - if provided, it is used for all modes.
 
             Returns:
                 Sink.Mode tuple with selected Sink config instances for the particular modes.

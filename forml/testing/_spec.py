@@ -157,8 +157,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
     def __hash__(self):
         return hash(self.params) ^ hash(self.input.trained) ^ hash(self.input.applied) ^ hash(self.exception)
 
-    @property
-    @functools.lru_cache
+    @functools.cached_property
     def outcome(self) -> 'Scenario.Outcome':
         """The outcome type of this scenario.
 

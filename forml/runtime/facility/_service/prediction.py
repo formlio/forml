@@ -86,9 +86,21 @@ class Pool(context.SpawnProcess):
     class Sink(io.Sink):
         """Dummy sink that only returns combo of the schema and the payload."""
 
+        class Consumer:
+            """Primitive consumer just passing the data."""
+
+            def __init__(self, schema: typing.Optional[dsl.Source.Schema]):
+                self._schema: typing.Optional[dsl.Source.Schema] = schema
+
+            def __call__(self, data: layout.RowMajor) -> layout.Outcome:
+                if not self._schema:
+                    LOGGER.warning('Inferring unknown output schema')
+                    self._schema = dsl.Schema.from_record(data[0])
+                return layout.Outcome(self._schema, data)
+
         @classmethod
-        def consumer(cls, schema: dsl.Source.Schema, **kwargs: typing.Any) -> io.Consumer:
-            return lambda d: layout.Outcome(schema, d)
+        def consumer(cls, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any) -> io.Consumer:
+            return cls.Consumer(schema)
 
     class Worker(context.ForkProcess):
         """Pool worker implementation."""

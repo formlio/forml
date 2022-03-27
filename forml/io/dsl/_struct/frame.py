@@ -91,7 +91,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         def __repr__(cls):
             return f'{cls.__module__}:{cls.__qualname__}'
 
-        @functools.lru_cache
+        @functools.cache
         def __getitem__(cls, name: str) -> '_struct.Field':
             try:
                 return getattr(cls, name)
@@ -182,7 +182,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         return tuple(self)
 
     def __hash__(self):
-        return hash(self.__class__) ^ super().__hash__()
+        return hash(self.__class__.__module__) ^ hash(self.__class__.__qualname__) ^ super().__hash__()
 
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
@@ -197,7 +197,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         """
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def schema(self) -> 'Source.Schema':
         """Get the schema type for this source.
 
@@ -216,7 +216,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         except KeyError as err:
             raise AttributeError(f'Invalid feature {name}') from err
 
-    @functools.lru_cache
+    @functools.cache
     def __getitem__(self, name: typing.Union[int, str]) -> typing.Any:
         try:
             return super().__getitem__(name)
@@ -279,7 +279,7 @@ class Join(Source):
         return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def features(self) -> typing.Sequence['series.Feature']:
         return self.left.features + self.right.features
 
@@ -309,7 +309,7 @@ class Set(Source):
         return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def features(self) -> typing.Sequence['series.Feature']:
         return self.left.features + self.right.features
 
@@ -512,7 +512,7 @@ class Reference(Origin):
         return f'{self.name}=[{repr(self.instance)}]'
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def features(self) -> typing.Sequence['series.Element']:
         return tuple(series.Element(self, c.name) for c in self.instance.features)
 
@@ -548,7 +548,12 @@ class Table(Origin):
     ):
         if isinstance(schema, str):  # used as metaclass
             if bases:
-                bases = (bases[0].schema,)
+                bases = tuple(b.schema for b in bases if isinstance(b, Table))
+                # strip the parent base class and namespace
+                mcs = type(schema, mcs.__bases__, {})  # pylint: disable=self-cls-assignment
+            elif not any(isinstance(a, _struct.Field) for a in namespace.values()):
+                # used as a base class definition - let's propagate the namespace
+                mcs = type(schema, (mcs,), namespace)  # pylint: disable=self-cls-assignment
             schema = mcs.Schema(schema, bases, namespace)
         elif bases or namespace:
             raise TypeError('Unexpected use of schema table')
@@ -558,7 +563,7 @@ class Table(Origin):
         return self.schema.__name__
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def features(self) -> typing.Sequence['series.Column']:
         return tuple(series.Column(self, f.name) for f in self.schema)
 
@@ -647,7 +652,7 @@ class Query(Queryable):
         return self
 
     @property
-    @functools.lru_cache
+    @functools.cache
     def features(self) -> typing.Sequence['series.Feature']:
         """Get the list of features supplied by this query.
 
