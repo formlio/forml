@@ -68,7 +68,7 @@ class Data(metaclass=abc.ABCMeta):
 
     def test_cardinality(self, kind: type[kindmod.Any]):
         """Test the kind cardinality."""
-        assert kind().__cardinality__ > 0
+        assert kind().__cardinality__ >= 0
 
 
 class Primitive(Data, metaclass=abc.ABCMeta):

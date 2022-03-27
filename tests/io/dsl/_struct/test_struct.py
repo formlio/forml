@@ -22,6 +22,7 @@ Struct tests.
 import typing
 
 import cloudpickle
+import numpy
 import pytest
 
 from forml.io import dsl, layout
@@ -53,7 +54,7 @@ class TestSchema:
             ('foo', [dsl.String()]),
             (1, [dsl.Integer()]),
             (['foo', 1], [dsl.String(), dsl.Integer()]),
-            # (numpy.array([('foo', 1)], dtype='U21, int')[0], [dsl.String(), dsl.Integer()]),
+            (numpy.array([('foo', 1)], dtype='U21, int')[0], [dsl.String(), dsl.Integer()]),
         ],
     )
     def test_from_record(self, record: layout.Native, kinds: typing.Sequence[dsl.Any]):

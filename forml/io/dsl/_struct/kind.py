@@ -22,6 +22,7 @@ import collections
 import datetime
 import decimal
 import inspect
+import numbers
 import operator
 import typing
 
@@ -78,7 +79,7 @@ class Any(metaclass=Meta):
 
     @property
     @abc.abstractmethod
-    def __native__(self) -> Native:
+    def __native__(self) -> type[Native]:
         """Native python type representing this kind.
 
         Returns:
@@ -151,20 +152,20 @@ class Boolean(Primitive):
     """Boolean data type class."""
 
     __native__ = bool
-    __cardinality__ = 2
+    __cardinality__ = 0
 
 
 class Integer(Numeric):
     """Integer data type class."""
 
-    __native__ = int
+    __native__ = numbers.Integral
     __cardinality__ = 1
 
 
 class Float(Numeric):
     """Float data type class."""
 
-    __native__ = float
+    __native__ = numbers.Real
     __cardinality__ = 2
 
 
@@ -172,7 +173,7 @@ class Decimal(Numeric):
     """Decimal data type class."""
 
     __native__ = decimal.Decimal
-    __cardinality__ = 3
+    __cardinality__ = 1
 
 
 class String(Primitive):
@@ -186,14 +187,14 @@ class Date(Primitive):
     """Date data type class."""
 
     __native__ = datetime.date
-    __cardinality__ = 1
+    __cardinality__ = 2
 
 
 class Timestamp(Date):
     """Timestamp data type class."""
 
     __native__ = datetime.datetime
-    __cardinality__ = 2
+    __cardinality__ = 1
 
 
 class Compound(Any, tuple):
@@ -277,7 +278,7 @@ def reflect(value: typing.Any) -> Any:
         first = type(next(seq))
         return all(isinstance(i, first) for i in seq)
 
-    for primitive in sorted(Primitive.__subkinds__, key=lambda k: k.__cardinality__, reverse=True):
+    for primitive in sorted(Primitive.__subkinds__, key=lambda k: k.__cardinality__):
         if isinstance(value, primitive.__native__):
             return primitive()
     if value:

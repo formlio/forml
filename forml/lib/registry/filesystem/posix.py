@@ -255,7 +255,7 @@ class Registry(asset.Registry, alias='posix'):
         except NotADirectoryError as err:
             raise asset.Level.Invalid(f'Path {path} is not a valid registry component') from err
         except FileNotFoundError:
-            return tuple()
+            return ()
 
     def projects(self) -> typing.Iterable[asset.Project.Key]:
         return self._listing(self._path, Path.Project)
