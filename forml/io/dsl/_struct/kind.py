@@ -147,6 +147,8 @@ class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
 class Numeric(Primitive, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Numeric data type base class."""
 
+    __native__ = numbers.Number
+
 
 class Boolean(Primitive):
     """Boolean data type class."""
