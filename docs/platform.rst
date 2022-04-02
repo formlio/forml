@@ -75,9 +75,6 @@ Example ForML platform configuration::
     [REGISTRY]
     default = "homedir"
 
-    [REGISTRY.virtual]
-    provider = "virtual"
-
     [REGISTRY.homedir]
     provider = "posix"
     #path = ~/.forml/registry
@@ -88,6 +85,14 @@ Example ForML platform configuration::
 
     [SINK.stdout]
     provider = "stdout"
+
+
+    [INVENTORY]
+    default = "homedir"
+
+    [INVENTORY.homedir]
+    provider = "posix"
+    #path = ~/.forml/inventory
 
 
 The file can contain configurations of multiple different provider instances labelled with custom alias - here for

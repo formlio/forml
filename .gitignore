@@ -13,9 +13,10 @@ htmlcov/
 .coverage
 .coverage.*
 .eggs
-.idea
+.idea/
 .ipynb_checkpoints/
 .pytest_cache/
+.vscode/
 .venv/
 coverage.xml
 junit.xml
