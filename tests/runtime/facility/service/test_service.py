@@ -22,6 +22,7 @@ import json
 
 import pytest
 
+import forml
 from forml import io
 from forml.io import layout
 from forml.runtime import asset
@@ -49,3 +50,12 @@ class TestEngine:
         """Apply unit test."""
         response = await engine.apply(application, testset_request)
         assert tuple(v for r in json.loads(response.payload) for v in r.values()) == generation_prediction
+
+    async def test_invalid(
+        self,
+        engine: _service.Engine,
+        testset_request: layout.Request,
+    ):
+        """Invalid request test."""
+        with pytest.raises(forml.MissingError, match='Application foobar not found in'):
+            await engine.apply('foobar', testset_request)

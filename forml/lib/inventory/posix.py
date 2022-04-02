@@ -28,16 +28,19 @@ from forml.runtime import asset
 LOGGER = logging.getLogger(__name__)
 
 
-class Path(pathlib.Path):
+class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     """Inventory path utility."""
 
     APPSFX = 'py'
 
     def descriptor(self, application: str) -> pathlib.Path:
+        """Get the descriptor path for the given application."""
         return self / f'{application}.{self.APPSFX}'
 
-    def is_descriptor(self, path: pathlib.Path) -> bool:
-        return path.is_file() and path.suffix == f'.{self.APPSFX}'
+    @classmethod
+    def is_descriptor(cls, path: pathlib.Path) -> bool:
+        """Check the give path is a descriptor path."""
+        return path.is_file() and path.suffix == f'.{cls.APPSFX}'
 
 
 class Inventory(asset.Inventory, alias='posix'):
@@ -47,7 +50,7 @@ class Inventory(asset.Inventory, alias='posix'):
         self._path: Path = Path(pathlib.Path(path).resolve())
 
     def list(self) -> typing.Iterable[str]:
-        return tuple(p.name for p in self._path.iterdir() if self._path.is_descriptor(p))
+        return tuple(p.stem for p in self._path.iterdir() if self._path.is_descriptor(p))
 
     def get(self, application: str) -> type[project.Descriptor]:
         path = self._path.descriptor(application)
@@ -55,7 +58,7 @@ class Inventory(asset.Inventory, alias='posix'):
         return project.Descriptor.Handle(path).descriptor
 
     def put(self, descriptor: project.Descriptor.Handle) -> None:
-        path = self._path.descriptor(descriptor.application)
+        path = self._path.descriptor(descriptor.descriptor.application)
         LOGGER.debug('Putting descriptor %s to %s', descriptor.path, path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(descriptor.path.read_text())

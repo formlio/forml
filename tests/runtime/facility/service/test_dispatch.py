@@ -22,6 +22,7 @@ import json
 
 import pytest
 
+import forml
 from forml import io, project
 from forml.io import layout
 from forml.runtime import asset
@@ -85,6 +86,15 @@ class TestWrapper:
         assert query.descriptor.application == application
         assert query.decoded.entry == testset_entry
         assert valid_instance == query.instance
+
+    async def test_invalid(
+        self,
+        wrapper: dispatch.Wrapper,
+        testset_request: layout.Request,
+    ):
+        """Invalid request test."""
+        with pytest.raises(forml.MissingError, match='Application foobar not found in'):
+            await wrapper.extract('foobar', testset_request, None)
 
     async def test_respond(
         self,

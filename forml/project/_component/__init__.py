@@ -22,6 +22,7 @@ import collections
 import importlib
 import inspect
 import logging
+import os
 import pathlib
 import secrets
 import sys
@@ -176,6 +177,21 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
         Component instance.
     """
 
+    def is_expected(actual: str) -> bool:
+        """Test the actually loaded module is the one that's been requested.
+
+        Args:
+            actual: Name of the actually loaded module.
+
+        Returns:
+            True if the actually loaded module is the one expected.
+        """
+        actual = actual.replace('.', os.path.sep)
+        expected = module.replace('.', os.path.sep)
+        if path:
+            expected = os.path.join(path, expected)
+        return expected.endswith(actual)
+
     class Component(types.ModuleType):
         """Fake component module."""
 
@@ -195,7 +211,7 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
                 component: Component instance to be registered.
             """
             caller = inspect.getmodule(inspect.currentframe().f_back)
-            if caller and caller.__name__ != module:
+            if caller and not is_expected(caller.__name__):
                 LOGGER.warning('Ignoring setup from unexpected component of %s', caller.__name__)
                 return
             LOGGER.debug('Component setup using %s', component)

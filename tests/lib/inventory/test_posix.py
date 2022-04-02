@@ -16,6 +16,25 @@
 # under the License.
 
 """
-This file exists for the sake of the actors defined in conftest.py so that they can use their .get_state()
-method that relies on pickling which requires the conftest to be a module, hence this __init__.py.
+ForML persistent inventory unit tests.
 """
+# pylint: disable=no-self-use
+import pathlib
+import tempfile
+import typing
+
+import pytest
+
+from forml.lib.inventory import posix
+from forml.runtime import asset
+
+from . import Inventory
+
+
+class TestInventory(Inventory):
+    """Inventory unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def constructor(tmp_path: pathlib.Path) -> typing.Callable[[], asset.Inventory]:
+        return lambda: posix.Inventory(tempfile.mkdtemp(dir=tmp_path))

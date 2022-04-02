@@ -218,14 +218,20 @@ class Registry(forml.Provider, default=provcfg.Registry.default, path=provcfg.Re
 class Inventory(forml.Provider, default=provcfg.Inventory.default, path=provcfg.Inventory.path):
     """Application descriptor storage abstraction."""
 
+    def __repr__(self):
+        name = self.__class__.__module__.rsplit('.', 1)[-1].capitalize()
+        return f'{name}-inventory'
+
     @abc.abstractmethod
     def list(self) -> typing.Iterable[str]:
         """List the unique application names."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get(self, application: str) -> 'prj.Descriptor':
+    def get(self, application: str) -> type['prj.Descriptor']:
         """Retrieve the descriptor for the given application.
+
+        Only application returned by ``.list()`` can be requested.
 
         Args:
             application: Unique application name.
@@ -238,6 +244,8 @@ class Inventory(forml.Provider, default=provcfg.Inventory.default, path=provcfg.
     @abc.abstractmethod
     def put(self, descriptor: 'prj.Descriptor.Handle') -> None:
         """Store the application descriptor into the inventory.
+
+        Existing application with the same name gets overwritten.
 
         Args:
             descriptor: Application descriptor handle.

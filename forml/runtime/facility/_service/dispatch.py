@@ -18,12 +18,12 @@
 Runtime service facility.
 """
 import asyncio
-import functools
 import logging
 import typing
 import uuid
 from concurrent import futures
 
+import forml
 from forml import io
 from forml import project as prjmod
 from forml.io import layout
@@ -162,9 +162,9 @@ class Wrapper:
         self._registry: asset.Directory = asset.Directory(self.Frozen(registry))
         self._processes: Wrapper.Executor = self.Executor(futures.ProcessPoolExecutor(max_workers), loop)
         self._threads: Wrapper.Executor = self.Executor(futures.ThreadPoolExecutor(max_workers), loop)
+        self._descriptors: dict[str, typing.Optional[type[prjmod.Descriptor]]] = {}
 
-    @functools.cache
-    def _get_descriptor(self, application: str) -> prjmod.Descriptor:
+    def _get_descriptor(self, application: str) -> type[prjmod.Descriptor]:
         """Get the application descriptor.
 
         Args:
@@ -173,7 +173,14 @@ class Wrapper:
         Returns:
             Application descriptor.
         """
-        return self._inventory.get(application)
+        if application not in self._descriptors:
+            updates = set(self._inventory.list()).difference(self._descriptors)
+            self._descriptors.update({a: None for a in updates})
+            if application not in updates:
+                raise forml.MissingError(f'Application {application} not found in {self._registry}')
+        if not self._descriptors[application]:
+            self._descriptors[application] = self._inventory.get(application)
+        return self._descriptors[application]
 
     @staticmethod
     def _dispatch(

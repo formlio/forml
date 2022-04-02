@@ -70,3 +70,10 @@ class TestGateway:
         )
         assert response.status_code == 200
         assert tuple(v for r in response.json() for v in r.values()) == generation_prediction
+
+    def test_invalid(self, client: testclient.TestClient):
+        """Test invalid requests."""
+        response = client.get('/foobar')
+        assert response.status_code == 405
+        response = client.post('/foobar')
+        assert response.status_code == 404

@@ -36,6 +36,7 @@ from forml.lib.pipeline import topology
 from forml.runtime import asset
 
 from . import helloworld
+from .helloworld import application as helloworld_descriptor
 
 
 class WrappedActor:
@@ -373,7 +374,7 @@ def sink_instance(sink_type: type[io.Sink], sink_output: multiprocessing.Queue) 
 @pytest.fixture(scope='session')
 def descriptor_handle() -> prj.Descriptor.Handle:
     """Application descriptor handle fixture."""
-    return prj.Descriptor.Handle(helloworld.__file__)
+    return prj.Descriptor.Handle(helloworld_descriptor.__file__)
 
 
 @pytest.fixture(scope='session')

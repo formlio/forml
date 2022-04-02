@@ -24,11 +24,12 @@ import re
 import typing
 
 import uvicorn
-from starlette import applications
+from starlette import applications, exceptions
 from starlette import requests as reqmod
 from starlette import responses as respmod
 from starlette import routing
 
+import forml
 from forml import io
 from forml.io import layout
 from forml.runtime import asset, facility
@@ -81,7 +82,10 @@ class Apply(routing.Route):
         if accept:
             accept = parse_mime_header(accept)
         payload = await request.body()
-        result = await self.__handler(application, layout.Request(payload, encoding, request.query_params, accept))
+        try:
+            result = await self.__handler(application, layout.Request(payload, encoding, request.query_params, accept))
+        except forml.MissingError as err:
+            raise exceptions.HTTPException(status_code=404, detail=str(err))
         return respmod.Response(result.payload, media_type=result.encoding)
 
 

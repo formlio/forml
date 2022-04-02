@@ -28,7 +28,7 @@ import typing
 import toml
 
 import forml
-from forml.lib import feed, gateway, inventory, runner, sink, registry
+from forml.lib import feed, gateway, inventory, registry, runner, sink
 
 
 class Parser(dict):

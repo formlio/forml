@@ -35,9 +35,21 @@ class Meta(abc.ABCMeta):
     def __call__(cls, *args, **kwargs):
         raise TypeError('Descriptor not instantiable')
 
+    def __hash__(cls):
+        return hash(cls.application)
+
+    def __eq__(cls, other):
+        return (
+            isinstance(other, cls.__class__)
+            and other.application == cls.application  # pylint: disable=comparison-with-callable
+        )
+
     @property
     def application(cls) -> str:
-        """Name of the application represented by this descriptor."""
+        """Name of the application represented by this descriptor.
+
+        Application name is expected to be globally unique.
+        """
         return cls.__name__.lower()
 
 
