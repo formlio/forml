@@ -23,8 +23,7 @@ ForML compiler unit tests.
 import pytest
 
 from forml import flow
-from forml.io import layout
-from forml.runtime import asset, code
+from forml.io import asset, layout
 
 
 @pytest.fixture(scope='session')
@@ -57,4 +56,4 @@ def test_generate(
     path: flow.Path, valid_instance: asset.Instance, node1: flow.Worker, node2: flow.Worker, node3: flow.Worker
 ):
     """Compiler generate test."""
-    code.generate(path, valid_instance.state((node1.gid, node2.gid, node3.gid)))
+    flow.generate(path, valid_instance.state((node1.gid, node2.gid, node3.gid)))

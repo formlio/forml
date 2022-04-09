@@ -22,18 +22,22 @@ import logging
 import typing
 import uuid
 
-from forml.runtime import asset
+import forml
 
-from .. import _target
+from .. import target
+
+if typing.TYPE_CHECKING:
+    from forml.io import asset
+
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Loader(_target.Instruction):
+class Loader(target.Instruction):
     """Registry based state loader."""
 
-    def __init__(self, assets: asset.State, key: typing.Union[int, uuid.UUID]):
-        self._assets: asset.State = assets
+    def __init__(self, assets: 'asset.State', key: typing.Union[int, uuid.UUID]):
+        self._assets: 'asset.State' = assets
         self._key: typing.Union[int, uuid.UUID] = key
 
     def execute(self) -> typing.Optional[bytes]:  # pylint: disable=arguments-differ
@@ -44,16 +48,16 @@ class Loader(_target.Instruction):
         """
         try:
             return self._assets.load(self._key)
-        except asset.Level.Listing.Empty:
+        except forml.MissingError:
             LOGGER.warning('No previous generations found - node #%d defaults to no state', self._key)
             return None
 
 
-class Dumper(_target.Instruction):
+class Dumper(target.Instruction):
     """Registry based state dumper."""
 
-    def __init__(self, assets: asset.State):
-        self._assets: asset.State = assets
+    def __init__(self, assets: 'asset.State'):
+        self._assets: 'asset.State' = assets
 
     def execute(self, state: bytes) -> uuid.UUID:  # pylint: disable=arguments-differ
         """Instruction functionality.
@@ -67,7 +71,7 @@ class Dumper(_target.Instruction):
         return self._assets.dump(state)
 
 
-class Getter(_target.Instruction):
+class Getter(target.Instruction):
     """Extracting single item from a vector."""
 
     def __init__(self, index: int):
@@ -97,11 +101,11 @@ class Getter(_target.Instruction):
         return sequence[self._index]
 
 
-class Committer(_target.Instruction):
+class Committer(target.Instruction):
     """Commit a new release generation."""
 
-    def __init__(self, assets: asset.State):
-        self._assets: asset.State = assets
+    def __init__(self, assets: 'asset.State'):
+        self._assets: 'asset.State' = assets
 
     def execute(self, *states: uuid.UUID) -> None:
         """Instruction functionality.

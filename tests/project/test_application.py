@@ -21,6 +21,7 @@ Application descriptor tests.
 # pylint: disable=no-self-use
 import pathlib
 import pickle
+import tempfile
 
 import pytest
 
@@ -48,7 +49,15 @@ class TestDescriptor:
 class TestDescriptorHandle:
     """Descriptor handle tests."""
 
-    def test_invalid(self, project_path: pathlib.Path):
+    def test_invalid(self, tmp_path: pathlib.Path):
         """Test invalid handle setup."""
         with pytest.raises(forml.InvalidError, match='file expected'):
-            project.Descriptor.Handle(project_path)  # not a
+            project.Descriptor.Handle(tmp_path)  # not a file
+        with tempfile.NamedTemporaryFile(dir=tmp_path, suffix='.foo') as path, pytest.raises(
+            forml.InvalidError, match='not a module'
+        ):
+            project.Descriptor.Handle(path.name)  # not a python module
+        with tempfile.NamedTemporaryFile(dir=tmp_path, suffix='.py') as path, pytest.raises(
+            forml.InvalidError, match='no setup'
+        ):
+            project.Descriptor.Handle(path.name)  # not calling component.setup

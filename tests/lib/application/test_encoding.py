@@ -16,10 +16,14 @@
 # under the License.
 
 """
-Customized runtime errors.
+ForML application encoding tests.
 """
-import forml
+import pytest
+
+from forml.lib import application
 
 
-class AssemblyError(forml.InvalidError):
-    """Code generation exception."""
+@pytest.mark.parametrize('patterns, subject, matches', [])
+def _test_get_encoder():
+    """Encoder getter test."""
+    application.get_encoder()

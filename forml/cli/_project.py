@@ -25,10 +25,14 @@ from click import core
 
 import forml
 
+if typing.TYPE_CHECKING:
+    from forml import cli
+
 
 class Scope(typing.NamedTuple):
     """Case class for holding the partial command config."""
 
+    parent: 'cli.Scope'
     path: typing.Optional[str]
 
 
@@ -37,7 +41,7 @@ class Scope(typing.NamedTuple):
 @click.pass_context
 def group(context: core.Context, path: typing.Optional[str]):
     """Project command group."""
-    context.obj = Scope(path)
+    context.obj = Scope(context.obj, path)
 
 
 @group.command()

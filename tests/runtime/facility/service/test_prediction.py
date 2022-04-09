@@ -23,8 +23,7 @@ import multiprocessing
 import pytest
 
 from forml import io
-from forml.io import layout
-from forml.runtime import asset
+from forml.io import asset, layout
 from forml.runtime.facility._service import prediction
 
 

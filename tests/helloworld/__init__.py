@@ -23,9 +23,8 @@ import uuid
 
 from forml import io
 from forml import project as prj
-from forml.io import dsl, layout
+from forml.io import asset, dsl, layout
 from forml.io.dsl import parser as parsmod
-from forml.runtime import asset
 
 
 class Person(dsl.Schema):

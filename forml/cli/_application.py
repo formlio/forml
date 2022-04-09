@@ -18,19 +18,38 @@
 """
 ForML command line interface.
 """
+import collections
 import typing
 
 import click
 from click import core
 
+from forml import project
 from forml.conf.parsed import provider as provcfg
+from forml.io import asset
 from forml.runtime import facility
 
+if typing.TYPE_CHECKING:
+    from forml import cli
 
-class Application(typing.NamedTuple):
+
+class Scope(collections.namedtuple('Scope', 'parent, inventory')):
     """Case class for holding the partial command config."""
 
-    inventory: typing.Optional[str]
+    parent: 'cli.Scope'
+    inventory: provcfg.Inventory
+
+    def __new__(cls, parent: 'cli.Scope', inventory: typing.Optional[str]):
+        return super().__new__(cls, parent, provcfg.Inventory.resolve(inventory))
+
+    @property
+    def descriptors(self) -> asset.Inventory:
+        """Get the descriptor inventory instance.
+
+        Returns:
+            Inventory instance.
+        """
+        return asset.Inventory[self.inventory.reference](**self.inventory.params)
 
 
 @click.group(name='application')
@@ -41,7 +60,16 @@ def group(
     inventory: typing.Optional[str],
 ):
     """Application command group."""
-    context.obj = Application(inventory)
+    context.obj = Scope(context.obj, inventory)
+
+
+@group.command()
+@click.argument('descriptor', type=click.Path(exists=True, file_okay=True))
+@click.pass_obj
+def put(scope: Scope, descriptor: str) -> None:
+    """Store the application descriptor into the inventory."""
+    handle = project.Descriptor.Handle(descriptor)
+    scope.descriptors.put(handle)
 
 
 @group.command()
@@ -50,12 +78,19 @@ def group(
 @click.option('-I', '--feed', multiple=True, type=str, help='Input feed references.')
 @click.pass_obj
 def serve(
-    application: Application, gateway: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[str]
+    scope: Scope, gateway: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[str]
 ) -> None:
     """Launch the serving frontend."""
     facility.Platform(
         registry=provcfg.Registry.resolve(registry),
         feeds=provcfg.Feed.resolve(feed),
-        inventory=provcfg.Inventory.resolve(application.inventory),
+        inventory=scope.inventory,
         gateway=provcfg.Gateway.resolve(gateway),
     ).service.run()
+
+
+@group.command(name='list')
+@click.pass_obj
+def list_(scope: Scope) -> None:
+    """List the application descriptors in the selected inventory."""
+    scope.parent.print(scope.descriptors.list())

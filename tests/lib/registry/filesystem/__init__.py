@@ -27,7 +27,7 @@ import uuid
 import pytest
 
 from forml import project as prj
-from forml.runtime import asset
+from forml.io import asset
 
 
 class Registry(metaclass=abc.ABCMeta):

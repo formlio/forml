@@ -23,8 +23,8 @@ import typing
 
 import pytest
 
+from forml.io import asset
 from forml.lib.registry.filesystem import virtual
-from forml.runtime import asset
 
 from . import Registry
 

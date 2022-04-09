@@ -23,8 +23,9 @@ import typing
 
 import graphviz as grviz
 
-from forml import conf, io
-from forml.runtime import asset, code, facility
+from forml import conf, flow, io
+from forml.io import asset
+from forml.runtime import facility
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,11 +47,11 @@ class Runner(facility.Runner, alias='graphviz'):
         self._filepath: str = filepath or self.FILEPATH
         self._gvkw: typing.Mapping[str, typing.Any] = gvkw
 
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
+    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
         dot: grviz.Digraph = grviz.Digraph(**self._gvkw)
         for sym in symbols:
             attrs = dict(shape='ellipse', style='rounded')
-            if isinstance(sym.instruction, code.Functor):
+            if isinstance(sym.instruction, flow.Functor):
                 attrs.update(shape='box')
             dot.node(repr(id(sym.instruction)), repr(sym.instruction), **attrs)
             for idx, arg in enumerate(sym.arguments):

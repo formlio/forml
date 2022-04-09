@@ -21,8 +21,8 @@ ForML asset directory unit tests.
 # pylint: disable=no-self-use
 import pytest
 
-from forml.runtime import asset
-from forml.runtime.asset import _directory
+from forml.io import asset
+from forml.io.asset import _directory
 
 
 class TestCache:

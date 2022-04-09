@@ -19,7 +19,11 @@
 Payload utilities.
 """
 import abc
+import cgi
 import collections
+import fnmatch
+import functools
+import re
 import types
 import typing
 
@@ -31,7 +35,6 @@ Array = typing.Sequence[typing.Any]  # Sequence of items (n-dimensional but only
 ColumnMajor = Array  # Sequence of columns of any type (columnar, column-wise semantic)
 RowMajor = Array  # Sequence of rows of any type (row-wise semantic)
 Native = typing.TypeVar('Native')
-Encoding = str  # Media type encoding
 
 
 class Tabular:
@@ -151,23 +154,89 @@ class Outcome(typing.NamedTuple):
     data: RowMajor
 
 
+_CSV = re.compile(r'\s*,\s*')
+
+
+class Encoding(collections.namedtuple('Encoding', 'kind, options')):
+    """Content encoding representation."""
+
+    kind: str
+    """Content type label."""
+    options: typing.Mapping[str, str]
+    """Encoding options."""
+
+    def __new__(cls, kind: str, **options: str):
+        return super().__new__(cls, kind.strip().lower(), types.MappingProxyType(options))
+
+    @functools.cached_property
+    def header(self) -> str:
+        """Get the header-formatted representation of this encoding.
+
+        Returns:
+            Header formatted representation.
+        """
+        value = self.kind
+        if self.options:
+            value += '; ' + '; '.join(f'{k}={v}' for k, v in self.options.items())
+        return value
+
+    @classmethod
+    @functools.lru_cache(256)
+    def parse(cls, value: str) -> typing.Sequence['Encoding']:
+        """Parse the mime header value.
+
+        Args:
+            value: Comma separated list of mime values and their parameters
+
+        Returns:
+            Sequence of the mime values ordered according to the provided priority.
+        """
+        return tuple(
+            cls(m, **{k: v for k, v in o.items() if k != 'q'})
+            for m, o in sorted(
+                (cgi.parse_header(h) for h in _CSV.split(value)),
+                key=lambda t: float(t[1].get('q', 1)),
+                reverse=True,
+            )
+        )
+
+    @functools.cache
+    def match(self, other: 'Encoding') -> bool:
+        """Return ture if the other encoding matches ours including glob wildcards.
+
+        Args:
+            other: Encoding to match against this - must not contain wildcards.
+
+        Returns:
+            True if matches.
+        """
+        return (
+            '*' not in other.kind
+            and fnmatch.fnmatch(other.kind, self.kind)
+            and all(other.options.get(k) == v for k, v in self.options.items())
+        )
+
+    def __hash__(self):
+        return hash(self.kind) ^ hash(tuple(sorted(self.options.items())))
+
+    def __str__(self):
+        return self.kind
+
+    def __getnewargs_ex__(self):
+        return (self.kind,), dict(self.options)
+
+
 class Request(collections.namedtuple('Request', 'payload, encoding, params, accept')):
     """Application level request object."""
 
-    class Decoded(collections.namedtuple('Decoded', 'entry, scope')):
+    class Decoded(typing.NamedTuple):
         """Decoded request case class."""
 
         entry: Entry
         """Input data."""
 
-        scope: typing.Any
+        scope: typing.Any = None
         """Custom (serializable!) metadata produced by (user-defined) decoder and carried through the system."""
-
-        def __new__(cls, schema: dsl.Source.Schema, data: Tabular, scope: typing.Any = None):
-            return super().__new__(cls, Entry(schema, data), scope)
-
-        def __getnewargs__(self):
-            return self.entry.schema, self.entry.data, self.scope
 
     payload: bytes
     """Encoded payload."""

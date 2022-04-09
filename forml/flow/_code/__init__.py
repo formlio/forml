@@ -14,24 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-"""
-Runtime unit tests fixtures.
-"""
-# pylint: disable=no-self-use
-
-import pytest
-
-from forml.runtime import asset
-
-
-@pytest.fixture(scope='session')
-def last_release(empty_release: asset.Release.Key) -> asset.Release.Key:
-    """Release fixture."""
-    return empty_release
-
-
-@pytest.fixture(scope='session')
-def last_generation(valid_generation: asset.Generation.Key) -> asset.Generation.Key:
-    """Generation fixture."""
-    return valid_generation

@@ -26,7 +26,7 @@ import typing
 import pytest
 
 from forml import project
-from forml.runtime import asset
+from forml.io import asset
 
 
 class Inventory(metaclass=abc.ABCMeta):

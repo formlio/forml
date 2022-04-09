@@ -27,9 +27,8 @@ from concurrent import futures
 from multiprocessing import context
 
 from forml import io
-from forml.io import dsl, layout
+from forml.io import asset, dsl, layout
 from forml.lib.runner import pyfunc
-from forml.runtime import asset
 
 LOGGER = logging.getLogger(__name__)
 

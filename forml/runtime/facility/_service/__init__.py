@@ -25,8 +25,7 @@ import typing
 import forml
 from forml import io
 from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
-from forml.io import layout
-from forml.runtime import asset
+from forml.io import asset, layout
 
 from . import dispatch
 

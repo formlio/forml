@@ -33,7 +33,7 @@ import typing
 import zipfile
 
 import forml
-from forml.runtime import asset
+from forml.io import asset
 
 from . import _importer, _product
 

@@ -18,9 +18,7 @@
 Rest gateway provider.
 """
 import asyncio
-import cgi
-import functools
-import re
+import logging
 import typing
 
 import uvicorn
@@ -31,30 +29,10 @@ from starlette import routing
 
 import forml
 from forml import io
-from forml.io import layout
-from forml.runtime import asset, facility
+from forml.io import asset, layout
+from forml.runtime import facility
 
-_CSV = re.compile(r'\s*,\s*')
-
-
-@functools.lru_cache(256)
-def parse_mime_header(value: str) -> typing.Sequence[str]:
-    """Parse the mime header value.
-
-    Args:
-        value: Comma separated list of mime values and their parameters
-
-    Returns:
-        Sequence of the mime values ordered according to the provided priority.
-    """
-    return tuple(
-        m
-        for m, _ in sorted(
-            (cgi.parse_header(h) for h in _CSV.split(value)),
-            key=lambda t: float(t[1].get('q', 1)),
-            reverse=True,
-        )
-    )
+LOGGER = logging.getLogger(__name__)
 
 
 class Apply(routing.Route):
@@ -77,16 +55,16 @@ class Apply(routing.Route):
             Output instance.
         """
         application = request.path_params['application']
-        encoding = parse_mime_header(request.headers.get('content-type', self.DEFAULT_ENCODING))[0]
+        encoding = layout.Encoding.parse(request.headers.get('content-type', self.DEFAULT_ENCODING))[0]
         accept = request.headers.get('accept')
         if accept:
-            accept = parse_mime_header(accept)
+            accept = layout.Encoding.parse(accept)
         payload = await request.body()
         try:
             result = await self.__handler(application, layout.Request(payload, encoding, request.query_params, accept))
         except forml.MissingError as err:
             raise exceptions.HTTPException(status_code=404, detail=str(err))
-        return respmod.Response(result.payload, media_type=result.encoding)
+        return respmod.Response(result.payload, media_type=result.encoding.header)
 
 
 class Stats(routing.Route):

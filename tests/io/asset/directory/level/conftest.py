@@ -16,23 +16,22 @@
 # under the License.
 
 """
-ForML runtime task graph assembly logic.
+Runtime unit tests fixtures.
 """
+# pylint: disable=no-self-use
 
-from ._compiler import generate
-from ._target import Instruction, Symbol
-from ._target.system import Committer, Dumper, Getter, Loader
-from ._target.user import Apply, Functor, Preset
+import pytest
 
-__all__ = [
-    'generate',
-    'Symbol',
-    'Instruction',
-    'Functor',
-    'Preset',
-    'Dumper',
-    'Committer',
-    'Loader',
-    'Getter',
-    'Apply',
-]
+from forml.io import asset
+
+
+@pytest.fixture(scope='session')
+def last_release(empty_release: asset.Release.Key) -> asset.Release.Key:
+    """Release fixture."""
+    return empty_release
+
+
+@pytest.fixture(scope='session')
+def last_generation(valid_generation: asset.Generation.Key) -> asset.Generation.Key:
+    """Generation fixture."""
+    return valid_generation

@@ -19,7 +19,7 @@
 ForML persistent unit tests.
 """
 # pylint: disable=no-self-use
-from forml.runtime import asset
+from forml.io import asset
 
 
 class TestRegistry:

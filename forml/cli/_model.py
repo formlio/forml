@@ -18,8 +18,7 @@
 """
 ForML command line interface.
 """
-import itertools
-import shutil
+import collections
 import typing
 
 import click
@@ -27,17 +26,38 @@ from click import core
 
 import forml
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl
-from forml.runtime import asset, facility
+from forml.io import asset, dsl
+from forml.runtime import facility
+
+if typing.TYPE_CHECKING:
+    from forml import cli
 
 
-class Scope(typing.NamedTuple):
+class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, sink')):
     """Case class for holding the partial command config."""
 
-    runner: typing.Optional[str]
-    registry: typing.Optional[str]
-    feed: typing.Optional[str]
-    sink: typing.Optional[str]
+    parent: 'cli.Scope'
+    runner: provcfg.Runner
+    registry: provcfg.Registry
+    feeds: tuple[provcfg.Feed]
+    sink: provcfg.Sink
+
+    def __new__(
+        cls,
+        parent: 'cli.Scope',
+        runner: typing.Optional[str],
+        registry: typing.Optional[str],
+        feed: typing.Optional[str],
+        sink: typing.Optional[str],
+    ):
+        return super().__new__(
+            cls,
+            parent,
+            provcfg.Runner.resolve(runner),
+            provcfg.Registry.resolve(registry),
+            tuple(provcfg.Feed.resolve(feed)),
+            provcfg.Sink.Mode.resolve(sink),
+        )
 
     def launcher(
         self, project: str, release: typing.Optional[str], generation: typing.Optional[str]
@@ -52,12 +72,9 @@ class Scope(typing.NamedTuple):
         Returns:
             Platform launcher.
         """
-        return facility.Platform(
-            runner=provcfg.Runner.resolve(self.runner),
-            registry=provcfg.Registry.resolve(self.registry),
-            feeds=provcfg.Feed.resolve(self.feed),
-            sink=provcfg.Sink.Mode.resolve(self.sink),
-        ).launcher(project, release, generation)
+        return facility.Platform(runner=self.runner, registry=self.registry, feeds=self.feeds, sink=self.sink).launcher(
+            project, release, generation
+        )
 
     def scan(self, project: typing.Optional[str], release: typing.Optional[str]) -> typing.Iterable[asset.Level.Key]:
         """Scan the registry level keys.
@@ -69,22 +86,7 @@ class Scope(typing.NamedTuple):
         Returns:
             List of level keys.
         """
-        return facility.Registry(provcfg.Registry.resolve(self.registry)).list(project, release)
-
-
-def lprint(listing: typing.Iterable[typing.Any]) -> None:
-    """Print list in pretty columns.
-
-    Args:
-        listing: Iterable to be printed into columns.
-    """
-    listing = tuple(str(i) for i in listing)
-    if not listing:
-        return
-    width = max(len(i) for i in listing) + 2
-    count = min(shutil.get_terminal_size().columns // width, len(listing))
-    for row in itertools.zip_longest(*(listing[i::count] for i in range(count)), fillvalue=''):
-        print(*(f'{c:<{width}}' for c in row), sep='')
+        return facility.Registry(self.registry).list(project, release)
 
 
 @click.group(name='model')
@@ -101,7 +103,7 @@ def group(
     sink: typing.Optional[str],
 ):
     """Model command group."""
-    context.obj = Scope(runner, registry, feed, sink)
+    context.obj = Scope(context.obj, runner, registry, feed, sink)
 
 
 @group.command()
@@ -184,6 +186,6 @@ def evaluate(
 @click.argument('project', required=False)
 @click.argument('release', required=False)
 @click.pass_obj
-def scan(scope: Scope, project: typing.Optional[str], release: typing.Optional[str]) -> None:
+def list_(scope: Scope, project: typing.Optional[str], release: typing.Optional[str]) -> None:
     """List the content of the selected registry."""
-    lprint(scope.scan(project, release))
+    scope.parent.print(scope.scan(project, release))

@@ -27,6 +27,7 @@ from collections import abc
 
 import forml
 from forml import conf, flow
+from forml.io import asset
 
 from . import _component, _distribution, _importer
 
@@ -184,7 +185,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             def __init__(self):
                 super().__init__(_distribution.Manifest.MODULE)
 
-        from forml.runtime import asset, facility  # pylint: disable=import-outside-toplevel
+        from forml.runtime import facility  # pylint: disable=import-outside-toplevel
 
         with _importer.context(Manifest()):
             # dummy package forced to load our fake manifest

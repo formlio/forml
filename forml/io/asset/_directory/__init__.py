@@ -14,16 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-"""Generic assets directory.
 """
+Generic assets directory.
+"""
+
 import abc
 import functools
 import logging
 import typing
 
 import forml
-from forml.runtime.asset import _persistent
+
+if typing.TYPE_CHECKING:
+    from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
@@ -86,7 +89,7 @@ class Level(metaclass=abc.ABCMeta):
         return isinstance(other, self.__class__) and other._parent == self._parent and other.key == self.key
 
     @property
-    def registry(self) -> '_persistent.Registry':
+    def registry(self) -> 'asset.Registry':
         """Registry instance.
 
         Returns:
@@ -140,7 +143,7 @@ class Cache:
         return repr(self.info)
 
     @functools.cache
-    def __call__(self, registry: '_persistent.Registry', *args, **kwargs):
+    def __call__(self, registry: 'asset.Registry', *args, **kwargs):
         return getattr(registry, self._method)(*args, **kwargs)
 
     def clear(self) -> None:

@@ -24,8 +24,7 @@ import pytest
 
 import forml
 from forml import io, project
-from forml.io import layout
-from forml.runtime import asset
+from forml.io import asset, layout
 from forml.runtime.facility._service import dispatch
 
 

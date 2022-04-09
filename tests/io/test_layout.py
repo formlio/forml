@@ -20,6 +20,7 @@ Payload tests.
 """
 # pylint: disable=no-self-use
 import pickle
+import typing
 
 import numpy
 import pytest
@@ -61,6 +62,61 @@ class TestDense:
         assert numpy.array_equal(layout.Dense.from_columns(columns).to_columns(), table.to_columns())
         if columns:
             assert table.take_columns([0]).to_columns().tolist() == [columns[0]]
+
+
+class TestEncoding:
+    """Encoding tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def encoding() -> layout.Encoding:
+        """Encoding fixture."""
+        return layout.Encoding('application/json', foo='1', bar='2')
+
+    @pytest.mark.parametrize(
+        'raw, kind, options',
+        [
+            ('application/json; charset=UTF-8', ['application/json'], [{'charset': 'UTF-8'}]),
+            (
+                'image/GIF; q=0.6; a=x, image/jpeg; q=0.6, text/html; q=1.0, text/*; q=0.8, image/*; q=0.5, */*; q=0.1',
+                ['text/html', 'text/*', 'image/gif', 'image/jpeg', 'image/*', '*/*'],
+                [{}, {}, {'a': 'x'}, {}, {}, {}],
+            ),
+        ],
+    )
+    def test_parse(self, raw: str, kind: typing.Sequence[str], options: typing.Sequence[typing.Mapping[str, str]]):
+        """Encoding parsing test."""
+        assert all(e == (k, o) for e, k, o in zip(layout.Encoding.parse(raw), kind, options))
+
+    @pytest.mark.parametrize(
+        'pattern, subject, matches',
+        [
+            ('application/json', 'application/json', True),
+            ('application/json; foo=1; bar=2', 'application/json; bar=2; foo=1', True),
+            ('application/json; foo=1; bar=2', 'application/json; bar=2', False),
+            ('application/json', 'Application/JSON', True),
+            ('application/json', 'foobar/json', False),
+            ('application/*', 'application/json', True),
+            ('*/*', 'application/json', True),
+            ('*/*; foo=1', 'application/json', False),
+            ('*/*', '*/json', False),
+        ],
+    )
+    def test_match(self, pattern: str, subject: str, matches: bool):
+        """Encoding matching test."""
+        assert layout.Encoding.parse(pattern)[0].match(layout.Encoding.parse(subject)[0]) == matches
+
+    def test_header(self, encoding: layout.Encoding):
+        """Encoding header test."""
+        assert layout.Encoding.parse(encoding.header)[0] == encoding
+
+    def test_hashable(self, encoding: layout.Encoding):
+        """Encoding hashability test."""
+        assert hash(encoding)
+
+    def test_serializable(self, encoding: layout.Encoding):
+        """Encoding serializability test."""
+        assert pickle.loads(pickle.dumps(encoding)) == encoding
 
 
 class TestRequest:

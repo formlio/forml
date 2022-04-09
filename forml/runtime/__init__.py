@@ -18,7 +18,3 @@
 """
 Runtime layer.
 """
-
-from ._exception import AssemblyError
-
-__all__ = ['AssemblyError']

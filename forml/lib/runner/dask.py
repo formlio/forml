@@ -25,8 +25,9 @@ import typing
 
 import dask
 
-from forml import io
-from forml.runtime import asset, code, facility
+from forml import flow, io
+from forml.io import asset
+from forml.runtime import facility
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class Runner(facility.Runner, alias='dask'):
     class Dag(dict):
         """Dask DAG builder."""
 
-        class Output(code.Instruction):
+        class Output(flow.Instruction):
             """Utility instruction for collecting multiple DAG leaves of which at most one is expected to return
             non-null value and passing that value through.
             """
@@ -66,8 +67,8 @@ class Runner(facility.Runner, alias='dask'):
 
                 return functools.reduce(nonnull, leaves, None)
 
-        def __init__(self, symbols: typing.Sequence[code.Symbol]):
-            tasks: dict[int, tuple[code.Instruction, int]] = {id(i): (i, *(id(p) for p in a)) for i, a in symbols}
+        def __init__(self, symbols: typing.Sequence[flow.Symbol]):
+            tasks: dict[int, tuple[flow.Instruction, int]] = {id(i): (i, *(id(p) for p in a)) for i, a in symbols}
             assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'
@@ -95,7 +96,7 @@ class Runner(facility.Runner, alias='dask'):
         super().__init__(instance, feed, sink)
         self._scheduler: str = scheduler or self.SCHEDULER
 
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
+    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:

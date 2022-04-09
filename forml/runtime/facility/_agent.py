@@ -25,8 +25,7 @@ import typing
 import forml
 from forml import flow, io
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl
-from forml.runtime import asset, code
+from forml.io import asset, dsl
 from forml.runtime.mode import evaluation
 
 LOGGER = logging.getLogger(__name__)
@@ -138,10 +137,10 @@ class Runner(forml.Provider, default=provcfg.Runner.default, path=provcfg.Runner
         Returns:
             Optional return value.
         """
-        return self._run(code.generate(path, assets))
+        return self._run(flow.generate(path, assets))
 
     @abc.abstractmethod
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
+    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
         """Actual run action to be implemented according to the specific runtime.
 
         Args:

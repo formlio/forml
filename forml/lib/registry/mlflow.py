@@ -32,7 +32,7 @@ from mlflow.store import entities as storent
 
 import forml
 from forml import project as prj
-from forml.runtime import asset
+from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 

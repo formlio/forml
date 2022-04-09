@@ -21,5 +21,9 @@ Customized flow errors.
 import forml
 
 
+class AssemblyError(forml.InvalidError):
+    """Code generation exception."""
+
+
 class TopologyError(forml.InvalidError):
     """Flow topology exception."""

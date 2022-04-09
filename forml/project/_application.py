@@ -19,14 +19,16 @@ Product application utils.
 """
 import abc
 import collections
+import inspect
 import pathlib
 import typing
 
 import forml
-from forml.io import layout
-from forml.runtime import asset
 
 from . import _component
+
+if typing.TYPE_CHECKING:
+    from forml.io import asset, layout
 
 
 class Meta(abc.ABCMeta):
@@ -68,10 +70,16 @@ class Descriptor(metaclass=Meta):
             path = pathlib.Path(path).resolve()
             if not path.is_file():
                 raise forml.InvalidError(f'Invalid descriptor module (file expected): {path}')
-
-            descriptor = _component.load(path.with_suffix('').name, path.parent)
-            if not issubclass(descriptor, Descriptor):
-                raise forml.InvalidError(f'Invalid descriptor: {path}')
+            try:
+                descriptor = _component.load(path.with_suffix('').name, path.parent)
+            except ModuleNotFoundError as err:
+                raise forml.InvalidError(f'Invalid descriptor module (not a module): {path}') from err
+            if not descriptor:
+                raise forml.InvalidError(f'Invalid descriptor (no setup): {path}')
+            if not inspect.isclass(descriptor) or not issubclass(descriptor, Descriptor):
+                raise forml.InvalidError(f'Invalid descriptor (wrong type): {path}')
+            if inspect.isabstract(descriptor):
+                raise forml.InvalidError(f'Invalid descriptor (incomplete implementation): {path}')
 
             return super().__new__(cls, path.resolve(), descriptor)
 
@@ -80,7 +88,7 @@ class Descriptor(metaclass=Meta):
 
     @classmethod
     @abc.abstractmethod
-    def decode(cls, request: layout.Request) -> layout.Request.Decoded:
+    def decode(cls, request: 'layout.Request') -> 'layout.Request.Decoded':
         """Decode the raw payload into a format accepted by the application.
 
         Args:
@@ -96,10 +104,10 @@ class Descriptor(metaclass=Meta):
     @abc.abstractmethod
     def encode(
         cls,
-        outcome: layout.Outcome,
-        encoding: typing.Sequence[layout.Encoding],
+        outcome: 'layout.Outcome',
+        encoding: typing.Sequence['layout.Encoding'],
         scope: typing.Any,
-    ) -> layout.Response:
+    ) -> 'layout.Response':
         """Encode the application result into a native response to be passed back by the engine.
 
         Args:
@@ -116,10 +124,10 @@ class Descriptor(metaclass=Meta):
     @abc.abstractmethod
     def select(
         cls,
-        registry: asset.Directory,
+        registry: 'asset.Directory',
         scope: typing.Any,
-        stats: layout.Stats,
-    ) -> asset.Instance:
+        stats: 'layout.Stats',
+    ) -> 'asset.Instance':
         """Select the model instance to be used for serving the request.
 
         Args:

@@ -28,7 +28,7 @@ import uuid
 
 from forml import conf
 from forml import project as prj
-from forml.runtime import asset
+from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 

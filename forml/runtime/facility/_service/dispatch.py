@@ -26,8 +26,7 @@ from concurrent import futures
 import forml
 from forml import io
 from forml import project as prjmod
-from forml.io import layout
-from forml.runtime import asset
+from forml.io import asset, layout
 
 from . import prediction
 

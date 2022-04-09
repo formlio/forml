@@ -23,7 +23,7 @@ import pathlib
 import typing
 
 from forml import conf, project
-from forml.runtime import asset
+from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,6 +50,8 @@ class Inventory(asset.Inventory, alias='posix'):
         self._path: Path = Path(pathlib.Path(path).resolve())
 
     def list(self) -> typing.Iterable[str]:
+        if not self._path.exists():
+            return ()
         return tuple(p.stem for p in self._path.iterdir() if self._path.is_descriptor(p))
 
     def get(self, application: str) -> type[project.Descriptor]:

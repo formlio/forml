@@ -25,8 +25,8 @@ import typing
 
 import forml
 from forml import flow, io
-from forml.io import dsl, layout
-from forml.runtime import asset, code, facility
+from forml.io import asset, dsl, layout
+from forml.runtime import facility
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,9 +42,9 @@ class Term(abc.ABC):
 class Task(Term):
     """Term representing an actor action."""
 
-    def __init__(self, actor: flow.Actor, action: code.Apply):
+    def __init__(self, actor: flow.Actor, action: flow.Apply):
         self._actor: flow.Actor = actor
-        self._action: code.Apply = action
+        self._action: flow.Apply = action
 
     def __repr__(self):
         return f'{self._actor}.{self._action}'
@@ -83,8 +83,8 @@ class Chain(Term):
 class Zip(Term):
     """Term involving multiple inputs."""
 
-    def __init__(self, instruction: code.Instruction, *branches: Term):
-        self._instruction: code.Instruction = instruction
+    def __init__(self, instruction: flow.Instruction, *branches: Term):
+        self._instruction: flow.Instruction = instruction
         self._branches: tuple[Term] = branches
 
     def __repr__(self):
@@ -151,7 +151,7 @@ class Expression(Term):
         szout: int
         args: typing.Sequence[Term]
 
-    def __init__(self, symbols: typing.Sequence[code.Symbol]):
+    def __init__(self, symbols: typing.Sequence[flow.Symbol]):
         dag = self._build(symbols)
         assert len(dag) > 0 and dag[-1].szout == 0 and not dag[0].args, 'Invalid DAG'
         providers: typing.Mapping[Term, typing.Deque[Term]] = {n.term: collections.deque([n.term]) for n in dag}
@@ -172,8 +172,8 @@ class Expression(Term):
 
     @staticmethod
     def _order(
-        dag: typing.Mapping[code.Instruction, typing.Sequence[code.Instruction]]
-    ) -> typing.Sequence[code.Instruction]:
+        dag: typing.Mapping[flow.Instruction, typing.Sequence[flow.Instruction]]
+    ) -> typing.Sequence[flow.Instruction]:
         """Return the dag nodes ordered from head to tail dependency-wise.
 
         Args:
@@ -183,7 +183,7 @@ class Expression(Term):
             Dag nodes ordered dependency-wise.
         """
 
-        def walk(level: int, *parents: code.Instruction) -> None:
+        def walk(level: int, *parents: flow.Instruction) -> None:
             for node in parents:
                 index[node] = max(index[node], level)
                 walk(level + 1, *dag[node])
@@ -191,12 +191,12 @@ class Expression(Term):
         leaves = set(dag).difference(p for a in dag.values() for p in a)
         assert len(leaves) == 1, 'Expecting single output DAG'
         tail = leaves.pop()
-        index: dict[code.Instruction, int] = collections.defaultdict(int, {tail: 0})
+        index: dict[flow.Instruction, int] = collections.defaultdict(int, {tail: 0})
         walk(1, *dag[tail])
         return sorted(index, key=lambda i: index[i], reverse=True)
 
     @classmethod
-    def _build(cls, symbols: typing.Iterable[code.Symbol]) -> typing.Sequence['Expression.Node']:
+    def _build(cls, symbols: typing.Iterable[flow.Symbol]) -> typing.Sequence['Expression.Node']:
         """Build the ordered DAG sequence of terms.
 
         Args:
@@ -206,7 +206,7 @@ class Expression(Term):
             Sequence of tuples each representing a terms, number of its outputs and a sequence of its upstream terms.
         """
 
-        def resolve(source: code.Instruction) -> Term:
+        def resolve(source: flow.Instruction) -> Term:
             """Get the term instance representing the given instruction and count the number of its usages.
 
             Args:
@@ -219,7 +219,7 @@ class Expression(Term):
             szout[target] += 1
             return target
 
-        def evaluate(arg: code.Instruction) -> typing.Any:
+        def evaluate(arg: flow.Instruction) -> typing.Any:
             """Attempt to evaluate given instruction if possible, else return the instruction.
 
             Args:
@@ -228,22 +228,22 @@ class Expression(Term):
             Returns:
                 Evaluated or original instruction.
             """
-            return arg() if isinstance(arg, code.Loader) else arg
+            return arg() if isinstance(arg, flow.Loader) else arg
 
-        upstream: dict[code.Instruction, tuple[code.Instruction]] = dict(symbols)
-        i2t: dict[code.Instruction, Term] = {}
+        upstream: dict[flow.Instruction, tuple[flow.Instruction]] = dict(symbols)
+        i2t: dict[flow.Instruction, Term] = {}
         dag: list[tuple[Term, tuple[Term]]] = []
         szout: dict[Term, int] = collections.defaultdict(int)
         for instruction in cls._order(upstream):
-            assert not isinstance(instruction, (code.Dumper, code.Committer)), f'Unexpected instruction: {instruction}'
-            if isinstance(instruction, code.Loader):
+            assert not isinstance(instruction, (flow.Dumper, flow.Committer)), f'Unexpected instruction: {instruction}'
+            if isinstance(instruction, flow.Loader):
                 assert not upstream[instruction], f'Dependent loader: {instruction}'
                 continue  # just ignore the instruction as we are going to condense it
-            if isinstance(instruction, code.Getter):
+            if isinstance(instruction, flow.Getter):
                 args = upstream[instruction]
                 term = Get(instruction.index)
             else:
-                assert isinstance(instruction, code.Functor), f'Not a functor: {instruction}'
+                assert isinstance(instruction, flow.Functor), f'Not a functor: {instruction}'
                 spec, action = instruction
                 actor = spec()
                 action, args = action.reduce(actor, *(evaluate(a) for a in upstream[instruction]))
@@ -264,7 +264,7 @@ class Runner(facility.Runner, alias='pyfunc'):
     ):
         super().__init__(instance, feed, sink)
         composition = self._build(None, None, self._instance.project.pipeline)
-        self._expression = Expression(code.generate(composition.apply, self._instance.state(composition.persistent)))
+        self._expression = Expression(flow.generate(composition.apply, self._instance.state(composition.persistent)))
 
     def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         raise forml.InvalidError('Invalid runner mode')
@@ -272,7 +272,7 @@ class Runner(facility.Runner, alias='pyfunc'):
     def tune(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         raise forml.InvalidError('Invalid runner mode')
 
-    def _run(self, symbols: typing.Sequence[code.Symbol]) -> None:
+    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
         Expression(symbols)(None)
 
     def call(self, entry: layout.Entry) -> layout.Outcome:

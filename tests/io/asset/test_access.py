@@ -25,7 +25,7 @@ import uuid
 
 import pytest
 
-from forml.runtime import asset
+from forml.io import asset
 
 
 class TestInstance:

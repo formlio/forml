@@ -26,8 +26,8 @@ import multiprocessing
 import pytest
 
 from forml import io
-from forml.io import layout
-from forml.runtime import asset, facility
+from forml.io import asset, layout
+from forml.runtime import facility
 
 
 class Runner(abc.ABC):

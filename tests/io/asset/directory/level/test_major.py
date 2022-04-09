@@ -25,7 +25,7 @@ import pytest
 
 import forml
 from forml import project as prj
-from forml.runtime import asset
+from forml.io import asset
 
 from . import Level
 

@@ -26,8 +26,7 @@ import forml
 from forml import io
 from forml import project as prj
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl
-from forml.runtime import asset
+from forml.io import asset, dsl
 
 from . import _agent, _service
 

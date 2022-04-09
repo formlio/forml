@@ -27,7 +27,6 @@ import pytest
 
 from forml import flow
 from forml.io import layout
-from forml.runtime.code._target import user
 
 
 class Functor(metaclass=abc.ABCMeta):
@@ -35,15 +34,15 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> user.Functor:
+    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Functor:
         """Functor fixture."""
 
-    def test_serializable(self, functor: user.Functor, actor_state: bytes, args: typing.Sequence):
+    def test_serializable(self, functor: flow.Functor, actor_state: bytes, args: typing.Sequence):
         """Test functor serializability."""
         functor = functor.preset_state()
         output = functor(actor_state, *args)
         clone = pickle.loads(pickle.dumps(functor))
-        assert isinstance(clone, user.Functor)
+        assert isinstance(clone, flow.Functor)
         assert functor(actor_state, *args) == output
 
 
@@ -52,9 +51,9 @@ class TestApply(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> user.Functor:
+    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Functor:
         """Functor fixture."""
-        return user.Apply().functor(actor_spec)
+        return flow.Apply().functor(actor_spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -64,7 +63,7 @@ class TestApply(Functor):
 
     def test_call(
         self,
-        functor: user.Functor,
+        functor: flow.Functor,
         actor_state: bytes,
         hyperparams: typing.Mapping[str, str],
         testset: layout.RowMajor,
@@ -84,9 +83,9 @@ class TestTrain(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> user.Functor:
+    def functor(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Functor:
         """Functor fixture."""
-        return user.Train().functor(actor_spec)
+        return flow.Train().functor(actor_spec)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -96,7 +95,7 @@ class TestTrain(Functor):
 
     def test_call(
         self,
-        functor: user.Functor,
+        functor: flow.Functor,
         actor_state: bytes,
         hyperparams: typing.Mapping[str, str],
         trainset_features: layout.RowMajor,

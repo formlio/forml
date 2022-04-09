@@ -25,8 +25,8 @@ import typing
 
 import pytest
 
+from forml.io import asset
 from forml.lib.inventory import posix
-from forml.runtime import asset
 
 from . import Inventory
 

@@ -26,9 +26,8 @@ import pytest
 from starlette import applications, testclient
 
 from forml import io, project
-from forml.io import layout
+from forml.io import asset, layout
 from forml.lib.gateway import rest
-from forml.runtime import asset
 
 
 class TestGateway:
@@ -66,7 +65,7 @@ class TestGateway:
         response = client.post(
             f'/{descriptor.application}',
             data=testset_request.payload,
-            headers={'content-type': descriptor.JSON, 'accept': descriptor.JSON},
+            headers={'content-type': descriptor.JSON.header, 'accept': descriptor.JSON.header},
         )
         assert response.status_code == 200
         assert tuple(v for r in response.json() for v in r.values()) == generation_prediction

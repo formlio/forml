@@ -23,8 +23,8 @@ Dask runner tests.
 import pytest
 
 from forml import io
+from forml.io import asset
 from forml.lib.runner import dask
-from forml.runtime import asset
 
 from . import Runner
 

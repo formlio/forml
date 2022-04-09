@@ -24,9 +24,11 @@ import functools
 import logging
 import typing
 
-from forml import flow
+from .. import target
 
-from .. import _target
+if typing.TYPE_CHECKING:
+    from forml import flow
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,13 +37,13 @@ class Action(abc.ABC):
     """Functor action handler."""
 
     @abc.abstractmethod
-    def __call__(self, actor: flow.Actor, *args: typing.Any) -> typing.Any:
+    def __call__(self, actor: 'flow.Actor', *args: typing.Any) -> typing.Any:
         """Action function."""
 
     def __repr__(self):
         return self.__class__.__name__.lower()
 
-    def functor(self, spec: flow.Spec) -> 'Functor':
+    def functor(self, spec: 'flow.Spec') -> 'Functor':
         """Helper method for creating functor instance for this action.
 
         Args:
@@ -53,7 +55,7 @@ class Action(abc.ABC):
         return Functor(spec, self)
 
     def reduce(
-        self, actor: flow.Actor, *args: typing.Any  # pylint: disable=unused-argument
+        self, actor: 'flow.Actor', *args: typing.Any  # pylint: disable=unused-argument
     ) -> tuple['Action', typing.Sequence[typing.Any]]:
         """Reduce the actions on the given actor to a discrete action and its direct parameters.
 
@@ -79,11 +81,11 @@ class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
     def __repr__(self):
         return f'{self.__class__.__name__.lower()}.{self._action}'
 
-    def __call__(self, actor: flow.Actor, *args: typing.Any) -> typing.Any:
+    def __call__(self, actor: 'flow.Actor', *args: typing.Any) -> typing.Any:
         action, args = self.reduce(actor, *args)
         return action(actor, *args)
 
-    def reduce(self, actor: flow.Actor, *args: typing.Any) -> tuple[Action, typing.Sequence[typing.Any]]:
+    def reduce(self, actor: 'flow.Actor', *args: typing.Any) -> tuple[Action, typing.Sequence[typing.Any]]:
         value, *args = args
         LOGGER.debug('Pre-setting actor %s with %d arguments ', actor, len(args))
         if value:
@@ -91,7 +93,7 @@ class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
         return self._action.reduce(actor, *args)
 
     @abc.abstractmethod
-    def set(self, actor: flow.Actor, value: ValueT) -> None:
+    def set(self, actor: 'flow.Actor', value: ValueT) -> None:
         """Set operation.
 
         Args:
@@ -103,7 +105,7 @@ class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
 class SetState(Preset[bytes]):
     """State preset action."""
 
-    def set(self, actor: flow.Actor, value: bytes) -> None:
+    def set(self, actor: 'flow.Actor', value: bytes) -> None:
         LOGGER.debug('%s receiving state (%d bytes)', actor, len(value))
         actor.set_state(value)
 
@@ -111,7 +113,7 @@ class SetState(Preset[bytes]):
 class SetParams(Preset[typing.Mapping[str, typing.Any]]):
     """Params preset action."""
 
-    def set(self, actor: flow.Actor, value: typing.Mapping[str, typing.Any]) -> None:
+    def set(self, actor: 'flow.Actor', value: typing.Mapping[str, typing.Any]) -> None:
         LOGGER.debug('%s receiving params (%s)', actor, value)
         actor.set_params(**value)
 
@@ -119,7 +121,7 @@ class SetParams(Preset[typing.Mapping[str, typing.Any]]):
 class Apply(Action):
     """Mapper (transformer) functor action."""
 
-    def __call__(self, actor: flow.Actor, *args) -> typing.Any:
+    def __call__(self, actor: 'flow.Actor', *args) -> typing.Any:
         """Mapper action is the apply method.
 
         Args:
@@ -137,7 +139,7 @@ class Apply(Action):
 class Train(Action):
     """Trainer functor action."""
 
-    def __call__(self, actor: flow.Actor, *args) -> bytes:
+    def __call__(self, actor: 'flow.Actor', *args) -> bytes:
         """Trainer action is the train method.
 
         Args:
@@ -151,13 +153,13 @@ class Train(Action):
         return actor.get_state()
 
 
-class Functor(collections.namedtuple('Functor', 'spec, action'), _target.Instruction):
+class Functor(collections.namedtuple('Functor', 'spec, action'), target.Instruction):
     """Special instruction for wrapping task actors.
 
     Functor object must be serializable.
     """
 
-    spec: flow.Spec
+    spec: 'flow.Spec'
     action: Action
 
     def __repr__(self):
@@ -175,7 +177,7 @@ class Functor(collections.namedtuple('Functor', 'spec, action'), _target.Instruc
         return Functor(self.spec, SetParams(self.action))
 
     @functools.cached_property
-    def _actor(self) -> flow.Actor:
+    def _actor(self) -> 'flow.Actor':
         """Cached actor instance.
 
         Returns:

@@ -26,17 +26,21 @@ import logging
 import typing
 import uuid
 
-from forml import flow
-from forml.runtime import asset
-
 from .. import _exception
-from . import _target
-from ._target import system, user
+from .._graph import node as nodemod
+from .._graph import span
+from . import target
+from .target import system, user
+
+if typing.TYPE_CHECKING:
+    from forml import flow
+    from forml.io import asset
+
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Table(flow.Visitor, typing.Iterable):
+class Table(span.Visitor, typing.Iterable):
     """Dynamic builder of the runtime symbols. Table uses node UIDs and GIDs where possible as instruction keys."""
 
     class Linkage:
@@ -84,7 +88,7 @@ class Table(flow.Visitor, typing.Iterable):
             assert not args[index], 'Link collision'
             args[index] = argument
 
-        def update(self, node: flow.Worker, getter: typing.Callable[[int], uuid.UUID]) -> None:
+        def update(self, node: 'flow.Worker', getter: typing.Callable[[int], uuid.UUID]) -> None:
             """Register given node (its eventual functor) as an absolute positional argument of all of its subscribers.
 
             For multi-output nodes the output needs to be passed through Getter instructions that are extracting
@@ -121,7 +125,7 @@ class Table(flow.Visitor, typing.Iterable):
         """Mapping of the stored instructions. Same instruction might be stored under multiple keys."""
 
         def __init__(self):
-            self._instructions: dict[uuid.UUID, _target.Instruction] = {}
+            self._instructions: dict[uuid.UUID, 'flow.Instruction'] = {}
 
         def __contains__(self, key: uuid.UUID) -> bool:
             return key in self._instructions
@@ -130,7 +134,7 @@ class Table(flow.Visitor, typing.Iterable):
             return self._instructions[key]
 
         @property
-        def instructions(self) -> typing.Iterator[tuple[_target.Instruction, typing.Iterator[uuid.UUID]]]:
+        def instructions(self) -> 'typing.Iterator[tuple[flow.Instruction, typing.Iterator[uuid.UUID]]]':
             """Iterator over tuples of instructions plus iterator of its keys.
 
             Returns:
@@ -138,7 +142,7 @@ class Table(flow.Visitor, typing.Iterable):
             """
             return itertools.groupby(self._instructions.keys(), self._instructions.__getitem__)
 
-        def set(self, instruction: _target.Instruction, key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
+        def set(self, instruction: 'flow.Instruction', key: typing.Optional[uuid.UUID] = None) -> uuid.UUID:
             """Store given instruction by provided or generated key.
 
             It is an error to store instruction with existing key (to avoid, use the reset method).
@@ -170,13 +174,13 @@ class Table(flow.Visitor, typing.Iterable):
             del self._instructions[orig]
             return self.set(instruction, new)
 
-    def __init__(self, assets: typing.Optional[asset.State]):
-        self._assets: typing.Optional[asset.State] = assets
+    def __init__(self, assets: typing.Optional['asset.State']):
+        self._assets: typing.Optional['asset.State'] = assets
         self._linkage: Table.Linkage = self.Linkage()
         self._index: Table.Index = self.Index()
         self._committer: typing.Optional[uuid.UUID] = None
 
-    def __iter__(self) -> _target.Symbol:
+    def __iter__(self) -> 'flow.Symbol':
         def merge(
             value: typing.Iterable[typing.Optional[uuid.UUID]], element: typing.Iterable[typing.Optional[uuid.UUID]]
         ) -> typing.Iterable[uuid.UUID]:
@@ -215,16 +219,16 @@ class Table(flow.Visitor, typing.Iterable):
                 arguments = tuple(self._index[a] for a in functools.reduce(merge, (self._linkage[k] for k in keys)))
             except KeyError as err:
                 raise _exception.AssemblyError(f'Argument mismatch for instruction {instruction}') from err
-            yield _target.Symbol(instruction, arguments)
+            yield target.Symbol(instruction, arguments)
 
-    def add(self, node: flow.Worker) -> None:
+    def add(self, node: 'flow.Worker') -> None:
         """Populate the symbol table to implement the logical flow of given node.
 
         Args:
             node: Node to be added - compiled into symbols.
         """
         assert node.uid not in self._index, f'Node collision ({node})'
-        assert isinstance(node, flow.Worker), f'Not a worker node ({node})'
+        assert isinstance(node, nodemod.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
         functor = user.Apply().functor(node.spec)
@@ -254,7 +258,7 @@ class Table(flow.Visitor, typing.Iterable):
         if not node.trained:
             self._linkage.update(node, lambda index: self._index.set(system.Getter(index)))
 
-    def visit_node(self, node: flow.Worker) -> None:
+    def visit_node(self, node: 'flow.Worker') -> None:
         """Visitor entrypoint.
 
         Args:
@@ -263,7 +267,7 @@ class Table(flow.Visitor, typing.Iterable):
         self.add(node)
 
 
-def generate(path: flow.Path, assets: typing.Optional[asset.State] = None) -> typing.Sequence[_target.Symbol]:
+def generate(path: 'flow.Path', assets: typing.Optional['asset.State'] = None) -> 'typing.Sequence[flow.Symbol]':
     """Generate the symbol code based on given flow path.
 
     Args:

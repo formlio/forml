@@ -24,9 +24,9 @@ import pytest
 
 import forml
 from forml import io
-from forml.io import layout
+from forml.io import asset, layout
 from forml.lib.runner import pyfunc
-from forml.runtime import asset, facility
+from forml.runtime import facility
 
 from . import Runner
 

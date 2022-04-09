@@ -15,48 +15,39 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Hello World application descriptor."""
-import json
+"""
+ForML application utils.
+"""
+
 import typing
 
-import numpy
+from forml import project
+from forml.io import asset, layout
 
-from forml import project as prj
-from forml.io import asset, dsl, layout
-from tests import helloworld
+from ._encoding import Decoder, Encoder, get_decoder, get_encoder
+
+__all__ = ['get_encoder', 'get_decoder', 'Encoder', 'Decoder', 'Generic']
 
 
-class HelloWorld(prj.Descriptor):
-    """Helloworld application descriptor."""
-
-    JSON = layout.Encoding('application/json')
+class Generic(project.Descriptor):
+    """Generic application descriptor base class."""
 
     @classmethod
     def decode(cls, request: layout.Request) -> layout.Request.Decoded:
-        assert request.encoding == cls.JSON
-        data = json.loads(request.payload)
-        first = tuple(data[0].items())
-        values = [[r[k] for k, _ in first] for r in data]
-        fields = (dsl.Field(dsl.reflect(v), name=k) for k, v in first)
-        return layout.Request.Decoded(layout.Entry(dsl.Schema.from_fields(*fields), layout.Dense.from_rows(values)))
+        """Decode using the internal bank of supported decoders."""
+        return layout.Request.Decoded(get_decoder(request.encoding).loads(request.payload))
 
     @classmethod
     def encode(
         cls, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], scope: typing.Any
     ) -> layout.Response:
-        assert any(e.match(cls.JSON) for e in encoding)
-        if isinstance(outcome.data[0], (typing.Sequence, numpy.ndarray)):  # 2D
-            assert len(outcome.schema) == len(outcome.data[0])
-            values = [{f.name: v for f, v in zip(outcome.schema, r)} for r in outcome.data]
-        else:
-            assert len(outcome.schema) == 1
-            name = next(iter(outcome.schema)).name
-            values = [{name: r} for r in outcome.data]
-        return layout.Response(json.dumps(values).encode('utf-8'), cls.JSON)
+        """Encode using the internal bank of supported encoders."""
+        encoder = get_encoder(*encoding)
+        return layout.Response(encoder.dumps(outcome), encoder.encoding)
 
     @classmethod
     def select(cls, registry: asset.Directory, scope: typing.Any, stats: layout.Stats) -> asset.Instance:
-        project = registry.get(helloworld.PACKAGE.manifest.name)
+        project = registry.get('helloworld.PACKAGE.manifest.name')
         for release in reversed(project.list()):
             try:
                 generation = project.get(release).list().last
@@ -71,6 +62,3 @@ class HelloWorld(prj.Descriptor):
             release=release,  # pylint: disable=undefined-loop-variable
             generation=generation,
         )
-
-
-prj.setup(HelloWorld)
