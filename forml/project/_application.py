@@ -19,7 +19,6 @@ Product application utils.
 """
 import abc
 import collections
-import inspect
 import pathlib
 import typing
 
@@ -31,31 +30,7 @@ if typing.TYPE_CHECKING:
     from forml.io import asset, layout
 
 
-class Meta(abc.ABCMeta):
-    """Descriptor metaclass."""
-
-    def __call__(cls, *args, **kwargs):
-        raise TypeError('Descriptor not instantiable')
-
-    def __hash__(cls):
-        return hash(cls.application)
-
-    def __eq__(cls, other):
-        return (
-            isinstance(other, cls.__class__)
-            and other.application == cls.application  # pylint: disable=comparison-with-callable
-        )
-
-    @property
-    def application(cls) -> str:
-        """Name of the application represented by this descriptor.
-
-        Application name is expected to be globally unique.
-        """
-        return cls.__name__.lower()
-
-
-class Descriptor(metaclass=Meta):
+class Descriptor(abc.ABC):
     """Application descriptor."""
 
     class Handle(collections.namedtuple('Handle', 'path, descriptor')):
@@ -63,7 +38,7 @@ class Descriptor(metaclass=Meta):
 
         path: pathlib.Path
         """Filesystem path to the module containing the descriptor."""
-        descriptor: type['Descriptor']
+        descriptor: 'Descriptor'
         """Actual descriptor."""
 
         def __new__(cls, path: typing.Union[str, pathlib.Path]):
@@ -76,19 +51,33 @@ class Descriptor(metaclass=Meta):
                 raise forml.InvalidError(f'Invalid descriptor module (not a module): {path}') from err
             if not descriptor:
                 raise forml.InvalidError(f'Invalid descriptor (no setup): {path}')
-            if not inspect.isclass(descriptor) or not issubclass(descriptor, Descriptor):
+            if not isinstance(descriptor, Descriptor):
                 raise forml.InvalidError(f'Invalid descriptor (wrong type): {path}')
-            if inspect.isabstract(descriptor):
-                raise forml.InvalidError(f'Invalid descriptor (incomplete implementation): {path}')
 
             return super().__new__(cls, path.resolve(), descriptor)
 
         def __getnewargs__(self):
             return tuple([self.path])
 
-    @classmethod
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        return isinstance(other, Descriptor) and other.name == self.name
+
+    @property
     @abc.abstractmethod
-    def decode(cls, request: 'layout.Request') -> 'layout.Request.Decoded':
+    def name(self) -> str:
+        """Name of the application represented by this descriptor.
+
+        Application name is expected to be globally unique.
+
+        Returns:
+            Application name.
+        """
+
+    @abc.abstractmethod
+    def decode(self, request: 'layout.Request') -> 'layout.Request.Decoded':
         """Decode the raw payload into a format accepted by the application.
 
         Args:
@@ -100,10 +89,9 @@ class Descriptor(metaclass=Meta):
         """
         raise NotImplementedError()
 
-    @classmethod
     @abc.abstractmethod
     def encode(
-        cls,
+        self,
         outcome: 'layout.Outcome',
         encoding: typing.Sequence['layout.Encoding'],
         scope: typing.Any,
@@ -120,10 +108,9 @@ class Descriptor(metaclass=Meta):
         """
         raise NotImplementedError()
 
-    @classmethod
     @abc.abstractmethod
     def select(
-        cls,
+        self,
         registry: 'asset.Directory',
         scope: typing.Any,
         stats: 'layout.Stats',

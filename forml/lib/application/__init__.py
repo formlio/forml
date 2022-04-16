@@ -18,47 +18,41 @@
 """
 ForML application utils.
 """
-
 import typing
 
 from forml import project
 from forml.io import asset, layout
 
 from ._encoding import Decoder, Encoder, get_decoder, get_encoder
+from ._strategy import Explicit, Latest, Selector
 
-__all__ = ['get_encoder', 'get_decoder', 'Encoder', 'Decoder', 'Generic']
+__all__ = ['get_encoder', 'get_decoder', 'Encoder', 'Explicit', 'Decoder', 'Generic', 'Latest', 'Selector']
 
 
 class Generic(project.Descriptor):
-    """Generic application descriptor base class."""
+    """Generic application descriptor."""
 
-    @classmethod
-    def decode(cls, request: layout.Request) -> layout.Request.Decoded:
+    def __init__(self, name: str, selector: typing.Optional[Selector] = None):
+        self._name: str = name
+        self._selector: Selector = selector or Latest(project=name)
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def decode(self, request: layout.Request) -> layout.Request.Decoded:
         """Decode using the internal bank of supported decoders."""
-        return layout.Request.Decoded(get_decoder(request.encoding).loads(request.payload))
+        return layout.Request.Decoded(
+            get_decoder(request.encoding).loads(request.payload), {'params': dict(request.params)}
+        )
 
-    @classmethod
     def encode(
-        cls, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], scope: typing.Any
+        self, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], scope: typing.Any
     ) -> layout.Response:
         """Encode using the internal bank of supported encoders."""
         encoder = get_encoder(*encoding)
         return layout.Response(encoder.dumps(outcome), encoder.encoding)
 
-    @classmethod
-    def select(cls, registry: asset.Directory, scope: typing.Any, stats: layout.Stats) -> asset.Instance:
-        project = registry.get('helloworld.PACKAGE.manifest.name')
-        for release in reversed(project.list()):
-            try:
-                generation = project.get(release).list().last
-            except asset.Level.Listing.Empty:
-                continue
-            break
-        else:
-            raise asset.Level.Listing.Empty(f'No models available for {project.key}')
-        return asset.Instance(
-            registry=registry,
-            project=project.key,
-            release=release,  # pylint: disable=undefined-loop-variable
-            generation=generation,
-        )
+    def select(self, registry: asset.Directory, scope: typing.Any, stats: layout.Stats) -> asset.Instance:
+        """Select using the provided selector."""
+        return self._selector(registry, scope, stats)

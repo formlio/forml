@@ -207,14 +207,14 @@ class Feed(io.Feed[str, str]):
 class Inventory(asset.Inventory):
     """Fixture inventory implementation."""
 
-    def __init__(self, descriptors: typing.Iterable[type[prj.Descriptor]]):
-        self._content: dict[str, type[prj.Descriptor]] = {d.application: d for d in descriptors}
+    def __init__(self, descriptors: typing.Iterable[prj.Descriptor]):
+        self._content: dict[str, prj.Descriptor] = {d.name: d for d in descriptors}
 
     def list(self) -> typing.Iterable[str]:
         return self._content.keys()
 
-    def get(self, application: str) -> type[prj.Descriptor]:
+    def get(self, application: str) -> prj.Descriptor:
         return self._content[application.lower()]
 
     def put(self, descriptor: prj.Descriptor.Handle) -> None:
-        self._content[descriptor.descriptor.application] = descriptor.descriptor
+        self._content[descriptor.descriptor.name] = descriptor.descriptor

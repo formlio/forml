@@ -377,25 +377,26 @@ def descriptor_handle() -> prj.Descriptor.Handle:
 
 
 @pytest.fixture(scope='session')
-def descriptor(descriptor_handle: prj.Descriptor.Handle) -> type[prj.Descriptor]:
+def descriptor(descriptor_handle: prj.Descriptor.Handle) -> prj.Descriptor:
     """Application descriptor fixture."""
     return descriptor_handle.descriptor
 
 
 @pytest.fixture(scope='session')
-def application(descriptor: type[prj.Descriptor]) -> str:
+def application(descriptor: prj.Descriptor) -> str:
     """Application name fixture."""
-    return descriptor.application
+    return descriptor.name
 
 
 @pytest.fixture(scope='function')
-def inventory(descriptor: type[prj.Descriptor]) -> asset.Inventory:
+def inventory(descriptor: prj.Descriptor) -> asset.Inventory:
     """Inventory fixture."""
     return helloworld.Inventory([descriptor])
 
 
 @pytest.fixture(scope='session')
-def testset_request(descriptor: type[prj.Descriptor], testset_entry: layout.Entry) -> layout.Request:
+def testset_request(descriptor: prj.Descriptor, testset_entry: layout.Entry) -> layout.Request:
     """Request fixture."""
     as_outcome = layout.Outcome(testset_entry.schema, testset_entry.data.to_rows())
-    return layout.Request(descriptor.encode(as_outcome, [descriptor.JSON], None).payload, descriptor.JSON)
+    as_response = descriptor.encode(as_outcome, [layout.Encoding('*/*')], None)
+    return layout.Request(as_response.payload, as_response.encoding)

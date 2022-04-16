@@ -59,9 +59,9 @@ class Inventory(metaclass=abc.ABCMeta):
         assert not any(empty.list())
         assert application in populated.list()
 
-    def test_get(self, populated: asset.Inventory, descriptor: type[project.Descriptor]):
+    def test_get(self, populated: asset.Inventory, descriptor: project.Descriptor):
         """Inventory get unit test."""
-        assert populated.get(descriptor.application) == descriptor
+        assert populated.get(descriptor.name) == descriptor
 
     def test_put(self, populated: asset.Inventory, descriptor_handle: project.Descriptor.Handle):
         """Inventory put unit test."""

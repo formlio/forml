@@ -228,7 +228,7 @@ class Inventory(forml.Provider, default=provcfg.Inventory.default, path=provcfg.
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get(self, application: str) -> type['prj.Descriptor']:
+    def get(self, application: str) -> 'prj.Descriptor':
         """Retrieve the descriptor for the given application.
 
         Only application returned by ``.list()`` can be requested.

@@ -82,7 +82,7 @@ class TestWrapper:
     ):
         """Extract test."""
         query = await wrapper.extract(application, testset_request, None)
-        assert query.descriptor.application == application
+        assert query.descriptor.name == application
         assert query.decoded.entry == testset_entry
         assert valid_instance == query.instance
 

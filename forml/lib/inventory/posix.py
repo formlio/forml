@@ -54,13 +54,13 @@ class Inventory(asset.Inventory, alias='posix'):
             return ()
         return tuple(p.stem for p in self._path.iterdir() if self._path.is_descriptor(p))
 
-    def get(self, application: str) -> type[project.Descriptor]:
+    def get(self, application: str) -> project.Descriptor:
         path = self._path.descriptor(application)
         LOGGER.debug('Getting descriptor %s from %s', application, path)
         return project.Descriptor.Handle(path).descriptor
 
     def put(self, descriptor: project.Descriptor.Handle) -> None:
-        path = self._path.descriptor(descriptor.descriptor.application)
+        path = self._path.descriptor(descriptor.descriptor.name)
         LOGGER.debug('Putting descriptor %s to %s', descriptor.path, path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(descriptor.path.read_text())

@@ -32,16 +32,11 @@ from forml import project
 class TestDescriptor:
     """Application descriptor unit tests."""
 
-    def test_instantiable(self, descriptor: type[project.Descriptor]):
-        """Test the descriptor can not be instantiated."""
-        with pytest.raises(TypeError, match='Descriptor not instantiable'):
-            descriptor()
-
-    def test_application(self, descriptor: type[project.Descriptor], application: str):
+    def test_application(self, descriptor: project.Descriptor, application: str):
         """Test the retrieval of the descriptor application name."""
-        assert descriptor.application == application
+        assert descriptor.name == application
 
-    def test_serializable(self, descriptor: type[project.Descriptor]):
+    def test_serializable(self, descriptor: project.Descriptor):
         """Descriptor serializability test."""
         assert pickle.loads(pickle.dumps(descriptor)) == descriptor
 

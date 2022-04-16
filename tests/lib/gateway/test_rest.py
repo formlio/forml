@@ -57,15 +57,15 @@ class TestGateway:
     def test_apply(
         self,
         client: testclient.TestClient,
-        descriptor: type[project.Descriptor],
+        descriptor: project.Descriptor,
         testset_request: layout.Request,
         generation_prediction: layout.Array,
     ):
         """Test the application predict endpoint."""
         response = client.post(
-            f'/{descriptor.application}',
+            f'/{descriptor.name}',
             data=testset_request.payload,
-            headers={'content-type': descriptor.JSON.header, 'accept': descriptor.JSON.header},
+            headers={'content-type': testset_request.encoding.header, 'accept': testset_request.encoding.header},
         )
         assert response.status_code == 200
         assert tuple(v for r in response.json() for v in r.values()) == generation_prediction
