@@ -113,6 +113,7 @@ class Components(collections.namedtuple('Components', 'source, pipeline, evaluat
             path: Path to load from.
             package: Base package to be considered as a root for all component modules.
             **modules: Component module mappings.
+
         Returns:
             Project components.
         """

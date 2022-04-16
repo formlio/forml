@@ -34,7 +34,7 @@ from forml import flow
 from forml.io import dsl, layout
 from forml.runtime.mode import evaluation
 
-from .. import _importer, _product
+from .. import _body, _importer
 from .._component import virtual
 
 LOGGER = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ class Source(typing.NamedTuple):
     def __rshift__(self, transform: flow.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
-    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> '_product.Artifact':
+    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> '_body.Artifact':
         """Create an artifact from this source and given pipeline.
 
         Args:
@@ -128,7 +128,7 @@ class Source(typing.NamedTuple):
         Returns:
             Project artifact instance.
         """
-        return _product.Artifact(source=self, pipeline=pipeline, **modules)
+        return _body.Artifact(source=self, pipeline=pipeline, **modules)
 
 
 class Evaluation(typing.NamedTuple):

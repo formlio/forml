@@ -86,7 +86,7 @@ class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, si
         Returns:
             List of level keys.
         """
-        return facility.Registry(self.registry).list(project, release)
+        return facility.Repo(self.registry).list(project, release)
 
 
 @click.group(name='model')

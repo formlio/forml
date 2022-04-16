@@ -53,7 +53,7 @@ def ensure_instance(
     return config_or_instance
 
 
-class Registry:
+class Repo:
     """Registry util handle."""
 
     def __init__(self, registry: typing.Union[provcfg.Registry, asset.Registry]):
@@ -227,10 +227,10 @@ class Platform:
         return Service(self._gateway, self._inventory, self._registry, self._feeds)
 
     @functools.cached_property
-    def registry(self) -> Registry:
+    def registry(self) -> Repo:
         """Registry handle getter.
 
         Returns:
             Registry handle.
         """
-        return Registry(self._registry)
+        return Repo(self._registry)

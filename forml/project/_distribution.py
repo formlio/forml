@@ -35,7 +35,7 @@ import zipfile
 import forml
 from forml.io import asset
 
-from . import _importer, _product
+from . import _body, _importer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
             writeall(pathlib.Path(source), package)
         return cls(path)
 
-    def install(self, path: typing.Union[str, pathlib.Path]) -> '_product.Artifact':
+    def install(self, path: typing.Union[str, pathlib.Path]) -> '_body.Artifact':
         """Return the project artifact based on this package mounted on given path.
 
         Args:
@@ -159,7 +159,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                         LOGGER.debug('Extracting non zip-safe package %s to %s', self.path, path)
                         package.extractall(path)
         _importer.search(path)
-        return _product.Artifact(path, self.manifest.package, **self.manifest.modules)
+        return _body.Artifact(path, self.manifest.package, **self.manifest.modules)
 
 
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):

@@ -16,7 +16,7 @@
 # under the License.
 
 """
-ForML flow composition logic.
+ForML flow logic.
 """
 
 from ._code.compiler import generate

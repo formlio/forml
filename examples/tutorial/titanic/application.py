@@ -15,13 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""
-Runtime launching subsystem.
-"""
+"""Titanic application descriptor."""
 
-from ._agent import Runner
-from ._pad import Launcher, Platform, Repo
-from ._pseudo import Virtual
-from ._service import Gateway
+from forml import project
+from forml.lib import application
 
-__all__ = ['Gateway', 'Platform', 'Launcher', 'Repo', 'Runner', 'Virtual']
+project.setup(application.Generic('forml-example-titanic'))

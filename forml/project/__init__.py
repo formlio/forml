@@ -22,9 +22,9 @@ import pathlib
 import typing
 
 from ._application import Descriptor
+from ._body import Artifact, Components
 from ._component import Evaluation, Source, setup
 from ._distribution import Manifest, Package
-from ._product import Artifact, Components
 from ._setuptools import Distribution
 
 __all__ = [
