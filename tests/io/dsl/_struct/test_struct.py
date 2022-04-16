@@ -49,14 +49,18 @@ class TestSchema:
         assert dsl.Schema.from_fields(*student_table.schema) == student_table.schema
 
     @pytest.mark.parametrize(
-        'record, kinds',
+        'record, names, fields',
         [
-            ('foo', [dsl.String()]),
-            (1, [dsl.Integer()]),
-            (['foo', 1], [dsl.String(), dsl.Integer()]),
-            (numpy.array([('foo', 1)], dtype='U21, int')[0], [dsl.String(), dsl.Integer()]),
+            ('foo', [], [dsl.Field(dsl.String(), name='c0')]),
+            (1, ['bar'], [dsl.Field(dsl.Integer(), name='bar')]),
+            (['foo', 1], ['bar', 'baz'], [dsl.Field(dsl.String(), name='bar'), dsl.Field(dsl.Integer(), name='baz')]),
+            (
+                numpy.array([('foo', 1)], dtype='U21, int')[0],
+                ['bar'],
+                [dsl.Field(dsl.String(), name='bar'), dsl.Field(dsl.Integer(), name='c1')],
+            ),
         ],
     )
-    def test_from_record(self, record: layout.Native, kinds: typing.Sequence[dsl.Any]):
+    def test_from_record(self, record: layout.Native, names: typing.Sequence[str], fields: typing.Sequence[dsl.Any]):
         """Test the schema inference."""
-        assert [f.kind for f in dsl.Schema.from_record(record)] == kinds  # pylint: disable=not-an-iterable
+        assert list(dsl.Schema.from_record(record, *names)) == fields  # pylint: disable=not-an-iterable

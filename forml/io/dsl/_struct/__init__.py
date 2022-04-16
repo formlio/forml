@@ -17,7 +17,7 @@
 """
 DSL structures.
 """
-
+import itertools
 import typing
 
 from . import frame
@@ -53,30 +53,36 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     """
 
     @staticmethod
-    def from_fields(*fields: Field, name: typing.Optional[str] = None) -> frame.Source.Schema:
+    def from_fields(*fields: Field, title: typing.Optional[str] = None) -> frame.Source.Schema:
         """Utility for programmatic schema assembly.
 
         Args:
             *fields: Schema field list.
-            name: Optional schema name.
+            title: Optional schema name.
 
         Returns:
             Assembled schema.
         """
-        return frame.Source.Schema(name or 'Schema', tuple(), {f'_{i}': f for i, f in enumerate(fields)})
+        return frame.Source.Schema(title or 'Schema', tuple(), {f'_{i}': f for i, f in enumerate(fields)})
 
     @classmethod
-    def from_record(cls, record: 'layout.Native', name: typing.Optional[str] = None) -> frame.Source.Schema:
+    def from_record(
+        cls, record: 'layout.Native', *names: str, title: typing.Optional[str] = None
+    ) -> frame.Source.Schema:
         """Utility for programmatic schema inference.
 
         Args:
             record: Scalar or vector representing single record for which the schema should be inferred.
-            name: Optional schema name.
+            names: Optional field names.
+            title: Optional schema name.
 
         Returns:
             Inferred schema.
         """
         if not hasattr(record, '__getitem__') or isinstance(record, (str, bytes)):  # wrap if scalar
             record = [record]
-        fields = (Field(kindmod.reflect(v), name=f'c{i}') for i, v in enumerate(record))
-        return cls.from_fields(*fields, name)
+        fields = (
+            Field(kindmod.reflect(v), name=(str(n) if n is not None else f'c{i}'))
+            for i, (v, n) in enumerate(itertools.zip_longest(record, names))
+        )
+        return cls.from_fields(*fields, title=title)

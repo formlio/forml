@@ -21,6 +21,7 @@ ForML application encoding utils.
 import abc
 import collections
 import functools
+import io
 import json
 import logging
 import typing
@@ -94,7 +95,7 @@ class Pandas:
                 assert not frame.empty, 'Empty frame'
                 # infer schema from a number of rows (MAX_SAMPLE) and take the most frequently occurring
                 cls._CACHE[key] = collections.Counter(
-                    dsl.Schema.from_record(r)
+                    dsl.Schema.from_record(r, *frame.columns)
                     for r in frame.sample(min(len(frame), cls.MAX_SAMPLE)).itertuples(index=False)
                 ).most_common(1)[0][0]
             return cls._CACHE[key]
@@ -102,19 +103,19 @@ class Pandas:
     class Decoder(Decoder):
         """Pandas based decoder."""
 
-        def __init__(self, converter: typing.Callable[[bytes], pandas.DataFrame]):
-            self._converter: typing.Callable[[bytes], pandas.DataFrame] = converter
+        def __init__(self, converter: typing.Callable[[str], pandas.DataFrame]):
+            self._converter: typing.Callable[[str], pandas.DataFrame] = converter
 
         def loads(self, data: bytes) -> layout.Entry:
-            frame = self._converter(data)
+            frame = self._converter(data.decode())
             schema = Pandas.Schema.from_frame(frame)
             return layout.Entry(schema, layout.Dense.from_rows(frame.values))
 
     class Encoder(Encoder):
         """Pandas based encoder."""
 
-        def __init__(self, converter: typing.Callable[[pandas.DataFrame], bytes], encoding: layout.Encoding):
-            self._converter: typing.Callable[[pandas.DataFrame], bytes] = converter
+        def __init__(self, converter: typing.Callable[[pandas.DataFrame], str], encoding: layout.Encoding):
+            self._converter: typing.Callable[[pandas.DataFrame], str] = converter
             self._encoding: layout.Encoding = encoding
 
         @property
@@ -135,14 +136,14 @@ class Pandas:
             return tuple(f.name for f in schema)
 
         def dumps(self, outcome: layout.Outcome) -> bytes:
-            return self._converter(pandas.DataFrame(outcome.data, columns=self._columns(outcome.schema)))
+            return self._converter(pandas.DataFrame(outcome.data, columns=self._columns(outcome.schema))).encode()
 
 
 class Json:
     """Json encoding utils."""
 
     @staticmethod
-    def to_pandas(data: bytes) -> pandas.DataFrame:
+    def to_pandas(data: str) -> pandas.DataFrame:
         """Try decoding data as JSON returning it as pandas DataFrame.
 
         Args:
@@ -196,6 +197,7 @@ DECODERS: typing.Sequence[tuple[Decoder, layout.Encoding]] = (
     (Pandas.Decoder(functools.partial(pandas.read_json, orient='table')), ENCODING_JSON_PANDAS_TABLE),
     (Pandas.Decoder(functools.partial(pandas.read_json, orient='values')), ENCODING_JSON_PANDAS_VALUES),
     (Pandas.Decoder(Json.to_pandas), ENCODING_JSON),
+    (Pandas.Decoder(lambda v: pandas.read_csv(io.StringIO(v))), ENCODING_CSV),
 )
 
 
