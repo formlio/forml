@@ -42,7 +42,10 @@ class Feed(
     typing.Generic[parser.Source, parser.Feature],
     path=provcfg.Feed.path,  # pylint: disable=no-member
 ):
-    """Feed is the implementation of a specific datasource provider."""
+    """Feed is the implementation of a specific datasource provider.
+
+    Note Feeds need to be serializable!
+    """
 
     Reader = _producer.Reader
 

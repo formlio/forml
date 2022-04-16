@@ -54,12 +54,17 @@ class ReturnHandler(CallHandler):
     class Sink(io.Sink):
         """Special sink to forward the output to a multiprocessing.Queue."""
 
-        class Writer(io.Sink.Writer[layout.Native]):
-            """Sink writer."""
+        class Writer:
+            """Sink writer.
 
-            @classmethod
-            def write(cls, data: layout.Native, queue: multiprocessing.Queue) -> None:
-                queue.put(data, block=False)
+            This should implement io.Consumer, but we don't really need it to return anything.
+            """
+
+            def __init__(self, _: typing.Optional[dsl.Source.Schema], queue: multiprocessing.Queue):
+                self._queue: multiprocessing.Queue = queue
+
+            def __call__(self, data: layout.RowMajor) -> None:
+                self._queue.put(data, block=False)
 
     def __call__(
         self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None

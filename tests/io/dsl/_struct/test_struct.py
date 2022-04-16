@@ -53,6 +53,7 @@ class TestSchema:
         [
             ('foo', [], [dsl.Field(dsl.String(), name='c0')]),
             (1, ['bar'], [dsl.Field(dsl.Integer(), name='bar')]),
+            (numpy.float64(0), [], [dsl.Field(dsl.Float(), name='c0')]),
             (['foo', 1], ['bar', 'baz'], [dsl.Field(dsl.String(), name='bar'), dsl.Field(dsl.Integer(), name='baz')]),
             (
                 numpy.array([('foo', 1)], dtype='U21, int')[0],

@@ -79,7 +79,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
         Returns:
             Inferred schema.
         """
-        if not hasattr(record, '__getitem__') or isinstance(record, (str, bytes)):  # wrap if scalar
+        if not hasattr(record, '__len__') or isinstance(record, (str, bytes)):  # wrap if scalar
             record = [record]
         fields = (
             Field(kindmod.reflect(v), name=(str(n) if n is not None else f'c{i}'))

@@ -19,6 +19,7 @@ Service facility dispatch tests.
 """
 # pylint: disable=no-self-use
 import json
+import pickle
 
 import pytest
 
@@ -112,7 +113,7 @@ class TestWrapper:
         """Frozen registry fixture."""
         return dispatch.Wrapper.Frozen(registry)
 
-    def test_frozen(self, frozen: dispatch.Wrapper.Frozen):
+    def test_frozen(self, frozen: dispatch.Wrapper.Frozen, registry: asset.Registry):
         """Frozen registry tests."""
         with pytest.raises(TypeError, match='Frozen registry is immutable'):
             frozen.push(None)
@@ -120,3 +121,5 @@ class TestWrapper:
             frozen.write(None, None, None, None)
         with pytest.raises(TypeError, match='Frozen registry is immutable'):
             frozen.close(None, None, None, None)
+        assert pickle.loads(pickle.dumps(frozen)) == frozen
+        assert frozen == registry

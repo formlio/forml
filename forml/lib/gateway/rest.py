@@ -89,6 +89,8 @@ class Stats(routing.Route):
 class Gateway(facility.Gateway, alias='rest'):
     """Rest frontend."""
 
+    DEFAULTS = {'headers': [('server', f'ForML {forml.__version__}')]}
+
     def __init__(
         self,
         inventory: typing.Optional[asset.Inventory] = None,
@@ -101,7 +103,7 @@ class Gateway(facility.Gateway, alias='rest'):
     ):
         super().__init__(inventory, registry, feeds, processes=processes, loop=loop)
         self._server: typing.Callable[[applications.Starlette, ...], None] = server
-        self._kwargs = kwargs
+        self._kwargs = self.DEFAULTS | kwargs
 
     def run(
         self,

@@ -81,7 +81,10 @@ class Wrapper:
             return hash(self._registry)
 
         def __eq__(self, other):
-            return self._registry == other
+            return other._registry == self._registry if isinstance(other, self.__class__) else other == self._registry
+
+        def mount(self, project: asset.Project.Key, release: asset.Release.Key) -> prjmod.Artifact:
+            return self._registry.mount(project, release)
 
         def projects(self) -> typing.Iterable[typing.Union[str, asset.Project.Key]]:
             return self._registry.projects()

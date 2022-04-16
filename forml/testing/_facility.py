@@ -127,8 +127,8 @@ class Launcher:
     def __call__(self, operator: type[flow.Operator]) -> facility.Virtual.Builder:
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
-        segment = instance.expand()
-        segment.apply.accept(initializer)
-        segment.train.accept(initializer)
-        segment.label.accept(initializer)
+        trunk = instance.expand()
+        trunk.apply.accept(initializer)
+        trunk.train.accept(initializer)
+        trunk.label.accept(initializer)
         return self._source.bind(instance).launcher(self._runner, [self._feed])
