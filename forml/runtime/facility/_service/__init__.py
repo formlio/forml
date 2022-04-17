@@ -22,8 +22,7 @@ import asyncio
 import logging
 import typing
 
-import forml
-from forml import io
+from forml import extension, io
 from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
 from forml.io import asset, layout
 
@@ -69,7 +68,7 @@ class Engine:
         return await self._wrapper.respond(query, outcome)
 
 
-class Gateway(forml.Provider, default=provcfg.Gateway.default, path=provcfg.Gateway.path):
+class Gateway(extension.Provider, default=provcfg.Gateway.default, path=provcfg.Gateway.path):
     """Top-level serving gateway abstraction."""
 
     def __init__(

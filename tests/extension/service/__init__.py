@@ -20,12 +20,12 @@ Service provider interface.
 """
 import abc
 
-import forml
+from forml import extension
 
 from . import provider
 
 
-class Provider(forml.Provider, path=[provider.__name__]):
+class Provider(extension.Provider, path=[provider.__name__]):
     """Service interface."""
 
     @abc.abstractmethod

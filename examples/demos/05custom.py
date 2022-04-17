@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from forml import flow
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 
 
 @topology.Mapper.operator

@@ -23,7 +23,7 @@ import logging
 import typing
 
 import forml
-from forml import flow, io
+from forml import extension, flow, io
 from forml.conf.parsed import provider as provcfg
 from forml.io import asset, dsl
 from forml.runtime.mode import evaluation
@@ -31,7 +31,7 @@ from forml.runtime.mode import evaluation
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(forml.Provider, default=provcfg.Runner.default, path=provcfg.Runner.path):
+class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Runner.path):
     """Abstract base runner class to be extended by particular runner implementations."""
 
     def __init__(

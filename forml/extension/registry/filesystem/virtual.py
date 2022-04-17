@@ -24,7 +24,8 @@ import tempfile
 import typing
 
 from forml.io import asset
-from forml.lib.registry.filesystem import posix
+
+from . import posix
 
 if typing.TYPE_CHECKING:
     from forml import project as prj

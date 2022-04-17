@@ -24,7 +24,7 @@ import logging
 import typing
 
 import forml
-from forml import flow
+from forml import extension, flow
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl, layout
 from forml.io.dsl import parser
@@ -38,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Feed(
-    forml.Provider,
+    extension.Provider,
     typing.Generic[parser.Source, parser.Feature],
     path=provcfg.Feed.path,  # pylint: disable=no-member
 ):

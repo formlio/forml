@@ -20,15 +20,14 @@ IO sink utils.
 """
 import typing
 
-import forml
-from forml import flow
+from forml import extension, flow
 from forml.conf.parsed import provider as provcfg
 
 from .. import dsl
 from . import _consumer, commit
 
 
-class Sink(forml.Provider, default=provcfg.Sink.default, path=provcfg.Sink.path):
+class Sink(extension.Provider, default=provcfg.Sink.default, path=provcfg.Sink.path):
     """Sink is an implementation of a specific data consumer."""
 
     Writer = _consumer.Writer

@@ -29,9 +29,9 @@ import sqlalchemy
 from pyhive import sqlalchemy_trino as trino
 from sqlalchemy import engine, sql
 
+from forml.extension.feed.reader.sql import alchemy
 from forml.io import dsl
 from forml.io.dsl import parser as parsmod
-from forml.lib.feed.reader.sql import alchemy
 
 from . import Parser
 

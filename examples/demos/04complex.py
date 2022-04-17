@@ -18,7 +18,7 @@
 import demos
 from sklearn import model_selection
 
-from forml.lib.pipeline import ensemble
+from forml.pipeline import ensemble
 
 FH_RFC = demos.FeatureHasher(n_features=128) >> demos.RFC(n_estimators=20, n_jobs=4, max_depth=3)
 BIN_BAYES = demos.Binarizer(threshold=0.63) >> demos.Bayes(alpha=1.1)

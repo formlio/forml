@@ -23,10 +23,10 @@ Forml demos.
 import pandas as pd
 from sklearn import ensemble, feature_extraction, impute, linear_model, naive_bayes, preprocessing
 
+from forml import project
+from forml.extension.feed import static
 from forml.io import dsl
-from forml.lib.feed import static
-from forml.lib.pipeline import payload, topology
-from forml.project import _component
+from forml.pipeline import payload, topology
 
 SimpleImputer = topology.Mapper.operator(topology.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
 
@@ -80,4 +80,4 @@ class Feed(static.Feed):
 
 
 FEED = Feed()
-SOURCE = _component.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.to_pandas(columns=['Age'])
+SOURCE = project.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.to_pandas(columns=['Age'])

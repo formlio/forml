@@ -16,24 +16,23 @@
 # under the License.
 
 """
-Dask runner tests.
+ForML persistent unit tests.
 """
 # pylint: disable=no-self-use
+import typing
 
 import pytest
 
-from forml import io
+from forml.extension.registry.filesystem import virtual
 from forml.io import asset
-from forml.lib.runner import dask
 
-from . import Runner
+from . import Registry
 
 
-class TestRunner(Runner):
-    """Runner tests."""
+class TestRegistry(Registry):
+    """Registry unit tests."""
 
     @staticmethod
-    @pytest.fixture(scope='function', params=('threaded', 'multiprocessing'))
-    def runner(request, valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> dask.Runner:
-        """Runner fixture."""
-        return dask.Runner(valid_instance, feed_instance, sink_instance, scheduler=request.param)
+    @pytest.fixture(scope='function')
+    def constructor() -> typing.Callable[[], asset.Registry]:
+        return virtual.Registry

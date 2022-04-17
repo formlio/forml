@@ -16,25 +16,35 @@
 # under the License.
 
 """
-ForML persistent unit tests.
+Pyfunc runner tests.
 """
 # pylint: disable=no-self-use
-import pathlib
-import tempfile
-import typing
 
 import pytest
 
-from forml.io import asset
-from forml.lib.registry.filesystem import posix
+import forml
+from forml import io
+from forml.extension.runner import pyfunc
+from forml.io import asset, layout
+from forml.runtime import facility
 
-from . import Registry
+from . import Runner
 
 
-class TestRegistry(Registry):
-    """Registry unit tests."""
+class TestRunner(Runner):
+    """Runner tests."""
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def constructor(tmp_path: pathlib.Path) -> typing.Callable[[], asset.Registry]:
-        return lambda: posix.Registry(tempfile.mkdtemp(dir=tmp_path))
+    def runner(valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> pyfunc.Runner:
+        """Runner fixture."""
+        return pyfunc.Runner(valid_instance, feed_instance, sink_instance)
+
+    def test_train(self, runner: facility.Runner):
+        """Overridden train test."""
+        with pytest.raises(forml.InvalidError, match='Invalid runner mode'):
+            super().test_train(runner)
+
+    def test_call(self, runner: pyfunc.Runner, testset_entry: layout.Entry, generation_prediction: layout.Array):
+        """Pyfunc call mode test."""
+        assert tuple(runner.call(testset_entry).data) == generation_prediction

@@ -24,8 +24,8 @@ import typing
 
 import pytest
 
+from forml.extension.feed.reader.sql import dbapi
 from forml.io import dsl
-from forml.lib.feed.reader.sql import dbapi
 
 from . import Case, Parser, Scenario
 
