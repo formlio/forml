@@ -24,10 +24,9 @@ import typing
 import click
 from click import core
 
-from forml import project
+from forml import project, runtime
 from forml.conf.parsed import provider as provcfg
 from forml.io import asset
-from forml.runtime import facility
 
 if typing.TYPE_CHECKING:
     from forml import cli
@@ -81,7 +80,7 @@ def serve(
     scope: Scope, gateway: typing.Optional[str], registry: typing.Optional[str], feed: typing.Optional[str]
 ) -> None:
     """Launch the serving frontend."""
-    facility.Platform(
+    runtime.Platform(
         registry=provcfg.Registry.resolve(registry),
         feeds=provcfg.Feed.resolve(feed),
         inventory=scope.inventory,

@@ -24,9 +24,8 @@ import logging
 import typing
 
 import forml
-from forml import flow, io
+from forml import flow, io, runtime
 from forml.io import asset, dsl, layout
-from forml.runtime import facility
 
 LOGGER = logging.getLogger(__name__)
 
@@ -253,7 +252,7 @@ class Expression(Term):
         return tuple(cls.Node(t, szout[t], u) for t, u in dag)
 
 
-class Runner(facility.Runner, alias='pyfunc'):
+class Runner(runtime.Runner, alias='pyfunc'):
     """Python function based runner implementation."""
 
     def __init__(

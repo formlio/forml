@@ -23,14 +23,13 @@ import typing
 
 import graphviz as grviz
 
-from forml import conf, flow, io
+from forml import conf, flow, io, runtime
 from forml.io import asset
-from forml.runtime import facility
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(facility.Runner, alias='graphviz'):
+class Runner(runtime.Runner, alias='graphviz'):
     """Graphviz based runner implementation."""
 
     FILEPATH = f'{conf.APPNAME}.dot'

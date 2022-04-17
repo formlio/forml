@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """
-Service facility tests.
+Service runtime tests.
 """
 # pylint: disable=no-self-use
 import json
@@ -25,7 +25,7 @@ import pytest
 import forml
 from forml import io
 from forml.io import asset, layout
-from forml.runtime.facility import _service
+from forml.runtime import _service
 
 
 class TestEngine:

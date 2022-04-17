@@ -23,10 +23,14 @@ import typing
 
 from forml import flow
 from forml.pipeline import topology
-from forml.runtime.mode import evaluation
+
+from . import _api
+
+if typing.TYPE_CHECKING:
+    from forml import evaluation
 
 
-class Function(evaluation.Metric):
+class Function(_api.Metric):
     """Basic metric wrapping a plain scoring function."""
 
     def __init__(
@@ -37,8 +41,8 @@ class Function(evaluation.Metric):
         self._metric: flow.Spec = topology.Function.Actor.spec(function=metric)
         self._reducer: flow.Spec = topology.Function.Actor.spec(function=reducer)
 
-    def score(self, *outcomes: evaluation.Outcome) -> flow.Worker:
-        def apply(fold: evaluation.Outcome) -> flow.Worker:
+    def score(self, *outcomes: 'evaluation.Outcome') -> flow.Worker:
+        def apply(fold: 'evaluation.Outcome') -> flow.Worker:
             """Score the given outcome fold.
 
             Args:

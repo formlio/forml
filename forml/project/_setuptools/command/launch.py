@@ -27,7 +27,7 @@ from setuptools.command import test
 from forml.conf.parsed import provider
 
 if typing.TYPE_CHECKING:
-    from forml.runtime import facility
+    from forml import runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def launch(launcher: 'facility.Virtual.Builder', *args, **kwargs) -> typing.Any:
+    def launch(launcher: 'runtime.Virtual.Builder', *args, **kwargs) -> typing.Any:
         """Executing the particular runner target.
 
         Args:
@@ -85,7 +85,7 @@ class Train(Mode):
     description = 'trigger the development train mode'
 
     @staticmethod
-    def launch(launcher: 'facility.Virtual.Builder', *args, **kwargs) -> typing.Any:
+    def launch(launcher: 'runtime.Virtual.Builder', *args, **kwargs) -> typing.Any:
         return launcher.train(*args, **kwargs)
 
 
@@ -95,7 +95,7 @@ class Tune(Mode):
     description = 'trigger the development tune mode'
 
     @staticmethod
-    def launch(launcher: 'facility.Virtual.Builder', *args, **kwargs) -> typing.Any:
+    def launch(launcher: 'runtime.Virtual.Builder', *args, **kwargs) -> typing.Any:
         raise NotImplementedError('Tune mode is not yet supported')
 
 
@@ -105,5 +105,5 @@ class Eval(Mode):
     description = 'trigger the model evaluation mode'
 
     @staticmethod
-    def launch(launcher: 'facility.Virtual.Builder', *args, **kwargs) -> typing.Any:
+    def launch(launcher: 'runtime.Virtual.Builder', *args, **kwargs) -> typing.Any:
         return launcher.eval(*args, **kwargs)

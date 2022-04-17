@@ -25,9 +25,8 @@ import string
 import typing
 import unittest
 
-from forml import flow
+from forml import flow, runtime
 from forml.conf.parsed import provider as provcfg
-from forml.runtime import facility as launchmod
 from forml.testing import _facility, _spec
 
 LOGGER = logging.getLogger(__name__)
@@ -64,12 +63,12 @@ class Test:
         self._launcher: _facility.Launcher = launcher
 
     def __call__(self, suite: Suite) -> None:
-        launcher: typing.Optional[launchmod.Virtual.Builder] = self.init(suite)
+        launcher: typing.Optional[runtime.Virtual.Builder] = self.init(suite)
         if launcher:
             with self.raises(suite):
                 self.matches(suite, self.test(launcher))
 
-    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
+    def init(self, suite: Suite) -> runtime.Virtual.Builder:
         """Test init phase.
 
         Args:
@@ -99,7 +98,7 @@ class Test:
             value: Tested value..
         """
 
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+    def test(self, launcher: runtime.Virtual.Builder) -> typing.Any:
         """Test subject logic.
 
         Args:
@@ -154,7 +153,7 @@ class ReturnableTest(Test):
 class TestInitRaises(RaisableTest, Test):
     """Test composite."""
 
-    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
+    def init(self, suite: Suite) -> runtime.Virtual.Builder:
         with self.raises(suite):
             return super().init(suite)
 
@@ -162,7 +161,7 @@ class TestInitRaises(RaisableTest, Test):
 class PlainApplyTest(Test):
     """Testcase logic."""
 
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+    def test(self, launcher: runtime.Virtual.Builder) -> typing.Any:
         return launcher.apply()
 
 
@@ -177,7 +176,7 @@ class TestPlainApplyRaises(RaisableTest, PlainApplyTest):
 class StateTrainTest(Test):
     """Testcase logic."""
 
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+    def test(self, launcher: runtime.Virtual.Builder) -> typing.Any:
         return launcher.train()
 
 
@@ -188,12 +187,12 @@ class TestStateTrainRaises(RaisableTest, StateTrainTest):
 class StateApplyTest(Test):
     """Testcase logic."""
 
-    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
+    def init(self, suite: Suite) -> runtime.Virtual.Builder:
         launcher = super().init(suite)
         launcher.train()
         return launcher
 
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+    def test(self, launcher: runtime.Virtual.Builder) -> typing.Any:
         return launcher.apply()
 
 

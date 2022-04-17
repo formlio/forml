@@ -30,9 +30,8 @@ import types
 import typing
 
 import forml
-from forml import flow
+from forml import evaluation, flow
 from forml.io import dsl, layout
-from forml.runtime.mode import evaluation
 
 from .. import _body, _importer
 from .._component import virtual

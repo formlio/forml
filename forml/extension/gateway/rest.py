@@ -28,9 +28,8 @@ from starlette import responses as respmod
 from starlette import routing
 
 import forml
-from forml import io
+from forml import io, runtime
 from forml.io import asset, layout
-from forml.runtime import facility
 
 LOGGER = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class Stats(routing.Route):
         return respmod.Response(str(result), media_type='text/plain')
 
 
-class Gateway(facility.Gateway, alias='rest'):
+class Gateway(runtime.Gateway, alias='rest'):
     """Rest frontend."""
 
     DEFAULTS = {'headers': [('server', f'ForML {forml.__version__}')]}

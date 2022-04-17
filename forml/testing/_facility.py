@@ -22,10 +22,9 @@ import logging
 import typing
 import uuid
 
-from forml import flow, io, project
+from forml import flow, io, project, runtime
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
-from forml.runtime import facility
 from forml.testing import _spec
 
 LOGGER = logging.getLogger(__name__)
@@ -124,7 +123,7 @@ class Launcher:
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
-    def __call__(self, operator: type[flow.Operator]) -> facility.Virtual.Builder:
+    def __call__(self, operator: type[flow.Operator]) -> runtime.Virtual.Builder:
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
         trunk = instance.expand()

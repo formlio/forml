@@ -32,7 +32,7 @@ from forml.io import asset
 from . import _component, _distribution, _importer
 
 if typing.TYPE_CHECKING:
-    from forml.runtime import facility
+    from forml import runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
     @property
     @functools.cache
-    def launcher(self) -> 'facility.Virtual':
+    def launcher(self) -> 'runtime.Virtual':
         """Return the launcher configured with a virtual registry preloaded with this artifact.
 
         Returns:
@@ -186,8 +186,8 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             def __init__(self):
                 super().__init__(_distribution.Manifest.MODULE)
 
-        from forml.runtime import facility  # pylint: disable=import-outside-toplevel
+        from forml import runtime  # pylint: disable=import-outside-toplevel
 
         with _importer.context(Manifest()):
             # dummy package forced to load our fake manifest
-            return facility.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))
+            return runtime.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))

@@ -23,10 +23,9 @@ Pyfunc runner tests.
 import pytest
 
 import forml
-from forml import io
+from forml import io, runtime
 from forml.extension.runner import pyfunc
 from forml.io import asset, layout
-from forml.runtime import facility
 
 from . import Runner
 
@@ -40,7 +39,7 @@ class TestRunner(Runner):
         """Runner fixture."""
         return pyfunc.Runner(valid_instance, feed_instance, sink_instance)
 
-    def test_train(self, runner: facility.Runner):
+    def test_train(self, runner: runtime.Runner):
         """Overridden train test."""
         with pytest.raises(forml.InvalidError, match='Invalid runner mode'):
             super().test_train(runner)

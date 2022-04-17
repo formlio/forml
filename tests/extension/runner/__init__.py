@@ -25,9 +25,8 @@ import multiprocessing
 
 import pytest
 
-from forml import io
+from forml import io, runtime
 from forml.io import asset, layout
-from forml.runtime import facility
 
 
 class Runner(abc.ABC):
@@ -36,16 +35,16 @@ class Runner(abc.ABC):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='function')
-    def runner(valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> facility.Runner:
+    def runner(valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> runtime.Runner:
         """Runner fixture."""
 
     def test_apply(
-        self, runner: facility.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Array
+        self, runner: runtime.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Array
     ):
         """Test runner apply mode."""
         runner.apply()
         assert tuple(sink_output.get_nowait()) == generation_prediction
 
-    def test_train(self, runner: facility.Runner):
+    def test_train(self, runner: runtime.Runner):
         """Test runner train mode."""
         runner.train()

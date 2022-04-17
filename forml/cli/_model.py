@@ -25,9 +25,9 @@ import click
 from click import core
 
 import forml
+from forml import runtime
 from forml.conf.parsed import provider as provcfg
 from forml.io import asset, dsl
-from forml.runtime import facility
 
 if typing.TYPE_CHECKING:
     from forml import cli
@@ -61,7 +61,7 @@ class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, si
 
     def launcher(
         self, project: str, release: typing.Optional[str], generation: typing.Optional[str]
-    ) -> facility.Launcher:
+    ) -> runtime.Launcher:
         """Platform launcher helper.
 
         Args:
@@ -72,7 +72,7 @@ class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, si
         Returns:
             Platform launcher.
         """
-        return facility.Platform(runner=self.runner, registry=self.registry, feeds=self.feeds, sink=self.sink).launcher(
+        return runtime.Platform(runner=self.runner, registry=self.registry, feeds=self.feeds, sink=self.sink).launcher(
             project, release, generation
         )
 
@@ -86,7 +86,7 @@ class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, si
         Returns:
             List of level keys.
         """
-        return facility.Repo(self.registry).list(project, release)
+        return runtime.Repo(self.registry).list(project, release)
 
 
 @click.group(name='model')

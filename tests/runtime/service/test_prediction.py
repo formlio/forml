@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """
-Service facility worker tests.
+Service runtime worker tests.
 """
 # pylint: disable=no-self-use
 import multiprocessing
@@ -24,7 +24,7 @@ import pytest
 
 from forml import io
 from forml.io import asset, layout
-from forml.runtime.facility._service import prediction
+from forml.runtime._service import prediction
 
 
 class TestPool:

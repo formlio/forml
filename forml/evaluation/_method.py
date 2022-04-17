@@ -25,10 +25,14 @@ from sklearn import model_selection
 
 from forml import flow
 from forml.pipeline import payload
-from forml.runtime.mode import evaluation
+
+from . import _api
+
+if typing.TYPE_CHECKING:
+    from forml import evaluation
 
 
-class CrossVal(evaluation.Method):
+class CrossVal(_api.Method):
     """Cross validation ytrue/ypred dataset producer."""
 
     def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
@@ -47,7 +51,7 @@ class CrossVal(evaluation.Method):
 
     def produce(
         self, pipeline: flow.Composable, features: flow.Publishable, label: flow.Publishable
-    ) -> typing.Iterable[evaluation.Outcome]:
+    ) -> typing.Iterable['evaluation.Outcome']:
         splitter = flow.Worker(self._splitter, 1, 2 * self.nsplits)
         splitter.train(features, label)
 
@@ -62,7 +66,7 @@ class CrossVal(evaluation.Method):
             fold.train.subscribe(features_splits[2 * fid])
             fold.label.subscribe(label_splits[2 * fid])
             fold.apply.subscribe(features_splits[2 * fid + 1])
-            outcomes.append(evaluation.Outcome(label_splits[2 * fid + 1].publisher, fold.apply.publisher))
+            outcomes.append(_api.Outcome(label_splits[2 * fid + 1].publisher, fold.apply.publisher))
         return tuple(outcomes)
 
 

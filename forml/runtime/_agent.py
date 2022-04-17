@@ -23,10 +23,9 @@ import logging
 import typing
 
 import forml
-from forml import extension, flow, io
+from forml import evaluation, extension, flow, io
 from forml.conf.parsed import provider as provcfg
 from forml.io import asset, dsl
-from forml.runtime.mode import evaluation
 
 LOGGER = logging.getLogger(__name__)
 
