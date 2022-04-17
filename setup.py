@@ -39,7 +39,7 @@ EXTRAS_DEV = {
     'pytest-asyncio',
 }
 
-EXTRAS_DOCS = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx_rtd_theme'}
+EXTRAS_DOCS = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx-immaterial', 'sphinx-copybutton', 'nbsphinx'}
 
 EXTRAS_FLOW = {'pandas', 'scikit-learn'}
 

@@ -54,7 +54,12 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
-    'sphinx_rtd_theme',
+    'sphinx_immaterial',
+    # 'sphinx_immaterial.theme_result',
+    # 'sphinx_immaterial.kbd_keys',
+    # 'sphinx_immaterial.format_signatures',
+    'sphinx_copybutton',
+    'nbsphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,26 +82,82 @@ intersphinx_mapping = {
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_immaterial'
+
+# Set link name generated in the top bar.
+html_title = 'ForML'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['static']
 
-html_show_sourcelink = False
+html_show_sourcelink = True
 html_show_copyright = False
+html_show_sphinx = False
 html_logo = 'images/logo.svg'
+
 html_theme_options = {
-    'logo_only': False,
-    'display_version': False,
-}
-html_context = {
-    'display_github': True,
-    'github_user': 'formlio',
-    'github_repo': 'forml',
-    'github_version': 'master',
-    'conf_py_path': '/docs/',
+    'icon': {
+        'repo': 'fontawesome/brands/github',
+    },
+    'site_url': 'https://forml.io/',
+    'repo_url': 'https://github.com/formlio/forml/',
+    'repo_name': 'formlio/forml',
+    'repo_type': 'github',
+    'edit_uri': 'blob/main/docs',
+    # "google_analytics": ["UA-XXXXX", "auto"],
+    'globaltoc_collapse': True,
+    'features': [
+        # "navigation.expand",
+        # "navigation.tabs",
+        # "toc.integrate",
+        'navigation.sections',
+        # "navigation.instant",
+        # "header.autohide",
+        'navigation.top',
+        # "navigation.tracking",
+        # "search.highlight",
+        'search.share',
+    ],
+    'palette': [
+        {
+            'media': '(prefers-color-scheme: light)',
+            'scheme': 'default',
+            'primary': 'blue',
+            'accent': 'cyan',
+            'toggle': {
+                'icon': 'material/lightbulb-outline',
+                'name': 'Switch to dark mode',
+            },
+        },
+        {
+            'media': '(prefers-color-scheme: dark)',
+            'scheme': 'slate',
+            'primary': 'blue',
+            'accent': 'cyan',
+            'toggle': {
+                'icon': 'material/lightbulb',
+                'name': 'Switch to light mode',
+            },
+        },
+    ],
+    # BEGIN: version_dropdown
+    'version_dropdown': True,
+    'version_info': [
+        {
+            'version': 'https://sphinx-immaterial.rtfd.io',
+            'title': 'ReadTheDocs',
+            'aliases': [],
+        },
+        {
+            'version': 'https://jbms.github.io/sphinx-immaterial',
+            'title': 'Github Pages',
+            'aliases': [],
+        },
+    ],
+    # END: version_dropdown
+    'toc_title_is_page_title': True,
 }
 
 # == Extensions configuration ==================================================
