@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Transformation utilities frontend API module.
+Payload transformation utilities.
 """
 
 from ._common import Apply, ColumnExtractor, Concat, LabelMerger
