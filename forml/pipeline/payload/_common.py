@@ -26,7 +26,8 @@ import pandas
 from pandas.core import generic as pdtype
 
 from forml import flow
-from forml.lib.pipeline.payload import _format
+
+from . import _format
 
 LOGGER = logging.getLogger(__name__)
 

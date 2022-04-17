@@ -27,7 +27,7 @@ import pandas
 from pandas.core import generic as pdtype
 
 from forml import flow
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 
 LOGGER = logging.getLogger(__name__)
 

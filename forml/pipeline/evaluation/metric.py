@@ -22,7 +22,7 @@ import statistics
 import typing
 
 from forml import flow
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 from forml.runtime.mode import evaluation
 
 

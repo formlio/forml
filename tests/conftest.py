@@ -32,7 +32,7 @@ import pytest
 from forml import flow, io
 from forml import project as prj
 from forml.io import asset, dsl, layout
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 
 from . import helloworld
 from .helloworld import application as helloworld_descriptor

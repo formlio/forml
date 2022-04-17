@@ -26,7 +26,7 @@ import pytest
 import forml
 from forml import flow, io, project
 from forml.io import layout
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 from forml.project import _importer
 
 

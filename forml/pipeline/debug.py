@@ -26,7 +26,7 @@ import typing
 import pandas
 
 from forml import flow
-from forml.lib.pipeline import payload
+from forml.pipeline import payload
 
 
 class Return(flow.Operator):

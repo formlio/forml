@@ -23,7 +23,7 @@ Simple operator unit tests.
 import pytest
 
 from forml import flow
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 
 
 class TestMapper:

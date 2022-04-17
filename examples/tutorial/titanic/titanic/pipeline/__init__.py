@@ -29,7 +29,7 @@ from sklearn import model_selection
 from titanic.pipeline import model, preprocessing
 
 from forml import project
-from forml.lib.pipeline import ensemble
+from forml.pipeline import ensemble
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.

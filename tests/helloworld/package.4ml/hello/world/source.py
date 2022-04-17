@@ -22,7 +22,7 @@ Dummy project source.
 from forml import project
 from forml.io import dsl, layout
 from forml.io.dsl import function
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 from tests import helloworld as schema
 
 school_ref = schema.School.reference('bar')

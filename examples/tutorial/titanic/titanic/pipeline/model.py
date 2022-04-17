@@ -26,7 +26,7 @@ Here we just create couple of forml operators that implement particular classifi
 from sklearn import ensemble as estimator
 from sklearn import linear_model
 
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 
 
 def predict_proba(classifier, *args, **kwargs):

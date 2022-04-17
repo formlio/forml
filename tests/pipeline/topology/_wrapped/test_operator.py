@@ -19,7 +19,7 @@ Generic operators unit tests.
 """
 # pylint: disable=no-self-use
 
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 
 
 class TestAdapter:

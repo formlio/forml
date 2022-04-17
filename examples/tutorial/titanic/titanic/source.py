@@ -26,7 +26,7 @@ the forml loader. In this case it is implemented as a python module but it could
 from openschema import kaggle as schema
 
 from forml import project
-from forml.lib.pipeline import payload
+from forml.pipeline import payload
 
 FEATURES = schema.Titanic.select(
     schema.Titanic.Pclass,

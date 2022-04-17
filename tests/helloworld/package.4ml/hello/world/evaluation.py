@@ -21,7 +21,7 @@ Dummy project evaluation.
 from sklearn import metrics, model_selection
 
 from forml import project
-from forml.lib.pipeline.evaluation import method, metric
+from forml.pipeline.evaluation import method, metric
 
 INSTANCE = project.Evaluation(
     metric.Function(metrics.log_loss),

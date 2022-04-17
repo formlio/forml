@@ -22,8 +22,8 @@ import typing
 
 import pytest
 
+from forml import application
 from forml.io import dsl, layout
-from forml.lib import application
 
 SCHEMA = dsl.Schema.from_fields(dsl.Field(dsl.Integer(), name='A'), dsl.Field(dsl.String(), name='B'))
 OUTCOME = layout.Outcome(SCHEMA, [[1, 'a'], [2, 'b'], [3, 'c']])

@@ -27,7 +27,7 @@ from pandas.core import generic as pdtype
 from sklearn import model_selection
 
 from forml import flow
-from forml.lib.pipeline import payload
+from forml.pipeline import payload
 
 
 class Split(typing.NamedTuple):

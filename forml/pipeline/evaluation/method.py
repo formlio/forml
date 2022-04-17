@@ -24,7 +24,7 @@ import pandas
 from sklearn import model_selection
 
 from forml import flow
-from forml.lib.pipeline import payload
+from forml.pipeline import payload
 from forml.runtime.mode import evaluation
 
 

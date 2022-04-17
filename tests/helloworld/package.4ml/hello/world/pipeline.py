@@ -23,7 +23,7 @@ import typing
 
 from forml import flow, project
 from forml.io import layout
-from forml.lib.pipeline import topology
+from forml.pipeline import topology
 
 
 @topology.Function.actor
