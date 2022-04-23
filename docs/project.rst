@@ -67,6 +67,7 @@ framework using the ``project.setup()`` as shown in the examples below.
 
 .. autofunction:: forml.project.setup
 
+.. _project-setup:
 
 Setup.py
 ''''''''

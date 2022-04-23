@@ -39,9 +39,17 @@ EXTRAS_DEV = {
     'pytest-asyncio',
 }
 
-EXTRAS_DOCS = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx-immaterial', 'sphinx-copybutton', 'nbsphinx'}
+EXTRAS_DOCS = {
+    'sphinx',
+    'sphinx-autodoc-typehints',
+    'sphinx-copybutton',
+    'sphinx-immaterial',
+    'sphinxcontrib-details-directive',
+    'sphinxcontrib-napoleon',
+    'nbsphinx',
+}
 
-EXTRAS_FLOW = {'pandas', 'scikit-learn'}
+EXTRAS_PIPELINE = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
@@ -52,7 +60,14 @@ EXTRAS_REST = {'starlette', 'uvicorn'}
 EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
 EXTRAS_ALL = (
-    EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOCS | EXTRAS_FLOW | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_REST | EXTRAS_SQL
+    EXTRAS_DASK
+    | EXTRAS_DEV
+    | EXTRAS_DOCS
+    | EXTRAS_PIPELINE
+    | EXTRAS_MLFLOW
+    | EXTRAS_GRAPHVIZ
+    | EXTRAS_REST
+    | EXTRAS_SQL
 )
 
 setuptools.setup(
@@ -73,7 +88,7 @@ setuptools.setup(
         'dask': EXTRAS_DASK,
         'dev': EXTRAS_DEV,
         'docs': EXTRAS_DOCS,
-        'flow': EXTRAS_FLOW,
+        'pipeline': EXTRAS_PIPELINE,
         'graphviz': EXTRAS_GRAPHVIZ,
         'mlflow': EXTRAS_MLFLOW,
         'rest': EXTRAS_REST,

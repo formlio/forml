@@ -26,7 +26,7 @@ Platform Setup
 --------------
 
 Assuming you have no existing :doc:`feeds <feed>` configured in your system yet, let's install the
-:doc:`Openlake feed<openlake:install>`:
+:doc:`Openlake feed<openlake:install>`::
 
     pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
 
@@ -100,7 +100,8 @@ Development Lifecycle Actions
 
     $ python3 setup.py train --runner visual
 
-.. image:: images/titanic-train.png
+.. image:: _static/images/titanic-train.png
+   :align: center
 
 4. Run the ``eval`` mode on the (default) ``dask`` runner (called ``compute`` in our config) to get the
    cross-validation score::
@@ -108,41 +109,42 @@ Development Lifecycle Actions
     $ python3 setup.py eval
     0.6531806857218416
 
-5. Create the project package artifact and upload it to the (default) filesystem registry (assuming the same linage
+5. Create the project package artifact and upload it to the (default) filesystem registry (assuming the same release
    doesn't already exist - otherwise increment the project version in the ``setup.py``)::
 
     $ python3 setup.py bdist_4ml upload
 
    This should publish the project into your local filesystem forml registry making it available for the production
    lifecycle. This becomes the first published :ref:`release <concept-persistence>` of this project versioned (according
-   to the version from :ref:setup.py `<project-setup>` as ``0.1.dev0``)
+   to the version from :ref:`setup.py <project-setup>` as ``0.1.dev0``)
 
 Production Lifecycle Actions
 ''''''''''''''''''''''''''''
 
-Production lifecycles doesn't need the project working copy so feel free to change the directory to another location
+Production lifecycle doesn't need the project working copy so feel free to change the directory to another location
 before executing the commands.
 
-1. List the local registry confirming the project has been published its first release::
+1. List the local registry confirming the project has been published as its first release::
 
-    $ forml registry list
+    $ forml model list
     forml-example-titanic
-    $ forml registry list forml-example-titanic
+    $ forml model list forml-example-titanic
     0.1.dev0
-    $ forml registry list forml-example-titanic 0.1.dev0
+    $ forml model list forml-example-titanic 0.1.dev0
 
    The output shows the project artifact is available in the registry as a release ``0.1.dev0`` not having any
    generation yet (the last command not producing any output).
 
-2. Train the project to create the first generation of its models and list the registry to confirm it got persisted::
+2. Train the project (using the default runner as per our config) to create the first generation of its models and list
+the registry to confirm it got persisted::
 
     $ forml model train forml-example-titanic
-    $ forml registry list forml-example-titanic 0.1.dev0
+    $ forml model list forml-example-titanic 0.1.dev0
     1
 
    Now we have our first generation of the titanic models available in the registry.
 
-3. Apply the trained generation of the project to get the predictions::
+3. Apply the trained generation to get the predictions::
 
     $ forml model apply forml-example-titanic
     [0.38717846 0.37779938 0.38008973 0.37771585 0.3873835  0.38832168
@@ -156,7 +158,10 @@ before executing the commands.
 
     $ forml model -R visual apply forml-example-titanic
 
-.. image:: images/titanic-apply.png
+.. image:: _static/images/titanic-apply.png
+
+Serving
+'''''''
 
 Working with Jupyter Notebooks
 ------------------------------

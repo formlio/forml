@@ -71,7 +71,7 @@ class Feed(
 
         def actor(
             driver: type[extract.Driver], query: dsl.Query
-        ) -> flow.Spec[typing.Optional[layout.Entry], None, extract.Operator]:
+        ) -> flow.Spec[typing.Optional[layout.Entry], None, extract.Output]:
             """Helper for creating the reader actor spec for the given query.
 
             Args:
@@ -97,7 +97,7 @@ class Feed(
             else:
                 columns, label_actor = extract.Slicer.from_columns(train_query.features, source.extract.labels)
                 train_query = train_query.select(*columns)
-        train_actor: flow.Spec[typing.Optional[layout.Entry], None, extract.Operator] = actor(train_driver, train_query)
+        train_actor: flow.Spec[typing.Optional[layout.Entry], None, layout.Tabular] = actor(train_driver, train_query)
         loader: flow.Composable = extract.Operator(apply_actor, train_actor, label_actor)
         if source.transform:
             loader >>= source.transform

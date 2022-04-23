@@ -2,7 +2,8 @@
 .tox/
 build/
 dist/
-docs/**/_*
+docs/_auto/
+docs/_build/
 htmlcov/
 *.pyc
 *.log

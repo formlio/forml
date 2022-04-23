@@ -59,22 +59,25 @@ Resources
 * `PyPI Repository <https://pypi.org/project/forml/>`_
 
 
-Content
--------
+.. toctree::
+    :hidden:
+
+    Home <self>
+    license
+
 
 .. toctree::
-    :maxdepth: 2
+    :hidden:
     :caption: Getting Started
 
-    concept
-    license
     install
-    examples
     tutorial
+    concept
     faq
 
+
 .. toctree::
-    :maxdepth: 2
+    :hidden:
     :caption: Implementor's Guide
 
     project
@@ -83,12 +86,14 @@ Content
     io
     dsl
     interactive
+    Foo <../examples/tutorial/titanic/notebooks/tutorial.ipynb>
     operator
     testing
     lib
 
+
 .. toctree::
-    :maxdepth: 2
+    :hidden:
     :caption: Operations Manual
 
     platform

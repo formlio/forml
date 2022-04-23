@@ -55,15 +55,14 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx_immaterial',
-    # 'sphinx_immaterial.theme_result',
-    # 'sphinx_immaterial.kbd_keys',
-    # 'sphinx_immaterial.format_signatures',
     'sphinx_copybutton',
+    'sphinxcontrib.details.directive',
     'nbsphinx',
+    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['templates']
+templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -76,6 +75,9 @@ intersphinx_mapping = {
     'openschema': ('https://openschema.readthedocs.io/en/latest/', None),
     'openlake': ('https://openlake.readthedocs.io/en/latest/', None),
 }
+
+# Warn about all references where the target cannot be found
+nitpicky = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -90,12 +92,16 @@ html_title = 'ForML'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['static']
+html_static_path = ['_static']
 
 html_show_sourcelink = True
 html_show_copyright = False
 html_show_sphinx = False
-html_logo = 'images/logo.svg'
+html_favicon = '_static/images/favicon.ico'
+html_logo = '_static/images/logo.svg'
+
+# don't include domain object description fields, like “Parameters”, “Returns”, “Raises”, etc. in the table of contents
+include_object_description_fields_in_toc = False
 
 html_theme_options = {
     'icon': {
@@ -113,10 +119,10 @@ html_theme_options = {
         # "navigation.tabs",
         # "toc.integrate",
         'navigation.sections',
-        # "navigation.instant",
+        'navigation.instant',
         # "header.autohide",
         'navigation.top',
-        # "navigation.tracking",
+        'navigation.tracking',
         # "search.highlight",
         'search.share',
     ],
@@ -127,7 +133,7 @@ html_theme_options = {
             'primary': 'blue',
             'accent': 'cyan',
             'toggle': {
-                'icon': 'material/lightbulb-outline',
+                'icon': 'material/weather-night',
                 'name': 'Switch to dark mode',
             },
         },
@@ -137,26 +143,11 @@ html_theme_options = {
             'primary': 'blue',
             'accent': 'cyan',
             'toggle': {
-                'icon': 'material/lightbulb',
+                'icon': 'material/weather-sunny',
                 'name': 'Switch to light mode',
             },
         },
     ],
-    # BEGIN: version_dropdown
-    'version_dropdown': True,
-    'version_info': [
-        {
-            'version': 'https://sphinx-immaterial.rtfd.io',
-            'title': 'ReadTheDocs',
-            'aliases': [],
-        },
-        {
-            'version': 'https://jbms.github.io/sphinx-immaterial',
-            'title': 'Github Pages',
-            'aliases': [],
-        },
-    ],
-    # END: version_dropdown
     'toc_title_is_page_title': True,
 }
 
@@ -164,12 +155,16 @@ html_theme_options = {
 
 # -- Options for sphinx.ext.autodoc --------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
-
 autoclass_content = 'both'
 autodoc_typehints = 'description'
 autosummary_generate = True
 
-# -- Options for sphinx.ext.napoleon --------------------------------------------
+# -- Options for sphinx_autodoc_typehints --------------------------------------
+# See: https://pypi.org/project/sphinx-autodoc-typehints/
+
+
+# -- Options for sphinx.ext.napoleon -------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_numpy_docstring = False
 napoleon_use_rtype = False
+napoleon_include_init_with_doc = True

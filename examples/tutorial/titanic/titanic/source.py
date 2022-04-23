@@ -35,9 +35,7 @@ FEATURES = schema.Titanic.select(
     schema.Titanic.Age,
     schema.Titanic.SibSp,
     schema.Titanic.Parch,
-    schema.Titanic.Ticket,
     schema.Titanic.Fare,
-    schema.Titanic.Cabin,
     schema.Titanic.Embarked,
 )
 
