@@ -32,7 +32,7 @@ from forml.io import asset
 from . import _component, _distribution, _importer
 
 if typing.TYPE_CHECKING:
-    from forml import runtime
+    from forml import project, runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,9 +40,9 @@ LOGGER = logging.getLogger(__name__)
 class Components(collections.namedtuple('Components', 'source, pipeline, evaluation')):
     """Top level ForML project components holding the implementations of individual project components."""
 
-    source: '_component.Source'
+    source: 'project.Source'
     pipeline: flow.Composable
-    evaluation: typing.Optional['_component.Evaluation']
+    evaluation: typing.Optional['project.Evaluation']
 
     class Builder(abc.Set):
         """Descriptor builder allowing to setup attributes one by one."""
@@ -85,9 +85,9 @@ class Components(collections.namedtuple('Components', 'source, pipeline, evaluat
 
     def __new__(
         cls,
-        source: '_component.Source',
+        source: 'project.Source',
         pipeline: flow.Composable,
-        evaluation: typing.Optional['_component.Evaluation'] = None,
+        evaluation: typing.Optional['project.Evaluation'] = None,
     ):
         if not isinstance(pipeline, flow.Composable):
             raise forml.InvalidError('Invalid pipeline')

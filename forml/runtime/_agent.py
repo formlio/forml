@@ -23,7 +23,7 @@ import logging
 import typing
 
 import forml
-from forml import evaluation, extension, flow, io
+from forml import evaluation, extension, flow, io, project
 from forml.conf.parsed import provider as provcfg
 from forml.io import asset, dsl
 
@@ -32,6 +32,8 @@ LOGGER = logging.getLogger(__name__)
 
 class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Runner.path):
     """Abstract base runner class to be extended by particular runner implementations."""
+
+    _METRIC_SCHEMA = dsl.Schema.from_fields(dsl.Field(dsl.Float(), name='Metric'))
 
     def __init__(
         self,
@@ -63,7 +65,7 @@ class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Ru
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._build(lower, upper, self._instance.project.pipeline)
+        composition = self._build(lower, upper, self._instance.project.pipeline, output=None)  # TO-DO: sink schema
         self._exec(composition.apply, self._instance.state(composition.persistent))
 
     def tune(  # pylint: disable=no-self-use
@@ -84,13 +86,7 @@ class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Ru
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        spec = self._instance.project.evaluation
-        if not spec:
-            raise forml.MissingError('Project not evaluable')
-
-        composition = self._build(
-            lower, upper, self._instance.project.pipeline >> evaluation.TrainScore(spec.metric, spec.method)
-        )
+        composition = self._eval(lower, upper, lambda s: evaluation.TrainScore(s.metric, s.method))
         self._exec(composition.train)
 
     def apply_eval(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
@@ -100,22 +96,50 @@ class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Ru
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
+        composition = self._eval(lower, upper, lambda s: evaluation.ApplyScore(s.metric))
+        self._exec(composition.train, self._instance.state(composition.persistent))
+
+    def _eval(
+        self,
+        lower: typing.Optional[dsl.Native],
+        upper: typing.Optional[dsl.Native],
+        evaluator: typing.Callable[[project.Evaluation], flow.Operator],
+    ) -> flow.Composition:
+        """Helper for setting up the evaluation composition.
+
+        Args:
+            lower: Ordinal value as the lower bound for the ETL cycle.
+            upper: Ordinal value as the upper bound for the ETL cycle.
+            evaluator: Callback to provide an operator based on the give evaluation spec.
+
+        Returns:
+            Evaluation composition.
+        """
         spec = self._instance.project.evaluation
         if not spec:
             raise forml.MissingError('Project not evaluable')
 
-        composition = self._build(lower, upper, self._instance.project.pipeline >> evaluation.ApplyScore(spec.metric))
-        self._exec(composition.train, self._instance.state(composition.persistent))
+        return self._build(
+            lower,
+            upper,
+            self._instance.project.pipeline >> evaluator(spec),
+            output=self._METRIC_SCHEMA,
+        )
 
     def _build(
-        self, lower: typing.Optional[dsl.Native], upper: typing.Optional[dsl.Native], *blocks: flow.Composable
+        self,
+        lower: typing.Optional[dsl.Native],
+        upper: typing.Optional[dsl.Native],
+        *blocks: flow.Composable,
+        output: typing.Optional[dsl.Source.Schema] = None,
     ) -> flow.Composition:
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
         Args:
+            *blocks: Composable block to assemble (each with its own composition domain).
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
-            *blocks: Additional block to assemble (each with its own composition domain).
+            output: Output schema.
 
         Returns:
             Assembled flow pipeline.
@@ -123,7 +147,7 @@ class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Ru
         segments = [self._feed.load(self._instance.project.source, lower, upper)]
         segments.extend(b.expand() for b in blocks)
         if self._sink:
-            segments.append(self._sink.save(None))  # TO-DO: implement sink schemas
+            segments.append(self._sink.save(output))
         return flow.Composition(*segments)
 
     def _exec(self, path: flow.Path, assets: typing.Optional[asset.State] = None) -> None:
