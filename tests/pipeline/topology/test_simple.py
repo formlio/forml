@@ -19,6 +19,7 @@
 Simple operator unit tests.
 """
 # pylint: disable=no-self-use
+import abc
 
 import pytest
 
@@ -26,15 +27,35 @@ from forml import flow
 from forml.pipeline import topology
 
 
-class TestMapper:
-    """Simple mapper unit tests."""
+class Base(abc.ABC):
+    """Simple operator unit tests base class."""
 
     @staticmethod
-    @pytest.fixture(scope='function')
-    def operator(actor_type: type[flow.Actor]):
+    @abc.abstractmethod
+    @pytest.fixture(scope='session')
+    def operator(actor_type: type[flow.Actor]) -> flow.Operator:
         """Operator fixture."""
-        return topology.Mapper.operator(actor_type)()  # pylint: disable=no-value-for-parameter
 
     def test_compose(self, operator: flow.Operator):
         """Operator composition test."""
         operator.compose(flow.Origin())
+
+
+class TestMapper(Base):
+    """Simple mapper unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def operator(actor_type: type[flow.Actor]):
+        """Operator fixture."""
+        return topology.Mapper.operator(actor_type)()  # pylint: disable=no-value-for-parameter
+
+
+class TestConsumer(Base):
+    """Simple consumer unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def operator(actor_type: type[flow.Actor]):
+        """Operator fixture."""
+        return topology.Consumer.operator(actor_type)()  # pylint: disable=no-value-for-parameter

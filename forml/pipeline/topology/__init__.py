@@ -19,8 +19,20 @@
 Dag composition utilities frontend API module.
 """
 
+from ._auto import SklearnClassifierWrapper, SklearnRegressorWrapper, SklearnTransformerWrapper, autowrap
 from ._simple import Consumer, Labeler, Mapper
 from ._wrapped.actor import Class, Function
 from ._wrapped.operator import Adapter
 
-__all__ = ['Class', 'Function', 'Adapter', 'Mapper', 'Consumer', 'Labeler']
+__all__ = [
+    'autowrap',
+    'Class',
+    'Function',
+    'Adapter',
+    'Mapper',
+    'Consumer',
+    'Labeler',
+    'SklearnTransformerWrapper',
+    'SklearnClassifierWrapper',
+    'SklearnRegressorWrapper',
+]

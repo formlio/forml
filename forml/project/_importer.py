@@ -44,7 +44,7 @@ class Finder(abc.MetaPathFinder):
             self._module: types.ModuleType = module
             self._onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = onexec
 
-        def create_module(self, spec) -> types.ModuleType:
+        def create_module(self, spec: machinery.ModuleSpec) -> types.ModuleType:
             """Return our fake module instance.
 
             Args:
@@ -70,8 +70,12 @@ class Finder(abc.MetaPathFinder):
         self._name: str = module.__name__
         self._loader: abc.Loader = self.Loader(module, onexec)
 
-    # pylint: disable=unused-argument
-    def find_spec(self, fullname: str, path, target) -> typing.Optional[machinery.ModuleSpec]:
+    def find_spec(
+        self,
+        fullname: str,
+        path: typing.Optional[typing.Sequence[str]],  # pylint: disable=unused-argument
+        target: typing.Optional[types.ModuleType] = None,  # pylint: disable=unused-argument
+    ) -> typing.Optional[machinery.ModuleSpec]:
         """Return module spec if asked for component module.
 
         Args:
