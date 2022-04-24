@@ -93,18 +93,18 @@ class Operator(flow.Operator):
 
     def __init__(
         self,
-        apply: flow.Spec[typing.Optional[layout.Entry], None, layout.RowMajor],
-        train: flow.Spec[typing.Optional[layout.Entry], None, layout.Tabular],
+        apply: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.RowMajor]],
+        train: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.Tabular]],
         label: typing.Optional[
-            flow.Spec[typing.Optional[layout.Entry], None, tuple[layout.RowMajor, layout.RowMajor]]
+            flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, tuple[layout.RowMajor, layout.RowMajor]]]
         ] = None,
     ):
         if apply.actor.is_stateful() or (train and train.actor.is_stateful()) or (label and label.actor.is_stateful()):
             raise forml.InvalidError('Stateful actor invalid for an extractor')
-        self._apply: flow.Spec[typing.Optional[layout.Entry], None, layout.RowMajor] = apply
-        self._train: flow.Spec[typing.Optional[layout.Entry], None, layout.Tabular] = train
+        self._apply: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.RowMajor]] = apply
+        self._train: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.Tabular]] = train
         self._label: typing.Optional[
-            flow.Spec[typing.Optional[layout.Entry], None, tuple[layout.RowMajor, layout.RowMajor]]
+            flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, tuple[layout.RowMajor, layout.RowMajor]]]
         ] = label
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
@@ -195,7 +195,7 @@ class Slicer(flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowM
     @classmethod
     def from_columns(
         cls, features: typing.Sequence[dsl.Feature], labels: typing.Union[dsl.Feature, typing.Sequence[dsl.Feature]]
-    ) -> tuple[typing.Sequence[dsl.Feature], flow.Spec[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]]:
+    ) -> tuple[typing.Sequence[dsl.Feature], 'flow.Spec[Slicer]']:
         """Helper method for creating the slicer and the combined set of columns.
 
         Args:

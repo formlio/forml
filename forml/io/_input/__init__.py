@@ -26,7 +26,7 @@ import typing
 import forml
 from forml import extension, flow
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl, layout
+from forml.io import dsl
 from forml.io.dsl import parser
 
 from . import _producer, extract
@@ -69,9 +69,7 @@ class Feed(
             Pipeline segment.
         """
 
-        def actor(
-            driver: type[extract.Driver], query: dsl.Query
-        ) -> flow.Spec[typing.Optional[layout.Entry], None, extract.Output]:
+        def actor(driver: type[extract.Driver], query: dsl.Query) -> 'flow.Spec[extract.Driver]':
             """Helper for creating the reader actor spec for the given query.
 
             Args:
@@ -84,9 +82,7 @@ class Feed(
             return driver.spec(producer, extract.Statement.prepare(query, source.extract.ordinal, lower, upper))
 
         producer = self.producer(self.sources, self.features, **self._readerkw)
-        apply_actor: flow.Spec[typing.Optional[layout.Entry], None, layout.RowMajor] = actor(
-            extract.RowDriver, source.extract.apply
-        )
+        apply_actor: flow.Spec[extract.Driver] = actor(extract.RowDriver, source.extract.apply)
         label_actor: typing.Optional[flow.Spec] = None
         train_query: dsl.Query = source.extract.train
         train_driver = extract.RowDriver
@@ -97,7 +93,7 @@ class Feed(
             else:
                 columns, label_actor = extract.Slicer.from_columns(train_query.features, source.extract.labels)
                 train_query = train_query.select(*columns)
-        train_actor: flow.Spec[typing.Optional[layout.Entry], None, layout.Tabular] = actor(train_driver, train_query)
+        train_actor: flow.Spec[extract.Driver] = actor(train_driver, train_query)
         loader: flow.Composable = extract.Operator(apply_actor, train_actor, label_actor)
         if source.transform:
             loader >>= source.transform

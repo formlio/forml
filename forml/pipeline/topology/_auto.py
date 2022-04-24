@@ -89,19 +89,28 @@ class ClassWrapper(collections.namedtuple('ClassWrapper', 'base, apply'), typing
 class SklearnTransformerWrapper(ClassWrapper[type[sklbase.TransformerMixin]]):
     """Wrapper for Scikit-learn transformers."""
 
-    def __new__(cls):
+    def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'transform'):
         def wrap(transformer: type[sklbase.TransformerMixin]):
-            return _simple.Mapper.operator(actor.Class.actor(transformer, train='fit', apply='transform'))
+            return _simple.Mapper.operator(actor.Class.actor(transformer, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.TransformerMixin, wrap)
 
 
 class SklearnClassifierWrapper(ClassWrapper[type[sklbase.ClassifierMixin]]):
-    """Wrapper for Scikit-learn classifiers."""
+    """Wrapper for Scikit-learn classifiers.
 
-    def __new__(cls):
+    Apply mode (predict) mapper can be customized to choose between the typical `.predict_proba` or the actual class
+    prediction using the `.predict`.
+    """
+
+    def __new__(
+        cls,
+        apply: typing.Union[str, typing.Callable[..., typing.Any]] = lambda c, *a, **kw: c.predict_proba(  # noqa: B008
+            *a, **kw
+        ).transpose()[-1],
+    ):
         def wrap(classifier: type[sklbase.ClassifierMixin]):
-            return _simple.Consumer.operator(actor.Class.actor(classifier, train='fit', apply='predict_proba'))
+            return _simple.Consumer.operator(actor.Class.actor(classifier, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.ClassifierMixin, wrap)
 
@@ -109,9 +118,9 @@ class SklearnClassifierWrapper(ClassWrapper[type[sklbase.ClassifierMixin]]):
 class SklearnRegressorWrapper(ClassWrapper[type[sklbase.RegressorMixin]]):
     """Wrapper for Scikit-learn regressors."""
 
-    def __new__(cls):
+    def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'predict'):
         def wrap(regressor: type[sklbase.RegressorMixin]):
-            return _simple.Consumer.operator(actor.Class.actor(regressor, train='fit', apply='predict'))
+            return _simple.Consumer.operator(actor.Class.actor(regressor, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.RegressorMixin, wrap)
 

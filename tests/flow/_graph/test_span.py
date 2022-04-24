@@ -66,14 +66,14 @@ class TestPath:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def head(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
+    def head(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
         """Path head fixture."""
         return flow.Worker(actor_spec, 1, 1)
 
     @staticmethod
     @pytest.fixture(scope='function', params=(False, True))
     def path(
-        request, head: flow.Worker, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]
+        request, head: flow.Worker, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ) -> span.Path:
         """Path fixture."""
         flow1 = flow.Worker(actor_spec, 1, 2)

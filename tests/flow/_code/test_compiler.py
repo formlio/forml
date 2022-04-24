@@ -27,19 +27,19 @@ from forml.io import asset, layout
 
 
 @pytest.fixture(scope='session')
-def node1(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
+def node1(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
     """Node fixture."""
     return flow.Worker(actor_spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node2(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
+def node2(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
     """Node fixture."""
     return flow.Worker(actor_spec, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node3(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
+def node3(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
     """Node fixture."""
     return flow.Worker(actor_spec, 1, 1)
 

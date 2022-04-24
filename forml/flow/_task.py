@@ -21,13 +21,11 @@ Flow actor abstraction.
 
 import abc
 import collections
-import io
 import logging
-import pickle
 import types
 import typing
 
-import joblib
+import cloudpickle
 
 import forml
 
@@ -63,8 +61,13 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
     return value
 
 
+# Actor features type.
 Features = typing.TypeVar('Features')
+
+# Actor labels type.
 Labels = typing.TypeVar('Labels')
+
+# Actor apply result type.
 Result = typing.TypeVar('Result')
 
 
@@ -72,7 +75,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
     """Abstract interface of an actor."""
 
     @classmethod
-    def spec(cls, *args, **kwargs: typing.Any) -> 'Spec[Features, Labels, Result]':
+    def spec(cls: 'type[_Actor]', *args, **kwargs: typing.Any) -> 'Spec[_Actor]':
         """Shortcut for creating a spec of this actor.
 
         Args:
@@ -94,7 +97,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         """
         return cls.train.__code__ is not Actor.train.__code__
 
-    def train(self, features: Features, labels: Labels) -> None:  # pylint: disable=no-self-use
+    def train(self, features: Features, labels: Labels, /) -> None:  # pylint: disable=no-self-use
         """Train the actor using the provided features and label.
 
         Optional method engaging the *Train* (``features``) and *Label* (``label``) ports on stateful actors.
@@ -147,9 +150,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         if not self.is_stateful():
             return bytes()
         LOGGER.debug('Getting %s state', self)
-        with io.BytesIO() as bio:
-            joblib.dump(self.__dict__, bio, protocol=pickle.HIGHEST_PROTOCOL)
-            return bio.getvalue()
+        return cloudpickle.dumps(self.__dict__)
 
     def set_state(self, state: bytes) -> None:
         """Set new internal state of the actor. Note this doesn't change the setting of the actor hyper-parameters.
@@ -163,22 +164,25 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
             raise forml.UnexpectedError('State provided but actor stateless')
         LOGGER.debug('Setting %s state (%d bytes)', self, len(state))
         params = self.get_params()  # keep the original hyper-params
-        with io.BytesIO(state) as bio:
-            self.__dict__.update(joblib.load(bio))
+        self.__dict__.update(cloudpickle.loads(state))
         self.set_params(**params)  # restore the original hyper-params
 
     def __repr__(self):
         return name(self.__class__, **self.get_params())
 
 
-class Spec(typing.Generic[Features, Labels, Result], collections.namedtuple('Spec', 'actor, args, kwargs')):
+# Generic actor type.
+_Actor = typing.TypeVar('_Actor', bound=Actor)
+
+
+class Spec(typing.Generic[_Actor], collections.namedtuple('Spec', 'actor, args, kwargs')):
     """Wrapper of actor class and init params."""
 
-    actor: type[Actor[Features, Labels, Result]]
+    actor: type[_Actor]
     args: tuple[typing.Any]
     kwargs: typing.Mapping[str, typing.Any]
 
-    def __new__(cls, actor: type[Actor], *args: typing.Any, **kwargs: typing.Any):
+    def __new__(cls, actor: type[_Actor], *args: typing.Any, **kwargs: typing.Any):
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 
     def __repr__(self):
@@ -187,5 +191,5 @@ class Spec(typing.Generic[Features, Labels, Result], collections.namedtuple('Spe
     def __getnewargs_ex__(self):
         return (self.actor, *self.args), dict(self.kwargs)
 
-    def __call__(self, *args, **kwargs) -> Actor[Features, Labels, Result]:
+    def __call__(self, *args, **kwargs) -> _Actor:
         return self.actor(*(args or self.args), **self.kwargs | kwargs)

@@ -34,7 +34,7 @@ class Atomic(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def node(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Atomic:
+    def node(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Atomic:
         """Node fixture."""
 
     def test_copy(self, node: flow.Atomic):
@@ -81,7 +81,7 @@ class TestWorker(Atomic):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def node(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
+    def node(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
         """Node fixture."""
         return flow.Worker(actor_spec, 1, 1)
 
@@ -108,7 +108,9 @@ class TestWorker(Atomic):
         """Test the node statefulness."""
         assert node.stateful
 
-    def test_spec(self, node: flow.Worker, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]):
+    def test_spec(
+        self, node: flow.Worker, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ):
         """Test the node spec."""
         assert node.spec is actor_spec
 
@@ -119,7 +121,7 @@ class TestFuture(Atomic):
     @staticmethod
     @pytest.fixture(scope='function')
     def node(
-        actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]
+        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ) -> flow.Future:  # pylint: disable=unused-argument
         """Node fixture."""
         return flow.Future()

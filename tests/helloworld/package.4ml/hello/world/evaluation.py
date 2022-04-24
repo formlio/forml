@@ -24,6 +24,6 @@ from forml import evaluation, project
 
 INSTANCE = project.Evaluation(
     evaluation.Function(metrics.log_loss),
-    evaluation.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    evaluation.CrossVal(crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
 )
 project.setup(INSTANCE)

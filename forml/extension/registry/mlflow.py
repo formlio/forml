@@ -36,19 +36,19 @@ from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
-EntityT = typing.TypeVar('EntityT')
+Entity = typing.TypeVar('Entity')
 
 
 class Client:
     """Mlflow tracking server wrapper."""
 
-    class Pager(typing.Generic[EntityT], typing.Iterable[EntityT]):
+    class Pager(typing.Generic[Entity], typing.Iterable[Entity]):
         """Rest API paging iterator."""
 
         def __init__(self, pager: typing.Callable[[typing.Optional[str]], storent.PagedList]):
             self._pager: typing.Callable[[typing.Optional[str]], storent.PagedList] = pager
 
-        def __iter__(self) -> typing.Iterator[EntityT]:
+        def __iter__(self) -> typing.Iterator[Entity]:
             token = None
             while True:
                 page = self._pager(token)

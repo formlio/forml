@@ -23,7 +23,7 @@ import os
 
 import setuptools
 
-EXTRAS_DASK = {'cloudpickle', 'dask'}
+EXTRAS_DASK = {'dask'}
 
 EXTRAS_DEV = {
     'black',
@@ -82,7 +82,7 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
     setup_requires=['setuptools', 'wheel', 'toml'],
-    install_requires=['click', 'joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
+    install_requires=['click', 'cloudpickle', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
     extras_require={
         'all': EXTRAS_ALL,
         'dask': EXTRAS_DASK,

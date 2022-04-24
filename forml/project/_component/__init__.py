@@ -57,7 +57,7 @@ class Source(typing.NamedTuple):
     Labels = typing.Union[
         dsl.Feature,
         typing.Sequence[dsl.Feature],
-        flow.Spec[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]],
+        flow.Spec[flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
     ]
     """Label type - either single column, multiple columns or generic label extracting actor (with two output ports)."""
 

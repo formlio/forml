@@ -32,8 +32,8 @@ from forml.pipeline import topology
 LOGGER = logging.getLogger(__name__)
 
 
-def _ndf(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None) -> pdtype.NDFrame:
-    """Conversion logic.
+def pandas_read(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None) -> pdtype.NDFrame:
+    """Attempt to convertor data to Pandas.
 
     Args:
         data: Argument to be converted.
@@ -64,7 +64,7 @@ def _ndf(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None
 def pandas_params(
     wrapped: typing.Callable[[flow.Actor, pdtype.NDFrame], typing.Any]
 ) -> typing.Callable[[flow.Actor, typing.Any], typing.Any]:
-    """Decorator for converting input parameters and return value to pandas.
+    """Decorator for converting Actor's input parameters and return value to pandas.
 
     Args:
         wrapped: Actor method to be decorated.
@@ -85,7 +85,7 @@ def pandas_params(
         Returns:
             Original output.
         """
-        return wrapped(self, *(_ndf(a) for a in args), **{k: _ndf(v) for k, v in kwargs.items()})
+        return wrapped(self, *(pandas_read(a) for a in args), **{k: pandas_read(v) for k, v in kwargs.items()})
 
     return wrapper
 
@@ -105,4 +105,4 @@ def to_pandas(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] =
     Returns:
         Pandas dataframe/series.
     """
-    return _ndf(data, columns=columns)
+    return pandas_read(data, columns=columns)

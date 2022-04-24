@@ -97,7 +97,7 @@ def hyperparams() -> typing.Mapping[str, int]:
 @pytest.fixture(scope='session')
 def actor_spec(
     actor_type: type[flow.Actor], hyperparams: typing.Mapping[str, int]
-) -> flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]:
+) -> flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]:
     """Task spec fixture."""
     return flow.Spec(actor_type, **hyperparams)
 
@@ -128,7 +128,7 @@ def testset() -> layout.RowMajor:
 
 @pytest.fixture(scope='session')
 def actor_state(
-    actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor],
+    actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     trainset_features: layout.RowMajor,
     trainset_labels: layout.Array,
 ) -> bytes:
@@ -140,7 +140,9 @@ def actor_state(
 
 @pytest.fixture(scope='session')
 def actor_prediction(
-    actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor], actor_state: bytes, testset: layout.RowMajor
+    actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+    actor_state: bytes,
+    testset: layout.RowMajor,
 ) -> layout.RowMajor:
     """Prediction result fixture."""
     actor = actor_spec()

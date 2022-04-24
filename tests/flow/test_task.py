@@ -34,7 +34,7 @@ class TestActor:
     @staticmethod
     @pytest.fixture(scope='function')
     def instance(
-        actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]
+        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ) -> flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]:
         """Instance fixture."""
         return actor_spec()
@@ -88,7 +88,7 @@ class TestActor:
         self,
         actor_type: type[flow.Actor],
         hyperparams: typing.Mapping[str, int],
-        actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor],
+        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     ):
         """Test the spec creation of the actor class."""
         assert actor_type.spec(**hyperparams) == actor_spec
@@ -110,11 +110,13 @@ class TestSpec:
     """Task spec unit tests."""
 
     def test_serializable(
-        self, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor], actor_type: type[flow.Actor]
+        self,
+        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+        actor_type: type[flow.Actor],
     ):
         """Test spec serializability."""
         assert pickle.loads(pickle.dumps(actor_spec)).actor == actor_type
 
-    def test_instantiate(self, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]):
+    def test_instantiate(self, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]):
         """Testing specto actor instantiation."""
         assert actor_spec(b=3).get_params() == {**actor_spec.kwargs, 'b': 3}

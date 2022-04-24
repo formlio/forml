@@ -19,6 +19,6 @@
 Ensembling operators.
 """
 
-from ._folding import FullStack
+from ._folding import Ensembler, FullStack
 
-__all__ = ['FullStack']
+__all__ = ['Ensembler', 'FullStack']

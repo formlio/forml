@@ -69,10 +69,10 @@ class Action(abc.ABC):
         return self, args
 
 
-ValueT = typing.TypeVar('ValueT')
+Value = typing.TypeVar('Value')
 
 
-class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
+class Preset(typing.Generic[Value], Action, metaclass=abc.ABCMeta):
     """Composite action that presets the actor using the first parameter as value."""
 
     def __init__(self, action: Action):
@@ -93,7 +93,7 @@ class Preset(typing.Generic[ValueT], Action, metaclass=abc.ABCMeta):
         return self._action.reduce(actor, *args)
 
     @abc.abstractmethod
-    def set(self, actor: 'flow.Actor', value: ValueT) -> None:
+    def set(self, actor: 'flow.Actor', value: Value) -> None:
         """Set operation.
 
         Args:

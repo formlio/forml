@@ -28,16 +28,16 @@ import forml
 from forml import flow
 
 Target = typing.Union[str, typing.Callable[..., typing.Any]]
-ValueT = typing.TypeVar('ValueT')
-ActorT = typing.TypeVar('ActorT')
+Value = typing.TypeVar('Value')
+Actor = typing.TypeVar('Actor')
 
 
-class Proxy(typing.Generic[ActorT, ValueT], metaclass=abc.ABCMeta):
+class Proxy(typing.Generic[Actor, Value], metaclass=abc.ABCMeta):
     """Base class for wrappers."""
 
-    def __init__(self, actor: ActorT, params: typing.Mapping[str, ValueT]):
-        self._actor: ActorT = actor
-        self._params: typing.Mapping[str, ValueT] = params
+    def __init__(self, actor: Actor, params: typing.Mapping[str, Value]):
+        self._actor: Actor = actor
+        self._params: typing.Mapping[str, Value] = params
 
     def __hash__(self):
         return hash(self._actor) ^ hash(tuple(sorted(self._params.items())))
@@ -70,7 +70,7 @@ class Proxy(typing.Generic[ActorT, ValueT], metaclass=abc.ABCMeta):
         return flow.Spec(self, *args, **kwargs)
 
 
-class Mapping(Proxy[ActorT, Target]):
+class Mapping(Proxy[Actor, Target]):
     """Base class for actor wrapping."""
 
     def is_stateful(self) -> bool:

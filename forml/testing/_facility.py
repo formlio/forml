@@ -66,10 +66,8 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
                 return self._features, self._labels
 
         def __init__(self, scenario: _spec.Scenario.Input):
-            self._testset: flow.Spec[None, None, typing.Any] = self.Apply.spec(scenario.apply)
-            self._trainset: flow.Spec[None, None, tuple[typing.Any, typing.Any]] = self.Train.spec(
-                scenario.train, scenario.label
-            )
+            self._testset: flow.Spec[Feed.Operator.Apply] = self.Apply.spec(scenario.apply)
+            self._trainset: flow.Spec[Feed.Operator.Train] = self.Train.spec(scenario.train, scenario.label)
 
         def compose(self, left: flow.Composable) -> flow.Trunk:
             """Compose the source segment track.

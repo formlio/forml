@@ -20,9 +20,6 @@ Data splitting functionality.
 """
 import typing
 
-import pandas
-from sklearn import model_selection
-
 from forml import flow
 from forml.pipeline import payload
 
@@ -35,24 +32,49 @@ if typing.TYPE_CHECKING:
 class CrossVal(_api.Method):
     """Cross validation ytrue/ypred dataset producer."""
 
-    def __init__(self, crossvalidator: model_selection.BaseCrossValidator):
-        self._splitter: flow.Spec[
-            pandas.DataFrame, pandas.Series, typing.Sequence[pandas.DataFrame]
-        ] = payload.CVFolds.spec(crossvalidator=crossvalidator)
+    @typing.overload
+    def __init__(
+        self,
+        *,
+        crossvalidator: payload.CrossValidable,
+        splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
+        nsplits: None = None,
+    ):
+        """Simplified constructor based on splitter supplied in form of a crossvalidator and a folding actor type.
 
-    @property
-    def nsplits(self) -> int:
-        """Get the number of folds.
+        Parameter nsplits must not be provided.
 
-        Returns:
-            Number of folds.
+        Args:
+            crossvalidator: Implementation of the split selection logic.
+            splitter: Folding actor type that is expected to take crossvalidator is its parameter.
+                      Defaults to `payload.PandasCDFolds`.
         """
-        return self._splitter.kwargs['crossvalidator'].get_n_splits()
+
+    @typing.overload
+    def __init__(self, *, crossvalidator: None = None, splitter: flow.Spec[payload.CVFoldable], nsplits: int):
+        """Ensembler constructor based on splitter supplied in form of a Spec object.
+
+        Crossvalidator must not be provided.
+
+        Args:
+            splitter: Spec object defining the folding splitter.
+            nsplits: Number of splits the splitter is going to generate (needs to be explicit as there is no reliable
+                     way to extract it from the Spec).
+        """
+
+    def __init__(self, *, crossvalidator=None, splitter=payload.PandasCVFolds, nsplits=None):
+        if (crossvalidator is None) ^ (nsplits is not None) ^ isinstance(splitter, flow.Spec):
+            raise TypeError('Invalid combination of crossvalidator, splitter and nsplits')
+        if not isinstance(splitter, flow.Spec):
+            splitter = splitter.spec(crossvalidator=crossvalidator)
+            nsplits = crossvalidator.get_n_splits()
+        self._nsplits: int = nsplits
+        self._splitter: flow.Spec[payload.CVFoldable] = splitter
 
     def produce(
         self, pipeline: flow.Composable, features: flow.Publishable, label: flow.Publishable
     ) -> typing.Iterable['evaluation.Outcome']:
-        splitter = flow.Worker(self._splitter, 1, 2 * self.nsplits)
+        splitter = flow.Worker(self._splitter, 1, 2 * self._nsplits)
         splitter.train(features, label)
 
         features_splits: flow.Worker = splitter.fork()
@@ -61,7 +83,7 @@ class CrossVal(_api.Method):
         label_splits[0].subscribe(label)
 
         outcomes = []
-        for fid in range(self.nsplits):
+        for fid in range(self._nsplits):
             fold: flow.Trunk = pipeline.expand()
             fold.train.subscribe(features_splits[2 * fid])
             fold.label.subscribe(label_splits[2 * fid])
@@ -70,5 +92,5 @@ class CrossVal(_api.Method):
         return tuple(outcomes)
 
 
-# class HoldOut(evaluation.Method):
+# class HoldOut(_api.Method):
 #     def __init__(self, test_size: ):
