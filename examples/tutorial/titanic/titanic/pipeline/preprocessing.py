@@ -29,7 +29,6 @@ We demonstrate three different ways of creating a forml operator:
 """
 import typing
 
-import category_encoders
 import numpy as np
 import pandas as pd
 
@@ -66,13 +65,7 @@ def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
         """Auxiliary method for extracting the title."""
         if '.' in name:
             return name.split(',')[1].split('.')[0].strip()
-        return 'Unknown'
+        return 'N/A'
 
     df[target] = df[source].map(get_title)
-    return df
-
-
-# 3rd party transformer wrapped as an actor into a mapper operator:
-ENCODER = topology.Mapper.operator(
-    topology.Class.actor(category_encoders.HashingEncoder, train='fit', apply='transform')
-)
+    return df.drop(source, axis='columns')
