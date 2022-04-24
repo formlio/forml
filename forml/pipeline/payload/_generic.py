@@ -185,7 +185,7 @@ class LabelMergeable(flow.Actor[flow.Features, flow.Labels, flow.Features], meta
 class PandasLabelMerger(LabelMergeable[pandas.DataFrame, pandas.Series]):
     """Label-extraction inversion - inserting the labels as a new column to the feature set."""
 
-    def __init__(self, label_header: str = 'Label'):
+    def __init__(self, label_header: typing.Optional[str] = 'Label'):
         super().__init__(label_header=label_header)
 
     @_convert.pandas_params
@@ -198,4 +198,6 @@ class PandasLabelMerger(LabelMergeable[pandas.DataFrame, pandas.Series]):
 
     @classmethod
     def merge(cls, features: pandas.DataFrame, labels: pandas.Series, **kwargs) -> pandas.DataFrame:
-        return features.set_index(labels.rename(kwargs.get('label_header'))).reset_index()
+        if name := kwargs['label_header']:
+            labels = labels.rename(name)
+        return features.set_index(labels).reset_index()

@@ -25,6 +25,9 @@ import functools
 import types
 import typing
 
+if typing.TYPE_CHECKING:
+    from forml import testing
+
 
 class Scenario(collections.namedtuple('Scenario', 'params, input, output, exception')):
     """Test case specification."""
@@ -139,9 +142,9 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
 
     def __new__(
         cls,
-        params: 'Scenario.Params',
-        input: typing.Optional['Scenario.Input'] = None,  # pylint: disable=redefined-builtin
-        output: typing.Optional['Scenario.Output'] = None,
+        params: 'testing.Scenario.Params',
+        input: typing.Optional['testing.Scenario.Input'] = None,  # pylint: disable=redefined-builtin
+        output: typing.Optional['testing.Scenario.Output'] = None,
         exception: typing.Optional[type[Exception]] = None,
     ):
         if not output:
@@ -158,7 +161,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
         return hash(self.params) ^ hash(self.input.trained) ^ hash(self.input.applied) ^ hash(self.exception)
 
     @functools.cached_property
-    def outcome(self) -> 'Scenario.Outcome':
+    def outcome(self) -> 'testing.Scenario.Outcome':
         """The outcome type of this scenario.
 
         Returns:
@@ -171,12 +174,12 @@ class Raisable:
     """Base outcome type allowing a raising assertion."""
 
     def __init__(
-        self, params: 'Scenario.Params', input: typing.Optional['Scenario.IO'] = None
+        self, params: 'testing.Scenario.Params', input: typing.Optional['testing.Scenario.IO'] = None
     ):  # pylint: disable=redefined-builtin
         self._params: Scenario.Params = params
         self._input: Scenario.Input = input or Scenario.Input()
 
-    def raises(self, kind: type[Exception], message: typing.Optional[str] = None) -> Scenario:
+    def raises(self, kind: type[Exception], message: typing.Optional[str] = None) -> 'testing.Scenario':
         """Assertion on expected exception."""
         return Scenario(self._params, self._input, exception=Scenario.Exception(kind, message))
 
@@ -186,7 +189,7 @@ class Applied(Raisable):
 
     def returns(
         self, output: typing.Any, matcher: typing.Optional[typing.Callable[[typing.Any, typing.Any], bool]] = None
-    ) -> Scenario:
+    ) -> 'testing.Scenario':
         """Assertion on expected return value."""
         return Scenario(self._params, self._input, Scenario.Output(apply=output, matcher=matcher))
 
