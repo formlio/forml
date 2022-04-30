@@ -20,8 +20,8 @@ Payload transformation utilities.
 """
 
 from ._convert import pandas_params, to_pandas
-from ._debug import Dump, Dumpable, Return
-from ._generic import Apply, Concatenable, LabelMergeable, PandasConcat, PandasLabelMerger
+from ._debug import Dump, Dumpable, PandasTrainsetResult, TrainsetResulting, TrainsetReturn
+from ._generic import Apply, Concatenable, PandasConcat
 from ._split import ColumnExtractable, CrossValidable, CVFoldable, PandasColumnExtractor, PandasCVFolds
 
 __all__ = [
@@ -32,12 +32,12 @@ __all__ = [
     'CVFoldable',
     'Dump',
     'Dumpable',
-    'LabelMergeable',
+    'TrainsetResulting',
     'pandas_params',
     'PandasConcat',
     'Apply',
     'PandasColumnExtractor',
-    'PandasLabelMerger',
+    'PandasTrainsetResult',
     'PandasCVFolds',
-    'Return',
+    'TrainsetReturn',
 ]

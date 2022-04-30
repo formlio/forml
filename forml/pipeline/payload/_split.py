@@ -113,14 +113,18 @@ class PandasColumnExtractor(ColumnExtractable[pandas.DataFrame, pandas.Series]):
         return features.drop(columns=column_name), features[column_name]
 
 
-class CrossValidable(typing.Protocol[flow.Features, flow.Labels]):
+class CrossValidable(typing.Protocol[flow.Features, flow.Labels, Column]):
     """Protocol for the cross-validator implementation.
 
     This matches for example all the SKLearn `sklearn.model_selection.BaseCrossValidator` implementations.
     """
 
     def split(
-        self, features: flow.Features, labels: flow.Labels = None, groups=None, /
+        self,
+        features: flow.Features,
+        labels: typing.Optional[flow.Labels] = None,
+        groups: typing.Optional[Column] = None,
+        /,
     ) -> typing.Iterable[tuple[typing.Sequence[int], typing.Sequence[int]]]:
         """Generate indices to split data into training and test set.
 
@@ -133,7 +137,13 @@ class CrossValidable(typing.Protocol[flow.Features, flow.Labels]):
             Iterable of tuples of train/test indexes.
         """
 
-    def get_n_splits(self, features: flow.Features, labels: flow.Labels = None, groups=None, /) -> int:
+    def get_n_splits(
+        self,
+        features: flow.Features,
+        labels: typing.Optional[flow.Labels] = None,
+        groups: typing.Optional[Column] = None,
+        /,
+    ) -> int:
         """Returns the number of splitting iterations in the cross-validator.
 
         Args:
@@ -146,7 +156,11 @@ class CrossValidable(typing.Protocol[flow.Features, flow.Labels]):
         """
 
 
-class CVFoldable(flow.Actor[flow.Features, flow.Labels, typing.Sequence[flow.Features]], metaclass=abc.ABCMeta):
+class CVFoldable(
+    typing.Generic[flow.Features, flow.Labels, Column],
+    flow.Actor[flow.Features, flow.Labels, typing.Sequence[flow.Features]],
+    metaclass=abc.ABCMeta,
+):
     """Abstract n-folds splitter of train-test folds based on the provided cross-validator.
 
     The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to
@@ -157,8 +171,13 @@ class CVFoldable(flow.Actor[flow.Features, flow.Labels, typing.Sequence[flow.Fea
       * [2 * i + 1]: testset
     """
 
-    def __init__(self, crossvalidator: CrossValidable[flow.Features, flow.Labels]):
-        self._crossvalidator: CrossValidable[flow.Features, flow.Labels] = crossvalidator
+    def __init__(
+        self,
+        crossvalidator: CrossValidable[flow.Features, flow.Labels, Column],
+        groups_extractor: typing.Optional[typing.Callable[[flow.Features], Column]] = None,
+    ):
+        self._crossvalidator: CrossValidable[flow.Features, flow.Labels, Column] = crossvalidator
+        self._groups_extractor: typing.Optional[typing.Callable[[flow.Features], Column]] = groups_extractor
         self._indices: typing.Optional[tuple[tuple[typing.Sequence[int], typing.Sequence[int]]]] = None
 
     def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
@@ -167,7 +186,8 @@ class CVFoldable(flow.Actor[flow.Features, flow.Labels, typing.Sequence[flow.Fea
             features: X table.
             labels: Y series.
         """
-        self._indices = tuple(self._crossvalidator.split(features, labels))  # tuple it so it can be pickled
+        groups = self._groups_extractor(features) if self._groups_extractor else None
+        self._indices = tuple(self._crossvalidator.split(features, labels, groups))  # tuple it so it can be pickled
 
     def apply(self, features: flow.Features) -> typing.Sequence[flow.Features]:  # pylint: disable=arguments-differ
         """Transforming the input feature set into two outputs separating the label column into the second one.
@@ -216,7 +236,7 @@ class CVFoldable(flow.Actor[flow.Features, flow.Labels, typing.Sequence[flow.Fea
         self._crossvalidator = crossvalidator
 
 
-class PandasCVFolds(CVFoldable[pandas.DataFrame, pdtype.NDFrame]):
+class PandasCVFolds(CVFoldable[pandas.DataFrame, pdtype.NDFrame, pandas.Series]):
     """Abstract n-folds splitter of train-test folds based on the provided cross-validator.
 
     The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to

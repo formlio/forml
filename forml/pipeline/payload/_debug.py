@@ -29,7 +29,7 @@ from pandas.core import generic as pdtype
 
 from forml import flow
 
-from . import _convert, _generic
+from . import _convert
 
 if typing.TYPE_CHECKING:
     from forml.pipeline import payload
@@ -143,6 +143,7 @@ class PandasApplyCSVDumper(Dumpable[pdtype.NDFrame, None, pdtype.NDFrame]):
         Returns:
             Original unchanged frames.
         """
+        path.parent.mkdir(parents=True, exist_ok=True)
         features.to_csv(path, index=False)
 
 
@@ -165,6 +166,7 @@ class PandasTrainCSVDumper(Dumpable[pandas.DataFrame, pandas.Series, pandas.Data
             labels: Y series.
             path: Target dump location.
         """
+        path.parent.mkdir(parents=True, exist_ok=True)
         features.set_index(labels.rename(kwargs['label_header'])).reset_index().to_csv(path, index=False)
 
 
@@ -238,19 +240,100 @@ class Dump(flow.Operator):
         apply_dumper: flow.Worker = flow.Worker(self._apply(self._instances), 1, 1)
         train_dumper.train(left.train.publisher, left.label.publisher)
         self._instances += 1
-        return left.extend(apply=flow.Path(apply_dumper), train=flow.Path(train_dumper.fork()))
+        return left.extend(apply=flow.Path(apply_dumper))  # train_dumper remains a leaf
 
 
-class Return(flow.Operator):
+class TrainsetResulting(flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=abc.ABCMeta):
+    """Abstract trainset propagating actor - returning previously trained data from each following call to apply."""
+
+    def __init__(self, **kwargs):
+        self._kwargs: dict[str, typing.Any] = kwargs
+        self._result: typing.Optional[flow.Result] = None
+
+    def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
+        """Train the actor by remembering the calculated result.
+
+        Args:
+            features: X table.
+            labels: Y series.
+        """
+        self._result = self.result(features, labels, **self._kwargs)
+
+    def apply(self, features: flow.Features) -> flow.Result:  # pylint: disable=arguments-differ
+        """Ignore the input and just return the previously captured trainset result.
+
+        Args:
+            features: Input data set to be ignored.
+
+        Returns:
+            Previously captured trainset result..
+        """
+        if self._result is None:
+            raise RuntimeError('Trainset result not trained')
+        return self._result
+
+    @classmethod
+    @abc.abstractmethod
+    def result(cls, features: flow.Features, labels: flow.Labels, **kwargs) -> flow.Result:
+        """Actual trainset result evaluation logic.
+
+        Args:
+            features: X table.
+            labels: Y series.
+
+        Returns:
+            Trainset result to be used.
+        """
+        raise NotImplementedError()
+
+    def get_params(self) -> dict[str, typing.Any]:
+        """Standard param getter.
+
+        Returns:
+            Actor params.
+        """
+        return dict(self._kwargs)
+
+    def set_params(self, **kwargs) -> None:  # pylint: disable=arguments-differ
+        """Standard params setter.
+
+        Args:
+            kwargs: Concat kwargs.
+        """
+        self._kwargs.update(kwargs)
+
+
+class PandasTrainsetResult(TrainsetResulting[pandas.DataFrame, pandas.Series, pandas.DataFrame]):
+    """Pandas trainset propagating actor - returning previously trained data from each following call to apply."""
+
+    def __init__(self, label_header: typing.Optional[str] = 'Label'):
+        super().__init__(label_header=label_header)
+
+    @_convert.pandas_params
+    def train(self, features: pandas.DataFrame, labels: pandas.Series, /) -> None:
+        super().train(features, labels)
+
+    @_convert.pandas_params
+    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:
+        return super().apply(features)
+
+    @classmethod
+    def result(cls, features: pandas.DataFrame, labels: pandas.Series, **kwargs) -> pandas.DataFrame:
+        if name := kwargs['label_header']:
+            labels = labels.rename(name)
+        return features.set_index(labels).reset_index()
+
+
+class TrainsetReturn(flow.Operator):
     """Transformer that for train flow merges labels back to the frame and returns it (apply flow remains unchanged).
     This is useful for cutting a pipeline and appending this operator to return the dataset as is for debugging.
     """
 
     def __init__(
         self,
-        label_merger: flow.Spec['payload.LabelMergeable'] = _generic.PandasLabelMerger.spec(),  # noqa: B008
+        trainset_result: flow.Spec['payload.TrainsetResulting'] = PandasTrainsetResult.spec(),  # noqa: B008
     ):
-        self._label_merger: 'flow.Spec[payload.LabelMergeable]' = label_merger
+        self._trainset_result: 'flow.Spec[payload.TrainsetResulting]' = trainset_result
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         """Composition implementation.
@@ -262,6 +345,6 @@ class Return(flow.Operator):
             Composed track.
         """
         left: flow.Trunk = left.expand()
-        label_merger: flow.Worker = flow.Worker(self._label_merger, 1, 1)
-        label_merger.train(left.train.publisher, left.label.publisher)
-        return left.extend(train=flow.Path(label_merger.fork()))
+        trainset_result: flow.Worker = flow.Worker(self._trainset_result, 1, 1)
+        trainset_result.train(left.train.publisher, left.label.publisher)
+        return left.extend(apply=flow.Path(trainset_result.fork()))
