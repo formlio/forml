@@ -40,6 +40,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
         PLAINAPPLY_RAISES = 'plainapply-raises'
         PLAINAPPLY_RETURNS = 'plainapply-returns'
         STATETRAIN_RAISES = 'statetrain-raises'
+        STATETRAIN_RETURNS = 'statetrain-returns'
         STATEAPPLY_RAISES = 'stateapply-raises'
         STATEAPPLY_RETURNS = 'stateapply-returns'
 
@@ -56,6 +57,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
         Digest(False, True, True): Outcome.PLAINAPPLY_RAISES,
         Digest(False, True, False): Outcome.PLAINAPPLY_RETURNS,
         Digest(True, False, True): Outcome.STATETRAIN_RAISES,
+        Digest(True, False, False): Outcome.STATETRAIN_RETURNS,
         Digest(True, True, True): Outcome.STATEAPPLY_RAISES,
         Digest(True, True, False): Outcome.STATEAPPLY_RETURNS,
     }

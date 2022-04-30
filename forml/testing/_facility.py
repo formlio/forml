@@ -24,7 +24,7 @@ import uuid
 
 from forml import flow, io, project, runtime
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl
+from forml.io import dsl, layout
 from forml.testing import _spec
 
 LOGGER = logging.getLogger(__name__)
@@ -104,6 +104,39 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
 class Launcher:
     """Test runner is a minimal forml pipeline wrapping the tested operator."""
 
+    class Action:
+        """Customized launcher actions exposed to testing routines."""
+
+        def __init__(self, handler: runtime.Virtual.Handler, query: dsl.Query):
+            self._handler: runtime.Virtual.Handler = handler
+            self._query: dsl.Query = query
+
+        def apply(self) -> typing.Any:
+            """Normal apply mode."""
+            return self._handler.apply()
+
+        def train_call(self) -> None:
+            """Normal train mode (no output capture/returned)."""
+            return self._handler.train()
+
+        def train_return(self) -> typing.Any:
+            """Extended train mode that's capturing and returning the output."""
+
+            def handler(sink: typing.Optional[io.Sink]) -> runtime.Launcher:
+                """Wrapping the original handler to capture the sink."""
+                nonlocal return_sink
+                return_sink = sink
+                return self._handler(sink)
+
+            def action(
+                launcher: runtime.Launcher,
+            ) -> typing.Callable[[typing.Optional[layout.Native], typing.Optional[layout.Native]], None]:
+                """Executing the runtime launcher using its generic call method with our query and the captured sink."""
+                return launcher(self._query, return_sink).train
+
+            return_sink = None
+            return self._handler.Return(handler, action)()
+
     class Initializer(flow.Visitor):
         """Visitor that tries to instantiate each node in attempt to validate it."""
 
@@ -121,11 +154,11 @@ class Launcher:
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
-    def __call__(self, operator: type[flow.Operator]) -> runtime.Virtual.Builder:
+    def __call__(self, operator: type[flow.Operator]) -> 'Launcher.Action':
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
         trunk = instance.expand()
         trunk.apply.accept(initializer)
         trunk.train.accept(initializer)
         trunk.label.accept(initializer)
-        return self._source.bind(instance).launcher(self._runner, [self._feed])
+        return self.Action(self._source.bind(instance).launcher(self._runner, [self._feed]), self._source.extract.train)

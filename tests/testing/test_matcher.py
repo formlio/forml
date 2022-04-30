@@ -16,25 +16,27 @@
 # under the License.
 
 """
-Debug payload operators unit tests.
+ForML testing matchers unit tests.
 """
-# pylint: disable=no-self-use
+# pylint: disable=protected-access,no-self-use
 
 import pandas
+import pytest
 
 from forml import testing
-from forml.pipeline import payload
 
 
-class TestReturn(testing.operator(payload.Return)):
-    """Return operator unit tests."""
-
-    FEATURES = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
-    LABELS = pandas.Series([0, 1, 0], name='baz')
-
-    apply_mode = testing.Case().apply(FEATURES).returns(FEATURES, testing.pandas_equals)
-    train_mode = (
-        testing.Case()
-        .train(FEATURES, LABELS)
-        .returns(FEATURES.set_index(LABELS.rename('Label')).reset_index(), testing.pandas_equals)
-    )
+@pytest.mark.parametrize(
+    'expected, actual, result',
+    [
+        (1, 1, False),
+        (pandas.DataFrame({'a': [1, 2]}), pandas.DataFrame({'a': [1, 2]}), True),
+        (pandas.DataFrame({'a': [2, 1]}), pandas.DataFrame({'a': [1, 2]}), False),
+        (pandas.DataFrame({'B': [1, 2]}), pandas.DataFrame({'a': [1, 2]}), False),
+        (pandas.Series([1, 2]), pandas.Series([1, 2]), True),
+        (pandas.Series([2, 1]), pandas.Series([1, 2]), False),
+    ],
+)
+def test_pandas_equals(expected, actual, result: bool):
+    """NDFrame equality test."""
+    assert testing.pandas_equals(expected, actual) == result

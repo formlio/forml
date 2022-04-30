@@ -19,7 +19,8 @@
 Testing framework.
 """
 
+from ._matcher import pandas_equals
 from ._routine import Suite, operator
 from ._spec import Case, Scenario
 
-__all__ = ['Case', 'operator', 'Suite', 'Scenario']
+__all__ = ['Case', 'operator', 'pandas_equals', 'Suite', 'Scenario']

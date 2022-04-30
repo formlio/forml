@@ -16,25 +16,24 @@
 # under the License.
 
 """
-Debug payload operators unit tests.
+Convenience testing matcher implementations.
 """
-# pylint: disable=no-self-use
+import sys
 
-import pandas
-
-from forml import testing
-from forml.pipeline import payload
+from pandas.core import generic as pdtype
 
 
-class TestReturn(testing.operator(payload.Return)):
-    """Return operator unit tests."""
+def pandas_equals(expected: pdtype.NDFrame, actual: pdtype.NDFrame) -> bool:
+    """Compare Pandas DataFrames for equality.
 
-    FEATURES = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
-    LABELS = pandas.Series([0, 1, 0], name='baz')
+    Args:
+        expected: Instance of the expected data representation.
+        actual: Testcase produced data.
 
-    apply_mode = testing.Case().apply(FEATURES).returns(FEATURES, testing.pandas_equals)
-    train_mode = (
-        testing.Case()
-        .train(FEATURES, LABELS)
-        .returns(FEATURES.set_index(LABELS.rename('Label')).reset_index(), testing.pandas_equals)
-    )
+    Returns:
+        True if the data is equal.
+    """
+    if not hasattr(actual, 'equals') or not actual.equals(expected):
+        print(f'Data mismatch: {expected} vs {actual}', file=sys.stderr)
+        return False
+    return True
