@@ -236,5 +236,5 @@ def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] =
     if not isinstance(module.__loader__, Finder.Loader):
         source = getattr(module, '__file__', None)
         if bool(path) ^ bool(source) or (path and not source.startswith(str(pathlib.Path(path).resolve()))):
-            raise ModuleNotFoundError(f'No module named {name}')
+            raise ModuleNotFoundError(f'No module named {name}', name=name)
     return module
