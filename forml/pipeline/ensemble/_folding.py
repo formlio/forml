@@ -131,11 +131,17 @@ class Ensembler(flow.Operator):
         nsplits=None,
         **kwargs,
     ):
-        if (crossvalidator is None) ^ (nsplits is not None) ^ isinstance(splitter, flow.Spec):
+        if not bases:
+            raise ValueError('Base models required')
+        if ((crossvalidator is None) ^ (nsplits is not None)) or (
+            (crossvalidator is None) ^ isinstance(splitter, flow.Spec)
+        ):
             raise TypeError('Invalid combination of crossvalidator, splitter and nsplits')
         if not isinstance(splitter, flow.Spec):
             splitter = splitter.spec(crossvalidator=crossvalidator)
             nsplits = crossvalidator.get_n_splits()
+        if nsplits < 2:
+            raise ValueError('At least 2 splits required')
         self._nsplits: int = nsplits
         self._splitter: flow.Spec[payload.CVFoldable] = splitter
         self._builder: Ensembler.Builder = self.Builder(bases, **kwargs)  # pylint: disable=abstract-class-instantiated

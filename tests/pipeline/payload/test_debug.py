@@ -34,7 +34,7 @@ class TestTrainsetReturn(testing.operator(payload.TrainsetReturn)):
     FEATURES = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
     LABELS = pandas.Series([0, 1, 0], name='baz')
 
-    apply_mode = testing.Case().apply(FEATURES).raises(RuntimeError)
+    apply_mode = testing.Case().apply(FEATURES).raises(RuntimeError, 'not trained')
     train_mode = (
         testing.Case()
         .train(FEATURES, LABELS)

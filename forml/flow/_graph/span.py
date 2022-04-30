@@ -188,6 +188,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
 
         seen: set[tuple[nodemod.Atomic, int, port.Subscription]] = set()
         copies: dict[nodemod.Atomic, nodemod.Atomic] = {}
+        get(self.pivot)  # bootstrap for single-node paths that wouldn't iterate through the following loop
         for pub, sub in (
             (get(o)[i], get(s.node)[s.port])
             for t in paths(self)

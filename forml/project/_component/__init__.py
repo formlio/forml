@@ -209,10 +209,12 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
             Args:
                 component: Component instance to be registered.
             """
-            caller = inspect.getmodule(inspect.currentframe().f_back)
-            if caller and not is_expected(caller.__name__):
-                LOGGER.warning('Ignoring setup from unexpected component of %s', caller.__name__)
-                return
+            caller_frame = inspect.currentframe().f_back
+            if inspect.getframeinfo(caller_frame).filename != __file__:  # ignore Virtual module setup
+                caller_module = inspect.getmodule(caller_frame)
+                if caller_module and not is_expected(caller_module.__name__):
+                    LOGGER.warning('Ignoring setup from unexpected component of %s', caller_module.__name__)
+                    return
             LOGGER.debug('Component setup using %s', component)
             nonlocal result
             if result:

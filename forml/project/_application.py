@@ -19,6 +19,7 @@ Product application utils.
 """
 import abc
 import collections
+import inspect
 import pathlib
 import typing
 
@@ -45,10 +46,10 @@ class Descriptor(abc.ABC):
             path = pathlib.Path(path).resolve()
             if not path.is_file():
                 raise forml.InvalidError(f'Invalid descriptor module (file expected): {path}')
-            try:
-                descriptor = _component.load(path.with_suffix('').name, path.parent)
-            except ModuleNotFoundError as err:
-                raise forml.InvalidError(f'Invalid descriptor module (not a module): {path}') from err
+            module = inspect.getmodulename(path)
+            if not module:
+                raise forml.InvalidError(f'Invalid descriptor module (not a module): {path}')
+            descriptor = _component.load(module, path.parent)
             if not descriptor:
                 raise forml.InvalidError(f'Invalid descriptor (no setup): {path}')
             if not isinstance(descriptor, Descriptor):
