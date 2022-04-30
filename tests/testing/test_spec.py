@@ -77,6 +77,21 @@ class TestScenario:
         assert statetrain_raises.input.label == label_input
         assert statetrain_raises.exception == exception
 
+    def test_statetrain_returns(
+        self,
+        statetrain_returns: testing.Scenario,
+        hyperparams: typing.Mapping[str, int],
+        train_input: str,
+        label_input: str,
+        train_output: str,
+    ):
+        """Scenario spec test case."""
+        assert statetrain_returns.outcome == testing.Scenario.Outcome.STATETRAIN_RETURNS
+        assert statetrain_returns.params.kwargs == hyperparams
+        assert statetrain_returns.input.train == train_input
+        assert statetrain_returns.input.label == label_input
+        assert statetrain_returns.output.train == train_output
+
     def test_stateapply_raises(
         self,
         stateapply_raises: testing.Scenario,
