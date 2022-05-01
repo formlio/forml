@@ -16,11 +16,9 @@
 # under the License.
 
 """
-ForML persistent unit tests.
+ForML posix registry unit tests.
 """
 # pylint: disable=no-self-use
-import pathlib
-import tempfile
 import typing
 
 import pytest
@@ -28,13 +26,13 @@ import pytest
 from forml.extension.registry.filesystem import posix
 from forml.io import asset
 
-from . import Registry
+from .. import Registry
 
 
 class TestRegistry(Registry):
     """Registry unit tests."""
 
     @staticmethod
-    @pytest.fixture(scope='function')
-    def constructor(tmp_path: pathlib.Path) -> typing.Callable[[], asset.Registry]:
-        return lambda: posix.Registry(tempfile.mkdtemp(dir=tmp_path))
+    @pytest.fixture(scope='session')
+    def constructor(tmp_path_factory: pytest.TempPathFactory) -> typing.Callable[[], asset.Registry]:
+        return lambda: posix.Registry(tmp_path_factory.mktemp('posix-registry'))

@@ -16,7 +16,7 @@
 # under the License.
 
 """
-ForML persistent unit tests.
+ForML virtual registry unit tests.
 """
 # pylint: disable=no-self-use
 import typing
@@ -26,13 +26,13 @@ import pytest
 from forml.extension.registry.filesystem import virtual
 from forml.io import asset
 
-from . import Registry
+from .. import Registry
 
 
 class TestRegistry(Registry):
     """Registry unit tests."""
 
     @staticmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def constructor() -> typing.Callable[[], asset.Registry]:
         return virtual.Registry

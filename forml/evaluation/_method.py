@@ -52,7 +52,7 @@ class CrossVal(_api.Method):
 
     @typing.overload
     def __init__(self, *, crossvalidator: None = None, splitter: flow.Spec[payload.CVFoldable], nsplits: int):
-        """Ensembler constructor based on splitter supplied in form of a Spec object.
+        """CrossVal constructor based on splitter supplied in form of a Spec object.
 
         Crossvalidator must not be provided.
 
@@ -63,11 +63,15 @@ class CrossVal(_api.Method):
         """
 
     def __init__(self, *, crossvalidator=None, splitter=payload.PandasCVFolds, nsplits=None):
-        if (crossvalidator is None) ^ (nsplits is not None) ^ isinstance(splitter, flow.Spec):
+        if ((crossvalidator is None) ^ (nsplits is not None)) or (
+            (crossvalidator is None) ^ isinstance(splitter, flow.Spec)
+        ):
             raise TypeError('Invalid combination of crossvalidator, splitter and nsplits')
         if not isinstance(splitter, flow.Spec):
             splitter = splitter.spec(crossvalidator=crossvalidator)
             nsplits = crossvalidator.get_n_splits()
+        if nsplits < 2:
+            raise ValueError('At least 2 splits required')
         self._nsplits: int = nsplits
         self._splitter: flow.Spec[payload.CVFoldable] = splitter
 

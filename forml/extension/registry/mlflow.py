@@ -18,10 +18,12 @@
 """
 Registry integration based on MLFlow Tracking Server.
 """
+import collections
 import functools
 import logging
 import os
 import pathlib
+import re
 import tempfile
 import typing
 import uuid
@@ -142,7 +144,7 @@ class Client:
         return entity
 
     @functools.cache
-    def get_or_create_run(self, experiment: str, **tags: str) -> entities.Run:
+    def get_or_create_run(self, experiment: str, **tags: str) -> tuple[entities.Experiment, entities.Run]:
         """Get a run instance matching the given tags if exists or create a new one.
 
         Args:
@@ -152,31 +154,67 @@ class Client:
         Returns:
             Run entity instance.
         """
-        eid = self.get_or_create_experiment(experiment).experiment_id
+        eobj = self.get_or_create_experiment(experiment)
         tags = {k: str(v) for k, v in (self._common_tags | tags).items()}
         result = self._mlflow.search_runs(
-            [eid],
+            [eobj.experiment_id],
             run_view_type=entities.ViewType.ALL,
             filter_string=' AND '.join(f"tag.{k} = '{v}'" for k, v in tags.items()),
         )
         if not result:
-            return self._mlflow.create_run(eid, tags=tags)
+            return eobj, self._mlflow.create_run(eobj.experiment_id, tags=tags)
         if len(result) == 1:
             run = result[0]
             if run.info.lifecycle_stage != 'active':
                 self._mlflow.restore_run(run.info.run_id)
-            return run
+            return eobj, run
         raise forml.UnexpectedError(f'Multiple entities matching experiment `{experiment}` and tags {tags}')
 
 
 class Registry(asset.Registry, alias='mlflow'):
     """ForML registry implementation backed by MLFlow tracking server."""
 
+    class Root(collections.namedtuple('Root', 'project, repoid')):
+        """Helper container for representing the registry root level.
+
+        To support the concept of virtual registries, the experiment name is the project name suffixed by the repoid.
+        """
+
+        project: asset.Project.Key
+        repoid: str
+
+        DELIMITER = '@'
+        PATTERN = re.compile(fr'(?P<project>\w+)(?:{DELIMITER}(?P<repoid>\w+))?')
+
+        def __new__(cls, project: str, repoid: typing.Optional[str]):
+            assert cls.DELIMITER not in project
+            return super().__new__(cls, asset.Project.Key(project), repoid or '')
+
+        @property
+        def experiment(self) -> str:
+            """Get the experiment name representation."""
+            value = self.project
+            if self.repoid:
+                value += f'{self.DELIMITER}{self.repoid}'
+            return value
+
+        @classmethod
+        def from_experiment(cls, experiment: str) -> 'Registry.Root':
+            """Parse the experiment name.
+
+            Args:
+                experiment: The MLFlow experiment name.
+            """
+            match = cls.PATTERN.fullmatch(experiment)
+            if not match:
+                raise ValueError(f'Invalid experiment name: {experiment}')
+            return cls(*match.groups())
+
     TAG_RELEASE_KEY = utils.MLFLOW_GIT_COMMIT
     TAG_GENERATION_KEY = utils.MLFLOW_GIT_COMMIT
     TAG_REPOID = 'forml.repoid'
     """Tag for identifying repository object belonging to same virtual repository."""
-    DEFAULT_REPOID = 'default'
+    DEFAULT_REPOID = ''
     """Default virtual repository id."""
     TAG_SESSION = 'forml.session'
     """Identifier used for tagging unbounded generations."""
@@ -197,6 +235,7 @@ class Registry(asset.Registry, alias='mlflow'):
     ):
         super().__init__(staging)
         self._client = Client(tracking_uri, registry_uri, common_tags={self.TAG_REPOID: repoid})
+        self._repoid: str = repoid
         self._session: uuid.UUID = uuid.uuid4()
         self._projects: dict[asset.Project.Key, entities.Experiment] = {}
         self._releases: dict[tuple[asset.Project.Key, asset.Release.Key], entities.Run] = {}
@@ -205,9 +244,11 @@ class Registry(asset.Registry, alias='mlflow'):
 
     def projects(self) -> typing.Iterable[typing.Union[str, asset.Project.Key]]:
         for experiment in self._client.list_experiments():
-            key = asset.Project.Key(experiment.name)
-            self._projects[key] = experiment
-            yield key
+            root = self.Root.from_experiment(experiment.name)
+            if root.repoid != self._repoid:
+                continue
+            self._projects[root.project] = experiment
+            yield root.project
 
     def releases(self, project: asset.Project.Key) -> typing.Iterable[typing.Union[str, asset.Release.Key]]:
         for run in self._client.list_runs(self._projects[project], **{self.TAG_LEVEL: self.LEVEL_RELEASE}):
@@ -239,12 +280,14 @@ class Registry(asset.Registry, alias='mlflow'):
         )
 
     def push(self, package: prj.Package) -> None:
-        assert package.path.is_file(), 'Expecting file package'
         project = package.manifest.name
         release = package.manifest.version
         with tempfile.TemporaryDirectory(dir=self._tmp) as tmp:
             path = pathlib.Path(tmp) / self.PKGFILE
-            path.write_bytes(package.path.read_bytes())
+            if package.path.is_file():
+                path.write_bytes(package.path.read_bytes())
+            else:
+                prj.Package.create(package.path, package.manifest, path)
             self._client.upload_artifact(self._get_release(project, release), path)
 
     def read(
@@ -308,9 +351,12 @@ class Registry(asset.Registry, alias='mlflow'):
             Run entity instance.
         """
         if (project, release) not in self._releases:
-            self._releases[project, release] = self._client.get_or_create_run(
-                project, **{self.TAG_LEVEL: self.LEVEL_RELEASE, self.TAG_RELEASE_KEY: release}
+            experiment, run = self._client.get_or_create_run(
+                self.Root(project, self._repoid).experiment,
+                **{self.TAG_LEVEL: self.LEVEL_RELEASE, self.TAG_RELEASE_KEY: release},
             )
+            self._projects[self.Root.from_experiment(experiment.name).project] = experiment
+            self._releases[project, release] = run
         return self._releases[project, release]
 
     def _get_unbound_generation(self, project: asset.Project.Key, release: asset.Release.Key) -> entities.Run:
@@ -323,11 +369,12 @@ class Registry(asset.Registry, alias='mlflow'):
         Returns:
             Run entity instance.
         """
-        return self._client.get_or_create_run(
-            project,
+        _, run = self._client.get_or_create_run(
+            self.Root(project, self._repoid).experiment,
             **{
                 self.TAG_LEVEL: self.LEVEL_GENERATION,
                 self.TAG_RELEASE_REF: self._get_release(project, release).info.run_id,
                 self.TAG_SESSION: self._session,
             },
         )
+        return run

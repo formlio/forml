@@ -16,23 +16,27 @@
 # under the License.
 
 """
-ForML persistent inventory unit tests.
+Evaluation stages unit tests.
 """
 # pylint: disable=no-self-use
-import typing
+from sklearn import metrics, model_selection
 
-import pytest
+from forml import evaluation, testing
 
-from forml.extension.inventory import posix
-from forml.io import asset
+METRIC = evaluation.Function(metrics.accuracy_score)
+YTRUE = [0, 1, 2, 3]
+YPRED = [0, 2, 1, 3]
 
-from . import Inventory
+
+class TestApplyScore(testing.operator(evaluation.ApplyScore)):
+    """Production evaluation stage operator unit test."""
+
+    score = testing.Case(METRIC).train(YPRED, YTRUE).returns(0.5)
 
 
-class TestInventory(Inventory):
-    """Inventory unit tests."""
+class TestTrainScore(testing.operator(evaluation.TrainScore)):
+    """Development evaluation stage operator unit test."""
 
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def constructor(tmp_path_factory: pytest.TempPathFactory) -> typing.Callable[[], asset.Inventory]:
-        return lambda: posix.Inventory(tmp_path_factory.mktemp('posix-inventory'))
+    METHOD = evaluation.CrossVal(crossvalidator=model_selection.PredefinedSplit([0, 0, 1, 1]))
+
+    score = testing.Case(METRIC, METHOD).train(YPRED, YTRUE).returns(0.5)

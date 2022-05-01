@@ -28,24 +28,6 @@ if typing.TYPE_CHECKING:
     from forml import evaluation
 
 
-class TrainScore(flow.Operator):
-    """Development evaluation result value operator.
-
-    This assumes no pre-existing state - pipeline is trained in scope of the evaluation.
-    Only the train path of the composed trunk is expected to be used.
-    """
-
-    def __init__(self, metric: 'evaluation.Metric', method: 'evaluation.Method'):
-        self._metric: 'evaluation.Metric' = metric
-        self._method: 'evaluation.Method' = method
-
-    def compose(self, left: flow.Composable) -> flow.Trunk:
-        head: flow.Trunk = flow.Trunk()
-        outcomes = self._method.produce(left, head.train.publisher, head.label.publisher)
-        value = self._metric.score(*outcomes)
-        return head.use(train=head.train.extend(tail=value))
-
-
 class ApplyScore(flow.Operator):
     """Production evaluation result value operator.
 
@@ -64,4 +46,22 @@ class ApplyScore(flow.Operator):
         pipeline.apply.copy().subscribe(head.apply)  # all persistent nodes must be reachable via the apply path
         pipeline.apply.subscribe(head.train)
         value = self._metric.score(_api.Outcome(head.label.publisher, pipeline.apply.publisher))
+        return head.use(train=head.train.extend(tail=value))
+
+
+class TrainScore(flow.Operator):
+    """Development evaluation result value operator.
+
+    This assumes no pre-existing state - pipeline is trained in scope of the evaluation.
+    Only the train path of the composed trunk is expected to be used.
+    """
+
+    def __init__(self, metric: 'evaluation.Metric', method: 'evaluation.Method'):
+        self._metric: 'evaluation.Metric' = metric
+        self._method: 'evaluation.Method' = method
+
+    def compose(self, left: flow.Composable) -> flow.Trunk:
+        head: flow.Trunk = flow.Trunk()
+        outcomes = self._method.produce(left, head.train.publisher, head.label.publisher)
+        value = self._metric.score(*outcomes)
         return head.use(train=head.train.extend(tail=value))

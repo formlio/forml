@@ -100,10 +100,10 @@ class Registry(extension.Provider, default=provcfg.Registry.default, path=provcf
 
     @abc.abstractmethod
     def releases(self, project: 'level.Project.Key') -> typing.Iterable[typing.Union[str, 'level.Release.Key']]:
-        """List the releases of given prj.
+        """List the releases of given existing project.
 
         Args:
-            project: Project to be listed.
+            project: Existing project to be listed.
 
         Returns:
             Releases listing.
@@ -117,8 +117,8 @@ class Registry(extension.Provider, default=provcfg.Registry.default, path=provcf
         """List the generations of given release.
 
         Args:
-            project: Project of which the release is to be listed.
-            release: Release of the project to be listed.
+            project: Existing project of which the release is to be listed.
+            release: Existing release of the project to be listed.
 
         Returns:
             Generations listing.

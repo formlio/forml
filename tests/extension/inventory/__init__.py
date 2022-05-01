@@ -34,7 +34,7 @@ class Inventory(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope='session')
     def constructor() -> typing.Callable[[], asset.Inventory]:
         """Inventory fixture."""
 
