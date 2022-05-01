@@ -183,6 +183,7 @@ class Ensembler(flow.Operator):
         return head.use(apply=head.apply.extend(tail=apply_tail), train=head.train.extend(tail=train_tail))
 
 
+@payload.pandas_params
 def pandas_mean(*folds: pdtype.NDFrame) -> pandas.DataFrame:
     """Specific fold models prediction reducer for Pandas dataframes based on arithmetic mean.
 
@@ -198,12 +199,12 @@ def pandas_mean(*folds: pdtype.NDFrame) -> pandas.DataFrame:
     if not (folds and all(f.shape == folds[0].shape for f in folds)):
         raise ValueError('Folds must have same shape')
     folds = (
-        [([f.name for f in folds], folds)]
-        if folds[0].ndim == 1
-        else (zip(*i) for i in zip(*(f.iteritems() for f in folds)))
+        [([folds[0].name], folds)] if folds[0].ndim == 1 else (zip(*i) for i in zip(*(f.iteritems() for f in folds)))
     )
     return pandas.concat(
-        (pandas.concat(s, axis='columns').mean(axis='columns').rename(n[0]) for n, s in folds), axis='columns'
+        (pandas.concat(s, axis='columns', copy=False).mean(axis='columns').rename(n[0]) for n, s in folds),
+        axis='columns',
+        copy=False,
     )
 
 
@@ -242,8 +243,12 @@ class FullStack(Ensembler):
         crossvalidator=None,
         splitter=payload.PandasCVFolds,
         nsplits=None,
-        appender: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(axis='columns'),  # noqa: B008
-        stacker: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(axis='index'),  # noqa: B008
+        appender: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(  # noqa: B008
+            axis='columns', ignore_index=True
+        ),
+        stacker: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(  # noqa: B008
+            axis='index', ignore_index=True
+        ),
         reducer: typing.Callable[..., flow.Features] = pandas_mean,
     ):
         super().__init__(

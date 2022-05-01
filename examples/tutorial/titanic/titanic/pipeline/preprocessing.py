@@ -33,10 +33,10 @@ import numpy as np
 import pandas as pd
 
 from forml import flow
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 
-@topology.Mapper.operator
+@decorate.Mapper.operator
 class NaNImputer(flow.Actor[pd.DataFrame, pd.Series, pd.DataFrame]):
     """Imputer for missing values implemented as native ForML actor."""
 
@@ -56,8 +56,8 @@ class NaNImputer(flow.Actor[pd.DataFrame, pd.Series, pd.DataFrame]):
         return X.fillna(self._fill)
 
 
-@topology.Mapper.operator
-@topology.Function.actor
+@decorate.Mapper.operator
+@decorate.Function.actor
 def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
     """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
 

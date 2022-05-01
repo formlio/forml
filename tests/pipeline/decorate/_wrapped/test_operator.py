@@ -19,7 +19,7 @@ Generic operators unit tests.
 """
 # pylint: disable=no-self-use
 
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 
 class TestAdapter:
@@ -29,14 +29,14 @@ class TestAdapter:
     def test_noparams(self):
         """Test adapter setup using non-parametrized decorators."""
 
-        @topology.Adapter.train
-        @topology.Function.actor
+        @decorate.Adapter.train
+        @decorate.Function.actor
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @topology.Function.actor
+        @decorate.Function.actor
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -48,29 +48,28 @@ class TestAdapter:
     def test_params(self):
         """Test adapter setup using parametrized decorators."""
 
-        @topology.Adapter.train(foo='foo', bar='foo')
-        @topology.Function.actor
+        @decorate.Adapter.train(foo='foo', bar='foo')
+        @decorate.Function.actor
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @topology.Function.actor(bar='bar', baz='bar')
+        @decorate.Function.actor
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
 
         assert not func._apply.spec()
         assert func._train.spec(bar='bar')().apply(None) == ('foo', {'foo': 'foo', 'bar': 'bar'})
-        assert func._label.spec(baz='baz')().apply(None) == ('bar', {'bar': 'bar', 'baz': 'baz'})
 
     def test_multi(self):
         """Test adapter setup using multiple decorators."""
 
-        @topology.Adapter.train(foo='foo')
-        @topology.Adapter.apply(bar='foo')
-        @topology.Adapter.label
-        @topology.Function.actor
+        @decorate.Adapter.train(foo='foo')
+        @decorate.Adapter.apply(bar='foo')
+        @decorate.Adapter.label
+        @decorate.Function.actor
         def funcfoo(_, **kw):
             """Dummy actor."""
             return 'foo', kw
@@ -80,7 +79,7 @@ class TestAdapter:
         assert funcfoo._label.spec()().apply(None) == ('foo', {})
 
         @funcfoo.apply(bar='bar')
-        @topology.Function.actor
+        @decorate.Function.actor
         def funcbar(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -92,11 +91,11 @@ class TestAdapter:
     def test_setup(self):
         """Test the operator instantiation."""
 
-        @topology.Adapter.train(foo='foo', bar='bar')
-        @topology.Adapter.apply(foo='foo', bar='bar')
-        @topology.Adapter.label(foo='foo', bar='bar')
-        @topology.Function.actor
-        def func(_, *args, **kwargs):
+        @decorate.Adapter.train(foo='foo', bar='bar')
+        @decorate.Adapter.apply(foo='foo', bar='bar')
+        @decorate.Adapter.label(foo='foo', bar='bar')
+        @decorate.Function.actor
+        def func(*args, **kwargs):
             """Dummy actor."""
             return 'foo', args, kwargs
 

@@ -23,9 +23,9 @@ import pandas
 from sklearn import model_selection
 
 from forml import testing
-from forml.pipeline import ensemble, payload, topology
+from forml.pipeline import decorate, ensemble, payload
 
-with topology.autowrap():
+with decorate.autowrap():
     from sklearn.dummy import DummyClassifier  # pylint: disable=ungrouped-imports
 
 

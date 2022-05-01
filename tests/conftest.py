@@ -32,7 +32,7 @@ import pytest
 from forml import flow, io
 from forml import project as prj
 from forml.io import asset, dsl, layout
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 from . import helloworld
 from .helloworld import application as helloworld_descriptor
@@ -81,7 +81,7 @@ def train_decorator(actor, *args, **kwargs):
 
 @pytest.fixture(
     scope='session',
-    params=(NativeActor, topology.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
+    params=(NativeActor, decorate.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
 )
 def actor_type(request) -> type[flow.Actor]:
     """Stateful actor fixture."""

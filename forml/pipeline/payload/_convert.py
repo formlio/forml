@@ -19,6 +19,7 @@
 Dataframe conversion tools.
 """
 import functools
+import itertools
 import logging
 import typing
 
@@ -27,7 +28,7 @@ import pandas
 from pandas.core import generic as pdtype
 
 from forml import flow
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 LOGGER = logging.getLogger(__name__)
 
@@ -74,27 +75,31 @@ def pandas_params(
     """
 
     @functools.wraps(wrapped)
-    def wrapper(self: flow.Actor, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+    def wrapper(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Decorating wrapper.
 
         Args:
-            self: Actor self.
-            *args: Input arguments to be converted.
+            *args: Input arguments to be converted - first one might be actor (self) in which case it is skipped.
             **kwargs: Input key-word arguments.
 
         Returns:
             Original output.
         """
-        return wrapped(self, *(pandas_read(a) for a in args), **{k: pandas_read(v) for k, v in kwargs.items()})
+        if args:
+            idx = 1 if isinstance(args[0], flow.Actor) else 0
+            args = itertools.chain(args[:idx], (pandas_read(a) for a in args[idx:]))
+        return wrapped(*args, **{k: pandas_read(v) for k, v in kwargs.items()})
 
     return wrapper
 
 
-@topology.Adapter.apply
-@topology.Adapter.train
-@topology.Adapter.label
-@topology.Function.actor
-def to_pandas(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None) -> pdtype.NDFrame:
+@decorate.Adapter.apply
+@decorate.Adapter.train
+@decorate.Adapter.label
+@decorate.Function.actor
+def ToPandas(  # pylint: disable=invalid-name
+    data: typing.Any, *, columns: typing.Optional[typing.Sequence[str]] = None
+) -> pdtype.NDFrame:
     """Simple 1:1 operator that attempts to convert the data on each of apply/train/label path to pandas
     dataframe/series.
 

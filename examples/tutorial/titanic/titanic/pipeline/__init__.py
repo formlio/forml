@@ -29,9 +29,9 @@ from sklearn import model_selection
 from titanic.pipeline import preprocessing
 
 from forml import project
-from forml.pipeline import ensemble, topology
+from forml.pipeline import decorate, ensemble
 
-with topology.autowrap():
+with decorate.autowrap():
     from category_encoders import HashingEncoder
     from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
     from sklearn.linear_model import LogisticRegression

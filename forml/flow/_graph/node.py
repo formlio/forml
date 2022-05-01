@@ -293,10 +293,10 @@ class Worker(Atomic):
         Returns:
             Self node.
         """
-        if any(f.trained for f in self._group):
-            raise _exception.TopologyError('Fork train collision')
         if not self.stateful:
             raise _exception.TopologyError('Stateless node training')
+        if any(f.trained for f in self._group):
+            raise _exception.TopologyError('Fork train collision')
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 

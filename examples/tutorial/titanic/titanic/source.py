@@ -39,5 +39,7 @@ FEATURES = schema.Titanic.select(
     schema.Titanic.Embarked,
 )
 
-ETL = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
+ETL = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.ToPandas(
+    columns=[f.name for f in FEATURES.schema]
+)
 project.setup(ETL)

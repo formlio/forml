@@ -21,33 +21,28 @@ Utilities for creating actors using decorator wrappings.
 
 import abc
 import inspect
-import itertools
 import typing
 
 import forml
 from forml import flow
 
-Target = typing.Union[str, typing.Callable[..., typing.Any]]
-Value = typing.TypeVar('Value')
-Actor = typing.TypeVar('Actor')
+Origin = typing.TypeVar('Origin')
 
 
-class Proxy(typing.Generic[Actor, Value], metaclass=abc.ABCMeta):
+class Proxy(typing.Generic[Origin], metaclass=abc.ABCMeta):
     """Base class for wrappers."""
 
-    def __init__(self, actor: Actor, params: typing.Mapping[str, Value]):
-        self._actor: Actor = actor
-        self._params: typing.Mapping[str, Value] = params
+    def __init__(self, origin: Origin):
+        self._origin: Origin = origin
 
     def __hash__(self):
-        return hash(self._actor) ^ hash(tuple(sorted(self._params.items())))
+        return hash(self._origin)
 
     def __eq__(self, other: typing.Any):
-        # pylint: disable=protected-access
-        return isinstance(other, self.__class__) and self._actor == other._actor and self._params == other._params
+        return isinstance(other, self.__class__) and self._origin == other._origin  # pylint: disable=protected-access
 
     def __repr__(self):
-        return flow.name(self._actor, **self._params)
+        return flow.name(self._origin)
 
     @abc.abstractmethod
     def is_stateful(self) -> bool:
@@ -70,8 +65,20 @@ class Proxy(typing.Generic[Actor, Value], metaclass=abc.ABCMeta):
         return flow.Spec(self, *args, **kwargs)
 
 
-class Mapping(Proxy[Actor, Target]):
+class Mapping(Proxy[Origin]):
     """Base class for actor wrapping."""
+
+    Target = typing.Union[str, typing.Callable[..., typing.Any]]
+
+    def __init__(self, origin: Origin, mapping: typing.Mapping[str, Target]):
+        super().__init__(origin)
+        self._mapping: typing.Mapping[str, Mapping.Target] = mapping
+
+    def __hash__(self):
+        return super().__hash__() ^ hash(tuple(sorted(self._mapping.items())))
+
+    def __eq__(self, other: typing.Any):
+        return super().__eq__(other) and self._mapping == other._mapping  # pylint: disable=protected-access
 
     def is_stateful(self) -> bool:
         """Emulation of native actor is_stateful class method.
@@ -79,8 +86,8 @@ class Mapping(Proxy[Actor, Target]):
         Returns:
             True if the wrapped actor is stateful (has a train method).
         """
-        attr = self._params[flow.Actor.train.__name__]
-        return callable(attr) or hasattr(self._actor, attr)
+        attr = self._mapping[flow.Actor.train.__name__]
+        return callable(attr) or hasattr(self._origin, attr)
 
 
 class Class(Mapping[type]):
@@ -99,44 +106,41 @@ class Class(Mapping[type]):
             def __call__(self, *args, **kwargs):
                 return self._decorator(self._instance, *args, **kwargs)
 
-        def __new__(cls, actor: object, params: typing.Mapping[str, Target]):  # pylint: disable=unused-argument
+        def __new__(
+            cls, actor: object, mapping: typing.Mapping[str, Mapping.Target]
+        ):  # pylint: disable=unused-argument
             cls.__abstractmethods__ = frozenset()
             return super().__new__(cls)
 
-        def __init__(self, actor: object, params: typing.Mapping[str, Target]):
-            super().__init__(actor, params)
+        def __init__(self, actor: object, mapping: typing.Mapping[str, Mapping.Target]):
+            super().__init__(actor, mapping)
 
         def __getnewargs__(self):
-            return self._actor, self._params
+            return self._origin, self._mapping
 
         def __getattribute__(self, item):
             if not item.startswith('_'):
-                if item in self._params:
-                    attr = self._params[item]
-                    return self.Decorated(self._actor, attr) if callable(attr) else getattr(self._actor, attr)
-                if hasattr(self._actor, item):
-                    return getattr(self._actor, item)
+                if item in self._mapping:
+                    attr = self._mapping[item]
+                    return self.Decorated(self._origin, attr) if callable(attr) else getattr(self._origin, attr)
+                if hasattr(self._origin, item):
+                    return getattr(self._origin, item)
             return super().__getattribute__(item)
 
-    def __init__(self, actor: type, params: typing.Mapping[str, Target]):
-        assert not issubclass(actor, flow.Actor), 'Already an actor'
-        super().__init__(actor, params)
+    def __init__(self, origin: type, mapping: typing.Mapping[str, Mapping.Target]):
+        assert not issubclass(origin, flow.Actor), 'Already an actor'
+        super().__init__(origin, mapping)
 
     def __call__(self, *args, **kwargs) -> flow.Actor:
-        return self.Actor(self._actor(*args, **kwargs), self._params)  # pylint: disable=abstract-class-instantiated
+        return self.Actor(self._origin(*args, **kwargs), self._mapping)  # pylint: disable=abstract-class-instantiated
 
-    def __repr__(self):
-        return flow.name(self._actor)
-
-    @staticmethod
-    def actor(  # pylint: disable=bad-staticmethod-argument
-        cls: typing.Optional[type] = None, /, **mapping: Target
-    ) -> type[flow.Actor]:
-        """Decorator for turning an user class to a valid actor. This can be used either as parameterless decorator or
+    @classmethod
+    def actor(cls, origin: typing.Optional[type] = None, /, **mapping: Mapping.Target) -> type[flow.Actor]:
+        """Decorator for turning a user class to a valid actor. This can be used either as parameterless decorator or
         optionally with mapping of Actor methods to decorated user class implementation.
 
         Args:
-            cls: Decorated class.
+            origin: Decorated class.
             apply: Method name or decorator function implementing the actor apply.
             train: Method name or decorator function implementing the actor train.
             get_params: Method name or decorator function implementing the actor get_params.
@@ -154,46 +158,44 @@ class Class(Mapping[type]):
         for method in (flow.Actor.apply, flow.Actor.train, flow.Actor.get_params, flow.Actor.set_params):
             mapping.setdefault(method.__name__, method.__name__)
 
-        def decorator(cls) -> type[flow.Actor]:
+        def decorator(origin: type) -> type[flow.Actor]:
             """Decorating function."""
-            if not inspect.isclass(cls):
-                raise ValueError(f'Invalid actor class {cls}')
-            if issubclass(cls, flow.Actor):
-                return cls
+            if not inspect.isclass(origin):
+                raise ValueError(f'Invalid actor class {origin}')
+            if issubclass(origin, flow.Actor):
+                return origin
             for target in {t for s, t in mapping.items() if s != flow.Actor.train.__name__ and not callable(t)}:
-                if not callable(getattr(cls, target, None)):
+                if not callable(getattr(origin, target, None)):
                     raise forml.MissingError(f'Wrapped actor missing required {target} implementation')
-            return Class(cls, mapping)
+            return cls(origin, mapping)
 
-        if cls:
-            decorator = decorator(cls)
+        if origin:
+            decorator = decorator(origin)
         return decorator
 
 
-class Function(Proxy[typing.Callable[[typing.Any], typing.Any], typing.Any]):
+class Function(Proxy[typing.Callable[..., typing.Any]]):
     """Function wrapping actor."""
 
-    class Actor(flow.Actor):
+    class Actor(flow.Actor[flow.Features, flow.Labels, flow.Result]):
         """Wrapper around user class implementing the Actor interface."""
 
-        def __init__(
-            self, function: typing.Callable[[typing.Any], typing.Any], *args: typing.Any, **kwargs: typing.Any
-        ):
-            # poor-man's args validation against the function signature; this works only partially as we don't know
-            # how many of the function arguments are data input ports (at least one but possibly more)
+        def __init__(self, function: typing.Callable[..., flow.Result], /, **kwargs: typing.Any):
             signature = inspect.signature(function)
-            signature.replace(parameters=itertools.islice(signature.parameters.values(), 1, None)).bind_partial(
-                *args, **kwargs
-            )
-            self._function: typing.Callable[[typing.Any], typing.Any] = function
-            self._args: typing.Sequence[typing.Any] = args
+            params = {
+                p
+                for p in signature.parameters.values()
+                if p.kind in {inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD}
+            }
+            signature.replace(parameters=params).bind(**kwargs)
+            self._function: typing.Callable[..., flow.Result] = function
             self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
         def __repr__(self):
-            return flow.name(self._function, *self._args, **self._kwargs)
+            return flow.name(self._function, **self._kwargs)
 
-        def apply(self, *features: typing.Any) -> typing.Union[typing.Any, typing.Sequence[typing.Any]]:
-            return self._function(*features, *self._args, **self._kwargs)
+        def apply(self, *features: flow.Features) -> flow.Result:
+            return self._function(*features, **self._kwargs)
 
         def get_params(self) -> dict[str, typing.Any]:
             """Standard param getter.
@@ -201,35 +203,31 @@ class Function(Proxy[typing.Callable[[typing.Any], typing.Any], typing.Any]):
             Returns:
                 Evaluation function.
             """
-            return {'function': self._function, 'args': self._args, 'kwargs': dict(self._kwargs)}
+            return {'function': self._function, 'kwargs': dict(self._kwargs)}
 
         def set_params(
             self,  # pylint: disable=arguments-differ
             function: typing.Optional[typing.Callable[[typing.Any], float]] = None,
-            args: typing.Optional[typing.Sequence[typing.Any]] = None,
             kwargs: typing.Optional[dict[str, typing.Any]] = None,
         ) -> None:
             """Standard params setter.
 
             Args:
                 function: Evaluation function.
-                args: Extra positional args.
                 kwargs: Extra kwargs to be passed to function.
             """
             if function:
                 self._function = function
-            if args:
-                self._args = args
             if kwargs:
                 self._kwargs = kwargs
 
-    def __init__(self, function: typing.Callable[[typing.Any], typing.Any], **params: typing.Any):
-        if not inspect.isfunction(function):
-            raise ValueError(f'Invalid actor function {function}')
-        super().__init__(function, params)
+    def __init__(self, origin: typing.Callable[..., typing.Any], /):
+        if not inspect.isfunction(origin):
+            raise ValueError(f'Invalid actor function {origin}')
+        super().__init__(origin)
 
-    def __call__(self, *args, **kwargs) -> 'Function.Actor':
-        return self.Actor(self._actor, *args, **self._params | kwargs)
+    def __call__(self, **kwargs) -> 'Function.Actor':  # Actor constructor-like
+        return self.Actor(self._origin, **kwargs)
 
     def is_stateful(self) -> bool:
         """Wrapped function is generally stateless.
@@ -239,25 +237,15 @@ class Function(Proxy[typing.Callable[[typing.Any], typing.Any], typing.Any]):
         """
         return False
 
-    @staticmethod
-    def actor(
-        function: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None, /, **params: typing.Any
-    ) -> type[flow.Actor]:
-        """Decorator for turning an user function to a valid actor. This can be used either as parameterless decorator
-        or optionally with addition kwargs that will be passed to the function.
+    @classmethod
+    def actor(cls, origin: typing.Callable[..., typing.Any], /) -> type[flow.Actor]:
+        """Decorator for turning a user function to a valid actor.
 
         Args:
-            function: Decorated function.
-            params: Optional kwargs to be passed to function.
+            origin: Decorated function.
 
         Returns:
             Actor class.
         """
 
-        def decorator(function) -> type[flow.Actor]:
-            """Decorating function."""
-            return Function(function, **params)
-
-        if function:
-            decorator = decorator(function)
-        return decorator
+        return cls(origin)

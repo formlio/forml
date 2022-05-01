@@ -147,10 +147,11 @@ class ReturnableTest(Test):
             suite: Tested suite.
             value: Tested value.
         """
+        msg = f'\nExpected: {self._output.value}\nActual: {value}'
         if self._output.matcher is not None:
-            suite.assertTrue(self._output.matcher(self._output.value, value))
+            suite.assertTrue(self._output.matcher(self._output.value, value), msg)
         else:
-            suite.assertEqual(self._output.value, value)
+            suite.assertEqual(self._output.value, value, msg)
 
 
 class TestInitRaises(RaisableTest, Test):

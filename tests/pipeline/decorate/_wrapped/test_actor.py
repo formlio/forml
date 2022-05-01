@@ -22,7 +22,7 @@ Wrapped actor unit tests.
 import pytest
 
 from forml import flow
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 
 class TestFunction:
@@ -33,8 +33,8 @@ class TestFunction:
     def actor() -> flow.Actor[str, None, str]:
         """Actor fixture."""
 
-        @topology.Function.actor
-        def replace(string: str, old: str, new: str, count=-1):
+        @decorate.Function.actor
+        def replace(string: str, *, old: str, new: str, count=-1):
             """Actor wrapped function."""
             return string.replace(old, new, count)
 
@@ -42,9 +42,13 @@ class TestFunction:
 
     def test_signature(self, actor: flow.Actor[str, None, str]):
         """Test the actor signature."""
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match='missing a required argument'):
             actor(foo='bar')
-        actor(old='asd')
+        with pytest.raises(TypeError, match="missing a required argument: 'old'"):
+            actor(new='bar')
+        with pytest.raises(TypeError, match="got an unexpected keyword argument 'foo'"):
+            actor(new='foo', old='asd', foo='bar')
+        actor(new='foo', old='asd')
 
     def test_apply(self, actor: flow.Actor[str, None, str]):
         """Actor applying test."""

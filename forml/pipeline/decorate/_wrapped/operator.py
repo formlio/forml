@@ -30,16 +30,16 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
 
     Actor definitions for individual modes can be defined using convenient decorators:
 
-    @Adapter.train(**kwargs)  # optional kwargs will be passed to actor
-    @Adapter.apply  # decorators can be chained if same actor is supposed to be used for another mode
-    @topology.Function.actor
-    def myadapter(df, **kwargs):
-        # stateless adapter implementation used for train/apply paths
+        @decorate.Adapter.train(**kwargs)  # optional kwargs will be passed to actor
+        @decorate.Adapter.apply  # decorators can be chained if same actor is supposed to be used for another mode
+        @decorate.Function.actor
+        def myadapter(df, **kwargs):
+            # stateless adapter implementation used for train/apply paths
 
-    @myadapter.label(**kwargs)  # previously decorated adapter can be used as decorator itself to override certain mode
-    @topology.Function.actor
-    def myadapter(df, **kwargs):
-        # stateless adapter implementation used for label path
+        @myadapter.label(**kwargs)  # previously decorated adapter can be itself used as decorator
+        @decorate.Function.actor
+        def myadapter(df, **kwargs):
+            # stateless adapter implementation used for label path
     """
 
     class Builder:

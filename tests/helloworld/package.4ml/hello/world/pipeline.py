@@ -23,30 +23,30 @@ import typing
 
 from forml import flow, project
 from forml.io import layout
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 
-@topology.Function.actor
+@decorate.Function.actor
 def split(rows: layout.RowMajor) -> tuple[layout.RowMajor, layout.RowMajor]:
     """Actor splitting set of rows into two."""
     mid = len(rows) // 2
     return rows[:mid], rows[mid:]
 
 
-@topology.Function.actor
+@decorate.Function.actor
 def merge(left: typing.Sequence[int], right: typing.Sequence[int]) -> typing.Sequence[int]:
     """Actor merging two vectors as positional sum."""
     return [a + b for a, b in zip(left, right)]
 
 
-@topology.Mapper.operator
-@topology.Function.actor
+@decorate.Mapper.operator
+@decorate.Function.actor
 def select(rows: typing.Sequence[tuple[str, str, int]]) -> typing.Sequence[int]:
     """Operator for selecting just the 3rd column."""
     return [r[2] for r in rows]
 
 
-@topology.Consumer.operator
+@decorate.Consumer.operator
 class HelloWorld(flow.Actor[typing.Sequence[int], typing.Sequence[int], typing.Sequence[int]]):
     """Stateful transformer."""
 

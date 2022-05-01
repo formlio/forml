@@ -26,7 +26,7 @@ from forml import testing
 from forml.pipeline import payload
 
 
-class Test_to_pandas(testing.operator(payload.to_pandas)):  # pylint: disable=invalid-name
+class TestToPandas(testing.operator(payload.ToPandas)):  # pylint: disable=invalid-name
     """Conversion to_pandas operator unit tests."""
 
     EXPECTED_SERIES = pandas.Series([0, 1, 0], name='baz')

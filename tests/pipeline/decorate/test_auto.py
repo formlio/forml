@@ -28,8 +28,8 @@ from sklearn import base as skbase
 from sklearn import ensemble, preprocessing
 
 from forml import flow
-from forml.pipeline import topology
-from forml.pipeline.topology import _auto
+from forml.pipeline import decorate
+from forml.pipeline.decorate import _auto
 
 
 class Wrapper(typing.Generic[_auto.Subject], abc.ABC):
@@ -65,8 +65,8 @@ class TestSklearnTransformerWrapper(Wrapper[type[skbase.TransformerMixin]]):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def wrapper() -> topology.SklearnTransformerWrapper:
-        return topology.SklearnTransformerWrapper()
+    def wrapper() -> decorate.SklearnTransformerWrapper:
+        return decorate.SklearnTransformerWrapper()
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -86,8 +86,8 @@ class TestSklearnClassifierWrapper(Wrapper[type[skbase.ClassifierMixin]]):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def wrapper() -> topology.SklearnClassifierWrapper:
-        return topology.SklearnClassifierWrapper()
+    def wrapper() -> decorate.SklearnClassifierWrapper:
+        return decorate.SklearnClassifierWrapper()
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -105,8 +105,8 @@ class TestSklearnRegressorWrapper(Wrapper[type[skbase.RegressorMixin]]):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def wrapper() -> topology.SklearnRegressorWrapper:
-        return topology.SklearnRegressorWrapper()
+    def wrapper() -> decorate.SklearnRegressorWrapper:
+        return decorate.SklearnRegressorWrapper()
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -122,7 +122,7 @@ class TestSklearnRegressorWrapper(Wrapper[type[skbase.RegressorMixin]]):
 def test_autowrap():
     """Autowrapping importer context manager unit test."""
     # pylint: disable=import-outside-toplevel,reimported
-    with topology.autowrap():
+    with decorate.autowrap():
         from sklearn.ensemble import GradientBoostingClassifier
     assert isinstance(GradientBoostingClassifier(max_depth=5), flow.Operator)
     assert 'sklearn.ensemble' not in sys.modules
@@ -130,7 +130,7 @@ def test_autowrap():
 
     assert not isinstance(GradientBoostingClassifier(max_depth=5), flow.Operator)
 
-    with topology.autowrap():
+    with decorate.autowrap():
         from sklearn import ensemble
     assert isinstance(ensemble.GradientBoostingClassifier(max_depth=5), flow.Operator)
     assert 'sklearn.ensemble' not in sys.modules
@@ -138,7 +138,7 @@ def test_autowrap():
 
     assert not isinstance(ensemble.GradientBoostingClassifier(max_depth=5), flow.Operator)
 
-    with topology.autowrap():
+    with decorate.autowrap():
         import sklearn.ensemble
     assert isinstance(sklearn.ensemble.GradientBoostingClassifier(max_depth=5), flow.Operator)
     assert 'sklearn.ensemble' not in sys.modules

@@ -19,19 +19,21 @@
 Payload transformation utilities.
 """
 
-from ._convert import pandas_params, to_pandas
+from ._convert import ToPandas, pandas_params
 from ._debug import Dump, Dumpable, PandasTrainsetResult, TrainsetResulting, TrainsetReturn
-from ._generic import Apply, Concatenable, PandasConcat
+from ._generic import Apply, Concatenable, DropPandas, MapReduce, PandasConcat, SelectPandas
 from ._split import ColumnExtractable, CrossValidable, CVFoldable, PandasColumnExtractor, PandasCVFolds
 
 __all__ = [
-    'to_pandas',
+    'ToPandas',
     'ColumnExtractable',
     'Concatenable',
     'CrossValidable',
     'CVFoldable',
+    'DropPandas',
     'Dump',
     'Dumpable',
+    'MapReduce',
     'TrainsetResulting',
     'pandas_params',
     'PandasConcat',
@@ -39,5 +41,6 @@ __all__ = [
     'PandasColumnExtractor',
     'PandasTrainsetResult',
     'PandasCVFolds',
+    'SelectPandas',
     'TrainsetReturn',
 ]

@@ -22,10 +22,10 @@ import numpy as np
 import pandas as pd
 
 from forml import flow
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 
-@topology.Mapper.operator
+@decorate.Mapper.operator
 class NaNImputer(flow.Actor[pd.DataFrame, pd.DataFrame, pd.DataFrame]):
     """Custom NaN imputation logic."""
 

@@ -26,7 +26,7 @@ Here we just create couple of forml operators that implement particular classifi
 from sklearn import ensemble as estimator
 from sklearn import linear_model
 
-from forml.pipeline import topology
+from forml.pipeline import decorate
 
 
 def predict_proba(classifier, *args, **kwargs):
@@ -37,13 +37,13 @@ def predict_proba(classifier, *args, **kwargs):
 
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-RFC = topology.Consumer.operator(
-    topology.Class.actor(estimator.RandomForestClassifier, train='fit', apply=predict_proba)
+RFC = decorate.Consumer.operator(
+    decorate.Class.actor(estimator.RandomForestClassifier, train='fit', apply=predict_proba)
 )
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-GBC = topology.Consumer.operator(
-    topology.Class.actor(
+GBC = decorate.Consumer.operator(
+    decorate.Class.actor(
         estimator.GradientBoostingClassifier,
         train='fit',
         apply=predict_proba,
@@ -51,4 +51,4 @@ GBC = topology.Consumer.operator(
 )
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-LR = topology.Consumer.operator(topology.Class.actor(linear_model.LogisticRegression, train='fit', apply=predict_proba))
+LR = decorate.Consumer.operator(decorate.Class.actor(linear_model.LogisticRegression, train='fit', apply=predict_proba))

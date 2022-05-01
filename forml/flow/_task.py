@@ -102,6 +102,8 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
 
         Optional method engaging the *Train* (``features``) and *Label* (``label``) ports on stateful actors.
 
+        Note the stateful Actor can only have single-port features input.
+
         Args:
             features: Table of feature vectors.
             labels: Table of labels.
@@ -112,7 +114,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
     def apply(self, *features: Features) -> Result:
         """Pass features through the apply function (typically transform or predict).
 
-        Mandatory M:N input-output *Apply* ports.
+        Mandatory M:N input-output *Apply* ports in case of stateless Actor or 1:N in case of a stateful one.
 
         Args:
             features: Table(s) of feature vectors.

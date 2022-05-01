@@ -16,20 +16,24 @@
 # under the License.
 
 """
-Convenience testing matcher implementations.
+Generic payload operators unit tests.
 """
+# pylint: disable=no-self-use
 
-from pandas.core import generic as pdtype
+import pandas
+
+from forml import testing
+from forml.pipeline import payload
 
 
-def pandas_equals(expected: pdtype.NDFrame, actual: pdtype.NDFrame) -> bool:
-    """Compare Pandas DataFrames for equality.
+class TestMapReduce(testing.operator(payload.MapReduce)):
+    """MapReduce operator unit tests."""
 
-    Args:
-        expected: Instance of the expected data representation.
-        actual: Testcase produced data.
+    FEATURES = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
+    LABELS = pandas.Series([0, 1, 0], name='baz')
 
-    Returns:
-        True if the data is equal.
-    """
-    return hasattr(actual, 'equals') and actual.equals(expected)
+    apply_mode = (
+        testing.Case(payload.SelectPandas.spec(columns=['foo']), payload.DropPandas.spec(columns=['foo']))
+        .apply(FEATURES)
+        .returns(FEATURES, testing.pandas_equals)
+    )

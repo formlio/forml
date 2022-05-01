@@ -27,6 +27,7 @@ from pandas.core import generic as pdtype
 
 from forml import flow
 
+from .. import decorate
 from . import _convert
 
 LOGGER = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ class Concatenable(flow.Actor[flow.Features, None, flow.Result], metaclass=abc.A
         """Concatenation logic implementation.
 
         Args:
-            features: Sequence of features objects to be contatenated.
+            features: Sequence of features objects to be concatenated.
             **kwargs: Optional kwargs.
 
         Returns:
@@ -83,8 +84,10 @@ class Concatenable(flow.Actor[flow.Features, None, flow.Result], metaclass=abc.A
 class PandasConcat(Concatenable[pdtype.NDFrame, pandas.DataFrame]):
     """Concat implementation based on Pandas Dataframe."""
 
-    def __init__(self, axis: str = 'index'):
-        super().__init__(axis=axis)
+    DEFAULTS = {'copy': False}
+
+    def __init__(self, **kwargs):
+        super().__init__(**(self.DEFAULTS | kwargs))
 
     @_convert.pandas_params
     def apply(self, *features: pdtype.NDFrame) -> pandas.DataFrame:
@@ -100,23 +103,56 @@ class PandasConcat(Concatenable[pdtype.NDFrame, pandas.DataFrame]):
         Returns:
             Single concatenated dataframe.
         """
-        return pandas.concat(features, axis=kwargs.get('axis'), ignore_index=True)
+        return pandas.concat(features, **kwargs)
 
 
-class Apply(flow.Actor[flow.Features, None, flow.Features]):
+@decorate.Function.actor
+def Apply(  # pylint: disable=invalid-name
+    *features: flow.Features, function: typing.Callable[..., flow.Features]
+) -> pandas.DataFrame:
     """Generic source apply actor."""
+    return function(*features)
 
-    def __init__(self, function: typing.Callable[[flow.Features], flow.Features]):
-        self.function: typing.Callable[[flow.Features], flow.Features] = function
 
-    @_convert.pandas_params
-    def apply(self, *features: flow.Features) -> flow.Features:  # pylint: disable=arguments-differ
-        """Execute the provided method with the given sources.
+@decorate.Function.actor
+def SelectPandas(  # pylint: disable=invalid-name
+    features: pandas.DataFrame, *, columns: typing.Sequence[str]
+) -> pandas.DataFrame:
+    """Column selection actor implementation based on Pandas Dataframe."""
+    return features[list(columns)]
 
-        Args:
-            features: Inputs to be passed through the provided method.
 
-        Returns:
-            Transformed output as returned by the provided method.
-        """
-        return self.function(*features)
+@decorate.Function.actor
+def DropPandas(  # pylint: disable=invalid-name
+    features: pandas.DataFrame, *, columns: typing.Sequence[str]
+) -> pandas.DataFrame:
+    """Column drop actor implementation based on Pandas Dataframe."""
+    return features.drop(columns=list(columns))
+
+
+class MapReduce(flow.Operator):
+    """Operator for applying parallel (possibly stateful) mapper actors and a final (stateless) reducer."""
+
+    def __init__(self, *mappers: flow.Spec, reducer: flow.Spec = PandasConcat.spec(axis='columns')):  # noqa: B008
+        if reducer.actor.is_stateful():
+            raise TypeError('Stateful reducer')
+        if not mappers:
+            raise ValueError('Mappers required')
+        self._mappers: tuple[flow.Spec] = mappers
+        self._reducer: flow.Spec = reducer
+
+    def compose(self, left: flow.Composable) -> flow.Trunk:
+        left: flow.Trunk = left.expand()
+        apply_reducer = flow.Worker(self._reducer, len(self._mappers), 1)
+        train_reducer = apply_reducer.fork()
+        for idx, mapper in enumerate(self._mappers):
+            apply_applier = flow.Worker(mapper, 1, 1)
+            apply_applier[0].subscribe(left.apply.publisher)
+            train_applier = apply_applier.fork()
+            train_applier[0].subscribe(left.train.publisher)
+            if mapper.actor.is_stateful():
+                train_trainer = apply_applier.fork()
+                train_trainer.train(left.train.publisher, left.label.publisher)
+            apply_reducer[idx].subscribe(apply_applier[0])
+            train_reducer[idx].subscribe(train_applier[0])
+        return left.use(apply=left.apply.extend(tail=apply_reducer), train=left.train.extend(tail=train_reducer))

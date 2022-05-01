@@ -26,37 +26,37 @@ from sklearn import ensemble, feature_extraction, impute, linear_model, naive_ba
 from forml import project
 from forml.extension.feed import static
 from forml.io import dsl
-from forml.pipeline import payload, topology
+from forml.pipeline import decorate, payload
 
-SimpleImputer = topology.Mapper.operator(topology.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
+SimpleImputer = decorate.Mapper.operator(decorate.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
 
-OneHotEncoder = topology.Mapper.operator(
-    topology.Class.actor(preprocessing.OneHotEncoder, train='fit', apply='transform')
+OneHotEncoder = decorate.Mapper.operator(
+    decorate.Class.actor(preprocessing.OneHotEncoder, train='fit', apply='transform')
 )
 
-Binarizer = topology.Mapper.operator(topology.Class.actor(preprocessing.Binarizer, train='fit', apply='transform'))
+Binarizer = decorate.Mapper.operator(decorate.Class.actor(preprocessing.Binarizer, train='fit', apply='transform'))
 
-FeatureHasher = topology.Mapper.operator(
-    topology.Class.actor(feature_extraction.FeatureHasher, train='fit', apply='transform')
+FeatureHasher = decorate.Mapper.operator(
+    decorate.Class.actor(feature_extraction.FeatureHasher, train='fit', apply='transform')
 )
 
-RFC = topology.Consumer.operator(
-    topology.Class.actor(ensemble.RandomForestClassifier, train='fit', apply='predict_proba')
+RFC = decorate.Consumer.operator(
+    decorate.Class.actor(ensemble.RandomForestClassifier, train='fit', apply='predict_proba')
 )
 
-GBC = topology.Consumer.operator(
-    topology.Class.actor(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba')
+GBC = decorate.Consumer.operator(
+    decorate.Class.actor(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba')
 )
 
-LR = topology.Consumer.operator(
-    topology.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba')
+LR = decorate.Consumer.operator(
+    decorate.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba')
 )
 
-Bayes = topology.Consumer.operator(topology.Class.actor(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
+Bayes = decorate.Consumer.operator(decorate.Class.actor(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
 
 
-@topology.Mapper.operator
-@topology.Function.actor
+@decorate.Mapper.operator
+@decorate.Function.actor
 def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     """Simple stateless transformer create from a plain function."""
     return df.dropna()
@@ -80,4 +80,4 @@ class Feed(static.Feed):
 
 
 FEED = Feed()
-SOURCE = project.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.to_pandas(columns=['Age'])
+SOURCE = project.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.ToPandas(columns=['Age'])
