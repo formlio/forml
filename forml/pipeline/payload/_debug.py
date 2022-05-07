@@ -78,6 +78,10 @@ class Dumpable(
         self.train_dump(features, labels, self._path, **self._kwargs)
 
     @classmethod
+    def is_stateful(cls) -> bool:
+        return cls.train_dump.__code__ is not Dumpable.train_dump.__code__
+
+    @classmethod
     def train_dump(
         cls,
         # pylint: disable=unused-argument
@@ -190,7 +194,7 @@ class Dump(flow.Operator):
         apply: flow.Spec['payload.Dumpable'] = PandasApplyCSVDumper.spec(),  # noqa: B008
         train: typing.Optional[flow.Spec['payload.Dumpable']] = PandasTrainCSVDumper.spec(),  # noqa: B008
         *,
-        path: typing.Optional[str] = None,
+        path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
         self._apply: typing.Callable[[int], flow.Spec['payload.Dumpable']] = self._spec_builder(apply, path, 'apply')
         self._train: typing.Callable[[int], flow.Spec['payload.Dumpable']] = self._spec_builder(
@@ -200,7 +204,7 @@ class Dump(flow.Operator):
 
     @classmethod
     def _spec_builder(
-        cls, spec: flow.Spec['payload.Dumpable'], path: typing.Optional[str], mode: str
+        cls, spec: flow.Spec['payload.Dumpable'], path: typing.Optional[typing.Union[str, pathlib.Path]], mode: str
     ) -> typing.Callable[[int], flow.Spec['payload.Dumpable']]:
         """Get a function for creating a Spec instance parametrized using a sequence id and a mode string which can be
         used to interpolate potential placeholders in the path template.
@@ -240,7 +244,7 @@ class Dump(flow.Operator):
         apply_dumper: flow.Worker = flow.Worker(self._apply(self._instances), 1, 1)
         train_dumper.train(left.train.publisher, left.label.publisher)
         self._instances += 1
-        return left.extend(apply=flow.Path(apply_dumper))  # train_dumper remains a leaf
+        return left.extend(apply=apply_dumper, train=train_dumper.fork())  # train_dumper@train to consume state
 
 
 class TrainsetResulting(flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=abc.ABCMeta):
@@ -347,4 +351,4 @@ class TrainsetReturn(flow.Operator):
         left: flow.Trunk = left.expand()
         trainset_result: flow.Worker = flow.Worker(self._trainset_result, 1, 1)
         trainset_result.train(left.train.publisher, left.label.publisher)
-        return left.extend(apply=flow.Path(trainset_result.fork()))
+        return left.extend(apply=trainset_result.fork())

@@ -27,7 +27,7 @@ from pandas.core import generic as pdtype
 
 from forml import flow
 
-from .. import decorate
+from .. import wrap
 from . import _convert
 
 LOGGER = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ class PandasConcat(Concatenable[pdtype.NDFrame, pandas.DataFrame]):
         return pandas.concat(features, **kwargs)
 
 
-@decorate.Function.actor
+@wrap.Actor.apply
 def Apply(  # pylint: disable=invalid-name
     *features: flow.Features, function: typing.Callable[..., flow.Features]
 ) -> pandas.DataFrame:
@@ -114,7 +114,7 @@ def Apply(  # pylint: disable=invalid-name
     return function(*features)
 
 
-@decorate.Function.actor
+@wrap.Actor.apply
 def SelectPandas(  # pylint: disable=invalid-name
     features: pandas.DataFrame, *, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:
@@ -122,7 +122,7 @@ def SelectPandas(  # pylint: disable=invalid-name
     return features[list(columns)]
 
 
-@decorate.Function.actor
+@wrap.Actor.apply
 def DropPandas(  # pylint: disable=invalid-name
     features: pandas.DataFrame, *, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:

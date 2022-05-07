@@ -19,8 +19,8 @@ ForML evaluation.
 """
 
 from ._api import Method, Metric, Outcome
-from ._method import CrossVal
+from ._method import CrossVal, HoldOut
 from ._metric import Function
 from ._stage import ApplyScore, TrainScore
 
-__all__ = ['ApplyScore', 'CrossVal', 'Function', 'Method', 'Metric', 'Outcome', 'TrainScore']
+__all__ = ['ApplyScore', 'CrossVal', 'Function', 'HoldOut', 'Method', 'Metric', 'Outcome', 'TrainScore']

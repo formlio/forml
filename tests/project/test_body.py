@@ -26,7 +26,7 @@ import pytest
 import forml
 from forml import flow, io, project
 from forml.io import layout
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 from forml.project import _importer
 
 
@@ -43,7 +43,7 @@ class TestBuilder:
     @pytest.fixture(scope='function')
     def pipeline(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Composable:
         """Pipeline fixture."""
-        return decorate.Consumer(actor_spec)
+        return wrap.Consumer(actor_spec)
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -123,4 +123,4 @@ class TestArtifact:
 
     def test_launcher(self, project_artifact: project.Artifact, feed_instance: io.Feed):
         """Testing launcher access."""
-        assert project_artifact.launcher('pyfunc', [feed_instance]).apply()
+        assert project_artifact.launcher('dask', [feed_instance]).eval()

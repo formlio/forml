@@ -26,37 +26,27 @@ from sklearn import ensemble, feature_extraction, impute, linear_model, naive_ba
 from forml import project
 from forml.extension.feed import static
 from forml.io import dsl
-from forml.pipeline import decorate, payload
+from forml.pipeline import payload, wrap
 
-SimpleImputer = decorate.Mapper.operator(decorate.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
+SimpleImputer = wrap.Mapper.operator(wrap.Actor.type(impute.SimpleImputer, train='fit', apply='transform'))
 
-OneHotEncoder = decorate.Mapper.operator(
-    decorate.Class.actor(preprocessing.OneHotEncoder, train='fit', apply='transform')
-)
+OneHotEncoder = wrap.Mapper.operator(wrap.Actor.type(preprocessing.OneHotEncoder, train='fit', apply='transform'))
 
-Binarizer = decorate.Mapper.operator(decorate.Class.actor(preprocessing.Binarizer, train='fit', apply='transform'))
+Binarizer = wrap.Mapper.operator(wrap.Actor.type(preprocessing.Binarizer, train='fit', apply='transform'))
 
-FeatureHasher = decorate.Mapper.operator(
-    decorate.Class.actor(feature_extraction.FeatureHasher, train='fit', apply='transform')
-)
+FeatureHasher = wrap.Mapper.operator(wrap.Actor.type(feature_extraction.FeatureHasher, train='fit', apply='transform'))
 
-RFC = decorate.Consumer.operator(
-    decorate.Class.actor(ensemble.RandomForestClassifier, train='fit', apply='predict_proba')
-)
+RFC = wrap.Consumer.operator(wrap.Actor.type(ensemble.RandomForestClassifier, train='fit', apply='predict_proba'))
 
-GBC = decorate.Consumer.operator(
-    decorate.Class.actor(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba')
-)
+GBC = wrap.Consumer.operator(wrap.Actor.type(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba'))
 
-LR = decorate.Consumer.operator(
-    decorate.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba')
-)
+LR = wrap.Consumer.operator(wrap.Actor.type(linear_model.LogisticRegression, train='fit', apply='predict_proba'))
 
-Bayes = decorate.Consumer.operator(decorate.Class.actor(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
+Bayes = wrap.Consumer.operator(wrap.Actor.type(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
 
 
-@decorate.Mapper.operator
-@decorate.Function.actor
+@wrap.Mapper.operator
+@wrap.Actor.type
 def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     """Simple stateless transformer create from a plain function."""
     return df.dropna()

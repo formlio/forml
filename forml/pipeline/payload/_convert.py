@@ -28,7 +28,7 @@ import pandas
 from pandas.core import generic as pdtype
 
 from forml import flow
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 
 LOGGER = logging.getLogger(__name__)
 
@@ -93,10 +93,10 @@ def pandas_params(
     return wrapper
 
 
-@decorate.Adapter.apply
-@decorate.Adapter.train
-@decorate.Adapter.label
-@decorate.Function.actor
+@wrap.Adapter.apply
+@wrap.Adapter.train
+@wrap.Adapter.label
+@wrap.Actor.apply
 def ToPandas(  # pylint: disable=invalid-name
     data: typing.Any, *, columns: typing.Optional[typing.Sequence[str]] = None
 ) -> pdtype.NDFrame:

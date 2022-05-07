@@ -201,7 +201,7 @@ class CVFoldable(
         if not self._indices:
             raise RuntimeError('Splitter not trained')
         LOGGER.debug('Splitting into %d train-test folds', len(self._indices))
-        return tuple(s for a, b in self._indices for s in (features.iloc[a], features.iloc[b]))
+        return self.split(features, self._indices)
 
     @classmethod
     @abc.abstractmethod
@@ -259,4 +259,8 @@ class PandasCVFolds(CVFoldable[pandas.DataFrame, pdtype.NDFrame, pandas.Series])
     def split(
         cls, features: pandas.DataFrame, indices: typing.Sequence[tuple[typing.Sequence[int], typing.Sequence[int]]]
     ) -> typing.Sequence[pandas.DataFrame]:
-        return tuple(s for a, b in indices for s in (features.iloc[a], features.iloc[b]))
+        return tuple(
+            s
+            for a, b in indices
+            for s in (features.iloc[a].reset_index(drop=True), features.iloc[b].reset_index(drop=True))
+        )

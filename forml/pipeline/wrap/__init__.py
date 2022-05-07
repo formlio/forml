@@ -14,3 +14,24 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+"""
+Dag composition utilities frontend API module.
+"""
+
+from ._actor import Actor
+from ._auto import SklearnClassifierWrapper, SklearnRegressorWrapper, SklearnTransformerWrapper, importer
+from ._operator import Adapter
+from ._simple import Consumer, Labeler, Mapper
+
+__all__ = [
+    'importer',
+    'Actor',
+    'Adapter',
+    'Mapper',
+    'Consumer',
+    'Labeler',
+    'SklearnTransformerWrapper',
+    'SklearnClassifierWrapper',
+    'SklearnRegressorWrapper',
+]

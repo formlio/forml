@@ -88,12 +88,10 @@ class Ensembler(flow.Operator):
         *bases: flow.Composable,
         crossvalidator: payload.CrossValidable,
         splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
-        nsplits: None = None,
         **kwargs,
     ):
         """Simplified constructor based on splitter supplied in form of a crossvalidator and a folding actor type.
 
-        Parameter nsplits must not be provided.
 
         Args:
             *bases: Set of primary models to be ensembled.
@@ -107,14 +105,11 @@ class Ensembler(flow.Operator):
     def __init__(
         self,
         *bases: flow.Composable,
-        crossvalidator: None = None,
         splitter: flow.Spec[payload.CVFoldable],
         nsplits: int,
         **kwargs,
     ):
         """Ensembler constructor based on splitter supplied in form of a Spec object.
-
-        Crossvalidator must not be provided.
 
         Args:
             *bases: Set of primary models to be ensembled.
@@ -244,7 +239,7 @@ class FullStack(Ensembler):
         splitter=payload.PandasCVFolds,
         nsplits=None,
         appender: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(  # noqa: B008
-            axis='columns', ignore_index=True
+            axis='columns', ignore_index=False
         ),
         stacker: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(  # noqa: B008
             axis='index', ignore_index=True

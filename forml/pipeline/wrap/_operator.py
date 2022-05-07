@@ -32,12 +32,12 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
 
         @decorate.Adapter.train(**kwargs)  # optional kwargs will be passed to actor
         @decorate.Adapter.apply  # decorators can be chained if same actor is supposed to be used for another mode
-        @decorate.Function.actor
+        @decorate.Function.apply
         def myadapter(df, **kwargs):
             # stateless adapter implementation used for train/apply paths
 
         @myadapter.label(**kwargs)  # previously decorated adapter can be itself used as decorator
-        @decorate.Function.actor
+        @decorate.Function.apply
         def myadapter(df, **kwargs):
             # stateless adapter implementation used for label path
     """

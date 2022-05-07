@@ -23,9 +23,9 @@ import pandas
 from sklearn import model_selection
 
 from forml import testing
-from forml.pipeline import decorate, ensemble, payload
+from forml.pipeline import ensemble, payload, wrap
 
-with decorate.autowrap():
+with wrap.importer():
     from sklearn.dummy import DummyClassifier  # pylint: disable=ungrouped-imports
 
 
@@ -37,8 +37,12 @@ class TestFullStack(testing.operator(ensemble.FullStack)):
     CROSSVALIDATOR = model_selection.PredefinedSplit([0, 0, 0, 1, 1, 1])
     MODEL1 = DummyClassifier(strategy='most_frequent')
     MODEL2 = DummyClassifier(strategy='most_frequent')
-    TRAIN_EXPECT = pandas.DataFrame({0: [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], 1: [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]})
-    APPLY_EXPECT = pandas.DataFrame({0: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 1: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]})
+    TRAIN_EXPECT = pandas.DataFrame(
+        [[1.0, 1.0], [1.0, 1.0], [1.0, 1.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], columns=[0, 1]
+    )
+    APPLY_EXPECT = pandas.DataFrame(
+        [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], columns=[0, 0]
+    )
 
     missing_bases = testing.Case().raises(ValueError, 'Base models required')
     missing_cval = testing.Case(MODEL1, MODEL2).raises(TypeError, 'Invalid combination')

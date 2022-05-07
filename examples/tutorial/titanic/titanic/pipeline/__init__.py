@@ -29,34 +29,34 @@ from sklearn import model_selection
 from titanic.pipeline import preprocessing
 
 from forml import project
-from forml.pipeline import decorate, ensemble
+from forml.pipeline import ensemble, payload, wrap
 
-with decorate.autowrap():
-    from category_encoders import HashingEncoder
-    from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+with wrap.importer():
+    from sklearn.ensemble import GradientBoostingClassifier
     from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
     from sklearn.svm import SVC
 
-
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
 STACK = ensemble.FullStack(
-    RandomForestClassifier(n_estimators=10, random_state=42),
     GradientBoostingClassifier(random_state=42),
     SVC(kernel='rbf', random_state=42, probability=True),
-    crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
+    crossvalidator=model_selection.StratifiedKFold(n_splits=2),
 )
 
 
 # This is the main pipeline composition:
 FLOW = (
-    preprocessing.NaNImputer()
+    preprocessing.impute(random_state=42)
+    >> payload.Dump(path='/tmp/tit/impute-$mode-$seq.csv')
     >> preprocessing.parse_title(source='Name', target='Title')
-    >> HashingEncoder(cols=['Sex', 'Embarked', 'Title'])
-    >> StandardScaler()
+    >> preprocessing.encode(columns=['Sex', 'Embarked', 'Title', 'Pclass'])
+    >> StandardScaler(copy=False)
+    >> payload.Dump(path='/tmp/tit/pretrain-$mode-$seq.csv')
     >> STACK
-    >> LogisticRegression(random_state=42, solver='lbfgs')
+    >> payload.Dump(path='/tmp/tit/stack-$mode-$seq.csv')
+    >> LogisticRegression(random_state=42)
 )
 
 # And the final step is registering the pipeline instance as the forml component:

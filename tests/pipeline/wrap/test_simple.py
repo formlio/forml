@@ -24,7 +24,7 @@ import abc
 import pytest
 
 from forml import flow
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 
 
 class Base(abc.ABC):
@@ -48,7 +48,7 @@ class TestMapper(Base):
     @pytest.fixture(scope='session')
     def operator(actor_type: type[flow.Actor]):
         """Operator fixture."""
-        return decorate.Mapper.operator(actor_type)()  # pylint: disable=no-value-for-parameter
+        return wrap.Mapper.operator(actor_type)()  # pylint: disable=no-value-for-parameter
 
 
 class TestConsumer(Base):
@@ -58,4 +58,4 @@ class TestConsumer(Base):
     @pytest.fixture(scope='session')
     def operator(actor_type: type[flow.Actor]):
         """Operator fixture."""
-        return decorate.Consumer.operator(actor_type)()  # pylint: disable=no-value-for-parameter
+        return wrap.Consumer.operator(actor_type)()  # pylint: disable=no-value-for-parameter

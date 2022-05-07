@@ -32,8 +32,7 @@ from sklearn import base as sklbase
 
 from forml import flow
 
-from . import _simple
-from ._wrapped import actor
+from . import _actor, _simple
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,7 +90,7 @@ class SklearnTransformerWrapper(ClassWrapper[type[sklbase.TransformerMixin]]):
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'transform'):
         def wrap(transformer: type[sklbase.TransformerMixin]):
-            return _simple.Mapper.operator(actor.Class.actor(transformer, train='fit', apply=apply))
+            return _simple.Mapper.operator(_actor.Actor.type(transformer, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.TransformerMixin, wrap)
 
@@ -110,7 +109,7 @@ class SklearnClassifierWrapper(ClassWrapper[type[sklbase.ClassifierMixin]]):
         ).transpose()[-1],
     ):
         def wrap(classifier: type[sklbase.ClassifierMixin]):
-            return _simple.Consumer.operator(actor.Class.actor(classifier, train='fit', apply=apply))
+            return _simple.Consumer.operator(_actor.Actor.type(classifier, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.ClassifierMixin, wrap)
 
@@ -120,7 +119,7 @@ class SklearnRegressorWrapper(ClassWrapper[type[sklbase.RegressorMixin]]):
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'predict'):
         def wrap(regressor: type[sklbase.RegressorMixin]):
-            return _simple.Consumer.operator(actor.Class.actor(regressor, train='fit', apply=apply))
+            return _simple.Consumer.operator(_actor.Actor.type(regressor, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.RegressorMixin, wrap)
 
@@ -173,7 +172,7 @@ def _unload(name: str, *subs: str) -> None:
 
 
 @contextlib.contextmanager
-def autowrap(*wrappers: Wrapper) -> typing.Iterable[None]:
+def importer(*wrappers: Wrapper) -> typing.Iterable[None]:
     """Context manager capturing all direct imports and patching their matching top-level attributes using
     the provided wrappers.
 
@@ -218,7 +217,7 @@ def autowrap(*wrappers: Wrapper) -> typing.Iterable[None]:
         for owner, label, instance in _walk(module, *fromlist):
             for wrap in wrappers:
                 if wrap.match(instance):
-                    LOGGER.info('Patching %s.%s using %s', owner.__name__, label, wrap)
+                    LOGGER.debug('Patching %s.%s using %s', owner.__name__, label, wrap)
                     setattr(owner, label, wrap(instance))
                     patched.add(owner.__name__)
                     break

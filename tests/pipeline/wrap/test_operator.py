@@ -19,7 +19,7 @@ Generic operators unit tests.
 """
 # pylint: disable=no-self-use
 
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 
 
 class TestAdapter:
@@ -29,14 +29,14 @@ class TestAdapter:
     def test_noparams(self):
         """Test adapter setup using non-parametrized decorators."""
 
-        @decorate.Adapter.train
-        @decorate.Function.actor
+        @wrap.Adapter.train
+        @wrap.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @decorate.Function.actor
+        @wrap.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -48,14 +48,14 @@ class TestAdapter:
     def test_params(self):
         """Test adapter setup using parametrized decorators."""
 
-        @decorate.Adapter.train(foo='foo', bar='foo')
-        @decorate.Function.actor
+        @wrap.Adapter.train(foo='foo', bar='foo')
+        @wrap.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @decorate.Function.actor
+        @wrap.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -66,10 +66,10 @@ class TestAdapter:
     def test_multi(self):
         """Test adapter setup using multiple decorators."""
 
-        @decorate.Adapter.train(foo='foo')
-        @decorate.Adapter.apply(bar='foo')
-        @decorate.Adapter.label
-        @decorate.Function.actor
+        @wrap.Adapter.train(foo='foo')
+        @wrap.Adapter.apply(bar='foo')
+        @wrap.Adapter.label
+        @wrap.Actor.apply
         def funcfoo(_, **kw):
             """Dummy actor."""
             return 'foo', kw
@@ -79,7 +79,7 @@ class TestAdapter:
         assert funcfoo._label.spec()().apply(None) == ('foo', {})
 
         @funcfoo.apply(bar='bar')
-        @decorate.Function.actor
+        @wrap.Actor.apply
         def funcbar(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -91,10 +91,10 @@ class TestAdapter:
     def test_setup(self):
         """Test the operator instantiation."""
 
-        @decorate.Adapter.train(foo='foo', bar='bar')
-        @decorate.Adapter.apply(foo='foo', bar='bar')
-        @decorate.Adapter.label(foo='foo', bar='bar')
-        @decorate.Function.actor
+        @wrap.Adapter.train(foo='foo', bar='bar')
+        @wrap.Adapter.apply(foo='foo', bar='bar')
+        @wrap.Adapter.label(foo='foo', bar='bar')
+        @wrap.Actor.apply
         def func(*args, **kwargs):
             """Dummy actor."""
             return 'foo', args, kwargs

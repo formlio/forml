@@ -22,7 +22,7 @@ This is one of the main _formal_ forml components (along with `source` and `eval
 the forml loader.
 """
 
-from sklearn import metrics, model_selection
+from sklearn import metrics
 
 from forml import evaluation, project
 
@@ -30,6 +30,7 @@ from forml import evaluation, project
 # to implement classic cross-validated metric scoring
 EVAL = project.Evaluation(
     evaluation.Function(metrics.log_loss),
-    evaluation.CrossVal(crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    # evaluation.CrossVal(crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    evaluation.HoldOut(test_size=0.2, stratify=True, random_state=42),
 )
 project.setup(EVAL)

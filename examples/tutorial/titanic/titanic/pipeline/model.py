@@ -26,7 +26,7 @@ Here we just create couple of forml operators that implement particular classifi
 from sklearn import ensemble as estimator
 from sklearn import linear_model
 
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 
 
 def predict_proba(classifier, *args, **kwargs):
@@ -37,13 +37,11 @@ def predict_proba(classifier, *args, **kwargs):
 
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-RFC = decorate.Consumer.operator(
-    decorate.Class.actor(estimator.RandomForestClassifier, train='fit', apply=predict_proba)
-)
+RFC = wrap.Consumer.operator(wrap.Actor.type(estimator.RandomForestClassifier, train='fit', apply=predict_proba))
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-GBC = decorate.Consumer.operator(
-    decorate.Class.actor(
+GBC = wrap.Consumer.operator(
+    wrap.Actor.type(
         estimator.GradientBoostingClassifier,
         train='fit',
         apply=predict_proba,
@@ -51,4 +49,4 @@ GBC = decorate.Consumer.operator(
 )
 
 # Defining a forml operator by wrapping the standard sklearn classifier
-LR = decorate.Consumer.operator(decorate.Class.actor(linear_model.LogisticRegression, train='fit', apply=predict_proba))
+LR = wrap.Consumer.operator(wrap.Actor.type(linear_model.LogisticRegression, train='fit', apply=predict_proba))

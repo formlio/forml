@@ -37,7 +37,7 @@ FEATURES = schema.Titanic.select(
     schema.Titanic.Parch,
     schema.Titanic.Fare,
     schema.Titanic.Embarked,
-)
+).orderby(schema.Titanic.PassengerId)
 
 ETL = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.ToPandas(
     columns=[f.name for f in FEATURES.schema]

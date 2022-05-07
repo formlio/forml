@@ -23,16 +23,16 @@ import collections
 import datetime
 import multiprocessing
 import pathlib
-import struct
 import typing
 import uuid
 
+import cloudpickle
 import pytest
 
 from forml import flow, io
 from forml import project as prj
 from forml.io import asset, dsl, layout
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 
 from . import helloworld
 from .helloworld import application as helloworld_descriptor
@@ -81,7 +81,7 @@ def train_decorator(actor, *args, **kwargs):
 
 @pytest.fixture(
     scope='session',
-    params=(NativeActor, decorate.Class.actor(WrappedActor, apply='predict', train=train_decorator)),
+    params=(NativeActor, wrap.Actor.type(WrappedActor, apply='predict', train=train_decorator)),
 )
 def actor_type(request) -> type[flow.Actor]:
     """Stateful actor fixture."""
@@ -200,14 +200,14 @@ def valid_generation() -> asset.Generation.Key:
 
 @pytest.fixture(scope='function')
 def stateful_nodes() -> typing.Sequence[uuid.UUID]:
-    """Persistent nodes GID fixture."""
+    """Helloworld project stateful nodes GID fixtures."""
     return uuid.UUID(bytes=b'\x00' * 16), uuid.UUID(bytes=b'\x01' * 16)
 
 
 @pytest.fixture(scope='function')
 def generation_states(stateful_nodes: typing.Sequence[uuid.UUID]) -> typing.Mapping[uuid.UUID, bytes]:
-    """State IDs to state values mapping fixture."""
-    return collections.OrderedDict((n, struct.pack('!Q', i)) for i, n in enumerate(stateful_nodes, start=1))
+    """Hellworld projects stateful nodes state IDs to state values mapping fixture."""
+    return collections.OrderedDict((n, cloudpickle.dumps(i)) for i, n in enumerate(stateful_nodes, start=1))
 
 
 @pytest.fixture(scope='function')

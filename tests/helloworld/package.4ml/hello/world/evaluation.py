@@ -18,12 +18,30 @@
 """
 Dummy project evaluation.
 """
+import typing
+
 from sklearn import metrics, model_selection
 
-from forml import evaluation, project
+from forml import evaluation, flow, project
+from forml.pipeline import payload
+
+
+class Splitter(payload.CVFoldable[typing.Sequence[tuple[str, str, int]], typing.Sequence[int], None]):
+    """Tuple based splitter implementation."""
+
+    @classmethod
+    def split(
+        cls,
+        features: typing.Sequence[tuple[str, str, int]],
+        indices: typing.Sequence[tuple[typing.Sequence[int], typing.Sequence[int]]],
+    ) -> typing.Sequence[flow.Features]:
+        return tuple(s for a, b in indices for s in ([features[i] for i in a], [features[i] for i in b]))
+
 
 INSTANCE = project.Evaluation(
-    evaluation.Function(metrics.log_loss),
-    evaluation.CrossVal(crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    evaluation.Function(metrics.mean_squared_error),
+    evaluation.CrossVal(
+        crossvalidator=model_selection.KFold(n_splits=2, shuffle=True, random_state=42), splitter=Splitter
+    ),
 )
 project.setup(INSTANCE)

@@ -29,6 +29,6 @@ setuptools.setup(
     version='0.1.dev0',
     packages=setuptools.find_packages(include=['titanic*'], where=os.path.dirname(__file__)),
     setup_requires=['forml', 'pytest-runner'],
-    install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
+    install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy'],
     distclass=project.Distribution,
 )

@@ -20,6 +20,8 @@ Data splitting functionality.
 """
 import typing
 
+from sklearn import model_selection
+
 from forml import flow
 from forml.pipeline import payload
 
@@ -38,11 +40,8 @@ class CrossVal(_api.Method):
         *,
         crossvalidator: payload.CrossValidable,
         splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
-        nsplits: None = None,
     ):
         """Simplified constructor based on splitter supplied in form of a crossvalidator and a folding actor type.
-
-        Parameter nsplits must not be provided.
 
         Args:
             crossvalidator: Implementation of the split selection logic.
@@ -51,10 +50,8 @@ class CrossVal(_api.Method):
         """
 
     @typing.overload
-    def __init__(self, *, crossvalidator: None = None, splitter: flow.Spec[payload.CVFoldable], nsplits: int):
+    def __init__(self, *, splitter: flow.Spec[payload.CVFoldable], nsplits: int):
         """CrossVal constructor based on splitter supplied in form of a Spec object.
-
-        Crossvalidator must not be provided.
 
         Args:
             splitter: Spec object defining the folding splitter.
@@ -96,5 +93,81 @@ class CrossVal(_api.Method):
         return tuple(outcomes)
 
 
-# class HoldOut(_api.Method):
-#     def __init__(self, test_size: ):
+class HoldOut(CrossVal):
+    """Evaluation method base on a hold-out portion of the trainset.
+
+    Implemented on top of the CrossVal method by simply forcing the number of folds to 1.
+    """
+
+    @typing.overload
+    def __init__(
+        self,
+        *,
+        test_size: typing.Optional[typing.Union[float, int]] = None,
+        train_size: typing.Optional[typing.Union[float, int]] = None,
+        random_state: typing.Optional[int] = None,
+        stratify: bool = False,
+        splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
+    ):
+        """Simplified constructor based explicit test_size/train_size specifications that will be used to setup a
+        ``StratifiedShuffleSplit`` or ``ShuffleSplit`` crossvalidator (depending on the ``stratify`` flag) for
+        defining the splits.
+
+        Args:
+            test_size: Absolute (if int) or relative (if float) size of the test split (defaults to train_size
+                       complement or 0.1).
+            train_size: Absolute (if int) or relative (if float) size of the train split (defaults to train_size
+                        complement or 0.1).
+            random_state: Controls the randomness of the training and testing indices produced.
+            stratify: Use ``StratifiedShuffleSplit`` if True otherwise use ``ShuffleSplit``.
+            splitter: Folding actor type that is expected to take crossvalidator is its parameter.
+                      Defaults to `payload.PandasCDFolds`.
+        """
+
+    @typing.overload
+    def __init__(
+        self,
+        *,
+        crossvalidator: payload.CrossValidable,
+        splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
+    ):
+        """Simplified constructor based on splitter supplied in form of a crossvalidator and a folding actor type.
+
+        Args:
+            crossvalidator: Implementation of the split selection logic.
+            splitter: Folding actor type that is expected to take crossvalidator is its parameter.
+                      Defaults to `payload.PandasCDFolds`.
+        """
+
+    @typing.overload
+    def __init__(self, *, splitter: flow.Spec[payload.CVFoldable]):
+        """HoldOut constructor based on splitter supplied in form of a Spec object.
+
+        Args:
+            splitter: Spec object defining the train-test splitter.
+        """
+
+    def __init__(
+        self,
+        *,
+        test_size=None,
+        train_size=None,
+        random_state=None,
+        stratify=None,
+        crossvalidator=None,
+        splitter: typing.Union[type[payload.CVFoldable], flow.Spec[payload.CVFoldable]] = payload.PandasCVFolds,
+    ):
+        if (test_size is None and train_size is None and random_state is None and stratify is None) ^ (
+            crossvalidator is not None or isinstance(splitter, flow.Spec)
+        ):
+            raise TypeError('Invalid combination of crossvalidator and test_size/train_size/random_state/shuffle')
+
+        cvsplits = None
+        if not isinstance(splitter, flow.Spec):
+            if not crossvalidator:
+                cvclass = model_selection.StratifiedShuffleSplit if stratify else model_selection.ShuffleSplit
+                crossvalidator = cvclass(test_size=test_size, train_size=train_size, random_state=random_state)
+        else:
+            cvsplits = 2
+        super().__init__(crossvalidator=crossvalidator, splitter=splitter, nsplits=cvsplits)
+        self._nsplits = 1  # force to single fold to avoid actual crossvalidation

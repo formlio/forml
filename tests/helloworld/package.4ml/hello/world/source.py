@@ -22,7 +22,7 @@ Dummy project source.
 from forml import project
 from forml.io import dsl, layout
 from forml.io.dsl import function
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 from tests import helloworld as schema
 
 school_ref = schema.School.reference('bar')
@@ -42,8 +42,8 @@ QUERY = (
 OUTPUT = dsl.Schema.from_fields()
 
 
-@decorate.Mapper.operator
-@decorate.Function.actor
+@wrap.Mapper.operator
+@wrap.Actor.apply
 def as_tuple(data: layout.RowMajor) -> layout.RowMajor:
     """Tuple transformation operator."""
     return tuple(tuple(r) for r in data)

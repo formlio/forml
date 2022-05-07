@@ -57,3 +57,34 @@ class TestCrossVal:
             evaluation.CrossVal(crossvalidator=crossvalidator, splitter=splitter_spec)  # extra cval, missing nsplits
         with pytest.raises(ValueError, match='splits required'):
             evaluation.CrossVal(splitter=splitter_spec, nsplits=1)  # few splits
+
+
+class TestHoldOut:
+    """HoldOut method unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def crossvalidator() -> payload.CrossValidable:
+        """Crossvalidator fixture."""
+        return model_selection.PredefinedSplit([0, 0, 0, 1, 1, 1])
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def splitter_spec() -> flow.Spec[payload.CVFoldable]:
+        """Splitter spec fixture."""
+        return payload.PandasCVFolds.spec()
+
+    def test_init(self, crossvalidator: payload.CrossValidable, splitter_spec: flow.Spec[payload.CVFoldable]):
+        """Init tests."""
+        with pytest.raises(TypeError, match='Invalid combination'):
+            evaluation.HoldOut(test_size=0.2, crossvalidator=crossvalidator)  # extra test_size/crossvalidator
+        with pytest.raises(TypeError, match='Invalid combination'):
+            evaluation.HoldOut(train_size=0.2, crossvalidator=crossvalidator)  # extra train_size/crossvalidator
+        with pytest.raises(TypeError, match='Invalid combination'):
+            evaluation.HoldOut(random_state=42, crossvalidator=crossvalidator)  # extra random/crossvalidator
+        with pytest.raises(TypeError, match='Invalid combination'):
+            evaluation.HoldOut(stratify=True, crossvalidator=crossvalidator)  # extra stratify/crossvalidator
+        with pytest.raises(TypeError, match='Invalid combination'):
+            evaluation.HoldOut(test_size=0.2, splitter=splitter_spec)  # extra test_size/splitter spec
+        with pytest.raises(TypeError, match='Invalid combination'):
+            evaluation.HoldOut(crossvalidator=crossvalidator, splitter=splitter_spec)  # extra cval

@@ -18,56 +18,51 @@
 """
 Dummy project pipeline.
 """
-import struct
 import typing
 
 from forml import flow, project
 from forml.io import layout
-from forml.pipeline import decorate
+from forml.pipeline import wrap
 
 
-@decorate.Function.actor
+@wrap.Actor.apply
 def split(rows: layout.RowMajor) -> tuple[layout.RowMajor, layout.RowMajor]:
     """Actor splitting set of rows into two."""
     mid = len(rows) // 2
     return rows[:mid], rows[mid:]
 
 
-@decorate.Function.actor
+@wrap.Actor.apply
 def merge(left: typing.Sequence[int], right: typing.Sequence[int]) -> typing.Sequence[int]:
     """Actor merging two vectors as positional sum."""
     return [a + b for a, b in zip(left, right)]
 
 
-@decorate.Mapper.operator
-@decorate.Function.actor
+@wrap.Mapper.operator
+@wrap.Actor.apply
 def select(rows: typing.Sequence[tuple[str, str, int]]) -> typing.Sequence[int]:
     """Operator for selecting just the 3rd column."""
     return [r[2] for r in rows]
 
 
-@decorate.Consumer.operator
-class HelloWorld(flow.Actor[typing.Sequence[int], typing.Sequence[int], typing.Sequence[int]]):
-    """Stateful transformer."""
+@wrap.Actor.train
+def helloworld(
+    state: typing.Optional[int],
+    features: typing.Sequence[int],  # pylint: disable=unused-argument
+    labels: typing.Sequence[int],
+) -> int:
+    """Helloworld actor train function."""
+    if state is None:
+        state = 1
+    state += sum(labels)
+    return state
 
-    FMT = '!Q'
 
-    def __init__(self):
-        self._magic = 1
-
-    def train(self, features: typing.Sequence[int], labels: typing.Sequence[int]):
-        """Impute missing values using the median for numeric columns and the most common value for string columns."""
-        self._magic += sum(labels)
-
-    def apply(self, rows: typing.Sequence[int]) -> typing.Sequence[int]:
-        """Filling the NaNs."""
-        return [r * self._magic for r in rows]
-
-    def get_state(self) -> bytes:
-        return struct.pack(self.FMT, self._magic)
-
-    def set_state(self, state: bytes) -> None:
-        self._magic = struct.unpack(self.FMT, state)[0]
+@wrap.Consumer.operator
+@helloworld.apply
+def helloworld(state: int, rows: typing.Sequence[int]) -> typing.Sequence[int]:
+    """Helloworld actor apply function."""
+    return [r * state for r in rows]
 
 
 class Branches(flow.Operator):
@@ -99,5 +94,5 @@ class Branches(flow.Operator):
         return head.use(apply=head.apply.extend(tail=merger))
 
 
-INSTANCE = select() >> Branches(HelloWorld(), HelloWorld())  # pylint: disable=no-value-for-parameter
+INSTANCE = select() >> Branches(helloworld(), helloworld())  # pylint: disable=no-value-for-parameter
 project.setup(INSTANCE)

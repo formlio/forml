@@ -29,43 +29,76 @@ We demonstrate three different ways of creating a forml operator:
 """
 import typing
 
-import numpy as np
+import numpy
+import pandas
 import pandas as pd
+from sklearn import preprocessing
 
-from forml import flow
-from forml.pipeline import decorate
-
-
-@decorate.Mapper.operator
-class NaNImputer(flow.Actor[pd.DataFrame, pd.Series, pd.DataFrame]):
-    """Imputer for missing values implemented as native ForML actor."""
-
-    def __init__(self):
-        self._fill: typing.Optional[pd.Series] = None
-
-    def train(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the actor by learning the median for each numeric column and finding the most common value for
-        strings.
-        """
-        self._fill = pd.Series(
-            [X[c].value_counts().index[0] if X[c].dtype == np.dtype('O') else X[c].median() for c in X], index=X.columns
-        )
-
-    def apply(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Apply the imputation to the given dataset."""
-        return X.fillna(self._fill)
+from forml.pipeline import wrap
 
 
-@decorate.Mapper.operator
-@decorate.Function.actor
-def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
+@wrap.Mapper.operator
+@wrap.Actor.apply
+def parse_title(df: pd.DataFrame, *, source: str, target: str) -> pd.DataFrame:
     """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
 
     def get_title(name: str) -> str:
         """Auxiliary method for extracting the title."""
         if '.' in name:
-            return name.split(',')[1].split('.')[0].strip()
+            return name.split(',')[1].split('.')[0].strip().lower()
         return 'N/A'
 
     df[target] = df[source].map(get_title)
-    return df.drop(source, axis='columns')
+    return df.drop(columns=source)
+
+
+@wrap.Actor.train
+def impute(
+    state: typing.Optional[dict[str, typing.Any]],
+    features: pandas.DataFrame,
+    labels: pandas.Series,
+    random_state: typing.Optional[int] = None,
+) -> dict[str, typing.Any]:
+    """Missing values imputation."""
+    return {'age_mean': features['Age'].mean(), 'age_std': features['Age'].std()}
+
+
+@wrap.Mapper.operator
+@impute.apply
+def impute(
+    state: dict[str, typing.Any], features: pandas.DataFrame, random_state: typing.Optional[int] = None
+) -> pandas.DataFrame:
+    na_slice = features['Age'].isna()
+    if na_slice.any():
+        rand_age = numpy.random.default_rng(random_state).integers(
+            state['age_mean'] - state['age_std'], state['age_mean'] + state['age_std'], size=na_slice.sum()
+        )
+        features.loc[na_slice, 'Age'] = rand_age
+    features['Embarked'].fillna('S', inplace=True)
+    features['Fare'].fillna(features['Fare'].mean(), inplace=True)
+    assert not features.isna().any().any(), 'NaN still'
+    return features
+
+
+@wrap.Actor.train
+def encode(
+    state: typing.Optional[preprocessing.OneHotEncoder],
+    features: pandas.DataFrame,
+    labels: pandas.Series,
+    columns: typing.Sequence[str],
+) -> preprocessing.OneHotEncoder:
+    encoder = preprocessing.OneHotEncoder(handle_unknown='infrequent_if_exist', sparse=False)
+    encoder.fit(features[columns])
+    return encoder
+
+
+@wrap.Mapper.operator
+@encode.apply
+def encode(
+    state: preprocessing.OneHotEncoder, features: pandas.DataFrame, columns: typing.Sequence[str]
+) -> pandas.DataFrame:
+    onehot = pandas.DataFrame(state.transform(features[columns]))
+    return pandas.concat(
+        (features.drop(columns=columns), onehot),
+        axis='columns',
+    )
