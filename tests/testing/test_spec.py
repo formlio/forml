@@ -90,7 +90,7 @@ class TestScenario:
         assert statetrain_returns.params.kwargs == hyperparams
         assert statetrain_returns.input.train == train_input
         assert statetrain_returns.input.label == label_input
-        assert statetrain_returns.output.train == train_output
+        assert statetrain_returns.output.train[0] == train_output
 
     def test_stateapply_raises(
         self,

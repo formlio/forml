@@ -66,10 +66,10 @@ class Test:
         self._launcher: _facility.Launcher = launcher
 
     def __call__(self, suite: 'testing.Suite') -> None:
-        launcher: typing.Optional[_facility.Launcher.Action] = self.init(suite)
-        if launcher:
+        action: typing.Optional[_facility.Launcher.Action] = self.init(suite)
+        if action:
             with self.raises(suite):
-                self.matches(suite, self.test(launcher))
+                self.matches(suite, self.test(action))
 
     def init(self, suite: 'testing.Suite') -> _facility.Launcher.Action:
         """Test init phase.
@@ -101,11 +101,11 @@ class Test:
             value: Tested value..
         """
 
-    def test(self, launcher: _facility.Launcher.Action) -> typing.Any:
+    def test(self, action: _facility.Launcher.Action) -> typing.Any:
         """Test subject logic.
 
         Args:
-            launcher: Launcher instance.
+            action: Launcher action instance.
 
         Returns:
             Produced value.
@@ -141,17 +141,35 @@ class ReturnableTest(Test):
         self._output: _spec.Scenario.Output = output
 
     def matches(self, suite: 'testing.Suite', value: typing.Any) -> None:
-        """Context manager for wrapping raising assertions.
+        """Result matching entrypoint.
 
         Args:
             suite: Tested suite.
             value: Tested value.
         """
-        msg = f'\nExpected: {self._output.value}\nActual: {value}'
-        if self._output.matcher is not None:
-            suite.assertTrue(self._output.matcher(self._output.value, value), msg)
+        self._assert(suite, self._output.value, value, self._output.matcher)
+
+    @classmethod
+    def _assert(
+        cls,
+        suite: 'testing.Suite',
+        expected: typing.Any,
+        actual: typing.Any,
+        matcher: typing.Optional[_spec.Matcher] = None,
+    ) -> None:
+        """Match assertion.
+
+        Args:
+            suite: Tested suite.
+            expected: Expected value.
+            actual: Actual value.
+            matcher: Optional matcher function.
+        """
+        msg = f'\nExpected: {expected}\nActual: {actual}'
+        if matcher is not None:
+            suite.assertTrue(matcher(expected, actual), msg)
         else:
-            suite.assertEqual(self._output.value, value, msg)
+            suite.assertEqual(expected, actual, msg)
 
 
 class TestInitRaises(RaisableTest, Test):
@@ -165,8 +183,8 @@ class TestInitRaises(RaisableTest, Test):
 class PlainApplyTest(Test):
     """Testcase logic."""
 
-    def test(self, launcher: _facility.Launcher.Action) -> typing.Any:
-        return launcher.apply()
+    def test(self, action: _facility.Launcher.Action) -> typing.Any:
+        return action.apply()
 
 
 class TestPlainApplyReturns(ReturnableTest, PlainApplyTest):
@@ -180,28 +198,39 @@ class TestPlainApplyRaises(RaisableTest, PlainApplyTest):
 class StateTrainTest(Test):
     """Testcase logic."""
 
-    def test(self, launcher: _facility.Launcher.Action) -> typing.Any:
-        return launcher.train_return()
+    def test(self, action: _facility.Launcher.Action) -> typing.Any:
+        return action.train_return()
 
 
 class TestStateTrainReturns(ReturnableTest, StateTrainTest):
     """Test composite."""
+
+    @classmethod
+    def _assert(
+        cls,
+        suite: 'testing.Suite',
+        expected: tuple[flow.Features, flow.Labels],
+        actual: tuple[flow.Features, flow.Labels],
+        matcher: typing.Optional[typing.Union[_spec.Matcher, tuple[_spec.Matcher, _spec.Matcher]]] = None,
+    ) -> None:
+        if not isinstance(matcher, typing.Sequence):
+            matcher = matcher, matcher
+        super()._assert(suite, expected[0], actual[0], matcher[0])
+        if expected[1] is not None:
+            super()._assert(suite, expected[1], actual[1], matcher[1])
 
 
 class TestStateTrainRaises(RaisableTest, StateTrainTest):
     """Test composite."""
 
 
-class StateApplyTest(Test):
+class StateApplyTest(PlainApplyTest):
     """Testcase logic."""
 
     def init(self, suite: 'testing.Suite') -> _facility.Launcher.Action:
         launcher = super().init(suite)
         launcher.train_call()
         return launcher
-
-    def test(self, launcher: _facility.Launcher.Action) -> typing.Any:
-        return launcher.apply()
 
 
 class TestStateApplyReturns(ReturnableTest, StateApplyTest):

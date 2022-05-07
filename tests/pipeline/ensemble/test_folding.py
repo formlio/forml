@@ -66,7 +66,7 @@ class TestFullStack(testing.operator(ensemble.FullStack)):
     train_mode = (
         testing.Case(MODEL1, MODEL2, crossvalidator=CROSSVALIDATOR)
         .train(FEATURES, LABELS)
-        .returns(TRAIN_EXPECT, testing.pandas_equals)
+        .returns(TRAIN_EXPECT, testing.pandas_equals, labels=LABELS)
     )
     apply_mode = (
         testing.Case(MODEL1, MODEL2, crossvalidator=CROSSVALIDATOR)

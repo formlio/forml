@@ -43,7 +43,7 @@ class Fold(collections.namedtuple('Fold', 'train, test')):
     class Test(typing.NamedTuple):
         """Test part of the fold."""
 
-        apply: flow.Publishable
+        train: flow.Publishable
         label: flow.Publishable
 
     train: Train
@@ -55,17 +55,17 @@ class Fold(collections.namedtuple('Fold', 'train, test')):
         train_apply: flow.Publishable,
         train_train: flow.Publishable,
         train_label: flow.Publishable,
-        test_apply: flow.Publishable,
+        test_train: flow.Publishable,
         test_label: flow.Publishable,
     ):
-        return super().__new__(cls, cls.Train(train_apply, train_train, train_label), cls.Test(test_apply, test_label))
+        return super().__new__(cls, cls.Train(train_apply, train_train, train_label), cls.Test(test_train, test_label))
 
     def publish(self, apply: flow.Path, train: flow.Path, label: flow.Path, test: flow.Path):
         """Helper for connecting the individual data ports."""
         apply.subscribe(self.train.apply)
         train.subscribe(self.train.train)
         label.subscribe(self.train.label)
-        test.subscribe(self.test.apply)
+        test.subscribe(self.test.train)
 
 
 class Ensembler(flow.Operator):

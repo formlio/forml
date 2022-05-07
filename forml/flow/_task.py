@@ -29,6 +29,10 @@ import cloudpickle
 
 import forml
 
+if typing.TYPE_CHECKING:
+    from forml import flow
+
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -97,7 +101,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         """
         return cls.train.__code__ is not Actor.train.__code__
 
-    def train(self, features: Features, labels: Labels, /) -> None:  # pylint: disable=no-self-use
+    def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:  # pylint: disable=no-self-use
         """Train the actor using the provided features and label.
 
         Optional method engaging the *Train* (``features``) and *Label* (``label``) ports on stateful actors.
@@ -111,7 +115,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         raise RuntimeError('Stateless actor')
 
     @abc.abstractmethod
-    def apply(self, *features: Features) -> Result:
+    def apply(self, *features: 'flow.Features') -> 'flow.Result':
         """Pass features through the apply function (typically transform or predict).
 
         Mandatory M:N input-output *Apply* ports in case of stateless Actor or 1:N in case of a stateful one.

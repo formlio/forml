@@ -25,8 +25,12 @@ import functools
 import types
 import typing
 
+from forml import flow
+
 if typing.TYPE_CHECKING:
     from forml import testing
+
+Matcher = typing.Callable[[typing.Any, typing.Any], bool]
 
 
 class Scenario(collections.namedtuple('Scenario', 'params, input, output, exception')):
@@ -76,7 +80,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
 
         @property
         @abc.abstractmethod
-        def apply(self) -> typing.Any:
+        def apply(self) -> flow.Result:
             """Apply dataset.
 
             Returns:
@@ -99,7 +103,12 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
     class Input(collections.namedtuple('Input', 'apply, train, label'), IO):
         """Input data type."""
 
-        def __new__(cls, apply: typing.Any = None, train: typing.Any = None, label: typing.Any = None):
+        def __new__(
+            cls,
+            apply: typing.Optional[flow.Result] = None,
+            train: typing.Optional[flow.Features] = None,
+            label: typing.Optional[flow.Labels] = None,
+        ):
             return super().__new__(cls, apply, train, label)
 
         @property
@@ -112,9 +121,9 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
 
         def __new__(
             cls,
-            apply: typing.Any = None,
-            train: typing.Any = None,
-            matcher: typing.Optional[typing.Callable[[typing.Any, typing.Any], bool]] = None,
+            apply: typing.Optional[flow.Result] = None,
+            train: typing.Optional[tuple[flow.Features, flow.Labels]] = None,
+            matcher: typing.Optional[Matcher] = None,
         ):
             if apply is not None and train is not None:
                 raise ValueError('Output apply/train collision')
@@ -187,19 +196,17 @@ class Raisable:
 
 
 class Applied(Raisable):
-    """Outcome with a apply input dataset defined."""
+    """Outcome with an apply input dataset defined."""
 
-    def returns(
-        self, output: typing.Any, matcher: typing.Optional[typing.Callable[[typing.Any, typing.Any], bool]] = None
-    ) -> 'testing.Scenario':
+    def returns(self, result: flow.Result, matcher: typing.Optional[Matcher] = None) -> 'testing.Scenario':
         """Assertion on expected return value."""
-        return Scenario(self._params, self._input, Scenario.Output(apply=output, matcher=matcher))
+        return Scenario(self._params, self._input, Scenario.Output(apply=result, matcher=matcher))
 
 
 class Appliable(Raisable):
     """Outcome type allowing to define an apply input dataset."""
 
-    def apply(self, features: typing.Any) -> Applied:
+    def apply(self, features: flow.Features) -> Applied:
         """Apply input dataset definition."""
         return Applied(self._params, self._input._replace(apply=features))
 
@@ -208,10 +215,13 @@ class Trained(Appliable):
     """Outcome with a train input dataset defined."""
 
     def returns(
-        self, output: typing.Any, matcher: typing.Optional[typing.Callable[[typing.Any, typing.Any], bool]] = None
+        self,
+        features: flow.Features,
+        matcher: typing.Optional[typing.Union[Matcher, tuple[Matcher, Matcher]]] = None,
+        labels: flow.Labels = None,
     ) -> Scenario:
         """Assertion on expected return value."""
-        return Scenario(self._params, self._input, Scenario.Output(train=output, matcher=matcher))
+        return Scenario(self._params, self._input, Scenario.Output(train=(features, labels), matcher=matcher))
 
 
 class Case(Appliable):
@@ -220,6 +230,6 @@ class Case(Appliable):
     def __init__(self, *args, **kwargs):
         super().__init__(Scenario.Params(*args, **kwargs))
 
-    def train(self, features: typing.Any, labels: typing.Any = None) -> Trained:
+    def train(self, features: flow.Features, labels: typing.Optional[flow.Labels] = None) -> Trained:
         """Train input dataset definition."""
         return Trained(self._params, Scenario.Input(train=features, label=labels))

@@ -53,30 +53,38 @@ class TestToPandas(testing.operator(payload.ToPandas)):  # pylint: disable=inval
     )
     apply_pytuple_vector = testing.Case().apply((0, 1, 0)).returns(EXPECTED_SERIES, testing.pandas_equals)
     train_dataframe = (
-        testing.Case().train(EXPECTED_DATAFRAME, EXPECTED_SERIES).returns(EXPECTED_DATAFRAME, testing.pandas_equals)
+        testing.Case()
+        .train(EXPECTED_DATAFRAME, EXPECTED_SERIES)
+        .returns(EXPECTED_DATAFRAME, testing.pandas_equals, EXPECTED_SERIES)
     )
     train_series = (
-        testing.Case().train(EXPECTED_SERIES, EXPECTED_SERIES).returns(EXPECTED_SERIES, testing.pandas_equals)
+        testing.Case()
+        .train(EXPECTED_SERIES, EXPECTED_SERIES)
+        .returns(EXPECTED_SERIES, testing.pandas_equals, EXPECTED_SERIES)
     )
     train_numpy_array = (
         testing.Case(columns=('foo', 'bar'))
         .train(numpy.array([[1.0, 'a'], [2.0, 'b'], [3.0, 'b']], dtype=object), numpy.array([0, 1, 0]))
-        .returns(EXPECTED_DATAFRAME, testing.pandas_equals)
+        .returns(EXPECTED_DATAFRAME, testing.pandas_equals, EXPECTED_SERIES)
     )
     train_numpy_vector = (
         testing.Case()
         .train(numpy.array([0, 1, 0]), numpy.array([0, 1, 0]))
-        .returns(EXPECTED_SERIES, testing.pandas_equals)
+        .returns(EXPECTED_SERIES, testing.pandas_equals, EXPECTED_SERIES)
     )
     train_pylist_table = (
         testing.Case(columns=('foo', 'bar'))
         .train([[1.0, 'a'], [2.0, 'b'], [3.0, 'b']], [0, 1, 0])
-        .returns(EXPECTED_DATAFRAME, testing.pandas_equals)
+        .returns(EXPECTED_DATAFRAME, testing.pandas_equals, EXPECTED_SERIES)
     )
-    train_pylist_vector = testing.Case().train([0, 1, 0], [0, 1, 0]).returns(EXPECTED_SERIES, testing.pandas_equals)
+    train_pylist_vector = (
+        testing.Case().train([0, 1, 0], [0, 1, 0]).returns(EXPECTED_SERIES, testing.pandas_equals, EXPECTED_SERIES)
+    )
     train_pytuple_table = (
         testing.Case(columns=('foo', 'bar'))
         .train(((1.0, 'a'), (2.0, 'b'), (3.0, 'b')), (0, 1, 0))
-        .returns(EXPECTED_DATAFRAME, testing.pandas_equals)
+        .returns(EXPECTED_DATAFRAME, testing.pandas_equals, EXPECTED_SERIES)
     )
-    train_pytuple_vector = testing.Case().train((0, 1, 0), (0, 1, 0)).returns(EXPECTED_SERIES, testing.pandas_equals)
+    train_pytuple_vector = (
+        testing.Case().train((0, 1, 0), (0, 1, 0)).returns(EXPECTED_SERIES, testing.pandas_equals, EXPECTED_SERIES)
+    )

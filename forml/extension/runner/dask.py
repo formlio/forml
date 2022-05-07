@@ -72,7 +72,9 @@ class Runner(runtime.Runner, alias='dask'):
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'
             if len(leaves) > 1:
-                LOGGER.debug('Dag output based on %d leaves: %s', len(leaves), ','.join(str(n) for n in leaves))
+                LOGGER.debug(
+                    'Dag output based on %d leaves: %s', len(leaves), ','.join(repr(tasks[n][0]) for n in leaves)
+                )
                 output = self.Output()
                 self.output = id(output)
                 tasks[self.output] = output, *leaves
