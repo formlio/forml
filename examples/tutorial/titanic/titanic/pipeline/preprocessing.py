@@ -16,50 +16,43 @@
 # under the License.
 
 """
-Transformers useful for the Titanic example.
-
-This module is informal from ForML perspective and has been created just for structuring the project code base.
-
-Here we just create couple of forml operators that implement particular transformers.
-
-We demonstrate three different ways of creating a forml operator:
-  * Implementing native ForML actor (NanImputer)
-  * Creating a wrapped actor from a plain function (parse_title)
-  * Wrapping a 3rd party Transformer-like class (ENCODER)
+Transformers useful for the Titanic dataset pre-processing.
 """
 import typing
 
 import numpy
 import pandas
-import pandas as pd
 from sklearn import preprocessing
 
 from forml.pipeline import wrap
 
+# There is a number of different ways ForML allows to implement actors/operators. Here we use the simplest approach
+# of wrapping plain functions using the decorators from the ``forml.pipeline.wrap`` package:
+
 
 @wrap.Mapper.operator
 @wrap.Actor.apply
-def parse_title(df: pd.DataFrame, *, source: str, target: str) -> pd.DataFrame:
-    """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
+def parse_title(features: pandas.DataFrame, *, source: str, target: str) -> pandas.DataFrame:
+    """Transformer extracting a person's title from the name string."""
 
     def get_title(name: str) -> str:
         """Auxiliary method for extracting the title."""
         if '.' in name:
             return name.split(',')[1].split('.')[0].strip().lower()
-        return 'N/A'
+        return 'n/a'
 
-    df[target] = df[source].map(get_title)
-    return df.drop(columns=source)
+    features[target] = features[source].map(get_title)
+    return features.drop(columns=source)
 
 
 @wrap.Actor.train
 def impute(
-    state: typing.Optional[dict[str, typing.Any]],
+    state: typing.Optional[dict[str, typing.Any]],  # pylint: disable=unused-argument
     features: pandas.DataFrame,
-    labels: pandas.Series,
-    random_state: typing.Optional[int] = None,
+    labels: pandas.Series,  # pylint: disable=unused-argument
+    random_state: typing.Optional[int] = None,  # pylint: disable=unused-argument
 ) -> dict[str, typing.Any]:
-    """Missing values imputation."""
+    """Train part of a stateful transformer for missing values imputation."""
     return {'age_mean': features['Age'].mean(), 'age_std': features['Age'].std()}
 
 
@@ -68,6 +61,7 @@ def impute(
 def impute(
     state: dict[str, typing.Any], features: pandas.DataFrame, random_state: typing.Optional[int] = None
 ) -> pandas.DataFrame:
+    """Apply part of a stateful transformer for missing values imputation."""
     na_slice = features['Age'].isna()
     if na_slice.any():
         rand_age = numpy.random.default_rng(random_state).integers(
@@ -82,11 +76,12 @@ def impute(
 
 @wrap.Actor.train
 def encode(
-    state: typing.Optional[preprocessing.OneHotEncoder],
+    state: typing.Optional[preprocessing.OneHotEncoder],  # pylint: disable=unused-argument
     features: pandas.DataFrame,
-    labels: pandas.Series,
+    labels: pandas.Series,  # pylint: disable=unused-argument
     columns: typing.Sequence[str],
 ) -> preprocessing.OneHotEncoder:
+    """Train part of a stateful encoder for the various categorical features."""
     encoder = preprocessing.OneHotEncoder(handle_unknown='infrequent_if_exist', sparse=False)
     encoder.fit(features[columns])
     return encoder
@@ -97,6 +92,7 @@ def encode(
 def encode(
     state: preprocessing.OneHotEncoder, features: pandas.DataFrame, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:
+    """Apply part of a stateful encoder for the various categorical features."""
     onehot = pandas.DataFrame(state.transform(features[columns]))
     return pandas.concat(
         (features.drop(columns=columns), onehot),

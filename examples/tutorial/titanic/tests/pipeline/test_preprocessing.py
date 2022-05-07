@@ -20,42 +20,48 @@ Preprocessing unit tests.
 
 We are thoroughly testing our preprocessing transformers.
 """
+import numpy
 import pandas
 from titanic.pipeline import preprocessing
 
 from forml import testing
 
 
-def dataframe_equals(expected: pandas.DataFrame, actual: pandas.DataFrame) -> bool:
-    """DataFrames can't be simply compared for equality so we need a custom matcher."""
-    if not actual.equals(expected):
-        print(f'Dataframe mismatch: {expected} vs {actual}')
-        return False
-    return True
-
-
-class TestNaNImputer(testing.operator(preprocessing.NaNImputer)):
-    """NaNImputer unit tests."""
-
-    # Dataset fixtures
-    TRAINSET = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
-    TESTSET = pandas.DataFrame({'foo': [1.0, 4.0, None], 'bar': [None, 'c', 'a']})
-    EXPECTED = pandas.DataFrame({'foo': [1.0, 4.0, 2.0], 'bar': ['b', 'c', 'a']})
-
-    # Test scenarios
-    invalid_params = testing.Case('foo').raises(TypeError, 'takes 1 positional argument but 2 were given')
-    not_trained = testing.Case().apply(TESTSET).raises(ValueError, "Must specify a fill 'value' or 'method'")
-    valid_imputation = testing.Case().train(TRAINSET).apply(TESTSET).returns(EXPECTED, dataframe_equals)
-
-
-class TestTitleParser(testing.operator(preprocessing.parse_title)):
+class TestParseTitle(testing.operator(preprocessing.parse_title)):
     """Unit testing the stateless TitleParser transformer."""
 
     # Dataset fixtures
     INPUT = pandas.DataFrame({'Name': ['Smith, Mr. John', 'Black, Ms. Jane', 'Brown, Mrs. Jo', 'White, Ian']})
-    EXPECTED = pandas.concat((INPUT, pandas.DataFrame({'Title': ['Mr', 'Ms', 'Mrs', 'Unknown']})), axis='columns')
+    EXPECTED = pandas.DataFrame({'Title': ['mr', 'ms', 'mrs', 'n/a']})
 
     # Test scenarios
-    invalid_params = testing.Case(foo='bar').raises(TypeError, "got an unexpected keyword argument 'foo'")
+    invalid_params = testing.Case(foo='bar').raises(TypeError, 'missing a required argument:')
     invalid_source = testing.Case(source='Foo', target='Bar').apply(INPUT).raises(KeyError, 'Foo')
-    valid_parsing = testing.Case(source='Name', target='Title').apply(INPUT).returns(EXPECTED, dataframe_equals)
+    valid_parsing = testing.Case(source='Name', target='Title').apply(INPUT).returns(EXPECTED, testing.pandas_equals)
+
+
+class TestImpute(testing.operator(preprocessing.impute)):
+    """NaN Imputer unit tests."""
+
+    def matcher(expected: pandas.DataFrame, actual: pandas.DataFrame) -> bool:  # pylint: disable=no-self-argument
+        """Custom matcher to verify the actual imputations."""
+        assert actual.notna().all().all()
+        # pylint: disable=unsubscriptable-object
+        if not testing.pandas_equals(expected['Embarked'], actual['Embarked']) or not testing.pandas_equals(
+            expected['Fare'], actual['Fare']
+        ):
+            return False
+        source_age = TestImpute.FEATURES['Age']
+        actual_age = actual['Age']
+        return source_age.mean() == actual_age.mean() and source_age.std() == actual_age.std()
+
+    # Dataset fixtures
+    FEATURES = pandas.DataFrame(
+        {'Age': [1.0, numpy.nan, 3.0], 'Embarked': ['X', numpy.nan, 'Y'], 'Fare': [1.0, numpy.nan, 3.0]}
+    )
+    EXPECTED = pandas.DataFrame({'foo': [1.0, 4.0, 2.0], 'Embarked': ['X', 'S', 'Y'], 'Fare': [1.0, 2.0, 3.0]})
+
+    # Test scenarios
+    invalid_params = testing.Case('foo').raises(TypeError, 'takes 1 positional argument but 2 were given')
+    not_trained = testing.Case().apply(FEATURES).raises(RuntimeError, 'not trained')
+    valid_imputation = testing.Case().train(FEATURES).apply(FEATURES).returns(EXPECTED, matcher)

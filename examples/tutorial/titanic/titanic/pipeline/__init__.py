@@ -18,12 +18,7 @@
 """
 Titanic project pipeline.
 
-This is one of the main _formal_ forml components (along with `source` and `evaluation`) that's being looked up by
-the forml loader. In this case it is implemented as a python package but it could be as well just a module
-`pipeline.py`.
-
-All the submodules of this packages have no semantic meaning for ForML - they are completely informal and have been
-created just for structuring the project code base splitting it into these particular parts with arbitrary names.
+This is one of the main _formal_ components that's being looked up by the ForML project loader.
 """
 from sklearn import model_selection
 from titanic.pipeline import preprocessing
@@ -31,7 +26,10 @@ from titanic.pipeline import preprocessing
 from forml import project
 from forml.pipeline import ensemble, wrap
 
+# Let's import number of the sklearn classifiers:
+# using the ``wrap.importer`` they'll transparently get converted into ForML operators
 with wrap.importer():
+    # pylint: disable=ungrouped-imports
     from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
     from sklearn.linear_model import LogisticRegression
     from sklearn.naive_bayes import GaussianNB
@@ -40,9 +38,9 @@ with wrap.importer():
     from sklearn.svm import SVC
     from sklearn.tree import DecisionTreeClassifier
 
-# Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
-# Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
-STACK = ensemble.FullStack(
+
+# Ensembling number of base models using the Stacking Generalization:
+STACK = ensemble.FullStack(  # here FullStack is the particular ensembler implementation
     GradientBoostingClassifier(random_state=42),
     SVC(kernel='rbf', random_state=42, probability=True),
     SVC(kernel='linear', random_state=42, probability=True),
@@ -50,15 +48,17 @@ STACK = ensemble.FullStack(
     GaussianNB(),
     RandomForestClassifier(n_estimators=10, criterion='entropy', random_state=42),
     DecisionTreeClassifier(criterion='entropy', random_state=42),
+    # and selecting ``StratifiedKFold`` as the internal cross-validator for generating the stack folds
     crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
 )
 
 
-# This is the main pipeline composition:
-FLOW = (
+# And finally let's put together the actual pipeline composition using our preprocessing operators and the
+# model ensemble:
+PIPELINE = (
     preprocessing.impute(random_state=42)
     # >> payload.Dump(path='/tmp/tit/impute-$mode-$seq.csv')
-    >> preprocessing.parse_title(source='Name', target='Title')
+    >> preprocessing.parse_title(source='Name', target='Title')  # pylint: disable=no-value-for-parameter
     >> preprocessing.encode(columns=['Sex', 'Embarked', 'Title', 'Pclass'])
     >> StandardScaler(copy=False)
     # >> payload.Dump(path='/tmp/tit/pretrain-$mode-$seq.csv')
@@ -67,5 +67,5 @@ FLOW = (
     >> LogisticRegression(random_state=42)
 )
 
-# And the final step is registering the pipeline instance as the forml component:
-project.setup(FLOW)
+# Registering the pipeline
+project.setup(PIPELINE)

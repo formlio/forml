@@ -20,6 +20,7 @@ Testing routines.
 """
 import abc
 import contextlib
+import io
 import logging
 import string
 import typing
@@ -68,8 +69,9 @@ class Test:
     def __call__(self, suite: 'testing.Suite') -> None:
         action: typing.Optional[_facility.Launcher.Action] = self.init(suite)
         if action:
-            with self.raises(suite):
+            with contextlib.redirect_stderr(io.StringIO()) as stderr, self.raises(suite):
                 self.matches(suite, self.test(action))
+            LOGGER.debug('Captured output: %s', stderr.getvalue())
 
     def init(self, suite: 'testing.Suite') -> _facility.Launcher.Action:
         """Test init phase.

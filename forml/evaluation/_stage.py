@@ -29,7 +29,7 @@ if typing.TYPE_CHECKING:
 
 
 class ApplyScore(flow.Operator):
-    """Production evaluation result value operator.
+    """Production in-sample evaluation result value operator.
 
     This assumes pre-existing state of the pipeline trained previously.
 
@@ -50,7 +50,7 @@ class ApplyScore(flow.Operator):
 
 
 class TrainScore(flow.Operator):
-    """Development evaluation result value operator.
+    """Development out-of-sample evaluation (backtesting) result value operator.
 
     This assumes no pre-existing state - pipeline is trained in scope of the evaluation.
     Only the train path of the composed trunk is expected to be used.

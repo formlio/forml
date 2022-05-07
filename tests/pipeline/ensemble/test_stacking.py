@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Folding ensembles unit tests.
+Stacking ensembles unit tests.
 """
 # pylint: disable=no-self-use
 import pandas

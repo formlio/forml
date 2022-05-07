@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Implementations of folding ensemblers.
+Implementations of stacking ensemblers.
 """
 
 import abc
@@ -69,7 +69,7 @@ class Fold(collections.namedtuple('Fold', 'train, test')):
 
 
 class Ensembler(flow.Operator):
-    """Base class for folding ensemblers."""
+    """Base class for stacking ensemblers."""
 
     class Builder(abc.ABC):
         """Implementation of fold stacking."""
