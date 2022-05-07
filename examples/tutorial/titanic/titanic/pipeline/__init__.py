@@ -29,33 +29,41 @@ from sklearn import model_selection
 from titanic.pipeline import preprocessing
 
 from forml import project
-from forml.pipeline import ensemble, payload, wrap
+from forml.pipeline import ensemble, wrap
 
 with wrap.importer():
-    from sklearn.ensemble import GradientBoostingClassifier
+    from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
     from sklearn.linear_model import LogisticRegression
+    from sklearn.naive_bayes import GaussianNB
+    from sklearn.neighbors import KNeighborsClassifier
     from sklearn.preprocessing import StandardScaler
     from sklearn.svm import SVC
+    from sklearn.tree import DecisionTreeClassifier
 
 # Stack of models implemented based on the forml lib ensembler supplied with standard sklearn Random Forest and
 # Gradient Boosting Classifiers using the sklearn StratifiedKFold crossvalidation splitter.
 STACK = ensemble.FullStack(
     GradientBoostingClassifier(random_state=42),
     SVC(kernel='rbf', random_state=42, probability=True),
-    crossvalidator=model_selection.StratifiedKFold(n_splits=2),
+    SVC(kernel='linear', random_state=42, probability=True),
+    KNeighborsClassifier(n_neighbors=5, metric='minkowski', p=2),
+    GaussianNB(),
+    RandomForestClassifier(n_estimators=10, criterion='entropy', random_state=42),
+    DecisionTreeClassifier(criterion='entropy', random_state=42),
+    crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
 )
 
 
 # This is the main pipeline composition:
 FLOW = (
     preprocessing.impute(random_state=42)
-    >> payload.Dump(path='/tmp/tit/impute-$mode-$seq.csv')
+    # >> payload.Dump(path='/tmp/tit/impute-$mode-$seq.csv')
     >> preprocessing.parse_title(source='Name', target='Title')
     >> preprocessing.encode(columns=['Sex', 'Embarked', 'Title', 'Pclass'])
     >> StandardScaler(copy=False)
-    >> payload.Dump(path='/tmp/tit/pretrain-$mode-$seq.csv')
+    # >> payload.Dump(path='/tmp/tit/pretrain-$mode-$seq.csv')
     >> STACK
-    >> payload.Dump(path='/tmp/tit/stack-$mode-$seq.csv')
+    # >> payload.Dump(path='/tmp/tit/stack-$mode-$seq.csv')
     >> LogisticRegression(random_state=42)
 )
 

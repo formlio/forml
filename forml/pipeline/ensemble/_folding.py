@@ -20,6 +20,7 @@ Implementations of folding ensemblers.
 """
 
 import abc
+import collections
 import typing
 
 import pandas
@@ -29,20 +30,42 @@ from forml import flow
 from forml.pipeline import payload
 
 
-class Split(typing.NamedTuple):
+class Fold(collections.namedtuple('Fold', 'train, test')):
     """Holder of data splits belonging to the same fold."""
 
-    apply: flow.Publishable
-    train: flow.Publishable
-    label: flow.Publishable
-    test: flow.Publishable
+    class Train(typing.NamedTuple):
+        """Train part of the fold."""
+
+        apply: flow.Publishable
+        train: flow.Publishable
+        label: flow.Publishable
+
+    class Test(typing.NamedTuple):
+        """Test part of the fold."""
+
+        apply: flow.Publishable
+        label: flow.Publishable
+
+    train: Train
+    test: Test
+
+    def __new__(
+        cls,
+        /,
+        train_apply: flow.Publishable,
+        train_train: flow.Publishable,
+        train_label: flow.Publishable,
+        test_apply: flow.Publishable,
+        test_label: flow.Publishable,
+    ):
+        return super().__new__(cls, cls.Train(train_apply, train_train, train_label), cls.Test(test_apply, test_label))
 
     def publish(self, apply: flow.Path, train: flow.Path, label: flow.Path, test: flow.Path):
         """Helper for connecting the individual data ports."""
-        apply.subscribe(self.apply)
-        train.subscribe(self.train)
-        label.subscribe(self.label)
-        test.subscribe(self.test)
+        apply.subscribe(self.train.apply)
+        train.subscribe(self.train.train)
+        label.subscribe(self.train.label)
+        test.subscribe(self.test.apply)
 
 
 class Ensembler(flow.Operator):
@@ -55,7 +78,7 @@ class Ensembler(flow.Operator):
             self._bases: tuple[flow.Composable] = tuple(bases)
             self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-        def __call__(self, folds: typing.Sequence[Split]) -> tuple[flow.Atomic, flow.Atomic]:
+        def __call__(self, folds: typing.Sequence[Fold]) -> tuple[flow.Atomic, flow.Atomic, flow.Atomic]:
             """Stack the folds using the given bases and produce a tran and apply outputs.
 
             Args:
@@ -69,8 +92,8 @@ class Ensembler(flow.Operator):
         @classmethod
         @abc.abstractmethod
         def build(
-            cls, bases: typing.Sequence[flow.Composable], folds: typing.Iterable[Split], **kwargs
-        ) -> tuple[flow.Atomic, flow.Atomic]:
+            cls, bases: typing.Sequence[flow.Composable], folds: typing.Sequence[Fold], **kwargs
+        ) -> tuple[flow.Atomic, flow.Atomic, flow.Atomic]:
             """Stack the folds using the given bases and produce a tran and apply outputs.
 
             Args:
@@ -79,7 +102,7 @@ class Ensembler(flow.Operator):
                 **kwargs: Builder specific kwargs.
 
             Returns:
-                Tuple of tail nodes returning the train and apply mode stack outputs.
+                Tuple of tail nodes returning the train, apply and label path outputs.
             """
 
     @typing.overload
@@ -167,15 +190,20 @@ class Ensembler(flow.Operator):
             test_fold = pipeline_fold.apply.copy()
             test_fold.subscribe(feature_folds[2 * fid + 1])
             data_folds.append(
-                Split(
+                Fold(
                     pipeline_fold.apply.publisher,
                     pipeline_fold.train.publisher,
                     pipeline_fold.label.publisher,
                     test_fold.publisher,
+                    label_folds[2 * fid + 1],
                 )
             )
-        train_tail, apply_tail = self._builder(data_folds)
-        return head.use(apply=head.apply.extend(tail=apply_tail), train=head.train.extend(tail=train_tail))
+        train_tail, apply_tail, label_tail = self._builder(data_folds)
+        return flow.Trunk(
+            apply=head.apply.extend(tail=apply_tail),
+            train=head.train.extend(tail=train_tail),
+            label=head.label.extend(tail=label_tail),
+        )
 
 
 @payload.pandas_params
@@ -211,26 +239,28 @@ class FullStack(Ensembler):
 
         @classmethod
         def build(
-            cls, bases: typing.Sequence[flow.Composable], folds: typing.Iterable[Split], **kwargs
-        ) -> tuple[flow.Atomic, flow.Atomic]:
-            folds = tuple(folds)
+            cls, bases: typing.Sequence[flow.Composable], folds: typing.Sequence[Fold], **kwargs
+        ) -> tuple[flow.Atomic, flow.Atomic, flow.Atomic]:
             nsplits = len(folds)
+            label_output: flow.Worker = flow.Worker(kwargs['stacker'], nsplits, 1)
             train_output: flow.Worker = flow.Worker(kwargs['appender'], len(bases), 1)
             apply_output: flow.Worker = train_output.fork()
             stacker_forks: typing.Iterable[flow.Worker] = flow.Worker.fgen(kwargs['stacker'], nsplits, 1)
-            merger_forks: typing.Iterable[flow.Worker] = flow.Worker.fgen(
+            reducer_forks: typing.Iterable[flow.Worker] = flow.Worker.fgen(
                 payload.Apply.spec(function=kwargs['reducer']), nsplits, 1
             )
-            for base_idx, (base, stacker, merger) in enumerate(zip(bases, stacker_forks, merger_forks)):
+            for fold_idx, pipeline_fold in enumerate(folds):
+                label_output[fold_idx].subscribe(pipeline_fold.test.label)
+            for base_idx, (base, stacker, reducer) in enumerate(zip(bases, stacker_forks, reducer_forks)):
                 train_output[base_idx].subscribe(stacker[0])
-                apply_output[base_idx].subscribe(merger[0])
+                apply_output[base_idx].subscribe(reducer[0])
                 for fold_idx, pipeline_fold in enumerate(folds):
                     base_fold: flow.Trunk = base.expand()
                     fold_apply = base_fold.apply.copy()
                     pipeline_fold.publish(base_fold.apply, base_fold.train, base_fold.label, fold_apply)
                     stacker[fold_idx].subscribe(fold_apply.publisher)
-                    merger[fold_idx].subscribe(base_fold.apply.publisher)
-            return train_output, apply_output
+                    reducer[fold_idx].subscribe(base_fold.apply.publisher)
+            return train_output, apply_output, label_output
 
     def __init__(
         self,
