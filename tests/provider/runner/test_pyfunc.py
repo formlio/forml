@@ -24,8 +24,8 @@ import pytest
 
 import forml
 from forml import io, runtime
-from forml.extension.runner import pyfunc
 from forml.io import asset, layout
+from forml.provider.runner import pyfunc
 
 from . import Runner
 

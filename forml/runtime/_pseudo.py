@@ -26,8 +26,8 @@ import typing
 from forml import io
 from forml import project as prj
 from forml.conf.parsed import provider as provcfg
-from forml.extension.registry.filesystem import virtual
 from forml.io import asset, dsl, layout
+from forml.provider.registry.filesystem import virtual
 
 from . import _pad
 

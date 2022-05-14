@@ -20,7 +20,10 @@ Debugging operators.
 """
 import abc
 import inspect
+import logging
+import multiprocessing
 import pathlib
+import queue as quemod
 import string
 import typing
 
@@ -32,7 +35,10 @@ from forml import flow
 from . import _convert
 
 if typing.TYPE_CHECKING:
-    from forml.pipeline import payload
+    from forml.pipeline import payload  # nopycln: import
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Dumpable(
@@ -78,10 +84,6 @@ class Dumpable(
         self.train_dump(features, labels, self._path, **self._kwargs)
 
     @classmethod
-    def is_stateful(cls) -> bool:
-        return cls.train_dump.__code__ is not Dumpable.train_dump.__code__
-
-    @classmethod
     def train_dump(
         cls,
         # pylint: disable=unused-argument
@@ -99,13 +101,16 @@ class Dumpable(
         """
         return None
 
+    @classmethod
+    def is_stateful(cls) -> bool:
+        return cls.train_dump.__code__ is not Dumpable.train_dump.__code__
+
     @typing.final
-    def get_state(self) -> bytes:
-        """We aren't really stateful even though `.is_stateful()` must be true so that `.train()` get engaged.
+    def get_state(self) -> None:
+        """We aren't really stateful even though `.is_stateful()` can be true so that `.train()` get engaged.
 
         Return: Empty state.
         """
-        return bytes()
 
     def get_params(self) -> dict[str, typing.Any]:
         """Standard param getter.
@@ -126,15 +131,19 @@ class Dumpable(
         self._kwargs.update(kwargs)
 
 
-class PandasApplyCSVDumper(Dumpable[pdtype.NDFrame, None, pdtype.NDFrame]):
-    """Pass-through transformer that dumps the input datasets during apply phase to CSV files."""
+class PandasCSVDumper(Dumpable[pandas.DataFrame, pandas.Series, pandas.DataFrame]):
+    """Pass-through transformer that dumps the input datasets to CSV files."""
 
-    def __init__(self, path: typing.Union[str, pathlib.Path]):  # pylint: disable=useless-super-delegation
-        super().__init__(path)
+    def __init__(self, path: typing.Union[str, pathlib.Path], label_header: str = 'Label'):
+        super().__init__(path, label_header=label_header)
 
     @_convert.pandas_params
     def apply(self, features: pdtype.NDFrame) -> pdtype.NDFrame:
         return super().apply(features)
+
+    @_convert.pandas_params
+    def train(self, features: pandas.DataFrame, labels: pandas.Series, /) -> None:
+        super().train(features, labels)
 
     @classmethod
     def apply_dump(cls, features: pdtype.NDFrame, path: pathlib.Path, **kwargs) -> None:
@@ -149,17 +158,6 @@ class PandasApplyCSVDumper(Dumpable[pdtype.NDFrame, None, pdtype.NDFrame]):
         """
         path.parent.mkdir(parents=True, exist_ok=True)
         features.to_csv(path, index=False)
-
-
-class PandasTrainCSVDumper(Dumpable[pandas.DataFrame, pandas.Series, pandas.DataFrame]):
-    """Pass-through transformer that dumps the input datasets during train phase to CSV files."""
-
-    def __init__(self, path: typing.Union[str, pathlib.Path], label_header: str = 'Label'):
-        super().__init__(path, label_header=label_header)
-
-    @_convert.pandas_params
-    def train(self, features: pandas.DataFrame, labels: pandas.Series, /) -> None:
-        super().train(features, labels)
 
     @classmethod
     def train_dump(cls, features: pandas.DataFrame, labels: pandas.Series, path: pathlib.Path, **kwargs) -> None:
@@ -191,8 +189,8 @@ class Dump(flow.Operator):
 
     def __init__(
         self,
-        apply: flow.Spec['payload.Dumpable'] = PandasApplyCSVDumper.spec(),  # noqa: B008
-        train: typing.Optional[flow.Spec['payload.Dumpable']] = PandasTrainCSVDumper.spec(),  # noqa: B008
+        apply: flow.Spec['payload.Dumpable'] = PandasCSVDumper.spec(),  # noqa: B008
+        train: typing.Optional[flow.Spec['payload.Dumpable']] = None,
         *,
         path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
@@ -240,115 +238,78 @@ class Dump(flow.Operator):
             Composed track.
         """
         left: flow.Trunk = left.expand()
-        train_dumper: flow.Worker = flow.Worker(self._train(self._instances), 1, 1)
-        apply_dumper: flow.Worker = flow.Worker(self._apply(self._instances), 1, 1)
-        train_dumper.train(left.train.publisher, left.label.publisher)
+        apply: flow.Worker = flow.Worker(self._apply(self._instances), 1, 1)
+        train: flow.Worker = flow.Worker(self._train(self._instances), 1, 1)
+        train.train(left.train.publisher, left.label.publisher)
         self._instances += 1
-        return left.extend(apply=apply_dumper, train=train_dumper.fork())  # train_dumper@train to consume state
+        return left.extend(apply=apply)
 
 
-class TrainsetResulting(flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=abc.ABCMeta):
-    """Abstract trainset propagating actor - returning previously trained data from each following call to apply."""
+class Sniff(flow.Operator):
+    """Operator for sniffing the inputs and exposing it using a Future provided when used as a context manager."""
 
-    def __init__(self, **kwargs):
-        self._kwargs: dict[str, typing.Any] = kwargs
-        self._result: typing.Optional[flow.Result] = None
+    class Actor(flow.Actor[flow.Features, flow.Labels, flow.Result]):
+        """Actor for sniffing all inputs and passing it to the queue."""
 
-    def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
-        """Train the actor by remembering the calculated result.
+        def __init__(self, queue: typing.Optional[multiprocessing.Queue]):
+            self._queue: typing.Optional[multiprocessing.Queue] = queue
 
-        Args:
-            features: X table.
-            labels: Y series.
-        """
-        self._result = self.result(features, labels, **self._kwargs)
+        def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
+            if self._queue is not None:
+                self._queue.put_nowait((features, labels))
 
-    def apply(self, features: flow.Features) -> flow.Result:  # pylint: disable=arguments-differ
-        """Ignore the input and just return the previously captured trainset result.
+        def apply(self, features: flow.Features) -> flow.Result:
+            if self._queue is not None:
+                self._queue.put_nowait(features)
+            return features
 
-        Args:
-            features: Input data set to be ignored.
+        def get_state(self) -> None:
+            """Not really having any state."""
 
-        Returns:
-            Previously captured trainset result..
-        """
-        if self._result is None:
-            raise RuntimeError('Trainset result not trained')
+    class Future:
+        """Future object to eventually contain the sniffed value."""
+
+        def __init__(self):
+            self._value: typing.Any = None
+
+        def result(self) -> typing.Any:
+            """Get the future result.
+
+            Returns:
+                Future result.
+            """
+            return self._value
+
+        def set_result(self, value: typing.Any) -> None:
+            """Set the future result.
+
+            Args:
+                value: Future result value.
+            """
+            self._value = value
+
+    def __init__(self):
+        self._manager: multiprocessing.Manager = multiprocessing.Manager()
+        self._queue: typing.Optional[multiprocessing.Queue] = None
+        self._result: typing.Optional[Sniff.Future] = None
+
+    def __enter__(self) -> 'Sniff.Future':
+        self._manager.__enter__()
+        self._queue = self._manager.Queue()
+        self._result = self.Future()
         return self._result
 
-    @classmethod
-    @abc.abstractmethod
-    def result(cls, features: flow.Features, labels: flow.Labels, **kwargs) -> flow.Result:
-        """Actual trainset result evaluation logic.
-
-        Args:
-            features: X table.
-            labels: Y series.
-
-        Returns:
-            Trainset result to be used.
-        """
-        raise NotImplementedError()
-
-    def get_params(self) -> dict[str, typing.Any]:
-        """Standard param getter.
-
-        Returns:
-            Actor params.
-        """
-        return dict(self._kwargs)
-
-    def set_params(self, **kwargs) -> None:  # pylint: disable=arguments-differ
-        """Standard params setter.
-
-        Args:
-            kwargs: Concat kwargs.
-        """
-        self._kwargs.update(kwargs)
-
-
-class PandasTrainsetResult(TrainsetResulting[pandas.DataFrame, pandas.Series, pandas.DataFrame]):
-    """Pandas trainset propagating actor - returning previously trained data from each following call to apply."""
-
-    def __init__(self, label_header: typing.Optional[str] = 'Label'):
-        super().__init__(label_header=label_header)
-
-    @_convert.pandas_params
-    def train(self, features: pandas.DataFrame, labels: pandas.Series, /) -> None:
-        super().train(features, labels)
-
-    @_convert.pandas_params
-    def apply(self, features: pandas.DataFrame) -> pandas.DataFrame:
-        return super().apply(features)
-
-    @classmethod
-    def result(cls, features: pandas.DataFrame, labels: pandas.Series, **kwargs) -> pandas.DataFrame:
-        if name := kwargs['label_header']:
-            labels = labels.rename(name)
-        return features.set_index(labels).reset_index()
-
-
-class TrainsetReturn(flow.Operator):
-    """Transformer that for train flow merges labels back to the frame and returns it (apply flow remains unchanged).
-    This is useful for cutting a pipeline and appending this operator to return the dataset as is for debugging.
-    """
-
-    def __init__(
-        self,
-        trainset_result: flow.Spec['payload.TrainsetResulting'] = PandasTrainsetResult.spec(),  # noqa: B008
-    ):
-        self._trainset_result: 'flow.Spec[payload.TrainsetResulting]' = trainset_result
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            self._result.set_result(self._queue.get_nowait())
+        except quemod.Empty:
+            LOGGER.warning('Sniffer queue empty')
+        self._manager.__exit__(exc_type, exc_val, exc_tb)
+        self._queue = self._result = None
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
-        """Composition implementation.
-
-        Args:
-            left: Left side.
-
-        Returns:
-            Composed track.
-        """
-        left: flow.Trunk = left.expand()
-        trainset_result: flow.Worker = flow.Worker(self._trainset_result, 1, 1)
-        trainset_result.train(left.train.publisher, left.label.publisher)
-        return left.extend(apply=trainset_result.fork())
+        left = left.expand()
+        apply = flow.Worker(self.Actor.spec(self._queue), 1, 1)
+        train = flow.Worker(self.Actor.spec(self._queue), 1, 1)
+        train.train(left.train.publisher, left.label.publisher)
+        return left.extend(apply=apply)

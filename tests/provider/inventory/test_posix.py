@@ -16,35 +16,23 @@
 # under the License.
 
 """
-Graphviz runner tests.
+ForML persistent inventory unit tests.
 """
 # pylint: disable=no-self-use
-import multiprocessing
-import pathlib
+import typing
 
 import pytest
 
-from forml import io, runtime
-from forml.extension.runner import dask, graphviz
-from forml.io import asset, layout
+from forml.io import asset
+from forml.provider.inventory import posix
 
-from . import Runner
+from . import Inventory
 
 
-class TestRunner(Runner):
-    """Runner tests."""
+class TestInventory(Inventory):
+    """Inventory unit tests."""
 
     @staticmethod
-    @pytest.fixture(scope='function')
-    def runner(
-        valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink, tmp_path: pathlib.Path
-    ) -> dask.Runner:
-        """Runner fixture."""
-        return graphviz.Runner(
-            valid_instance, feed_instance, sink_instance, filepath=str(tmp_path / 'foo.dot'), view=False
-        )
-
-    def test_apply(
-        self, runner: runtime.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Array
-    ):
-        runner.apply()
+    @pytest.fixture(scope='session')
+    def constructor(tmp_path_factory: pytest.TempPathFactory) -> typing.Callable[[], asset.Inventory]:
+        return lambda: posix.Inventory(tmp_path_factory.mktemp('posix-inventory'))

@@ -126,7 +126,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
     class Visitor:
         """Source visitor."""
 
-        def visit_source(self, source: 'dsl.Source') -> None:  # pylint: disable=unused-argument, no-self-use
+        def visit_source(self, source: 'dsl.Source') -> None:  # pylint: disable=unused-argument
             """Generic source hook.
 
             Args:
@@ -191,8 +191,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
 
-    @property
-    @abc.abstractmethod
+    @functools.cached_property
     def features(self) -> typing.Sequence['dsl.Feature']:
         """Get the list of features supplied by this source.
 
@@ -200,8 +199,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             Sequence of supplying features.
         """
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def schema(self) -> 'dsl.Source.Schema':
         """Get the schema type for this source.
 
@@ -282,8 +280,7 @@ class Join(Source):
     def __repr__(self):
         return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def features(self) -> typing.Sequence['dsl.Feature']:
         return self.left.features + self.right.features
 
@@ -312,8 +309,7 @@ class Set(Source):
     def __repr__(self):
         return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def features(self) -> typing.Sequence['dsl.Feature']:
         return self.left.features + self.right.features
 
@@ -515,8 +511,7 @@ class Reference(Origin):
     def __repr__(self):
         return f'{self.name}=[{repr(self.instance)}]'
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def features(self) -> typing.Sequence['dsl.Element']:
         return tuple(series.Element(self, c.name) for c in self.instance.features)
 
@@ -566,8 +561,7 @@ class Table(Origin):
     def __repr__(self):
         return self.schema.__name__
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def features(self) -> typing.Sequence['dsl.Column']:
         return tuple(series.Column(self, f.name) for f in self.schema)
 
@@ -655,8 +649,7 @@ class Query(Queryable):
     def query(self) -> 'dsl.Query':
         return self
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def features(self) -> typing.Sequence['dsl.Feature']:
         """Get the list of features supplied by this query.
 

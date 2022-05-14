@@ -26,8 +26,8 @@ import pytest
 from starlette import applications, testclient
 
 from forml import io, project
-from forml.extension.gateway import rest
 from forml.io import asset, layout
+from forml.provider.gateway import rest
 
 
 class TestGateway:

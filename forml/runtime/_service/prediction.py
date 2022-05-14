@@ -27,8 +27,8 @@ from concurrent import futures
 from multiprocessing import context
 
 from forml import io
-from forml.extension.runner import pyfunc
 from forml.io import asset, dsl, layout
+from forml.provider.runner import pyfunc
 
 LOGGER = logging.getLogger(__name__)
 

@@ -115,7 +115,7 @@ def Apply(  # pylint: disable=invalid-name
 
 
 @wrap.Actor.apply
-def SelectPandas(  # pylint: disable=invalid-name
+def PandasSelect(  # pylint: disable=invalid-name
     features: pandas.DataFrame, *, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:
     """Column selection actor implementation based on Pandas Dataframe."""
@@ -123,7 +123,7 @@ def SelectPandas(  # pylint: disable=invalid-name
 
 
 @wrap.Actor.apply
-def DropPandas(  # pylint: disable=invalid-name
+def PandasDrop(  # pylint: disable=invalid-name
     features: pandas.DataFrame, *, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:
     """Column drop actor implementation based on Pandas Dataframe."""

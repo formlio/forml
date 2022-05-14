@@ -16,16 +16,16 @@
 # under the License.
 
 """
-Service provider interface.
+Helloworld test-service provider interface.
 """
 import abc
 
-from forml import extension
+from forml import provider as provmod
 
 from . import provider
 
 
-class Provider(extension.Provider, path=[provider.__name__]):
+class Service(provmod.Service, path=[provider.__name__]):
     """Service interface."""
 
     @abc.abstractmethod

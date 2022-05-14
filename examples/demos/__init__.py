@@ -24,9 +24,9 @@ import pandas as pd
 from sklearn import ensemble, feature_extraction, impute, linear_model, naive_bayes, preprocessing
 
 from forml import project
-from forml.extension.feed import static
 from forml.io import dsl
 from forml.pipeline import payload, wrap
+from forml.provider.feed import static
 
 SimpleImputer = wrap.Mapper.operator(wrap.Actor.type(impute.SimpleImputer, train='fit', apply='transform'))
 

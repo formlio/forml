@@ -18,8 +18,6 @@
 """
 Generic payload operators unit tests.
 """
-# pylint: disable=no-self-use
-
 import pandas
 
 from forml import testing
@@ -33,7 +31,7 @@ class TestMapReduce(testing.operator(payload.MapReduce)):
     LABELS = pandas.Series([0, 1, 0], name='baz')
 
     apply_mode = (
-        testing.Case(payload.SelectPandas.spec(columns=['foo']), payload.DropPandas.spec(columns=['foo']))
+        testing.Case(payload.PandasSelect.spec(columns=['foo']), payload.PandasDrop.spec(columns=['foo']))
         .apply(FEATURES)
         .returns(FEATURES, testing.pandas_equals)
     )

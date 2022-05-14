@@ -65,10 +65,12 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
         """
         frame = inspect.currentframe()
         while frame:
-            if frame.f_globals.get('__name__') == '__main__':
-                super().run_commands()
+            name = frame.f_globals.get('__name__')
+            if name == '__mp_main__':
                 break
             frame = frame.f_back
+        else:
+            super().run_commands()
 
     @property
     def artifact(self) -> _body.Artifact:

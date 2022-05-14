@@ -23,14 +23,14 @@ import logging
 import typing
 
 import forml
-from forml import evaluation, extension, flow, io, project
+from forml import evaluation, flow, io, project, provider
 from forml.conf.parsed import provider as provcfg
 from forml.io import asset, dsl
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Runner.path):
+class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runner.path):
     """Abstract base runner class to be extended by particular runner implementations."""
 
     _METRIC_SCHEMA = dsl.Schema.from_fields(dsl.Field(dsl.Float(), name='Metric'))
@@ -80,7 +80,7 @@ class Runner(extension.Provider, default=provcfg.Runner.default, path=provcfg.Ru
         raise forml.MissingError('Not yet supported')
 
     def train_eval(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
-        """Run the development mode evaluation (based on training model from scratch).
+        """Run the development mode (backtesting) evaluation (based on training model from scratch).
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.

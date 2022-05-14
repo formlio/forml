@@ -266,6 +266,15 @@ class Worker(Atomic):
         return self._group.spec.actor.is_stateful()
 
     @property
+    def derived(self) -> bool:
+        """Check this node is a state receiver in a trained group.
+
+        Returns:
+            True if persistent.
+        """
+        return self.stateful and any(n.trained for n in self.group if n is not self)
+
+    @property
     def gid(self) -> uuid.UUID:
         """Return the group ID shared by all forks of this worker.
 

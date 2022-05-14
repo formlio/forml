@@ -41,15 +41,15 @@ repos:
   hooks:
   - id: black
     name: Black
-    args: [--config=./pyproject.toml]
+    args: [--config=pyproject.toml]
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.32.0
+  rev: v2.32.1
   hooks:
     - id: pyupgrade
       name: Python syntax upgrade
       args: [--py39-plus]
 - repo: https://github.com/hadialqattan/pycln
-  rev: v1.3.2
+  rev: v1.3.3
   hooks:
   - id: pycln
     name: Remove unused import statements
@@ -62,7 +62,7 @@ repos:
     files: "\\.(py)$"
     args: [--settings-path=pyproject.toml]
 - repo: https://github.com/pycqa/pylint
-  rev: v2.13.7
+  rev: v2.13.9
   hooks:
   - id: pylint
     args: ["--init-hook", "import sys; sys.path.extend(['.', 'tests/', '.venv/lib/python3.9/site-packages/'])"]
@@ -72,7 +72,7 @@ repos:
   - id: flake8
     additional_dependencies: [flake8-bugbear, flake8-typing-imports]
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.1.13
+  rev: v1.2.0
   hooks:
   - id: forbid-tabs
   - id: insert-license

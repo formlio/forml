@@ -22,8 +22,9 @@ import functools
 import logging
 import typing
 
-from forml import extension, io
+from forml import io
 from forml import project as prj
+from forml import provider as provmod
 from forml.conf.parsed import provider as provcfg
 from forml.io import asset, dsl
 
@@ -33,11 +34,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 def ensure_instance(
-    config_or_instance: typing.Union[provcfg.Section, extension.Provider],
-    provider: type[extension.Provider],
+    config_or_instance: typing.Union[provcfg.Section, provmod.Service],
+    provider: type[provmod.Service],
     *args,
     **kwargs,
-) -> extension.Provider:
+) -> provmod.Service:
     """Helper for returning a provider instance.
 
     Args:

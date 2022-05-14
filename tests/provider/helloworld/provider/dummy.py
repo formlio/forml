@@ -16,23 +16,14 @@
 # under the License.
 
 """
-ForML posix registry unit tests.
+Dummy provider implementation.
 """
-# pylint: disable=no-self-use
-import typing
-
-import pytest
-
-from forml.extension.registry.filesystem import posix
-from forml.io import asset
-
-from .. import Registry
+from tests.provider import helloworld
 
 
-class TestRegistry(Registry):
-    """Registry unit tests."""
+class Provider(helloworld.Service, alias='dummy'):
+    """Provider implementation."""
 
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def constructor(tmp_path_factory: pytest.TempPathFactory) -> typing.Callable[[], asset.Registry]:
-        return lambda: posix.Registry(tmp_path_factory.mktemp('posix-registry'))
+    def serve(self) -> str:
+        """No op."""
+        return 'dummy'

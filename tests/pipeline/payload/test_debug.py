@@ -18,7 +18,6 @@
 """
 Debug payload operators unit tests.
 """
-# pylint: disable=no-self-use
 import pathlib
 
 import pandas
@@ -26,21 +25,6 @@ import pandas
 from forml import testing
 from forml.io import asset
 from forml.pipeline import payload
-
-
-class TestTrainsetReturn(testing.operator(payload.TrainsetReturn)):
-    """TrainsetReturn operator unit tests."""
-
-    FEATURES = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
-    LABELS = pandas.Series([0, 1, 0], name='baz')
-
-    apply_mode = testing.Case().apply(FEATURES).raises(RuntimeError, 'not trained')
-    train_mode = (
-        testing.Case()
-        .train(FEATURES, LABELS)
-        .apply(FEATURES)
-        .returns(FEATURES.set_index(LABELS.rename('Label')).reset_index(), testing.pandas_equals)
-    )
 
 
 class TestDump(testing.operator(payload.Dump)):

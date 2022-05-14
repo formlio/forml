@@ -29,7 +29,7 @@ black==22.3.0
     # via forml (setup.py)
 bleach==5.0.0
     # via nbconvert
-certifi==2022.5.18
+certifi==2022.5.18.1
     # via requests
 cfgv==3.3.1
     # via pre-commit
@@ -45,7 +45,7 @@ click==8.1.3
     #   pip-tools
     #   typer
     #   uvicorn
-cloudpickle==2.0.0
+cloudpickle==2.1.0
     # via
     #   dask
     #   forml (setup.py)
@@ -58,7 +58,7 @@ databricks-cli==0.16.6
     # via mlflow
 defusedxml==0.7.1
     # via nbconvert
-dill==0.3.4
+dill==0.3.5.1
     # via pylint
 distlib==0.3.4
     # via virtualenv
@@ -92,7 +92,7 @@ flask==2.1.2
     # via
     #   mlflow
     #   prometheus-flask-exporter
-fsspec==2022.3.0
+fsspec==2022.5.0
     # via dask
 future==0.18.2
     # via pyhive
@@ -108,7 +108,7 @@ gunicorn==20.1.0
     # via mlflow
 h11==0.13.0
     # via uvicorn
-identify==2.5.0
+identify==2.5.1
     # via pre-commit
 idna==3.3
     # via
@@ -116,7 +116,7 @@ idna==3.3
     #   requests
 imagesize==1.3.0
     # via sphinx
-importlib-metadata==4.11.3
+importlib-metadata==4.11.4
     # via
     #   flask
     #   mlflow
@@ -191,7 +191,7 @@ nest-asyncio==1.5.5
     #   nbclient
 nodeenv==1.6.0
     # via pre-commit
-numpy==1.22.3
+numpy==1.22.4
     # via
     #   forml (setup.py)
     #   mlflow
@@ -243,7 +243,7 @@ protobuf==3.20.1
     # via mlflow
 py==1.11.0
     # via pytest
-pycln==1.3.2
+pycln==1.3.3
     # via forml (setup.py)
 pycodestyle==2.8.0
     # via flake8

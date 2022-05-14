@@ -236,8 +236,6 @@ class Table(span.Visitor, typing.Iterable):
         if node.stateful:
             state = node.gid
             persistent = self._assets and state in self._assets
-            if not persistent and not any(n.trained for n in node.group):
-                raise _exception.AssemblyError(f'Stateful node {node} neither persisted nor trained')
             if persistent and state not in self._index:
                 self._index.set(system.Loader(self._assets, state), state)
             if node.trained:
@@ -250,7 +248,7 @@ class Table(span.Visitor, typing.Iterable):
                     self._linkage.insert(dumper, node.uid)
                     self._linkage.insert(self._committer, dumper, self._assets.offset(state))
                     state = self._index.reset(state)  # re-register loader under it's own id
-            if persistent or not node.trained:
+            if persistent or node.derived:
                 functor = functor.preset_state()
                 self._linkage.prepend(node.uid, state)
         for key in aliases:

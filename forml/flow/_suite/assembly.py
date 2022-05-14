@@ -108,8 +108,8 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
     apply: 'flow.Path'
     train: 'flow.Path'
 
-    class Stateful(span.Visitor, typing.Iterable[uuid.UUID]):
-        """Visitor that cumulates gids of stateful nodes."""
+    class Persistent(span.Visitor, typing.Iterable[uuid.UUID]):
+        """Visitor that cumulates gids of persistent nodes."""
 
         def __init__(self):
             self._gids: list[uuid.UUID] = []
@@ -118,7 +118,7 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
             return iter(self._gids)
 
         def visit_node(self, node: nodemod.Worker) -> None:
-            if node.stateful and node.gid not in self._gids:
+            if node.derived and node.gid not in self._gids:
                 self._gids.append(node.gid)
 
     def __new__(cls, *segments: Trunk):
@@ -135,18 +135,17 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         # label.accept(clean.Validator())
         return super().__new__(cls, apply, train)
 
-    @property
-    @functools.lru_cache(256)
+    @functools.cached_property
     def persistent(self) -> typing.Sequence[uuid.UUID]:
         """Get the set of nodes with state that needs to be carried over between the apply/train modes.
 
         The states used within the apply path are expected to be subset of the states used in the train path (since not
         all the stateful workers engaged during training are necessarily used during apply and hence don't need
-        persisting and we can ignore them).
+        persisting so we can ignore them).
 
         Returns:
             Set of nodes sharing state between pipeline modes.
         """
-        apply = self.Stateful()
+        apply = self.Persistent()
         self.apply.accept(apply)
         return tuple(apply)

@@ -16,23 +16,35 @@
 # under the License.
 
 """
-ForML virtual registry unit tests.
+Graphviz runner tests.
 """
 # pylint: disable=no-self-use
-import typing
+import multiprocessing
+import pathlib
 
 import pytest
 
-from forml.extension.registry.filesystem import virtual
-from forml.io import asset
+from forml import io, runtime
+from forml.io import asset, layout
+from forml.provider.runner import dask, graphviz
 
-from .. import Registry
+from . import Runner
 
 
-class TestRegistry(Registry):
-    """Registry unit tests."""
+class TestRunner(Runner):
+    """Runner tests."""
 
     @staticmethod
-    @pytest.fixture(scope='session')
-    def constructor() -> typing.Callable[[], asset.Registry]:
-        return virtual.Registry
+    @pytest.fixture(scope='function')
+    def runner(
+        valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink, tmp_path: pathlib.Path
+    ) -> dask.Runner:
+        """Runner fixture."""
+        return graphviz.Runner(
+            valid_instance, feed_instance, sink_instance, filepath=str(tmp_path / 'foo.dot'), view=False
+        )
+
+    def test_apply(
+        self, runner: runtime.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Array
+    ):
+        runner.apply()

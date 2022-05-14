@@ -60,7 +60,7 @@ class Feature(tuple, metaclass=abc.ABCMeta):
     class Visitor:
         """Feature visitor."""
 
-        def visit_feature(self, feature: 'dsl.Feature') -> None:  # pylint: disable=unused-argument, no-self-use
+        def visit_feature(self, feature: 'dsl.Feature') -> None:  # pylint: disable=unused-argument
             """Generic feature hook.
 
             Args:
@@ -729,8 +729,7 @@ class And(Logical, Infix):
 
     symbol = 'AND'
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def factors(self: 'And') -> 'dsl.Predicate.Factors':
         return self.left.factors & self.right.factors
 
@@ -740,8 +739,7 @@ class Or(Logical, Infix):
 
     symbol = 'OR'
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def factors(self: 'Or') -> 'dsl.Predicate.Factors':
         return self.left.factors | self.right.factors
 
@@ -808,8 +806,7 @@ class Comparison(Predicate):
         ):
             raise _exception.GrammarError(f'Invalid operands for {self} comparison')
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def factors(self: 'Comparison') -> 'dsl.Predicate.Factors':
         return Predicate.Factors(self) if len({f.origin for f in Column.dissect(self)}) == 1 else Predicate.Factors()
 

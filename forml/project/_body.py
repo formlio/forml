@@ -166,8 +166,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         """
         return Components.load(self.package, self.path, **self.modules)
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def launcher(self) -> 'runtime.Virtual':
         """Return the launcher configured with a virtual registry preloaded with this artifact.
 

@@ -105,7 +105,7 @@ class Scenario(collections.namedtuple('Scenario', 'params, input, output, except
 
         def __new__(
             cls,
-            apply: typing.Optional[flow.Result] = None,
+            apply: typing.Optional[flow.Features] = None,
             train: typing.Optional[flow.Features] = None,
             label: typing.Optional[flow.Labels] = None,
         ):

@@ -16,23 +16,24 @@
 # under the License.
 
 """
-ForML persistent inventory unit tests.
+Dask runner tests.
 """
 # pylint: disable=no-self-use
-import typing
 
 import pytest
 
-from forml.extension.inventory import posix
+from forml import io
 from forml.io import asset
+from forml.provider.runner import dask
 
-from . import Inventory
+from . import Runner
 
 
-class TestInventory(Inventory):
-    """Inventory unit tests."""
+class TestRunner(Runner):
+    """Runner tests."""
 
     @staticmethod
-    @pytest.fixture(scope='session')
-    def constructor(tmp_path_factory: pytest.TempPathFactory) -> typing.Callable[[], asset.Inventory]:
-        return lambda: posix.Inventory(tmp_path_factory.mktemp('posix-inventory'))
+    @pytest.fixture(scope='function', params=('threaded', 'multiprocessing'))
+    def runner(request, valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> dask.Runner:
+        """Runner fixture."""
+        return dask.Runner(valid_instance, feed_instance, sink_instance, scheduler=request.param)

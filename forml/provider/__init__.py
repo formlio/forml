@@ -29,7 +29,7 @@ import forml
 LOGGER = logging.getLogger(__name__)
 
 
-def isabstract(cls: type['Provider']) -> bool:
+def isabstract(cls: type['Service']) -> bool:
     """Extended version of inspect.isabstract that also considers any inner classes.
 
     Args:
@@ -44,7 +44,7 @@ def isabstract(cls: type['Provider']) -> bool:
 class Reference:
     """Provider reference base class/dispatcher."""
 
-    def __new__(cls, value: typing.Union[type['Provider'], str]):
+    def __new__(cls, value: typing.Union[type['Service'], str]):
         if isinstance(value, str):
             if Qualifier.DELIMITER not in value:
                 return Alias(value)
@@ -55,7 +55,7 @@ class Reference:
         return Qualifier(module, qualname)
 
     @abc.abstractmethod
-    def paths(self, base: typing.Optional[typing.Iterable['Registry.Path']] = None) -> typing.Iterable['Registry.Path']:
+    def paths(self, base: typing.Optional[typing.Iterable['Bank.Path']] = None) -> typing.Iterable['Bank.Path']:
         """Return potential search paths for importing this referenced provider.
 
         Args:
@@ -76,8 +76,8 @@ class Qualifier(collections.namedtuple('Qualifier', 'module, qualname'), Referen
     def __repr__(self):
         return f'{self.module}{self.DELIMITER}{self.qualname}'
 
-    def paths(self, base: typing.Optional[typing.Iterable['Registry.Path']] = None) -> typing.Iterable['Registry.Path']:
-        return tuple([Registry.Path(self.module, explicit=False)])
+    def paths(self, base: typing.Optional[typing.Iterable['Bank.Path']] = None) -> typing.Iterable['Bank.Path']:
+        return tuple([Bank.Path(self.module, explicit=False)])
 
 
 class Alias(str, Reference):
@@ -88,11 +88,11 @@ class Alias(str, Reference):
             raise ValueError(f'Invalid alias: {value}')
         return super().__new__(cls, value)
 
-    def paths(self, base: typing.Optional[typing.Iterable['Registry.Path']] = None) -> typing.Iterable['Registry.Path']:
+    def paths(self, base: typing.Optional[typing.Iterable['Bank.Path']] = None) -> typing.Iterable['Bank.Path']:
         return tuple(b / self for b in base or [])
 
 
-class Registry(collections.namedtuple('Registry', 'provider, paths')):
+class Bank(collections.namedtuple('Registry', 'provider, paths')):
     """Registry of providers of certain interface. It is a tuple of (not-yet-imported) search paths and already
     imported providers.
     """
@@ -109,8 +109,8 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         def __eq__(self, other):
             return other.__class__ is self.__class__ and other.value == self.value
 
-        def __truediv__(self, suffix: str) -> 'Registry.Path':
-            return Registry.Path(f'{self.value}.{suffix}', explicit=False)
+        def __truediv__(self, suffix: str) -> 'Bank.Path':
+            return Bank.Path(f'{self.value}.{suffix}', explicit=False)
 
         def load(self) -> None:
             """Load the package modules."""
@@ -127,7 +127,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
     def __new__(cls):
         return super().__new__(cls, dict(), set())  # pylint: disable=use-dict-literal
 
-    def add(self, provider: type['Provider'], alias: typing.Optional[Alias], paths: set[Path]):
+    def add(self, provider: type['Service'], alias: typing.Optional[Alias], paths: set[Path]):
         """Push package to lazy loading stack.
 
         Args:
@@ -156,7 +156,7 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
             )
             self.provider[ref] = provider
 
-    def get(self, reference: Reference) -> type['Provider']:
+    def get(self, reference: Reference) -> type['Service']:
         """Get the registered provider or attempt to load all search paths packages that might be containing it.
 
         Args:
@@ -173,8 +173,8 @@ class Registry(collections.namedtuple('Registry', 'provider, paths')):
         return self.provider[reference]
 
 
-REGISTRY: dict[type['Provider'], Registry] = collections.defaultdict(Registry)
-DEFAULTS: dict[type['Provider'], tuple[str, typing.Mapping[str, typing.Any]]] = {}
+BANK: dict[type['Service'], Bank] = collections.defaultdict(Bank)
+DEFAULTS: dict[type['Service'], tuple[str, typing.Mapping[str, typing.Any]]] = {}
 
 
 class Meta(abc.ABCMeta):
@@ -195,17 +195,17 @@ class Meta(abc.ABCMeta):
             DEFAULTS[cls] = default
         return cls
 
-    def __call__(cls, *args, **kwargs) -> 'Provider':
+    def __call__(cls, *args, **kwargs) -> 'Service':
         if cls in DEFAULTS:
             reference, params = DEFAULTS[cls]
             return cls[reference](*args, **params | kwargs)  # pylint: disable=unsubscriptable-object
         return super().__call__(*args, **kwargs)
 
-    def __getitem__(cls, reference: typing.Any) -> type['Provider']:
+    def __getitem__(cls, reference: typing.Any) -> type['Service']:
         if not isinstance(reference, str) and issubclass(cls, typing.Generic):
             return cls.__class_getitem__(reference)
         try:
-            return REGISTRY[cls].get(Reference(reference))
+            return BANK[cls].get(Reference(reference))
         except KeyError as err:
             known = ', '.join(str(c) for c in cls)  # pylint: disable=not-an-iterable
             raise forml.MissingError(
@@ -213,7 +213,7 @@ class Meta(abc.ABCMeta):
             ) from err
 
     def __iter__(cls):
-        return iter(REGISTRY[cls].provider)
+        return iter(BANK[cls].provider)
 
     def __repr__(cls):
         return repr(Reference(cls))
@@ -228,13 +228,13 @@ class Meta(abc.ABCMeta):
         return hash(cls.__module__) ^ hash(cls.__qualname__)
 
 
-class Provider(metaclass=Meta):
+class Service(metaclass=Meta):
     """Base class for service providers."""
 
     def __init_subclass__(cls, alias: typing.Optional[str] = None, path: typing.Optional[typing.Iterable[str]] = None):
         """Register the provider based on its optional reference.
 
-        Normally would be implemented using the Meta.__init__ but it needs the Interface class to exist.
+        Normally would be implemented using the Meta.__init__ but it needs the Service class to exist.
 
         Args:
             alias: Optional reference to register the provider as (in addition to its qualified name).
@@ -245,6 +245,6 @@ class Provider(metaclass=Meta):
             if isabstract(cls):
                 raise forml.UnexpectedError(f'Provider reference ({alias}) illegal on abstract class')
             alias = Alias(alias)
-        path = {Registry.Path(p, explicit=True) for p in path or []}
-        for parent in (p for p in cls.__mro__ if issubclass(p, Provider) and p is not Provider):
-            REGISTRY[parent].add(cls, alias, path)
+        path = {Bank.Path(p, explicit=True) for p in path or []}
+        for parent in (p for p in cls.__mro__ if issubclass(p, Service) and p is not Service):
+            BANK[parent].add(cls, alias, path)

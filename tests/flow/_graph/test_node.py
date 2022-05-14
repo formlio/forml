@@ -108,6 +108,14 @@ class TestWorker(Atomic):
         """Test the node statefulness."""
         assert node.stateful
 
+    def test_derived(self, node: flow.Worker, multi: flow.Worker):
+        """Test the node derived property."""
+        assert not node.derived
+        fork = node.fork()
+        fork.train(multi[0], multi[1])
+        assert node.derived
+        assert not fork.derived
+
     def test_spec(
         self, node: flow.Worker, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ):

@@ -31,8 +31,8 @@ import pytest
 import requests
 from requests import exceptions
 
-from forml.extension.registry import mlflow
 from forml.io import asset
+from forml.provider.registry import mlflow
 
 from . import Registry
 

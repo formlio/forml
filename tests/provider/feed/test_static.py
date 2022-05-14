@@ -25,8 +25,8 @@ import numpy
 import pytest
 
 from forml import io
-from forml.extension.feed import static
 from forml.io import dsl, layout
+from forml.provider.feed import static
 
 
 class TestFeed:
