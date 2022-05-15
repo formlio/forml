@@ -23,7 +23,7 @@ from forml.pipeline import ensemble
 FH_RFC = demos.FeatureHasher(n_features=128) >> demos.RFC(n_estimators=20, n_jobs=4, max_depth=3)
 BIN_BAYES = demos.Binarizer(threshold=0.63) >> demos.Bayes(alpha=1.1)
 
-STACK = ensemble.FullStack(bases=(FH_RFC, BIN_BAYES), crossvalidator=model_selection.StratifiedKFold(n_splits=2))
+STACK = ensemble.FullStack(FH_RFC, BIN_BAYES, crossvalidator=model_selection.StratifiedKFold(n_splits=2))
 
 PIPELINE = (
     demos.SimpleImputer(strategy='mean') >> demos.OneHotEncoder() >> STACK >> demos.LR(max_iter=3, solver='lbfgs')

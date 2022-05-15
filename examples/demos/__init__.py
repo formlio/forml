@@ -21,32 +21,27 @@ Forml demos.
 
 
 import pandas as pd
-from sklearn import ensemble, feature_extraction, impute, linear_model, naive_bayes, preprocessing
 
 from forml import project
 from forml.io import dsl
 from forml.pipeline import payload, wrap
 from forml.provider.feed import static
 
-SimpleImputer = wrap.Mapper.operator(wrap.Actor.type(impute.SimpleImputer, train='fit', apply='transform'))
+with wrap.importer():  # automatically converting the particular SKLearn classes to ForML operators
+    from sklearn.ensemble import GradientBoostingClassifier as GBC
+    from sklearn.ensemble import RandomForestClassifier as RFC
+    from sklearn.feature_extraction import FeatureHasher
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression as LR
+    from sklearn.naive_bayes import BernoulliNB as Bayes
+    from sklearn.preprocessing import Binarizer, OneHotEncoder
 
-OneHotEncoder = wrap.Mapper.operator(wrap.Actor.type(preprocessing.OneHotEncoder, train='fit', apply='transform'))
 
-Binarizer = wrap.Mapper.operator(wrap.Actor.type(preprocessing.Binarizer, train='fit', apply='transform'))
-
-FeatureHasher = wrap.Mapper.operator(wrap.Actor.type(feature_extraction.FeatureHasher, train='fit', apply='transform'))
-
-RFC = wrap.Consumer.operator(wrap.Actor.type(ensemble.RandomForestClassifier, train='fit', apply='predict_proba'))
-
-GBC = wrap.Consumer.operator(wrap.Actor.type(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba'))
-
-LR = wrap.Consumer.operator(wrap.Actor.type(linear_model.LogisticRegression, train='fit', apply='predict_proba'))
-
-Bayes = wrap.Consumer.operator(wrap.Actor.type(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
+__all__ = ['GBC', 'RFC', 'FeatureHasher', 'SimpleImputer', 'LR', 'Bayes', 'Binarizer', 'OneHotEncoder']
 
 
 @wrap.Mapper.operator
-@wrap.Actor.type
+@wrap.Actor.apply
 def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     """Simple stateless transformer create from a plain function."""
     return df.dropna()

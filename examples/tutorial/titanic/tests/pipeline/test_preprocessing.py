@@ -52,8 +52,10 @@ class TestImpute(testing.operator(preprocessing.impute)):
         ):
             return False
         source_age = TestImpute.FEATURES['Age']
-        actual_age = actual['Age']
-        return source_age.mean() == actual_age.mean() and source_age.std() == actual_age.std()
+        source_lo = source_age.mean() - source_age.std(ddof=0)
+        source_hi = source_age.mean() + source_age.std(ddof=0)
+        imputed_age = actual['Age'][source_age.isna()]
+        return ((imputed_age >= source_lo) & (imputed_age <= source_hi)).all()
 
     # Dataset fixtures
     FEATURES = pandas.DataFrame(

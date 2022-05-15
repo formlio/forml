@@ -47,19 +47,19 @@ def parse_title(features: pandas.DataFrame, *, source: str, target: str) -> pand
 
 @wrap.Actor.train
 def impute(
-    state: typing.Optional[dict[str, typing.Any]],  # pylint: disable=unused-argument
+    state: typing.Optional[dict[str, float]],  # pylint: disable=unused-argument
     features: pandas.DataFrame,
     labels: pandas.Series,  # pylint: disable=unused-argument
     random_state: typing.Optional[int] = None,  # pylint: disable=unused-argument
-) -> dict[str, typing.Any]:
+) -> dict[str, float]:
     """Train part of a stateful transformer for missing values imputation."""
-    return {'age_mean': features['Age'].mean(), 'age_std': features['Age'].std()}
+    return {'age_mean': features['Age'].mean(), 'age_std': features['Age'].std(ddof=0)}
 
 
 @wrap.Mapper.operator
 @impute.apply
 def impute(
-    state: dict[str, typing.Any], features: pandas.DataFrame, random_state: typing.Optional[int] = None
+    state: dict[str, float], features: pandas.DataFrame, random_state: typing.Optional[int] = None
 ) -> pandas.DataFrame:
     """Apply part of a stateful transformer for missing values imputation."""
     na_slice = features['Age'].isna()
@@ -94,7 +94,6 @@ def encode(
 ) -> pandas.DataFrame:
     """Apply part of a stateful encoder for the various categorical features."""
     onehot = pandas.DataFrame(state.transform(features[columns]))
-    return pandas.concat(
-        (features.drop(columns=columns), onehot),
-        axis='columns',
-    )
+    result = pandas.concat((features.drop(columns=columns), onehot), axis='columns')
+    result.columns = [str(c) for c in result.columns]
+    return result

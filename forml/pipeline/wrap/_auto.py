@@ -228,7 +228,7 @@ def importer(*wrappers: Wrapper) -> typing.Iterable[None]:
     if not wrappers:
         wrappers = WRAPPERS
     source = inspect.getmodule(inspect.currentframe().f_back.f_back)
-    LOGGER.debug('Autowrap called from %s', source.__name__)
+    LOGGER.debug('Autowrap called from %s', source)
     native = builtins.__import__
     builtins.__import__ = wrapping
     yield
