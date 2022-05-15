@@ -54,11 +54,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
-    'sphinx_immaterial',
-    'sphinx_copybutton',
-    'sphinxcontrib.details.directive',
-    'nbsphinx',
-    'sphinx_autodoc_typehints',
+    'sphinx_rtd_theme',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -84,7 +80,7 @@ nitpicky = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_immaterial'
+html_theme = 'sphinx_rtd_theme'
 
 # Set link name generated in the top bar.
 html_title = 'ForML'
@@ -100,55 +96,16 @@ html_show_sphinx = False
 html_favicon = '_static/images/favicon.ico'
 html_logo = '_static/images/logo.svg'
 
-# don't include domain object description fields, like “Parameters”, “Returns”, “Raises”, etc. in the table of contents
-include_object_description_fields_in_toc = False
-
 html_theme_options = {
-    'icon': {
-        'repo': 'fontawesome/brands/github',
-    },
-    'site_url': 'https://forml.io/',
-    'repo_url': 'https://github.com/formlio/forml/',
-    'repo_name': 'formlio/forml',
-    'repo_type': 'github',
-    'edit_uri': 'blob/main/docs',
-    # "google_analytics": ["UA-XXXXX", "auto"],
-    'globaltoc_collapse': True,
-    'features': [
-        # "navigation.expand",
-        # "navigation.tabs",
-        # "toc.integrate",
-        'navigation.sections',
-        'navigation.instant',
-        # "header.autohide",
-        'navigation.top',
-        'navigation.tracking',
-        # "search.highlight",
-        'search.share',
-    ],
-    'palette': [
-        {
-            'media': '(prefers-color-scheme: light)',
-            'scheme': 'default',
-            'primary': 'blue',
-            'accent': 'cyan',
-            'toggle': {
-                'icon': 'material/weather-night',
-                'name': 'Switch to dark mode',
-            },
-        },
-        {
-            'media': '(prefers-color-scheme: dark)',
-            'scheme': 'slate',
-            'primary': 'blue',
-            'accent': 'cyan',
-            'toggle': {
-                'icon': 'material/weather-sunny',
-                'name': 'Switch to light mode',
-            },
-        },
-    ],
-    'toc_title_is_page_title': True,
+    'logo_only': False,
+    'display_version': False,
+}
+html_context = {
+    'display_github': True,
+    'github_user': 'formlio',
+    'github_repo': 'forml',
+    'github_version': 'master',
+    'conf_py_path': '/docs/',
 }
 
 # == Extensions configuration ==================================================

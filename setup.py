@@ -43,7 +43,7 @@ EXTRAS_DOCS = {
     'sphinx',
     'sphinx-autodoc-typehints',
     'sphinx-copybutton',
-    'sphinx-immaterial',
+    'sphinx_rtd_theme',
     'sphinxcontrib-details-directive',
     'sphinxcontrib-napoleon',
     'nbsphinx',

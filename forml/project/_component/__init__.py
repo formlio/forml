@@ -223,8 +223,6 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
 
     result = None
     with _importer.context(Component()):
-        if module in sys.modules:
-            del sys.modules[module]
         LOGGER.debug('Importing project component from %s', module)
         _importer.isolated(module, path)
 

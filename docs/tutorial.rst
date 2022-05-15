@@ -39,7 +39,7 @@ Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add
 
     [RUNNER.compute]
     provider = "dask"
-    scheduler = "multiprocessing"
+    scheduler = "threaded"
 
     [RUNNER.visual]
     provider = "graphviz"
@@ -95,7 +95,7 @@ Development Lifecycle Actions
 
     OK
 
-3. Try running the ``train`` mode on the ``graphviz`` runner (called ``visual`` in our config ) to see the train task
+3. Try running the ``train`` mode on the *Graphviz* runner (called ``visual`` in our config ) to see the train task
    graph::
 
     $ python3 setup.py train --runner visual
@@ -103,11 +103,11 @@ Development Lifecycle Actions
 .. image:: _static/images/titanic-train.png
    :align: center
 
-4. Run the ``eval`` mode on the (default) ``dask`` runner (called ``compute`` in our config) to get the
+4. Run the ``eval`` mode on the (default) *Dask* runner (called ``compute`` in our config) to get the
    cross-validation score::
 
     $ python3 setup.py eval
-    0.6531806857218416
+    0.8379888268156425
 
 5. Create the project package artifact and upload it to the (default) filesystem registry (assuming the same release
    doesn't already exist - otherwise increment the project version in the ``setup.py``)::
@@ -154,7 +154,7 @@ the registry to confirm it got persisted::
     0.3860998  0.38041917 0.3885712 ]
 
 
-4. Run the ``apply`` mode alternatively on the ``graphviz`` runner to explore its task graph::
+4. Run the ``apply`` mode alternatively on the *Graphviz* runner to explore its task graph::
 
     $ forml model -R visual apply forml-example-titanic
 
