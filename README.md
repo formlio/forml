@@ -20,24 +20,24 @@
 ForML
 =====
 
-[![GitHub Build](https://github.com/formlio/forml/workflows/CI%20Build/badge.svg)](https://github.com/formlio/forml/actions/)
-[![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/main.svg)](https://codecov.io/github/formlio/forml?branch=main)
-[![Code Style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Lines of Code](https://img.shields.io/tokei/lines/github.com/formlio/forml.svg)](https://github.com/formlio/forml)
+[![GitHub Build](https://img.shields.io/github/workflow/status/formlio/forml/CI%20Build/main)](https://github.com/formlio/forml/actions/)
+[![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/main)](https://codecov.io/github/formlio/forml?branch=main)
+[![Code Style: black](https://img.shields.io/badge/code%20style-black-000000)](https://github.com/psf/black)
+[![Lines of Code](https://img.shields.io/tokei/lines/github/formlio/forml)](https://github.com/formlio/forml)
 
 [![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://docs.forml.io/en/latest/)
-[![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+[![License](https://img.shields.io/pypi/l/forml)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
-![Python Version](https://img.shields.io/pypi/pyversions/forml.svg)
-[![PyPI Version](https://badge.fury.io/py/forml.svg)](https://pypi.org/project/forml/)
+![Python Version](https://img.shields.io/pypi/pyversions/forml)
+[![PyPI Version](https://img.shields.io/pypi/v/forml)](https://pypi.org/project/forml/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/forml)](https://pypi.org/project/forml/)
 
-[![Stars](https://img.shields.io/github/stars/formlio/forml.svg)](https://github.com/formlio/forml/stargazers)
-[![Forks](https://img.shields.io/github/forks/formlio/forml.svg)](https://github.com/formlio/forml/fork)
-[![Issues](https://img.shields.io/github/issues/formlio/forml.svg)](https://github.com/formlio/forml/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/formlio/forml.svg)](https://github.com/formlio/forml/pulls)
-[![Contributors](https://img.shields.io/github/contributors/formlio/forml.svg)](https://github.com/formlio/forml/graphs/contributors)
-[![Lst Commit](https://img.shields.io/github/last-commit/formlio/forml.svg)](https://github.com/formlio/forml/commits/main)
+[![Stars](https://img.shields.io/github/stars/formlio/forml?style=social)](https://github.com/formlio/forml/stargazers)
+[![Forks](https://img.shields.io/github/forks/formlio/forml?style=social)](https://github.com/formlio/forml/fork)
+[![Issues](https://img.shields.io/github/issues/formlio/forml)](https://github.com/formlio/forml/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/formlio/forml)](https://github.com/formlio/forml/pulls)
+[![Contributors](https://img.shields.io/github/contributors/formlio/forml)](https://github.com/formlio/forml/graphs/contributors)
+[![Last Commit](https://img.shields.io/github/last-commit/formlio/forml)](https://github.com/formlio/forml/commits/main)
 
 ForML is a framework for researching, implementing and operating data science projects.
 
