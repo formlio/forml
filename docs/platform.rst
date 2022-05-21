@@ -27,7 +27,7 @@ Platform is a configuration-driven selection of particular *providers* implement
 ForML uses an internal *bank* of available provider implementations of the different possible types. Provider instances
 are registered in this bank using one of two possible *references*:
 
-* provider's *fully qualified class name* - for example, the ``forml.lib.runner.dask:Runner``
+* provider's *fully qualified class name* - for example, the ``forml.provider.runner.dask:Runner``
 * for convenience, each provider can also optionally have an *alias* defined by its author - ie ``dask``
 
 .. note:: For any provider implementation to be placed into the ForML provider bank, it needs to get imported somehow.
@@ -114,8 +114,8 @@ configuration and the whole feed needs to be implemented as code. For this purpo
 configuration directories are also potentially searched by the provider importer so that the custom feeds can be placed
 there.
 
-For the special case of the public datasets described using the :doc:`Openschema catalog<openschema>`, there is a
-lightweight feed provided in form of the installable :ref:`Openlake package<openlake:install>`.
+For the special case of the public datasets described using the :doc:`Openschema catalog<openschema:index>`, there is a
+lightweight feed provided in form of the installable :doc:`Openlake package<openlake:install>`.
 
 Logging
 -------

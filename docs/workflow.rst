@@ -36,7 +36,7 @@ like this::
 Given the particular implementation of the example operators, this will render a pipeline with the *train* and *apply*
 graphs visualized as follows:
 
-.. image:: images/workflow.png
+.. image:: _static/images/workflow.png
 
 The meaning of operators and how are they defined using actors is described in more details in the following sections.
 
@@ -84,68 +84,51 @@ Example of a user-defined native actor::
     import pandas as pd
     from forml import flow
 
-    class LabelExtractor(flow.Actor):
-        """Simple label-extraction actor returning a specific column from input feature set."""
-        def __init__(self, column: str = 'label'):
+    class Impute(flow.Actor):
+        """Simple static imputation actor."""
+
+        def __init__(self, column: str, value: typing.Any):
             self._column: str = column
+            self._value: typing.Any = value
 
         def apply(self, df: pd.DataFrame) -> typing.Tuple[pd.DataFrame, pd.Series]:
-            return df.drop(columns=self._column), df[self._column]
+            return df[self._column].fillna(self._value)
 
         def get_params(self) -> typing.Mapping[str, typing.Any]:
-            return {'column': self._column}
+            return {'column': self._column, 'value': self._value}
 
-        def set_params(self, column: str) -> None:
-            self._column = column
+        def set_params(self, column: typing.Optional[str] = None, value: typing.Optional[str] = None) -> None:
+            if column is not None:
+                self._column = column
+            if value is not None:
+                self._value = value
 
 Note this actor doesn't implement the ``train`` method making it a simple *stateless* actor.
-
-
-Wrapped Class Actors
-....................
-
-Another option of defining actors is reusing third-party classes that are providing the desired functionality. These
-classes cannot be changed to extend ForML base Actor class but can be wrapped using a ``wrapped.Class.actor``
-decorator like this::
-
-    from sklearn import ensemble as sklearn
-    from forml.lib.pipeline import topology
-
-    gbc_actor = topology.Class.actor(sklearn.GradientBoostingClassifier, train='fit', apply='predict_proba')
-
-Note the extra parameters used to map the third-party class methods to the expected Actor API methods.
 
 
 Decorated Function Actors
 .........................
 
-Last option of defining actors is simplistic decorating of user-defined functions::
+More convenient option for defining actors is based on decorating user-defined functions::
 
     import pandas as pd
-    from forml.lib.pipeline import topology
+    from forml.pipeline import wrap
 
-    @topology.Function.actor
-    def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
-        """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
-        def get_title(name: str) -> str:
-            """Auxiliary method for extracting the title."""
-            if '.' in name:
-                return name.split(',')[1].split('.')[0].strip()
-            return 'Unknown'
-
-        df[target] = df[source].map(get_title)
-        return df
+    @wrap.Actor.apply
+    def impute(df: pandas.DataFrame, *, column: str, value: typing.Any) -> pandas.DataFrame:
+        """Simple static imputation actor."""
+        return df[column].fillna(value)
 
 
 Operator
 --------
 
 Operators represent the high-level abstraction of the task dependency graph. They are built using one or more actors
-and support a *composition operation* (the ``>>`` syntax) for building up the pipeline. Each operator defines its actors
-and their wiring and expands the task graph through composition with other operators.
+and support a *composition operation* (the ``>>`` syntax) for building up the particular pipeline. Each operator defines
+its actors and their wiring and expands the task graph through composition with other operators.
 
 Operator composition is a very powerful concept built into ForML. It is the composition in
-the `mathematical sense <https://en.wikipedia.org/wiki/Function_composition>`_ that allows to expanding the task graph
+the `mathematical sense <https://en.wikipedia.org/wiki/Function_composition>`_ that allows expanding the task graph
 topology into a complex layout just by a simple combination of two operators. More details about the composition
 mechanism are discussed in the :doc:`operator` sections.
 
@@ -164,38 +147,31 @@ Standard ML entities like *transformers* or *estimators* can be turned into oper
 provided decorators or adding a provided mixin class into the class hierarchy. More complex entities like for example
 a *stacked ensembler* need to be implemented as operators from scratch (reusable entities can be maintained centrally as
 library operators). For simple operators (typically single-actor operators) are available convenient decorators under
-the ``forml.lib.pipeline.topology`` that makes it really easy to create specific instances. More details on the
+the ``forml.pipeline.wrap`` that makes it really easy to create specific instances. More details on the
 topic of operator development can be found in the :doc:`operator` sections.
 
-Following is an example of creating a simple transformer operator by decorating a user-defined actor with the
-``topology.Mapper.operator`` decorator::
+Operators are generally defined by implementing the ``flow.Operator`` interface. For couple of trivial patterns, there
+also is a simpler option based on decorating user-defined actors (whether native (class based) or decorated)::
 
-    import typing
     import pandas as pd
-    import numpy as np
-    from forml import flow
-    from forml.lib.pipeline import topology
+    from forml.pipeline import wrap
 
-    @topology.Mapper.operator
-    class NaNImputer(flow.Actor):
-        """Imputer for missing values implemented as native ForML actor."""
-        def __init__(self):
-            self._fill: typing.Optional[pd.Series] = None
+    @wrap.Mapper.operator
+    @wrap.Actor.apply
+    def impute(df: pandas.DataFrame, *, column: str, value: typing.Any) -> pandas.DataFrame:
+        """Simple static imputation actor."""
+        return df[column].fillna(value)
 
-        def train(self, X: pd.DataFrame, y: pd.Series) -> None:
-            """Train the actor by learning the median for each numeric column and finding the most common value for strings."""
-            self._fill = pd.Series([X[c].value_counts().index[0] if X[c].dtype == np.dtype('O')
-                                    else X[c].median() for c in X], index=X.columns)
 
-        def apply(self, X: pd.DataFrame) -> pd.DataFrame:
-            """Apply the imputation to the given dataset."""
-            return X.fillna(self._fill)
+Auto-Wrapped Operators
+......................
 
-It is also possible to use the decorator to create operators from third-party wrapped Actors::
+Another option of defining actors is reusing third-party classes that are providing the desired functionality. These
+classes cannot be changed to extend ForML base Actor class but can be wrapped upon importing using the ``wrap.importer``
+context manager like this::
 
-    from sklearn import ensemble as sklearn
-    from forml.lib.pipeline import topology
+    from forml.pipeline import wrap
+    with wrap.importer():
+        from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 
-    RFC = topology.Consumer.operator(topology.Class.actor(sklearn.RandomForestClassifier, train='fit', apply='predict_proba'))
-
-These operators are now good to be used for pipeline composition.
+    gbc_operator = GradientBoostingClassifier(random_state=42)  # this is now a ForML operator

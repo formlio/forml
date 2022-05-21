@@ -24,15 +24,15 @@ The available runner implementations are:
 
 .. autosummary::
 
-   forml.lib.runner.dask
-   forml.lib.runner.graphviz
-   forml.lib.runner.pyfunc
+   forml.provider.runner.dask
+   forml.provider.runner.graphviz
+   forml.provider.runner.pyfunc
 
 
 API
 ---
 
-.. autoclass:: forml.runtime.facility.Runner
+.. autoclass:: forml.runtime.Runner
     :members:
 
 

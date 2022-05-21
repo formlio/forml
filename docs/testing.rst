@@ -164,4 +164,4 @@ example uses a custom matcher for asserting the values returned as ``pandas.Data
 
 For convenience, there is a number of explicit matchers provided as part of the ``forml.testing`` package:
 
-.. automethod:: forml.testing.pandas_equals
+.. autofunction:: forml.testing.pandas_equals

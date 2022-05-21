@@ -43,7 +43,7 @@ environment.
 This approach can also be seen as *datasource virtualization*. ForML projects work with datasets regardless of their
 particular physical format or storage technology.
 
-.. image:: images/schema-mapping.png
+.. image:: _static/images/schema-mapping.png
 
 A schema catalog is a logical group of schemas which both - projects and platforms - can use as a mutual data proxy.
 It is not a service or a system, rather a namespaced descriptor implemented simply as python module(s) that must be

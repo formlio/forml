@@ -53,7 +53,11 @@ def impute(
     random_state: typing.Optional[int] = None,  # pylint: disable=unused-argument
 ) -> dict[str, float]:
     """Train part of a stateful transformer for missing values imputation."""
-    return {'age_mean': features['Age'].mean(), 'age_std': features['Age'].std(ddof=0)}
+    return {
+        'age_avg': features['Age'].mean(),
+        'age_std': features['Age'].std(ddof=0),
+        'fare_avg': features['Fare'].mean(),
+    }
 
 
 @wrap.Mapper.operator
@@ -62,14 +66,14 @@ def impute(
     state: dict[str, float], features: pandas.DataFrame, random_state: typing.Optional[int] = None
 ) -> pandas.DataFrame:
     """Apply part of a stateful transformer for missing values imputation."""
-    na_slice = features['Age'].isna()
-    if na_slice.any():
-        rand_age = numpy.random.default_rng(random_state).integers(
-            state['age_mean'] - state['age_std'], state['age_mean'] + state['age_std'], size=na_slice.sum()
+    age_nan = features['Age'].isna()
+    if age_nan.any():
+        age_rnd = numpy.random.default_rng(random_state).integers(
+            state['age_avg'] - state['age_std'], state['age_avg'] + state['age_std'], size=age_nan.sum()
         )
-        features.loc[na_slice, 'Age'] = rand_age
+        features.loc[age_nan, 'Age'] = age_rnd
     features['Embarked'].fillna('S', inplace=True)
-    features['Fare'].fillna(features['Fare'].mean(), inplace=True)
+    features['Fare'].fillna(state['fare_avg'], inplace=True)
     assert not features.isna().any().any(), 'NaN still'
     return features
 

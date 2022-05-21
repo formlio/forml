@@ -47,6 +47,7 @@ EXTRAS_DOCS = {
     'sphinxcontrib-details-directive',
     'sphinxcontrib-napoleon',
     'nbsphinx',
+    'openlake',
 }
 
 EXTRAS_PIPELINE = {'pandas', 'scikit-learn'}

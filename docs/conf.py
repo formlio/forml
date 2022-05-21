@@ -55,6 +55,10 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx_rtd_theme',
+    'sphinx_copybutton',
+    'sphinxcontrib.details.directive',
+    'nbsphinx',
+    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -73,7 +77,7 @@ intersphinx_mapping = {
 }
 
 # Warn about all references where the target cannot be found
-nitpicky = True
+nitpicky = False
 
 # -- Options for HTML output -------------------------------------------------
 
