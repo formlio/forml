@@ -44,8 +44,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: "Install dependencies"
       run: pip install --upgrade tox-gh
-    - name: "Run tests"
-      run: tox r -vv
+    - name: "Setup test suite"
+      run: tox r -vv --notest
+    - name: "Run test suite"
+      run: tox r --skip-pkg-install
     - name: "Upload test results"
       uses: actions/upload-artifact@v2
       with:
