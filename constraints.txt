@@ -53,7 +53,7 @@ cloudpickle==2.1.0
     #   mlflow
 coverage==6.4
     # via pytest-cov
-dask==2022.5.0
+dask==2022.5.1
     # via forml (setup.py)
 databricks-cli==0.16.6
     # via mlflow
@@ -211,7 +211,7 @@ oauthlib==3.2.0
     # via databricks-cli
 openlake==0.2.dev1
     # via forml (setup.py)
-openschema==0.3.dev2
+openschema==0.3.dev3
     # via openlake
 packaging==21.3
     # via

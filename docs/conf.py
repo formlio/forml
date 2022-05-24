@@ -120,12 +120,11 @@ autoclass_content = 'both'
 autodoc_typehints = 'description'
 autosummary_generate = True
 
-# -- Options for sphinx_autodoc_typehints --------------------------------------
-# See: https://pypi.org/project/sphinx-autodoc-typehints/
-
-
 # -- Options for sphinx.ext.napoleon -------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_numpy_docstring = False
 napoleon_use_rtype = False
 napoleon_include_init_with_doc = True
+
+# -- Options for sphinx_autodoc_typehints --------------------------------------
+# See: https://pypi.org/project/sphinx-autodoc-typehints/
