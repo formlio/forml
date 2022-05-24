@@ -45,8 +45,7 @@ jobs:
     - name: "Install dependencies"
       run: pip install --upgrade tox-gh
     - name: "Run tests"
-      run: |
-        tox
+      run: tox r -vv
     - name: "Upload test results"
       uses: actions/upload-artifact@v2
       with:
