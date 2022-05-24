@@ -60,5 +60,4 @@ jobs:
         directory: ./htmlcov
         flags: unittests
         fail_ci_if_error: true
-      if: >
-        github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main'

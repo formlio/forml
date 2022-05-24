@@ -4,8 +4,6 @@
 #
 #    pip-compile --extra=all --output-file=constraints.txt --strip-extras
 #
---extra-index-url http://127.0.0.1:9000
-
 alabaster==0.7.12
     # via sphinx
 alembic==1.7.7
