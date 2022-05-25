@@ -67,6 +67,7 @@ framework using the ``project.setup()`` as shown in the examples below.
 
 .. autofunction:: forml.project.setup
 
+.. _project-setup:
 
 Setup.py
 ''''''''
@@ -145,7 +146,7 @@ splitting or incremental operations) and *label* columns for supervised learning
 The Source descriptor again needs to be submitted to the framework using the ``project.setup()`` handler::
 
     from forml import project
-    from forml.lib.pipeline import payload
+    from forml.pipeline import payload
     from openschema import kaggle as schema
 
     FEATURES = schema.Titanic.select(
@@ -161,8 +162,8 @@ The Source descriptor again needs to be submitted to the framework using the ``p
         schema.Titanic.Embarked,
     )
 
-    ETL = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
-    project.setup(ETL)
+    SOURCE = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.ToPandas(columns=[f.name for f in FEATURES.schema])
+    project.setup(SOURCE)
 
 
 .. _project-evaluation:
@@ -179,12 +180,11 @@ Definition of the model evaluation strategy for both the development (backtestin
 The evaluation strategy again needs to be submitted to the framework using the ``project.setup()`` handler::
 
     from sklearn import model_selection, metrics
-    from forml import project
-    from forml.lib.pipeline.evaluation import metric, method
+    from forml import evaluation, project
 
-    EVAL = project.Evaluation(
-            metric.Function(metrics.log_loss),
-            method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+    EVALUATION = project.Evaluation(
+        metric.Function(metrics.log_loss),
+        evaluation.HoldOut(test_size=0.2, stratify=True, random_state=42),
     )
     project.setup(EVAL)
 

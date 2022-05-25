@@ -28,11 +28,11 @@ from forml import testing
 from forml.testing import _routine as routinemod
 
 
-class Runner:
-    """Runner mock."""
+class Launcher:
+    """Launcher mock."""
 
-    class Outcome:
-        """Runner outcome mock"""
+    class Action:
+        """Launcher action mock"""
 
         def __init__(
             self,
@@ -50,13 +50,18 @@ class Runner:
             """Helper for raising exception."""
             raise exception.kind(exception.message)
 
-        def train(self):
+        def train_call(self) -> None:
+            """Runner train mode mock."""
+            if isinstance(self._train, testing.Scenario.Exception):
+                self._raise(self._train)
+
+        def train_return(self) -> typing.Any:
             """Runner train mode mock."""
             if isinstance(self._train, testing.Scenario.Exception):
                 self._raise(self._train)
             return self._train
 
-        def apply(self):
+        def apply(self) -> typing.Any:
             """Runner apply mode mock."""
             if isinstance(self._apply, testing.Scenario.Exception):
                 self._raise(self._apply)
@@ -65,21 +70,23 @@ class Runner:
     def __init__(self, scenario: testing.Scenario):
         self._scenario: testing.Scenario = scenario
 
-    def __call__(self, _) -> 'Runner.Outcome':
+    def __call__(self, _) -> 'Launcher.Action':
         if self._scenario.outcome is testing.Scenario.Outcome.INIT_RAISES:
-            return self.Outcome(init=self._scenario.exception)
+            return self.Action(init=self._scenario.exception)
         if self._scenario.outcome in {
             testing.Scenario.Outcome.PLAINAPPLY_RAISES,
             testing.Scenario.Outcome.STATEAPPLY_RAISES,
         }:
-            return self.Outcome(apply=self._scenario.exception)
+            return self.Action(apply=self._scenario.exception)
         if self._scenario.outcome in {
             testing.Scenario.Outcome.PLAINAPPLY_RETURNS,
             testing.Scenario.Outcome.STATEAPPLY_RETURNS,
         }:
-            return self.Outcome(apply=self._scenario.output.apply)
+            return self.Action(apply=self._scenario.output.apply)
         if self._scenario.outcome is testing.Scenario.Outcome.STATETRAIN_RAISES:
-            return self.Outcome(train=self._scenario.exception)
+            return self.Action(train=self._scenario.exception)
+        if self._scenario.outcome is testing.Scenario.Outcome.STATETRAIN_RETURNS:
+            return self.Action(train=self._scenario.output.train)
         raise RuntimeError('Invalid scenario')
 
 
@@ -107,7 +114,7 @@ class Routine(metaclass=abc.ABCMeta):
     @pytest.fixture(scope='session')
     def routine(scenario: testing.Scenario) -> routinemod.Test:
         """Routine fixture."""
-        return routinemod.Case.select(scenario, Runner(scenario))
+        return routinemod.Case.select(scenario, Launcher(scenario))
 
     def test_routine(self, routine: routinemod.Test, suite: testing.Suite):
         """Routine test case."""
@@ -148,6 +155,15 @@ class TestStateTrainRaises(Routine):
     @pytest.fixture(scope='session')
     def scenario(statetrain_raises: testing.Scenario) -> testing.Scenario:  # pylint: disable=arguments-renamed
         return statetrain_raises
+
+
+class TestStateTrainReturns(Routine):
+    """Routine test."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def scenario(statetrain_returns: testing.Scenario) -> testing.Scenario:  # pylint: disable=arguments-renamed
+        return statetrain_returns
 
 
 class TestStateApplyRaises(Routine):

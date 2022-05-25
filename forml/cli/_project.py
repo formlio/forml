@@ -25,10 +25,14 @@ from click import core
 
 import forml
 
+if typing.TYPE_CHECKING:
+    from forml import cli
 
-class Project(typing.NamedTuple):
+
+class Scope(typing.NamedTuple):
     """Case class for holding the partial command config."""
 
+    parent: 'cli.Scope'
     path: typing.Optional[str]
 
 
@@ -37,13 +41,13 @@ class Project(typing.NamedTuple):
 @click.pass_context
 def group(context: core.Context, path: typing.Optional[str]):
     """Project command group."""
-    context.obj = Project(path)
+    context.obj = Scope(context.obj, path)
 
 
 @group.command()
 @click.argument('name', required=True)
 @click.option('--package', type=str, help='Full python package path to be used.')
 @click.pass_obj
-def init(project: Project, name: str, package: typing.Optional[str]) -> None:
+def init(scope: Scope, name: str, package: typing.Optional[str]) -> None:
     """Create skeleton for a new project."""
     raise forml.MissingError(f'Creating project {name}... not implemented')

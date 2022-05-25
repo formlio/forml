@@ -18,28 +18,50 @@
 """
 ForML command line interface.
 """
+import collections
 import typing
 
 import click
 from click import core
 
 import forml
+from forml import runtime
 from forml.conf.parsed import provider as provcfg
-from forml.io import dsl
-from forml.runtime import facility
+from forml.io import asset, dsl
+
+if typing.TYPE_CHECKING:
+    from forml import cli
 
 
-class Model(typing.NamedTuple):
+class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, sink')):
     """Case class for holding the partial command config."""
 
-    runner: typing.Optional[str]
-    registry: typing.Optional[str]
-    feed: typing.Optional[str]
-    sink: typing.Optional[str]
+    parent: 'cli.Scope'
+    runner: provcfg.Runner
+    registry: provcfg.Registry
+    feeds: tuple[provcfg.Feed]
+    sink: provcfg.Sink
+
+    def __new__(
+        cls,
+        parent: 'cli.Scope',
+        runner: typing.Optional[str],
+        registry: typing.Optional[str],
+        feed: typing.Optional[str],
+        sink: typing.Optional[str],
+    ):
+        return super().__new__(
+            cls,
+            parent,
+            provcfg.Runner.resolve(runner),
+            provcfg.Registry.resolve(registry),
+            tuple(provcfg.Feed.resolve(feed)),
+            provcfg.Sink.Mode.resolve(sink),
+        )
 
     def launcher(
         self, project: str, release: typing.Optional[str], generation: typing.Optional[str]
-    ) -> facility.Launcher:
+    ) -> runtime.Launcher:
         """Platform launcher helper.
 
         Args:
@@ -50,17 +72,26 @@ class Model(typing.NamedTuple):
         Returns:
             Platform launcher.
         """
-        return facility.Platform(
-            provcfg.Runner.resolve(self.runner),
-            provcfg.Registry.resolve(self.registry),
-            provcfg.Feed.resolve(self.feed),
-            provcfg.Sink.Mode.resolve(self.sink),
-        ).launcher(project, release, generation)
+        return runtime.Platform(runner=self.runner, registry=self.registry, feeds=self.feeds, sink=self.sink).launcher(
+            project, release, generation
+        )
+
+    def scan(self, project: typing.Optional[str], release: typing.Optional[str]) -> typing.Iterable[asset.Level.Key]:
+        """Scan the registry level keys.
+
+        Args:
+            project: Project to scan.
+            release: Release to scan.
+
+        Returns:
+            List of level keys.
+        """
+        return runtime.Repo(self.registry).list(project, release)
 
 
 @click.group(name='model')
 @click.option('-R', '--runner', type=str, help='Runtime runner reference.')
-@click.option('-P', '--registry', type=str, help='Persistent registry reference.')
+@click.option('-M', '--registry', type=str, help='Model registry reference.')
 @click.option('-I', '--feed', multiple=True, type=str, help='Input feed references.')
 @click.option('-O', '--sink', type=str, help='Output sink reference.')
 @click.pass_context
@@ -72,7 +103,7 @@ def group(
     sink: typing.Optional[str],
 ):
     """Model command group."""
-    context.obj = Model(runner, registry, feed, sink)
+    context.obj = Scope(context.obj, runner, registry, feed, sink)
 
 
 @group.command()
@@ -83,7 +114,7 @@ def group(
 @click.option('--upper', help='Dataset upper ordinal.')
 @click.pass_obj
 def tune(
-    model: Model,
+    model: Scope,
     project: str,
     release: typing.Optional[str],
     generation: typing.Optional[str],
@@ -102,7 +133,7 @@ def tune(
 @click.option('--upper', help='Dataset upper ordinal.')
 @click.pass_obj
 def train(
-    model: Model,
+    scope: Scope,
     project: str,
     release: typing.Optional[str],
     generation: typing.Optional[str],
@@ -110,7 +141,7 @@ def train(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Train new generation of the given (or default) project release."""
-    model.launcher(project, release, generation).train(lower, upper)
+    scope.launcher(project, release, generation).train(lower, upper)
 
 
 @group.command()
@@ -121,7 +152,7 @@ def train(
 @click.option('--upper', help='Dataset upper ordinal.')
 @click.pass_obj
 def apply(
-    model: Model,
+    scope: Scope,
     project: str,
     release: typing.Optional[str],
     generation: typing.Optional[str],
@@ -129,7 +160,7 @@ def apply(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Apply the given (or default) generation."""
-    model.launcher(project, release, generation).apply(lower, upper)
+    scope.launcher(project, release, generation).apply(lower, upper)
 
 
 @group.command(name='eval')
@@ -140,7 +171,7 @@ def apply(
 @click.option('--upper', help='Dataset upper ordinal.')
 @click.pass_obj
 def evaluate(
-    model: Model,
+    scope: Scope,
     project: str,
     release: typing.Optional[str],
     generation: typing.Optional[str],
@@ -148,4 +179,13 @@ def evaluate(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Evaluate predictions of the given (or default) generation."""
-    model.launcher(project, release, generation).apply_eval(lower, upper)
+    scope.launcher(project, release, generation).apply_eval(lower, upper)
+
+
+@group.command(name='list')
+@click.argument('project', required=False)
+@click.argument('release', required=False)
+@click.pass_obj
+def list_(scope: Scope, project: typing.Optional[str], release: typing.Optional[str]) -> None:
+    """List the content of the selected registry."""
+    scope.parent.print(scope.scan(project, release))

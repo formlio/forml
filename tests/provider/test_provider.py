@@ -25,7 +25,7 @@ import typing
 import pytest
 
 import forml
-from forml import _provider as provmod
+from forml import provider as provmod
 
 
 @pytest.fixture(scope='session')
@@ -49,11 +49,11 @@ def default(alias: str, params: typing.Mapping[str, typing.Any]) -> tuple[str, t
 @pytest.fixture(scope='session')
 def interface(
     default: tuple[str, typing.Mapping[str, typing.Any]]  # pylint: disable=unused-argument
-) -> type[provmod.Interface]:
+) -> type[provmod.Service]:
     """Provider fixture."""
     _T = typing.TypeVar('_T')
 
-    class Provider(provmod.Interface, typing.Generic[_T], default=default):
+    class Provider(provmod.Service, typing.Generic[_T], default=default):
         """Provider implementation."""
 
         def __init__(self, **kwargs):
@@ -70,9 +70,7 @@ def interface(
 
 
 @pytest.fixture(scope='session')
-def provider(
-    interface: type[provmod.Interface], alias: str  # pylint: disable=unused-argument
-) -> type[provmod.Interface]:
+def provider(interface: type[provmod.Service], alias: str) -> type[provmod.Service]:  # pylint: disable=unused-argument
     """Provider fixture."""
 
     class SubProvider(interface[set], alias=alias):
@@ -84,7 +82,7 @@ def provider(
     return SubProvider
 
 
-def test_isabstract(interface: type[provmod.Interface], provider: type[provmod.Interface]):
+def test_isabstract(interface: type[provmod.Service], provider: type[provmod.Service]):
     """Isabstract inspection unit test."""
     assert provmod.isabstract(interface)
     assert not provmod.isabstract(provider)
@@ -95,8 +93,8 @@ class TestInterface:
 
     def test_get(
         self,
-        interface: type[provmod.Interface],
-        provider: type[provmod.Interface],
+        interface: type[provmod.Service],
+        provider: type[provmod.Service],
         alias: str,
         params: typing.Mapping[str, typing.Any],
     ):
@@ -107,7 +105,7 @@ class TestInterface:
         with pytest.raises(forml.MissingError):
             assert provider['miss']
 
-    def test_collision(self, provider: type[provmod.Interface], alias: str):  # pylint: disable=unused-argument
+    def test_collision(self, provider: type[provmod.Service], alias: str):  # pylint: disable=unused-argument
         """Test a colliding provider key."""
         with pytest.raises(forml.UnexpectedError):
 
@@ -122,8 +120,8 @@ class TestProvider:
 
     def test_path(self):
         """Test the search path based loading."""
-        from . import service  # pylint: disable=import-outside-toplevel
+        from . import helloworld  # pylint: disable=import-outside-toplevel
 
-        dummy = service.Provider['dummy']
-        assert issubclass(dummy, service.Provider)
-        assert service.Provider[f'{dummy.__module__}:{dummy.__qualname__}']().serve() == 'dummy'
+        dummy = helloworld.Service['dummy']
+        assert issubclass(dummy, helloworld.Service)
+        assert helloworld.Service[f'{dummy.__module__}:{dummy.__qualname__}']().serve() == 'dummy'

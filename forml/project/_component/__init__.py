@@ -22,6 +22,7 @@ import collections
 import importlib
 import inspect
 import logging
+import os
 import pathlib
 import secrets
 import sys
@@ -29,11 +30,10 @@ import types
 import typing
 
 import forml
-from forml import flow
+from forml import evaluation, flow
 from forml.io import dsl, layout
-from forml.runtime.mode import evaluation
 
-from .. import _importer, _product
+from .. import _body, _importer
 from .._component import virtual
 
 LOGGER = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
 
 
 class Source(typing.NamedTuple):
-    """Feed independent data source descriptor."""
+    """Feed independent data source component."""
 
     extract: 'Source.Extract'
     transform: typing.Optional[flow.Composable] = None
@@ -57,7 +57,7 @@ class Source(typing.NamedTuple):
     Labels = typing.Union[
         dsl.Feature,
         typing.Sequence[dsl.Feature],
-        flow.Spec[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]],
+        flow.Spec[flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
     ]
     """Label type - either single column, multiple columns or generic label extracting actor (with two output ports)."""
 
@@ -99,7 +99,7 @@ class Source(typing.NamedTuple):
         apply: typing.Optional[dsl.Queryable] = None,
         ordinal: typing.Optional[dsl.Operable] = None,
     ) -> 'Source':
-        """Create new source descriptor with the given parameters. All parameters are the DSL objects - either queries
+        """Create new source component with the given parameters. All parameters are the DSL objects - either queries
         or columns.
 
         Args:
@@ -110,14 +110,14 @@ class Source(typing.NamedTuple):
             ordinal: Optional specification of an ordinal column.
 
         Returns:
-            Source descriptor instance.
+            Source component instance.
         """
         return cls(cls.Extract(features, apply or features, labels, ordinal))  # pylint: disable=no-member
 
     def __rshift__(self, transform: flow.Composable) -> 'Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
-    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> '_product.Artifact':
+    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> '_body.Artifact':
         """Create an artifact from this source and given pipeline.
 
         Args:
@@ -127,11 +127,11 @@ class Source(typing.NamedTuple):
         Returns:
             Project artifact instance.
         """
-        return _product.Artifact(source=self, pipeline=pipeline, **modules)
+        return _body.Artifact(source=self, pipeline=pipeline, **modules)
 
 
 class Evaluation(typing.NamedTuple):
-    """Evaluation descriptor."""
+    """Evaluation component."""
 
     metric: evaluation.Metric
     """Loss/Score function."""
@@ -176,6 +176,21 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
         Component instance.
     """
 
+    def is_expected(actual: str) -> bool:
+        """Test the actually loaded module is the one that's been requested.
+
+        Args:
+            actual: Name of the actually loaded module.
+
+        Returns:
+            True if the actually loaded module is the one expected.
+        """
+        actual = actual.replace('.', os.path.sep)
+        expected = module.replace('.', os.path.sep)
+        if path:
+            expected = os.path.join(path, expected)
+        return expected.endswith(actual)
+
     class Component(types.ModuleType):
         """Fake component module."""
 
@@ -194,10 +209,12 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
             Args:
                 component: Component instance to be registered.
             """
-            caller = inspect.getmodule(inspect.currentframe().f_back)
-            if caller and caller.__name__ != module:
-                LOGGER.warning('Ignoring setup from unexpected component of %s', caller.__name__)
-                return
+            caller_frame = inspect.currentframe().f_back
+            if inspect.getframeinfo(caller_frame).filename != __file__:  # ignore Virtual module setup
+                caller_module = inspect.getmodule(caller_frame)
+                if caller_module and not is_expected(caller_module.__name__):
+                    LOGGER.warning('Ignoring setup from unexpected component of %s', caller_module.__name__)
+                    return
             LOGGER.debug('Component setup using %s', component)
             nonlocal result
             if result:
@@ -206,8 +223,6 @@ def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = N
 
     result = None
     with _importer.context(Component()):
-        if module in sys.modules:
-            del sys.modules[module]
         LOGGER.debug('Importing project component from %s', module)
         _importer.isolated(module, path)
 

@@ -19,24 +19,28 @@
 Flow members represent partial pipeline blocks during pipeline assembly.
 """
 import abc
+import typing
 import weakref
 
 from .. import _exception
 from . import assembly
+
+if typing.TYPE_CHECKING:
+    from forml import flow
 
 
 class Composable(metaclass=abc.ABCMeta):
     """Common base for operators and expressions."""
 
     @abc.abstractmethod
-    def expand(self) -> assembly.Trunk:
+    def expand(self) -> 'flow.Trunk':
         """Compose and return a trunk track.
 
         Returns:
             Trunk track.
         """
 
-    def __rshift__(self, right: 'Composable') -> 'Compound':
+    def __rshift__(self, right: 'flow.Composable') -> 'Compound':
         """Semantical composition construct."""
         return Compound(right, self)
 
@@ -44,7 +48,7 @@ class Composable(metaclass=abc.ABCMeta):
         return self.__class__.__name__
 
     @abc.abstractmethod
-    def compose(self, left: 'Composable') -> assembly.Trunk:
+    def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
         """Expand the left trunk producing new composed trunk track.
 
         Args:
@@ -58,7 +62,7 @@ class Composable(metaclass=abc.ABCMeta):
 class Origin(Composable):
     """Initial builder without a predecessor."""
 
-    def expand(self) -> assembly.Trunk:
+    def expand(self) -> 'flow.Trunk':
         """Track of future nodes.
 
         Returns:
@@ -66,7 +70,7 @@ class Origin(Composable):
         """
         return assembly.Trunk()
 
-    def compose(self, left: Composable) -> assembly.Trunk:
+    def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
         """Origin composition is just the left side track.
 
         Args:
@@ -81,7 +85,7 @@ class Origin(Composable):
 class Operator(Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base pipeline entity."""
 
-    def expand(self) -> assembly.Trunk:
+    def expand(self) -> 'flow.Trunk':
         """Create dummy composition of this operator on a future origin nodes.
 
         Returns:
@@ -95,20 +99,20 @@ class Compound(Composable):
 
     _TERMS = weakref.WeakValueDictionary()
 
-    def __init__(self, right: Composable, left: Composable):
+    def __init__(self, right: 'flow.Composable', left: 'flow.Composable'):
         for term in (left, right):
             if not isinstance(term, Composable):
                 raise ValueError(f'{type(term)} not composable')
             if term in self._TERMS:
                 raise _exception.TopologyError(f'Non-linear {term} composition')
             self._TERMS[term] = self
-        self._right: Composable = right
-        self._left: Composable = left
+        self._right: 'flow.Composable' = right
+        self._left: 'flow.Composable' = left
 
     def __repr__(self):
         return f'{self._left} >> {self._right}'
 
-    def expand(self) -> assembly.Trunk:
+    def expand(self) -> 'flow.Trunk':
         """Compose the trunk track.
 
         Returns:
@@ -116,7 +120,7 @@ class Compound(Composable):
         """
         return self._right.compose(self._left)
 
-    def compose(self, left: Composable) -> assembly.Trunk:
+    def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
         """Expression composition is just extension of its tracks.
 
         Args:

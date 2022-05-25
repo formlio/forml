@@ -21,42 +21,27 @@ Forml demos.
 
 
 import pandas as pd
-from sklearn import ensemble, feature_extraction, impute, linear_model, naive_bayes, preprocessing
 
+from forml import project
 from forml.io import dsl
-from forml.lib.feed import static
-from forml.lib.pipeline import payload, topology
-from forml.project import _component
+from forml.pipeline import payload, wrap
+from forml.provider.feed import static
 
-SimpleImputer = topology.Mapper.operator(topology.Class.actor(impute.SimpleImputer, train='fit', apply='transform'))
-
-OneHotEncoder = topology.Mapper.operator(
-    topology.Class.actor(preprocessing.OneHotEncoder, train='fit', apply='transform')
-)
-
-Binarizer = topology.Mapper.operator(topology.Class.actor(preprocessing.Binarizer, train='fit', apply='transform'))
-
-FeatureHasher = topology.Mapper.operator(
-    topology.Class.actor(feature_extraction.FeatureHasher, train='fit', apply='transform')
-)
-
-RFC = topology.Consumer.operator(
-    topology.Class.actor(ensemble.RandomForestClassifier, train='fit', apply='predict_proba')
-)
-
-GBC = topology.Consumer.operator(
-    topology.Class.actor(ensemble.GradientBoostingClassifier, train='fit', apply='predict_proba')
-)
-
-LR = topology.Consumer.operator(
-    topology.Class.actor(linear_model.LogisticRegression, train='fit', apply='predict_proba')
-)
-
-Bayes = topology.Consumer.operator(topology.Class.actor(naive_bayes.BernoulliNB, train='fit', apply='predict_proba'))
+with wrap.importer():  # automatically converting the particular SKLearn classes to ForML operators
+    from sklearn.ensemble import GradientBoostingClassifier as GBC
+    from sklearn.ensemble import RandomForestClassifier as RFC
+    from sklearn.feature_extraction import FeatureHasher
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression as LR
+    from sklearn.naive_bayes import BernoulliNB as Bayes
+    from sklearn.preprocessing import Binarizer, OneHotEncoder
 
 
-@topology.Mapper.operator
-@topology.Function.actor
+__all__ = ['GBC', 'RFC', 'FeatureHasher', 'SimpleImputer', 'LR', 'Bayes', 'Binarizer', 'OneHotEncoder']
+
+
+@wrap.Mapper.operator
+@wrap.Actor.apply
 def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     """Simple stateless transformer create from a plain function."""
     return df.dropna()
@@ -80,4 +65,4 @@ class Feed(static.Feed):
 
 
 FEED = Feed()
-SOURCE = _component.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.to_pandas(columns=['Age'])
+SOURCE = project.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.ToPandas(columns=['Age'])

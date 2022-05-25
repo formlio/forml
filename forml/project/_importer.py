@@ -44,7 +44,7 @@ class Finder(abc.MetaPathFinder):
             self._module: types.ModuleType = module
             self._onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = onexec
 
-        def create_module(self, spec) -> types.ModuleType:
+        def create_module(self, spec: machinery.ModuleSpec) -> types.ModuleType:
             """Return our fake module instance.
 
             Args:
@@ -70,8 +70,12 @@ class Finder(abc.MetaPathFinder):
         self._name: str = module.__name__
         self._loader: abc.Loader = self.Loader(module, onexec)
 
-    # pylint: disable=unused-argument
-    def find_spec(self, fullname: str, path, target) -> typing.Optional[machinery.ModuleSpec]:
+    def find_spec(
+        self,
+        fullname: str,
+        path: typing.Optional[typing.Sequence[str]],  # pylint: disable=unused-argument
+        target: typing.Optional[types.ModuleType] = None,  # pylint: disable=unused-argument
+    ) -> typing.Optional[machinery.ModuleSpec]:
         """Return module spec if asked for component module.
 
         Args:
@@ -135,8 +139,7 @@ def _parent(name: str) -> typing.Optional[str]:
     Returns:
         Parent package path.
     """
-    result, _ = re.match(r'(?:(.*)\.)?(.*)', name).groups()  # different from module.rsplit('.', 1)
-    return result
+    return re.match(r'(?:(.*)\.)?(.*)', name).group(1)  # different from module.rsplit('.', 1)
 
 
 def _walkup(name: str, handler: typing.Callable[[str], bool]) -> None:
@@ -169,7 +172,7 @@ def _unload(module: str) -> None:
 
 @contextlib.contextmanager
 def context(module: types.ModuleType) -> typing.Iterable[None]:
-    """Context manager that adds a importlib.MetaPathFinder to sys._meta_path while in the context faking imports
+    """Context manager that adds an importlib.MetaPathFinder to sys._meta_path while in the context faking imports
     of forml.project.component to a virtual fabricated module.
 
     Args:
@@ -233,5 +236,5 @@ def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] =
     if not isinstance(module.__loader__, Finder.Loader):
         source = getattr(module, '__file__', None)
         if bool(path) ^ bool(source) or (path and not source.startswith(str(pathlib.Path(path).resolve()))):
-            raise ModuleNotFoundError(f'No module named {name}')
+            raise ModuleNotFoundError(f'No module named {name}', name=name)
     return module

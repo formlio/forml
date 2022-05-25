@@ -21,7 +21,7 @@ Feed is a :doc:`runtime platform <platform>` component responsible for resolving
 
 .. autosummary::
 
-   forml.lib.feed.static.Feed
+   forml.provider.feed.static.Feed
    openlake.Local
 
 
@@ -30,8 +30,8 @@ Reader
 
 .. autosummary::
 
-   forml.lib.feed.reader.sql.alchemy
-   forml.lib.feed.reader.sql.dbapi
+   forml.provider.feed.reader.sql.alchemy
+   forml.provider.feed.reader.sql.dbapi
 
 
 API

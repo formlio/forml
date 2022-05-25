@@ -16,63 +16,88 @@
 # under the License.
 
 """
-Transformers useful for the Titanic example.
-
-This module is informal from ForML perspective and has been created just for structuring the project code base.
-
-Here we just create couple of forml operators that implement particular transformers.
-
-We demonstrate three different ways of creating a forml operator:
-  * Implementing native ForML actor (NanImputer)
-  * Creating a wrapped actor from a plain function (parse_title)
-  * Wrapping a 3rd party Transformer-like class (ENCODER)
+Transformers useful for the Titanic dataset pre-processing.
 """
 import typing
 
-import category_encoders
-import numpy as np
-import pandas as pd
+import numpy
+import pandas
+from sklearn import preprocessing
 
-from forml import flow
-from forml.lib.pipeline import topology
+from forml.pipeline import wrap
 
-
-@topology.Mapper.operator
-class NaNImputer(flow.Actor[pd.DataFrame, pd.Series, pd.DataFrame]):
-    """Imputer for missing values implemented as native ForML actor."""
-
-    def __init__(self):
-        self._fill: typing.Optional[pd.Series] = None
-
-    def train(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the actor by learning the median for each numeric column and finding the most common value for
-        strings.
-        """
-        self._fill = pd.Series(
-            [X[c].value_counts().index[0] if X[c].dtype == np.dtype('O') else X[c].median() for c in X], index=X.columns
-        )
-
-    def apply(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Apply the imputation to the given dataset."""
-        return X.fillna(self._fill)
+# There is a number of different ways ForML allows to implement actors/operators. Here we use the simplest approach
+# of wrapping plain functions using the decorators from the ``forml.pipeline.wrap`` package:
 
 
-@topology.Mapper.operator
-@topology.Function.actor
-def parse_title(df: pd.DataFrame, source: str, target: str) -> pd.DataFrame:
-    """Transformer extracting a person's title from the name string implemented as wrapped stateless function."""
+@wrap.Mapper.operator
+@wrap.Actor.apply
+def parse_title(features: pandas.DataFrame, *, source: str, target: str) -> pandas.DataFrame:
+    """Transformer extracting a person's title from the name string."""
 
     def get_title(name: str) -> str:
         """Auxiliary method for extracting the title."""
         if '.' in name:
-            return name.split(',')[1].split('.')[0].strip()
-        return 'Unknown'
+            return name.split(',')[1].split('.')[0].strip().lower()
+        return 'n/a'
 
-    df[target] = df[source].map(get_title)
-    return df
+    features[target] = features[source].map(get_title)
+    return features.drop(columns=source)
 
 
-# 3rd party transformer wrapped as an actor into a mapper operator:
-ENCODER = topology.Mapper.operator(
-    topology.Class.actor(category_encoders.HashingEncoder, train='fit', apply='transform')
-)
+@wrap.Actor.train
+def impute(
+    state: typing.Optional[dict[str, float]],  # pylint: disable=unused-argument
+    features: pandas.DataFrame,
+    labels: pandas.Series,  # pylint: disable=unused-argument
+    random_state: typing.Optional[int] = None,  # pylint: disable=unused-argument
+) -> dict[str, float]:
+    """Train part of a stateful transformer for missing values imputation."""
+    return {
+        'age_avg': features['Age'].mean(),
+        'age_std': features['Age'].std(ddof=0),
+        'fare_avg': features['Fare'].mean(),
+    }
+
+
+@wrap.Mapper.operator
+@impute.apply
+def impute(
+    state: dict[str, float], features: pandas.DataFrame, random_state: typing.Optional[int] = None
+) -> pandas.DataFrame:
+    """Apply part of a stateful transformer for missing values imputation."""
+    age_nan = features['Age'].isna()
+    if age_nan.any():
+        age_rnd = numpy.random.default_rng(random_state).integers(
+            state['age_avg'] - state['age_std'], state['age_avg'] + state['age_std'], size=age_nan.sum()
+        )
+        features.loc[age_nan, 'Age'] = age_rnd
+    features['Embarked'].fillna('S', inplace=True)
+    features['Fare'].fillna(state['fare_avg'], inplace=True)
+    assert not features.isna().any().any(), 'NaN still'
+    return features
+
+
+@wrap.Actor.train
+def encode(
+    state: typing.Optional[preprocessing.OneHotEncoder],  # pylint: disable=unused-argument
+    features: pandas.DataFrame,
+    labels: pandas.Series,  # pylint: disable=unused-argument
+    columns: typing.Sequence[str],
+) -> preprocessing.OneHotEncoder:
+    """Train part of a stateful encoder for the various categorical features."""
+    encoder = preprocessing.OneHotEncoder(handle_unknown='infrequent_if_exist', sparse=False)
+    encoder.fit(features[columns])
+    return encoder
+
+
+@wrap.Mapper.operator
+@encode.apply
+def encode(
+    state: preprocessing.OneHotEncoder, features: pandas.DataFrame, columns: typing.Sequence[str]
+) -> pandas.DataFrame:
+    """Apply part of a stateful encoder for the various categorical features."""
+    onehot = pandas.DataFrame(state.transform(features[columns]))
+    result = pandas.concat((features.drop(columns=columns), onehot), axis='columns')
+    result.columns = [str(c) for c in result.columns]
+    return result

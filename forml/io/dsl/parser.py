@@ -250,7 +250,7 @@ class Visitor(
         except KeyError as err:
             raise dsl.UnprovisionedError(f'Unknown mapping for feature {feature}') from err
 
-    @functools.lru_cache
+    @functools.cache
     def generate_feature(self, feature: dsl.Feature) -> Feature:
         """Generate target code for the generic feature type.
 

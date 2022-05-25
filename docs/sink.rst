@@ -20,7 +20,7 @@ Sink is a :doc:`runtime platform <platform>` component responsible for consuming
 
 .. autosummary::
 
-   forml.lib.sink.stdout
+   forml.provider.sink.stdout
 
 
 API

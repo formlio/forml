@@ -22,7 +22,6 @@ import os
 import sys
 import typing
 
-import pip._internal as pip
 import setuptools
 
 from ... import _distribution
@@ -69,6 +68,8 @@ class Package(setuptools.Command):
 
     def run(self) -> None:
         """Trigger the packaging process."""
+        import pip._internal as pip  # pylint: disable=import-outside-toplevel
+
         pip.main(
             [
                 'install',

@@ -22,10 +22,10 @@ import logging
 import typing
 import uuid
 
-from forml import flow, io, project
+from forml import flow, io, project, runtime
 from forml.conf.parsed import provider as provcfg
 from forml.io import dsl
-from forml.runtime import facility
+from forml.pipeline import payload
 from forml.testing import _spec
 
 LOGGER = logging.getLogger(__name__)
@@ -67,10 +67,8 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
                 return self._features, self._labels
 
         def __init__(self, scenario: _spec.Scenario.Input):
-            self._testset: flow.Spec[None, None, typing.Any] = self.Apply.spec(scenario.apply)
-            self._trainset: flow.Spec[None, None, tuple[typing.Any, typing.Any]] = self.Train.spec(
-                scenario.train, scenario.label
-            )
+            self._testset: flow.Spec[Feed.Operator.Apply] = self.Apply.spec(scenario.apply)
+            self._trainset: flow.Spec[Feed.Operator.Train] = self.Train.spec(scenario.train, scenario.label)
 
         def compose(self, left: flow.Composable) -> flow.Trunk:
             """Compose the source segment track.
@@ -107,6 +105,27 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
 class Launcher:
     """Test runner is a minimal forml pipeline wrapping the tested operator."""
 
+    class Action:
+        """Customized launcher actions exposed to testing routines."""
+
+        def __init__(self, handler: runtime.Virtual, sniffer: payload.Sniff):
+            self._handler: runtime.Virtual = handler
+            self._sniffer: payload.Sniff = sniffer
+
+        def apply(self) -> typing.Any:
+            """Normal apply mode."""
+            return self._handler.apply()
+
+        def train_call(self) -> None:
+            """Normal train mode (no output captured/returned)."""
+            self._handler.train()
+
+        def train_return(self) -> tuple[flow.Features, flow.Labels]:
+            """Extended train mode that's capturing and returning the features+labels output."""
+            with self._sniffer as future:
+                self._handler.train()
+            return future.result()
+
     class Initializer(flow.Visitor):
         """Visitor that tries to instantiate each node in attempt to validate it."""
 
@@ -124,11 +143,14 @@ class Launcher:
         self._feed: Feed = Feed(scenario)
         self._runner: provcfg.Runner = runner
 
-    def __call__(self, operator: type[flow.Operator]) -> facility.Virtual.Builder:
+    def __call__(self, operator: type[flow.Operator]) -> 'Launcher.Action':
         instance = operator(*self._params.args, **self._params.kwargs)
         initializer = self.Initializer()
-        segment = instance.expand()
-        segment.apply.accept(initializer)
-        segment.train.accept(initializer)
-        segment.label.accept(initializer)
-        return self._source.bind(instance).launcher(self._runner, [self._feed])
+        trunk = instance.expand()
+        trunk.apply.accept(initializer)
+        trunk.train.accept(initializer)
+        trunk.label.accept(initializer)
+
+        sniffer = payload.Sniff()
+        handler = self._source.bind(instance >> sniffer).launcher(self._runner, [self._feed])
+        return self.Action(handler, sniffer)

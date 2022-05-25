@@ -37,19 +37,24 @@ class TestTraversal:
         simple[0].subscribe(multi[0])
         return multi
 
-    def test_acyclic(self, worker, simple: flow.Worker):
+    def test_acyclic(self, worker: flow.Worker, simple: flow.Worker):
         """Test cycle detection."""
         worker[0].subscribe(simple[0])
         with pytest.raises(span.Traversal.Cyclic):  # cyclic flow
             span.Traversal(worker).tail()
 
-    def test_copy(self, worker, simple: flow.Worker, multi: flow.Worker):
+    def test_copy(self, worker: flow.Worker, simple: flow.Worker, multi: flow.Worker):
         """Copy test."""
         copy = span.Traversal(worker).copy(simple)
         assert copy[simple].gid == simple.gid
         assert copy[multi].gid == multi.gid
 
-    def test_each(self, worker, simple: flow.Worker, multi: flow.Worker):
+        # copy single-node path
+        future = flow.Future()
+        copy = span.Traversal(future).copy(future)
+        assert future in copy
+
+    def test_each(self, worker: flow.Worker, simple: flow.Worker, multi: flow.Worker):
         """Each test."""
 
         def check(node: flow.Worker) -> None:
@@ -66,14 +71,14 @@ class TestPath:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def head(actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]) -> flow.Worker:
+    def head(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
         """Path head fixture."""
         return flow.Worker(actor_spec, 1, 1)
 
     @staticmethod
     @pytest.fixture(scope='function', params=(False, True))
     def path(
-        request, head: flow.Worker, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]
+        request, head: flow.Worker, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ) -> span.Path:
         """Path fixture."""
         flow1 = flow.Worker(actor_spec, 1, 2)

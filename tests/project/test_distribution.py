@@ -68,7 +68,7 @@ class TestPackage:
         """Package install unit test."""
         artifact = project_package.install(tmp_path / 'foo')
         assert artifact.package == project_package.manifest.package
-        assert artifact.descriptor
+        assert artifact.components
 
     def test_serilizable(self, project_package: project.Package):
         """Test package serializability."""

@@ -18,16 +18,15 @@
 """
 Titanic data source.
 
-This is one of the main _formal_ forml components (along with `pipeline` and `evaluation`) that's being looked up by
-the forml loader. In this case it is implemented as a python module but it could be as well a package
-`source/__init__.py` (to potentially split it into additional informal submodules).
+This is one of the main _formal_ components that's being looked up by the ForML project loader.
 """
 
 from openschema import kaggle as schema
 
 from forml import project
-from forml.lib.pipeline import payload
+from forml.pipeline import payload
 
+# Using the ForML DSL to specify the data source:
 FEATURES = schema.Titanic.select(
     schema.Titanic.Pclass,
     schema.Titanic.Name,
@@ -35,11 +34,16 @@ FEATURES = schema.Titanic.select(
     schema.Titanic.Age,
     schema.Titanic.SibSp,
     schema.Titanic.Parch,
-    schema.Titanic.Ticket,
     schema.Titanic.Fare,
-    schema.Titanic.Cabin,
     schema.Titanic.Embarked,
+).orderby(schema.Titanic.PassengerId)
+
+# Setting up the source descriptor:
+SOURCE = project.Source.query(
+    FEATURES, schema.Titanic.Survived
+) >> payload.ToPandas(  # pylint: disable=no-value-for-parameter
+    columns=[f.name for f in FEATURES.schema]
 )
 
-ETL = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.to_pandas([f.name for f in FEATURES.schema])
-project.setup(ETL)
+# Registering the descriptor
+project.setup(SOURCE)

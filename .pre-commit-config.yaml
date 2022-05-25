@@ -20,33 +20,36 @@ default_language_version:
   python: python3
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.1.0
+  rev: v4.2.0
   hooks:
   - id: check-added-large-files
   - id: check-ast
-  - id: fix-byte-order-marker
+  - id: check-builtin-literals
   - id: check-case-conflict
+  - id: check-docstring-first
   - id: check-merge-conflict
+  - id: check-toml
   - id: check-yaml
   - id: debug-statements
   - id: double-quote-string-fixer
   - id: end-of-file-fixer
+  - id: fix-byte-order-marker
   - id: mixed-line-ending
   - id: trailing-whitespace
 - repo: https://github.com/psf/black
-  rev: 22.1.0
+  rev: 22.3.0
   hooks:
   - id: black
     name: Black
-    args: [--config=./pyproject.toml]
+    args: [--config=pyproject.toml]
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.31.0
+  rev: v2.32.1
   hooks:
     - id: pyupgrade
       name: Python syntax upgrade
       args: [--py39-plus]
 - repo: https://github.com/hadialqattan/pycln
-  rev: v1.2.4
+  rev: v1.3.3
   hooks:
   - id: pycln
     name: Remove unused import statements
@@ -58,8 +61,18 @@ repos:
     name: Sort import statements
     files: "\\.(py)$"
     args: [--settings-path=pyproject.toml]
+- repo: https://github.com/pycqa/pylint
+  rev: v2.13.9
+  hooks:
+  - id: pylint
+    args: ["--init-hook", "import sys; sys.path.extend(['.', 'tests/', '.venv/lib/python3.9/site-packages/'])"]
+- repo: https://github.com/PyCQA/flake8
+  rev: 4.0.1
+  hooks:
+  - id: flake8
+    additional_dependencies: [flake8-bugbear, flake8-typing-imports]
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.1.13
+  rev: v1.2.0
   hooks:
   - id: forbid-tabs
   - id: insert-license
@@ -114,19 +127,3 @@ repos:
     - --fuzzy-match-generates-todo
     files: >
       \.toml$|\.ini$|\.readthedocs$
-- repo: local
-  hooks:
-  - id: pylint
-    name: Pylint
-    exclude: ^examples/.*$
-    entry: "env PYTHONPATH=.:tests pylint"
-    language: system
-    files: \.py$
-    pass_filenames: true
-    require_serial: true
-  - id: flake8
-    name: Flake8
-    entry: flake8
-    language: system
-    files: \.py$
-    pass_filenames: true

@@ -50,3 +50,18 @@ eval = "stdout"
 
 [SINK.stdout]
 provider = "stdout"
+
+
+[INVENTORY]
+default = "homedir"
+
+[INVENTORY.homedir]
+provider = "posix"
+#path = ~/.forml/inventory
+
+
+[GATEWAY]
+default = "http"
+
+[GATEWAY.http]
+provider = "rest"

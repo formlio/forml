@@ -27,21 +27,24 @@ from .._graph import node as nodemod
 from .._graph import span
 from . import clean
 
+if typing.TYPE_CHECKING:
+    from forml import flow
+
 
 class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
     """Structure for holding three main related paths."""
 
-    apply: span.Path
-    train: span.Path
-    label: span.Path
+    apply: 'flow.Path'
+    train: 'flow.Path'
+    label: 'flow.Path'
 
     def __new__(
         cls,
-        apply: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-        train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-        label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
+        apply: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        train: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        label: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
     ):
-        def init(mode: typing.Optional[typing.Union[span.Path, nodemod.Atomic]]) -> span.Path:
+        def init(mode: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']]) -> span.Path:
             """Apply default cleaning to the mode segment.
 
             Args:
@@ -60,10 +63,10 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 
     def extend(
         self,
-        apply: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-        train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-        label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-    ) -> 'Trunk':
+        apply: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        train: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        label: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+    ) -> 'flow.Trunk':
         """Helper for creating new Trunk with specified paths extended by provided values.
 
         Args:
@@ -82,10 +85,10 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 
     def use(
         self,
-        apply: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-        train: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-        label: typing.Optional[typing.Union[span.Path, nodemod.Atomic]] = None,
-    ) -> 'Trunk':
+        apply: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        train: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        label: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+    ) -> 'flow.Trunk':
         """Helper for creating new Trunk with specified paths replaced by provided values.
 
         Args:
@@ -102,11 +105,11 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 class Composition(collections.namedtuple('Composition', 'apply, train')):
     """Structure for holding related flow parts of different modes."""
 
-    apply: span.Path
-    train: span.Path
+    apply: 'flow.Path'
+    train: 'flow.Path'
 
-    class Stateful(span.Visitor, typing.Iterable[uuid.UUID]):
-        """Visitor that cumulates gids of stateful nodes."""
+    class Persistent(span.Visitor, typing.Iterable[uuid.UUID]):
+        """Visitor that cumulates gids of persistent nodes."""
 
         def __init__(self):
             self._gids: list[uuid.UUID] = []
@@ -115,7 +118,7 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
             return iter(self._gids)
 
         def visit_node(self, node: nodemod.Worker) -> None:
-            if node.stateful and node.gid not in self._gids:
+            if node.derived and node.gid not in self._gids:
                 self._gids.append(node.gid)
 
     def __new__(cls, *segments: Trunk):
@@ -132,18 +135,17 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         # label.accept(clean.Validator())
         return super().__new__(cls, apply, train)
 
-    @property
-    @functools.lru_cache
+    @functools.cached_property
     def persistent(self) -> typing.Sequence[uuid.UUID]:
         """Get the set of nodes with state that needs to be carried over between the apply/train modes.
 
         The states used within the apply path are expected to be subset of the states used in the train path (since not
         all the stateful workers engaged during training are necessarily used during apply and hence don't need
-        persisting and we can ignore them).
+        persisting so we can ignore them).
 
         Returns:
             Set of nodes sharing state between pipeline modes.
         """
-        apply = self.Stateful()
+        apply = self.Persistent()
         self.apply.accept(apply)
         return tuple(apply)

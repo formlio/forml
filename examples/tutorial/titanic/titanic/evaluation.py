@@ -18,19 +18,26 @@
 """
 Titanic evaluation definition.
 
-This is one of the main _formal_ forml components (along with `source` and `evaluation`) that's being looked up by
-the forml loader.
+This is one of the main _formal_ components that's being looked up by the ForML project loader.
 """
+import numpy
+from sklearn import metrics
 
-from sklearn import metrics, model_selection
+from forml import evaluation, project
 
-from forml import project
-from forml.lib.pipeline.evaluation import method, metric
-
-# Typical method of providing component implementation using `component.setup()`. Choosing the CrossVal method
-# to implement classic cross-validated metric scoring
-EVAL = project.Evaluation(
-    metric.Function(metrics.log_loss),
-    method.CrossVal(model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42)),
+# Setting up the evaluation descriptor needs the following input:
+# 1) Evaluation metric for the actual assessment of the prediction error
+# 2) Evaluation method for out-of-sample evaluation (backtesting) - hold-out or cross-validation
+EVALUATION = project.Evaluation(
+    evaluation.Function(
+        lambda t, p: metrics.accuracy_score(t, numpy.round(p))  # using accuracy as the metric for our project
+    ),
+    # alternatively we could simply switch to logloss:
+    # evaluation.Function(metrics.log_loss),
+    evaluation.HoldOut(test_size=0.2, stratify=True, random_state=42),  # hold-out as the backtesting method
+    # alternatively we could switch to the cross-validation method instead of hold-out:
+    # evaluation.CrossVal(crossvalidator=model_selection.StratifiedKFold(n_splits=3, shuffle=True, random_state=42)),
 )
-project.setup(EVAL)
+
+# Registering the descriptor
+project.setup(EVALUATION)

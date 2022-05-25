@@ -21,38 +21,36 @@ import demos
 import numpy as np
 import pandas as pd
 
-from forml import flow
-from forml.lib.pipeline import topology
+from forml.pipeline import wrap
 
 
-@topology.Mapper.operator
-class NaNImputer(flow.Actor[pd.DataFrame, pd.DataFrame, pd.DataFrame]):
-    """Custom NaN imputation logic."""
+@wrap.Actor.train
+def impute_age(
+    state: typing.Optional[dict[str, typing.Any]],  # pylint: disable=unused-argument
+    X: pd.DataFrame,
+    y: pd.Series,  # pylint: disable=unused-argument
+    random_state: typing.Optional[int] = None,  # pylint: disable=unused-argument
+) -> dict[str, typing.Any]:
+    """Train part of a stateful transformer for missing age imputation."""
+    return {'age_mean': X['Age'].mean(), 'age_std': X['Age'].std()}
 
-    def train(self, features: pd.DataFrame, label: pd.DataFrame):
-        """Impute missing values using the median for numeric columns and the most common value for string columns."""
-        self._fill = pd.Series(
-            [
-                features[f].value_counts().index[0] if features[f].dtype == np.dtype('O') else features[f].median()
-                for f in features
-            ],
-            index=features.columns,
+
+@wrap.Mapper.operator
+@impute_age.apply
+def impute_age(
+    state: dict[str, typing.Any], X: pd.DataFrame, random_state: typing.Optional[int] = None
+) -> pd.DataFrame:
+    """Apply part of a stateful transformer for missing age imputation."""
+    na_slice = X['Age'].isna()
+    if na_slice.any():
+        rand_age = np.random.default_rng(random_state).integers(
+            state['age_mean'] - state['age_std'], state['age_mean'] + state['age_std'], size=na_slice.sum()
         )
-        return self
-
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Filling the NaNs."""
-        return df.fillna(self._fill)
-
-    def get_params(self) -> dict[str, typing.Any]:
-        """Mandatory get params."""
-        return {}
-
-    def set_params(self, params: dict[str, typing.Any]) -> None:
-        """Mandatory set params."""
+        X.loc[na_slice, 'Age'] = rand_age
+    return X
 
 
-PIPELINE = NaNImputer() >> demos.LR(
+PIPELINE = impute_age(random_state=42) >> demos.LR(
     max_iter=3, solver='lbfgs'
 )  # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
 

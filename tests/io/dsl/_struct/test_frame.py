@@ -21,6 +21,7 @@ ETL unit tests.
 # pylint: disable=no-self-use
 
 import abc
+import pickle
 import typing
 
 import cloudpickle
@@ -47,6 +48,7 @@ class Source(metaclass=abc.ABCMeta):
     def test_serilizable(self, source: frame.Source):
         """Test source serializability."""
         assert cloudpickle.loads(cloudpickle.dumps(source)) == source
+        assert pickle.loads(pickle.dumps(source.schema)) == source.schema
 
     def test_features(self, source: frame.Source, student_table: frame.Table):
         """Test the reported feature."""
@@ -197,17 +199,17 @@ class TestSchema:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def schema(student_table: dsl.Table) -> type['_struct.Schema']:
+    def schema(student_table: dsl.Table) -> dsl.Source.Schema:
         """Schema fixture."""
         return student_table.schema
 
-    def test_identity(self, schema: type['_struct.Schema'], student_table: dsl.Table):
+    def test_identity(self, schema: dsl.Source.Schema, student_table: dsl.Table):
         """Schema identity tests."""
         other = student_table.query.schema
         assert schema is not other
         assert len({schema, other}) == 1
 
-    def test_colliding(self, schema: type['_struct.Schema']):
+    def test_colliding(self, schema: dsl.Source.Schema):
         """Test schema with colliding field names."""
 
         class Base(_struct.Schema):
@@ -238,7 +240,7 @@ class TestSchema:
 
         assert schema.school.kind == kind.Integer() and Override.school.kind == kind.String()
 
-    def test_access(self, schema: type['_struct.Schema']):
+    def test_access(self, schema: dsl.Source.Schema):
         """Test the schema access methods."""
         assert tuple(f.name for f in schema) == ('surname', 'birthday', 'level', 'score', 'school', 'updated')
         assert schema.dob.name == 'birthday'
@@ -266,6 +268,10 @@ class TestSchema:
         assert Base.old
         with pytest.raises(AttributeError):
             assert Child.old
+
+    def test_serializable(self, schema: dsl.Source.Schema):
+        """Test schema serializability."""
+        assert pickle.loads(pickle.dumps(schema)) == schema
 
 
 class TestReference(Tangible):

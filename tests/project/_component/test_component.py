@@ -92,7 +92,9 @@ class TestSource:
     @staticmethod
     @pytest.fixture(scope='session', params=('vector', 'table', 'actor', None))
     def label(
-        request, student_table: dsl.Table, actor_spec: flow.Spec[layout.RowMajor, layout.Array, layout.RowMajor]
+        request,
+        student_table: dsl.Table,
+        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     ) -> typing.Optional[project.Source.Labels]:
         """Component fixture."""
         if request.param == 'vector':

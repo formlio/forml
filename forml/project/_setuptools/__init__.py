@@ -27,7 +27,7 @@ import typing
 import setuptools
 from setuptools import dist
 
-from .. import _product
+from .. import _body
 from .command import bdist, launch, upload
 
 LOGGER = logging.getLogger(__name__)
@@ -65,13 +65,15 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
         """
         frame = inspect.currentframe()
         while frame:
-            if frame.f_globals.get('__name__') == '__main__':
-                super().run_commands()
+            name = frame.f_globals.get('__name__')
+            if name == '__mp_main__':
                 break
             frame = frame.f_back
+        else:
+            super().run_commands()
 
     @property
-    def artifact(self) -> _product.Artifact:
+    def artifact(self) -> _body.Artifact:
         """Get the artifact for this project.
 
         Returns:
@@ -86,4 +88,4 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
                     break
             else:
                 package = self.packages[0]
-        return _product.Artifact(self.package_dir[''], package=package, **modules)
+        return _body.Artifact(self.package_dir[''], package=package, **modules)

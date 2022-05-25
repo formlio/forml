@@ -66,19 +66,26 @@ STATETRAIN_RAISES
 
         mytest4 = testing.Case(arg1='bar').train('baz').raises(ValueError, 'wrong baz')
 
+STATETRAIN_RETURNS
+    compares the output value of the successfully completed *train* mode with the expected value.
+
+    Synopsis::
+
+        mytest5 = testing.Case(arg1='bar').train('foo').returns('baz')
+
 STATEAPPLY_RAISES
     asserts an exception to be raised from the *apply* mode when executed after previous successful *train* mode.
 
     Synopsis::
 
-        mytest5 = testing.Case(arg1='bar').train('foo').apply('baz').raises(ValueError, 'wrong baz')
+        mytest6 = testing.Case(arg1='bar').train('foo').apply('baz').raises(ValueError, 'wrong baz')
 
 STATEAPPLY_RETURNS
     is a scenario, where the *apply* mode executed after previous successful *train* mode returns the expected value.
 
     Synopsis::
 
-        mytest6 = testing.Case(arg1='bar').train('foo').apply('bar').returns('baz')
+        mytest7 = testing.Case(arg1='bar').train('foo').apply('bar').returns('baz')
 
 
 Operator Test Suite
@@ -129,27 +136,32 @@ Custom Value Matchers
 
 All the ``.returns()`` assertions are implemented using the ``unittest.TestCase.assertEquals()`` which compares the
 expected and actual values checking for ``__eq__()`` equality. If this is not a valid comparison for the particular
-data types used by the operator, you have to supply custom matcher as a second parameter to the assertion.
+data types used by the operator, you have to supply custom matcher as a second parameter to the assertion. The matcher
+needs to be a callable with the following signature of ``typing.Callable[[typing.Any, typing.Any], bool]``, where the
+first argument is *expected* and the second is the *actual* value.
 
 This can be useful for example for ``pandas.DataFrames``, which don't support simple boolean equality check. Following
 example uses a custom matcher for asserting the values returned as ``pandas.DataFrames``::
 
 
-    def dataframe_equals(expected: pandas.DataFrame, actual: pandas.DataFrame) -> bool:
-        """DataFrames can't be simply compared for equality so we need a custom matcher."""
-        if not actual.equals(expected):
-            print(f'Dataframe mismatch: {expected} vs {actual}')
+    def size_equals(expected: object, actual: object) -> bool:
+        """Custom object comparison logic based on their size."""
+        if sys.getsizeof(actual) != sys.getsizeof(expected):
+            print(f'Size mismatch: {expected} vs {actual}')
             return False
         return True
 
 
-    class TestTitleParser(testing.operator(preprocessing.parse_title)):
-        """Unit testing the stateless TitleParser transformer."""
+    class TestFooBar(testing.operator(FooBar)):
+        """Unit testing the FooBar operator."""
         # Dataset fixtures
-        INPUT = pandas.DataFrame({'Name': ['Smith, Mr. John', 'Black, Ms. Jane', 'Brown, Mrs. Jo', 'White, Ian']})
-        EXPECTED = pandas.concat((INPUT, pandas.DataFrame({'Title': ['Mr', 'Ms', 'Mrs', 'Unknown']})), axis='columns')
+        INPUT = ...
+        EXPECTED = ...
 
         # Test scenarios
-        invalid_params = testing.Case(foo='bar').raises(TypeError, "got an unexpected keyword argument 'foo'")
-        invalid_source = testing.Case(source='Foo', target='Bar').apply(INPUT).raises(KeyError, 'Foo')
-        valid_parsing = testing.Case(source='Name', target='Title').apply(INPUT).returns(EXPECTED, dataframe_equals)
+        valid_parsing = testing.Case().apply(INPUT).returns(EXPECTED, size_equals)
+
+
+For convenience, there is a number of explicit matchers provided as part of the ``forml.testing`` package:
+
+.. autofunction:: forml.testing.pandas_equals

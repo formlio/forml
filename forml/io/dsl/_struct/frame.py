@@ -20,6 +20,7 @@ ETL schema types.
 """
 import abc
 import collections
+import copyreg
 import enum
 import functools
 import inspect
@@ -31,6 +32,10 @@ import typing
 
 from .. import _exception, _struct
 from . import series
+
+if typing.TYPE_CHECKING:
+    from forml.io import dsl
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,17 +53,87 @@ class Rows(typing.NamedTuple):
 class Source(tuple, metaclass=abc.ABCMeta):
     """Source base class."""
 
+    class Schema(type):
+        """Meta class for schema type ensuring consistent hashing."""
+
+        def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
+            seen = set()
+            existing = collections.ChainMap(
+                *(
+                    {f.name: k}
+                    for b in bases
+                    if isinstance(b, Source.Schema)
+                    for c in reversed(inspect.getmro(b))
+                    for k, f in c.__dict__.items()
+                    if isinstance(f, _struct.Field) and k not in seen and not seen.add(k)
+                )
+            )
+            if existing and len(existing.maps) > len(existing):
+                raise _exception.GrammarError(f'Colliding base classes in schema {name}')
+            for key, field in namespace.items():
+                if not isinstance(field, _struct.Field):
+                    continue
+                if not field.name:
+                    namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
+                if field.name in existing and existing[field.name] != key:
+                    raise _exception.GrammarError(f'Colliding field name {field.name} in schema {name}')
+                existing[field.name] = key
+            cls = super().__new__(mcs, name, bases, namespace)
+            cls.__qualname__ = f'{name}.schema'
+            return cls
+
+        def __hash__(cls):
+            # pylint: disable=not-an-iterable
+            return functools.reduce(operator.xor, (hash(f) for f in cls), 0)
+
+        def __eq__(cls, other: 'dsl.Source.Schema'):
+            return len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
+
+        def __len__(cls):
+            return sum(1 for _ in cls)  # pylint: disable=not-an-iterable
+
+        def __repr__(cls):
+            return f'{cls.__module__}:{cls.__qualname__}'
+
+        @functools.cache
+        def __getitem__(cls, name: str) -> 'dsl.Field':
+            try:
+                return getattr(cls, name)
+            except AttributeError:
+                for field in cls:  # pylint: disable=not-an-iterable
+                    if name == field.name:
+                        return field
+            raise KeyError(f'Unknown field {name}')
+
+        def __iter__(cls) -> typing.Iterator['dsl.Field']:
+            return iter(
+                {
+                    k: f
+                    for c in reversed(inspect.getmro(cls))
+                    for k, f in c.__dict__.items()
+                    if isinstance(f, _struct.Field)
+                }.values()
+            )
+
+    copyreg.pickle(
+        Schema,
+        lambda s: (
+            Source.Schema,
+            (s.__name__, s.__bases__, {k: f for k, f in s.__dict__.items() if isinstance(f, _struct.Field)}),
+        ),
+    )
+
     class Visitor:
         """Source visitor."""
 
-        def visit_source(self, source: 'Source') -> None:  # pylint: disable=unused-argument, no-self-use
+        def visit_source(self, source: 'dsl.Source') -> None:  # pylint: disable=unused-argument
             """Generic source hook.
 
             Args:
                 source: Source instance to be visited.
             """
 
-        def visit_table(self, source: 'Table') -> None:
+        def visit_table(self, source: 'dsl.Table') -> None:
             """Table hook.
 
             Args:
@@ -66,7 +141,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             """
             self.visit_source(source)
 
-        def visit_reference(self, source: 'Reference') -> None:
+        def visit_reference(self, source: 'dsl.Reference') -> None:
             """Reference hook.
 
             Args:
@@ -75,7 +150,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             source.instance.accept(self)
             self.visit_source(source)
 
-        def visit_join(self, source: 'Join') -> None:
+        def visit_join(self, source: 'dsl.Join') -> None:
             """Join hook.
 
             Args:
@@ -85,7 +160,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             source.right.accept(self)
             self.visit_source(source)
 
-        def visit_set(self, source: 'Set') -> None:
+        def visit_set(self, source: 'dsl.Set') -> None:
             """Set hook.
 
             Args:
@@ -95,7 +170,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             source.right.accept(self)
             self.visit_source(source)
 
-        def visit_query(self, source: 'Query') -> None:
+        def visit_query(self, source: 'dsl.Query') -> None:
             """Query hook.
 
             Args:
@@ -111,41 +186,39 @@ class Source(tuple, metaclass=abc.ABCMeta):
         return tuple(self)
 
     def __hash__(self):
-        return hash(self.__class__) ^ super().__hash__()
+        return hash(self.__class__.__module__) ^ hash(self.__class__.__qualname__) ^ super().__hash__()
 
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
 
-    @property
-    @abc.abstractmethod
-    def features(self) -> typing.Sequence['series.Feature']:
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Feature']:
         """Get the list of features supplied by this source.
 
         Returns:
             Sequence of supplying features.
         """
 
-    @property
-    @functools.lru_cache
-    def schema(self) -> type['_struct.Schema']:
+    @functools.cached_property
+    def schema(self) -> 'dsl.Source.Schema':
         """Get the schema type for this source.
 
         Returns:
             Schema type.
         """
-        return Table.Schema(
-            f'{self.__class__.__name__}Schema',
+        return self.Schema(
+            self.__class__.__name__,
             (_struct.Schema.schema,),
             {(c.name or f'_{i}'): _struct.Field(c.kind, c.name) for i, c in enumerate(self.features)},
         )
 
-    def __getattr__(self, name: str) -> 'series.Feature':
+    def __getattr__(self, name: str) -> 'dsl.Feature':
         try:
             return self[name]
         except KeyError as err:
             raise AttributeError(f'Invalid feature {name}') from err
 
-    @functools.lru_cache
+    @functools.cache
     def __getitem__(self, name: typing.Union[int, str]) -> typing.Any:
         try:
             return super().__getitem__(name)
@@ -157,7 +230,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             raise RuntimeError(f'Inconsistent {name} lookup vs schema iteration') from err
 
     @abc.abstractmethod
-    def accept(self, visitor: Visitor) -> None:
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
         """Visitor acceptor.
 
         Args:
@@ -181,17 +254,17 @@ class Join(Source):
         def __repr__(self):
             return f'<{self.value}-join>'
 
-    left: 'Origin' = property(operator.itemgetter(0))
-    right: 'Origin' = property(operator.itemgetter(1))
-    condition: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
-    kind: 'Join.Kind' = property(operator.itemgetter(3))
+    left: 'dsl.Origin' = property(operator.itemgetter(0))
+    right: 'dsl.Origin' = property(operator.itemgetter(1))
+    condition: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
+    kind: 'dsl.Join.Kind' = property(operator.itemgetter(3))
 
     def __new__(
         cls,
-        left: 'Origin',
-        right: 'Origin',
-        condition: typing.Optional['series.Expression'] = None,
-        kind: typing.Optional[typing.Union['Join.Kind', str]] = None,
+        left: 'dsl.Origin',
+        right: 'dsl.Origin',
+        condition: typing.Optional['dsl.Predicate'] = None,
+        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
     ):
         kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
         if condition is not None:
@@ -207,12 +280,11 @@ class Join(Source):
     def __repr__(self):
         return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
 
-    @property
-    @functools.lru_cache
-    def features(self) -> typing.Sequence['series.Feature']:
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Feature']:
         return self.left.features + self.right.features
 
-    def accept(self, visitor: Source.Visitor) -> None:
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
         visitor.visit_join(self)
 
 
@@ -227,22 +299,21 @@ class Set(Source):
         INTERSECTION = 'intersection'
         DIFFERENCE = 'difference'
 
-    left: Source = property(operator.itemgetter(0))
-    right: Source = property(operator.itemgetter(1))
-    kind: 'Set.Kind' = property(operator.itemgetter(2))
+    left: 'dsl.Source' = property(operator.itemgetter(0))
+    right: 'dsl.Source' = property(operator.itemgetter(1))
+    kind: 'dsl.Set.Kind' = property(operator.itemgetter(2))
 
-    def __new__(cls, left: Source, right: Source, kind: 'Set.Kind'):
+    def __new__(cls, left: 'dsl.Source', right: 'dsl.Source', kind: 'dsl.Set.Kind'):
         return super().__new__(cls, left, right, kind)
 
     def __repr__(self):
         return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
 
-    @property
-    @functools.lru_cache
-    def features(self) -> typing.Sequence['series.Feature']:
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Feature']:
         return self.left.features + self.right.features
 
-    def accept(self, visitor: Source.Visitor) -> None:
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
         visitor.visit_set(self)
 
 
@@ -250,7 +321,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     """Base class for queryable sources."""
 
     @property
-    def query(self) -> 'Query':
+    def query(self) -> 'dsl.Query':
         """Return query instance of this queryable.
 
         Returns:
@@ -258,7 +329,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return Query(self)
 
-    def reference(self, name: typing.Optional[str] = None) -> 'Reference':
+    def reference(self, name: typing.Optional[str] = None) -> 'dsl.Reference':
         """Use an independent reference to this Source (ie for self-join conditions).
 
         Args:
@@ -270,7 +341,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         return Reference(self, name)
 
     @property
-    def instance(self) -> 'Source':
+    def instance(self) -> 'dsl.Source':
         """Return the source instance - which apart from the Reference type is the source itself.
 
         Returns:
@@ -278,7 +349,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self
 
-    def select(self, *features: 'series.Feature') -> 'Query':
+    def select(self, *features: 'dsl.Feature') -> 'dsl.Query':
         """Specify the output features to be provided (projection).
 
         Args:
@@ -289,7 +360,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.select(*features)
 
-    def where(self, condition: 'series.Expression') -> 'Query':
+    def where(self, condition: 'dsl.Predicate') -> 'dsl.Query':
         """Add a row-filtering condition that's evaluated before any aggregations.
 
         Repeated calls to ``.where`` combine all the conditions (logical AND).
@@ -302,7 +373,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.where(condition)
 
-    def having(self, condition: 'series.Expression') -> 'Query':
+    def having(self, condition: 'dsl.Predicate') -> 'dsl.Query':
         """Add a row-filtering condition that's applied to the evaluated aggregations.
 
         Repeated calls to ``.having`` combine all the conditions (logical AND).
@@ -318,9 +389,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def join(
         self,
         other: 'Origin',
-        condition: typing.Optional['series.Expression'] = None,
-        kind: typing.Optional[typing.Union[Join.Kind, str]] = None,
-    ) -> 'Query':
+        condition: typing.Optional['dsl.Predicate'] = None,
+        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
+    ) -> 'dsl.Query':
         """Join with another datasource.
 
         Args:
@@ -333,7 +404,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.join(other, condition, kind)
 
-    def groupby(self, *features: 'series.Operable') -> 'Query':
+    def groupby(self, *features: 'dsl.Operable') -> 'dsl.Query':
         """Aggregation specifiers.
 
         Args:
@@ -347,11 +418,11 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def orderby(
         self,
         *features: typing.Union[
-            'series.Operable',
-            typing.Union['series.Ordering.Direction', str],
-            tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+            'dsl.Operable',
+            typing.Union['dsl.Ordering.Direction', str],
+            tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
         ],
-    ) -> 'Query':
+    ) -> 'dsl.Query':
         """Ordering specifiers.
 
         Args:
@@ -362,7 +433,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.orderby(*features)
 
-    def limit(self, count: int, offset: int = 0) -> 'Query':
+    def limit(self, count: int, offset: int = 0) -> 'dsl.Query':
         """Restrict the result rows by its max count with an optional offset.
 
         Args:
@@ -374,7 +445,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.limit(count, offset)
 
-    def union(self, other: 'Queryable') -> 'Query':
+    def union(self, other: 'dsl.Queryable') -> 'dsl.Query':
         """Set union with the other source.
 
         Args:
@@ -385,7 +456,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.union(other)
 
-    def intersection(self, other: 'Queryable') -> 'Query':
+    def intersection(self, other: 'dsl.Queryable') -> 'dsl.Query':
         """Set intersection with the other source.
 
         Args:
@@ -396,7 +467,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.intersection(other)
 
-    def difference(self, other: 'Queryable') -> 'Query':
+    def difference(self, other: 'dsl.Queryable') -> 'dsl.Query':
         """Set difference with the other source.
 
         Args:
@@ -417,11 +488,11 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def features(self) -> typing.Sequence['series.Element']:
+    def features(self) -> typing.Sequence['dsl.Element']:
         """Tangible features are instances of series.Element.
 
         Returns:
-            Sequence of series.Field instances.
+            Sequence of dsl.Field instances.
         """
 
 
@@ -440,19 +511,18 @@ class Reference(Origin):
     def __repr__(self):
         return f'{self.name}=[{repr(self.instance)}]'
 
-    @property
-    @functools.lru_cache
-    def features(self) -> typing.Sequence['series.Element']:
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Element']:
         return tuple(series.Element(self, c.name) for c in self.instance.features)
 
     @property
-    def schema(self) -> type['_struct.Schema']:
+    def schema(self) -> Source.Schema:
         return self.instance.schema
 
-    def reference(self, name: typing.Optional[str] = None) -> 'Reference':
+    def reference(self, name: typing.Optional[str] = None) -> 'dsl.Reference':
         return Reference(self.instance, name)
 
-    def accept(self, visitor: Source.Visitor) -> None:
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
         """Visitor acceptor.
 
         Args:
@@ -467,77 +537,22 @@ class Table(Origin):
     This type can be used either as metaclass or as a base class to inherit from.
     """
 
-    class Schema(type):
-        """Meta class for schema type ensuring consistent hashing."""
-
-        def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
-            seen = set()
-            existing = collections.ChainMap(
-                *(
-                    {f.name: k}
-                    for b in bases
-                    if isinstance(b, Table.Schema)
-                    for c in reversed(inspect.getmro(b))
-                    for k, f in c.__dict__.items()
-                    if isinstance(f, _struct.Field) and k not in seen and not seen.add(k)
-                )
-            )
-            if existing and len(existing.maps) > len(existing):
-                raise _exception.GrammarError(f'Colliding base classes in schema {name}')
-            for key, field in namespace.items():
-                if not isinstance(field, _struct.Field):
-                    continue
-                if not field.name:
-                    namespace[key] = field = field.renamed(key)  # to normalize so that hash/eq is consistent
-                if field.name in existing and existing[field.name] != key:
-                    raise _exception.GrammarError(f'Colliding field name {field.name} in schema {name}')
-                existing[field.name] = key
-            return super().__new__(mcs, name, bases, namespace)
-
-        def __hash__(cls):
-            # pylint: disable=not-an-iterable
-            return functools.reduce(operator.xor, (hash(f) for f in cls), 0)
-
-        def __eq__(cls, other: type['_struct.Schema']):
-            return len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
-
-        def __len__(cls):
-            return sum(1 for _ in cls)  # pylint: disable=not-an-iterable
-
-        def __repr__(cls):
-            return f'{cls.__module__}:{cls.__qualname__}'
-
-        @functools.lru_cache
-        def __getitem__(cls, name: str) -> '_struct.Field':
-            try:
-                return getattr(cls, name)
-            except AttributeError:
-                for field in cls:  # pylint: disable=not-an-iterable
-                    if name == field.name:
-                        return field
-            raise KeyError(f'Unknown field {name}')
-
-        def __iter__(cls) -> typing.Iterator['_struct.Field']:
-            return iter(
-                {
-                    k: f
-                    for c in reversed(inspect.getmro(cls))
-                    for k, f in c.__dict__.items()
-                    if isinstance(f, _struct.Field)
-                }.values()
-            )
-
-    schema: type['_struct.Schema'] = property(operator.itemgetter(0))
+    schema: Source.Schema = property(operator.itemgetter(0))
 
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
-        schema: typing.Union[str, type['_struct.Schema']],
+        schema: typing.Union[str, Source.Schema],
         bases: typing.Optional[tuple[type]] = None,
         namespace: typing.Optional[dict[str, typing.Any]] = None,
     ):
         if isinstance(schema, str):  # used as metaclass
             if bases:
-                bases = (bases[0].schema,)
+                bases = tuple(b.schema for b in bases if isinstance(b, Table))
+                # strip the parent base class and namespace
+                mcs = type(schema, mcs.__bases__, {})  # pylint: disable=self-cls-assignment
+            elif not any(isinstance(a, _struct.Field) for a in namespace.values()):
+                # used as a base class definition - let's propagate the namespace
+                mcs = type(schema, (mcs,), namespace)  # pylint: disable=self-cls-assignment
             schema = mcs.Schema(schema, bases, namespace)
         elif bases or namespace:
             raise TypeError('Unexpected use of schema table')
@@ -546,12 +561,11 @@ class Table(Origin):
     def __repr__(self):
         return self.schema.__name__
 
-    @property
-    @functools.lru_cache
-    def features(self) -> typing.Sequence['series.Column']:
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Column']:
         return tuple(series.Column(self, f.name) for f in self.schema)
 
-    def accept(self, visitor: Source.Visitor) -> None:
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
         visitor.visit_table(self)
 
 
@@ -559,32 +573,32 @@ class Query(Queryable):
     """Generic source descriptor."""
 
     source: Source = property(operator.itemgetter(0))
-    selection: tuple['series.Feature'] = property(operator.itemgetter(1))
-    prefilter: typing.Optional['series.Expression'] = property(operator.itemgetter(2))
-    grouping: tuple['series.Operable'] = property(operator.itemgetter(3))
-    postfilter: typing.Optional['series.Expression'] = property(operator.itemgetter(4))
-    ordering: tuple['series.Ordering'] = property(operator.itemgetter(5))
+    selection: tuple['dsl.Feature'] = property(operator.itemgetter(1))
+    prefilter: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
+    grouping: tuple['dsl.Operable'] = property(operator.itemgetter(3))
+    postfilter: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(4))
+    ordering: tuple['dsl.Ordering'] = property(operator.itemgetter(5))
     rows: typing.Optional[Rows] = property(operator.itemgetter(6))
 
     def __new__(
         cls,
         source: Source,
-        selection: typing.Optional[typing.Iterable['series.Feature']] = None,
-        prefilter: typing.Optional['series.Expression'] = None,
-        grouping: typing.Optional[typing.Iterable['series.Operable']] = None,
-        postfilter: typing.Optional['series.Expression'] = None,
+        selection: typing.Optional[typing.Iterable['dsl.Feature']] = None,
+        prefilter: typing.Optional['dsl.Predicate'] = None,
+        grouping: typing.Optional[typing.Iterable['dsl.Operable']] = None,
+        postfilter: typing.Optional['dsl.Predicate'] = None,
         ordering: typing.Optional[
             typing.Sequence[
                 typing.Union[
-                    'series.Operable',
-                    typing.Union['series.Ordering.Direction', str],
-                    tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+                    'dsl.Operable',
+                    typing.Union['dsl.Ordering.Direction', str],
+                    tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
                 ]
             ]
         ] = None,
         rows: typing.Optional[Rows] = None,
     ):
-        def ensure_subset(*features: 'series.Feature') -> typing.Sequence['series.Feature']:
+        def ensure_subset(*features: 'dsl.Feature') -> typing.Sequence['dsl.Feature']:
             """Ensure the provided features is a valid subset of the available source features.
 
             Args:
@@ -632,12 +646,11 @@ class Query(Queryable):
         return value
 
     @property
-    def query(self) -> 'Query':
+    def query(self) -> 'dsl.Query':
         return self
 
-    @property
-    @functools.lru_cache
-    def features(self) -> typing.Sequence['series.Feature']:
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Feature']:
         """Get the list of features supplied by this query.
 
         Returns:
@@ -645,18 +658,18 @@ class Query(Queryable):
         """
         return self.selection if self.selection else self.source.features
 
-    def accept(self, visitor: Source.Visitor) -> None:
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
         visitor.visit_query(self)
 
-    def select(self, *features: 'series.Feature') -> 'Query':
+    def select(self, *features: 'dsl.Feature') -> 'dsl.Query':
         return Query(self.source, features, self.prefilter, self.grouping, self.postfilter, self.ordering, self.rows)
 
-    def where(self, condition: 'series.Expression') -> 'Query':
+    def where(self, condition: 'dsl.Predicate') -> 'dsl.Query':
         if self.prefilter is not None:
             condition &= self.prefilter
         return Query(self.source, self.selection, condition, self.grouping, self.postfilter, self.ordering, self.rows)
 
-    def having(self, condition: 'series.Expression') -> 'Query':
+    def having(self, condition: 'dsl.Predicate') -> 'dsl.Query':
         if self.postfilter is not None:
             condition &= self.postfilter
         return Query(self.source, self.selection, self.prefilter, self.grouping, condition, self.ordering, self.rows)
@@ -664,9 +677,9 @@ class Query(Queryable):
     def join(
         self,
         other: Queryable,
-        condition: typing.Optional['series.Expression'] = None,
-        kind: typing.Optional[typing.Union[Join.Kind, str]] = None,
-    ) -> 'Query':
+        condition: typing.Optional['dsl.Predicate'] = None,
+        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
+    ) -> 'dsl.Query':
         return Query(
             Join(self.source, other, condition, kind),
             self.selection,
@@ -677,20 +690,20 @@ class Query(Queryable):
             self.rows,
         )
 
-    def groupby(self, *features: 'series.Operable') -> 'Query':
+    def groupby(self, *features: 'dsl.Operable') -> 'dsl.Query':
         return Query(self.source, self.selection, self.prefilter, features, self.postfilter, self.ordering, self.rows)
 
     def orderby(
         self,
         *features: typing.Union[
-            'series.Operable',
-            typing.Union['series.Ordering.Direction', str],
-            tuple['series.Operable', typing.Union['series.Ordering.Direction', str]],
+            'dsl.Operable',
+            typing.Union['dsl.Ordering.Direction', str],
+            tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
         ],
-    ) -> 'Query':
+    ) -> 'dsl.Query':
         return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, features, self.rows)
 
-    def limit(self, count: int, offset: int = 0) -> 'Query':
+    def limit(self, count: int, offset: int = 0) -> 'dsl.Query':
         return Query(
             self.source,
             self.selection,

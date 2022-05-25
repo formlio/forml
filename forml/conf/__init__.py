@@ -28,8 +28,7 @@ import typing
 import toml
 
 import forml
-from forml.lib import runner, sink
-from forml.lib.registry import filesystem
+from forml.provider import feed, gateway, inventory, registry, runner, sink
 
 
 class Parser(dict):
@@ -131,6 +130,8 @@ SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
 SECTION_SINK = 'SINK'
 SECTION_RUNNER = 'RUNNER'
+SECTION_INVENTORY = 'INVENTORY'
+SECTION_GATEWAY = 'GATEWAY'
 SECTION_TESTING = 'TESTING'
 OPT_LOGCFG = 'logcfg'
 OPT_TMPDIR = 'tmpdir'
@@ -150,10 +151,12 @@ OPT_EVAL = 'eval'
 DEFAULTS = {
     # all static defaults should go rather to the ./config.toml (in this package)
     OPT_TMPDIR: tempfile.gettempdir(),
-    SECTION_REGISTRY: {OPT_PATH: [filesystem.__name__]},
+    SECTION_REGISTRY: {OPT_PATH: [registry.__name__]},
     SECTION_RUNNER: {OPT_PATH: [runner.__name__]},
-    SECTION_FEED: {OPT_PATH: []},
+    SECTION_FEED: {OPT_PATH: [feed.__name__]},
     SECTION_SINK: {OPT_PATH: [sink.__name__]},
+    SECTION_INVENTORY: {OPT_PATH: [inventory.__name__]},
+    SECTION_GATEWAY: {OPT_PATH: [gateway.__name__]},
 }
 
 APPNAME = 'forml'

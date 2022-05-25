@@ -48,7 +48,7 @@ Components
 The serving capabilities are provided through a number of additional :doc:`platform components <platform>` as explained
 in the following sections.
 
-.. image:: images/serving-components.png
+.. image:: _static/images/serving-components.png
 
 Online Agent
 ''''''''''''
@@ -124,4 +124,4 @@ Offline Agent
 Offline agent is the backend service responsible for doing all the heavy processing of:
 
 * (incremental) *training* and *tuning* of new model generations (pushed to the :doc:`model registry<registry/index>`)
-* *evaluating* project performance (pushed to the `metrics DB`_)
+* *evaluating* project performance (pushed to the `PerfDB`_)

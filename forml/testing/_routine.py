@@ -20,6 +20,7 @@ Testing routines.
 """
 import abc
 import contextlib
+import io
 import logging
 import string
 import typing
@@ -27,8 +28,10 @@ import unittest
 
 from forml import flow
 from forml.conf.parsed import provider as provcfg
-from forml.runtime import facility as launchmod
 from forml.testing import _facility, _spec
+
+if typing.TYPE_CHECKING:
+    from forml import testing
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,13 +66,14 @@ class Test:
     def __init__(self, launcher: _facility.Launcher):
         self._launcher: _facility.Launcher = launcher
 
-    def __call__(self, suite: Suite) -> None:
-        launcher: typing.Optional[launchmod.Virtual.Builder] = self.init(suite)
-        if launcher:
-            with self.raises(suite):
-                self.matches(suite, self.test(launcher))
+    def __call__(self, suite: 'testing.Suite') -> None:
+        action: typing.Optional[_facility.Launcher.Action] = self.init(suite)
+        if action:
+            with contextlib.redirect_stderr(io.StringIO()) as stderr, self.raises(suite):
+                self.matches(suite, self.test(action))
+            LOGGER.debug('Captured output: %s', stderr.getvalue())
 
-    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
+    def init(self, suite: 'testing.Suite') -> _facility.Launcher.Action:
         """Test init phase.
 
         Args:
@@ -80,7 +84,7 @@ class Test:
         """
         return self._launcher(suite.__operator__)
 
-    def raises(self, suite: Suite) -> typing.ContextManager:  # pylint: disable=unused-argument, no-self-use
+    def raises(self, suite: 'testing.Suite') -> typing.ContextManager:  # pylint: disable=unused-argument, no-self-use
         """Context manager for wrapping raising assertions.
 
         Args:
@@ -91,7 +95,7 @@ class Test:
         """
         return contextlib.nullcontext()
 
-    def matches(self, suite: Suite, value: typing.Any) -> None:
+    def matches(self, suite: 'testing.Suite', value: typing.Any) -> None:
         """Context manager for wrapping raising assertions.
 
         Args:
@@ -99,11 +103,11 @@ class Test:
             value: Tested value..
         """
 
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
+    def test(self, action: _facility.Launcher.Action) -> typing.Any:
         """Test subject logic.
 
         Args:
-            launcher: Launcher instance.
+            action: Launcher action instance.
 
         Returns:
             Produced value.
@@ -113,11 +117,11 @@ class Test:
 class RaisableTest(Test):
     """Base test class for raising test cases."""
 
-    def __init__(self, launcher: _facility.Launcher, exception: _spec.Scenario.Exception):
+    def __init__(self, launcher: _facility.Launcher, exception: 'testing.Scenario.Exception'):
         super().__init__(launcher)
         self._exception: _spec.Scenario.Exception = exception
 
-    def raises(self, suite: Suite) -> typing.ContextManager:
+    def raises(self, suite: 'testing.Suite') -> typing.ContextManager:
         """Context manager for wrapping raising assertions.
 
         Args:
@@ -134,27 +138,46 @@ class RaisableTest(Test):
 class ReturnableTest(Test):
     """Base test class for returning test cases."""
 
-    def __init__(self, launcher: _facility.Launcher, output: _spec.Scenario.Output):
+    def __init__(self, launcher: _facility.Launcher, output: 'testing.Scenario.Output'):
         super().__init__(launcher)
         self._output: _spec.Scenario.Output = output
 
-    def matches(self, suite: Suite, value: typing.Any) -> None:
-        """Context manager for wrapping raising assertions.
+    def matches(self, suite: 'testing.Suite', value: typing.Any) -> None:
+        """Result matching entrypoint.
 
         Args:
             suite: Tested suite.
             value: Tested value.
         """
-        if self._output.matcher is not None:
-            suite.assertTrue(self._output.matcher(self._output.value, value))
+        self._assert(suite, self._output.value, value, self._output.matcher)
+
+    @classmethod
+    def _assert(
+        cls,
+        suite: 'testing.Suite',
+        expected: typing.Any,
+        actual: typing.Any,
+        matcher: typing.Optional[_spec.Matcher] = None,
+    ) -> None:
+        """Match assertion.
+
+        Args:
+            suite: Tested suite.
+            expected: Expected value.
+            actual: Actual value.
+            matcher: Optional matcher function.
+        """
+        msg = f'\nExpected: {expected}\nActual: {actual}'
+        if matcher is not None:
+            suite.assertTrue(matcher(expected, actual), msg)
         else:
-            suite.assertEqual(self._output.value, value)
+            suite.assertEqual(expected, actual, msg)
 
 
 class TestInitRaises(RaisableTest, Test):
     """Test composite."""
 
-    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
+    def init(self, suite: 'testing.Suite') -> _facility.Launcher.Action:
         with self.raises(suite):
             return super().init(suite)
 
@@ -162,8 +185,8 @@ class TestInitRaises(RaisableTest, Test):
 class PlainApplyTest(Test):
     """Testcase logic."""
 
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
-        return launcher.apply()
+    def test(self, action: _facility.Launcher.Action) -> typing.Any:
+        return action.apply()
 
 
 class TestPlainApplyReturns(ReturnableTest, PlainApplyTest):
@@ -177,24 +200,39 @@ class TestPlainApplyRaises(RaisableTest, PlainApplyTest):
 class StateTrainTest(Test):
     """Testcase logic."""
 
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
-        return launcher.train()
+    def test(self, action: _facility.Launcher.Action) -> typing.Any:
+        return action.train_return()
+
+
+class TestStateTrainReturns(ReturnableTest, StateTrainTest):
+    """Test composite."""
+
+    @classmethod
+    def _assert(
+        cls,
+        suite: 'testing.Suite',
+        expected: tuple[flow.Features, flow.Labels],
+        actual: tuple[flow.Features, flow.Labels],
+        matcher: typing.Optional[typing.Union[_spec.Matcher, tuple[_spec.Matcher, _spec.Matcher]]] = None,
+    ) -> None:
+        if not isinstance(matcher, typing.Sequence):
+            matcher = matcher, matcher
+        super()._assert(suite, expected[0], actual[0], matcher[0])
+        if expected[1] is not None:
+            super()._assert(suite, expected[1], actual[1], matcher[1])
 
 
 class TestStateTrainRaises(RaisableTest, StateTrainTest):
     """Test composite."""
 
 
-class StateApplyTest(Test):
+class StateApplyTest(PlainApplyTest):
     """Testcase logic."""
 
-    def init(self, suite: Suite) -> launchmod.Virtual.Builder:
+    def init(self, suite: 'testing.Suite') -> _facility.Launcher.Action:
         launcher = super().init(suite)
-        launcher.train()
+        launcher.train_call()
         return launcher
-
-    def test(self, launcher: launchmod.Virtual.Builder) -> typing.Any:
-        return launcher.apply()
 
 
 class TestStateApplyReturns(ReturnableTest, StateApplyTest):
@@ -208,13 +246,13 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine."""
 
-    def __init__(self, name: str, scenario: _spec.Scenario, launcher: provcfg.Runner = provcfg.Runner.default):
+    def __init__(self, name: str, scenario: 'testing.Scenario', launcher: provcfg.Runner = provcfg.Runner.default):
         self._name: str = name
         launcher = _facility.Launcher(scenario.params, scenario.input, launcher)
         self._test: Test = self.select(scenario, launcher)
 
     @staticmethod
-    def select(scenario: _spec.Scenario, launcher: _facility.Launcher) -> Test:
+    def select(scenario: 'testing.Scenario', launcher: _facility.Launcher) -> Test:
         """Selecting and setting up the test implementation for given scenario.
 
         Args:
@@ -234,11 +272,13 @@ class Case:
             return TestStateApplyRaises(launcher, scenario.exception)
         if scenario.outcome is _spec.Scenario.Outcome.PLAINAPPLY_RETURNS:
             return TestPlainApplyReturns(launcher, scenario.output)
+        if scenario.outcome is _spec.Scenario.Outcome.STATETRAIN_RETURNS:
+            return TestStateTrainReturns(launcher, scenario.output)
         if scenario.outcome is _spec.Scenario.Outcome.STATEAPPLY_RETURNS:
             return TestStateApplyReturns(launcher, scenario.output)
         raise RuntimeError('Unexpected scenario outcome')
 
-    def __get__(self, suite: Suite, cls):
+    def __get__(self, suite: 'testing.Suite', cls):
         def case():
             """Bound routine representation."""
             LOGGER.debug('Testing %s[%s] case', suite, self._name)
@@ -248,7 +288,7 @@ class Case:
         return case
 
 
-def operator(subject: type[flow.Operator]) -> type[Suite]:
+def operator(subject: type[flow.Operator]) -> type['testing.Suite']:
     """Operator base class generator.
 
     Args:

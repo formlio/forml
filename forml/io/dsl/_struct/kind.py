@@ -22,6 +22,7 @@ import collections
 import datetime
 import decimal
 import inspect
+import numbers
 import operator
 import typing
 
@@ -78,8 +79,8 @@ class Any(metaclass=Meta):
 
     @property
     @abc.abstractmethod
-    def __native__(self) -> Native:
-        """Native python type representing this kind.
+    def __type__(self) -> type[Native]:
+        """Native python supertype representing this kind.
 
         Returns:
             Native type.
@@ -146,54 +147,56 @@ class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
 class Numeric(Primitive, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Numeric data type base class."""
 
+    __type__ = numbers.Number
+
 
 class Boolean(Primitive):
     """Boolean data type class."""
 
-    __native__ = bool
-    __cardinality__ = 2
+    __type__ = bool
+    __cardinality__ = 0
 
 
 class Integer(Numeric):
     """Integer data type class."""
 
-    __native__ = int
+    __type__ = numbers.Integral
     __cardinality__ = 1
 
 
 class Float(Numeric):
     """Float data type class."""
 
-    __native__ = float
+    __type__ = numbers.Real
     __cardinality__ = 2
 
 
 class Decimal(Numeric):
     """Decimal data type class."""
 
-    __native__ = decimal.Decimal
-    __cardinality__ = 3
+    __type__ = decimal.Decimal
+    __cardinality__ = 1
 
 
 class String(Primitive):
     """String data type class."""
 
-    __native__ = str
+    __type__ = str
     __cardinality__ = 1
 
 
 class Date(Primitive):
     """Date data type class."""
 
-    __native__ = datetime.date
-    __cardinality__ = 1
+    __type__ = datetime.date
+    __cardinality__ = 2
 
 
 class Timestamp(Date):
     """Timestamp data type class."""
 
-    __native__ = datetime.datetime
-    __cardinality__ = 2
+    __type__ = datetime.datetime
+    __cardinality__ = 1
 
 
 class Compound(Any, tuple):
@@ -219,7 +222,7 @@ class Array(Compound):
     """Array data type class."""
 
     element: Any = property(operator.itemgetter(0))
-    __native__ = list
+    __type__ = typing.Sequence
 
     def __new__(cls, element: Any):
         return tuple.__new__(cls, [element])
@@ -230,7 +233,7 @@ class Map(Compound):
 
     key: Any = property(operator.itemgetter(0))
     value: Any = property(operator.itemgetter(1))
-    __native__ = dict
+    __type__ = typing.Mapping
 
     def __new__(cls, key: Any, value: Any):
         return tuple.__new__(cls, [key, value])
@@ -248,7 +251,7 @@ class Struct(Compound):
         def __hash__(self):
             return hash(self.__class__) ^ super().__hash__()
 
-    __native__ = object
+    __type__ = object
 
     def __new__(cls, **element: Any):
         return tuple.__new__(cls, [cls.Element(n, k) for n, k in element.items()])
@@ -277,8 +280,8 @@ def reflect(value: typing.Any) -> Any:
         first = type(next(seq))
         return all(isinstance(i, first) for i in seq)
 
-    for primitive in sorted(Primitive.__subkinds__, key=lambda k: k.__cardinality__, reverse=True):
-        if isinstance(value, primitive.__native__):
+    for primitive in sorted(Primitive.__subkinds__, key=lambda k: k.__cardinality__):
+        if isinstance(value, primitive.__type__):
             return primitive()
     if value:
         if isinstance(value, typing.Sequence):

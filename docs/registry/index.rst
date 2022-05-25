@@ -24,15 +24,15 @@ ForML can use multiple registries built upon different technologies. The availab
 
 .. autosummary::
 
-   forml.lib.registry.filesystem.posix
-   forml.lib.registry.filesystem.virtual
-   forml.lib.registry.mlflow
+   forml.provider.registry.filesystem.posix
+   forml.provider.registry.filesystem.virtual
+   forml.provider.registry.mlflow
 
 
 API
 ---
 
-.. autoclass:: forml.runtime.asset.Registry
+.. autoclass:: forml.io.asset.Registry
     :members:
 
 

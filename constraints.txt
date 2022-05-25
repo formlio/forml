@@ -6,25 +6,34 @@
 #
 alabaster==0.7.12
     # via sphinx
-alembic==1.7.6
+alembic==1.7.7
     # via mlflow
-astroid==2.9.3
+anyio==3.6.1
+    # via starlette
+asgiref==3.5.2
+    # via uvicorn
+astroid==2.11.5
     # via pylint
 attrs==21.4.0
     # via
     #   flake8-bugbear
+    #   jsonschema
     #   pytest
-babel==2.9.1
+babel==2.10.1
     # via sphinx
-black==22.1.0
+beautifulsoup4==4.11.1
+    # via nbconvert
+black==22.3.0
     # via forml (setup.py)
-certifi==2021.10.8
+bleach==5.0.0
+    # via nbconvert
+certifi==2022.5.18.1
     # via requests
 cfgv==3.3.1
     # via pre-commit
 charset-normalizer==2.0.12
     # via requests
-click==8.0.4
+click==8.1.3
     # via
     #   black
     #   databricks-cli
@@ -33,42 +42,56 @@ click==8.0.4
     #   mlflow
     #   pip-tools
     #   typer
-cloudpickle==2.0.0
+    #   uvicorn
+cloudpickle==2.1.0
     # via
     #   dask
     #   forml (setup.py)
     #   mlflow
-coverage==6.3.2
+coverage==6.4
     # via pytest-cov
-dask==2022.2.1
+dask==2022.5.1
     # via forml (setup.py)
-databricks-cli==0.16.4
+databricks-cli==0.16.6
     # via mlflow
+defusedxml==0.7.1
+    # via nbconvert
+dill==0.3.5.1
+    # via pylint
 distlib==0.3.4
     # via virtualenv
 docker==5.0.3
     # via mlflow
 docutils==0.17.1
     # via
+    #   nbsphinx
     #   sphinx
     #   sphinx-rtd-theme
 entrypoints==0.4
-    # via mlflow
-filelock==3.6.0
+    # via
+    #   jupyter-client
+    #   mlflow
+    #   nbconvert
+fastjsonschema==2.15.3
+    # via nbformat
+filelock==3.7.0
     # via virtualenv
 flake8==4.0.1
     # via
     #   flake8-bugbear
     #   flake8-colors
-flake8-bugbear==22.1.11
+    #   flake8-typing-imports
+flake8-bugbear==22.4.25
     # via forml (setup.py)
 flake8-colors==0.1.9
     # via forml (setup.py)
-flask==2.0.3
+flake8-typing-imports==1.12.0
+    # via forml (setup.py)
+flask==2.1.2
     # via
     #   mlflow
     #   prometheus-flask-exporter
-fsspec==2022.2.0
+fsspec==2022.5.0
     # via dask
 future==0.18.2
     # via pyhive
@@ -76,20 +99,25 @@ gitdb==4.0.9
     # via gitpython
 gitpython==3.1.27
     # via mlflow
-graphviz==0.19.1
+graphviz==0.20
     # via forml (setup.py)
 greenlet==1.1.2
     # via sqlalchemy
 gunicorn==20.1.0
     # via mlflow
-identify==2.4.11
+h11==0.13.0
+    # via uvicorn
+identify==2.5.1
     # via pre-commit
 idna==3.3
-    # via requests
+    # via
+    #   anyio
+    #   requests
 imagesize==1.3.0
     # via sphinx
-importlib-metadata==4.11.2
+importlib-metadata==4.11.4
     # via
+    #   flask
     #   mlflow
     #   sphinx
 iniconfig==1.1.1
@@ -98,58 +126,92 @@ isort==5.10.1
     # via
     #   forml (setup.py)
     #   pylint
-itsdangerous==2.1.0
+itsdangerous==2.1.2
     # via flask
-jinja2==3.0.3
+jinja2==3.1.2
     # via
     #   flask
+    #   nbconvert
+    #   nbsphinx
     #   sphinx
 joblib==1.1.0
+    # via scikit-learn
+jsonschema==4.5.1
+    # via nbformat
+jupyter-client==7.3.1
+    # via nbclient
+jupyter-core==4.10.0
     # via
-    #   forml (setup.py)
-    #   scikit-learn
+    #   jupyter-client
+    #   nbconvert
+    #   nbformat
+jupyterlab-pygments==0.2.2
+    # via nbconvert
 lazy-object-proxy==1.7.1
     # via astroid
-libcst==0.3.23
+libcst==0.4.3
     # via pycln
-locket==0.2.1
+locket==1.0.0
     # via partd
-mako==1.1.6
+mako==1.2.0
     # via alembic
-markupsafe==2.1.0
+markupsafe==2.1.1
     # via
     #   jinja2
     #   mako
+    #   nbconvert
 mccabe==0.6.1
     # via
     #   flake8
     #   pylint
-mlflow==1.24.0
+mistune==0.8.4
+    # via nbconvert
+mlflow==1.26.0
     # via forml (setup.py)
 mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
+nbclient==0.6.3
+    # via nbconvert
+nbconvert==6.5.0
+    # via nbsphinx
+nbformat==5.4.0
+    # via
+    #   nbclient
+    #   nbconvert
+    #   nbsphinx
+nbsphinx==0.8.8
+    # via forml (setup.py)
+nest-asyncio==1.5.5
+    # via
+    #   jupyter-client
+    #   nbclient
 nodeenv==1.6.0
     # via pre-commit
-numpy==1.22.3
+numpy==1.22.4
     # via
     #   forml (setup.py)
     #   mlflow
     #   pandas
     #   scikit-learn
     #   scipy
+oauthlib==3.2.0
+    # via databricks-cli
 packaging==21.3
     # via
     #   dask
     #   forml (setup.py)
     #   mlflow
+    #   nbconvert
     #   pytest
     #   sphinx
-pandas==1.4.1
+pandas==1.4.2
     # via
     #   forml (setup.py)
     #   mlflow
+pandocfilters==1.5.0
+    # via nbconvert
 partd==1.2.0
     # via dask
 pathspec==0.9.0
@@ -158,9 +220,9 @@ pathspec==0.9.0
     #   pycln
 pep517==0.12.0
     # via pip-tools
-pip-tools==6.5.1
+pip-tools==6.6.2
     # via forml (setup.py)
-platformdirs==2.5.1
+platformdirs==2.5.2
     # via
     #   black
     #   pylint
@@ -169,50 +231,63 @@ pluggy==1.0.0
     # via pytest
 pockets==0.9.1
     # via sphinxcontrib-napoleon
-pre-commit==2.17.0
+pre-commit==2.19.0
     # via forml (setup.py)
-prometheus-client==0.13.1
+prometheus-client==0.14.1
     # via prometheus-flask-exporter
-prometheus-flask-exporter==0.19.0
+prometheus-flask-exporter==0.20.1
     # via mlflow
-protobuf==3.19.4
+protobuf==3.20.1
     # via mlflow
 py==1.11.0
     # via pytest
-pycln==1.2.4
+pycln==1.3.3
     # via forml (setup.py)
 pycodestyle==2.8.0
     # via flake8
 pyflakes==2.4.0
     # via flake8
-pygments==2.11.2
-    # via sphinx
+pygments==2.12.0
+    # via
+    #   nbconvert
+    #   sphinx
 pyhive==0.6.5
     # via forml (setup.py)
-pylint==2.12.2
+pyjwt==2.4.0
+    # via databricks-cli
+pylint==2.13.9
     # via forml (setup.py)
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via packaging
-pytest==7.0.1
-    # via pytest-cov
+pyrsistent==0.18.1
+    # via jsonschema
+pytest==7.1.2
+    # via
+    #   pytest-asyncio
+    #   pytest-cov
+pytest-asyncio==0.18.3
+    # via forml (setup.py)
 pytest-cov==3.0.0
     # via forml (setup.py)
 python-dateutil==2.8.2
     # via
+    #   jupyter-client
     #   pandas
     #   pyhive
-pytz==2021.3
+pytz==2022.1
     # via
     #   babel
     #   mlflow
     #   pandas
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   dask
     #   libcst
     #   mlflow
     #   pre-commit
     #   pycln
+pyzmq==23.0.0
+    # via jupyter-client
 querystring-parser==1.2.4
     # via mlflow
 requests==2.27.1
@@ -221,14 +296,15 @@ requests==2.27.1
     #   docker
     #   mlflow
     #   sphinx
-scikit-learn==1.0.2
+scikit-learn==1.1.1
     # via forml (setup.py)
-scipy==1.8.0
+scipy==1.8.1
     # via
     #   mlflow
     #   scikit-learn
 six==1.16.0
     # via
+    #   bleach
     #   databricks-cli
     #   pockets
     #   python-dateutil
@@ -237,16 +313,30 @@ six==1.16.0
     #   virtualenv
 smmap==5.0.0
     # via gitdb
+sniffio==1.2.0
+    # via anyio
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==4.4.0
+soupsieve==2.3.2.post1
+    # via beautifulsoup4
+sphinx==4.5.0
     # via
     #   forml (setup.py)
+    #   nbsphinx
+    #   sphinx-autodoc-typehints
+    #   sphinx-copybutton
     #   sphinx-rtd-theme
+    #   sphinxcontrib-details-directive
+sphinx-autodoc-typehints==1.18.1
+    # via forml (setup.py)
+sphinx-copybutton==0.5.0
+    # via forml (setup.py)
 sphinx-rtd-theme==1.0.0
     # via forml (setup.py)
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
+sphinxcontrib-details-directive==0.1.0
+    # via forml (setup.py)
 sphinxcontrib-devhelp==1.0.2
     # via sphinx
 sphinxcontrib-htmlhelp==2.0.0
@@ -259,57 +349,78 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
-sqlalchemy==1.4.32
+sqlalchemy==1.4.36
     # via
     #   alembic
     #   forml (setup.py)
     #   mlflow
 sqlparse==0.4.2
     # via mlflow
+starlette==0.20.0
+    # via forml (setup.py)
 tabulate==0.8.9
     # via databricks-cli
 threadpoolctl==3.1.0
     # via scikit-learn
+tinycss2==1.1.1
+    # via nbconvert
 toml==0.10.2
     # via
     #   forml (setup.py)
     #   pre-commit
     #   pycln
-    #   pylint
 tomli==2.0.1
     # via
     #   black
     #   coverage
     #   pep517
+    #   pylint
     #   pytest
 toolz==0.11.2
     # via
     #   dask
     #   partd
-typer==0.4.0
+tornado==6.1
+    # via jupyter-client
+traitlets==5.2.1.post0
+    # via
+    #   jupyter-client
+    #   jupyter-core
+    #   nbclient
+    #   nbconvert
+    #   nbformat
+    #   nbsphinx
+typer==0.4.1
     # via pycln
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   astroid
     #   black
     #   libcst
     #   pylint
+    #   starlette
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-urllib3==1.26.8
+urllib3==1.26.9
     # via requests
-virtualenv==20.13.3
+uvicorn==0.17.6
+    # via forml (setup.py)
+virtualenv==20.14.1
     # via pre-commit
-websocket-client==1.3.1
+webencodings==0.5.1
+    # via
+    #   bleach
+    #   tinycss2
+websocket-client==1.3.2
     # via docker
-werkzeug==2.0.3
+werkzeug==2.1.2
     # via flask
 wheel==0.37.1
     # via pip-tools
-wrapt==1.13.3
+wrapt==1.14.1
     # via astroid
-zipp==3.7.0
+zipp==3.8.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -35,8 +35,11 @@ import collections
 import typing
 import uuid
 
-from .. import _exception, _task
+from .. import _exception
 from . import port
+
+if typing.TYPE_CHECKING:
+    from forml import flow
 
 
 class Visitor:
@@ -187,16 +190,16 @@ class Worker(Atomic):
     class Group(set):
         """Container for holding all forked workers."""
 
-        def __init__(self, spec: _task.Spec):
+        def __init__(self, spec: 'flow.Spec'):
             super().__init__()
-            self.spec: _task.Spec = spec
+            self.spec: 'flow.Spec' = spec
             self.uid: uuid.UUID = uuid.uuid4()
 
         def __repr__(self):
             return f'{self.spec}[uid={self.uid}]'
 
     @typing.overload
-    def __init__(self, group_or_spec: _task.Spec, /, szin: int, szout: int):
+    def __init__(self, group_or_spec: 'flow.Spec', /, szin: int, szout: int):
         """Constructor for a new independent worker."""
 
     @typing.overload
@@ -214,7 +217,7 @@ class Worker(Atomic):
         return repr(self._group)
 
     @property
-    def spec(self) -> _task.Spec:
+    def spec(self) -> 'flow.Spec':
         """Task spec in this worker.
 
         Returns:
@@ -263,6 +266,15 @@ class Worker(Atomic):
         return self._group.spec.actor.is_stateful()
 
     @property
+    def derived(self) -> bool:
+        """Check this node is a state receiver in a trained group.
+
+        Returns:
+            True if persistent.
+        """
+        return self.stateful and any(n.trained for n in self.group if n is not self)
+
+    @property
     def gid(self) -> uuid.UUID:
         """Return the group ID shared by all forks of this worker.
 
@@ -290,10 +302,10 @@ class Worker(Atomic):
         Returns:
             Self node.
         """
-        if any(f.trained for f in self._group):
-            raise _exception.TopologyError('Fork train collision')
         if not self.stateful:
             raise _exception.TopologyError('Stateless node training')
+        if any(f.trained for f in self._group):
+            raise _exception.TopologyError('Fork train collision')
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
@@ -317,7 +329,7 @@ class Worker(Atomic):
         return Worker(self._group, self.szin, self.szout)
 
     @classmethod
-    def fgen(cls, spec: _task.Spec, szin: int, szout: int) -> typing.Generator['Worker', None, None]:
+    def fgen(cls, spec: 'flow.Spec', szin: int, szout: int) -> typing.Generator['Worker', None, None]:
         """Generator producing forks of the same node.
 
         Args:

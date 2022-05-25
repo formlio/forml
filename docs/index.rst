@@ -96,4 +96,3 @@ Content
     registry/index
     runner/index
     sink
-    serving

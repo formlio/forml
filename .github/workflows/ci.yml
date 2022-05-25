@@ -20,9 +20,12 @@ name: CI Build
 
 on:
   push:
-    branches: ['main']
+    branches:
+    - "main"
+    - "develop"
   pull_request:
-    branches: ['main']
+    branches:
+    - "main"
 
 
 jobs:
@@ -31,26 +34,28 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version:
+        - "3.9"
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
+      uses: actions/checkout@v2
+    - name: "Set up Python ${{ matrix.python-version }}"
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: pip install --upgrade tox
-    - name: Run tests
+    - name: "Install dependencies"
       run: |
-        tox
-    - name: Upload test results
+        sudo apt-get install graphviz
+        pip install --upgrade tox
+    - name: "Run tests"
+      run: tox -e clean,lint,py39,coverage
+    - name: "Upload test results"
       uses: actions/upload-artifact@v2
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: junit.xml
-      if: ${{ always() }}
-    - name: Upload coverage results
+    - name: "Upload coverage results"
       uses: codecov/codecov-action@v1
       with:
         name: codecov-forml
@@ -58,3 +63,4 @@ jobs:
         directory: ./htmlcov
         flags: unittests
         fail_ci_if_error: true
+      if: github.ref == 'refs/heads/main'

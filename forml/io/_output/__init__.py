@@ -20,15 +20,14 @@ IO sink utils.
 """
 import typing
 
-from forml import _provider as provmod
-from forml import flow
+from forml import flow, provider
 from forml.conf.parsed import provider as provcfg
 
 from .. import dsl
-from . import _consumer, publish
+from . import _consumer, commit
 
 
-class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.path):
+class Sink(provider.Service, default=provcfg.Sink.default, path=provcfg.Sink.path):
     """Sink is an implementation of a specific data consumer."""
 
     Writer = _consumer.Writer
@@ -36,17 +35,17 @@ class Sink(provmod.Interface, default=provcfg.Sink.default, path=provcfg.Sink.pa
     def __init__(self, **writerkw):
         self._writerkw: dict[str, typing.Any] = writerkw
 
-    def save(self, schema: dsl.Schema) -> flow.Trunk:
+    def save(self, schema: typing.Optional[dsl.Source.Schema]) -> flow.Trunk:
         """Provide a pipeline composable segment implementing the publish action.
 
         Returns:
             Pipeline segment.
         """
-        publisher: flow.Composable = publish.Operator(publish.Driver.spec(self.consumer(schema, **self._writerkw)))
+        publisher: flow.Composable = commit.Operator(commit.Driver.spec(self.consumer(schema, **self._writerkw)))
         return publisher.expand()
 
     @classmethod
-    def consumer(cls, schema: dsl.Schema, **kwargs: typing.Any) -> publish.Consumer:
+    def consumer(cls, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any) -> commit.Consumer:
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

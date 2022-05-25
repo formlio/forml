@@ -23,31 +23,52 @@ import os
 
 import setuptools
 
-EXTRAS_DASK = {'cloudpickle', 'dask'}
+EXTRAS_DASK = {'dask'}
 
 EXTRAS_DEV = {
     'black',
     'flake8-colors',
     'flake8-bugbear',
+    'flake8-typing-imports',
     'isort',
     'pip-tools',
     'pre-commit',
     'pycln',
     'pylint',
     'pytest-cov',
+    'pytest-asyncio',
 }
 
-EXTRAS_DOCS = {'sphinx', 'sphinxcontrib-napoleon', 'sphinx_rtd_theme'}
+EXTRAS_DOCS = {
+    'sphinx',
+    'sphinx-autodoc-typehints',
+    'sphinx-copybutton',
+    'sphinx_rtd_theme',
+    'sphinxcontrib-details-directive',
+    'sphinxcontrib-napoleon',
+    'nbsphinx',
+}
 
-EXTRAS_FLOW = {'pandas', 'scikit-learn'}
+EXTRAS_PIPELINE = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
 EXTRAS_MLFLOW = {'mlflow'}
 
+EXTRAS_REST = {'starlette', 'uvicorn'}
+
 EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
-EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOCS | EXTRAS_FLOW | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_SQL
+EXTRAS_ALL = (
+    EXTRAS_DASK
+    | EXTRAS_DEV
+    | EXTRAS_DOCS
+    | EXTRAS_PIPELINE
+    | EXTRAS_MLFLOW
+    | EXTRAS_GRAPHVIZ
+    | EXTRAS_REST
+    | EXTRAS_SQL
+)
 
 setuptools.setup(
     name='forml',
@@ -61,15 +82,16 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
     setup_requires=['setuptools', 'wheel', 'toml'],
-    install_requires=['click', 'joblib', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
+    install_requires=['click', 'cloudpickle', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
     extras_require={
         'all': EXTRAS_ALL,
         'dask': EXTRAS_DASK,
         'dev': EXTRAS_DEV,
         'docs': EXTRAS_DOCS,
-        'flow': EXTRAS_FLOW,
+        'pipeline': EXTRAS_PIPELINE,
         'graphviz': EXTRAS_GRAPHVIZ,
         'mlflow': EXTRAS_MLFLOW,
+        'rest': EXTRAS_REST,
         'sql': EXTRAS_SQL,
     },
     entry_points={
@@ -79,12 +101,13 @@ setuptools.setup(
     },
     python_requires='>=3.9',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: System :: Distributed Computing',
     ],

@@ -19,9 +19,13 @@
 Struct tests.
 """
 # pylint: disable=no-self-use
-import cloudpickle
+import typing
 
-from forml.io import dsl
+import cloudpickle
+import numpy
+import pytest
+
+from forml.io import dsl, layout
 
 
 class TestField:
@@ -39,3 +43,25 @@ class TestSchema:
         """Test schema serializability."""
         assert cloudpickle.loads(cloudpickle.dumps(student_table.schema)) == student_table.schema
         assert cloudpickle.loads(cloudpickle.dumps(student_table)) == student_table
+
+    def test_from_fields(self, student_table: dsl.Table):
+        """Test the programmatic schema assembly from fields."""
+        assert dsl.Schema.from_fields(*student_table.schema) == student_table.schema
+
+    @pytest.mark.parametrize(
+        'record, names, fields',
+        [
+            ('foo', [], [dsl.Field(dsl.String(), name='c0')]),
+            (1, ['bar'], [dsl.Field(dsl.Integer(), name='bar')]),
+            (numpy.float64(0), [], [dsl.Field(dsl.Float(), name='c0')]),
+            (['foo', 1], ['bar', 'baz'], [dsl.Field(dsl.String(), name='bar'), dsl.Field(dsl.Integer(), name='baz')]),
+            (
+                numpy.array([('foo', 1)], dtype='U21, int')[0],
+                ['bar'],
+                [dsl.Field(dsl.String(), name='bar'), dsl.Field(dsl.Integer(), name='c1')],
+            ),
+        ],
+    )
+    def test_from_record(self, record: layout.Native, names: typing.Sequence[str], fields: typing.Sequence[dsl.Any]):
+        """Test the schema inference."""
+        assert list(dsl.Schema.from_record(record, *names)) == fields  # pylint: disable=not-an-iterable

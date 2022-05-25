@@ -24,13 +24,13 @@ To install the pre-packaged version of ForML simply use ``pip``::
 
     pip install forml
 
-ForML has a number of optional features with their own dependencies which can be pulled in during the installation like
+ForML has a number of optional features with their own dependencies which can be pulled-in during the installation like
 this::
 
     pip install 'forml[sql,dask]'
 
 Some of the features might have their own binary dependencies that need to be resolved using a system-dependant way
-(ie using the OS package manager).
+(i.e. using the OS package manager).
 
 Dependency Constraints
 ----------------------
@@ -56,9 +56,13 @@ Extra Features
 +----------+---------------------------------------+----------------------------------------------------------------+
 | docs     | ``pip install 'forml[docs]'``         | Documentation publishing dependencies                          |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| flow     | ``pip install 'forml[flow]'``         | The standard operator and actor library shipped with ForML     |
+| pipeline | ``pip install 'forml[pipeline]'``     | Bunch of useful operators and actors shipped with ForML        |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | graphviz | ``pip install 'forml[graphviz]'``     | The Graphviz pseudo-runner (also requires ``graphviz`` binary) |
++----------+---------------------------------------+----------------------------------------------------------------+
+| mlflow   | ``pip install 'forml[mlflow]'``       | Model registry backed by the MLFlow Tracking server            |
++----------+---------------------------------------+----------------------------------------------------------------+
+| rest     | ``pip install 'forml[rest]'``         | RESTful serving gateway                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | sql      | ``pip install 'forml[sql]'``          | SQL reader dependencies                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+

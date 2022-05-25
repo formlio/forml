@@ -33,15 +33,15 @@ class TestSlicer:
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def features(project_descriptor: project.Descriptor) -> typing.Sequence[dsl.Feature]:
-        """Features descriptor fixture."""
-        return project_descriptor.source.extract.train.features
+    def features(project_components: project.Components) -> typing.Sequence[dsl.Feature]:
+        """Features components fixture."""
+        return project_components.source.extract.train.features
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def labels(project_descriptor: project.Descriptor) -> dsl.Feature:
-        """Labels descriptor fixture."""
-        value = project_descriptor.source.extract.labels
+    def labels(project_components: project.Components) -> dsl.Feature:
+        """Labels components fixture."""
+        value = project_components.source.extract.labels
         assert isinstance(value, dsl.Feature)
         return value
 
