@@ -45,7 +45,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: "Install dependencies"
-      run: pip install --upgrade tox
+      run: |
+        sudo apt-get install graphviz
+        pip install --upgrade tox
     - name: "Run tests"
       run: tox -e clean,lint,py39,coverage
     - name: "Upload test results"
