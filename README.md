@@ -32,8 +32,8 @@ ForML
 [![PyPI Version](https://img.shields.io/pypi/v/forml)](https://pypi.org/project/forml/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/forml)](https://pypi.org/project/forml/)
 
-[![Stars](https://img.shields.io/github/stars/formlio/forml?style=social)](https://github.com/formlio/forml/stargazers)
-[![Forks](https://img.shields.io/github/forks/formlio/forml?style=social)](https://github.com/formlio/forml/fork)
+[![Stars](https://img.shields.io/github/stars/formlio/forml)](https://github.com/formlio/forml/stargazers)
+[![Forks](https://img.shields.io/github/forks/formlio/forml)](https://github.com/formlio/forml/fork)
 [![Issues](https://img.shields.io/github/issues/formlio/forml)](https://github.com/formlio/forml/issues)
 [![Pull Requests](https://img.shields.io/github/issues-pr/formlio/forml)](https://github.com/formlio/forml/pulls)
 [![Contributors](https://img.shields.io/github/contributors/formlio/forml)](https://github.com/formlio/forml/graphs/contributors)
