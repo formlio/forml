@@ -13,5 +13,12 @@
     specific language governing permissions and limitations
     under the License.
 
-Filesystem Registry
-===================
+Pipeline Demos
+==============
+
+Mini
+----
+
+.. literalinclude:: ../../tutorials/demos/01mini.py
+  :language: python
+  :start-at: import

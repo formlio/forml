@@ -16,7 +16,7 @@
 ForML Documentation
 ===================
 
-ForML is a framework for researching, implementing and operating data science projects.
+ForML is a high-level framework for researching, implementing and operating data science projects.
 
 Use ForML to formally describe a data science problem as a composition of high-level operators. ForML expands your
 project into a task dependency graph specific to a given life-cycle phase and executes it using any of its supported
@@ -59,40 +59,53 @@ Resources
 * `PyPI Repository <https://pypi.org/project/forml/>`_
 
 
-Content
--------
+.. toctree::
+    :hidden:
+
+    Home <self>
+    license
+
 
 .. toctree::
-    :maxdepth: 2
+    :hidden:
     :caption: Getting Started
 
-    concept
-    license
     install
-    examples
-    tutorial
+    concept
+    tutorials/index
     faq
 
+
 .. toctree::
-    :maxdepth: 2
-    :caption: Implementor's Guide
+    :hidden:
+    :caption: Framework Manual
 
     project
-    lifecycle
-    workflow
-    io
-    dsl
-    interactive
-    operator
+    workflow/index
+    evaluation
+    pipeline
     testing
-    lib
+    application
+
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Operations Manual
+    :hidden:
+    :caption: Data Management
 
-    platform
-    feed
-    registry/index
-    runner/index
+    dsl
+    io
     sink
+    feed
+    registry
+    inventory
+
+
+.. toctree::
+    :hidden:
+    :caption: Runtime Operations
+
+    lifecycle
+    interactive
+    platform
+    runner
+    serving

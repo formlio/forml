@@ -28,7 +28,7 @@ setuptools.setup(
     name='forml-example-titanic',
     version='0.1.dev0',
     packages=setuptools.find_packages(include=['titanic*'], where=os.path.dirname(__file__)),
-    setup_requires=['forml', 'pytest-runner'],
+    setup_requires=['forml'],
     install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy'],
     distclass=project.Distribution,
 )

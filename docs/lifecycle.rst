@@ -13,8 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Lifecycle
-=========
+Lifecycle Actions
+=================
 
 Machine learning projects are operated in typical stages that are followed in a particular order. This pattern is what
 we call a *lifecycle*. ForML supports two specific lifecycles depending on the project stage.

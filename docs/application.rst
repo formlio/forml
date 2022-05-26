@@ -13,7 +13,5 @@
     specific language governing permissions and limitations
     under the License.
 
-Examples
-========
-
-See the ``/examples/demos/`` for a simple demo examples.
+Application
+===========

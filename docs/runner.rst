@@ -13,5 +13,28 @@
     specific language governing permissions and limitations
     under the License.
 
-Graphviz Runner
+Pipeline Runner
 ===============
+
+The main point of the :doc:`runtime platform <../platform>` is to run the :doc:`projects <../project>`. The specific
+implementation of a system that can :ref:`execute <concept-execution>` the project :doc:`lifecycle <../lifecycle>`
+based on its description (its *Task Dependency Graph* in particular) is called the *Runner*.
+
+
+API
+---
+
+.. autoclass:: forml.runtime.Runner
+    :members:
+
+
+Providers
+---------
+
+The available runner implementations are:
+
+.. autosummary::
+
+   forml.provider.runner.dask
+   forml.provider.runner.graphviz
+   forml.provider.runner.pyfunc

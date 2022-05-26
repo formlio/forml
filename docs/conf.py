@@ -14,12 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+"""
+Configuration file for the Sphinx documentation builder.
 
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# http://www.sphinx-doc.org/en/master/config
+This file only contains a selection of the most common options. For a full
+list see the documentation:
+http://www.sphinx-doc.org/en/master/config
+"""
+# pylint: disable=invalid-name
 
 # -- Path setup --------------------------------------------------------------
 
@@ -32,7 +34,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-import forml  # noqa: E402
+import forml  # pylint: disable=wrong-import-position; # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
@@ -54,7 +56,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
-    'sphinx_rtd_theme',
+    'sphinx_immaterial',
     'sphinx_copybutton',
     'sphinxcontrib.details.directive',
     'nbsphinx',
@@ -84,7 +86,7 @@ nitpicky = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_immaterial'
 
 # Set link name generated in the top bar.
 html_title = 'ForML'
@@ -101,15 +103,51 @@ html_favicon = '_static/images/favicon.ico'
 html_logo = '_static/images/logo.svg'
 
 html_theme_options = {
-    'logo_only': False,
-    'display_version': False,
-}
-html_context = {
-    'display_github': True,
-    'github_user': 'formlio',
-    'github_repo': 'forml',
-    'github_version': 'master',
-    'conf_py_path': '/docs/',
+    'icon': {
+        'repo': 'fontawesome/brands/github',
+    },
+    'site_url': 'https://forml.io/',
+    'repo_url': 'https://github.com/formlio/forml/',
+    'repo_name': 'formlio/forml',
+    'repo_type': 'github',
+    'edit_uri': 'blob/main/docs',
+    # "google_analytics": ["UA-XXXXX", "auto"],
+    'features': [
+        # "navigation.expand",
+        # "navigation.tabs",
+        # "toc.integrate",
+        'navigation.sections',
+        'navigation.instant',
+        # "header.autohide",
+        'navigation.top',
+        'navigation.tracking',
+        'search.highlight',
+        'search.share',
+    ],
+    'toc_title_is_page_title': True,
+    # 'globaltoc_collapse': False,
+    'palette': [
+        {
+            'media': '(prefers-color-scheme: light)',
+            'scheme': 'default',
+            'primary': 'blue',
+            'accent': 'cyan',
+            'toggle': {
+                'icon': 'material/weather-night',
+                'name': 'Switch to dark mode',
+            },
+        },
+        {
+            'media': '(prefers-color-scheme: dark)',
+            'scheme': 'slate',
+            'primary': 'blue',
+            'accent': 'cyan',
+            'toggle': {
+                'icon': 'material/weather-sunny',
+                'name': 'Switch to light mode',
+            },
+        },
+    ],
 }
 
 # == Extensions configuration ==================================================
@@ -120,11 +158,31 @@ autoclass_content = 'both'
 autodoc_typehints = 'description'
 autosummary_generate = True
 
+
 # -- Options for sphinx.ext.napoleon -------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_numpy_docstring = False
 napoleon_use_rtype = False
 napoleon_include_init_with_doc = True
 
+
 # -- Options for sphinx_autodoc_typehints --------------------------------------
 # See: https://pypi.org/project/sphinx-autodoc-typehints/
+
+
+# -- Options for sphinx_immaterial --------------------------------------
+# See: https://pypi.org/project/sphinx-immaterial/
+# python_transform_type_annotations_concise_literal = False
+# python_transform_type_annotations_pep604 = False
+object_description_options = [
+    ('py:.*parameter', dict(include_in_toc=False)),
+    # ('py:.*function', dict(include_in_toc=False)),
+    # ('py:.*property', dict(include_in_toc=False)),
+    # ('py:.*method', dict(include_in_toc=False)),
+    ('py:.*', dict(include_fields_in_toc=False)),
+]
+
+
+# -- Options for nbsphinx --------------------------------------
+# See: https://nbsphinx.readthedocs.io/en/latest/
+nbsphinx_requirejs_path = ''

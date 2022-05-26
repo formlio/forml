@@ -13,8 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Operator Unit Testing
-=====================
+Unit Testing
+============
 
 ForML provides a custom testing framework for user-defined operators. It is built on top of the standard ``unittest``
 library with an API specialized to cover all the standard operator outcomes while minimizing any boiler-plating.
