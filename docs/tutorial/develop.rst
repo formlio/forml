@@ -13,57 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Tutorial
-========
-
-There is a complete ForML project available under ``examples/tutorial/titanic/``. It is the famous `Titanic Challenge
-<https://www.kaggle.com/c/titanic>`_. We will use it here to demonstrate the typical ForML usecases.
-
-Before you start, please make sure to install ForML as per the :doc:`installation instructions <install>` and ideally
-also familiarize yourself with the :doc:`ForML concepts <concept>`.
-
-Platform Setup
---------------
-
-Assuming you have no existing :doc:`feeds <feed>` configured in your system yet, let's install the
-:doc:`Openlake feed<openlake:install>`::
-
-    pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
-
-
-Now let's specify the actual ForML :doc:`platform <platform>` configuration. Add the following content to your
-``~/.forml/config.toml``::
-
-    [RUNNER]
-    default = "compute"
-
-    [RUNNER.compute]
-    provider = "dask"
-    scheduler = "threaded"
-
-    [RUNNER.visual]
-    provider = "graphviz"
-    format = "png"
-
-    [REGISTRY]
-    default = "tutorial"
-
-    [REGISTRY.tutorial]
-    provider = "posix"
-    path = "/tmp/forml-tutorial"
-
-    [FEED]
-    default = ["openlake"]
-
-    [FEED.openlake]
-    provider = "openlake:Local"
-
-    [SINK]
-    default = "print"
-
-    [SINK.print]
-    provider = "stdout"
-
+Codebase Implementation
+=======================
 
 Project Operations
 ------------------

@@ -16,7 +16,7 @@
 Input & Output
 ==============
 
-ForML comes with a special approach to data access. For projects to be portable, they must not be coupled directly with
+ForML comes with a unique approach to data access. For projects to be portable, they must not be coupled directly with
 any specific data storages or formats - which for a data-processing framework might sound a bit self-contradictory.
 
 In ForML architecture, all runtime dependencies including the pipeline I/O are handled by the :doc:`platform <platform>`
