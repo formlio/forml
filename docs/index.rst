@@ -16,7 +16,7 @@
 ForML Documentation
 ===================
 
-ForML is a framework for researching, implementing and operating data science projects.
+ForML is a high-level framework for researching, implementing and operating data science projects.
 
 Use ForML to formally describe a data science problem as a composition of high-level operators. ForML expands your
 project into a task dependency graph specific to a given life-cycle phase and executes it using any of its supported
@@ -69,7 +69,6 @@ Resources
 .. toctree::
     :hidden:
     :caption: Getting Started
-    :maxdepth: 2
 
     install
     tutorial/index
@@ -91,7 +90,7 @@ Resources
 
 .. toctree::
     :hidden:
-    :caption: Data & Persistence
+    :caption: Data Management
 
     dsl
     io
@@ -102,7 +101,7 @@ Resources
 
 .. toctree::
     :hidden:
-    :caption: Runtime & Operations
+    :caption: Runtime Operations
 
     lifecycle
     interactive
