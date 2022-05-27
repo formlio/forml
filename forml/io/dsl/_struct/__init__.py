@@ -24,16 +24,16 @@ from . import frame
 from . import kind as kindmod
 
 if typing.TYPE_CHECKING:
-    from forml.io import layout
+    from forml.io import dsl, layout
 
 
 class Field(typing.NamedTuple):
     """Schema field class."""
 
-    kind: kindmod.Any
+    kind: 'dsl.Any'
     name: typing.Optional[str] = None
 
-    def renamed(self, name: typing.Optional[str]) -> 'Field':
+    def renamed(self, name: typing.Optional[str]) -> 'dsl.Field':
         """Return copy of the field with the new name.
 
         Args:
@@ -53,7 +53,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     """
 
     @staticmethod
-    def from_fields(*fields: Field, title: typing.Optional[str] = None) -> frame.Source.Schema:
+    def from_fields(*fields: 'dsl.Field', title: typing.Optional[str] = None) -> 'dsl.Source.Schema':
         """Utility for programmatic schema assembly.
 
         Args:
@@ -68,7 +68,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     @classmethod
     def from_record(
         cls, record: 'layout.Native', *names: str, title: typing.Optional[str] = None
-    ) -> frame.Source.Schema:
+    ) -> 'dsl.Source.Schema':
         """Utility for programmatic schema inference.
 
         Args:
