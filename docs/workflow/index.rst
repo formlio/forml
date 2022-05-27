@@ -13,7 +13,12 @@
     specific language governing permissions and limitations
     under the License.
 
-Examples
+Workflow
 ========
 
-See the ``/examples/demos/`` for a simple demo examples.
+.. toctree::
+    :maxdepth: 1
+
+    task
+    topology
+    composition

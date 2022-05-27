@@ -69,6 +69,7 @@ Resources
 .. toctree::
     :hidden:
     :caption: Getting Started
+    :maxdepth: 2
 
     install
     tutorial/index
@@ -78,27 +79,33 @@ Resources
 
 .. toctree::
     :hidden:
-    :caption: Implementor's Guide
+    :caption: Development Framework
 
     project
-    lifecycle
-    workflow
-    io
-    dsl
-    evaluation
-    interactive
-    operator
+    workflow/index
     testing
+    evaluation
     lib
+    application
 
 
 .. toctree::
     :hidden:
-    :caption: Operations Manual
+    :caption: Data & Persistence
 
-    platform
+    dsl
+    io
+    sink
     feed
     registry/index
+
+
+.. toctree::
+    :hidden:
+    :caption: Runtime & Operations
+
+    lifecycle
+    interactive
+    platform
     runner/index
-    sink
     serving

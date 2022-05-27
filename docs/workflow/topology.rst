@@ -13,8 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Workflow
-========
+Path & Trunk API
+================
 
 Workflow is the backbone of the ML solution responsible for holding all its pieces in the right place together. On the
 low level, it is a *Task Dependency Graph* where edges represent data flows and vertices are the data transformations.
