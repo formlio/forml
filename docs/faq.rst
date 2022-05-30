@@ -23,7 +23,7 @@ ForML actually doesn't care. It is only responsible for wiring up the actors in 
 agnostic about the actual payload exchanged between them. It is the responsibility of the project implementor to engage
 actors that understand each other.
 
-For convenience, the :doc:`lib` shipped with ForML contains certain actors/operators implementations that expect
+For convenience, the :doc:`pipeline` shipped with ForML contains certain actors/operators implementations that expect
 the data to be `Pandas <https://pandas.pydata.org/>`_ dataframes. This is however rather a practical choice of the flow
 library (or a controversy that might get it removed from the ForML framework long term) while the ForML core is truly
 independent of the data formats being passed through.

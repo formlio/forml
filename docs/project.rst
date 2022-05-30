@@ -175,7 +175,7 @@ Definition of the model evaluation strategy for both the development (backtestin
 :doc:`lifecycle <lifecycle>`.
 
 .. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
-.roadmap.
+   roadmap.
 
 The evaluation strategy again needs to be submitted to the framework using the ``project.setup()`` handler::
 

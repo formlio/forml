@@ -71,20 +71,20 @@ Resources
     :caption: Getting Started
 
     install
-    tutorial/index
     concept
+    tutorials/index
     faq
 
 
 .. toctree::
     :hidden:
-    :caption: Development Framework
+    :caption: Framework Manual
 
     project
     workflow/index
     testing
     evaluation
-    lib
+    pipeline
     application
 
 
@@ -96,7 +96,8 @@ Resources
     io
     sink
     feed
-    registry/index
+    registry
+    inventory
 
 
 .. toctree::
@@ -106,5 +107,5 @@ Resources
     lifecycle
     interactive
     platform
-    runner/index
+    runner
     serving

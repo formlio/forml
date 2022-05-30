@@ -13,34 +13,5 @@
     specific language governing permissions and limitations
     under the License.
 
-Model Registry
-==============
-
-At :doc:`runtime <../platform>`, the :ref:`production lifecycle <lifecycle-production>` uses the model registry for storing
-:ref:`artifacts <concept-persistence>` of project *releases* as well as the models of its *generations*.
-
-ForML can use multiple registries built upon different technologies. The available registry implementations are:
-
-
-.. autosummary::
-
-   forml.provider.registry.filesystem.posix
-   forml.provider.registry.filesystem.virtual
-   forml.provider.registry.mlflow
-
-
-API
----
-
-.. autoclass:: forml.io.asset.Registry
-    :members:
-
-
-Providers
----------
-
-.. toctree::
-    :maxdepth: 2
-
-    filesystem
-    mlflow
+Pipeline Library
+================

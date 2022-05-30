@@ -13,35 +13,12 @@
     specific language governing permissions and limitations
     under the License.
 
-Pipeline Runner
-===============
+Pipeline Demos
+==============
 
-The main point of the :doc:`runtime platform <../platform>` is to run the :doc:`projects <../project>`. The specific
-implementation of a system that can :ref:`execute <concept-execution>` the project :doc:`lifecycle <../lifecycle>`
-based on its description (its *Task Dependency Graph* in particular) is called the *Runner*.
+Mini
+----
 
-The available runner implementations are:
-
-.. autosummary::
-
-   forml.provider.runner.dask
-   forml.provider.runner.graphviz
-   forml.provider.runner.pyfunc
-
-
-API
----
-
-.. autoclass:: forml.runtime.Runner
-    :members:
-
-
-Providers
----------
-
-.. toctree::
-    :maxdepth: 2
-
-    dask
-    graphviz
-    pyfunc
+.. literalinclude:: ../../tutorials/demos/01mini.py
+  :language: python
+  :start-at: import

@@ -112,7 +112,6 @@ html_theme_options = {
     'repo_type': 'github',
     'edit_uri': 'blob/main/docs',
     # "google_analytics": ["UA-XXXXX", "auto"],
-    'globaltoc_collapse': True,
     'features': [
         # "navigation.expand",
         # "navigation.tabs",
@@ -122,9 +121,11 @@ html_theme_options = {
         # "header.autohide",
         'navigation.top',
         'navigation.tracking',
-        # "search.highlight",
+        'search.highlight',
         'search.share',
     ],
+    'toc_title_is_page_title': True,
+    # 'globaltoc_collapse': False,
     'palette': [
         {
             'media': '(prefers-color-scheme: light)',
@@ -147,7 +148,6 @@ html_theme_options = {
             },
         },
     ],
-    'toc_title_is_page_title': True,
 }
 
 # == Extensions configuration ==================================================
@@ -169,7 +169,12 @@ napoleon_include_init_with_doc = True
 
 # -- Options for sphinx_immaterial --------------------------------------
 # See: https://pypi.org/project/sphinx-immaterial/
-python_transform_type_annotations_pep604 = True
+# python_transform_type_annotations_concise_literal = False
+# python_transform_type_annotations_pep604 = False
 object_description_options = [
-    ('py:.*', dict(include_fields_in_toc=False, wrap_signatures_with_css=True)),
+    ('py:.*parameter', dict(include_in_toc=False)),
+    # ('py:.*function', dict(include_in_toc=False)),
+    # ('py:.*property', dict(include_in_toc=False)),
+    # ('py:.*method', dict(include_in_toc=False)),
+    ('py:.*', dict(include_fields_in_toc=False)),
 ]

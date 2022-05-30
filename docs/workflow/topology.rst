@@ -36,7 +36,18 @@ like this::
 Given the particular implementation of the example operators, this will render a pipeline with the *train* and *apply*
 graphs visualized as follows:
 
-.. image:: _static/images/workflow.png
+.. md-mermaid::
+    :name: flowcharts
+
+    graph LR
+        A[Start] --> B{Error?};
+        B -->|Yes| C[Hmm...];
+        C --> D[Debug];
+        D --> B;
+        B ---->|No| E[Yay!];
+
+
+.. image:: ../_static/images/workflow.png
 
 The meaning of operators and how are they defined using actors is described in more details in the following sections.
 
