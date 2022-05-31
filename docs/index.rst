@@ -82,9 +82,9 @@ Resources
 
     project
     workflow/index
-    testing
     evaluation
     pipeline
+    testing
     application
 
 

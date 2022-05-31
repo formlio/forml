@@ -13,8 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Model Registry
-==============
+Model Persistence
+=================
 
 At :doc:`runtime <../platform>`, the :ref:`production lifecycle <lifecycle-production>` uses the model registry for storing
 :ref:`artifacts <concept-persistence>` of project *releases* as well as the models of its *generations*.

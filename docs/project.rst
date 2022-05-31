@@ -13,8 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Project
-=======
+Project Organization
+====================
 
 Starting New Project
 --------------------
