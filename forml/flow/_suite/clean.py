@@ -31,8 +31,7 @@ Graph topology validation.
 """
 
 from .. import _exception
-from .._graph import node as nodemod
-from .._graph import span
+from .._graph import atomic, span
 
 
 class Validator(span.Visitor):
@@ -45,15 +44,15 @@ class Validator(span.Visitor):
     """
 
     def __init__(self):
-        self._futures: set[nodemod.Atomic] = set()
+        self._futures: set[atomic.Node] = set()
 
-    def visit_node(self, node: nodemod.Atomic) -> None:
+    def visit_node(self, node: atomic.Node) -> None:
         """Node visit.
 
         Args:
             node: Node to be visited.
         """
-        if isinstance(node, nodemod.Future):
+        if isinstance(node, atomic.Future):
             self._futures.add(node)
 
     def visit_path(self, path: span.Path) -> None:

@@ -53,7 +53,7 @@ class WrappedActor:
     def predict(self, features: layout.RowMajor) -> layout.RowMajor:
         """Apply to-be handler."""
         if not self._model:
-            raise ValueError('Not Fitted')
+            raise RuntimeError('Actor not trained')
         model = hash(tuple(self._model)) ^ hash(tuple(sorted(self._params.items())))
         return tuple(hash(tuple(f)) ^ model for f in features)
 
@@ -74,6 +74,26 @@ class NativeActor(WrappedActor, flow.Actor[layout.RowMajor, None, layout.RowMajo
         return self.predict(features[0])
 
 
+@wrap.Actor.train
+def decorated_actor(
+    state: typing.Optional[typing.Sequence],
+    features: layout.RowMajor,
+    labels: layout.Array,
+    **params,  # pylint: disable=unused-argument
+) -> typing.Sequence:
+    """Train part of a stateful actor implemented as a decorated function."""
+    state = list(state or [])
+    state.append((tuple(tuple(r) for r in features), tuple(labels)))
+    return state
+
+
+@decorated_actor.apply
+def decorated_actor(state: typing.Sequence, features: layout.RowMajor, **params) -> layout.RowMajor:
+    """Apply part of a stateful actor implemented as a decorated function."""
+    model = hash(tuple(state)) ^ hash(tuple(sorted(params.items())))
+    return tuple(hash(tuple(f)) ^ model for f in features)
+
+
 def train_decorator(actor, *args, **kwargs):
     """Wrapping decorator for the train method."""
     return actor.train(*args, **kwargs)
@@ -81,7 +101,7 @@ def train_decorator(actor, *args, **kwargs):
 
 @pytest.fixture(
     scope='session',
-    params=(NativeActor, wrap.Actor.type(WrappedActor, apply='predict', train=train_decorator)),
+    params=(NativeActor, decorated_actor, wrap.Actor.type(WrappedActor, apply='predict', train=train_decorator)),
 )
 def actor_type(request) -> type[flow.Actor]:
     """Stateful actor fixture."""

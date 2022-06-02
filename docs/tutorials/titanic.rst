@@ -121,7 +121,7 @@ Development Lifecycle Actions
 
         $ python3 setup.py train --runner visual
 
-    .. image:: ../../_static/images/titanic-train.png
+    .. image:: ../_static/images/titanic-train.png
        :align: center
 
 4. Run the ``eval`` mode on the (default) *Dask* runner (called ``compute`` in our config) to get the
@@ -190,7 +190,7 @@ before executing the commands.
 
         $ forml model -R visual apply forml-example-titanic
 
-    .. image:: ../../_static/images/titanic-apply.png
+    .. image:: ../_static/images/titanic-apply.png
 
 
 Deployment and Serving

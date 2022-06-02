@@ -45,7 +45,7 @@ if typing.TYPE_CHECKING:
 class Visitor:
     """View visitor interface."""
 
-    def visit_node(self, node: 'Atomic') -> None:
+    def visit_node(self, node: 'flow.Node') -> None:
         """Node visit.
 
         Args:
@@ -60,9 +60,9 @@ class Port(typing.Iterable[port.Subscription]):
     """
 
     def __init__(self):
-        self._subscriptions: dict[port.Subscription, None] = collections.OrderedDict()
+        self._subscriptions: dict['flow.Subscription', None] = collections.OrderedDict()
 
-    def add(self, subscription: port.Subscription) -> None:
+    def add(self, subscription: 'flow.Subscription') -> None:
         """Add new subscription to this port.
 
         Args:
@@ -74,7 +74,7 @@ class Port(typing.Iterable[port.Subscription]):
         return iter(self._subscriptions.keys())
 
 
-class Atomic(metaclass=abc.ABCMeta):
+class Node(metaclass=abc.ABCMeta):
     """Abstract primitive task graph node."""
 
     def __init__(self, szin: int, szout: int):
@@ -87,7 +87,7 @@ class Atomic(metaclass=abc.ABCMeta):
     def __repr__(self):
         return f'{self.__class__.__name__}[uid={self.uid}]'
 
-    def __getitem__(self, index) -> port.PubSub:
+    def __getitem__(self, index: int) -> 'flow.PubSub':
         """Semantical construct for creating PubSub port instance.
 
         Args:
@@ -108,7 +108,7 @@ class Atomic(metaclass=abc.ABCMeta):
         Returns:
             True if equal.
         """
-        if isinstance(other, Atomic) and other.__class__ is not self.__class__:
+        if isinstance(other, Node) and other.__class__ is not self.__class__:
             return (
                 self.szout == other.szout
                 and any(self._output)
@@ -144,7 +144,7 @@ class Atomic(metaclass=abc.ABCMeta):
         return len(self._output)
 
     @property
-    def output(self) -> typing.Sequence[typing.Iterable[port.Subscription]]:
+    def output(self) -> typing.Sequence[typing.Iterable['flow.Subscription']]:
         """Get list of output subscriptions per each port.
 
         Returns:
@@ -152,7 +152,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
         return tuple(tuple(s) for s in self._output)
 
-    def _publish(self, index: int, subscription: port.Subscription) -> None:
+    def _publish(self, index: int, subscription: 'flow.Subscription') -> None:
         """Publish an output port based on the given subscription.
 
         Args:
@@ -165,7 +165,7 @@ class Atomic(metaclass=abc.ABCMeta):
         self._output[index].add(subscription)
 
     @abc.abstractmethod
-    def subscribed(self, publisher: 'Atomic') -> bool:
+    def subscribed(self, publisher: 'flow.Node') -> bool:
         """Checking we are on given node's subscription list.
 
         Args:
@@ -176,7 +176,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def fork(self) -> 'Atomic':
+    def fork(self) -> 'flow.Node':
         """Create new node with same shape and actor as self but without any subscriptions.
 
         Returns:
@@ -184,7 +184,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
 
 
-class Worker(Atomic):
+class Worker(Node):
     """Main primitive node type."""
 
     class Group(set):
@@ -225,7 +225,7 @@ class Worker(Atomic):
         """
         return self._group.spec
 
-    def _publish(self, index: int, subscription: port.Subscription) -> None:
+    def _publish(self, index: int, subscription: 'flow.Subscription') -> None:
         """Publish an output port based on the given subscription.
 
         Args:
@@ -284,7 +284,7 @@ class Worker(Atomic):
         return self._group.uid
 
     @property
-    def group(self) -> typing.AbstractSet['Worker']:
+    def group(self) -> typing.AbstractSet['flow.Worker']:
         """Set of forked workers in the same fork group.
 
         Returns:
@@ -292,15 +292,12 @@ class Worker(Atomic):
         """
         return frozenset(self._group)
 
-    def train(self, train: port.Publishable, label: port.Publishable) -> None:
-        """Subscribe this node train and label port to given publishers.
+    def train(self, train: 'flow.Publishable', label: 'flow.Publishable') -> None:
+        """Subscribe this node *Train* and *Label* port to given publishers.
 
         Args:
             train: Train port publisher.
             label: Label port publisher.
-
-        Returns:
-            Self node.
         """
         if not self.stateful:
             raise _exception.TopologyError('Stateless node training')
@@ -309,7 +306,7 @@ class Worker(Atomic):
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
-    def subscribed(self, publisher: 'Atomic') -> bool:
+    def subscribed(self, publisher: 'flow.Node') -> bool:
         """Checking we are on given node's subscription list.
 
         Args:
@@ -320,8 +317,9 @@ class Worker(Atomic):
         """
         return any(s.node is self for p in publisher.output for s in p)
 
-    def fork(self) -> 'Worker':
-        """Create new node with same shape and actor as self but without any subscriptions.
+    def fork(self) -> 'flow.Worker':
+        """Create new node belonging to the same group (having same shape and actor as self) but without any
+        subscriptions.
 
         Returns:
             Forked node.
@@ -329,8 +327,8 @@ class Worker(Atomic):
         return Worker(self._group, self.szin, self.szout)
 
     @classmethod
-    def fgen(cls, spec: 'flow.Spec', szin: int, szout: int) -> typing.Generator['Worker', None, None]:
-        """Generator producing forks of the same node.
+    def fgen(cls, spec: 'flow.Spec', szin: int, szout: int) -> typing.Generator['flow.Worker', None, None]:
+        """Generator producing forks of the same node belonging to the same group.
 
         Args:
             spec: Worker spec.
@@ -338,7 +336,7 @@ class Worker(Atomic):
             szout: Worker output apply port size.
 
         Returns:
-            Generator producing worker forks.
+            Generator producing same-group worker forks.
         """
         node = cls(spec, szin, szout)
         yield node
@@ -346,7 +344,7 @@ class Worker(Atomic):
             yield node.fork()
 
 
-class Future(Atomic):
+class Future(Node):
     """Fake transparent apply port node that can be used as a lazy publisher/subscriber that disappears
     from the chain once it gets connected to another apply node(s).
     """
@@ -356,7 +354,7 @@ class Future(Atomic):
 
         def __init__(
             self,
-            node: 'Future',
+            node: 'flow.Future',
             index: int,
             register: typing.Callable[[port.Publishable], None],
             sync: typing.Callable[[], None],
@@ -365,7 +363,7 @@ class Future(Atomic):
             self._register: typing.Callable[[port.Publishable], None] = register
             self._sync: typing.Callable[[], None] = sync
 
-        def subscribe(self, publisher: port.Publishable) -> None:
+        def subscribe(self, publisher: 'flow.Publishable') -> None:
             """Register publisher for future subscriptions.
 
             Args:
@@ -378,8 +376,8 @@ class Future(Atomic):
         super().__init__(szin, szout)
         self._proxy: dict[port.Publishable, int] = {}
 
-    def __getitem__(self, index) -> port.PubSub:
-        def register(publisher: port.Publishable) -> None:
+    def __getitem__(self, index) -> 'flow.PubSub':
+        def register(publisher: 'flow.Publishable') -> None:
             """Callback for publisher proxy registration.
 
             Args:
@@ -391,7 +389,7 @@ class Future(Atomic):
 
         return self.PubSub(self, index, register, self._sync)
 
-    def subscribed(self, publisher: 'Atomic') -> bool:
+    def subscribed(self, publisher: 'flow.Node') -> bool:
         """Overridden subscription checker. Future node checks the subscriptions in its proxy registrations.
 
         Args:
@@ -408,7 +406,7 @@ class Future(Atomic):
         for publisher, subscription in ((p, s) for p, i in self._proxy.items() for s in self._output[i]):
             publisher.republish(subscription)
 
-    def _publish(self, index: int, subscription: port.Subscription) -> None:
+    def _publish(self, index: int, subscription: 'flow.Subscription') -> None:
         """Publish an output port based on the given subscription.
 
         Args:
@@ -420,7 +418,7 @@ class Future(Atomic):
         super()._publish(index, subscription)
         self._sync()
 
-    def fork(self) -> 'Future':
+    def fork(self) -> 'flow.Future':
         """There is nothing to copy on a Future node so just create a new one.
 
         Returns:

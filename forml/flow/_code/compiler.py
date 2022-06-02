@@ -27,8 +27,7 @@ import typing
 import uuid
 
 from .. import _exception
-from .._graph import node as nodemod
-from .._graph import span
+from .._graph import atomic, span
 from . import target
 from .target import system, user
 
@@ -228,7 +227,7 @@ class Table(span.Visitor, typing.Iterable):
             node: Node to be added - compiled into symbols.
         """
         assert node.uid not in self._index, f'Node collision ({node})'
-        assert isinstance(node, nodemod.Worker), f'Not a worker node ({node})'
+        assert isinstance(node, atomic.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
         functor = user.Apply().functor(node.spec)

@@ -23,7 +23,9 @@ The tests need to be placed under the ``tests/`` folder of your :doc:`project` (
 files and the ``tests/`` directory itself to be python modules hence it needs to contain the appropriate
 ``__init__.py`` files).
 
-The testing framework is available after importing the ``forml.testing`` module::
+The testing framework is available after importing the ``forml.testing`` module:
+
+.. code-block:: python
 
     from forml import testing
 
@@ -39,7 +41,9 @@ INIT_RAISES
     is a scenario, where the operator raises an *exception* right upon initialization. This can be used to assert an
     expected (hyper)parameter validation.
 
-    Synopsis::
+    Synopsis:
+
+    .. code-block:: python
 
         mytest1 = testing.Case(arg1='foo').raises(ValueError, 'invalid value of arg1')
 
@@ -47,7 +51,9 @@ PLAINAPPLY_RAISES
     asserts an exception to be raised when executing the *apply* mode of an operator without any previous *train*
     execution.
 
-    Synopsis::
+    Synopsis:
+
+    .. code-block:: python
 
         mytest2 = testing.Case(arg1='bar').apply('foo').raises(RuntimeError, 'Not trained')
 
@@ -55,35 +61,45 @@ PLAINAPPLY_RETURNS
     is an assertion of an output value of successful outcome of the *apply* mode executed again without previous
     *train* mode.
 
-    Synopsis::
+    Synopsis:
+
+    .. code-block:: python
 
         mytest3 = testing.Case(arg1='bar').apply('baz').returns('foo')
 
 STATETRAIN_RAISES
     checks the *train* mode of given operator fails with the expected exception.
 
-    Synopsis::
+    Synopsis:
+
+    .. code-block:: python
 
         mytest4 = testing.Case(arg1='bar').train('baz').raises(ValueError, 'wrong baz')
 
 STATETRAIN_RETURNS
     compares the output value of the successfully completed *train* mode with the expected value.
 
-    Synopsis::
+    Synopsis:
+
+    .. code-block:: python
 
         mytest5 = testing.Case(arg1='bar').train('foo').returns('baz')
 
 STATEAPPLY_RAISES
     asserts an exception to be raised from the *apply* mode when executed after previous successful *train* mode.
 
-    Synopsis::
+    Synopsis:
+
+    .. code-block:: python
 
         mytest6 = testing.Case(arg1='bar').train('foo').apply('baz').raises(ValueError, 'wrong baz')
 
 STATEAPPLY_RETURNS
     is a scenario, where the *apply* mode executed after previous successful *train* mode returns the expected value.
 
-    Synopsis::
+    Synopsis:
+
+    .. code-block:: python
 
         mytest7 = testing.Case(arg1='bar').train('foo').apply('bar').returns('baz')
 
@@ -91,7 +107,9 @@ STATEAPPLY_RETURNS
 Operator Test Suite
 -------------------
 All test case assertions of the same operator are defined within the operator test suite that's created simply as
-follows::
+follows:
+
+.. code-block:: python
 
     class TestMyTransformer(testing.operator(mymodule.MyTransformer)):
         """MyTransformer unit tests."""
@@ -109,7 +127,9 @@ Running Your Tests
 ------------------
 
 All the suites are transparently expanded into full-blown ``unittest.TestCase`` definition so from here you would treat
-them as normal unit tests, which means you can simply run them using the usual::
+them as normal unit tests, which means you can simply run them using the usual:
+
+.. code-block:: console
 
     $ python3 setup.py test
     running test
@@ -141,8 +161,9 @@ needs to be a callable with the following signature of ``typing.Callable[[typing
 first argument is *expected* and the second is the *actual* value.
 
 This can be useful for example for ``pandas.DataFrames``, which don't support simple boolean equality check. Following
-example uses a custom matcher for asserting the values returned as ``pandas.DataFrames``::
+example uses a custom matcher for asserting the values returned as ``pandas.DataFrames``:
 
+.. code-block:: python
 
     def size_equals(expected: object, actual: object) -> bool:
         """Custom object comparison logic based on their size."""

@@ -23,8 +23,7 @@ import functools
 import typing
 import uuid
 
-from .._graph import node as nodemod
-from .._graph import span
+from .._graph import atomic, span
 from . import clean
 
 if typing.TYPE_CHECKING:
@@ -40,11 +39,11 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 
     def __new__(
         cls,
-        apply: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
-        train: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
-        label: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        apply: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        train: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        label: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
     ):
-        def init(mode: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']]) -> span.Path:
+        def init(mode: typing.Optional[typing.Union['flow.Path', 'flow.Node']]) -> span.Path:
             """Apply default cleaning to the mode segment.
 
             Args:
@@ -54,8 +53,8 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
                 Cleaned mode path.
             """
             if not mode:
-                mode = nodemod.Future()
-            if isinstance(mode, nodemod.Atomic):
+                mode = atomic.Future()
+            if isinstance(mode, atomic.Node):
                 mode = span.Path(mode)
             return mode
 
@@ -63,9 +62,9 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 
     def extend(
         self,
-        apply: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
-        train: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
-        label: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        apply: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        train: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        label: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
     ) -> 'flow.Trunk':
         """Helper for creating new Trunk with specified paths extended by provided values.
 
@@ -85,9 +84,9 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 
     def use(
         self,
-        apply: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
-        train: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
-        label: typing.Optional[typing.Union['flow.Path', 'flow.Atomic']] = None,
+        apply: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        train: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        label: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
     ) -> 'flow.Trunk':
         """Helper for creating new Trunk with specified paths replaced by provided values.
 
@@ -117,7 +116,7 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         def __iter__(self) -> typing.Iterator[uuid.UUID]:
             return iter(self._gids)
 
-        def visit_node(self, node: nodemod.Worker) -> None:
+        def visit_node(self, node: atomic.Worker) -> None:
             if node.derived and node.gid not in self._gids:
                 self._gids.append(node.gid)
 

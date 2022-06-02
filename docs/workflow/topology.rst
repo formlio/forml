@@ -16,4 +16,150 @@
 Flow Topology
 =============
 
-Worker & Path & Trunk API
+ForML has custom primitives for logical representation of the *task graph*, which also provide the API for its
+assembly during the construction phase.
+
+.. note::
+    Thanks to this runtime-agnostic internal representation of the task graph, ForML can support number of different
+    third-party :doc:`runners <../runner>` simply by converting the DAG on demand from its internal structure to the
+    particular representation of the target runtime.
+
+
+
+Nodes, Groups, Ports and Subscriptions
+--------------------------------------
+
+While the actual unit of work - the vertex in the runtime DAG - is a *task* provided as the :doc:`Actor <actor>`
+implementation, its logical representation used by ForML internally is the abstract ``flow.Node`` structure and its
+subtype ``flow.Worker`` in particular.
+
+Creating a Worker
+^^^^^^^^^^^^^^^^^
+
+Worker node gets created simply by providing a ``flow.Spec`` :ref:`actor builder <actor-spec>` and the required number
+of the input and output (apply) ports:
+
+.. code-block:: python
+
+    from forml import flow
+    from forml.pipeline import payload  # let's use some existing actors
+
+    # one input, one output and the PandasSelect actor Spec
+    select_foo = flow.Worker(payload.PandasSelect.spec(columns=['foo', 'bar']), szin=1, szout=1)
+    # one input, one output and the PandasDrop actor Spec
+    drop_baz = flow.Worker(payload.PandasDrop.spec(columns=['baz']), szin=1, szout=1)
+    # two inputs, one output and the PandasConcat actor Spec
+    concat = flow.Worker(payload.PandasConcat.spec(axis='columns'), szin=2, szout=1)
+    # one input, one output and the mean_impute actor Spec (defined in the previous chapter)
+    impute_bar_apply = flow.Worker(mean_impute.spec(column='bar'), szin=1, szout=1)
+
+This gives us four disconnected workers:
+
+.. md-mermaid::
+
+    graph LR
+        si(("i")) --> select_foo --> so(("o"))
+        di(("i")) --> drop_baz --> do(("o"))
+        ci1(("i1")) & ci2(("i2")) --> concat --> co(("o"))
+        ii(("i")) --> impute_bar_apply --> io(("o"))
+
+.. note::
+    All the actors we chose in this example work with Pandas payload - by no means this is some official format required
+    by ForML. As explained, ForML doesn't care about the payload and the choice of compatible actors is responsibility
+    of the implementor.
+
+Connecting Nodes
+^^^^^^^^^^^^^^^^
+
+Let's now create the actual dependency of the individual tasks by connecting the worker (apply) ports:
+
+.. code-block:: python
+
+    concat[0].subscribe(select_foo[0])
+    concat[1].subscribe(drop_baz[0])
+    impute_bar_apply[0].subscribe(concat[0])
+
+The ``node[port_index]`` *getitem* syntax on a ``flow.Node`` instance returns a ``flow.PubSub`` object for
+the particular :ref:`Apply port <actor-ports>` on the *input* or *output* side (determined by context) of that node,
+that can be used to publish or subscribe to another such object.
+
+.. caution::
+    Any input port can be subscribed to at most one upstream output port but any output port can be publishing to
+    multiple subscribed input ports. Actor cannot be subscribed to itself.
+
+The key methods of the ``flow.PubSub`` class are:
+
+.. autoclass:: forml.flow.PubSub
+   :members: subscribe, publish
+
+
+Now, with that connections between our nodes, the topology looks like this:
+
+.. md-mermaid::
+
+    graph LR
+        si(("i")) --> select_foo --> concat
+        di(("i")) --> drop_baz --> concat
+        concat --> impute_bar_apply --> co(("o"))
+
+
+Dealing with Worker State
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sofar we've discussed only the *apply-mode* connections. For *stateful* nodes (i.e. nodes representing
+:doc:`stateful actors <actor>`), we also need to take care of the *train-mode* connections to their *Train* and *Label*
+ports. This is achieved simply using the ``.train()`` method on the worker object:
+
+.. automethod:: forml.flow.Worker.train
+
+Training and applying even the same worker are two distinct tasks, hence they need to be represented using two related
+but separate worker nodes. ForML transparently manages these related workers using a ``flow.Worker.Group`` instance.
+All workers in the same *group* have the same shape and share the same actor builder instance. Workers of the same
+group can be created using one of the two methods:
+
+.. automethod:: forml.flow.Worker.fork
+.. automethod:: forml.flow.Worker.fgen
+
+Based on the group membership, ForML automatically handles the runtime state management between the different modes
+of the same actor.
+
+.. code-block:: python
+
+    impute_bar_train = impute_bar_apply.fork()
+
+    concat[0].subscribe(select_foo[0])
+    concat[1].subscribe(drop_baz[0])
+
+
+
+..caution::
+    At most one worker in the same group can be trained
+
+At most one trained
+
+
+
+Actor is expected to process data arriving to input ports and return results using output ports if applicable. There
+is specific consistency constraint which ports can or need to be active (attached) at the same time: either both
+*Train* and *Label* or all *Apply* inputs and outputs.
+
+
+
+
+worker.fork()
+
+
+
+
+
+Consistency Constraints
+
+Future Nodes
+
+Paths and Trunks
+----------------
+
+
+Compiler
+--------
+... connecting system ports

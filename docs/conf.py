@@ -157,6 +157,7 @@ html_theme_options = {
 autoclass_content = 'both'
 autodoc_typehints = 'description'
 autosummary_generate = True
+autodoc_member_order = 'bysource'
 
 
 # -- Options for sphinx.ext.napoleon -------------------------------------------

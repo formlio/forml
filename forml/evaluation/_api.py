@@ -37,7 +37,7 @@ class Metric(abc.ABC):
     """Evaluation metric interface."""
 
     @abc.abstractmethod
-    def score(self, *outcomes: Outcome) -> flow.Atomic:
+    def score(self, *outcomes: Outcome) -> flow.Node:
         """Compose the metric evaluation on top of the dataset DAG and return the tail node of the new DAG that's
         expected to have single output apply port delivering the calculated metric.
 

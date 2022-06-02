@@ -34,14 +34,14 @@ class Atomic(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def node(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Atomic:
+    def node(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Node:
         """Node fixture."""
 
-    def test_copy(self, node: flow.Atomic):
+    def test_copy(self, node: flow.Node):
         """Test for node copy method."""
-        assert isinstance(node.fork(), flow.Atomic)
+        assert isinstance(node.fork(), flow.Node)
 
-    def test_subscribe_to(self, node: flow.Atomic, simple: flow.Worker):
+    def test_subscribe_to(self, node: flow.Node, simple: flow.Worker):
         """Test node subscribing."""
         simple[0].subscribe(node[0])
         assert simple.subscribed(node)
@@ -50,12 +50,12 @@ class Atomic(metaclass=abc.ABCMeta):
         with pytest.raises(flow.TopologyError):  # self subscription
             simple[0].subscribe(node[0])
 
-    def test_subscribe_from(self, node: flow.Atomic, simple: flow.Worker):
+    def test_subscribe_from(self, node: flow.Node, simple: flow.Worker):
         """Test inverted node subscribing."""
         node[0].subscribe(simple[0])
         assert node.subscribed(simple)
 
-    def test_publish_from(self, node: flow.Atomic, simple: flow.Worker):
+    def test_publish_from(self, node: flow.Node, simple: flow.Worker):
         """Test node publishing."""
         node[0].publish(simple, port.Train())
         assert simple.subscribed(node)
@@ -70,7 +70,7 @@ class Atomic(metaclass=abc.ABCMeta):
         with pytest.raises(flow.TopologyError):  # trained node publishing
             node[0].subscribe(simple[0])
 
-    def test_publish_to(self, node: flow.Atomic, simple: flow.Worker):
+    def test_publish_to(self, node: flow.Node, simple: flow.Worker):
         """Test inverted node publishing."""
         simple[0].publish(node, port.Apply())
         assert node.subscribed(simple)

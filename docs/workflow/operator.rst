@@ -44,7 +44,9 @@ the ``forml.pipeline.wrap`` that makes it really easy to create specific instanc
 topic of operator development can be found in the :doc:`operator` sections.
 
 Operators are generally defined by implementing the ``flow.Operator`` interface. For couple of trivial patterns, there
-also is a simpler option based on decorating user-defined actors (whether native (class based) or decorated)::
+also is a simpler option based on decorating user-defined actors (whether native (class based) or decorated):
+
+.. code-block:: python
 
     import pandas as pd
     from forml.pipeline import wrap
@@ -61,7 +63,9 @@ Auto-Wrapped Operators
 
 Another option of defining actors is reusing third-party classes that are providing the desired functionality. These
 classes cannot be changed to extend ForML base Actor class but can be wrapped upon importing using the ``wrap.importer``
-context manager like this::
+context manager like this:
+
+.. code-block:: python
 
     from forml.pipeline import wrap
     with wrap.importer():

@@ -21,6 +21,7 @@ Flow actor abstraction.
 
 import abc
 import collections
+import inspect
 import logging
 import types
 import typing
@@ -76,79 +77,50 @@ Result = typing.TypeVar('Result')
 
 
 class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
-    """Abstract interface of an actor."""
+    """Abstract actor base class.
 
-    @classmethod
-    def spec(cls: 'type[_Actor]', *args, **kwargs: typing.Any) -> 'Spec[_Actor]':
-        """Shortcut for creating a spec of this actor.
+    This is a generic class with parametric input types ``flow.Features``, ``flow.Labels`` and output type
+    ``flow.Result``.
+    """
 
-        Args:
-            *args: Positional params.
-            **kwargs: Keyword params.
-
-        Returns:
-            Actor spec instance.
-        """
-        return Spec(cls, *args, **kwargs)
-
-    @classmethod
-    def is_stateful(cls) -> bool:
-        """Check whether this actor is stateful (by default determined based on existence of user-overridden train
-        method).
-
-        Returns:
-            True if stateful.
-        """
-        return cls.train.__code__ is not Actor.train.__code__
-
-    def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:  # pylint: disable=no-self-use
-        """Train the actor using the provided features and label.
-
-        Optional method engaging the *Train* (``features``) and *Label* (``label``) ports on stateful actors.
-
-        Note the stateful Actor can only have single-port features input.
-
-        Args:
-            features: Table of feature vectors.
-            labels: Table of labels.
-        """
-        raise RuntimeError('Stateless actor')
+    def __repr__(self):
+        return name(self.__class__, **self.get_params())
 
     @abc.abstractmethod
     def apply(self, *features: 'flow.Features') -> 'flow.Result':
-        """Pass features through the apply function (typically transform or predict).
+        """The *apply* mode entry-point.
 
-        Mandatory M:N input-output *Apply* ports in case of stateless Actor or 1:N in case of a stateful one.
-
-        Args:
-            features: Table(s) of feature vectors.
-
-        Returns:
-            Transformed features (ie predictions).
-        """
-
-    def get_params(self) -> typing.Mapping[str, typing.Any]:  # pylint: disable=no-self-use
-        """Get hyper-parameters of this actor.
-
-        Mandatory input and output *Params* ports.
-
-        Returns:
-            Dictionary of the name-value of the hyperparameters. All of the returned parameters must be acceptable
-            by the companion set_params.
-        """
-        return {}
-
-    def set_params(self, **params: typing.Any) -> None:
-        """Set hyper-parameters of this actor.
+        Mandatory method engaging the M:N input-output *Apply* ports.
 
         Args:
-            params: Dictionary of hyper parameters.
+            features: Input feature-set(s).
+
+        Returns:
+            Transformation result (ie predictions).
         """
-        if params:
-            raise RuntimeError(f'Params setter for {params} not implemented on {self}')
+
+    def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:  # pylint: disable=no-self-use
+        """The *train* mode entry point.
+
+        Optional method engaging the *Train* (``features``) and *Label* (``label``) ports of stateful actors.
+
+        Unlike with the multiple apply-mode feature ports, there can only be a single train-mode feature port.
+
+        Args:
+            features: Train feature-set.
+            labels: Train labels.
+        """
+        raise RuntimeError('Stateless actor')
 
     def get_state(self) -> bytes:
         """Return the internal state of the actor.
+
+        The *State* output port representation.
+
+        The particular bytes-encoding of the returned value can be arbitrary as long as it is acceptable by
+        the companion ``.set_state()`` method.
+
+        The default implementation is using Python Pickle for serializing the entire actor object.
 
         Returns:
             State as bytes.
@@ -159,7 +131,11 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         return cloudpickle.dumps(self.__dict__)
 
     def set_state(self, state: bytes) -> None:
-        """Set new internal state of the actor. Note this doesn't change the setting of the actor hyper-parameters.
+        """Set new internal state of the actor.
+
+        The *State* input port representation.
+
+        The default implementation is interpreting the state as the entire actor object serialized by Python Pickle.
 
         Args:
             state: bytes to be used as internal state.
@@ -173,22 +149,82 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         self.__dict__.update(cloudpickle.loads(state))
         self.set_params(**params)  # restore the original hyper-params
 
-    def __repr__(self):
-        return name(self.__class__, **self.get_params())
+    def get_params(self) -> typing.Mapping[str, typing.Any]:  # pylint: disable=no-self-use
+        """Get the current hyper-parameters of the actor.
+
+        The *Params* output port representation.
+
+        All the values returned by this method must be acceptable by the companion ``.set_params()``.
+
+        The default implementation return empty mapping.
+
+        Returns:
+            Dictionary of the name-value of the hyper-parameters.
+        """
+        return {}
+
+    def set_params(self, **params: typing.Any) -> None:
+        """Set new hyper-parameters of the actor (typically by a hyper-parameter tuner).
+
+        The *Params* input port representation.
+
+        The implementation of this method can choose to accept only a subset of the constructor arguments if some of
+        them are not expected to be changed during the lifetime.
+
+        Args:
+            params: New hyper-parameters as kwargs.
+        """
+        if params:
+            raise NotImplementedError(f'Params setter for {params} not implemented on {self}')
+
+    @classmethod
+    def spec(cls: 'type[_Actor]', *args, **kwargs: typing.Any) -> 'Spec[_Actor]':
+        """Shortcut for creating a particular spec instance for this actor.
+
+        Args:
+            *args: Positional params.
+            **kwargs: Keyword params.
+
+        Returns:
+            Actor spec instance.
+        """
+        return Spec(cls, *args, **kwargs)
+
+    @classmethod
+    def is_stateful(cls) -> bool:
+        """Check whether this actor is stateful.
+
+        By default this is determined based on the existence of user-overridden train method.
+
+        Returns:
+            True if stateful.
+        """
+        return cls.train.__code__ is not Actor.train.__code__
 
 
 # Generic actor type.
 _Actor = typing.TypeVar('_Actor', bound=Actor)
 
 
+@typing.final
 class Spec(typing.Generic[_Actor], collections.namedtuple('Spec', 'actor, args, kwargs')):
-    """Wrapper of actor class and init params."""
+    """Spec is an Actor builder.
+
+    It is holding all the required init configuration for instantiating the particular actor.
+    """
 
     actor: type[_Actor]
     args: tuple[typing.Any]
     kwargs: typing.Mapping[str, typing.Any]
 
     def __new__(cls, actor: type[_Actor], *args: typing.Any, **kwargs: typing.Any):
+        """
+        Args:
+            actor: Target actor class.
+            *args: Actor positional arguments.
+            **kwargs: Actor keyword arguments.
+        """
+        inspect.signature(actor).bind_partial(*args, **kwargs)
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 
     def __repr__(self):
