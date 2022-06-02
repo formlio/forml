@@ -17,3 +17,15 @@ Flow Topology
 =============
 
 Worker & Path & Trunk API
+
+
+
+Ports of different actors can be connected via subscriptions. Any input port can be subscribed to at most one upstream
+output port but any output port can be publishing to multiple subscribed input ports. Actor cannot be subscribed to
+itself.
+
+Consistency Constraints
+
+Actor is expected to process data arriving to input ports and return results using output ports if applicable. There
+is specific consistency constraint which ports can or need to be active (attached) at the same time: either both *Train*
+and *Label* or all *Apply* inputs and outputs.

@@ -19,9 +19,9 @@
 Flow task unit tests.
 """
 # pylint: disable=no-self-use
-import pickle
 import typing
 
+import cloudpickle
 import pytest
 
 from forml import flow
@@ -75,10 +75,10 @@ class TestActor:
     ):
         """Testing actor statefulness."""
         instance.train(trainset_features, trainset_labels)
-        assert instance.predict(testset) == actor_prediction
+        assert instance.apply(testset) == actor_prediction
         assert instance.get_state() == actor_state
         instance.train('foo', 'bar')  # retraining to change the state
-        assert instance.predict(testset) != actor_prediction
+        assert instance.apply(testset) != actor_prediction
         assert 'x' not in instance.get_params()
         instance.set_params(x=100)
         instance.set_state(actor_state)
@@ -103,7 +103,7 @@ class TestActor:
     ):
         """Test actor serializability."""
         instance.train(trainset_features, trainset_labels)
-        assert pickle.loads(pickle.dumps(instance)).predict(testset) == actor_prediction
+        assert cloudpickle.loads(cloudpickle.dumps(instance)).apply(testset) == actor_prediction
 
 
 class TestSpec:
@@ -115,8 +115,8 @@ class TestSpec:
         actor_type: type[flow.Actor],
     ):
         """Test spec serializability."""
-        assert pickle.loads(pickle.dumps(actor_spec)).actor == actor_type
+        assert repr(cloudpickle.loads(cloudpickle.dumps(actor_spec)).actor) == repr(actor_type)
 
     def test_instantiate(self, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]):
         """Testing specto actor instantiation."""
-        assert actor_spec(b=3).get_params() == {**actor_spec.kwargs, 'b': 3}
+        assert actor_spec(b=3).get_params() == actor_spec.kwargs | {'b': 3}

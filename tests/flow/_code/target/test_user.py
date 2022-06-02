@@ -20,9 +20,9 @@ ForML runtime instruction unit tests.
 """
 # pylint: disable=no-self-use
 import abc
-import pickle
 import typing
 
+import cloudpickle
 import pytest
 
 from forml import flow
@@ -41,7 +41,7 @@ class Functor(metaclass=abc.ABCMeta):
         """Test functor serializability."""
         functor = functor.preset_state()
         output = functor(actor_state, *args)
-        clone = pickle.loads(pickle.dumps(functor))
+        clone = cloudpickle.loads(cloudpickle.dumps(functor))
         assert isinstance(clone, flow.Functor)
         assert functor(actor_state, *args) == output
 
@@ -70,7 +70,7 @@ class TestApply(Functor):
         actor_prediction: layout.RowMajor,
     ):
         """Test the functor call."""
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError, match='not trained'):
             functor(testset)
         functor = functor.preset_state()
         assert functor(actor_state, testset) == actor_prediction

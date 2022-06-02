@@ -426,7 +426,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """Ordering specifiers.
 
         Args:
-            *features: Sequence of feature expressions and direction tuples.
+            features: Sequence of feature expressions and direction tuples.
 
         Returns:
             Query instance.

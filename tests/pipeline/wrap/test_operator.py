@@ -95,13 +95,12 @@ class TestAdapter:
         @wrap.Adapter.apply(foo='foo', bar='bar')
         @wrap.Adapter.label(foo='foo', bar='bar')
         @wrap.Actor.apply
-        def func(*args, **kwargs):
+        def func(**kwargs):
             """Dummy actor."""
-            return 'foo', args, kwargs
+            return 'foo', kwargs
 
-        operator = func('foo', bar='baz')
+        operator = func(bar='baz')
         # pylint: disable=no-member
-        assert operator._apply.args == operator._train.args == operator._label.args == ('foo',)
         assert (
             operator._apply.kwargs == operator._train.kwargs == operator._label.kwargs == {'foo': 'foo', 'bar': 'baz'}
         )

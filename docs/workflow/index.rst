@@ -18,7 +18,8 @@ Workflow Fundamentals
 
 Workflow is the backbone of the ML solution responsible for consistently sticking all its pieces together. On the low
 level it is a *Task Dependency Graph* with edges representing data flows and vertices standing for the data
-transformations.
+transformations. This particular type of the graph is called *Directed Acyclic Graph* (DAG) - meaning the flows are
+oriented and can't form any cycles.
 
 ForML is providing a convenient API for defining complex workflows using simple notation based on the following
 concepts:
@@ -47,8 +48,11 @@ The high-level API for describing a workflow allows to compose an operator expre
 
     flow = LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)
 
-Given the implementation of the particular operators, this single expression might render a workflow with the two
-*train* and *apply* task graphs visualized as follows:
+The typically counterintuitive feature of any DAG-based frameworks is that execution of these expressions *builds* a DAG
+rather than *performing* the actual processing functions (which happens separately in a completely different context).
+
+Given the implementation of the particular operators used in the previous example, this single expression might render
+a workflow with the two *train* and *apply* task graphs visualized as follows:
 
 .. md-mermaid::
     :name: flowcharts
@@ -76,9 +80,9 @@ The meaning of :doc:`operators <operator>` and how they are defined using :doc:`
 :doc:`interconnections <topology>` is described in details in the following chapters.
 
 .. caution::
-    The workflow internals is at its core applied principles from graph theory and SW+ML engineering, which might feel
-    way too involved from a general data-science perspective. Fortunately, this understanding is not required for the
-    usual day-to-day work with the existing high-level ForML operators.
+    At its core, the workflow internals are built around graph theory and SW+ML engineering principles, which might feel
+    way too involved from a general data-science perspective. Fortunately, this level of detail is not required
+    for the usual day-to-day work with the existing high-level ForML operators.
 
 
 .. toctree::
