@@ -44,24 +44,31 @@ of the input and output (apply) ports:
     from forml import flow
     from forml.pipeline import payload  # let's use some existing actors
 
-    # one input, one output and the PandasSelect actor Spec
-    select_foo = flow.Worker(payload.PandasSelect.spec(columns=['foo', 'bar']), szin=1, szout=1)
-    # one input, one output and the PandasDrop actor Spec
-    drop_baz = flow.Worker(payload.PandasDrop.spec(columns=['baz']), szin=1, szout=1)
-    # two inputs, one output and the PandasConcat actor Spec
-    concat = flow.Worker(payload.PandasConcat.spec(axis='columns'), szin=2, szout=1)
-    # one input, one output and the mean_impute actor Spec (defined in the previous chapter)
-    impute_bar_apply = flow.Worker(mean_impute.spec(column='bar'), szin=1, szout=1)
+    # one input, one output and the PandasSelect stateless actor Spec
+    select_foobar = flow.Worker(payload.PandasSelect.spec(columns=['foo', 'bar']), szin=1, szout=1)
+    select_bar = flow.Worker(payload.PandasSelect.spec(columns=['bar']), szin=1, szout=1)
+    select_baz = flow.Worker(payload.PandasSelect.spec(columns=['baz']), szin=1, szout=1)
 
-This gives us four disconnected workers:
+    # one input, one output and the PandasDrop stateless actor Spec
+    drop_bar = flow.Worker(payload.PandasDrop.spec(columns=['bar']), szin=1, szout=1)
+
+    # two inputs, one output and the PandasConcat stateless actor Spec
+    concat = flow.Worker(payload.PandasConcat.spec(axis='columns'), szin=2, szout=1)
+
+    # one input, one output and the mean_impute stateful actor Spec (defined in the previous chapter)
+    impute_baz_apply = flow.Worker(mean_impute.spec(column='foo'), szin=1, szout=1)
+
+This gives us the following disconnected workers:
 
 .. md-mermaid::
 
     graph LR
-        si(("i")) --> select_foo --> so(("o"))
-        di(("i")) --> drop_baz --> do(("o"))
-        ci1(("i1")) & ci2(("i2")) --> concat --> co(("o"))
-        ii(("i")) --> impute_bar_apply --> io(("o"))
+        sfbi((i)) --> select_foobar --> sfbo((o))
+        szi((i)) --> select_baz --> szo((o))
+        ci1((i1)) & ci2((i2)) --> concat --> co((o))
+        dbi((i)) --> drop_bar --> dbo((o))
+        sri((i)) --> select_bar --> sro((o))
+        ibai((i)) --> impute_baz_apply --> ibao((o))
 
 .. note::
     All the actors we chose in this example work with Pandas payload - by no means this is some official format required
@@ -75,22 +82,23 @@ Let's now create the actual dependency of the individual tasks by connecting the
 
 .. code-block:: python
 
-    concat[0].subscribe(select_foo[0])
-    concat[1].subscribe(drop_baz[0])
-    impute_bar_apply[0].subscribe(concat[0])
+    concat[0].subscribe(select_foobar[0])
+    concat[1].subscribe(select_baz[0])
+    drop_bar[0].subscribe(concat[0])
+    select_bar[0].subscribe(concat[0])
+    impute_baz_apply[0].subscribe(drop_bar[0])
 
 The ``node[port_index]`` *getitem* syntax on a ``flow.Node`` instance returns a ``flow.PubSub`` object for
-the particular :ref:`Apply port <actor-ports>` on the *input* or *output* side (determined by context) of that node,
-that can be used to publish or subscribe to another such object.
+the particular :ref:`Apply port <actor-ports>` on the *input* or *output* side (determined by context) of that node.
+This can be used to publish or subscribe to another such object.
 
 .. caution::
     Any input port can be subscribed to at most one upstream output port but any output port can be publishing to
     multiple subscribed input ports. Actor cannot be subscribed to itself.
 
-The key methods of the ``flow.PubSub`` class are:
+The key method of the ``flow.PubSub`` is the ``.subscribe()``:
 
-.. autoclass:: forml.flow.PubSub
-   :members: subscribe, publish
+.. automethod:: forml.flow.PubSub.subscribe
 
 
 Now, with that connections between our nodes, the topology looks like this:
@@ -98,9 +106,10 @@ Now, with that connections between our nodes, the topology looks like this:
 .. md-mermaid::
 
     graph LR
-        si(("i")) --> select_foo --> concat
-        di(("i")) --> drop_baz --> concat
-        concat --> impute_bar_apply --> co(("o"))
+        sfbi((i)) --> select_foobar -- "o(0)->i(0)" --> concat
+        sbi((i)) --> select_baz -- "o(0)->i(1)" --> concat
+        concat -- "o(0)->i(0)" --> drop_bar -- "o(0)->i(0)" --> impute_baz_apply --> ibao((o))
+        concat -- "o(0)->i(0)" --> select_bar --> sro((o))
 
 
 Dealing with Worker State
@@ -114,45 +123,46 @@ ports. This is achieved simply using the ``.train()`` method on the worker objec
 
 Training and applying even the same worker are two distinct tasks, hence they need to be represented using two related
 but separate worker nodes. ForML transparently manages these related workers using a ``flow.Worker.Group`` instance.
-All workers in the same *group* have the same shape and share the same actor builder instance. Workers of the same
-group can be created using one of the two methods:
+All workers in the same *group* have the same shape and share the same actor builder instance.
+
+Based on the group membership, ForML automatically handles the runtime state management between the different modes
+of the same actor (the :ref:`State ports <actor-ports>` are *system* level ports and cannot be connected
+from the user level API).
+
+Workers of the same group can be created using one of the two methods:
 
 .. automethod:: forml.flow.Worker.fork
 .. automethod:: forml.flow.Worker.fgen
 
-Based on the group membership, ForML automatically handles the runtime state management between the different modes
-of the same actor.
 
 .. code-block:: python
 
-    impute_bar_train = impute_bar_apply.fork()
+    impute_baz_train = impute_baz_apply.fork()
+    impute_baz_train(drop_bar[0], select_bar[0])
 
-    concat[0].subscribe(select_foo[0])
-    concat[1].subscribe(drop_baz[0])
+Now we have one more worker ``impute_baz_train`` logically *grouped* as a companion of the original
+``impute_baz_apply``. The task graph now looks like this:
 
+.. md-mermaid::
 
-
-..caution::
-    At most one worker in the same group can be trained
-
-At most one trained
-
-
-
-Actor is expected to process data arriving to input ports and return results using output ports if applicable. There
-is specific consistency constraint which ports can or need to be active (attached) at the same time: either both
-*Train* and *Label* or all *Apply* inputs and outputs.
-
-
-
-
-worker.fork()
+    graph LR
+        subgraph Group
+        impute_baz_apply
+        impute_baz_train
+        end
+        sfbi((i)) --> select_foobar -- "o(0)->i(0)" --> concat
+        sbi((i)) --> select_baz -- "o(0)->i(1)" --> concat
+        concat -- "o(0)->i(0)" --> drop_bar -- "o(0)->i(0)" --> impute_baz_apply --> ibao((o))
+        concat -- "o(0)->i(0)" --> select_bar -- "o(0)->Label" --> impute_baz_train
+        drop_bar -- "o(0)->Train" --> impute_baz_train
 
 
+.. caution::
 
+    Worker groups and the trained workers impose a couple of additional constraints:
 
-
-Consistency Constraints
+    * At most one worker in the same group can be trained.
+    * Either both *Train* and *Label* or all *Apply* input and output ports of each worker must be connected.
 
 Future Nodes
 
