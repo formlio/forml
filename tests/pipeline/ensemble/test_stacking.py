@@ -50,16 +50,16 @@ class TestFullStack(testing.operator(ensemble.FullStack)):
         TypeError, 'Invalid combination'
     )
     extra_nsplits_missing_cval = testing.Case(MODEL1, MODEL2, nsplits=2).raises(TypeError, 'Invalid combination')
-    missing_nsplits = testing.Case(MODEL1, MODEL2, splitter=payload.PandasCVFolds.spec()).raises(
+    missing_nsplits = testing.Case(MODEL1, MODEL2, splitter=payload.PandasCVFolds.builder()).raises(
         TypeError, 'Invalid combination'
     )
     extra_cval = testing.Case(
-        MODEL1, MODEL2, crossvalidator='foo', splitter=payload.PandasCVFolds.spec(), nsplits=2
+        MODEL1, MODEL2, crossvalidator='foo', splitter=payload.PandasCVFolds.builder(), nsplits=2
     ).raises(TypeError, 'Invalid combination')
     extra_cval_missing_nsplits = testing.Case(
-        MODEL1, MODEL2, crossvalidator='foo', splitter=payload.PandasCVFolds.spec()
+        MODEL1, MODEL2, crossvalidator='foo', splitter=payload.PandasCVFolds.builder()
     ).raises(TypeError, 'Invalid combination')
-    few_splits = testing.Case(MODEL1, MODEL2, splitter=payload.PandasCVFolds.spec(), nsplits=1).raises(
+    few_splits = testing.Case(MODEL1, MODEL2, splitter=payload.PandasCVFolds.builder(), nsplits=1).raises(
         ValueError, 'splits required'
     )
 

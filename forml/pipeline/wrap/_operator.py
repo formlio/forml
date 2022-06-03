@@ -34,12 +34,12 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
         @decorate.Adapter.apply  # decorators can be chained if same actor is supposed to be used for another mode
         @decorate.Function.apply
         def myadapter(df, **kwargs):
-            # stateless adapter implementation used for train/apply paths
+            # stateless adapter implementation used for train/apply segments
 
         @myadapter.label(**kwargs)  # previously decorated adapter can be itself used as decorator
         @decorate.Function.apply
         def myadapter(df, **kwargs):
-            # stateless adapter implementation used for label path
+            # stateless adapter implementation used for label segment
     """
 
     class Builder:
@@ -78,19 +78,19 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
                 self._actor = actor or self._default
                 self._params = params
 
-            def spec(self, *args, **kwargs) -> typing.Optional[flow.Spec]:
-                """Create the actor task.Spec from previously provided config or do nothing if no config provided.
+            def builder(self, *args, **kwargs) -> typing.Optional[flow.Builder]:
+                """Create the actor builder from previously provided config or do nothing if no config provided.
 
                 Args:
-                    *args: Optional args for the Spec instance.
-                    **kwargs: Optional kwargs for the Spec instance.
+                    *args: Optional args for the Builder instance.
+                    **kwargs: Optional kwargs for the Builder instance.
 
                 Returns:
-                    Spec instance or None if not configured.
+                    Builder instance or None if not configured.
                 """
                 if not self._actor:
                     return None
-                return self._actor.spec(*args, **self._params | kwargs)
+                return self._actor.builder(*args, **self._params | kwargs)
 
         train = property(lambda self: Adapter.Builder.Decorator(self, self._train))
         apply = property(lambda self: Adapter.Builder.Decorator(self, self._apply))
@@ -103,7 +103,9 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
 
         def __call__(self, *args, **kwargs) -> 'Adapter':
             return Adapter(
-                self._apply.spec(*args, **kwargs), self._train.spec(*args, **kwargs), self._label.spec(*args, **kwargs)
+                self._apply.builder(*args, **kwargs),
+                self._train.builder(*args, **kwargs),
+                self._label.builder(*args, **kwargs),
             )
 
     class Decorator:
@@ -140,16 +142,16 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
 
     def __init__(
         self,
-        apply: typing.Optional[flow.Spec] = None,
-        train: typing.Optional[flow.Spec] = None,
-        label: typing.Optional[flow.Spec] = None,
+        apply: typing.Optional[flow.Builder] = None,
+        train: typing.Optional[flow.Builder] = None,
+        label: typing.Optional[flow.Builder] = None,
     ):
         for mode in apply, train, label:
             if mode and mode.actor.is_stateful():
                 raise forml.InvalidError('Stateful actor invalid for an adapter')
-        self._apply: typing.Optional[flow.Spec] = apply
-        self._train: typing.Optional[flow.Spec] = train
-        self._label: typing.Optional[flow.Spec] = label
+        self._apply: typing.Optional[flow.Builder] = apply
+        self._train: typing.Optional[flow.Builder] = train
+        self._label: typing.Optional[flow.Builder] = label
 
     def __repr__(self):
         return (
@@ -171,11 +173,11 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
             Composed track.
         """
 
-        def worker(mode: typing.Optional[flow.Spec]) -> typing.Optional[flow.Worker]:
-            """Create a worker for given spec if not None.
+        def worker(mode: typing.Optional[flow.Builder]) -> typing.Optional[flow.Worker]:
+            """Create a worker for given builder if not None.
 
             Args:
-                mode: Task spec for given mode.
+                mode: Task builder for given mode.
 
             Returns:
                 Worker instance or None.

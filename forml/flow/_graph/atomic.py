@@ -190,26 +190,26 @@ class Worker(Node):
     class Group(set):
         """Container for holding all forked workers."""
 
-        def __init__(self, spec: 'flow.Spec'):
+        def __init__(self, builder: 'flow.Builder'):
             super().__init__()
-            self.spec: 'flow.Spec' = spec
+            self.builder: 'flow.Builder' = builder
             self.uid: uuid.UUID = uuid.uuid4()
 
         def __repr__(self):
-            return f'{self.spec}[uid={self.uid}]'
+            return f'{self.builder}[uid={self.uid}]'
 
     @typing.overload
-    def __init__(self, group_or_spec: 'flow.Spec', /, szin: int, szout: int):
+    def __init__(self, group_or_builder: 'flow.Builder', /, szin: int, szout: int):
         """Constructor for a new independent worker."""
 
     @typing.overload
-    def __init__(self, group_or_spec: Group, /, szin: int, szout: int):
+    def __init__(self, group_or_builder: Group, /, szin: int, szout: int):
         """Constructor for a new worker belonging to the given group."""
 
-    def __init__(self, group_or_spec, /, szin, szout):
+    def __init__(self, group_or_builder, /, szin, szout):
         super().__init__(szin, szout)
         self._group: Worker.Group = (
-            group_or_spec if isinstance(group_or_spec, Worker.Group) else self.Group(group_or_spec)
+            group_or_builder if isinstance(group_or_builder, Worker.Group) else self.Group(group_or_builder)
         )
         self._group.add(self)
 
@@ -217,13 +217,13 @@ class Worker(Node):
         return repr(self._group)
 
     @property
-    def spec(self) -> 'flow.Spec':
-        """Task spec in this worker.
+    def builder(self) -> 'flow.Builder':
+        """Task builder in this worker.
 
         Returns:
-            Task spec.
+            Task builder.
         """
-        return self._group.spec
+        return self._group.builder
 
     def _publish(self, index: int, subscription: 'flow.Subscription') -> None:
         """Publish an output port based on the given subscription.
@@ -263,7 +263,7 @@ class Worker(Node):
         Returns:
             True if stateful.
         """
-        return self._group.spec.actor.is_stateful()
+        return self._group.builder.actor.is_stateful()
 
     @property
     def derived(self) -> bool:
@@ -293,7 +293,7 @@ class Worker(Node):
         return frozenset(self._group)
 
     def train(self, train: 'flow.Publishable', label: 'flow.Publishable') -> None:
-        """Subscribe this node *Train* and *Label* port to given publishers.
+        """Subscribe this node *Train* and *Label* ports to the given publishers.
 
         Args:
             train: Train port publisher.
@@ -327,18 +327,18 @@ class Worker(Node):
         return Worker(self._group, self.szin, self.szout)
 
     @classmethod
-    def fgen(cls, spec: 'flow.Spec', szin: int, szout: int) -> typing.Generator['flow.Worker', None, None]:
+    def fgen(cls, builder: 'flow.Builder', szin: int, szout: int) -> typing.Iterator['flow.Worker']:
         """Generator producing forks of the same node belonging to the same group.
 
         Args:
-            spec: Worker spec.
+            builder: Actor builder.
             szin: Worker input apply port size.
             szout: Worker output apply port size.
 
         Returns:
             Generator producing same-group worker forks.
         """
-        node = cls(spec, szin, szout)
+        node = cls(builder, szin, szout)
         yield node
         while True:
             yield node.fork()

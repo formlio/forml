@@ -34,7 +34,7 @@ class Atomic(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def node(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Node:
+    def node(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Node:
         """Node fixture."""
 
     def test_copy(self, node: flow.Node):
@@ -81,9 +81,9 @@ class TestWorker(Atomic):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def node(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
+    def node(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
         """Node fixture."""
-        return flow.Worker(actor_spec, 1, 1)
+        return flow.Worker(actor_builder, 1, 1)
 
     def test_train(self, node: flow.Worker, simple: flow.Worker, multi: flow.Worker):
         """Test train subscription"""
@@ -116,11 +116,11 @@ class TestWorker(Atomic):
         assert node.derived
         assert not fork.derived
 
-    def test_spec(
-        self, node: flow.Worker, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    def test_builder(
+        self, node: flow.Worker, actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ):
-        """Test the node spec."""
-        assert node.spec is actor_spec
+        """Test the node builder."""
+        assert node.builder is actor_builder
 
 
 class TestFuture(Atomic):
@@ -129,7 +129,7 @@ class TestFuture(Atomic):
     @staticmethod
     @pytest.fixture(scope='function')
     def node(
-        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ) -> flow.Future:  # pylint: disable=unused-argument
         """Node fixture."""
         return flow.Future()

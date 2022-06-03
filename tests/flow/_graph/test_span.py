@@ -28,7 +28,7 @@ from forml.io import layout
 
 
 class TestTraversal:
-    """Path traversal tests."""
+    """Segment traversal tests."""
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -49,7 +49,7 @@ class TestTraversal:
         assert copy[simple].gid == simple.gid
         assert copy[multi].gid == multi.gid
 
-        # copy single-node path
+        # copy single-node segment
         future = flow.Future()
         copy = span.Traversal(future).copy(future)
         assert future in copy
@@ -66,60 +66,62 @@ class TestTraversal:
         assert not expected
 
 
-class TestPath:
-    """Path tests."""
+class TestSegment:
+    """Segment tests."""
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def head(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
-        """Path head fixture."""
-        return flow.Worker(actor_spec, 1, 1)
+    def head(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
+        """Segment head fixture."""
+        return flow.Worker(actor_builder, 1, 1)
 
     @staticmethod
     @pytest.fixture(scope='function', params=(False, True))
-    def path(
-        request, head: flow.Worker, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
-    ) -> span.Path:
-        """Path fixture."""
-        flow1 = flow.Worker(actor_spec, 1, 2)
-        flow2 = flow.Worker(actor_spec, 2, 1)
+    def segment(
+        request,
+        head: flow.Worker,
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+    ) -> flow.Segment:
+        """Segment fixture."""
+        flow1 = flow.Worker(actor_builder, 1, 2)
+        flow2 = flow.Worker(actor_builder, 2, 1)
         flow1[0].subscribe(head[0])
         flow2[0].subscribe(flow1[0])
         flow2[1].subscribe(flow1[1])
         if request.param:  # stateful
-            flow3 = flow.Worker(actor_spec, 1, 1)
+            flow3 = flow.Worker(actor_builder, 1, 1)
             flow2[0].publish(flow3, port.Train())
-        return span.Path(head)
+        return flow.Segment(head)
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def superpath(path: span.Path, simple: flow.Worker) -> span.Path:
-        """Fixture containing the path as of its sub-path."""
-        path.subscribe(simple[0])
-        return span.Path(simple)
+    def presegment(segment: flow.Segment, simple: flow.Worker) -> flow.Segment:
+        """Fixture containing the segment as its followup segment."""
+        segment.subscribe(simple[0])
+        return flow.Segment(simple)
 
     def test_invalid(self, multi: flow.Worker):
-        """Testing invalid path."""
+        """Testing invalid segment."""
         with pytest.raises(flow.TopologyError):  # not a simple edge node
-            span.Path(multi)
+            flow.Segment(multi)
 
-    def test_copy(self, path: span.Path):
-        """Testing copying path nodes."""
-        copy = path.copy()
-        assert copy._head.gid == path._head.gid
+    def test_copy(self, segment: flow.Segment):
+        """Testing copying segment nodes."""
+        copy = segment.copy()
+        assert copy._head.gid == segment._head.gid
 
-    def test_pubsub(self, path: span.Path, simple: flow.Worker, multi: flow.Worker):
-        """Testing path publishing."""
-        multi.train(path.publisher, path.publisher)
-        path.subscribe(simple[0])
-        assert span.Path(simple)._tail is path._tail
+    def test_pubsub(self, segment: flow.Segment, simple: flow.Worker, multi: flow.Worker):
+        """Testing segment publishing."""
+        multi.train(segment.publisher, segment.publisher)
+        segment.subscribe(simple[0])
+        assert flow.Segment(simple)._tail is segment._tail
 
-    def test_subpath(self, path: span.Path, superpath: span.Path):
-        """Testing subpath checking."""
-        assert path.is_subpath(path)
-        assert not superpath.is_subpath(path)
-        assert path.is_subpath(superpath)
+    def test_follows(self, segment: flow.Segment, presegment: flow.Segment):
+        """Testing subsegment checking."""
+        assert segment.follows(segment)
+        assert not presegment.follows(segment)
+        assert segment.follows(presegment)
 
-    def test_root(self, path: span.Path, superpath: span.Path):
-        """Test the root path selector."""
-        assert span.Path.root(path, superpath) is span.Path.root(superpath, path) is superpath
+    def test_root(self, segment: flow.Segment, presegment: flow.Segment):
+        """Test the root segment selector."""
+        assert flow.Segment.root(segment, presegment) is flow.Segment.root(presegment, segment) is presegment

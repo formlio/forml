@@ -180,7 +180,7 @@ class Subscriptable(Applicable):
         return self._node.szin
 
     def subscribe(self, publisher: 'flow.Publishable') -> None:
-        """Subscribe to give publisher.
+        """Subscribe to the given publisher.
 
         Args:
             publisher: *Publishable* to subscribe to.

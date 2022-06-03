@@ -31,7 +31,7 @@ class TestMapReduce(testing.operator(payload.MapReduce)):
     LABELS = pandas.Series([0, 1, 0], name='baz')
 
     apply_mode = (
-        testing.Case(payload.PandasSelect.spec(columns=['foo']), payload.PandasDrop.spec(columns=['foo']))
+        testing.Case(payload.PandasSelect.builder(columns=['foo']), payload.PandasDrop.builder(columns=['foo']))
         .apply(FEATURES)
         .returns(FEATURES, testing.pandas_equals)
     )

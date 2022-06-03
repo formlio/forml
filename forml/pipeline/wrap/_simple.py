@@ -31,11 +31,11 @@ class Base(flow.Operator, metaclass=abc.ABCMeta):
     SZIN = 1
     SZOUT = 1
 
-    def __init__(self, spec: flow.Spec):
-        self.spec: flow.Spec = spec
+    def __init__(self, builder: flow.Builder):
+        self.builder: flow.Builder = builder
 
     def __repr__(self):
-        return f'{self.__class__.__name__}[{repr(self.spec)}]'
+        return f'{self.__class__.__name__}[{repr(self.builder)}]'
 
     @classmethod
     def operator(cls, actor: typing.Optional[type[flow.Actor]] = None, /, **params) -> typing.Callable[..., 'Base']:
@@ -62,7 +62,7 @@ class Base(flow.Operator, metaclass=abc.ABCMeta):
                 Returns:
                     Operator instance.
                 """
-                return cls(flow.Spec(actor, *args, **params | kwargs))
+                return cls(flow.Builder(actor, *args, **params | kwargs))
 
             return simple
 
@@ -79,7 +79,7 @@ class Base(flow.Operator, metaclass=abc.ABCMeta):
         Returns:
             Composed track.
         """
-        return self.apply(flow.Worker(self.spec, self.SZIN, self.SZOUT), left.expand())
+        return self.apply(flow.Worker(self.builder, self.SZIN, self.SZOUT), left.expand())
 
     @abc.abstractmethod
     def apply(self, applier: flow.Worker, left: flow.Trunk) -> flow.Trunk:
@@ -90,7 +90,7 @@ class Base(flow.Operator, metaclass=abc.ABCMeta):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
 
 
@@ -105,10 +105,10 @@ class Mapper(Base):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
         train_applier: flow.Worker = applier.fork()
-        if self.spec.actor.is_stateful():
+        if self.builder.actor.is_stateful():
             train_trainer: flow.Worker = applier.fork()
             train_trainer.train(left.train.publisher, left.label.publisher)
         return left.extend(applier, train_applier)
@@ -117,10 +117,10 @@ class Mapper(Base):
 class Consumer(Base):
     """Basic operator with one input and one output port in apply mode and no output in train mode."""
 
-    def __init__(self, spec: flow.Spec):
-        if not spec.actor.is_stateful():
+    def __init__(self, builder: flow.Builder):
+        if not builder.actor.is_stateful():
             raise forml.InvalidError('Stateless actor invalid for a consumer')
-        super().__init__(spec)
+        super().__init__(builder)
 
     def apply(self, applier: flow.Worker, left: flow.Trunk) -> flow.Trunk:
         """Consumer composition implementation.
@@ -130,7 +130,7 @@ class Consumer(Base):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
         trainer: flow.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
@@ -153,7 +153,7 @@ class Labeler(Base):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
         train: flow.Future = flow.Future()
         label: flow.Future = flow.Future()

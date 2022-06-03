@@ -38,8 +38,8 @@ class Function(_api.Metric):
         metric: typing.Callable[[typing.Any, typing.Any], float],
         reducer: typing.Callable[..., float] = lambda *m: statistics.mean(m),  # noqa: B008
     ):
-        self._metric: flow.Spec = payload.Apply.spec(function=metric)
-        self._reducer: flow.Spec = payload.Apply.spec(function=reducer)
+        self._metric: flow.Builder = payload.Apply.builder(function=metric)
+        self._reducer: flow.Builder = payload.Apply.builder(function=reducer)
 
     def score(self, *outcomes: 'evaluation.Outcome') -> flow.Worker:
         def apply(fold: 'evaluation.Outcome') -> flow.Worker:

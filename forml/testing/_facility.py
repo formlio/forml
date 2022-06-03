@@ -67,14 +67,14 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
                 return self._features, self._labels
 
         def __init__(self, scenario: _spec.Scenario.Input):
-            self._testset: flow.Spec[Feed.Operator.Apply] = self.Apply.spec(scenario.apply)
-            self._trainset: flow.Spec[Feed.Operator.Train] = self.Train.spec(scenario.train, scenario.label)
+            self._testset: flow.Builder[Feed.Operator.Apply] = self.Apply.builder(scenario.apply)
+            self._trainset: flow.Builder[Feed.Operator.Train] = self.Train.builder(scenario.train, scenario.label)
 
         def compose(self, left: flow.Composable) -> flow.Trunk:
-            """Compose the source segment track.
+            """Compose the source segment trunk.
 
             Returns:
-                Source segment track.
+                Source segment trunk.
             """
             testset = flow.Worker(self._testset, 0, 1)
             trainset = flow.Worker(self._trainset, 0, 2)
@@ -82,7 +82,7 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
             train[0].subscribe(trainset[0])
             label = flow.Future()
             label[0].subscribe(trainset[1])
-            return flow.Trunk(testset, flow.Path(trainset, train), flow.Path(trainset, label))
+            return flow.Trunk(testset, flow.Segment(trainset, train), flow.Segment(trainset, label))
 
     def __init__(self, scenario: _spec.Scenario.Input, **kwargs):
         super().__init__(**kwargs)
@@ -135,7 +135,7 @@ class Launcher:
         def visit_node(self, node: flow.Worker) -> None:
             if isinstance(node, flow.Worker) and node.gid not in self._gids:
                 self._gids.add(node.gid)
-                node.spec()
+                node.builder()
 
     def __init__(self, params: _spec.Scenario.Params, scenario: _spec.Scenario.Input, runner: provcfg.Runner):
         self._params: _spec.Scenario.Params = params

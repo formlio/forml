@@ -50,27 +50,27 @@ class CrossVal(_api.Method):
         """
 
     @typing.overload
-    def __init__(self, *, splitter: flow.Spec[payload.CVFoldable], nsplits: int):
-        """CrossVal constructor based on splitter supplied in form of a Spec object.
+    def __init__(self, *, splitter: flow.Builder[payload.CVFoldable], nsplits: int):
+        """CrossVal constructor based on splitter supplied in form of an actor builder object.
 
         Args:
-            splitter: Spec object defining the folding splitter.
+            splitter: Actor builder object defining the folding splitter.
             nsplits: Number of splits the splitter is going to generate (needs to be explicit as there is no reliable
-                     way to extract it from the Spec).
+                     way to extract it from the Builder).
         """
 
     def __init__(self, *, crossvalidator=None, splitter=payload.PandasCVFolds, nsplits=None):
         if ((crossvalidator is None) ^ (nsplits is not None)) or (
-            (crossvalidator is None) ^ isinstance(splitter, flow.Spec)
+            (crossvalidator is None) ^ isinstance(splitter, flow.Builder)
         ):
             raise TypeError('Invalid combination of crossvalidator, splitter and nsplits')
-        if not isinstance(splitter, flow.Spec):
-            splitter = splitter.spec(crossvalidator=crossvalidator)
+        if not isinstance(splitter, flow.Builder):
+            splitter = splitter.builder(crossvalidator=crossvalidator)
             nsplits = crossvalidator.get_n_splits()
         if nsplits < 2:
             raise ValueError('At least 2 splits required')
         self._nsplits: int = nsplits
-        self._splitter: flow.Spec[payload.CVFoldable] = splitter
+        self._splitter: flow.Builder[payload.CVFoldable] = splitter
 
     def produce(
         self, pipeline: flow.Composable, features: flow.Publishable, label: flow.Publishable
@@ -140,11 +140,11 @@ class HoldOut(CrossVal):
         """
 
     @typing.overload
-    def __init__(self, *, splitter: flow.Spec[payload.CVFoldable]):
-        """HoldOut constructor based on splitter supplied in form of a Spec object.
+    def __init__(self, *, splitter: flow.Builder[payload.CVFoldable]):
+        """HoldOut constructor based on splitter supplied in form of a Builder object.
 
         Args:
-            splitter: Spec object defining the train-test splitter.
+            splitter: Builder object defining the train-test splitter.
         """
 
     def __init__(
@@ -155,15 +155,15 @@ class HoldOut(CrossVal):
         random_state=None,
         stratify=None,
         crossvalidator=None,
-        splitter: typing.Union[type[payload.CVFoldable], flow.Spec[payload.CVFoldable]] = payload.PandasCVFolds,
+        splitter: typing.Union[type[payload.CVFoldable], flow.Builder[payload.CVFoldable]] = payload.PandasCVFolds,
     ):
         if (test_size is None and train_size is None and random_state is None and stratify is None) ^ (
-            crossvalidator is not None or isinstance(splitter, flow.Spec)
+            crossvalidator is not None or isinstance(splitter, flow.Builder)
         ):
             raise TypeError('Invalid combination of crossvalidator and test_size/train_size/random_state/shuffle')
 
         cvsplits = None
-        if not isinstance(splitter, flow.Spec):
+        if not isinstance(splitter, flow.Builder):
             if not crossvalidator:
                 cvclass = model_selection.StratifiedShuffleSplit if stratify else model_selection.ShuffleSplit
                 crossvalidator = cvclass(test_size=test_size, train_size=train_size, random_state=random_state)

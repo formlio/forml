@@ -89,17 +89,17 @@ class Type(Proxy[Origin], metaclass=abc.ABCMeta):
     def __call__(self, *args, **kwargs) -> flow.Actor:
         """Actor constructor-like proxy."""
 
-    def spec(self, *args, **kwargs) -> flow.Spec:
-        """Shortcut for creating a spec of this actor builder.
+    def builder(self, *args, **kwargs) -> flow.Builder:
+        """Shortcut for creating a builder of this actor builder.
 
         Args:
-            *args: Args to be used for the spec.
-            **kwargs: Keywords to be used for the spec.
+            *args: Args to be used for the builder.
+            **kwargs: Keywords to be used for the builder.
 
         Returns:
-            Actor spec instance.
+            Actor builder instance.
         """
-        return flow.Spec(self, *args, **kwargs)
+        return flow.Builder(self, *args, **kwargs)
 
 
 class Class(Mapping[type], Type[type]):

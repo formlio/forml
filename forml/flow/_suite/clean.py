@@ -20,8 +20,8 @@ Graph topology validation.
 
 # train and apply graph don't intersect
 # acyclic
-# train path is a closure
-# apply path is a channel
+# train segment is a closure
+# apply segment is a channel
 # nodes ports subscriptions:
 # * train/apply subscriptions are exclusive (enforced synchronously)
 # * no future nodes
@@ -55,11 +55,11 @@ class Validator(span.Visitor):
         if isinstance(node, atomic.Future):
             self._futures.add(node)
 
-    def visit_path(self, path: span.Path) -> None:
+    def visit_segment(self, segment: span.Segment) -> None:
         """Final visit.
 
         Args:
-            path: Path to be visited.
+            segment: Segment to be visited.
         """
         if self._futures:
-            raise _exception.TopologyError(f'Future nodes on path: {", ".join(str(f) for f in self._futures)}')
+            raise _exception.TopologyError(f'Future nodes in segment: {", ".join(str(f) for f in self._futures)}')

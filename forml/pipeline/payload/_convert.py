@@ -100,7 +100,7 @@ def pandas_params(
 def ToPandas(  # pylint: disable=invalid-name
     data: typing.Any, *, columns: typing.Optional[typing.Sequence[str]] = None
 ) -> pdtype.NDFrame:
-    """Simple 1:1 operator that attempts to convert the data on each of apply/train/label path to pandas
+    """Simple 1:1 operator that attempts to convert the data on each of apply/train/label segments to pandas
     dataframe/series.
 
     Args:

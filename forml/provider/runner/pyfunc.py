@@ -243,8 +243,8 @@ class Expression(Term):
                 term = Get(instruction.index)
             else:
                 assert isinstance(instruction, flow.Functor), f'Not a functor: {instruction}'
-                spec, action = instruction
-                actor = spec()
+                builder, action = instruction
+                actor = builder()
                 action, args = action.reduce(actor, *(evaluate(a) for a in upstream[instruction]))
                 term = Task(actor, action)
             dag.append((term, tuple(resolve(a) for a in args)))

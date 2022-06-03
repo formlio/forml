@@ -107,12 +107,12 @@ is to simply extend this class providing the relevant methods with the desired f
 look as follows:
 
 .. autoclass:: forml.flow.Actor
-   :members: apply, train, get_state, set_state, get_params, set_params
+   :members: apply, train, get_state, set_state, get_params, set_params, builder
 
 
-.. _actor-spec:
+.. _actor-builder:
 
-.. autoclass:: forml.flow.Spec
+.. autoclass:: forml.flow.Builder
 
 
 Implementation

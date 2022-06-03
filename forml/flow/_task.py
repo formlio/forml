@@ -178,23 +178,23 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
             raise NotImplementedError(f'Params setter for {params} not implemented on {self}')
 
     @classmethod
-    def spec(cls: 'type[_Actor]', *args, **kwargs: typing.Any) -> 'Spec[_Actor]':
-        """Shortcut for creating a particular spec instance for this actor.
+    def builder(cls: 'type[_Actor]', *args, **kwargs: typing.Any) -> 'flow.Builder[_Actor]':
+        """Creating a builder instance for this actor.
 
         Args:
             *args: Positional params.
             **kwargs: Keyword params.
 
         Returns:
-            Actor spec instance.
+            Actor builder instance.
         """
-        return Spec(cls, *args, **kwargs)
+        return Builder(cls, *args, **kwargs)
 
     @classmethod
     def is_stateful(cls) -> bool:
         """Check whether this actor is stateful.
 
-        By default this is determined based on the existence of user-overridden train method.
+        By default, this is determined based on the existence of user-overridden train method.
 
         Returns:
             True if stateful.
@@ -207,11 +207,8 @@ _Actor = typing.TypeVar('_Actor', bound=Actor)
 
 
 @typing.final
-class Spec(typing.Generic[_Actor], collections.namedtuple('Spec', 'actor, args, kwargs')):
-    """Spec is an Actor builder.
-
-    It is holding all the required init configuration for instantiating the particular actor.
-    """
+class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, args, kwargs')):
+    """Actor builder holding all the required init configuration for instantiating the particular actor."""
 
     actor: type[_Actor]
     args: tuple[typing.Any]

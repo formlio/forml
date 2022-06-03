@@ -31,7 +31,9 @@ class TestTrunk:
 
     def test_new(self):
         """Test segment setup."""
-        assert all(isinstance(m, span.Path) for m in assembly.Trunk(span.Path(atomic.Future()), atomic.Future(), None))
+        assert all(
+            isinstance(m, span.Segment) for m in assembly.Trunk(span.Segment(atomic.Future()), atomic.Future(), None)
+        )
 
 
 class TestComposition:

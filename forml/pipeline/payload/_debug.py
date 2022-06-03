@@ -181,7 +181,7 @@ class Dump(flow.Operator):
         * `$seq` - a sequence ID which gets incremented for each particular Actor instance
         * `$mode` - a label of the mode in which the dumping occurs (`train` or `apply`)
 
-    The path (or path template) must be provided either within the raw spec parameters or as the standalone `path`
+    The path (or path template) must be provided either within the raw builder parameters or as the standalone `path`
     parameter which is used as a fallback option.
     """
 
@@ -189,44 +189,47 @@ class Dump(flow.Operator):
 
     def __init__(
         self,
-        apply: flow.Spec['payload.Dumpable'] = PandasCSVDumper.spec(),  # noqa: B008
-        train: typing.Optional[flow.Spec['payload.Dumpable']] = None,
+        apply: flow.Builder['payload.Dumpable'] = PandasCSVDumper.builder(),  # noqa: B008
+        train: typing.Optional[flow.Builder['payload.Dumpable']] = None,
         *,
         path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
-        self._apply: typing.Callable[[int], flow.Spec['payload.Dumpable']] = self._spec_builder(apply, path, 'apply')
-        self._train: typing.Callable[[int], flow.Spec['payload.Dumpable']] = self._spec_builder(
+        self._apply: typing.Callable[[int], flow.Builder['payload.Dumpable']] = self._meta_builder(apply, path, 'apply')
+        self._train: typing.Callable[[int], flow.Builder['payload.Dumpable']] = self._meta_builder(
             train or apply, path, 'train'
         )
         self._instances: int = 0
 
     @classmethod
-    def _spec_builder(
-        cls, spec: flow.Spec['payload.Dumpable'], path: typing.Optional[typing.Union[str, pathlib.Path]], mode: str
-    ) -> typing.Callable[[int], flow.Spec['payload.Dumpable']]:
-        """Get a function for creating a Spec instance parametrized using a sequence id and a mode string which can be
-        used to interpolate potential placeholders in the path template.
+    def _meta_builder(
+        cls,
+        builder: flow.Builder['payload.Dumpable'],
+        path: typing.Optional[typing.Union[str, pathlib.Path]],
+        mode: str,
+    ) -> typing.Callable[[int], flow.Builder['payload.Dumpable']]:
+        """Get a function for creating a Builder instance parametrized using a sequence id and a mode string which can
+        be used to interpolate potential placeholders in the path template.
 
         Args:
-            spec: Raw spec to be enhanced. Optional path parameter can have template placeholders.
+            builder: Raw builder to be enhanced. Optional path parameter can have template placeholders.
             path: Optional path with potential template placeholders.
 
         Returns:
-            Factory function for creating a spec instance with the potential path template placeholders interpolated.
+            Factory function for creating a builder instance with the potential path template placeholders interpolated.
         """
 
-        def mkspec(seq: int) -> flow.Spec['payload.Dumpable']:
-            """The factory function for creating a spec instance with path template interpolation."""
+        def wrapper(seq: int) -> flow.Builder['payload.Dumpable']:
+            """The factory function for creating a builder instance with path template interpolation."""
 
             interpolated = string.Template(str(pathlib.Path(path))).safe_substitute(seq=seq, mode=mode)
-            return spec.actor.spec(*binding.args, path=interpolated, **binding.kwargs)
+            return builder.actor.builder(*binding.args, path=interpolated, **binding.kwargs)
 
-        binding = inspect.signature(spec.actor).bind_partial(*spec.args, **spec.kwargs)
+        binding = inspect.signature(builder.actor).bind_partial(*builder.args, **builder.kwargs)
         binding.apply_defaults()
         path = binding.arguments.pop('path', path)
         if not path:
             raise TypeError('Path is required')
-        return mkspec
+        return wrapper
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         """Composition implementation.
@@ -309,7 +312,7 @@ class Sniff(flow.Operator):
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         left = left.expand()
-        apply = flow.Worker(self.Actor.spec(self._queue), 1, 1)
-        train = flow.Worker(self.Actor.spec(self._queue), 1, 1)
+        apply = flow.Worker(self.Actor.builder(self._queue), 1, 1)
+        train = flow.Worker(self.Actor.builder(self._queue), 1, 1)
         train.train(left.train.publisher, left.label.publisher)
         return left.extend(apply=apply)

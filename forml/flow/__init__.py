@@ -26,10 +26,10 @@ from ._code.target.user import Apply, Functor, Preset, Train
 from ._exception import TopologyError
 from ._graph.atomic import Future, Node, Worker
 from ._graph.port import Publishable, PubSub, Subscriptable, Subscription
-from ._graph.span import Path, Visitor
+from ._graph.span import Segment, Visitor
 from ._suite.assembly import Composition, Trunk
 from ._suite.member import Composable, Operator, Origin
-from ._task import Actor, Features, Labels, Result, Spec, name
+from ._task import Actor, Builder, Features, Labels, Result, name
 
 __all__ = [
     'Actor',
@@ -50,12 +50,12 @@ __all__ = [
     'name',
     'Operator',
     'Origin',
-    'Path',
+    'Segment',
     'Preset',
     'Publishable',
     'PubSub',
     'Result',
-    'Spec',
+    'Builder',
     'Subscriptable',
     'Subscription',
     'Symbol',

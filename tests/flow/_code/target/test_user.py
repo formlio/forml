@@ -34,7 +34,9 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Functor:
+    def functor(
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ) -> flow.Functor:
         """Functor fixture."""
 
     def test_serializable(self, functor: flow.Functor, actor_state: bytes, args: typing.Sequence):
@@ -51,9 +53,11 @@ class TestApply(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Functor:
+    def functor(
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ) -> flow.Functor:
         """Functor fixture."""
-        return flow.Apply().functor(actor_spec)
+        return flow.Apply().functor(actor_builder)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -83,9 +87,11 @@ class TestTrain(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Functor:
+    def functor(
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ) -> flow.Functor:
         """Functor fixture."""
-        return flow.Train().functor(actor_spec)
+        return flow.Train().functor(actor_builder)
 
     @staticmethod
     @pytest.fixture(scope='session')
