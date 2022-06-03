@@ -26,11 +26,10 @@ import operator
 import typing
 
 from .. import _exception
-from . import node as nodemod
-from . import port
+from . import atomic, port
 
 
-class Visitor(nodemod.Visitor):
+class Visitor(atomic.Visitor):
     """Path visitor interface."""
 
     def visit_path(self, path: 'Path') -> None:
@@ -44,19 +43,19 @@ class Visitor(nodemod.Visitor):
 class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
     """Graph traversal helper."""
 
-    pivot: nodemod.Atomic
+    pivot: atomic.Node
     """Focal node of this traversal."""
-    members: typing.AbstractSet[nodemod.Atomic]
+    members: typing.AbstractSet[atomic.Node]
     """All nodes belonging to this traversal (including the 'pivot' node)."""
 
     class Cyclic(_exception.TopologyError):
         """Cyclic graph error."""
 
-    def __new__(cls, pivot: nodemod.Atomic, members: typing.AbstractSet[nodemod.Atomic] = frozenset()):
+    def __new__(cls, pivot: atomic.Node, members: typing.AbstractSet[atomic.Node] = frozenset()):
         return super().__new__(cls, pivot, frozenset(members | {pivot}))
 
     def directs(
-        self, *extras: nodemod.Atomic, mask: typing.Optional[typing.Callable[[nodemod.Atomic], bool]] = None
+        self, *extras: atomic.Node, mask: typing.Optional[typing.Callable[[atomic.Node], bool]] = None
     ) -> typing.Iterator['Traversal']:
         """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
         subscribed directly).
@@ -79,7 +78,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             seen.add(node)
             yield self.__class__(node, self.members)
 
-    def mappers(self, *extras: nodemod.Atomic) -> typing.Iterator['Traversal']:
+    def mappers(self, *extras: atomic.Node) -> typing.Iterator['Traversal']:
         """Return subscribers with specific mask to pass only mapper (not trained) nodes.
 
         Args:
@@ -88,9 +87,9 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         Returns:
             Subscribers instance.
         """
-        return self.directs(*extras, mask=lambda n: not isinstance(n, nodemod.Worker) or not n.trained)
+        return self.directs(*extras, mask=lambda n: not isinstance(n, atomic.Worker) or not n.trained)
 
-    def tail(self, expected: typing.Optional[nodemod.Atomic] = None) -> 'Traversal':
+    def tail(self, expected: typing.Optional[atomic.Node] = None) -> 'Traversal':
         """Recursive traversing all mapper subscription paths down to the tail mapper checking there is just one.
 
         Args:
@@ -114,7 +113,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             raise _exception.TopologyError('Ambiguous tail')
         return endings.pop()
 
-    def each(self, tail: nodemod.Atomic, acceptor: typing.Callable[[nodemod.Atomic], None]) -> None:
+    def each(self, tail: atomic.Node, acceptor: typing.Callable[[atomic.Node], None]) -> None:
         """Traverse the path downstream calling acceptor for each unique node.
 
         Potential tail Future node is ignored.
@@ -124,7 +123,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             acceptor: Acceptor to call for each unique node.
         """
 
-        def unseen(node: nodemod.Atomic) -> bool:
+        def unseen(node: atomic.Node) -> bool:
             """Test for node recurrence.
 
             Args:
@@ -135,7 +134,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             """
             return node not in seen
 
-        def unseen_trained(node: nodemod.Atomic) -> bool:
+        def unseen_trained(node: atomic.Node) -> bool:
             """Mask for trained non-recurrent node.
 
             Args:
@@ -144,7 +143,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             Returns:
                 True if not recurrent and trained.
             """
-            return unseen(node) and isinstance(node, nodemod.Worker) and node.trained
+            return unseen(node) and isinstance(node, atomic.Worker) and node.trained
 
         def traverse(traversal: Traversal) -> None:
             """Recursive path scan.
@@ -153,16 +152,16 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
                 traversal: Node to be processed.
             """
             mask = unseen_trained if traversal.pivot == tail else unseen
-            if isinstance(traversal.pivot, nodemod.Worker) or traversal.pivot != tail:
+            if isinstance(traversal.pivot, atomic.Worker) or traversal.pivot != tail:
                 acceptor(traversal.pivot)
             seen.add(traversal.pivot)
             for node in traversal.directs(tail, mask=mask):
                 traverse(node)
 
-        seen: set[nodemod.Atomic] = set()
+        seen: set[atomic.Node] = set()
         traverse(Traversal(self.pivot))
 
-    def copy(self, tail: nodemod.Atomic) -> typing.Mapping[nodemod.Atomic, nodemod.Atomic]:
+    def copy(self, tail: atomic.Node) -> typing.Mapping[atomic.Node, atomic.Node]:
         """Make a copy of the apply path topology. Any nodes not on path are ignored.
 
         Only the main branch is copied ignoring all sink branches.
@@ -182,12 +181,12 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
                 for node in traversal.mappers(tail):
                     yield from paths(node)
 
-        def get(node: nodemod.Atomic) -> nodemod.Atomic:
+        def get(node: atomic.Node) -> atomic.Node:
             """Get the copy of the given node."""
             return copies.get(node) or copies.setdefault(node, node.fork())
 
-        seen: set[tuple[nodemod.Atomic, int, port.Subscription]] = set()
-        copies: dict[nodemod.Atomic, nodemod.Atomic] = {}
+        seen: set[tuple[atomic.Node, int, port.Subscription]] = set()
+        copies: dict[atomic.Node, atomic.Node] = {}
         get(self.pivot)  # bootstrap for single-node paths that wouldn't iterate through the following loop
         for pub, sub in (
             (get(o)[i], get(s.node)[s.port])
@@ -206,10 +205,10 @@ class Path(tuple):
     at most one apply input/output port.
     """
 
-    _head: nodemod.Atomic = property(operator.itemgetter(0))
-    _tail: nodemod.Atomic = property(operator.itemgetter(1))
+    _head: atomic.Node = property(operator.itemgetter(0))
+    _tail: atomic.Node = property(operator.itemgetter(1))
 
-    def __new__(cls, head: nodemod.Atomic, tail: typing.Optional[nodemod.Atomic] = None):
+    def __new__(cls, head: atomic.Node, tail: typing.Optional[atomic.Node] = None):
         if head.szin > 1:
             raise _exception.TopologyError('Simple head required')
         tail = Traversal(head).tail(tail).pivot
@@ -230,7 +229,7 @@ class Path(tuple):
         """
         # pylint: disable=protected-access
 
-        def check(node: nodemod.Atomic) -> None:
+        def check(node: atomic.Node) -> None:
             """Check the node is our head node.
 
             Args:
@@ -285,8 +284,8 @@ class Path(tuple):
 
     def extend(
         self,
-        right: typing.Optional[typing.Union['Path', nodemod.Atomic]] = None,
-        tail: typing.Optional[nodemod.Atomic] = None,
+        right: typing.Optional[typing.Union['Path', atomic.Node]] = None,
+        tail: typing.Optional[atomic.Node] = None,
     ) -> 'Path':
         """Create new path by appending right head to our tail or retracing this path up to its physical or specified
         tail.
@@ -300,7 +299,7 @@ class Path(tuple):
         """
         # pylint: disable=protected-access
         if right:
-            if isinstance(right, nodemod.Atomic):
+            if isinstance(right, atomic.Node):
                 right = Path(right)
             right.subscribe(self.publisher)
             if not tail:

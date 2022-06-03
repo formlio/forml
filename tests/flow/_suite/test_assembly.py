@@ -22,7 +22,7 @@ Flow segment unit tests.
 import pytest
 
 from forml import flow
-from forml.flow._graph import node, span
+from forml.flow._graph import atomic, span
 from forml.flow._suite import assembly, member
 
 
@@ -31,7 +31,7 @@ class TestTrunk:
 
     def test_new(self):
         """Test segment setup."""
-        assert all(isinstance(m, span.Path) for m in assembly.Trunk(span.Path(node.Future()), node.Future(), None))
+        assert all(isinstance(m, span.Path) for m in assembly.Trunk(span.Path(atomic.Future()), atomic.Future(), None))
 
 
 class TestComposition:

@@ -45,7 +45,7 @@ if typing.TYPE_CHECKING:
 class Visitor:
     """View visitor interface."""
 
-    def visit_node(self, node: 'Atomic') -> None:
+    def visit_node(self, node: 'Node') -> None:
         """Node visit.
 
         Args:
@@ -74,7 +74,7 @@ class Port(typing.Iterable[port.Subscription]):
         return iter(self._subscriptions.keys())
 
 
-class Atomic(metaclass=abc.ABCMeta):
+class Node(metaclass=abc.ABCMeta):
     """Abstract primitive task graph node."""
 
     def __init__(self, szin: int, szout: int):
@@ -108,7 +108,7 @@ class Atomic(metaclass=abc.ABCMeta):
         Returns:
             True if equal.
         """
-        if isinstance(other, Atomic) and other.__class__ is not self.__class__:
+        if isinstance(other, Node) and other.__class__ is not self.__class__:
             return (
                 self.szout == other.szout
                 and any(self._output)
@@ -165,7 +165,7 @@ class Atomic(metaclass=abc.ABCMeta):
         self._output[index].add(subscription)
 
     @abc.abstractmethod
-    def subscribed(self, publisher: 'Atomic') -> bool:
+    def subscribed(self, publisher: 'Node') -> bool:
         """Checking we are on given node's subscription list.
 
         Args:
@@ -176,7 +176,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def fork(self) -> 'Atomic':
+    def fork(self) -> 'Node':
         """Create new node with same shape and actor as self but without any subscriptions.
 
         Returns:
@@ -184,7 +184,7 @@ class Atomic(metaclass=abc.ABCMeta):
         """
 
 
-class Worker(Atomic):
+class Worker(Node):
     """Main primitive node type."""
 
     class Group(set):
@@ -309,7 +309,7 @@ class Worker(Atomic):
         train.publish(self, port.Train())
         label.publish(self, port.Label())
 
-    def subscribed(self, publisher: 'Atomic') -> bool:
+    def subscribed(self, publisher: 'Node') -> bool:
         """Checking we are on given node's subscription list.
 
         Args:
@@ -346,7 +346,7 @@ class Worker(Atomic):
             yield node.fork()
 
 
-class Future(Atomic):
+class Future(Node):
     """Fake transparent apply port node that can be used as a lazy publisher/subscriber that disappears
     from the chain once it gets connected to another apply node(s).
     """
@@ -391,7 +391,7 @@ class Future(Atomic):
 
         return self.PubSub(self, index, register, self._sync)
 
-    def subscribed(self, publisher: 'Atomic') -> bool:
+    def subscribed(self, publisher: 'Node') -> bool:
         """Overridden subscription checker. Future node checks the subscriptions in its proxy registrations.
 
         Args:

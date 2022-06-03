@@ -22,8 +22,8 @@ passing data.
 .. important::
     ForML doesn't care neither about the particular internal processing functionality of any actors nor the
     actual types and formats of the data passed between them. All that ForML deals with is the actor interconnection
-    within the overall flow topology - their logical and functional compatibility is purely the implementor's
-    responsibility.
+    within the overall flow topology - responsibility for their logical and functional compatibility is solely in hands
+    of the implementor.
 
 The two main actor types are:
 
@@ -225,7 +225,6 @@ and/or ``@wrap.Actor.apply`` decorators from the :doc:`Pipeline Library <../pipe
                 """Train part of a stateful imputation actor using the trained mean value to fill the NaNs."""
                 return df[column].mean()
 
-            @wrap.Mapper.operator
             @mean_impute.apply
             def mean_impute(state: float, df: pd.DataFrame, column: str) -> pd.DataFrame:
                 """Apply part of a stateful imputation actor using the trained mean value to fill the NaNs."""

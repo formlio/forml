@@ -22,7 +22,7 @@ import collections
 import typing
 
 from .. import _exception
-from . import node as nodemod  # pylint: disable=unused-import
+from . import atomic  # pylint: disable=unused-import
 
 
 class Type(int):
@@ -76,9 +76,9 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
     """Descriptor representing subscription node input port of given type."""
 
     # registry of ports subscribed on given node
-    _PORTS: dict['nodemod.Atomic', set[Type]] = collections.defaultdict(set)  # TO-DO: switch to weakref
+    _PORTS: dict['atomic.Node', set[Type]] = collections.defaultdict(set)  # TO-DO: switch to weakref
 
-    def __new__(cls, subscriber: 'nodemod.Atomic', port: Type):
+    def __new__(cls, subscriber: 'atomic.Node', port: Type):
         if port in cls._PORTS[subscriber]:
             raise _exception.TopologyError('Double subscription')
         if cls._PORTS[subscriber] and (
@@ -87,7 +87,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
             raise _exception.TopologyError('Apply/Train collision')
         if isinstance(port, (Train, Label)) and any(subscriber.output):
             raise _exception.TopologyError('Publishing node trained')
-        if isinstance(subscriber, nodemod.Future):
+        if isinstance(subscriber, atomic.Future):
             raise _exception.TopologyError('Future node subscribing')
         cls._PORTS[subscriber].add(port)
         return super().__new__(cls, subscriber, port)
@@ -102,14 +102,14 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         return isinstance(other, self.__class__) and self.node == other.node and self.port == other.port
 
     @classmethod
-    def ports(cls, subscriber: 'nodemod.Atomic') -> typing.Iterable[Type]:
-        """Get subscribed ports of given nodemod.
+    def ports(cls, subscriber: 'atomic.Node') -> typing.Iterable[Type]:
+        """Get subscribed ports of given atomic.
 
         Args:
             subscriber: Node whose subscribed ports should be retrieved.
 
         Returns:
-            Subscribed ports of given nodemod.
+            Subscribed ports of given atomic.
         """
         return frozenset(cls._PORTS[subscriber])
 
@@ -120,8 +120,8 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 class Applicable:
     """Base for publisher/subscriber proxies."""
 
-    def __init__(self, node: 'nodemod.Atomic', index: int):
-        self._node: 'nodemod.Atomic' = node
+    def __init__(self, node: 'atomic.Node', index: int):
+        self._node: 'atomic.Node' = node
         self._index: int = index
 
 
@@ -137,14 +137,14 @@ class Publishable(Applicable):
         """
         return self._node.szout
 
-    def publish(self, subscriber: 'nodemod.Atomic', port: Type) -> None:
+    def publish(self, subscriber: 'atomic.Node', port: Type) -> None:
         """Publish new subscription.
 
         Args:
             subscriber: node to publish to
             port: port to publish to
         """
-        if isinstance(subscriber, nodemod.Future) and subscriber is not self._node:
+        if isinstance(subscriber, atomic.Future) and subscriber is not self._node:
             subscriber[port].subscribe(self)
             return
         subscription = Subscription(subscriber, port)

@@ -78,7 +78,7 @@ class Ensembler(flow.Operator):
             self._bases: tuple[flow.Composable] = tuple(bases)
             self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
-        def __call__(self, folds: typing.Sequence[Fold]) -> tuple[flow.Atomic, flow.Atomic, flow.Atomic]:
+        def __call__(self, folds: typing.Sequence[Fold]) -> tuple[flow.Node, flow.Node, flow.Node]:
             """Stack the folds using the given bases and produce a tran and apply outputs.
 
             Args:
@@ -93,7 +93,7 @@ class Ensembler(flow.Operator):
         @abc.abstractmethod
         def build(
             cls, bases: typing.Sequence[flow.Composable], folds: typing.Sequence[Fold], **kwargs
-        ) -> tuple[flow.Atomic, flow.Atomic, flow.Atomic]:
+        ) -> tuple[flow.Node, flow.Node, flow.Node]:
             """Stack the folds using the given bases and produce a tran and apply outputs.
 
             Args:
@@ -240,7 +240,7 @@ class FullStack(Ensembler):
         @classmethod
         def build(
             cls, bases: typing.Sequence[flow.Composable], folds: typing.Sequence[Fold], **kwargs
-        ) -> tuple[flow.Atomic, flow.Atomic, flow.Atomic]:
+        ) -> tuple[flow.Node, flow.Node, flow.Node]:
             nsplits = len(folds)
             label_output: flow.Worker = flow.Worker(kwargs['stacker'], nsplits, 1)
             train_output: flow.Worker = flow.Worker(kwargs['appender'], len(bases), 1)
