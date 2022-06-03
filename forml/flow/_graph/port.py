@@ -24,6 +24,9 @@ import typing
 from .. import _exception
 from . import atomic  # pylint: disable=unused-import
 
+if typing.TYPE_CHECKING:
+    from forml import flow
+
 
 class Type(int):
     """Input port base class."""
@@ -69,16 +72,16 @@ class Label(Type, metaclass=Meta):
 
 
 class Apply(Type):
-    """Apply input/output port at given index."""
+    """Apply input/output port at the given index."""
 
 
 class Subscription(collections.namedtuple('Subscription', 'node, port')):
     """Descriptor representing subscription node input port of given type."""
 
     # registry of ports subscribed on given node
-    _PORTS: dict['atomic.Node', set[Type]] = collections.defaultdict(set)  # TO-DO: switch to weakref
+    _PORTS: dict['flow.Node', set[Type]] = collections.defaultdict(set)  # TO-DO: switch to weakref
 
-    def __new__(cls, subscriber: 'atomic.Node', port: Type):
+    def __new__(cls, subscriber: 'flow.Node', port: Type):
         if port in cls._PORTS[subscriber]:
             raise _exception.TopologyError('Double subscription')
         if cls._PORTS[subscriber] and (
@@ -102,7 +105,7 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
         return isinstance(other, self.__class__) and self.node == other.node and self.port == other.port
 
     @classmethod
-    def ports(cls, subscriber: 'atomic.Node') -> typing.Iterable[Type]:
+    def ports(cls, subscriber: 'flow.Node') -> typing.Iterable[Type]:
         """Get subscribed ports of given atomic.
 
         Args:
@@ -120,13 +123,13 @@ class Subscription(collections.namedtuple('Subscription', 'node, port')):
 class Applicable:
     """Base for publisher/subscriber proxies."""
 
-    def __init__(self, node: 'atomic.Node', index: int):
-        self._node: 'atomic.Node' = node
+    def __init__(self, node: 'flow.Node', index: int):
+        self._node: 'flow.Node' = node
         self._index: int = index
 
 
 class Publishable(Applicable):
-    """Output apply port reference that can be used just for publishing."""
+    """Output *Apply* port reference that can be used just for publishing."""
 
     @property
     def szout(self) -> int:
@@ -137,12 +140,12 @@ class Publishable(Applicable):
         """
         return self._node.szout
 
-    def publish(self, subscriber: 'atomic.Node', port: Type) -> None:
+    def publish(self, subscriber: 'flow.Node', port: Type) -> None:
         """Publish new subscription.
 
         Args:
-            subscriber: node to publish to
-            port: port to publish to
+            subscriber: Node to publish to.
+            port: Port to publish to.
         """
         if isinstance(subscriber, atomic.Future) and subscriber is not self._node:
             subscriber[port].subscribe(self)
@@ -155,7 +158,7 @@ class Publishable(Applicable):
             Subscription._PORTS[subscriber].discard(port)  # pylint: disable=protected-access
             raise err
 
-    def republish(self, subscription: Subscription) -> None:
+    def republish(self, subscription: 'flow.Subscription') -> None:
         """Publish existing subscription.
 
         Args:
@@ -165,7 +168,7 @@ class Publishable(Applicable):
 
 
 class Subscriptable(Applicable):
-    """Input apply port reference that can be used just for subscribing."""
+    """Input *Apply* port reference that can be used just for subscribing."""
 
     @property
     def szin(self) -> int:
@@ -176,32 +179,32 @@ class Subscriptable(Applicable):
         """
         return self._node.szin
 
-    def subscribe(self, publisher: Publishable) -> None:
+    def subscribe(self, publisher: 'flow.Publishable') -> None:
         """Subscribe to give publisher.
 
         Args:
-            publisher: Applicable to subscribe to.
+            publisher: *Publishable* to subscribe to.
         """
         publisher.publish(self._node, Apply(self._index))
 
 
 class PubSub(Publishable, Subscriptable):
-    """Input or output apply port reference that can be used for both subscribing and publishing."""
+    """Input or output *Apply* port reference that can be used for both subscribing and publishing."""
 
     @property
-    def publisher(self) -> Publishable:
+    def publisher(self) -> 'flow.Publishable':
         """Return just a publishable representation.
 
         Returns:
-            Publishable apply port reference.
+            Publishable *Apply* port reference.
         """
         return Publishable(self._node, self._index)
 
     @property
-    def subscriber(self) -> Subscriptable:
+    def subscriber(self) -> 'flow.Subscriptable':
         """Return just a subscriptable representation.
 
         Returns:
-            Subscriptable apply port reference.
+            Subscriptable *Apply* port reference.
         """
         return Subscriptable(self._node, self._index)

@@ -25,7 +25,7 @@ from ._code.target.system import Committer, Dumper, Getter, Loader
 from ._code.target.user import Apply, Functor, Preset, Train
 from ._exception import TopologyError
 from ._graph.atomic import Future, Node, Worker
-from ._graph.port import Publishable, Subscriptable
+from ._graph.port import Publishable, PubSub, Subscriptable, Subscription
 from ._graph.span import Path, Visitor
 from ._suite.assembly import Composition, Trunk
 from ._suite.member import Composable, Operator, Origin
@@ -53,9 +53,11 @@ __all__ = [
     'Path',
     'Preset',
     'Publishable',
+    'PubSub',
     'Result',
     'Spec',
     'Subscriptable',
+    'Subscription',
     'Symbol',
     'TopologyError',
     'Train',

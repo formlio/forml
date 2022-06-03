@@ -206,6 +206,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
 _Actor = typing.TypeVar('_Actor', bound=Actor)
 
 
+@typing.final
 class Spec(typing.Generic[_Actor], collections.namedtuple('Spec', 'actor, args, kwargs')):
     """Spec is an Actor builder.
 

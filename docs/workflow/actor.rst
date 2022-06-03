@@ -33,6 +33,8 @@ The two main actor types are:
    the stateful actors operate.
 
 
+.. _actor-ports:
+
 Ports
 -----
 
@@ -40,7 +42,6 @@ ForML actors have number of input and output *ports* for the mutual :doc:`interc
 graph. The following diagram shows how the different ports might get engaged when in each of the particular actor modes:
 
 .. md-mermaid::
-    :name: flowcharts
 
     graph LR
         subgraph Actor
@@ -108,6 +109,8 @@ look as follows:
 .. autoclass:: forml.flow.Actor
    :members: apply, train, get_state, set_state, get_params, set_params
 
+
+.. _actor-spec:
 
 .. autoclass:: forml.flow.Spec
 
@@ -177,7 +180,8 @@ Example of a user-defined native actor:
                 def apply(self, df: pd.DataFrame) -> pd.DataFrame:
                     if self._value is None:
                         raise RuntimeError('Not trained')
-                    return df[self._column].fillna(self._value)
+                    df[self._column] = df[self._column].fillna(self._value)
+                    return df
 
                 def get_params(self) -> typing.Mapping[str, typing.Any]:
                     return {'column': self._column}
@@ -190,7 +194,8 @@ Decorated Function Actors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Less verbose option for defining actors is based on wrapping user-defined functions using the ``@wrap.Actor.train``
-and/or ``@wrap.Actor.apply`` decorators from the :doc:`Pipeline Library <../pipeline>`:
+and/or ``@wrap.Actor.apply`` decorators from the :doc:`Pipeline Library <../pipeline>` (the following examples match
+exactly the functionality as in the native implementations above):
 
 .. md-tab-set::
 
@@ -205,7 +210,8 @@ and/or ``@wrap.Actor.apply`` decorators from the :doc:`Pipeline Library <../pipe
             @wrap.Actor.apply
             def static_impute(df: pd.DataFrame, *, column: str, value: float) -> pd.DataFrame:
                 """Simple stateless imputation actor using the provided value to fill the NaNs."""
-                return df[column].fillna(value)
+                df[column] = df[column].fillna(value)
+                return df
 
     .. md-tab-item:: Stateful Actor
 
@@ -220,15 +226,17 @@ and/or ``@wrap.Actor.apply`` decorators from the :doc:`Pipeline Library <../pipe
                 state: typing.Optional[float],
                 df: pd.DataFrame,
                 labels: pd.Series,
+                *,
                 columns: str,
             ) -> float:
                 """Train part of a stateful imputation actor using the trained mean value to fill the NaNs."""
                 return df[column].mean()
 
             @mean_impute.apply
-            def mean_impute(state: float, df: pd.DataFrame, column: str) -> pd.DataFrame:
+            def mean_impute(state: float, df: pd.DataFrame, *, column: str) -> pd.DataFrame:
                 """Apply part of a stateful imputation actor using the trained mean value to fill the NaNs."""
-                return df[column].fillna(state)
+                df[column] = df[column].fillna(value)
+                return df
 
 
 Mapped Actors
