@@ -60,7 +60,7 @@ class Fold(collections.namedtuple('Fold', 'train, test')):
     ):
         return super().__new__(cls, cls.Train(train_apply, train_train, train_label), cls.Test(test_train, test_label))
 
-    def publish(self, apply: flow.Path, train: flow.Path, label: flow.Path, test: flow.Path):
+    def publish(self, apply: flow.Segment, train: flow.Segment, label: flow.Segment, test: flow.Segment):
         """Helper for connecting the individual data ports."""
         apply.subscribe(self.train.apply)
         train.subscribe(self.train.train)
@@ -102,7 +102,7 @@ class Ensembler(flow.Operator):
                 **kwargs: Builder specific kwargs.
 
             Returns:
-                Tuple of tail nodes returning the train, apply and label path outputs.
+                Tuple of tail nodes returning the train, apply and label segment outputs.
             """
 
     @typing.overload
@@ -171,7 +171,7 @@ class Ensembler(flow.Operator):
             left: left segment.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
         head: flow.Trunk = flow.Trunk()
         input_splitter = flow.Worker(self._splitter, 1, 2 * self._nsplits)

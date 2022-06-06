@@ -25,9 +25,8 @@ assembly during the construction phase.
     particular representation of the target runtime.
 
 
-
-Nodes, Groups, Ports and Subscriptions
---------------------------------------
+Task Graph Primitives
+---------------------
 
 While the actual unit of work - the vertex in the runtime DAG - is a *task* provided as the :doc:`Actor <actor>`
 implementation, its logical representation used by ForML internally is the abstract ``flow.Node`` structure and its
@@ -158,7 +157,6 @@ Now we have one more worker node ``impute_baz_train`` logically *grouped* as a c
 
 
 .. caution::
-
     Worker groups and the trained workers impose a couple of additional constraints:
 
     * At most one worker in the same group can be trained.
@@ -168,16 +166,55 @@ Now we have one more worker node ``impute_baz_train`` logically *grouped* as a c
 Future Nodes
 ^^^^^^^^^^^^
 
+In addition to the *Worker* nodes, there is a special node implementation called ``flow.Future`` representing a future
+worker placeholder. *Future* can be used during topology construction when the real connected worker-to-be is not know
+yet (e.g. when implementing an :doc:`operator <operator>` which doesn't know what up/down stream workers will it be
+eventually composed with). When connected to a real worker, the Future node will automatically collapse and disappear
+from the topology.
+
+In our examples above, the Future nodes are those round shaped ones with ``i`` or ``o`` labels representing the
+virtual up/downstream in/output connections. It shows how they disappear once they are connected to a real worker.
+
+.. warning::
+    Flow containing Future nodes is considered *incomplete* and cannot be passed to compiler until all Future nodes are
+    collapsed.
 
 
-Paths and Trunks
-----------------
+Advanced Structures
+-------------------
+
+When implementing more complex topologies (typically in scope of :doc:`operators development <operator>`), the
+significant parts of the task graph become its entry and exit nodes (as that's where new connections are being added),
+while the inner nodes (already fully connected) fade away from the perspective of the ongoing construction.
+
+For this purpose, ForML uses the ``flow.Segment`` abstraction representing a subgraph between one entry (``.head``) and
+exit (``.tail``) node and providing a useful API to work with this part of the task graph:
+
+.. autoclass:: forml.flow.Segment
+   :members: subscribe, extend, copy
+
+To carry one of the core ForML traits - the inseparability of the *train* and *apply* mode implementations - ForML uses
+the ``flow.Trunk`` structure as the integrated representation of the related *segments*. There are actually three
+segments that need to be bound together to cover all the matching tasks across the different modes. While the *apply*
+mode is represented by its single segment, the *train* mode needs in addition to its *train* segment also a dedicated
+segment for its *label* task graph.
+
+.. autoclass:: forml.flow.Trunk
+   :members: extend, use
 
 
 Compiler
 --------
-... connecting system ports
 
+While representing the task graph using linked structures is practical for implementing the user-level API, more
+efficient structure for its actual runtime execution would be the (actor) *adjacency matrix* produced by the internal
+ForML compiler.
+
+ForML uses its compiler to:
+
+#. Augment the task graph by adding any necessary system-level nodes.
+#. Optimizing the task graph by removing any irrelevant or redundant parts.
+#. Generating the adjacency matrix representation suitable for runtime execution.
 
 
 .. md-mermaid::

@@ -150,17 +150,17 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
             segments.append(self._sink.save(output))
         return flow.Composition(*segments)
 
-    def _exec(self, path: flow.Path, assets: typing.Optional[asset.State] = None) -> None:
-        """Execute the given path and assets.
+    def _exec(self, segment: flow.Segment, assets: typing.Optional[asset.State] = None) -> None:
+        """Execute the given segment and assets.
 
         Args:
-            path: Pipeline path.
+            segment: Pipeline segment.
             assets: Persistent assets to be used.
 
         Returns:
             Optional return value.
         """
-        return self._run(flow.generate(path, assets))
+        return self._run(flow.generate(segment, assets))
 
     @abc.abstractmethod
     def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:

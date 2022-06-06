@@ -37,10 +37,10 @@ class Operator(flow.Operator):
         self._writer: flow.Spec[flow.Actor[layout.RowMajor, None, layout.Native]] = writer
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
-        """Compose the publisher segment track.
+        """Compose the publisher segment trunk.
 
         Returns:
-            Sink segment track.
+            Sink segment trunk.
         """
         apply: flow.Worker = flow.Worker(self._writer, 1, 0)
         train: flow.Worker = apply.fork()

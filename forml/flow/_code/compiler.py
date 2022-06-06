@@ -264,16 +264,16 @@ class Table(span.Visitor, typing.Iterable):
         self.add(node)
 
 
-def generate(path: 'flow.Path', assets: typing.Optional['asset.State'] = None) -> 'typing.Sequence[flow.Symbol]':
-    """Generate the symbol code based on given flow path.
+def generate(segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None) -> 'typing.Sequence[flow.Symbol]':
+    """Generate the symbol code based on given flow segment.
 
     Args:
-        path: Flow path to generate the symbols for.
+        segment: Flow segment to generate the symbols for.
         assets: Runtime assets dependencies.
 
     Returns:
         Sequence of symbol code.
     """
     table = Table(assets)
-    path.accept(table)
+    segment.accept(table)
     return tuple(table)

@@ -84,7 +84,7 @@ class Branches(flow.Operator):
             fold_train.train.subscribe(feature_splitter[fid])
             fold_train.label.subscribe(label_splitter[fid])
 
-            fold_apply: flow.Path = fold_train.apply.copy()
+            fold_apply: flow.Segment = fold_train.apply.copy()
             fold_apply.subscribe(head.apply)
 
             pipeline_branch.train.subscribe(fold_train.train)

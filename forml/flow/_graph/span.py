@@ -28,34 +28,37 @@ import typing
 from .. import _exception
 from . import atomic, port
 
+if typing.TYPE_CHECKING:
+    from forml import flow
+
 
 class Visitor(atomic.Visitor):
-    """Path visitor interface."""
+    """Segment visitor interface."""
 
-    def visit_path(self, path: 'Path') -> None:
-        """Path visit.
+    def visit_segment(self, segment: 'flow.Segment') -> None:
+        """Segment visit.
 
         Args:
-            path: Path visit.
+            segment: Segment visit.
         """
 
 
 class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
     """Graph traversal helper."""
 
-    pivot: atomic.Node
+    pivot: 'flow.Node'
     """Focal node of this traversal."""
-    members: typing.AbstractSet[atomic.Node]
+    members: typing.AbstractSet['flow.Node']
     """All nodes belonging to this traversal (including the 'pivot' node)."""
 
     class Cyclic(_exception.TopologyError):
         """Cyclic graph error."""
 
-    def __new__(cls, pivot: atomic.Node, members: typing.AbstractSet[atomic.Node] = frozenset()):
+    def __new__(cls, pivot: 'flow.Node', members: typing.AbstractSet['flow.Node'] = frozenset()):
         return super().__new__(cls, pivot, frozenset(members | {pivot}))
 
     def directs(
-        self, *extras: atomic.Node, mask: typing.Optional[typing.Callable[[atomic.Node], bool]] = None
+        self, *extras: 'flow.Node', mask: typing.Optional[typing.Callable[['flow.Node'], bool]] = None
     ) -> typing.Iterator['Traversal']:
         """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
         subscribed directly).
@@ -78,7 +81,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             seen.add(node)
             yield self.__class__(node, self.members)
 
-    def mappers(self, *extras: atomic.Node) -> typing.Iterator['Traversal']:
+    def mappers(self, *extras: 'flow.Node') -> typing.Iterator['Traversal']:
         """Return subscribers with specific mask to pass only mapper (not trained) nodes.
 
         Args:
@@ -89,8 +92,8 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         """
         return self.directs(*extras, mask=lambda n: not isinstance(n, atomic.Worker) or not n.trained)
 
-    def tail(self, expected: typing.Optional[atomic.Node] = None) -> 'Traversal':
-        """Recursive traversing all mapper subscription paths down to the tail mapper checking there is just one.
+    def tail(self, expected: typing.Optional['flow.Node'] = None) -> 'Traversal':
+        """Recursive traversing all mapper subscription segments down to the tail mapper checking there is just one.
 
         Args:
             expected: Optional indication of the expected tail. If expected is a Future, it's matching Worker is
@@ -113,8 +116,8 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             raise _exception.TopologyError('Ambiguous tail')
         return endings.pop()
 
-    def each(self, tail: atomic.Node, acceptor: typing.Callable[[atomic.Node], None]) -> None:
-        """Traverse the path downstream calling acceptor for each unique node.
+    def each(self, tail: 'flow.Node', acceptor: typing.Callable[['flow.Node'], None]) -> None:
+        """Traverse the segment downstream calling acceptor for each unique node.
 
         Potential tail Future node is ignored.
 
@@ -123,7 +126,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             acceptor: Acceptor to call for each unique node.
         """
 
-        def unseen(node: atomic.Node) -> bool:
+        def unseen(node: 'flow.Node') -> bool:
             """Test for node recurrence.
 
             Args:
@@ -134,7 +137,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             """
             return node not in seen
 
-        def unseen_trained(node: atomic.Node) -> bool:
+        def unseen_trained(node: 'flow.Node') -> bool:
             """Mask for trained non-recurrent node.
 
             Args:
@@ -146,7 +149,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             return unseen(node) and isinstance(node, atomic.Worker) and node.trained
 
         def traverse(traversal: Traversal) -> None:
-            """Recursive path scan.
+            """Recursive segment scan.
 
             Args:
                 traversal: Node to be processed.
@@ -158,11 +161,11 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             for node in traversal.directs(tail, mask=mask):
                 traverse(node)
 
-        seen: set[atomic.Node] = set()
+        seen: set['flow.Node'] = set()
         traverse(Traversal(self.pivot))
 
-    def copy(self, tail: atomic.Node) -> typing.Mapping[atomic.Node, atomic.Node]:
-        """Make a copy of the apply path topology. Any nodes not on path are ignored.
+    def copy(self, tail: 'flow.Node') -> typing.Mapping['flow.Node', 'flow.Node']:
+        """Make a copy of the apply segment topology. Any nodes not on segment are ignored.
 
         Only the main branch is copied ignoring all sink branches.
 
@@ -170,27 +173,27 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             tail: Last node to copy.
 
         Returns:
-            Copy of the apply path.
+            Copy of the apply segment.
         """
 
-        def paths(traversal: Traversal) -> typing.Iterable[Traversal]:
-            """Generator of all paths between the current traversal and the tail."""
+        def segments(traversal: Traversal) -> typing.Iterable[Traversal]:
+            """Generator of all segments between the current traversal and the tail."""
             if traversal.pivot == tail:
                 yield traversal
             else:
                 for node in traversal.mappers(tail):
-                    yield from paths(node)
+                    yield from segments(node)
 
-        def get(node: atomic.Node) -> atomic.Node:
+        def get(node: 'flow.Node') -> 'flow.Node':
             """Get the copy of the given node."""
             return copies.get(node) or copies.setdefault(node, node.fork())
 
-        seen: set[tuple[atomic.Node, int, port.Subscription]] = set()
-        copies: dict[atomic.Node, atomic.Node] = {}
-        get(self.pivot)  # bootstrap for single-node paths that wouldn't iterate through the following loop
+        seen: set[tuple['flow.Node', int, port.Subscription]] = set()
+        copies: dict['flow.Node', 'flow.Node'] = {}
+        get(self.pivot)  # bootstrap for single-node segments that wouldn't iterate through the following loop
         for pub, sub in (
             (get(o)[i], get(s.node)[s.port])
-            for t in paths(self)
+            for t in segments(self)
             for o in t.members
             for i, p in enumerate(o.output)
             for s in p
@@ -200,15 +203,13 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         return copies
 
 
-class Path(tuple):
-    """Representing acyclic apply path(s) between two nodes - a sub-graph with single head and tail node each with
-    at most one apply input/output port.
-    """
+class Segment(tuple):
+    """Representing acyclic (sub)graph between two nodes - each with at most one apply input/output port."""
 
-    _head: atomic.Node = property(operator.itemgetter(0))
-    _tail: atomic.Node = property(operator.itemgetter(1))
+    _head: 'flow.Node' = property(operator.itemgetter(0))
+    _tail: 'flow.Node' = property(operator.itemgetter(1))
 
-    def __new__(cls, head: atomic.Node, tail: typing.Optional[atomic.Node] = None):
+    def __new__(cls, head: 'flow.Node', tail: typing.Optional['flow.Node'] = None):
         if head.szin > 1:
             raise _exception.TopologyError('Simple head required')
         tail = Traversal(head).tail(tail).pivot
@@ -216,20 +217,82 @@ class Path(tuple):
             raise _exception.TopologyError('Simple tail required')
         return super().__new__(cls, (head, tail))
 
-    def is_subpath(self, other: 'Path') -> bool:
-        """Check this is a sub-path of the other.
-
-        It is a sub-path if our head is found anywhere on the other path.
+    def accept(self, visitor: Visitor) -> None:
+        """Visitor acceptor.
 
         Args:
-            other: Path to check against.
+            visitor: Visitor instance.
+        """
+        Traversal(self._head).each(self._tail, visitor.visit_node)
+        visitor.visit_segment(self)
+
+    @property
+    def publisher(self) -> 'flow.Publishable':
+        """Publishable tail node representation.
 
         Returns:
-            True if this is a sub-path of the other.
+            Publishable tail *Apply* port reference.
+        """
+        return self._tail[0].publisher
+
+    def subscribe(self, publisher: typing.Union['flow.Publishable', 'flow.Segment']) -> None:
+        """Subscribe our head node to the given publisher."""
+        if isinstance(publisher, Segment):
+            publisher = publisher.publisher
+        self._head[0].subscribe(publisher)
+
+    def extend(
+        self,
+        right: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
+        tail: typing.Optional['flow.Node'] = None,
+    ) -> 'flow.Segment':
+        """Create new segment by appending right head to our tail or retracing this segment up to its physical or
+        explicit tail.
+
+        Args:
+            right: Optional segment to extend with (retracing to the physical or explicit tail if not provided).
+            tail: Optional tail as a segment exit node.
+
+        Returns:
+            New extended segment.
+        """
+        # pylint: disable=protected-access
+        if right:
+            if isinstance(right, atomic.Node):
+                right = Segment(right)
+            right.subscribe(self.publisher)
+            if not tail:
+                tail = right._tail
+        elif not tail:
+            tail = Traversal(self._tail).tail().pivot
+        return Segment(self._head, tail)
+
+    def copy(self) -> 'flow.Segment':
+        """Make a copy of the *Apply* topology within this segment.
+
+        All trained nodes are ignored.
+
+        Returns:
+            Copy of the *Apply* segment topology.
+        """
+
+        copies = Traversal(self._head).copy(self._tail)
+        return Segment(copies[self._head], copies[self._tail])
+
+    def follows(self, other: 'flow.Segment') -> bool:
+        """Check this segment follows from the other.
+
+        It follows, if our head is found anywhere on the other segment.
+
+        Args:
+            other: Segment to check against.
+
+        Returns:
+            True if this follows from the other.
         """
         # pylint: disable=protected-access
 
-        def check(node: atomic.Node) -> None:
+        def check(node: 'flow.Node') -> None:
             """Check the node is our head node.
 
             Args:
@@ -244,91 +307,31 @@ class Path(tuple):
         return result
 
     @staticmethod
-    def root(first: 'Path', *others: 'Path') -> 'Path':
-        """Get the root paths amongst the parameters - path that all the others are sub-paths of.
+    def root(first: 'flow.Segment', *others: 'flow.Segment') -> 'flow.Segment':
+        """Get the root segments amongst the parameters - segment that all the others follow from.
 
-        All paths must be related.
+        All segments must be related.
 
         Args:
-            first: Path to start with (syntax to enforce passing at least one path as an argument).
-            others: Remaining args of paths from which the root should be selected.
+            first: Segment to start with (syntax to enforce passing at least one segment as an argument).
+            others: Remaining args of segments from which the root should be selected.
         Returns:
-            Root path that all the others are sub-path of.
+            Root segment that all the others follow from.
         """
 
-        def choose(left: Path, right: Path) -> Path:
-            """Choose the super-path out of the two.
+        def choose(left: Segment, right: Segment) -> Segment:
+            """Choose the super-segment out of the two.
 
             Args:
-                left: One path to chose from.
-                right: The other path to choose from.
+                left: One segment to chose from.
+                right: The other segment to choose from.
             Returns:
-                Root path of the two.
+                Root segment of the two.
             """
-            if left.is_subpath(right):
+            if left.follows(right):
                 return right
-            if right.is_subpath(left):
+            if right.follows(left):
                 return left
-            raise _exception.TopologyError('Unrelated paths.')
+            raise _exception.TopologyError('Unrelated segments.')
 
         return functools.reduce(choose, others, first)
-
-    def accept(self, visitor: Visitor) -> None:
-        """Visitor acceptor.
-
-        Args:
-            visitor: Visitor instance.
-        """
-        Traversal(self._head).each(self._tail, visitor.visit_node)
-        visitor.visit_path(self)
-
-    def extend(
-        self,
-        right: typing.Optional[typing.Union['Path', atomic.Node]] = None,
-        tail: typing.Optional[atomic.Node] = None,
-    ) -> 'Path':
-        """Create new path by appending right head to our tail or retracing this path up to its physical or specified
-        tail.
-
-        Args:
-            right: Optional path to extend with (retracing to physical or specified tail if not provided).
-            tail: Optional tail as a path output vertex.
-
-        Returns:
-            New extended path.
-        """
-        # pylint: disable=protected-access
-        if right:
-            if isinstance(right, atomic.Node):
-                right = Path(right)
-            right.subscribe(self.publisher)
-            if not tail:
-                tail = right._tail
-        elif not tail:
-            tail = Traversal(self._tail).tail().pivot
-        return Path(self._head, tail)
-
-    def subscribe(self, publisher: typing.Union[port.Publishable, 'Path']) -> None:
-        """Subscribe head node to given publisher."""
-        if isinstance(publisher, Path):
-            publisher = publisher.publisher
-        self._head[0].subscribe(publisher)
-
-    @property
-    def publisher(self) -> port.Publishable:
-        """Publishable tail node representation.
-
-        Returns:
-            Publishable tail apply port reference.
-        """
-        return self._tail[0].publisher
-
-    def copy(self) -> 'Path':
-        """Make a copy of the apply path topology. Any nodes not on path are ignored.
-
-        Returns:
-            Copy of the apply path.
-        """
-
-        copies = Traversal(self._head).copy(self._tail)
-        return Path(copies[self._head], copies[self._tail])

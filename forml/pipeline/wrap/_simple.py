@@ -90,7 +90,7 @@ class Base(flow.Operator, metaclass=abc.ABCMeta):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
 
 
@@ -105,7 +105,7 @@ class Mapper(Base):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
         train_applier: flow.Worker = applier.fork()
         if self.spec.actor.is_stateful():
@@ -130,7 +130,7 @@ class Consumer(Base):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
         trainer: flow.Worker = applier.fork()
         trainer.train(left.train.publisher, left.label.publisher)
@@ -153,7 +153,7 @@ class Labeler(Base):
             left: Track of the left side flows.
 
         Returns:
-            Composed segment track.
+            Composed segment trunk.
         """
         train: flow.Future = flow.Future()
         label: flow.Future = flow.Future()

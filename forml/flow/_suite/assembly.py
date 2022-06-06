@@ -31,50 +31,50 @@ if typing.TYPE_CHECKING:
 
 
 class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
-    """Structure for holding three main related paths."""
+    """Structure for integrating the three related segments representing both the runtime modes."""
 
-    apply: 'flow.Path'
-    train: 'flow.Path'
-    label: 'flow.Path'
+    apply: 'flow.Segment'
+    train: 'flow.Segment'
+    label: 'flow.Segment'
 
     def __new__(
         cls,
-        apply: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
-        train: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
-        label: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        apply: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
+        train: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
+        label: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
     ):
-        def init(mode: typing.Optional[typing.Union['flow.Path', 'flow.Node']]) -> span.Path:
+        def init(mode: typing.Optional[typing.Union['flow.Segment', 'flow.Node']]) -> span.Segment:
             """Apply default cleaning to the mode segment.
 
             Args:
-                mode: Mode segment provided either as a path or just a node.
+                mode: Mode segment provided either as a segment or just a node.
 
             Returns:
-                Cleaned mode path.
+                Cleaned mode segment.
             """
             if not mode:
                 mode = atomic.Future()
             if isinstance(mode, atomic.Node):
-                mode = span.Path(mode)
+                mode = span.Segment(mode)
             return mode
 
         return super().__new__(cls, init(apply), init(train), init(label))
 
     def extend(
         self,
-        apply: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
-        train: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
-        label: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        apply: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
+        train: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
+        label: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
     ) -> 'flow.Trunk':
-        """Helper for creating new Trunk with specified paths extended by provided values.
+        """Helper for creating new Trunk with the specified segments *extended* by the provided values.
 
         Args:
-            apply: Optional path to be connected to apply segment.
-            train: Optional path to be connected to train segment.
-            label: Optional path to be connected to label segment.
+            apply: Optional segment to extend our existing *apply* segment with.
+            train: Optional segment to extend our existing *train* segment with.
+            label: Optional segment to extend our existing *label* segment with.
 
         Returns:
-            New Track instance.
+            New Trunk instance.
         """
         return self.__class__(
             self.apply.extend(apply) if apply else self.apply,
@@ -84,19 +84,19 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 
     def use(
         self,
-        apply: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
-        train: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
-        label: typing.Optional[typing.Union['flow.Path', 'flow.Node']] = None,
+        apply: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
+        train: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
+        label: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
     ) -> 'flow.Trunk':
-        """Helper for creating new Trunk with specified paths replaced by provided values.
+        """Helper for creating new Trunk with the specified segments *replaced* by the provided values.
 
         Args:
-            apply: Optional path to be used as apply segment.
-            train: Optional path to be used as train segment.
-            label: Optional path to be used as label segment.
+            apply: Optional segment to replace our existing *apply* segment with.
+            train: Optional segment to replace our existing *train* segment with.
+            label: Optional segment to replace our existing *label* segment with.
 
         Returns:
-            New Track instance.
+            New Trunk instance.
         """
         return self.__class__(apply or self.apply, train or self.train, label or self.label)
 
@@ -104,8 +104,8 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
 class Composition(collections.namedtuple('Composition', 'apply, train')):
     """Structure for holding related flow parts of different modes."""
 
-    apply: 'flow.Path'
-    train: 'flow.Path'
+    apply: 'flow.Segment'
+    train: 'flow.Segment'
 
     class Persistent(span.Visitor, typing.Iterable[uuid.UUID]):
         """Visitor that cumulates gids of persistent nodes."""
@@ -138,9 +138,9 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
     def persistent(self) -> typing.Sequence[uuid.UUID]:
         """Get the set of nodes with state that needs to be carried over between the apply/train modes.
 
-        The states used within the apply path are expected to be subset of the states used in the train path (since not
-        all the stateful workers engaged during training are necessarily used during apply and hence don't need
-        persisting so we can ignore them).
+        The states used within the apply segment are expected to be subset of the states used in the train segment
+        (since not all the stateful workers engaged during training are necessarily used during apply and hence don't
+        need persisting so we can ignore them).
 
         Returns:
             Set of nodes sharing state between pipeline modes.

@@ -108,16 +108,16 @@ class Operator(flow.Operator):
         ] = label
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
-        """Compose the source segment track.
+        """Compose the source segment trunk.
 
         Returns:
-            Source segment track.
+            Source segment trunk.
         """
         if not isinstance(left, flow.Origin):
             raise forml.UnexpectedError('Source not origin')
-        apply: flow.Path = flow.Path(flow.Worker(self._apply, 0, 1))
-        train: flow.Path = flow.Path(flow.Worker(self._train, 0, 1))
-        label: typing.Optional[flow.Path] = None
+        apply: flow.Segment = flow.Segment(flow.Worker(self._apply, 0, 1))
+        train: flow.Segment = flow.Segment(flow.Worker(self._train, 0, 1))
+        label: typing.Optional[flow.Segment] = None
         if self._label:
             train_tail = flow.Future()
             label_tail = flow.Future()

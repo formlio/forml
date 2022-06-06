@@ -71,10 +71,10 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
             self._trainset: flow.Spec[Feed.Operator.Train] = self.Train.spec(scenario.train, scenario.label)
 
         def compose(self, left: flow.Composable) -> flow.Trunk:
-            """Compose the source segment track.
+            """Compose the source segment trunk.
 
             Returns:
-                Source segment track.
+                Source segment trunk.
             """
             testset = flow.Worker(self._testset, 0, 1)
             trainset = flow.Worker(self._trainset, 0, 2)
@@ -82,7 +82,7 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
             train[0].subscribe(trainset[0])
             label = flow.Future()
             label[0].subscribe(trainset[1])
-            return flow.Trunk(testset, flow.Path(trainset, train), flow.Path(trainset, label))
+            return flow.Trunk(testset, flow.Segment(trainset, train), flow.Segment(trainset, label))
 
     def __init__(self, scenario: _spec.Scenario.Input, **kwargs):
         super().__init__(**kwargs)

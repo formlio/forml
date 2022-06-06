@@ -34,12 +34,12 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
         @decorate.Adapter.apply  # decorators can be chained if same actor is supposed to be used for another mode
         @decorate.Function.apply
         def myadapter(df, **kwargs):
-            # stateless adapter implementation used for train/apply paths
+            # stateless adapter implementation used for train/apply segments
 
         @myadapter.label(**kwargs)  # previously decorated adapter can be itself used as decorator
         @decorate.Function.apply
         def myadapter(df, **kwargs):
-            # stateless adapter implementation used for label path
+            # stateless adapter implementation used for label segment
     """
 
     class Builder:
