@@ -117,17 +117,17 @@ Dealing with Worker State
 
 Sofar we've discussed only the *apply-mode* connections. For *stateful* nodes (i.e. nodes representing
 :doc:`stateful actors <actor>`), we also need to take care of the *train-mode* connections to their *Train* and *Label*
-ports. This is achieved simply using the ``.train()`` method on the worker object:
+ports. This is achieved simply by using the ``.train()`` method on the worker object:
 
 .. automethod:: forml.flow.Worker.train
 
 Training and applying even the same worker are two distinct tasks, hence they need to be represented using two related
 but separate worker nodes. ForML transparently manages these related workers using a ``flow.Worker.Group`` instance.
-All workers in the same *group* have the same shape and share the same actor builder instance.
+All workers in the same *group* have the same shape and share the same :ref:`actor builder <actor-spec>` instance.
 
-Based on the group membership, ForML automatically handles the runtime state management between the different modes
-of the same actor (the :ref:`State ports <actor-ports>` are *system* level ports and cannot be connected
-from the user level API).
+Based on the group membership (and the general context), ForML automatically handles the runtime state management
+between the different modes of the same actor (the :ref:`State ports <actor-ports>` are *system* level ports and cannot
+be connected from the user level API).
 
 Workers of the same group can be created using one of the two methods:
 
@@ -138,9 +138,9 @@ Workers of the same group can be created using one of the two methods:
 .. code-block:: python
 
     impute_baz_train = impute_baz_apply.fork()
-    impute_baz_train(drop_bar[0], select_bar[0])
+    impute_baz_train.train(drop_bar[0], select_bar[0])
 
-Now we have one more worker ``impute_baz_train`` logically *grouped* as a companion of the original
+Now we have one more worker node ``impute_baz_train`` logically *grouped* as a companion of the original
 ``impute_baz_apply``. The task graph now looks like this:
 
 .. md-mermaid::
@@ -164,7 +164,11 @@ Now we have one more worker ``impute_baz_train`` logically *grouped* as a compan
     * At most one worker in the same group can be trained.
     * Either both *Train* and *Label* or all *Apply* input and output ports of each worker must be connected.
 
+
 Future Nodes
+^^^^^^^^^^^^
+
+
 
 Paths and Trunks
 ----------------
@@ -173,3 +177,20 @@ Paths and Trunks
 Compiler
 --------
 ... connecting system ports
+
+
+
+.. md-mermaid::
+
+    graph LR
+        subgraph Group
+        impute_baz_apply
+        impute_baz_train
+        end
+        sfbi((i)) --> select_foobar -- "o(0)->i(0)" --> concat
+        sbi((i)) --> select_baz -- "o(0)->i(1)" --> concat
+        concat -- "o(0)->i(0)" --> drop_bar -- "o(0)->i(0)" --> impute_baz_apply --> ibao((o))
+        concat -- "o(0)->i(0)" --> select_bar -- "o(0)->Label" --> impute_baz_train
+        drop_bar -- "o(0)->Train" --> impute_baz_train
+        impute_baz_train -. State .-> impute_baz_apply
+        l[(Loader)] -. State .-> impute_baz_train -. State .-> d[(Dumper)]

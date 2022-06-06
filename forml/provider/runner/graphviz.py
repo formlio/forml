@@ -55,6 +55,8 @@ class Runner(runtime.Runner, alias='graphviz'):
             attrs = dict(shape='ellipse', style='rounded')
             if isinstance(sym.instruction, flow.Functor):
                 attrs.update(shape='box')
+            elif isinstance(sym.instruction, (flow.Loader, flow.Dumper, flow.Committer)):
+                attrs.update(shape='cylinder')
             dot.node(repr(id(sym.instruction)), repr(sym.instruction), **attrs)
             for idx, arg in enumerate(sym.arguments):
                 dot.edge(repr(id(arg)), repr(id(sym.instruction)), label=repr(idx))
