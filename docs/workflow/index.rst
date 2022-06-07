@@ -21,6 +21,11 @@ level it is a *Task Dependency Graph* with edges representing data flows and ver
 transformations. This particular type of the graph is called *Directed Acyclic Graph* (DAG) - meaning the flows are
 oriented and can't form any cycles.
 
+.. caution::
+    At its core, the workflow internals explained in the following chapters are built around the Graph theory and SW+ML
+    engineering principles, which might feel way too involved from a general data-science perspective. Fortunately, this
+    level of detail is not required for the usual day-to-day work with the existing high-level ForML operators.
+
 ForML is providing a convenient API for defining complex workflows using simple notation based on the following
 concepts:
 
@@ -78,11 +83,6 @@ a workflow with the two *train* and *apply* task graphs visualized as follows:
 
 The meaning of :doc:`operators <operator>` and how they are defined using :doc:`actors <actor>` and their
 :doc:`interconnections <topology>` is described in details in the following chapters.
-
-.. caution::
-    At its core, the workflow internals are built around graph theory and SW+ML engineering principles, which might feel
-    way too involved from a general data-science perspective. Fortunately, this level of detail is not required
-    for the usual day-to-day work with the existing high-level ForML operators.
 
 
 .. toctree::

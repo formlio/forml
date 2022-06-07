@@ -94,7 +94,7 @@ class TestSource:
     def label(
         request,
         student_table: dsl.Table,
-        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     ) -> typing.Optional[project.Source.Labels]:
         """Component fixture."""
         if request.param == 'vector':
@@ -102,7 +102,7 @@ class TestSource:
         if request.param == 'table':
             return student_table.level, student_table.level
         if request.param == 'actor':
-            return actor_spec
+            return actor_builder
         return None
 
     def test_invalid(self, student_table: dsl.Table, school_table: dsl.Table):

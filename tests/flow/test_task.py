@@ -34,10 +34,10 @@ class TestActor:
     @staticmethod
     @pytest.fixture(scope='function')
     def instance(
-        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ) -> flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]:
         """Instance fixture."""
-        return actor_spec()
+        return actor_builder()
 
     def test_train(
         self,
@@ -84,14 +84,14 @@ class TestActor:
         instance.set_state(actor_state)
         assert instance.get_params()['x'] == 100  # state shouldn't override parameter setting
 
-    def test_spec(
+    def test_builder(
         self,
         actor_type: type[flow.Actor],
         hyperparams: typing.Mapping[str, int],
-        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     ):
-        """Test the spec creation of the actor class."""
-        assert actor_type.spec(**hyperparams) == actor_spec
+        """Test the builder creation of the actor class."""
+        assert actor_type.builder(**hyperparams) == actor_builder
 
     def test_serializable(
         self,
@@ -107,16 +107,16 @@ class TestActor:
 
 
 class TestSpec:
-    """Task spec unit tests."""
+    """Task builder unit tests."""
 
     def test_serializable(
         self,
-        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
         actor_type: type[flow.Actor],
     ):
-        """Test spec serializability."""
-        assert repr(cloudpickle.loads(cloudpickle.dumps(actor_spec)).actor) == repr(actor_type)
+        """Test builder serializability."""
+        assert repr(cloudpickle.loads(cloudpickle.dumps(actor_builder)).actor) == repr(actor_type)
 
-    def test_instantiate(self, actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]):
-        """Testing specto actor instantiation."""
-        assert actor_spec(b=3).get_params() == actor_spec.kwargs | {'b': 3}
+    def test_instantiate(self, actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]):
+        """Testing builder to actor instantiation."""
+        assert actor_builder(b=3).get_params() == actor_builder.kwargs | {'b': 3}

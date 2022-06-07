@@ -128,17 +128,17 @@ class Ensembler(flow.Operator):
     def __init__(
         self,
         *bases: flow.Composable,
-        splitter: flow.Spec[payload.CVFoldable],
+        splitter: flow.Builder[payload.CVFoldable],
         nsplits: int,
         **kwargs,
     ):
-        """Ensembler constructor based on splitter supplied in form of a Spec object.
+        """Ensembler constructor based on splitter supplied in form of an actor builder object.
 
         Args:
             *bases: Set of primary models to be ensembled.
-            splitter: Spec object defining the folding splitter.
+            splitter: Actor builder object defining the folding splitter.
             nsplits: Number of splits the splitter is going to generate (needs to be explicit as there is no reliable
-                     way to extract it from the Spec).
+                     way to extract it from the actor builder).
         """
 
     def __init__(
@@ -152,16 +152,16 @@ class Ensembler(flow.Operator):
         if not bases:
             raise ValueError('Base models required')
         if ((crossvalidator is None) ^ (nsplits is not None)) or (
-            (crossvalidator is None) ^ isinstance(splitter, flow.Spec)
+            (crossvalidator is None) ^ isinstance(splitter, flow.Builder)
         ):
             raise TypeError('Invalid combination of crossvalidator, splitter and nsplits')
-        if not isinstance(splitter, flow.Spec):
-            splitter = splitter.spec(crossvalidator=crossvalidator)
+        if not isinstance(splitter, flow.Builder):
+            splitter = splitter.builder(crossvalidator=crossvalidator)
             nsplits = crossvalidator.get_n_splits()
         if nsplits < 2:
             raise ValueError('At least 2 splits required')
         self._nsplits: int = nsplits
-        self._splitter: flow.Spec[payload.CVFoldable] = splitter
+        self._splitter: flow.Builder[payload.CVFoldable] = splitter
         self._builder: Ensembler.Builder = self.Builder(bases, **kwargs)  # pylint: disable=abstract-class-instantiated
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
@@ -247,7 +247,7 @@ class FullStack(Ensembler):
             apply_output: flow.Worker = train_output.fork()
             stacker_forks: typing.Iterable[flow.Worker] = flow.Worker.fgen(kwargs['stacker'], nsplits, 1)
             reducer_forks: typing.Iterable[flow.Worker] = flow.Worker.fgen(
-                payload.Apply.spec(function=kwargs['reducer']), nsplits, 1
+                payload.Apply.builder(function=kwargs['reducer']), nsplits, 1
             )
             for fold_idx, pipeline_fold in enumerate(folds):
                 label_output[fold_idx].subscribe(pipeline_fold.test.label)
@@ -268,10 +268,10 @@ class FullStack(Ensembler):
         crossvalidator=None,
         splitter=payload.PandasCVFolds,
         nsplits=None,
-        appender: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(  # noqa: B008
+        appender: flow.Builder[payload.Concatenable] = payload.PandasConcat.builder(  # noqa: B008
             axis='columns', ignore_index=False
         ),
-        stacker: flow.Spec[payload.Concatenable] = payload.PandasConcat.spec(  # noqa: B008
+        stacker: flow.Builder[payload.Concatenable] = payload.PandasConcat.builder(  # noqa: B008
             axis='index', ignore_index=True
         ),
         reducer: typing.Callable[..., flow.Features] = pandas_mean,

@@ -110,7 +110,7 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
-            evaluator: Callback to provide an operator based on the give evaluation spec.
+            evaluator: Callback to provide an operator based on the given evaluation spec.
 
         Returns:
             Evaluation composition.

@@ -41,7 +41,7 @@ class Sink(provider.Service, default=provcfg.Sink.default, path=provcfg.Sink.pat
         Returns:
             Pipeline segment.
         """
-        publisher: flow.Composable = commit.Operator(commit.Driver.spec(self.consumer(schema, **self._writerkw)))
+        publisher: flow.Composable = commit.Operator(commit.Driver.builder(self.consumer(schema, **self._writerkw)))
         return publisher.expand()
 
     @classmethod

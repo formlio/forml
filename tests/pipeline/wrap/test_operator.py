@@ -41,9 +41,9 @@ class TestAdapter:
             """Dummy actor."""
             return 'bar', kw
 
-        assert not func._apply.spec()
-        assert func._train.spec()().apply(None) == ('foo', {})
-        assert func._label.spec()().apply(None) == ('bar', {})
+        assert not func._apply.builder()
+        assert func._train.builder()().apply(None) == ('foo', {})
+        assert func._label.builder()().apply(None) == ('bar', {})
 
     def test_params(self):
         """Test adapter setup using parametrized decorators."""
@@ -60,8 +60,8 @@ class TestAdapter:
             """Dummy actor."""
             return 'bar', kw
 
-        assert not func._apply.spec()
-        assert func._train.spec(bar='bar')().apply(None) == ('foo', {'foo': 'foo', 'bar': 'bar'})
+        assert not func._apply.builder()
+        assert func._train.builder(bar='bar')().apply(None) == ('foo', {'foo': 'foo', 'bar': 'bar'})
 
     def test_multi(self):
         """Test adapter setup using multiple decorators."""
@@ -74,9 +74,9 @@ class TestAdapter:
             """Dummy actor."""
             return 'foo', kw
 
-        assert funcfoo._train.spec()().apply(None) == ('foo', {'foo': 'foo'})
-        assert funcfoo._apply.spec()().apply(None) == ('foo', {'bar': 'foo'})
-        assert funcfoo._label.spec()().apply(None) == ('foo', {})
+        assert funcfoo._train.builder()().apply(None) == ('foo', {'foo': 'foo'})
+        assert funcfoo._apply.builder()().apply(None) == ('foo', {'bar': 'foo'})
+        assert funcfoo._label.builder()().apply(None) == ('foo', {})
 
         @funcfoo.apply(bar='bar')
         @wrap.Actor.apply
@@ -84,9 +84,9 @@ class TestAdapter:
             """Dummy actor."""
             return 'bar', kw
 
-        assert funcbar._train.spec()().apply(None) == ('foo', {'foo': 'foo'})
-        assert funcbar._apply.spec()().apply(None) == ('bar', {'bar': 'bar'})
-        assert funcbar._label.spec()().apply(None) == ('foo', {})
+        assert funcbar._train.builder()().apply(None) == ('foo', {'foo': 'foo'})
+        assert funcbar._apply.builder()().apply(None) == ('bar', {'bar': 'bar'})
+        assert funcbar._label.builder()().apply(None) == ('foo', {})
 
     def test_setup(self):
         """Test the operator instantiation."""

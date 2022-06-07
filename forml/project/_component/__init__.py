@@ -57,7 +57,7 @@ class Source(typing.NamedTuple):
     Labels = typing.Union[
         dsl.Feature,
         typing.Sequence[dsl.Feature],
-        flow.Spec[flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
+        flow.Builder[flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
     ]
     """Label type - either single column, multiple columns or generic label extracting actor (with two output ports)."""
 
@@ -78,7 +78,7 @@ class Source(typing.NamedTuple):
         ):
             train = train.query
             apply = apply.query
-            if labels is not None and not isinstance(labels, flow.Spec):
+            if labels is not None and not isinstance(labels, flow.Builder):
                 if isinstance(labels, dsl.Feature):
                     lseq = [labels]
                 else:
@@ -104,7 +104,7 @@ class Source(typing.NamedTuple):
 
         Args:
             features: Query defining the train (and if same also the ``apply``) features.
-            labels: (Sequence of) training label column(s) or label extraction actor spec.
+            labels: (Sequence of) training label column(s) or label extraction actor builder.
             apply: Optional query defining the apply features (if different from train ones). If provided, it must
                    result in the same schema as the main provided via ``features``.
             ordinal: Optional specification of an ordinal column.

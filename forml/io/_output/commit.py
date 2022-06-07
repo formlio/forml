@@ -31,10 +31,10 @@ LOGGER = logging.getLogger(__name__)
 class Operator(flow.Operator):
     """Basic publisher operator."""
 
-    def __init__(self, writer: flow.Spec[flow.Actor[layout.RowMajor, None, layout.Native]]):
+    def __init__(self, writer: flow.Builder[flow.Actor[layout.RowMajor, None, layout.Native]]):
         if writer.actor.is_stateful():
             raise forml.InvalidError('Stateful actor invalid for a publisher')
-        self._writer: flow.Spec[flow.Actor[layout.RowMajor, None, layout.Native]] = writer
+        self._writer: flow.Builder[flow.Actor[layout.RowMajor, None, layout.Native]] = writer
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         """Compose the publisher segment trunk.

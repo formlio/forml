@@ -35,27 +35,27 @@ subtype ``flow.Worker`` in particular.
 Creating a Worker
 ^^^^^^^^^^^^^^^^^
 
-Worker node gets created simply by providing a ``flow.Spec`` :ref:`actor builder <actor-spec>` and the required number
-of the input and output (apply) ports:
+Worker node gets created simply by providing a ``flow.Builder`` :ref:`actor builder <actor-builder>` and the required
+number of the input and output (apply) ports:
 
 .. code-block:: python
 
     from forml import flow
     from forml.pipeline import payload  # let's use some existing actors
 
-    # one input, one output and the PandasSelect stateless actor Spec
-    select_foobar = flow.Worker(payload.PandasSelect.spec(columns=['foo', 'bar']), szin=1, szout=1)
-    select_bar = flow.Worker(payload.PandasSelect.spec(columns=['bar']), szin=1, szout=1)
-    select_baz = flow.Worker(payload.PandasSelect.spec(columns=['baz']), szin=1, szout=1)
+    # one input, one output and the PandasSelect stateless actor builder
+    select_foobar = flow.Worker(payload.PandasSelect.builder(columns=['foo', 'bar']), szin=1, szout=1)
+    select_bar = flow.Worker(payload.PandasSelect.builder(columns=['bar']), szin=1, szout=1)
+    select_baz = flow.Worker(payload.PandasSelect.builder(columns=['baz']), szin=1, szout=1)
 
-    # one input, one output and the PandasDrop stateless actor Spec
-    drop_bar = flow.Worker(payload.PandasDrop.spec(columns=['bar']), szin=1, szout=1)
+    # one input, one output and the PandasDrop stateless actor builder
+    drop_bar = flow.Worker(payload.PandasDrop.builder(columns=['bar']), szin=1, szout=1)
 
-    # two inputs, one output and the PandasConcat stateless actor Spec
-    concat = flow.Worker(payload.PandasConcat.spec(axis='columns'), szin=2, szout=1)
+    # two inputs, one output and the PandasConcat stateless actor builder
+    concat = flow.Worker(payload.PandasConcat.builder(axis='columns'), szin=2, szout=1)
 
-    # one input, one output and the mean_impute stateful actor Spec (defined in the previous chapter)
-    impute_baz_apply = flow.Worker(mean_impute.spec(column='foo'), szin=1, szout=1)
+    # one input, one output and the mean_impute stateful actor builder (defined in the previous chapter)
+    impute_baz_apply = flow.Worker(mean_impute.builder(column='foo'), szin=1, szout=1)
 
 This gives us the following disconnected workers:
 
@@ -93,14 +93,14 @@ This can be used to publish or subscribe to another such object.
 
 .. caution::
     Any input port can be subscribed to at most one upstream output port but any output port can be publishing to
-    multiple subscribed input ports. Actor cannot be subscribed to itself.
+    multiple subscribed input ports. Actor cannot subscribe to itself.
 
 The key method of the ``flow.PubSub`` is the ``.subscribe()``:
 
 .. automethod:: forml.flow.PubSub.subscribe
 
 
-Now, with that connections between our nodes, the topology looks like this:
+Now, with that connections between our nodes, the topology looks shown:
 
 .. md-mermaid::
 
@@ -122,7 +122,7 @@ ports. This is achieved simply by using the ``.train()`` method on the worker ob
 
 Training and applying even the same worker are two distinct tasks, hence they need to be represented using two related
 but separate worker nodes. ForML transparently manages these related workers using a ``flow.Worker.Group`` instance.
-All workers in the same *group* have the same shape and share the same :ref:`actor builder <actor-spec>` instance.
+All workers in the same *group* have the same shape and share the same :ref:`actor builder <actor-builder>` instance.
 
 Based on the group membership (and the general context), ForML automatically handles the runtime state management
 between the different modes of the same actor (the :ref:`State ports <actor-ports>` are *system* level ports and cannot
@@ -178,8 +178,8 @@ The following example demonstrates the functionality of the *Future* nodes:
 
     from forml import flow
 
-    worker1 = flow.Worker(SomeActor.spec(), szin=1, szout=1)
-    worker2 = flow.Worker(AnotherActor.spec(), szin=1, szout=1)
+    worker1 = flow.Worker(SomeActor.builder(), szin=1, szout=1)
+    worker2 = flow.Worker(AnotherActor.builder(), szin=1, szout=1)
     future1 = flow.Future()  # defaults to szin=1, szout=1 (other shapes still possible)
     future2 = flow.Future()
 
@@ -252,7 +252,7 @@ ForML uses its compiler to:
 #. Generating the adjacency matrix representation suitable for runtime execution.
 
 
-See our existing topology enhanced by compiler by adding the state *Dumper* and *Loader* system nodes plus
+See our existing topology enhanced by the compiler with adding the state *Dumper* and *Loader* system nodes plus
 connecting the relevant *State* ports (dotted lines):
 
 .. md-mermaid::

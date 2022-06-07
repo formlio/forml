@@ -230,7 +230,7 @@ class Table(span.Visitor, typing.Iterable):
         assert isinstance(node, atomic.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
-        functor = user.Apply().functor(node.spec)
+        functor = user.Apply().functor(node.builder)
         aliases = [node.uid]
         if node.stateful:
             state = node.gid
@@ -238,7 +238,7 @@ class Table(span.Visitor, typing.Iterable):
             if persistent and state not in self._index:
                 self._index.set(system.Loader(self._assets, state), state)
             if node.trained:
-                functor = user.Train().functor(node.spec)
+                functor = user.Train().functor(node.builder)
                 aliases.append(state)
                 if persistent:
                     if not self._committer:

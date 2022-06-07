@@ -133,13 +133,15 @@ def PandasDrop(  # pylint: disable=invalid-name
 class MapReduce(flow.Operator):
     """Operator for applying parallel (possibly stateful) mapper actors and a final (stateless) reducer."""
 
-    def __init__(self, *mappers: flow.Spec, reducer: flow.Spec = PandasConcat.spec(axis='columns')):  # noqa: B008
+    def __init__(
+        self, *mappers: flow.Builder, reducer: flow.Builder = PandasConcat.builder(axis='columns')  # noqa: B008
+    ):
         if reducer.actor.is_stateful():
             raise TypeError('Stateful reducer')
         if not mappers:
             raise ValueError('Mappers required')
-        self._mappers: tuple[flow.Spec] = mappers
-        self._reducer: flow.Spec = reducer
+        self._mappers: tuple[flow.Builder] = mappers
+        self._reducer: flow.Builder = reducer
 
     def compose(self, left: flow.Composable) -> flow.Trunk:
         left: flow.Trunk = left.expand()

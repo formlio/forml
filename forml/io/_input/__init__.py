@@ -69,31 +69,31 @@ class Feed(
             Pipeline segment.
         """
 
-        def actor(driver: type[extract.Driver], query: dsl.Query) -> 'flow.Spec[extract.Driver]':
-            """Helper for creating the reader actor spec for the given query.
+        def actor(driver: type[extract.Driver], query: dsl.Query) -> 'flow.Builder[extract.Driver]':
+            """Helper for creating the reader actor builder for the given query.
 
             Args:
                 driver: Driver class.
                 query: Data loading query.
 
             Returns:
-                Reader actor spec.
+                Reader actor builder.
             """
-            return driver.spec(producer, extract.Statement.prepare(query, source.extract.ordinal, lower, upper))
+            return driver.builder(producer, extract.Statement.prepare(query, source.extract.ordinal, lower, upper))
 
         producer = self.producer(self.sources, self.features, **self._readerkw)
-        apply_actor: flow.Spec[extract.Driver] = actor(extract.RowDriver, source.extract.apply)
-        label_actor: typing.Optional[flow.Spec] = None
+        apply_actor: flow.Builder[extract.Driver] = actor(extract.RowDriver, source.extract.apply)
+        label_actor: typing.Optional[flow.Builder] = None
         train_query: dsl.Query = source.extract.train
         train_driver = extract.RowDriver
         if source.extract.labels:
             train_driver = extract.TableDriver
-            if isinstance(source.extract.labels, flow.Spec):
+            if isinstance(source.extract.labels, flow.Builder):
                 label_actor = source.extract.labels
             else:
                 columns, label_actor = extract.Slicer.from_columns(train_query.features, source.extract.labels)
                 train_query = train_query.select(*columns)
-        train_actor: flow.Spec[extract.Driver] = actor(train_driver, train_query)
+        train_actor: flow.Builder[extract.Driver] = actor(train_driver, train_query)
         loader: flow.Composable = extract.Operator(apply_actor, train_actor, label_actor)
         if source.transform:
             loader >>= source.transform
