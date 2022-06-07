@@ -204,7 +204,10 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
 
 
 class Segment(tuple):
-    """Representing acyclic (sub)graph between two nodes - each with at most one apply input/output port."""
+    """Representing acyclic (sub)graph between two apply-mode nodes - each with at most one apply input/output port.
+
+    The ``tail`` node (if provided) must be reachable from the ``head`` node via the existing connections.
+    """
 
     _head: 'flow.Node' = property(operator.itemgetter(0))
     _tail: 'flow.Node' = property(operator.itemgetter(1))
@@ -268,9 +271,7 @@ class Segment(tuple):
         return Segment(self._head, tail)
 
     def copy(self) -> 'flow.Segment':
-        """Make a copy of the *Apply* topology within this segment.
-
-        All trained nodes are ignored.
+        """Make a copy of the *apply-mode* topology within this segment (all trained nodes are ignored).
 
         Returns:
             Copy of the *Apply* segment topology.
@@ -282,7 +283,7 @@ class Segment(tuple):
     def follows(self, other: 'flow.Segment') -> bool:
         """Check this segment follows from the other.
 
-        It follows, if our head is found anywhere on the other segment.
+        It follows, if our head is found anywhere within the other segment.
 
         Args:
             other: Segment to check against.

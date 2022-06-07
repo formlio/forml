@@ -172,20 +172,54 @@ yet (e.g. when implementing an :doc:`operator <operator>` which doesn't know wha
 eventually composed with). When connected to a real worker, the Future node will automatically collapse and disappear
 from the topology.
 
-In our examples above, the Future nodes are those round shaped ones with ``i`` or ``o`` labels representing the
-virtual up/downstream in/output connections. It shows how they disappear once they are connected to a real worker.
+The following example demonstrates the functionality of the *Future* nodes:
+
+.. code-block:: python
+
+    from forml import flow
+
+    worker1 = flow.Worker(SomeActor.spec(), szin=1, szout=1)
+    worker2 = flow.Worker(AnotherActor.spec(), szin=1, szout=1)
+    future1 = flow.Future()  # defaults to szin=1, szout=1 (other shapes still possible)
+    future2 = flow.Future()
+
+    future1[0].subscribe(worker1[0])
+    worker2[0].subscribe(future2[0])
+
+.. md-mermaid::
+
+    graph LR
+        worker1 --> f1((future1))
+        f2((future2)) --> worker2
+
+
+As the diagram shows, we have ``worker1`` node connecting its first *apply* output port to the ``future1`` *Future*
+node and another ``future2`` connected to input port of ``worker2``. Now, after subscribing the ``future2`` node to
+the ``future1`` output, you can see how both the *Future* nodes disappear from the topology and the workers become
+connected directly:
+
+.. code-block:: python
+
+    future2[0].subscribe(future1[0])
+
+
+.. md-mermaid::
+
+    graph LR
+        worker1 --> worker2
+
 
 .. warning::
-    Flow containing Future nodes is considered *incomplete* and cannot be passed to compiler until all Future nodes are
-    collapsed.
+    Flow containing *Future* nodes is considered *incomplete* and cannot be passed for execution until all Future nodes
+    are collapsed.
 
 
 Advanced Structures
 -------------------
 
 When implementing more complex topologies (typically in scope of :doc:`operators development <operator>`), the
-significant parts of the task graph become its entry and exit nodes (as that's where new connections are being added),
-while the inner nodes (already fully connected) fade away from the perspective of the ongoing construction.
+significant parts of the task graph become its *entry* and *exit* nodes (as that's where new connections are being
+added), while the inner nodes (already fully connected) fade away from the perspective of the ongoing construction.
 
 For this purpose, ForML uses the ``flow.Segment`` abstraction representing a subgraph between one entry (``.head``) and
 exit (``.tail``) node and providing a useful API to work with this part of the task graph:
@@ -207,15 +241,19 @@ Compiler
 --------
 
 While representing the task graph using linked structures is practical for implementing the user-level API, more
-efficient structure for its actual runtime execution would be the (actor) *adjacency matrix* produced by the internal
+efficient structure for its actual runtime execution is the (actor) *adjacency matrix* produced by the internal
 ForML compiler.
 
 ForML uses its compiler to:
 
-#. Augment the task graph by adding any necessary system-level nodes.
+#. Augment the task graph by adding any necessary system-level nodes (e.g. to automatically manage persistence
+   of any :doc:`stateful actors <actor>`).
 #. Optimizing the task graph by removing any irrelevant or redundant parts.
 #. Generating the adjacency matrix representation suitable for runtime execution.
 
+
+See our existing topology enhanced by compiler by adding the state *Dumper* and *Loader* system nodes plus
+connecting the relevant *State* ports (dotted lines):
 
 .. md-mermaid::
 
