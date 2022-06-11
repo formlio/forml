@@ -110,7 +110,7 @@ class PandasConcat(Concatenable[pdtype.NDFrame, pandas.DataFrame]):
 def Apply(  # pylint: disable=invalid-name
     *features: flow.Features, function: typing.Callable[..., flow.Features]
 ) -> pandas.DataFrame:
-    """Generic source apply actor."""
+    """Generic function based transformer actor."""
     return function(*features)
 
 

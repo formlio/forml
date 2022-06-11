@@ -111,6 +111,8 @@ Now, with that connections between our nodes, the topology looks shown:
         concat -- "o(0)->i(0)" --> select_bar --> sro((o))
 
 
+.. _topology-state:
+
 Dealing with Worker State
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -162,6 +164,7 @@ Now we have one more worker node ``impute_baz_train`` logically *grouped* as a c
     * At most one worker in the same group can be trained.
     * Either both *Train* and *Label* or all *Apply* input and output ports of each worker must be connected.
 
+.. _topology-future:
 
 Future Nodes
 ^^^^^^^^^^^^
@@ -213,9 +216,10 @@ connected directly:
     Flow containing *Future* nodes is considered *incomplete* and cannot be passed for execution until all Future nodes
     are collapsed.
 
+.. _topology-logical:
 
-Advanced Structures
--------------------
+Logical Structures
+------------------
 
 When implementing more complex topologies (typically in scope of :doc:`operators development <operator>`), the
 significant parts of the task graph become its *entry* and *exit* nodes (as that's where new connections are being
@@ -225,7 +229,10 @@ For this purpose, ForML uses the ``flow.Segment`` abstraction representing a sub
 exit (``.tail``) node and providing a useful API to work with this part of the task graph:
 
 .. autoclass:: forml.flow.Segment
-   :members: subscribe, extend, copy
+   :members: publisher, subscribe, extend, copy, prune
+
+.. caution::
+    Note the ``.head`` node must have *single input port* and the ``.tail`` node must have *single output port*.
 
 To carry one of the core ForML traits - the inseparability of the *train* and *apply* mode implementations - ForML uses
 the ``flow.Trunk`` structure as the integrated representation of the related *segments*. There are actually three

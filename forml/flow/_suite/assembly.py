@@ -66,7 +66,7 @@ class Trunk(collections.namedtuple('Trunk', 'apply, train, label')):
         train: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
         label: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
     ) -> 'flow.Trunk':
-        """Helper for creating new Trunk with the specified segments *extended* by the provided values.
+        """Helper for creating new Trunk with the specified segments *extended* by the provided instances.
 
         Args:
             apply: Optional segment to extend our existing *apply* segment with.
