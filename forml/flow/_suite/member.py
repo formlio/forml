@@ -32,14 +32,6 @@ if typing.TYPE_CHECKING:
 class Composable(metaclass=abc.ABCMeta):
     """Common base for operators and expressions."""
 
-    @abc.abstractmethod
-    def expand(self) -> 'flow.Trunk':
-        """Compose and return a trunk track.
-
-        Returns:
-            Trunk track.
-        """
-
     def __rshift__(self, right: 'flow.Composable') -> 'Compound':
         """Semantical composition construct."""
         return Compound(right, self)
@@ -49,48 +41,49 @@ class Composable(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
-        """Expand the left trunk producing new composed trunk track.
+        """Implementation of the internal task graph and its composition with the preceding part of the expression.
 
         Args:
-            left: Left side composable.
+            left: Preceding part of the expression that this operator is supposed to compose with.
 
         Returns:
-            Composed trunk track.
+            Trunk instance representing the composed task graph.
+        """
+
+    @abc.abstractmethod
+    def expand(self) -> 'flow.Trunk':
+        """Compose this instance and the entire preceding part of the expression and return the resulting trunk.
+
+        This is typically called by a downstream operator (*right* side of the expression) within its ``.compose()``
+        method where this is passed as part of the *left* side of the expression.
+
+        Returns:
+            Trunk instance representing the composed task graph.
         """
 
 
 class Origin(Composable):
     """Initial builder without a predecessor."""
 
-    def expand(self) -> 'flow.Trunk':
-        """Track of future nodes.
-
-        Returns:
-            Trunk track.
-        """
-        return assembly.Trunk()
-
     def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
-        """Origin composition is just the left side track.
+        """Origin composition is just the left side trunk.
 
         Args:
             left: Left side composable.
 
         Returns:
-            Trunk track.
+            Trunk.
         """
         return left.expand()
 
+    def expand(self) -> 'flow.Trunk':
+        return assembly.Trunk()
+
 
 class Operator(Composable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
-    """Base pipeline entity."""
+    """Base class for operator implementations."""
 
     def expand(self) -> 'flow.Trunk':
-        """Create dummy composition of this operator on a future origin nodes.
-
-        Returns:
-            Trunk track.
-        """
         return self.compose(Origin())
 
 
@@ -112,21 +105,16 @@ class Compound(Composable):
     def __repr__(self):
         return f'{self._left} >> {self._right}'
 
-    def expand(self) -> 'flow.Trunk':
-        """Compose the trunk track.
-
-        Returns:
-            Trunk track.
-        """
-        return self._right.compose(self._left)
-
     def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
-        """Expression composition is just extension of its tracks.
+        """Expression composition is just extension of its segments.
 
         Args:
             left: Left side composable.
 
         Returns:
-            Trunk track.
+            Trunk.
         """
         return left.expand().extend(*self.expand())
+
+    def expand(self) -> 'flow.Trunk':
+        return self._right.compose(self._left)

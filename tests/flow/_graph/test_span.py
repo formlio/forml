@@ -43,6 +43,20 @@ class TestTraversal:
         with pytest.raises(span.Traversal.Cyclic):  # cyclic flow
             span.Traversal(worker).tail()
 
+    def test_tail(self, simple: flow.Worker, multi: flow.Worker):
+        """Test tail detection."""
+        assert span.Traversal(multi).tail(multi).pivot.gid == multi.gid
+        with pytest.raises(flow.TopologyError, match='Disconnected tail'):
+            assert span.Traversal(multi).tail(simple).pivot.gid == multi.gid
+        simple[0].subscribe(multi[0])
+        assert span.Traversal(multi).tail().pivot.gid == simple.gid
+        assert span.Traversal(multi).tail(simple).pivot.gid == simple.gid
+        tail2 = flow.Worker(None, 1, 1)
+        tail2[0].subscribe(multi[1])
+        with pytest.raises(flow.TopologyError, match='Ambiguous tail'):
+            span.Traversal(multi).tail()
+        assert span.Traversal(multi).tail(tail2)
+
     def test_copy(self, worker: flow.Worker, simple: flow.Worker, multi: flow.Worker):
         """Copy test."""
         copy = span.Traversal(worker).copy(simple)
@@ -100,15 +114,25 @@ class TestSegment:
         segment.subscribe(simple[0])
         return flow.Segment(simple)
 
-    def test_invalid(self, multi: flow.Worker):
+    def test_invalid(self, simple: flow.Worker, multi: flow.Worker):
         """Testing invalid segment."""
-        with pytest.raises(flow.TopologyError):  # not a simple edge node
+        with pytest.raises(flow.TopologyError, match='Simple head required'):
             flow.Segment(multi)
+        with pytest.raises(flow.TopologyError, match='Disconnected tail'):
+            flow.Segment(simple, multi)
+        multi[0].subscribe(simple[0])
+        with pytest.raises(flow.TopologyError, match='Simple tail required'):
+            flow.Segment(simple, multi)
 
     def test_copy(self, segment: flow.Segment):
         """Testing copying segment nodes."""
         copy = segment.copy()
         assert copy._head.gid == segment._head.gid
+
+    def test_prune(self, head: flow.Worker, segment: flow.Segment):
+        """Testing pruning segment nodes."""
+        with pytest.raises(flow.TopologyError, match='connected segment'):
+            flow.Segment(head, head).prune()
 
     def test_pubsub(self, segment: flow.Segment, simple: flow.Worker, multi: flow.Worker):
         """Testing segment publishing."""

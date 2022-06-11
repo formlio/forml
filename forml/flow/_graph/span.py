@@ -57,7 +57,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
     def __new__(cls, pivot: 'flow.Node', members: typing.AbstractSet['flow.Node'] = frozenset()):
         return super().__new__(cls, pivot, frozenset(members | {pivot}))
 
-    def directs(
+    def subscribers(
         self, *extras: 'flow.Node', mask: typing.Optional[typing.Callable[['flow.Node'], bool]] = None
     ) -> typing.Iterator['Traversal']:
         """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
@@ -72,7 +72,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         """
         seen = set()
         for node in itertools.chain(
-            (s.node for p in self.pivot.output for s in p), (e for e in extras if e and e.subscribed(self.pivot))
+            (s.node for p in self.pivot.output for s in p), (e for e in extras if e.subscribed(self.pivot))
         ):
             if node in seen or mask and not mask(node):
                 continue
@@ -90,31 +90,37 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         Returns:
             Subscribers instance.
         """
-        return self.directs(*extras, mask=lambda n: not isinstance(n, atomic.Worker) or not n.trained)
+        return self.subscribers(*extras, mask=lambda n: not isinstance(n, atomic.Worker) or not n.trained)
 
     def tail(self, expected: typing.Optional['flow.Node'] = None) -> 'Traversal':
         """Recursive traversing all mapper subscription segments down to the tail mapper checking there is just one.
 
         Args:
-            expected: Optional indication of the expected tail. If expected is a Future, it's matching Worker is
-                      returned instead.
+            expected: Optional indication of the expected tail - it's an error if not found.
 
         Returns:
             Tail traversal of the flow.
         """
-        if expected and self.pivot == expected:
-            return self
-        endings = set()
-        for node in self.mappers(expected):
-            tail = node.tail(expected)
-            if expected and tail.pivot == expected:
-                return tail
-            endings.add(tail)
-        if not any(endings):
-            return self
-        if len(self.members) == 1 and (expected or len(endings) > 1):
+
+        def exists(traversal: Traversal) -> bool:
+            """Traverse the graph and return True if the *expected* node is found."""
+            if traversal.pivot == expected:
+                return True
+            return any(exists(m) for m in traversal.mappers(expected))
+
+        def scan(traversal: Traversal) -> set[Traversal]:
+            """Traverse the graph and return set of all leaf nodes."""
+            return {e for m in traversal.mappers() for e in scan(m)} or {traversal}
+
+        if expected:
+            if exists(self):
+                return Traversal(expected)
+            raise _exception.TopologyError(f'Disconnected tail {expected}')
+
+        leaves = scan(self)
+        if len(leaves) > 1:
             raise _exception.TopologyError('Ambiguous tail')
-        return endings.pop()
+        return leaves.pop()
 
     def each(self, tail: 'flow.Node', acceptor: typing.Callable[['flow.Node'], None]) -> None:
         """Traverse the segment downstream calling acceptor for each unique node.
@@ -158,7 +164,7 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
             if isinstance(traversal.pivot, atomic.Worker) or traversal.pivot != tail:
                 acceptor(traversal.pivot)
             seen.add(traversal.pivot)
-            for node in traversal.directs(tail, mask=mask):
+            for node in traversal.subscribers(tail, mask=mask):
                 traverse(node)
 
         seen: set['flow.Node'] = set()
@@ -204,7 +210,10 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
 
 
 class Segment(tuple):
-    """Representing acyclic (sub)graph between two apply-mode nodes - each with at most one apply input/output port.
+    """Representing acyclic (sub)graph between two apply-mode nodes.
+
+    Each of the two boundary nodes must be externally facing with just *single port* (``.head`` node having single
+    input port and ``.tail`` node having single output port).
 
     The ``tail`` node (if provided) must be reachable from the ``head`` node via the existing connections.
     """
@@ -214,10 +223,10 @@ class Segment(tuple):
 
     def __new__(cls, head: 'flow.Node', tail: typing.Optional['flow.Node'] = None):
         if head.szin > 1:
-            raise _exception.TopologyError('Simple head required')
+            raise _exception.TopologyError(f'Simple head required - got {head} with {head.szin} ports')
         tail = Traversal(head).tail(tail).pivot
         if tail.szout > 1:
-            raise _exception.TopologyError('Simple tail required')
+            raise _exception.TopologyError(f'Simple tail required - got {tail} with {tail.szout} ports')
         return super().__new__(cls, (head, tail))
 
     def accept(self, visitor: Visitor) -> None:
@@ -279,6 +288,12 @@ class Segment(tuple):
 
         copies = Traversal(self._head).copy(self._tail)
         return Segment(copies[self._head], copies[self._tail])
+
+    def prune(self) -> None:
+        """Disconnect all the apply-mode topology within this segment (all train nodes remain connected)."""
+        if any(self._tail.output):
+            raise _exception.TopologyError('Pruning a connected segment')
+        raise NotImplementedError()
 
     def follows(self, other: 'flow.Segment') -> bool:
         """Check this segment follows from the other.

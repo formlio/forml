@@ -310,7 +310,7 @@ class Worker(Node):
         """Checking we are on given node's subscription list.
 
         Args:
-            publisher: Node to check for being it's subscriber,
+            publisher: Node to check for being its subscriber,
 
         Returns:
             True if we are given node's subscriber.
@@ -357,11 +357,9 @@ class Future(Node):
             node: 'flow.Future',
             index: int,
             register: typing.Callable[[port.Publishable], None],
-            sync: typing.Callable[[], None],
         ):
             super().__init__(node, index)
             self._register: typing.Callable[[port.Publishable], None] = register
-            self._sync: typing.Callable[[], None] = sync
 
         def subscribe(self, publisher: 'flow.Publishable') -> None:
             """Register publisher for future subscriptions.
@@ -370,40 +368,40 @@ class Future(Node):
                 publisher: Actual left side publisher to be used for all the interim subscriptions.
             """
             self._register(publisher)
-            self._sync()
 
     def __init__(self, szin: int = 1, szout: int = 1):
         super().__init__(szin, szout)
-        self._proxy: dict[port.Publishable, int] = {}
+        self._input: dict[port.Publishable, int] = {}
 
     def __getitem__(self, index) -> 'flow.PubSub':
         def register(publisher: 'flow.Publishable') -> None:
-            """Callback for publisher proxy registration.
+            """Callback for publisher input registration.
 
             Args:
                 publisher: Left side publisher
             """
-            if publisher in self._proxy:
+            if publisher in self._input:
                 raise _exception.TopologyError('Publisher collision')
-            self._proxy[publisher] = index
+            self._input[publisher] = index
+            self._collapse()
 
-        return self.PubSub(self, index, register, self._sync)
+        return self.PubSub(self, index, register)
 
     def subscribed(self, publisher: 'flow.Node') -> bool:
         """Overridden subscription checker. Future node checks the subscriptions in its proxy registrations.
 
         Args:
-            publisher: Node to check for being it's subscriber,
+            publisher: Node to check for being its subscriber,
 
         Returns:
             True if we are given node's subscriber.
         """
         # pylint: disable=protected-access
-        return any(p._node is publisher or p._node.subscribed(publisher) for p in self._proxy)
+        return any(p._node is publisher or p._node.subscribed(publisher) for p in self._input)
 
-    def _sync(self) -> None:
+    def _collapse(self) -> None:
         """Callback for interconnecting proxied registrations."""
-        for publisher, subscription in ((p, s) for p, i in self._proxy.items() for s in self._output[i]):
+        for publisher, subscription in ((p, s) for p, i in self._input.items() for s in self._output[i]):
             publisher.republish(subscription)
 
     def _publish(self, index: int, subscription: 'flow.Subscription') -> None:
@@ -416,7 +414,7 @@ class Future(Node):
         Upstream publish followed by proxy synchronization.
         """
         super()._publish(index, subscription)
-        self._sync()
+        self._collapse()
 
     def fork(self) -> 'flow.Future':
         """There is nothing to copy on a Future node so just create a new one.

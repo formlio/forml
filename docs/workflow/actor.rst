@@ -190,6 +190,8 @@ Example of a user-defined native actor:
                     self._column = column
 
 
+.. _actor-decorated:
+
 Decorated Function Actors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -227,7 +229,7 @@ exactly the functionality as in the native implementations above):
                 df: pd.DataFrame,
                 labels: pd.Series,
                 *,
-                columns: str,
+                column: str,
             ) -> float:
                 """Train part of a stateful imputation actor using the trained mean value to fill the NaNs."""
                 return df[column].mean()
@@ -235,7 +237,7 @@ exactly the functionality as in the native implementations above):
             @mean_impute.apply
             def mean_impute(state: float, df: pd.DataFrame, *, column: str) -> pd.DataFrame:
                 """Apply part of a stateful imputation actor using the trained mean value to fill the NaNs."""
-                df[column] = df[column].fillna(value)
+                df[column] = df[column].fillna(state)
                 return df
 
 

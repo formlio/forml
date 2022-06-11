@@ -19,18 +19,20 @@ Workflow Fundamentals
 Workflow is the backbone of the ML solution responsible for consistently sticking all its pieces together. On the low
 level it is a *Task Dependency Graph* with edges representing data flows and vertices standing for the data
 transformations. This particular type of the graph is called *Directed Acyclic Graph* (DAG) - meaning the flows are
-oriented and can't form any cycles.
+oriented and can't form any cycles. Representing workflows using task graphs is crucial for scalable scheduling,
+distributed execution and runtime portability.
 
 .. caution::
     At its core, the workflow internals explained in the following chapters are built around the Graph theory and SW+ML
     engineering principles, which might feel way too involved from a general data-science perspective. Fortunately, this
-    level of detail is not required for the usual day-to-day work with the existing high-level ForML operators.
+    level of detail is not required for the usual day-to-day work with the existing high-level ForML
+    :doc:`operators <operator>`.
 
 ForML is providing a convenient API for defining complex workflows using simple notation based on the following
 concepts:
 
 :doc:`Operators <operator>`
-    are high-level pipeline macros that can be composed together and eventually expand into the task graph.
+    are high-level pipeline macro-instructions that can be composed together and eventually expand into the task graph.
 
 :doc:`Actors <actor>`
     are the low-level task primitives representing the graph vertices.
@@ -41,7 +43,7 @@ concepts:
 .. important::
     While the other ML frameworks and platforms out there are typically *model-centric* (having their discrete *train*
     process produce *model(s)* that get separately deployed for serving the *predict* phase), ForML, in contrast, is
-    rather *workflow-centric* - ensuring all the steps (i.e. workflow) applied during the *predict* phase strictly
+    rather *workflow-centric* - ensuring all the steps (i.e. workflow) applied during the *predict* phase consistently
     reflect the original *train* process. That's achieved by an inseparable integration of both
     the *train* as well as the *apply* (predict) representations of the specific ML scenario into a single ForML
     expression. Essentially every single ForML workflow expands into one of the two related task graphs depending on
