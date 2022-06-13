@@ -33,8 +33,8 @@ The operator layer also happens to be the ideal stage for carrying out unit test
 a complete :doc:`operator unit testing framework <../testing>`.
 
 
-Implementation
---------------
+Generic Implementation
+----------------------
 
 Operators can implement whatever complex functionality based on any number of actors. They are using the
 :ref:`logical topology structures <topology-logical>` to implement the internal task graph and its composition
@@ -98,7 +98,7 @@ method:
         """Generic stateful mapper operator."""
 
         def __init__(self, actor_builder: flow.Builder):
-            assert actor_builder.actor.is_stateful(), 'Not stateful'
+            assert actor_builder.actor.is_stateful(), 'Expected stateful'
             self._actor_builder = actor_builder
 
         def compose(self, left: flow.Composable) -> flow.Trunk:
@@ -157,6 +157,61 @@ That would render the following task graphs:
         end
 
 
+Wrapped Operators
+-----------------
+
+Instead of implementing the entire base class, operators can in special cases be defined using the wrappers provided
+within the ``forml.pipeline.wrap`` package.
+
+This approach is applicable to *simple* operators based on a *single actor*.
+
+
+Simple Decorated Operators
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Standard ML entities like *transformers* or *estimators* can be turned into operators easily by wrapping them within the
+provided decorators or adding a provided mixin class into the class hierarchy. More complex entities like for example
+a *stacked ensembler* need to be implemented as operators from scratch (reusable entities can be maintained centrally as
+library operators). For simple operators (typically single-actor operators) are available convenient decorators under
+ that makes it really easy to create specific instances. More details on the
+topic of operator development can be found in the :doc:`operator` sections.
+
+Operators are generally defined by implementing the ``flow.Operator`` interface. For couple of trivial patterns, there
+also is a simpler option based on decorating user-defined actors (whether native (class based) or decorated):
+
+
+.. autoclass:: forml.pipeline.wrap.Operator
+   :members: apply, train, label, mapper
+
+
+.. code-block:: python
+
+    import pandas as pd
+    from forml.pipeline import wrap
+
+    @wrap.Operator.mapper
+    @wrap.Actor.apply
+    def impute(df: pandas.DataFrame, *, column: str, value: typing.Any) -> pandas.DataFrame:
+        """Simple static imputation actor."""
+        return df[column].fillna(value)
+
+
+Auto-Wrapped Operators
+^^^^^^^^^^^^^^^^^^^^^^
+
+Another option of defining actors is reusing third-party classes that are providing the desired functionality. These
+classes cannot be changed to extend ForML base Actor class but can be wrapped upon importing using the ``wrap.importer``
+context manager like this:
+
+.. code-block:: python
+
+    from forml.pipeline import wrap
+    with wrap.importer():
+        from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+
+    gbc_operator = GradientBoostingClassifier(random_state=42)  # this is now a ForML operator
+
+
 Advanced Composition
 --------------------
 
@@ -196,7 +251,7 @@ This can be implemented as follows:
             assert (
                 not splitter_builder.actor.is_stateful()
                 and not reducer_builder.actor.is_stateful()
-            ), "Is stateful"
+            ), "Expected stateless"
             self._nfolds = nfolds
             self._splitter_builder = splitter_builder
             self._reducer_builder = reducer_builder
@@ -216,8 +271,9 @@ This can be implemented as follows:
                 branch.train.subscribe(splitter_trainmode_train[fid])
                 branch.label.subscribe(splitter_trainmode_label[fid])
                 branch.apply.subscribe(apply_head[0])
-                branch.train.prune()  # throw away the train-apply branch as we are going to copy the pre-split apply
-                branch_trainmode_apply = branch.apply.copy()  # copy the graph to apply the entire pre-split train data
+
+
+                branch_trainmode_apply = branch.apply.copy()  # copy the entire pre-split as the new train-apply
                 branch_trainmode_apply.subscribe(train_head[0])
                 reducer_applymode_apply[fid].subscribe(branch.apply.publisher)
                 reducer_trainmode_apply[fid].subscribe(branch_trainmode_apply.publisher)
@@ -227,47 +283,9 @@ This can be implemented as follows:
                 flow.Segment(label_head, label_head),  # this will patch through the pre-split labels
             )
 
-Here we have an operator which takes the number of folds and a 1:N splitter actor builder with a N:1 reducer actor
-builder. Note how we had to use the :ref:`Future <topology-future>` nodes to create the virtual *heads* of the segments
-due to the specific need of prepending
-
-
-Decorated Operators
-^^^^^^^^^^^^^^^^^^^
-
-Standard ML entities like *transformers* or *estimators* can be turned into operators easily by wrapping them within the
-provided decorators or adding a provided mixin class into the class hierarchy. More complex entities like for example
-a *stacked ensembler* need to be implemented as operators from scratch (reusable entities can be maintained centrally as
-library operators). For simple operators (typically single-actor operators) are available convenient decorators under
-the ``forml.pipeline.wrap`` that makes it really easy to create specific instances. More details on the
-topic of operator development can be found in the :doc:`operator` sections.
-
-Operators are generally defined by implementing the ``flow.Operator`` interface. For couple of trivial patterns, there
-also is a simpler option based on decorating user-defined actors (whether native (class based) or decorated):
-
-.. code-block:: python
-
-    import pandas as pd
-    from forml.pipeline import wrap
-
-    @wrap.Mapper.operator
-    @wrap.Actor.apply
-    def impute(df: pandas.DataFrame, *, column: str, value: typing.Any) -> pandas.DataFrame:
-        """Simple static imputation actor."""
-        return df[column].fillna(value)
-
-
-Auto-Wrapped Operators
-^^^^^^^^^^^^^^^^^^^^^^
-
-Another option of defining actors is reusing third-party classes that are providing the desired functionality. These
-classes cannot be changed to extend ForML base Actor class but can be wrapped upon importing using the ``wrap.importer``
-context manager like this:
-
-.. code-block:: python
-
-    from forml.pipeline import wrap
-    with wrap.importer():
-        from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-
-    gbc_operator = GradientBoostingClassifier(random_state=42)  # this is now a ForML operator
+That is an operator configured with the number of folds, a 1:N *splitter* actor builder and a N:1 *reducer*
+actor builder. To prepend the entire composition scope, it uses the :ref:`Future <topology-future>` nodes to create
+the virtual *heads* for its segments. In each iteration, the ``for`` loop expands the *left*
+side of the composition producing the branch task graph to be wrapped. Its *train* and *label*
+input segments get attached to the relevant splitter ports, while the *apply* segment goes directly to the main
+apply-mode head node. The ``branch.train.prune()`` and ``branch.apply.copy()`` effectively

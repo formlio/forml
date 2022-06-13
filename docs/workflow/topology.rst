@@ -229,7 +229,7 @@ For this purpose, ForML uses the ``flow.Segment`` abstraction representing a sub
 exit (``.tail``) node and providing a useful API to work with this part of the task graph:
 
 .. autoclass:: forml.flow.Segment
-   :members: publisher, subscribe, extend, copy, prune
+   :members: publisher, subscribe, extend, copy
 
 .. caution::
     Note the ``.head`` node must have *single input port* and the ``.tail`` node must have *single output port*.

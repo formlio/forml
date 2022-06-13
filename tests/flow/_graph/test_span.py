@@ -129,11 +129,6 @@ class TestSegment:
         copy = segment.copy()
         assert copy._head.gid == segment._head.gid
 
-    def test_prune(self, head: flow.Worker, segment: flow.Segment):
-        """Testing pruning segment nodes."""
-        with pytest.raises(flow.TopologyError, match='connected segment'):
-            flow.Segment(head, head).prune()
-
     def test_pubsub(self, segment: flow.Segment, simple: flow.Worker, multi: flow.Worker):
         """Testing segment publishing."""
         multi.train(segment.publisher, segment.publisher)

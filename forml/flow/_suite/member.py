@@ -40,11 +40,11 @@ class Composable(metaclass=abc.ABCMeta):
         return self.__class__.__name__
 
     @abc.abstractmethod
-    def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
+    def compose(self, scope: 'flow.Composable') -> 'flow.Trunk':
         """Implementation of the internal task graph and its composition with the preceding part of the expression.
 
         Args:
-            left: Preceding part of the expression that this operator is supposed to compose with.
+            scope: Preceding part of the expression that this operator is supposed to compose with.
 
         Returns:
             Trunk instance representing the composed task graph.
@@ -65,16 +65,16 @@ class Composable(metaclass=abc.ABCMeta):
 class Origin(Composable):
     """Initial builder without a predecessor."""
 
-    def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
+    def compose(self, scope: 'flow.Composable') -> 'flow.Trunk':
         """Origin composition is just the left side trunk.
 
         Args:
-            left: Left side composable.
+            scope: Left side composable.
 
         Returns:
             Trunk.
         """
-        return left.expand()
+        return scope.expand()
 
     def expand(self) -> 'flow.Trunk':
         return assembly.Trunk()
@@ -105,16 +105,16 @@ class Compound(Composable):
     def __repr__(self):
         return f'{self._left} >> {self._right}'
 
-    def compose(self, left: 'flow.Composable') -> 'flow.Trunk':
+    def compose(self, scope: 'flow.Composable') -> 'flow.Trunk':
         """Expression composition is just extension of its segments.
 
         Args:
-            left: Left side composable.
+            scope: Left side composable.
 
         Returns:
             Trunk.
         """
-        return left.expand().extend(*self.expand())
+        return scope.expand().extend(*self.expand())
 
     def expand(self) -> 'flow.Trunk':
         return self._right.compose(self._left)

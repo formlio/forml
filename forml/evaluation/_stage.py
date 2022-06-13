@@ -40,9 +40,9 @@ class ApplyScore(flow.Operator):
     def __init__(self, metric: 'evaluation.Metric'):
         self._metric: 'evaluation.Metric' = metric
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
-        pipeline: flow.Trunk = left.expand()
+        pipeline: flow.Trunk = scope.expand()
         pipeline.apply.copy().subscribe(head.apply)  # all persistent nodes must be reachable via the apply segment
         pipeline.apply.subscribe(head.train)
         value = self._metric.score(_api.Outcome(head.label.publisher, pipeline.apply.publisher))
@@ -60,8 +60,8 @@ class TrainScore(flow.Operator):
         self._metric: 'evaluation.Metric' = metric
         self._method: 'evaluation.Method' = method
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
-        outcomes = self._method.produce(left, head.train.publisher, head.label.publisher)
+        outcomes = self._method.produce(scope, head.train.publisher, head.label.publisher)
         value = self._metric.score(*outcomes)
         return head.use(train=head.train.extend(tail=value))

@@ -40,7 +40,7 @@ with wrap.importer():  # automatically converting the particular SKLearn classes
 __all__ = ['GBC', 'RFC', 'FeatureHasher', 'SimpleImputer', 'LR', 'Bayes', 'Binarizer', 'OneHotEncoder']
 
 
-@wrap.Mapper.operator
+@wrap.Operator.mapper
 @wrap.Actor.apply
 def cleaner(df: pd.DataFrame) -> pd.DataFrame:
     """Simple stateless transformer create from a plain function."""

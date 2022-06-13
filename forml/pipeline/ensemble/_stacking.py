@@ -164,11 +164,11 @@ class Ensembler(flow.Operator):
         self._splitter: flow.Builder[payload.CVFoldable] = splitter
         self._builder: Ensembler.Builder = self.Builder(bases, **kwargs)  # pylint: disable=abstract-class-instantiated
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         """Ensemble composition.
 
         Args:
-            left: left segment.
+            scope: left segment.
 
         Returns:
             Composed segment trunk.
@@ -183,7 +183,7 @@ class Ensembler(flow.Operator):
 
         data_folds = []
         for fid in range(self._nsplits):
-            pipeline_fold: flow.Trunk = left.expand()
+            pipeline_fold: flow.Trunk = scope.expand()
             pipeline_fold.train.subscribe(feature_folds[2 * fid])
             pipeline_fold.label.subscribe(label_folds[2 * fid])
             pipeline_fold.apply.subscribe(head.apply.publisher)

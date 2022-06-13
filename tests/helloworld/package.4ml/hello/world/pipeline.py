@@ -38,7 +38,7 @@ def merge(left: typing.Sequence[int], right: typing.Sequence[int]) -> typing.Seq
     return [a + b for a, b in zip(left, right)]
 
 
-@wrap.Mapper.operator
+@wrap.Operator.mapper
 @wrap.Actor.apply
 def select(rows: typing.Sequence[tuple[str, str, int]]) -> typing.Sequence[int]:
     """Operator for selecting just the 3rd column."""
@@ -58,7 +58,7 @@ def helloworld(
     return state
 
 
-@wrap.Consumer.operator
+@wrap.Operator.apply
 @helloworld.apply
 def helloworld(state: int, rows: typing.Sequence[int]) -> typing.Sequence[int]:
     """Helloworld actor apply function."""
@@ -72,7 +72,7 @@ class Branches(flow.Operator):
         self._left: flow.Composable = left
         self._right: flow.Composable = right
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
         feature_splitter: flow.Worker = flow.Worker(split.builder(), 1, 2)
         feature_splitter[0].subscribe(head.train.publisher)
@@ -80,7 +80,7 @@ class Branches(flow.Operator):
         label_splitter[0].subscribe(head.label.publisher)
         merger: flow.Worker = flow.Worker(merge.builder(), 2, 1)
         for fid, pipeline_branch in enumerate((self._left.expand(), self._right.expand())):
-            fold_train: flow.Trunk = left.expand()
+            fold_train: flow.Trunk = scope.expand()
             fold_train.train.subscribe(feature_splitter[fid])
             fold_train.label.subscribe(label_splitter[fid])
 

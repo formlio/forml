@@ -21,41 +21,26 @@ Generic operators.
 import abc
 import typing
 
-import forml
 from forml import flow
 
 
-class Adapter(flow.Operator, metaclass=abc.ABCMeta):
-    """Adapter is a generic stateless transformer applied to specific pipeline mode(s).
-
-    Actor definitions for individual modes can be defined using convenient decorators:
-
-        @decorate.Adapter.train(**kwargs)  # optional kwargs will be passed to actor
-        @decorate.Adapter.apply  # decorators can be chained if same actor is supposed to be used for another mode
-        @decorate.Function.apply
-        def myadapter(df, **kwargs):
-            # stateless adapter implementation used for train/apply segments
-
-        @myadapter.label(**kwargs)  # previously decorated adapter can be itself used as decorator
-        @decorate.Function.apply
-        def myadapter(df, **kwargs):
-            # stateless adapter implementation used for label segment
-    """
+class Decorator:
+    """Decorator facility for multi-level decoration."""
 
     class Builder:
-        """Adapter builder carrying the parameters during decorations."""
+        """Operator builder carrying the parameters during decorations."""
 
         class Decorator:
             """Builder-level decorator used for overriding specific modes on previously decorated instances."""
 
-            def __init__(self, builder: 'Adapter.Builder', setter: 'Adapter.Builder.Setter'):
-                self._builder: Adapter.Builder = builder
-                self._setter: Adapter.Builder.Setter = setter
+            def __init__(self, builder: 'Decorator.Builder', setter: 'Decorator.Builder.Setter'):
+                self._builder: Decorator.Builder = builder
+                self._setter: Decorator.Builder.Setter = setter
 
             def __call__(
                 self, actor: typing.Optional[type[flow.Actor]] = None, /, **params: typing.Any
-            ) -> typing.Union['Adapter.Builder', typing.Callable[[type[flow.Actor]], 'Adapter.Builder']]:
-                def decorator(actor: type[flow.Actor]) -> 'Adapter.Builder':
+            ) -> typing.Union['Decorator.Builder', typing.Callable[[type[flow.Actor]], 'Decorator.Builder']]:
+                def decorator(actor: type[flow.Actor]) -> 'Decorator.Builder':
                     """Decorating function."""
                     self._setter(actor, **params)
                     return self._builder
@@ -92,53 +77,68 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
                     return None
                 return self._actor.builder(*args, **self._params | kwargs)
 
-        train = property(lambda self: Adapter.Builder.Decorator(self, self._train))
-        apply = property(lambda self: Adapter.Builder.Decorator(self, self._apply))
-        label = property(lambda self: Adapter.Builder.Decorator(self, self._label))
+        train = property(lambda self: self.Decorator(self, self._train))
+        apply = property(lambda self: self.Decorator(self, self._apply))
+        label = property(lambda self: self.Decorator(self, self._label))
 
         def __init__(self, actor: type[flow.Actor]):
-            self._train: Adapter.Builder.Setter = self.Setter(actor)
-            self._apply: Adapter.Builder.Setter = self.Setter(actor)
-            self._label: Adapter.Builder.Setter = self.Setter(actor)
+            self._train: Decorator.Builder.Setter = self.Setter(actor)
+            self._apply: Decorator.Builder.Setter = self.Setter(actor)
+            self._label: Decorator.Builder.Setter = self.Setter(actor)
 
-        def __call__(self, *args, **kwargs) -> 'Adapter':
-            return Adapter(
+        def __call__(self, *args, **kwargs) -> 'Operator':
+            return Operator(
                 self._apply.builder(*args, **kwargs),
                 self._train.builder(*args, **kwargs),
                 self._label.builder(*args, **kwargs),
             )
 
-    class Decorator:
-        """Adapter-level decorator used to create Adapter (builder) instances in the first place."""
+    def __init__(self, builder: property):
+        self._builder: property = builder
 
-        def __init__(self, builder: property):
-            self._builder: property = builder
+    def __call__(
+        self,
+        actor: typing.Optional[typing.Union[type[flow.Actor], 'Decorator.Builder']] = None,
+        /,
+        **params: typing.Any,
+    ) -> 'Decorator.Builder':
+        """Actor decorator for creating curried operator that get instantiated upon another (optionally
+        parametrized) call.
 
-        def __call__(
-            self,
-            actor: typing.Optional[typing.Union[type[flow.Actor], 'Adapter.Builder']] = None,
-            /,
-            **params: typing.Any,
-        ) -> 'Adapter.Builder':
-            """Actor decorator for creating curried operator that get instantiated upon another (optionally
-            parametrized) call.
+        Args:
+            actor: Decorated actor class.
+            **params: Optional operator kwargs.
 
-            Args:
-                actor: Decorated actor class.
-                **params: Optional operator kwargs.
+        Returns:
+            Decorated operator.
+        """
 
-            Returns:
-                Curried operator.
-            """
+        def decorator(actor: typing.Union[type[flow.Actor], 'Decorator.Builder']) -> 'Decorator.Builder':
+            """Decorating function."""
+            if not isinstance(actor, Decorator.Builder):
+                actor = Decorator.Builder(actor)
+            self._builder.fget(actor)(**params)
+            return actor
 
-            def decorator(actor: typing.Union[type[flow.Actor], 'Adapter.Builder']) -> 'Adapter.Builder':
-                """Decorating function."""
-                if not isinstance(actor, Adapter.Builder):
-                    actor = Adapter.Builder(actor)
-                self._builder.fget(actor)(**params)
-                return actor
+        return decorator(actor) if actor else decorator
 
-            return decorator(actor) if actor else decorator
+
+class Operator(flow.Operator, metaclass=abc.ABCMeta):
+    """Wrapper for creating operators from simple actors.
+
+    Actor definitions for individual modes can be provided using convenient decorators:
+
+        @wrap.Operator.train(**kwargs)  # optional kwargs will be passed to actor
+        @wrap.Operator.apply  # decorators can be chained if same actor is supposed to be used for another mode
+        @wrap.Actor.apply
+        def myadapter(df, **kwargs):
+            # stateless actor implementation used for train/apply segments
+
+        @myadapter.label(**kwargs)  # previously decorated adapter can be itself used as decorator
+        @wrap.Actor.apply
+        def myadapter(df, **kwargs):
+            # stateless actor implementation used for label segment
+    """
 
     def __init__(
         self,
@@ -146,9 +146,8 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
         train: typing.Optional[flow.Builder] = None,
         label: typing.Optional[flow.Builder] = None,
     ):
-        for mode in apply, train, label:
-            if mode and mode.actor.is_stateful():
-                raise forml.InvalidError('Stateful actor invalid for an adapter')
+        if label and label.actor.is_stateful():
+            raise TypeError('Stateful actor invalid for a Label transformer')
         self._apply: typing.Optional[flow.Builder] = apply
         self._train: typing.Optional[flow.Builder] = train
         self._label: typing.Optional[flow.Builder] = label
@@ -159,31 +158,66 @@ class Adapter(flow.Operator, metaclass=abc.ABCMeta):
             f'[apply={repr(self._apply)}, train={repr(self._train)}, label={repr(self._label)}]'
         )
 
-    train = staticmethod(Decorator(Builder.train))
-    apply = staticmethod(Decorator(Builder.apply))
-    label = staticmethod(Decorator(Builder.label))
+    train = staticmethod(Decorator(Decorator.Builder.train))
+    """Train segment decorator."""
+    apply = staticmethod(Decorator(Decorator.Builder.apply))
+    """Apply segment decorator."""
+    label = staticmethod(Decorator(Decorator.Builder.label))
+    """Label segment decorator."""
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    @classmethod
+    def mapper(
+        cls,
+        actor: typing.Optional[type[flow.Actor]] = None,
+        /,
+        **params: typing.Any,
+    ) -> typing.Callable[..., 'Operator']:
+        """Extra decorator for actor to be used for both the train and apply segment."""
+
+        def decorator(actor: type[flow.Actor]) -> typing.Callable[..., Operator]:
+            """Decorating function."""
+
+            def operator(*args, **kwargs) -> Operator:
+                """Decorated operator.
+
+                Args:
+                    **kwargs: Operator params.
+
+                Returns:
+                    Operator instance.
+                """
+                builder = flow.Builder(actor, *args, **params | kwargs)
+                return cls(apply=builder, train=builder)
+
+            return operator
+
+        return decorator(actor) if actor else decorator
+
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         """Composition implementation.
 
         Args:
-            left: Left side track builder.
+            scope: Left side composition builder.
 
         Returns:
-            Composed track.
+            Composed trunk.
         """
+        left = scope.expand()
+        apply = train = label = None
+        label_publisher = left.label.publisher
+        if self._label:
+            label = flow.Worker(self._label, 1, 1)
+            label_publisher = label[0]
+        if self._apply:
+            apply = flow.Worker(self._apply, 1, 1)
+            if self._apply.actor.is_stateful():
+                apply.fork().train(left.train.publisher, label_publisher)
+        if self._train:
+            if self._train == self._apply:
+                train = apply.fork()
+            else:
+                train = flow.Worker(self._train, 1, 1)
+                if self._train.actor.is_stateful():
+                    train.fork().train(left.train.publisher, label_publisher)
 
-        def worker(mode: typing.Optional[flow.Builder]) -> typing.Optional[flow.Worker]:
-            """Create a worker for given builder if not None.
-
-            Args:
-                mode: Task builder for given mode.
-
-            Returns:
-                Worker instance or None.
-            """
-            if mode:
-                mode = flow.Worker(mode, 1, 1)
-            return mode
-
-        return left.expand().extend(worker(self._apply), worker(self._train), worker(self._label))
+        return left.extend(apply, train, label)

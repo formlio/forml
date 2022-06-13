@@ -30,7 +30,7 @@ from forml.pipeline import wrap
 # of wrapping plain functions using the decorators from the ``forml.pipeline.wrap`` package:
 
 
-@wrap.Mapper.operator
+@wrap.Operator.mapper
 @wrap.Actor.apply
 def parse_title(features: pandas.DataFrame, *, source: str, target: str) -> pandas.DataFrame:
     """Transformer extracting a person's title from the name string."""
@@ -60,7 +60,7 @@ def impute(
     }
 
 
-@wrap.Mapper.operator
+@wrap.Operator.mapper
 @impute.apply
 def impute(
     state: dict[str, float], features: pandas.DataFrame, random_state: typing.Optional[int] = None
@@ -91,7 +91,7 @@ def encode(
     return encoder
 
 
-@wrap.Mapper.operator
+@wrap.Operator.mapper
 @encode.apply
 def encode(
     state: preprocessing.OneHotEncoder, features: pandas.DataFrame, columns: typing.Sequence[str]

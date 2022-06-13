@@ -32,7 +32,7 @@ from sklearn import base as sklbase
 
 from forml import flow
 
-from . import _actor, _simple
+from . import _actor, _operator
 
 LOGGER = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class SklearnTransformerWrapper(ClassWrapper[type[sklbase.TransformerMixin]]):
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'transform'):
         def wrap(transformer: type[sklbase.TransformerMixin]):
-            return _simple.Mapper.operator(_actor.Actor.type(transformer, train='fit', apply=apply))
+            return _operator.Operator.mapper(_actor.Actor.type(transformer, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.TransformerMixin, wrap)
 
@@ -109,7 +109,7 @@ class SklearnClassifierWrapper(ClassWrapper[type[sklbase.ClassifierMixin]]):
         ).transpose()[-1],
     ):
         def wrap(classifier: type[sklbase.ClassifierMixin]):
-            return _simple.Consumer.operator(_actor.Actor.type(classifier, train='fit', apply=apply))
+            return _operator.Operator.apply(_actor.Actor.type(classifier, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.ClassifierMixin, wrap)
 
@@ -119,7 +119,7 @@ class SklearnRegressorWrapper(ClassWrapper[type[sklbase.RegressorMixin]]):
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'predict'):
         def wrap(regressor: type[sklbase.RegressorMixin]):
-            return _simple.Consumer.operator(_actor.Actor.type(regressor, train='fit', apply=apply))
+            return _operator.Operator.apply(_actor.Actor.type(regressor, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.RegressorMixin, wrap)
 

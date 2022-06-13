@@ -171,15 +171,16 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         traverse(Traversal(self.pivot))
 
     def copy(self, tail: 'flow.Node') -> typing.Mapping['flow.Node', 'flow.Node']:
-        """Make a copy of the apply segment topology. Any nodes not on segment are ignored.
+        """Make a copy of the *apply-mode* topology.
 
-        Only the main branch is copied ignoring all sink branches.
+        Any trained nodes as well as nodes outside the segment are ignored (only the direct branch is copied ignoring
+        all sink branches). Copied nodes remain members of the same worker groups.
 
         Args:
             tail: Last node to copy.
 
         Returns:
-            Copy of the apply segment.
+            Copy of the *apply-mode* segment topology.
         """
 
         def segments(traversal: Traversal) -> typing.Iterable[Traversal]:
@@ -282,18 +283,14 @@ class Segment(tuple):
     def copy(self) -> 'flow.Segment':
         """Make a copy of the *apply-mode* topology within this segment (all trained nodes are ignored).
 
+        Copied nodes remain members of the same worker groups.
+
         Returns:
             Copy of the *Apply* segment topology.
         """
 
         copies = Traversal(self._head).copy(self._tail)
         return Segment(copies[self._head], copies[self._tail])
-
-    def prune(self) -> None:
-        """Disconnect all the apply-mode topology within this segment (all train nodes remain connected)."""
-        if any(self._tail.output):
-            raise _exception.TopologyError('Pruning a connected segment')
-        raise NotImplementedError()
 
     def follows(self, other: 'flow.Segment') -> bool:
         """Check this segment follows from the other.

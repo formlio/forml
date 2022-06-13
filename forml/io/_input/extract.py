@@ -107,13 +107,13 @@ class Operator(flow.Operator):
             flow.Builder[flow.Actor[typing.Optional[layout.Entry], None, tuple[layout.RowMajor, layout.RowMajor]]]
         ] = label
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         """Compose the source segment trunk.
 
         Returns:
             Source segment trunk.
         """
-        if not isinstance(left, flow.Origin):
+        if not isinstance(scope, flow.Origin):
             raise forml.UnexpectedError('Source not origin')
         apply: flow.Segment = flow.Segment(flow.Worker(self._apply, 0, 1))
         train: flow.Segment = flow.Segment(flow.Worker(self._train, 0, 1))
