@@ -137,14 +137,14 @@ Example of a user-defined native actor:
             import pandas as pd
             from forml import flow
 
-            class StaticImpute(flow.Actor[pd.DataFrame, None, pd.DataFrame]):
+            class StaticImpute(flow.Actor[pandas.DataFrame, None, pandas.DataFrame]):
                 """Simple stateless imputation actor using the provided value to fill the NaNs."""
 
                 def __init__(self, column: str, value: float):
                     self._column: str = column
                     self._value: float = value
 
-                def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+                def apply(self, df: pandas.DataFrame) -> pandas.DataFrame:
                     return df[self._column].fillna(self._value)
 
                 def get_params(self) -> typing.Mapping[str, typing.Any]:
@@ -164,7 +164,7 @@ Example of a user-defined native actor:
             import pandas as pd
             from forml import flow
 
-            class MeanImpute(flow.Actor[pd.DataFrame, pd.Series, pd.DataFrame]):
+            class MeanImpute(flow.Actor[pandas.DataFrame, pandas.Series, pandas.DataFrame]):
                 """Simple stateful imputation actor using the trained mean value to fill the NaNs.
 
                 Using the default implementations of ``.get_state()`` and ``.set_state()`` methods.
@@ -174,10 +174,10 @@ Example of a user-defined native actor:
                     self._column: str = column
                     self._value: typing.Optional[float] = None
 
-                def train(self, df: pd.DataFrame, labels: pd.Series) -> None:
+                def train(self, df: pandas.DataFrame, labels: pandas.Series) -> None:
                     self._value = df[self._column].mean()
 
-                def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+                def apply(self, df: pandas.DataFrame) -> pandas.DataFrame:
                     if self._value is None:
                         raise RuntimeError('Not trained')
                     df[self._column] = df[self._column].fillna(self._value)
@@ -206,11 +206,11 @@ exactly the functionality as in the native implementations above):
         .. code-block:: python
 
             import typing
-            import pandas as pd
+            import pandas
             from forml.pipeline import wrap
 
             @wrap.Actor.apply
-            def static_impute(df: pd.DataFrame, *, column: str, value: float) -> pd.DataFrame:
+            def static_impute(df: pandas.DataFrame, *, column: str, value: float) -> pandas.DataFrame:
                 """Simple stateless imputation actor using the provided value to fill the NaNs."""
                 df[column] = df[column].fillna(value)
                 return df
@@ -220,14 +220,14 @@ exactly the functionality as in the native implementations above):
         .. code-block:: python
 
             import typing
-            import pandas as pd
+            import pandas
             from forml.pipeline import wrap
 
             @wrap.Actor.train
             def mean_impute(
                 state: typing.Optional[float],
-                df: pd.DataFrame,
-                labels: pd.Series,
+                df: pandas.DataFrame,
+                labels: pandas.Series,
                 *,
                 column: str,
             ) -> float:
@@ -235,11 +235,12 @@ exactly the functionality as in the native implementations above):
                 return df[column].mean()
 
             @mean_impute.apply
-            def mean_impute(state: float, df: pd.DataFrame, *, column: str) -> pd.DataFrame:
+            def mean_impute(state: float, df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
                 """Apply part of a stateful imputation actor using the trained mean value to fill the NaNs."""
                 df[column] = df[column].fillna(state)
                 return df
 
+.. _actor-mapped:
 
 Mapped Actors
 ^^^^^^^^^^^^^
@@ -263,4 +264,5 @@ ForML actors using the ``@wrap.Actor.type`` wrapper from the :doc:`Pipeline Libr
     Rather then to just Actors, the third-party implementations are usually required to be converted all the way to
     ForML :doc:`operators <operator>` to be eventually composable within the pipeline expressions. For this purpose,
     there is even easier method of turning those implementations into operators with no effort using the
-    ``@wrap.importer`` context manager - see ...
+    ``@wrap.importer`` context manager - see the :ref:`operator auto-wrapping <operator-autowrap>` section for more
+    details.

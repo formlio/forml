@@ -36,7 +36,7 @@ class Operator(flow.Operator):
             raise forml.InvalidError('Stateful actor invalid for a publisher')
         self._writer: flow.Builder[flow.Actor[layout.RowMajor, None, layout.Native]] = writer
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         """Compose the publisher segment trunk.
 
         Returns:
@@ -44,7 +44,7 @@ class Operator(flow.Operator):
         """
         apply: flow.Worker = flow.Worker(self._writer, 1, 0)
         train: flow.Worker = apply.fork()
-        return left.expand().extend(apply, train)
+        return scope.expand().extend(apply, train)
 
 
 Consumer = typing.Callable[[layout.RowMajor], layout.Outcome]

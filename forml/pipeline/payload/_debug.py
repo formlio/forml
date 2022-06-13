@@ -231,16 +231,16 @@ class Dump(flow.Operator):
             raise TypeError('Path is required')
         return wrapper
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         """Composition implementation.
 
         Args:
-            left: Left side.
+            scope: Left side.
 
         Returns:
             Composed track.
         """
-        left: flow.Trunk = left.expand()
+        left: flow.Trunk = scope.expand()
         apply: flow.Worker = flow.Worker(self._apply(self._instances), 1, 1)
         train: flow.Worker = flow.Worker(self._train(self._instances), 1, 1)
         train.train(left.train.publisher, left.label.publisher)
@@ -310,8 +310,8 @@ class Sniff(flow.Operator):
         self._manager.__exit__(exc_type, exc_val, exc_tb)
         self._queue = self._result = None
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
-        left = left.expand()
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
+        left = scope.expand()
         apply = flow.Worker(self.Actor.builder(self._queue), 1, 1)
         train = flow.Worker(self.Actor.builder(self._queue), 1, 1)
         train.train(left.train.publisher, left.label.publisher)

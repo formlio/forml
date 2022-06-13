@@ -143,8 +143,8 @@ class MapReduce(flow.Operator):
         self._mappers: tuple[flow.Builder] = mappers
         self._reducer: flow.Builder = reducer
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
-        left: flow.Trunk = left.expand()
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
+        left: flow.Trunk = scope.expand()
         apply_reducer = flow.Worker(self._reducer, len(self._mappers), 1)
         train_reducer = apply_reducer.fork()
         for idx, mapper in enumerate(self._mappers):

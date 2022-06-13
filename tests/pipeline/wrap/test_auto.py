@@ -38,7 +38,7 @@ class Wrapper(typing.Generic[_auto.Subject], abc.ABC):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def wrapper() -> _auto.Wrapper:
+    def wrapper() -> _auto.Auto:
         """Wrapper fixture."""
 
     @staticmethod
@@ -53,7 +53,7 @@ class Wrapper(typing.Generic[_auto.Subject], abc.ABC):
     def mismatch() -> typing.Any:
         """Mismatching subject fixture."""
 
-    def test_wrapper(self, wrapper: _auto.Wrapper, subject: _auto.Subject, mismatch: typing.Any):
+    def test_wrapper(self, wrapper: _auto.Auto, subject: _auto.Subject, mismatch: typing.Any):
         """Wrapper test."""
         assert not wrapper.match(mismatch)
         assert wrapper.match(subject)

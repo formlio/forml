@@ -20,17 +20,14 @@ Dag composition utilities frontend API module.
 """
 
 from ._actor import Actor
-from ._auto import SklearnClassifierWrapper, SklearnRegressorWrapper, SklearnTransformerWrapper, importer
-from ._operator import Adapter
-from ._simple import Consumer, Labeler, Mapper
+from ._auto import Auto, SklearnClassifierWrapper, SklearnRegressorWrapper, SklearnTransformerWrapper, importer
+from ._operator import Operator
 
 __all__ = [
     'importer',
+    'Auto',
     'Actor',
-    'Adapter',
-    'Mapper',
-    'Consumer',
-    'Labeler',
+    'Operator',
     'SklearnTransformerWrapper',
     'SklearnClassifierWrapper',
     'SklearnRegressorWrapper',

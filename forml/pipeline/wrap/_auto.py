@@ -32,7 +32,10 @@ from sklearn import base as sklbase
 
 from forml import flow
 
-from . import _actor, _simple
+from . import _actor, _operator
+
+if typing.TYPE_CHECKING:
+    from forml.pipeline import wrap
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,8 +44,8 @@ Subject = typing.TypeVar('Subject')
 Class = typing.TypeVar('Class', bound=type)
 
 
-class Wrapper(typing.Generic[Subject], abc.ABC):
-    """Wrapper base class."""
+class Auto(typing.Generic[Subject], abc.ABC):
+    """Generic auto-wrapper base class."""
 
     def __call__(self, subject: Subject) -> typing.Callable[..., flow.Operator]:
         if not self.match(subject):
@@ -53,33 +56,36 @@ class Wrapper(typing.Generic[Subject], abc.ABC):
         return self.__class__.__name__
 
     @abc.abstractmethod
+    def match(self, subject: typing.Any) -> bool:
+        """Check this wrapper is capable of wrapping the given subject into a ForML operator.
+
+        Args:
+            subject: Wrapping candidate subject.
+
+        Returns:
+            True if this wrapper is capable to wrap the subject.
+        """
+
+    @abc.abstractmethod
     def apply(self, subject: Subject) -> typing.Callable[..., flow.Operator]:
-        """Wrapping implementation.
+        """Actual wrapping implementation.
 
         Args:
             subject: Wrapping subject.
 
         Returns:
-            Wrapped proxy.
-        """
-
-    @abc.abstractmethod
-    def match(self, subject: typing.Any) -> bool:
-        """Check this wrapper is capable of wrapping the given subject.
-
-        Args:
-            subject: Wrapping candidate.
+            ForML operator constructor-like callable with the same signature as the wrapped subject.
         """
 
 
-class ClassWrapper(collections.namedtuple('ClassWrapper', 'base, apply'), typing.Generic[Class], Wrapper[Class]):
+class ClassWrapper(collections.namedtuple('ClassWrapper', 'base, apply'), typing.Generic[Class], Auto[Class]):
     """Class-specific wrapper."""
 
     base: Class
     apply: typing.Callable[[Class], typing.Callable[..., flow.Operator]]
 
     def __repr__(self):
-        return Wrapper.__repr__(self)
+        return Auto.__repr__(self)
 
     def match(self, subject: Class) -> bool:
         return inspect.isclass(subject) and issubclass(subject, self.base) and not inspect.isabstract(subject)
@@ -90,7 +96,7 @@ class SklearnTransformerWrapper(ClassWrapper[type[sklbase.TransformerMixin]]):
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'transform'):
         def wrap(transformer: type[sklbase.TransformerMixin]):
-            return _simple.Mapper.operator(_actor.Actor.type(transformer, train='fit', apply=apply))
+            return _operator.Operator.mapper(_actor.Actor.type(transformer, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.TransformerMixin, wrap)
 
@@ -109,7 +115,7 @@ class SklearnClassifierWrapper(ClassWrapper[type[sklbase.ClassifierMixin]]):
         ).transpose()[-1],
     ):
         def wrap(classifier: type[sklbase.ClassifierMixin]):
-            return _simple.Consumer.operator(_actor.Actor.type(classifier, train='fit', apply=apply))
+            return _operator.Operator.apply(_actor.Actor.type(classifier, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.ClassifierMixin, wrap)
 
@@ -119,7 +125,7 @@ class SklearnRegressorWrapper(ClassWrapper[type[sklbase.RegressorMixin]]):
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'predict'):
         def wrap(regressor: type[sklbase.RegressorMixin]):
-            return _simple.Consumer.operator(_actor.Actor.type(regressor, train='fit', apply=apply))
+            return _operator.Operator.apply(_actor.Actor.type(regressor, train='fit', apply=apply))
 
         return super().__new__(cls, sklbase.RegressorMixin, wrap)
 
@@ -172,17 +178,42 @@ def _unload(name: str, *subs: str) -> None:
 
 
 @contextlib.contextmanager
-def importer(*wrappers: Wrapper) -> typing.Iterable[None]:
-    """Context manager capturing all direct imports and patching their matching top-level attributes using
-    the provided wrappers.
-
-    Note only the top-level items of the directly imported modules are matched for wrapping.
+def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
+    """Context manager capturing all direct imports and patching their matching attributes using the provided or default
+    set of auto-wrappers.
 
     Args:
         wrappers: Sequences of the wrapper implementations to be applied to the matching attributes.
 
     Returns:
         Context manager.
+
+    Examples:
+
+        All the three possible import syntax alternatives are supported, although only the first one is recommended::
+
+            with wrap.importer():
+                # auto-wrap just the explicit members (recommended):
+                from sklearn.ensemble import GradientBoostingClassifier
+
+                # auto-wrap all members discovered in ensemble.* (not recommended - unnecessarily heavy)
+                from sklearn import ensemble
+
+                # similar but without the namespace (even less recommended - heavy and dirty)
+                from sklearn.ensemble import *
+
+        Example use-case importing the ``sklearn.ensemble.GradientBoostingClassifier`` classifier wrapped as
+        a ForML operator that can be directly used within a pipeline composition expression::
+
+            from forml import flow
+            from forml.pipeline import wrap
+
+            with wrap.importer():
+                from sklearn.ensemble import GradientBoostingClassifier
+
+            isinstance(GradientBoostingClassifier(), flow.Operator)  # True
+
+            PIPELINE = someoperator() >> GradientBoostingClassifier(random_state=42)
     """
 
     def wrapping(
@@ -192,7 +223,7 @@ def importer(*wrappers: Wrapper) -> typing.Iterable[None]:
         fromlist=(),
         level=0,
     ) -> types.ModuleType:
-        """Our injected importer function matching the official __import__ signature.
+        """Our injected importer function matching the original __import__ signature.
 
         Args:
             name: Module name to import.

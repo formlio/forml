@@ -42,7 +42,7 @@ QUERY = (
 OUTPUT = dsl.Schema.from_fields()
 
 
-@wrap.Mapper.operator
+@wrap.Operator.mapper
 @wrap.Actor.apply
 def as_tuple(data: layout.RowMajor) -> layout.RowMajor:
     """Tuple transformation operator."""

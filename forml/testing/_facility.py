@@ -70,7 +70,7 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
             self._testset: flow.Builder[Feed.Operator.Apply] = self.Apply.builder(scenario.apply)
             self._trainset: flow.Builder[Feed.Operator.Train] = self.Train.builder(scenario.train, scenario.label)
 
-        def compose(self, left: flow.Composable) -> flow.Trunk:
+        def compose(self, scope: flow.Composable) -> flow.Trunk:
             """Compose the source segment trunk.
 
             Returns:

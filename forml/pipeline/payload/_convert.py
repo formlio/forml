@@ -93,9 +93,9 @@ def pandas_params(
     return wrapper
 
 
-@wrap.Adapter.apply
-@wrap.Adapter.train
-@wrap.Adapter.label
+@wrap.Operator.apply
+@wrap.Operator.train
+@wrap.Operator.label
 @wrap.Actor.apply
 def ToPandas(  # pylint: disable=invalid-name
     data: typing.Any, *, columns: typing.Optional[typing.Sequence[str]] = None

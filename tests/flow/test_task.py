@@ -106,7 +106,7 @@ class TestActor:
         assert cloudpickle.loads(cloudpickle.dumps(instance)).apply(testset) == actor_prediction
 
 
-class TestSpec:
+class TestBuilder:
     """Task builder unit tests."""
 
     def test_serializable(

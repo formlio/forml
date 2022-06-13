@@ -84,11 +84,10 @@ a workflow with the two *train* and *apply* task graphs visualized as follows:
         end
 
 The meaning of :doc:`operators <operator>` and how they are defined using :doc:`actors <actor>` and their
-:doc:`interconnections <topology>` is described in details in the following chapters.
-
+:doc:`interconnections <topology>` is described in details in the following chapters:
 
 .. toctree::
-    :hidden:
+    :maxdepth: 2
 
     actor
     topology
