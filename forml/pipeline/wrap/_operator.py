@@ -31,7 +31,9 @@ class Decorator:
         """Operator builder carrying the parameters during decorations."""
 
         class Decorator:
-            """Builder-level decorator used for overriding specific modes on previously decorated instances."""
+            """Builder-level decorator used for overriding specific modes on previously decorated
+            instances.
+            """
 
             def __init__(self, builder: 'Decorator.Builder', setter: 'Decorator.Builder.Setter'):
                 self._builder: Decorator.Builder = builder
@@ -64,7 +66,8 @@ class Decorator:
                 self._params = params
 
             def builder(self, *args, **kwargs) -> typing.Optional[flow.Builder]:
-                """Create the actor builder from previously provided config or do nothing if no config provided.
+                """Create the actor builder from previously provided config or do nothing if no
+                config provided.
 
                 Args:
                     *args: Optional args for the Builder instance.
@@ -102,8 +105,8 @@ class Decorator:
         /,
         **params: typing.Any,
     ) -> 'Decorator.Builder':
-        """Actor decorator for creating curried operator that get instantiated upon another (optionally
-        parametrized) call.
+        """Actor decorator for creating curried operator that get instantiated upon another
+        (optionally parametrized) call.
 
         Args:
             actor: Decorated actor class.
@@ -128,23 +131,23 @@ class Operator(flow.Operator, metaclass=abc.ABCMeta):
 
     Actor definitions for individual modes can be provided using the available decorator methods.
 
-    The primitive decorators (``@apply``, ``@train``, ``@label``) can be *chained* together as well as applied in
-    a *split* fashion onto separate actors for different modes::
+    The primitive decorators (``@apply``, ``@train``, ``@label``) can be *chained* together as well
+    as applied in a *split* fashion onto separate actors for different modes::
 
         @wrap.Operator.train
-        @wrap.Operator.apply  # decorators can be chained if same actor is supposed to be used for another mode
+        @wrap.Operator.apply  # can be chained if same actor is also to be used in another mode
         @wrap.Actor.apply
-        def myoperator(df, *, myarg=None):
+        def MyOperator(df, *, myarg=None):
             # stateless actor implementation used for train/apply segments
 
-        @myoperator.label  # previously decorated adapter can be itself used as decorator in split fashion
+        @MyOperator.label  # decorated operator can itself be used as decorator in split fashion
         @wrap.Actor.apply
-        def myoperator(df, *, myarg=None):
-            # stateless actor implementation used for label segment
+        def MyOperator(df, *, myarg=None):
+            # stateless actor implementation used for the label segment
 
     Keyword parameters passed to the created operators get delivered to the actor when invoked::
 
-        PIPELINE = myoperator(myarg='foo') >> anotheroperator()
+        PIPELINE = MyOperator(myarg='foo') >> AnotherOperator()
     """
 
     def __init__(
@@ -173,32 +176,33 @@ class Operator(flow.Operator, metaclass=abc.ABCMeta):
     train = staticmethod(Decorator(Decorator.Builder.train))
     """Train segment actor decorator.
 
-    When used as a decorator, this method creates an *operator* engaging the wrapped *actor* in the *train-mode*. If
-    *stateful*, the actor also gets normally trained first. Note it doesn't get applied to the *apply-mode* features
-    unless also decorated with the ``@apply`` decorator (this is rarely desired - see the ``@mapper`` decorator for
-    more typical use case)!
+    When used as a decorator, this method creates an *operator* engaging the wrapped *actor* in
+    the *train-mode*. If *stateful*, the actor also gets normally trained first. Note it doesn't
+    get applied to the *apply-mode* features unless also decorated with the ``@apply`` decorator
+    (this is rarely desired - see the ``@mapper`` decorator for more typical use case)!
 
     Example usage with a wrapped *stateless* actor::
 
         @wrap.Operator.train
         @wrap.Actor.apply
-        def train_only_drop_column(df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
+        def TrainOnlyDropColumn(df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
             return df.drop(columns=column)
 
-        PIPELINE = anotheroperator() >> train_only_drop_column(column='foo')
+        PIPELINE = AnotherOperator() >> TrainOnlyDropColumn(column='foo')
     """
 
     apply = staticmethod(Decorator(Decorator.Builder.apply))
     """Apply segment actor decorator.
 
-    When used as a decorator, this method creates an *operator* engaging the wrapped *actor* in the *apply-mode*. If
-    *stateful*, the actor also gets normally trained in *train-mode* (but doesn't get applied to the train-mode features
-    unless also decorated with the ``@train`` decorator!)::
+    When used as a decorator, this method creates an *operator* engaging the wrapped *actor* in
+    the *apply-mode*. If *stateful*, the actor also gets normally trained in *train-mode* (but
+    doesn't get applied to the train-mode features unless also decorated with the ``@train``
+    decorator!)::
 
     Example usage with a wrapped *stateful* actor::
 
         @wrap.Actor.train
-        def apply_only_fillna_mean(
+        def ApplyOnlyFillnaMean(
             state: typing.Optional[float],
             df: pandas.DataFrame,
             labels: pandas.Series,
@@ -208,40 +212,50 @@ class Operator(flow.Operator, metaclass=abc.ABCMeta):
             return df[column].mean()
 
         @wrap.Operator.apply
-        @mean_impute.apply
-        def apply_only_fillna_mean(state: float, df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
+        @ApplyOnlyFillnaMean.apply
+        def ApplyOnlyFillnaMean(
+            state: float,
+            df: pandas.DataFrame,
+            *,
+            column: str
+        ) -> pandas.DataFrame:
             df[column] = df[column].fillna(state)
             return df
 
-        PIPELINE = anotheroperator() >> train_only_drop_column(column='foo') >> apply_only_fillna_mean(column='bar')
+        PIPELINE = (
+            AnotherOperator()
+            >> TrainOnlyDropColumn(column='foo')
+            >> ApplyOnlyFillnaMean(column='bar')
+        )
     """
 
     label = staticmethod(Decorator(Decorator.Builder.label))
     """Label segment actor decorator.
 
-    When used as a decorator, this method creates an *operator* engaging the wrapped *actor* in the *train-mode* as
-    the *label transformer*. If *stateful*, the actor also gets normally trained first. The actor gets engaged prior
-    to any other stateful actors potentially added to the same operator (using the ``@train`` or ``@apply`` decorators).
+    When used as a decorator, this method creates an *operator* engaging the wrapped *actor* in
+    the *train-mode* as the *label transformer*. If *stateful*, the actor also gets normally trained
+    first. The actor gets engaged prior to any other stateful actors potentially added to the same
+    operator (using the ``@train`` or ``@apply`` decorators).
 
     Example usage with a wrapped *stateless* actor::
 
         @wrap.Operator.label
         @wrap.Actor.apply
-        def label_only_fill_zero(labels: pandas.Series) -> pandas.Series:
+        def LabelOnlyFillZero(labels: pandas.Series) -> pandas.Series:
             return labels.fillna(0)
 
         PIPELINE = (
             anotheroperator()
-            >> label_only_fill_zero()
-            >> train_only_drop_column(column='foo')
-            >> apply_only_fillna_mean(column='bar')
+            >> LabelOnlyFillZero()
+            >> TrainOnlyDropColumn(column='foo')
+            >> ApplyOnlyFillnaMean(column='bar')
         )
 
-    Alternatively, it could as well be just added to the existing ``apply_only_fillna_mean``::
+    Alternatively, it could as well be just added to the existing ``ApplyOnlyFillnaMean``::
 
-        @apply_only_fillna_mean.label
+        @ApplyOnlyFillnaMean.label
         @wrap.Actor.apply
-        def apply_fillna_mean_label_fill_zero(labels: pandas.Series) -> pandas.Series:
+        def ApplyFillnaMeanLabelFillZero(labels: pandas.Series) -> pandas.Series:
             return labels.fillna(0)
     """
 
@@ -252,12 +266,12 @@ class Operator(flow.Operator, metaclass=abc.ABCMeta):
         /,
         **params: typing.Any,
     ) -> typing.Callable[..., 'Operator']:
-        """Combined decorator representing the wrapping of the same actor using both the ``@train`` and ``@apply``
-        decorators effectively engaging the actor in transforming the features in both the *train-mode* as well as
-        the *apply-mode*.
+        """Combined decorator representing the wrapping of the same actor using both the ``@train``
+        and ``@apply`` decorators effectively engaging the actor in transforming the features in
+        both the *train-mode* as well as the *apply-mode*.
 
-        This decorator can't be chained nor applied in the split fashion as the ``@train``, ``@apply`` or ``@label``
-        decorators.
+        This decorator can't be chained nor applied in the split fashion as the ``@train``,
+        ``@apply`` or ``@label`` decorators.
         """
 
         def decorator(actor: type[flow.Actor]) -> typing.Callable[..., Operator]:

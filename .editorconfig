@@ -15,21 +15,25 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""
-Dag composition utilities frontend API module.
-"""
+root = true
 
-from ._actor import Actor
-from ._auto import AUTO, Auto, AutoSklearnClassifier, AutoSklearnRegressor, AutoSklearnTransformer, importer
-from ._operator import Operator
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 120
+tab_width = 4
+trim_trailing_whitespace = true
 
-__all__ = [
-    'importer',
-    'AUTO',
-    'Auto',
-    'Actor',
-    'Operator',
-    'AutoSklearnTransformer',
-    'AutoSklearnClassifier',
-    'AutoSklearnRegressor',
-]
+[*.py]
+ij_visual_guides = 100
+
+[*.rst]
+max_line_length = 100
+ij_wrap_on_typing = true
+ij_any_wrap_long_lines = true
+
+[Makefile]
+indent_style = tab

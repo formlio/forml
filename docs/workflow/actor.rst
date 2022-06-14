@@ -16,21 +16,21 @@
 Task Actor
 ==========
 
-Actor is the lowest level entity - a node in the task graph - representing an atomic black box transformation of the
-passing data.
+Actor is the lowest level entity - a node in the task graph - representing an atomic black box
+transformation of the passing data.
 
 .. important::
-    ForML doesn't care neither about the particular internal processing functionality of any actors nor the
-    actual types and formats of the data passed between them. All that ForML deals with is the actor interconnection
-    within the overall flow topology - responsibility for their logical and functional compatibility is solely in hands
-    of the implementor.
+    ForML doesn't care neither about the particular internal processing functionality of any
+    actors nor the actual types and formats of the data passed between them. All that ForML deals
+    with is the actor interconnection within the overall flow topology - responsibility for their
+    logical and functional compatibility is solely in hands of the implementor.
 
 The two main actor types are:
 
 #. Plain *stateless* actors which define output as a function applied just to their input.
-#. More complex *stateful* actors produce output based on not just the input but also their inner *state* which it
-   acquires during separate phase called *train*. We then distinguish between the *train-mode* and *apply-mode* in which
-   the stateful actors operate.
+#. More complex *stateful* actors produce output based on not just the input but also their inner
+   *state* which it acquires during separate phase called *train*. We then distinguish between the
+   *train-mode* and *apply-mode* in which the stateful actors operate.
 
 
 .. _actor-ports:
@@ -38,8 +38,9 @@ The two main actor types are:
 Ports
 -----
 
-ForML actors have number of input and output *ports* for the mutual :doc:`interconnection <topology>` within the task
-graph. The following diagram shows how the different ports might get engaged when in each of the particular actor modes:
+ForML actors have number of input and output *ports* for the mutual :doc:`interconnection
+<topology>` within the task graph. The following diagram shows how the different ports might get
+engaged when in each of the particular actor modes:
 
 .. md-mermaid::
 
@@ -83,28 +84,28 @@ There is a couple of different ways the ports can logically be grouped together:
 
 With this perspective, we can now describe each of the different ports as follows:
 
-======  ======  =====  ========  =========  ===============================================================
+======  ======  =====  ========  =========  ========================================================
  Name   Level   Mode   # Inputs  # Outputs  Description
-======  ======  =====  ========  =========  ===============================================================
-Apply    user   apply      M         N      The main featureset ports(s) to/from the apply-transformation.
+======  ======  =====  ========  =========  ========================================================
+Apply    user   apply      M         N      The features ports(s) to/from the apply-transformation.
 Train    user   train      1         0      Features port to be trained on.
 Label    user   train      1         0      Labels port to be trained on.
 State   system  both       1         1      State getter/setter ports.
 Params  system  both       1         1      Hyper-parameter getter/setter ports.
-======  ======  =====  ========  =========  ===============================================================
+======  ======  =====  ========  =========  ========================================================
 
 .. seealso::
 
-    The actual port management is discussed in great detail in the :doc:`topology` chapter, here we stay focused rather
-    on the Actor itself.
+    The actual port management is discussed in great detail in the :doc:`topology` chapter, here
+    we stay focused rather on the Actor itself.
 
 
 API
 ---
 
-The actor API is defined using an abstract class of ``flow.Actor``. The generic way of implementing user-defined actors
-is to simply extend this class providing the relevant methods with the desired functionality. The main parts of the API
-look as follows:
+The actor API is defined using an abstract class of ``flow.Actor``. The generic way of
+implementing user-defined actors is to simply extend this class providing the relevant methods
+with the desired functionality. The main parts of the API look as follows:
 
 .. autoclass:: forml.flow.Actor
    :members: apply, train, get_state, set_state, get_params, set_params, builder
@@ -132,6 +133,7 @@ Example of a user-defined native actor:
     .. md-tab-item:: Stateless Actor
 
         .. code-block:: python
+            :linenos:
 
             import typing
             import pandas as pd
@@ -150,7 +152,11 @@ Example of a user-defined native actor:
                 def get_params(self) -> typing.Mapping[str, typing.Any]:
                     return {'column': self._column, 'value': self._value}
 
-                def set_params(self, column: typing.Optional[str] = None, value: typing.Optional[float] = None) -> None:
+                def set_params(
+                    self,
+                    column: typing.Optional[str] = None,
+                    value: typing.Optional[float] = None,
+                ) -> None:
                     if column is not None:
                         self._column = column
                     if value is not None:
@@ -159,6 +165,7 @@ Example of a user-defined native actor:
     .. md-tab-item:: Stateful Actor
 
         .. code-block:: python
+            :linenos:
 
             import typing
             import pandas as pd
@@ -195,22 +202,29 @@ Example of a user-defined native actor:
 Decorated Function Actors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Less verbose option for defining actors is based on wrapping user-defined functions using the ``@wrap.Actor.train``
-and/or ``@wrap.Actor.apply`` decorators from the :doc:`Pipeline Library <../pipeline>` (the following examples match
-exactly the functionality as in the native implementations above):
+Less verbose option for defining actors is based on wrapping user-defined functions using the
+``@wrap.Actor.train`` and/or ``@wrap.Actor.apply`` decorators from the
+:doc:`Pipeline Library <../pipeline>` (the following examples match exactly the functionality as
+in the native implementations above):
 
 .. md-tab-set::
 
     .. md-tab-item:: Stateless Actor
 
         .. code-block:: python
+            :linenos:
 
             import typing
             import pandas
             from forml.pipeline import wrap
 
             @wrap.Actor.apply
-            def static_impute(df: pandas.DataFrame, *, column: str, value: float) -> pandas.DataFrame:
+            def StaticImpute(
+                df: pandas.DataFrame,
+                *,
+                column: str,
+                value: float,
+            ) -> pandas.DataFrame:
                 """Simple stateless imputation actor using the provided value to fill the NaNs."""
                 df[column] = df[column].fillna(value)
                 return df
@@ -218,25 +232,30 @@ exactly the functionality as in the native implementations above):
     .. md-tab-item:: Stateful Actor
 
         .. code-block:: python
+            :linenos:
 
             import typing
             import pandas
             from forml.pipeline import wrap
 
             @wrap.Actor.train
-            def mean_impute(
+            def MeanImpute(
                 state: typing.Optional[float],
                 df: pandas.DataFrame,
                 labels: pandas.Series,
                 *,
                 column: str,
             ) -> float:
-                """Train part of a stateful imputation actor using the trained mean value to fill the NaNs."""
+                """Train part of a stateful imputation actor using the trained mean value to fill
+                the NaNs.
+                """
                 return df[column].mean()
 
-            @mean_impute.apply
-            def mean_impute(state: float, df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
-                """Apply part of a stateful imputation actor using the trained mean value to fill the NaNs."""
+            @MeanImpute.apply
+            def MeanImpute(state: float, df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
+                """Apply part of a stateful imputation actor using the trained mean value to fill
+                the NaNs.
+                """
                 df[column] = df[column].fillna(state)
                 return df
 
@@ -245,24 +264,28 @@ exactly the functionality as in the native implementations above):
 Mapped Actors
 ^^^^^^^^^^^^^
 
-Third-party implementations that are logically compatible with the ForML actor concept can be easily mapped into a valid
-ForML actors using the ``@wrap.Actor.type`` wrapper from the :doc:`Pipeline Library <../pipeline>`:
+Third-party implementations that are logically compatible with the ForML actor concept can be
+easily mapped into a valid ForML actors using the ``@wrap.Actor.type`` wrapper from the
+:doc:`Pipeline Library <../pipeline>`:
 
 .. code-block:: python
+    :linenos:
 
     from sklearn import ensemble
     from forml.pipeline import wrap
 
-    RFC_ACTOR = wrap.Actor.type(
+    RfcActor = wrap.Actor.type(
         ensemble.RandomForestClassifier,
-        train='fit',  # mapping using target method reference
-        apply=lambda c, *a, **kw: c.predict_proba(*a, **kw).transpose()[-1],  # mapping using a callable wrapper
+        # mapping using target method reference
+        train='fit',
+        # mapping using a callable wrapper
+        apply=lambda c, *a, **kw: c.predict_proba(*a, **kw).transpose()[-1],
     )
 
 
 .. attention::
-    Rather then to just Actors, the third-party implementations are usually required to be converted all the way to
-    ForML :doc:`operators <operator>` to be eventually composable within the pipeline expressions. For this purpose,
-    there is even easier method of turning those implementations into operators with no effort using the
-    ``@wrap.importer`` context manager - see the :ref:`operator auto-wrapping <operator-autowrap>` section for more
-    details.
+    Rather then to just Actors, the third-party implementations are usually required to be
+    converted all the way to ForML :doc:`operators <operator>` to be eventually composable within
+    the pipeline expressions. For this purpose, there is even easier method of turning those
+    implementations into operators with no effort using the ``@wrap.importer`` context manager -
+    see the :ref:`operator auto-wrapping <operator-autowrap>` section for more details.

@@ -113,15 +113,14 @@ class Ensembler(flow.Operator):
         splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
         **kwargs,
     ):
-        """Simplified constructor based on splitter supplied in form of a crossvalidator and a folding actor type.
-
+        """Simplified constructor based on splitter supplied in form of a crossvalidator and
+        a folding actor type.
 
         Args:
             *bases: Set of primary models to be ensembled.
             crossvalidator: Implementation of the split selection logic.
             splitter: Folding actor type that is expected to take crossvalidator is its parameter.
                       Defaults to `payload.PandasCDFolds`.
-
         """
 
     @typing.overload
@@ -137,8 +136,8 @@ class Ensembler(flow.Operator):
         Args:
             *bases: Set of primary models to be ensembled.
             splitter: Actor builder object defining the folding splitter.
-            nsplits: Number of splits the splitter is going to generate (needs to be explicit as there is no reliable
-                     way to extract it from the actor builder).
+            nsplits: Number of splits the splitter is going to generate (needs to be explicit as
+                     there is no reliable way to extract it from the actor builder).
         """
 
     def __init__(
@@ -210,8 +209,8 @@ class Ensembler(flow.Operator):
 def pandas_mean(*folds: pdtype.NDFrame) -> pandas.DataFrame:
     """Specific fold models prediction reducer for Pandas dataframes based on arithmetic mean.
 
-    Predictions can either be series or multicolumn dataframes in which case same position columns are merged
-    together.
+    Predictions can either be series or multicolumn dataframes in which case same position columns
+    are merged together.
 
     Args:
         *folds: Individual model predictions.
