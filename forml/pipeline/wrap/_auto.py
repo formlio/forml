@@ -40,45 +40,46 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-Subject = typing.TypeVar('Subject')
+Entity = typing.TypeVar('Entity')
 Class = typing.TypeVar('Class', bound=type)
 
 
-class Auto(typing.Generic[Subject], abc.ABC):
+class Auto(typing.Generic[Entity], abc.ABC):
     """Generic auto-wrapper base class."""
 
-    def __call__(self, subject: Subject) -> typing.Callable[..., flow.Operator]:
-        if not self.match(subject):
-            raise TypeError(f'Incompatible wrapping: {subject}')
-        return self.apply(subject)
+    def __call__(self, entity: Entity) -> typing.Callable[..., flow.Operator]:
+        if not self.match(entity):
+            raise TypeError(f'Incompatible wrapping: {entity}')
+        return self.apply(entity)
 
     def __repr__(self):
         return self.__class__.__name__
 
     @abc.abstractmethod
-    def match(self, subject: typing.Any) -> bool:
-        """Check this wrapper is capable of wrapping the given subject into a ForML operator.
+    def match(self, entity: typing.Any) -> bool:
+        """Check this wrapper is capable of wrapping the given entity into a ForML operator.
 
         Args:
-            subject: Wrapping candidate subject.
+            entity: Wrapping candidate subject.
 
         Returns:
-            True if this wrapper is capable to wrap the subject.
+            True if this wrapper is capable to wrap the entity.
         """
 
     @abc.abstractmethod
-    def apply(self, subject: Subject) -> typing.Callable[..., flow.Operator]:
+    def apply(self, entity: Entity) -> typing.Callable[..., flow.Operator]:
         """Actual wrapping implementation.
 
         Args:
-            subject: Wrapping subject.
+            entity: Wrapping subject.
 
         Returns:
-            ForML operator constructor-like callable with the same signature as the wrapped subject.
+            ForML operator constructor-like callable compatible with the signature of the wrapped
+            entity.
         """
 
 
-class ClassWrapper(collections.namedtuple('ClassWrapper', 'base, apply'), typing.Generic[Class], Auto[Class]):
+class AutoClass(collections.namedtuple('AutoClass', 'base, apply'), typing.Generic[Class], Auto[Class]):
     """Class-specific wrapper."""
 
     base: Class
@@ -87,11 +88,11 @@ class ClassWrapper(collections.namedtuple('ClassWrapper', 'base, apply'), typing
     def __repr__(self):
         return Auto.__repr__(self)
 
-    def match(self, subject: Class) -> bool:
-        return inspect.isclass(subject) and issubclass(subject, self.base) and not inspect.isabstract(subject)
+    def match(self, entity: Class) -> bool:
+        return inspect.isclass(entity) and issubclass(entity, self.base) and not inspect.isabstract(entity)
 
 
-class SklearnTransformerWrapper(ClassWrapper[type[sklbase.TransformerMixin]]):
+class AutoSklearnTransformer(AutoClass[type[sklbase.TransformerMixin]]):
     """Wrapper for Scikit-learn transformers."""
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'transform'):
@@ -101,11 +102,11 @@ class SklearnTransformerWrapper(ClassWrapper[type[sklbase.TransformerMixin]]):
         return super().__new__(cls, sklbase.TransformerMixin, wrap)
 
 
-class SklearnClassifierWrapper(ClassWrapper[type[sklbase.ClassifierMixin]]):
+class AutoSklearnClassifier(AutoClass[type[sklbase.ClassifierMixin]]):
     """Wrapper for Scikit-learn classifiers.
 
-    Apply mode (predict) mapper can be customized to choose between the typical `.predict_proba` or the actual class
-    prediction using the `.predict`.
+    Apply mode (predict) mapper can be customized to choose between the typical `.predict_proba`
+    or the actual class prediction using the `.predict`.
     """
 
     def __new__(
@@ -120,7 +121,7 @@ class SklearnClassifierWrapper(ClassWrapper[type[sklbase.ClassifierMixin]]):
         return super().__new__(cls, sklbase.ClassifierMixin, wrap)
 
 
-class SklearnRegressorWrapper(ClassWrapper[type[sklbase.RegressorMixin]]):
+class AutoSklearnRegressor(AutoClass[type[sklbase.RegressorMixin]]):
     """Wrapper for Scikit-learn regressors."""
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'predict'):
@@ -130,17 +131,17 @@ class SklearnRegressorWrapper(ClassWrapper[type[sklbase.RegressorMixin]]):
         return super().__new__(cls, sklbase.RegressorMixin, wrap)
 
 
-# Default set of wrappers.
-WRAPPERS = SklearnTransformerWrapper(), SklearnClassifierWrapper(), SklearnRegressorWrapper()
+# Default list of auto-wrapper implementations.
+AUTO = [AutoSklearnTransformer(), AutoSklearnClassifier(), AutoSklearnRegressor()]
 
 
 def _walk(owner: object, *attrs: str, seen: typing.Optional[set] = None) -> typing.Iterable[tuple[object, str, object]]:
-    """Helper for traversing the given (or all) attributes of the owning object and returning all of its submodules or
-    subclasses.
+    """Helper for traversing the given (or all) attributes of the owning object and returning all
+    of its submodules or subclasses.
 
     Args:
         owner: Module or class to traverse.
-        attrs: Potential explicit list of base's attribute names to traverse.
+        attrs: Potential explicit list of owner's attribute names to traverse.
         seen: Internal memo to avoid cycles.
 
     Returns:
@@ -152,7 +153,7 @@ def _walk(owner: object, *attrs: str, seen: typing.Optional[set] = None) -> typi
         return
     seen.add(owner)
     for label in attrs or dir(owner):
-        if not (instance := getattr(owner, label, None)):
+        if (instance := getattr(owner, label, None)) is None:
             continue
         if inspect.ismodule(instance):  # dive into the module
             yield from _walk(instance, seen=seen)
@@ -179,41 +180,48 @@ def _unload(name: str, *subs: str) -> None:
 
 @contextlib.contextmanager
 def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
-    """Context manager capturing all direct imports and patching their matching attributes using the provided or default
-    set of auto-wrappers.
+    """Context manager capturing all direct imports and wrapping their matching entities using the
+    *explicit* or *default* list of *auto-wrappers*.
+
+    Signature of the wrapped object is compatible with the original entity.
 
     Args:
-        wrappers: Sequences of the wrapper implementations to be applied to the matching attributes.
+        wrappers: Sequences of the ``wrap.Auto`` auto-wrapper implementations to be applied to the
+                  discovered wrapping candidates. If no explicit value is provided, the default
+                  ``wrap.AUTO`` list of auto-wrapper implementations is used.
 
     Returns:
-        Context manager.
+        Context manager under which the direct imports become subject to auto-wrapping.
 
     Examples:
-
-        All the three possible import syntax alternatives are supported, although only the first one is recommended::
+        All the three possible import syntax alternatives are supported, although only the first
+        one is recommended::
 
             with wrap.importer():
-                # auto-wrap just the explicit members (recommended):
+                # 1. auto-wrap just the explicit members (recommended):
                 from sklearn.ensemble import GradientBoostingClassifier
 
-                # auto-wrap all members discovered in ensemble.* (not recommended - unnecessarily heavy)
+                # 2. auto-wrap all members discovered in ensemble.*
+                #    (not recommended - unnecessarily heavy)
                 from sklearn import ensemble
 
-                # similar but without the namespace (even less recommended - heavy and dirty)
+                # 3. similar but without the namespace
+                #    (even less recommended - heavy and dirty)
                 from sklearn.ensemble import *
 
-        Example use-case importing the ``sklearn.ensemble.GradientBoostingClassifier`` classifier wrapped as
-        a ForML operator that can be directly used within a pipeline composition expression::
+        Example use-case importing the ``sklearn.ensemble.GradientBoostingClassifier`` classifier
+        wrapped as a ForML operator that can be directly used within a pipeline composition
+        expression:
 
-            from forml import flow
-            from forml.pipeline import wrap
-
-            with wrap.importer():
-                from sklearn.ensemble import GradientBoostingClassifier
-
-            isinstance(GradientBoostingClassifier(), flow.Operator)  # True
-
-            PIPELINE = someoperator() >> GradientBoostingClassifier(random_state=42)
+            >>> from forml import flow
+            >>> from forml.pipeline import wrap
+            >>>
+            >>> with wrap.importer():
+            ...     from sklearn.ensemble import RandomForestClassifier
+            ...
+            >>> RFC = RandomForestClassifier(n_estimators=30, max_depth=10)
+            >>> isinstance(RFC, flow.Operator)
+            True
     """
 
     def wrapping(
@@ -239,6 +247,7 @@ def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
         if caller != source:  # ignore secondary imports
             return native(name, globals, locals, fromlist, level)
 
+        builtins.__import__ = native  # we don't want to be called for imports from imports...
         LOGGER.debug('Importing %s using autowrap', name)
         if not fromlist:  # might be None
             fromlist = ()
@@ -246,18 +255,19 @@ def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
         module = native(name, globals, locals, fromlist, level)
         patched = set()
         for owner, label, instance in _walk(module, *fromlist):
-            for wrap in wrappers:
-                if wrap.match(instance):
-                    LOGGER.debug('Patching %s.%s using %s', owner.__name__, label, wrap)
-                    setattr(owner, label, wrap(instance))
+            for autowrap in wrappers:
+                if autowrap.match(instance):
+                    LOGGER.debug('Patching %s.%s using %s', owner.__name__, label, autowrap)
+                    setattr(owner, label, autowrap(instance))
                     patched.add(owner.__name__)
                     break
         for owner in patched:  # drop cache so the patched instance doesn't get used elsewhere
             _unload(owner)
+        builtins.__import__ = wrapping  # to again capture the next top-level import
         return module
 
     if not wrappers:
-        wrappers = WRAPPERS
+        wrappers = AUTO
     source = inspect.getmodule(inspect.currentframe().f_back.f_back)
     LOGGER.debug('Autowrap called from %s', source)
     native = builtins.__import__

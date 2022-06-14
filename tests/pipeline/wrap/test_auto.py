@@ -32,7 +32,7 @@ from forml.pipeline import wrap
 from forml.pipeline.wrap import _auto
 
 
-class Wrapper(typing.Generic[_auto.Subject], abc.ABC):
+class Wrapper(typing.Generic[_auto.Entity], abc.ABC):
     """Wrapper unit tests base class."""
 
     @staticmethod
@@ -44,33 +44,33 @@ class Wrapper(typing.Generic[_auto.Subject], abc.ABC):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def subject() -> _auto.Subject:
+    def entity() -> _auto.Entity:
         """Subject fixture."""
 
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
     def mismatch() -> typing.Any:
-        """Mismatching subject fixture."""
+        """Mismatching entity fixture."""
 
-    def test_wrapper(self, wrapper: _auto.Auto, subject: _auto.Subject, mismatch: typing.Any):
+    def test_wrapper(self, wrapper: _auto.Auto, entity: _auto.Entity, mismatch: typing.Any):
         """Wrapper test."""
         assert not wrapper.match(mismatch)
-        assert wrapper.match(subject)
-        assert isinstance(wrapper(subject)(), flow.Operator)
+        assert wrapper.match(entity)
+        assert isinstance(wrapper(entity)(), flow.Operator)
 
 
-class TestSklearnTransformerWrapper(Wrapper[type[skbase.TransformerMixin]]):
+class TestAutoSklearnTransformer(Wrapper[type[skbase.TransformerMixin]]):
     """Sklearn transformer wrapper unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def wrapper() -> wrap.SklearnTransformerWrapper:
-        return wrap.SklearnTransformerWrapper()
+    def wrapper() -> wrap.AutoSklearnTransformer:
+        return wrap.AutoSklearnTransformer()
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def subject() -> type[skbase.TransformerMixin]:
+    def entity() -> type[skbase.TransformerMixin]:
         return preprocessing.LabelEncoder
 
     @staticmethod
@@ -81,17 +81,17 @@ class TestSklearnTransformerWrapper(Wrapper[type[skbase.TransformerMixin]]):
         return request.param
 
 
-class TestSklearnClassifierWrapper(Wrapper[type[skbase.ClassifierMixin]]):
+class TestAutoSklearnClassifier(Wrapper[type[skbase.ClassifierMixin]]):
     """Sklearn classifier wrapper unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def wrapper() -> wrap.SklearnClassifierWrapper:
-        return wrap.SklearnClassifierWrapper()
+    def wrapper() -> wrap.AutoSklearnClassifier:
+        return wrap.AutoSklearnClassifier()
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def subject() -> type[skbase.ClassifierMixin]:
+    def entity() -> type[skbase.ClassifierMixin]:
         return ensemble.GradientBoostingClassifier
 
     @staticmethod
@@ -100,17 +100,17 @@ class TestSklearnClassifierWrapper(Wrapper[type[skbase.ClassifierMixin]]):
         return request.param
 
 
-class TestSklearnRegressorWrapper(Wrapper[type[skbase.RegressorMixin]]):
+class TestAutoSklearnRegressor(Wrapper[type[skbase.RegressorMixin]]):
     """Sklearn regressor wrapper unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def wrapper() -> wrap.SklearnRegressorWrapper:
-        return wrap.SklearnRegressorWrapper()
+    def wrapper() -> wrap.AutoSklearnRegressor:
+        return wrap.AutoSklearnRegressor()
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def subject() -> type[skbase.RegressorMixin]:
+    def entity() -> type[skbase.RegressorMixin]:
         return ensemble.GradientBoostingRegressor
 
     @staticmethod
