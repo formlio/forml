@@ -46,9 +46,11 @@ class TestOperator(testing.operator(wrap.Operator)):
     """Operator unit tests."""
 
     # label
-    test_stateful_label = testing.Case(label=stateful.builder()).raises(TypeError, message='actor invalid')
     test_stateless_label = (
         testing.Case(train=stateful.builder(), label=stateless.builder()).train('foo', 'bar').returns('FOOBARFOO')
+    )
+    test_stateful_label = (
+        testing.Case(train=stateful.builder(), label=stateful.builder()).train('foo', 'bar').returns('FOOFOObarBARFOO')
     )
 
     # stateless apply/train

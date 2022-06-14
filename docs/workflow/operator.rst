@@ -101,8 +101,8 @@ method:
             assert actor_builder.actor.is_stateful(), 'Expected stateful'
             self._actor_builder = actor_builder
 
-        def compose(self, left: flow.Composable) -> flow.Trunk:
-            preceding: flow.Trunk = left.expand()
+        def compose(self, scope: flow.Composable) -> flow.Trunk:
+            preceding: flow.Trunk = scope.expand()
             mapper_trainmode_train = flow.Worker(self._actor_builder, 1, 1)
             mapper_trainmode_apply = mapper_trainmode_train.fork()
             mapper_applymode_apply = mapper_trainmode_train.fork()
@@ -163,53 +163,41 @@ Wrapped Operators
 Instead of implementing the entire base class, operators can in special cases be defined using the wrappers provided
 within the ``forml.pipeline.wrap`` package.
 
-This approach is applicable to *simple* operators based on a *single actor*.
+This approach is applicable to basic ML entities based on *individual actors* like *transformers* or *estimators*.
 
 
 Simple Decorated Operators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Standard ML entities like *transformers* or *estimators* can be turned into operators easily by wrapping them within the
-provided decorators or adding a provided mixin class into the class hierarchy. More complex entities like for example
-a *stacked ensembler* need to be implemented as operators from scratch (reusable entities can be maintained centrally as
-library operators). For simple operators (typically single-actor operators) are available convenient decorators under
- that makes it really easy to create specific instances. More details on the
-topic of operator development can be found in the :doc:`operator` sections.
-
-Operators are generally defined by implementing the ``flow.Operator`` interface. For couple of trivial patterns, there
-also is a simpler option based on decorating user-defined actors (whether native (class based) or decorated):
-
+Custom actors can be turned into operators easily by wrapping within the provided ``wrap.Operator.*`` decorators:
 
 .. autoclass:: forml.pipeline.wrap.Operator
    :members: apply, train, label, mapper
 
-
-.. code-block:: python
-
-    import pandas as pd
-    from forml.pipeline import wrap
-
-    @wrap.Operator.mapper
-    @wrap.Actor.apply
-    def impute(df: pandas.DataFrame, *, column: str, value: typing.Any) -> pandas.DataFrame:
-        """Simple static imputation actor."""
-        return df[column].fillna(value)
+.. _operator-autowrap:
 
 
 Auto-Wrapped Operators
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Another option of defining actors is reusing third-party classes that are providing the desired functionality. These
-classes cannot be changed to extend ForML base Actor class but can be wrapped upon importing using the ``wrap.importer``
-context manager like this:
+Another option for defining actors is reusing third-party implementations that are providing the desired functionality.
+We've already shown how these entities can be easily :ref:`mapped into ForML actors <actor-mapped>`. It can, however,
+be even easier to transparently *auto-wrap* them directly into ForML operators right upon importing. This can be
+achieved using the ``wrap.importer`` context manager:
+
+.. autofunction:: forml.pipeline.wrap.importer
+
+The default set of the *auto-wrappers*
+
+.. autoclass:: forml.pipeline.wrap.Auto
+    :members: match, apply
+
+
+
+
 
 .. code-block:: python
 
-    from forml.pipeline import wrap
-    with wrap.importer():
-        from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-
-    gbc_operator = GradientBoostingClassifier(random_state=42)  # this is now a ForML operator
 
 
 Advanced Composition
@@ -221,9 +209,9 @@ out of the individual operators in a way that allows to shape the entire task gr
 As shown, the pipeline composition expressions are using the ``>>`` syntax to compose two operators together. This
 can be chained further down engaging multiple operators.
 
-The ``.compose()`` method of each operator is getting the *left* (upstream) side of the expression in an *unexpanded*
-form allowing the ``.compose()`` implementation to expand it (by calling the ``left.expand()``) itself (as many times
-as needed).
+The ``.compose()`` method of each operator is getting the *scope* - the upstream side of the expression - in an
+*unexpanded* form allowing the ``.compose()`` implementation to expand it (by calling the ``scope.expand()``) itself
+(as many times as needed).
 
 The *expansion* process triggers the chained ``.compose()`` calls of the upstream operators all the way up to the
 *origin* of the given expression *scope*. Explicit scoping can be defined using the intuitive parenthetical notation.
@@ -256,7 +244,7 @@ This can be implemented as follows:
             self._splitter_builder = splitter_builder
             self._reducer_builder = reducer_builder
 
-        def compose(self, left: flow.Composable) -> flow.Trunk:
+        def compose(self, scope: flow.Composable) -> flow.Trunk:
             apply_head = flow.Future()  # we are going to prepend the entire scope so need some virtual head nodes
             train_head = flow.Future()
             label_head = flow.Future()
@@ -267,7 +255,7 @@ This can be implemented as follows:
             splitter_trainmode_train[0].subscribe(train_head[0])
             splitter_trainmode_label[0].subscribe(label_head[0])
             for fid in range(self._nfolds):
-                branch = left.expand()  # this will repeatedly expand the scope producing subgraph clone for each fold
+                branch = scope.expand()  # this will repeatedly expand the scope producing subgraph clone for each fold
                 branch.train.subscribe(splitter_trainmode_train[fid])
                 branch.label.subscribe(splitter_trainmode_label[fid])
                 branch.apply.subscribe(apply_head[0])
@@ -286,6 +274,6 @@ This can be implemented as follows:
 That is an operator configured with the number of folds, a 1:N *splitter* actor builder and a N:1 *reducer*
 actor builder. To prepend the entire composition scope, it uses the :ref:`Future <topology-future>` nodes to create
 the virtual *heads* for its segments. In each iteration, the ``for`` loop expands the *left*
-side of the composition producing the branch task graph to be wrapped. Its *train* and *label*
+side of the composition scope producing the branch task graph to be wrapped. Its *train* and *label*
 input segments get attached to the relevant splitter ports, while the *apply* segment goes directly to the main
 apply-mode head node. The ``branch.train.prune()`` and ``branch.apply.copy()`` effectively
