@@ -13,6 +13,7 @@
     specific language governing permissions and limitations
     under the License.
 
+
 Workflow Fundamentals
 =====================
 
@@ -50,8 +51,13 @@ the following concepts:
     *train* process. That's achieved by an inseparable integration of both the *train* as well as
     the *apply* (predict) representations of the specific ML scenario into a single ForML
     expression. Essentially every single ForML workflow expands into one of the two related task
-    graphs depending on its particular mode. The high-level API for describing a workflow allows
-    to compose an operator expressions using the following syntax:
+    graphs depending on its particular mode.
+
+
+.. _workflow-expression:
+
+The high-level API for describing a workflow allows to :ref:`compose an operator expressions
+<operator-composition>` using the following syntax:
 
 .. code-block:: python
 

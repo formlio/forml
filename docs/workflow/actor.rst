@@ -219,7 +219,7 @@ in the native implementations above):
             from forml.pipeline import wrap
 
             @wrap.Actor.apply
-            def static_impute(
+            def StaticImpute(
                 df: pandas.DataFrame,
                 *,
                 column: str,
@@ -239,7 +239,7 @@ in the native implementations above):
             from forml.pipeline import wrap
 
             @wrap.Actor.train
-            def mean_impute(
+            def MeanImpute(
                 state: typing.Optional[float],
                 df: pandas.DataFrame,
                 labels: pandas.Series,
@@ -251,8 +251,8 @@ in the native implementations above):
                 """
                 return df[column].mean()
 
-            @mean_impute.apply
-            def mean_impute(state: float, df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
+            @MeanImpute.apply
+            def MeanImpute(state: float, df: pandas.DataFrame, *, column: str) -> pandas.DataFrame:
                 """Apply part of a stateful imputation actor using the trained mean value to fill
                 the NaNs.
                 """
@@ -274,7 +274,7 @@ easily mapped into a valid ForML actors using the ``@wrap.Actor.type`` wrapper f
     from sklearn import ensemble
     from forml.pipeline import wrap
 
-    RFC_ACTOR = wrap.Actor.type(
+    RfcActor = wrap.Actor.type(
         ensemble.RandomForestClassifier,
         # mapping using target method reference
         train='fit',

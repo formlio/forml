@@ -195,7 +195,7 @@ The following example demonstrates the functionality of the *Future* nodes:
 
     worker1 = flow.Worker(SomeActor.builder(), szin=1, szout=1)
     worker2 = flow.Worker(AnotherActor.builder(), szin=1, szout=1)
-    future1 = flow.Future()  # defaults to szin=1, szout=1 (other shapes still possible)
+    future1 = flow.Future()  # defaults to szin=1, szout=1 (other shapes also possible)
     future2 = flow.Future()
 
     future1[0].subscribe(worker1[0])

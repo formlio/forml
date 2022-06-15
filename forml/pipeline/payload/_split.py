@@ -38,7 +38,8 @@ Column = typing.TypeVar('Column')
 class CrossValidable(typing.Protocol[flow.Features, flow.Labels, Column]):
     """Protocol for the cross-validator implementation.
 
-    This matches for example all the SKLearn `sklearn.model_selection.BaseCrossValidator` implementations.
+    This matches for example all the SKLearn `sklearn.model_selection.BaseCrossValidator`
+    implementations.
     """
 
     def split(
@@ -85,10 +86,11 @@ class CVFoldable(
 ):
     """Abstract n-folds splitter of train-test folds based on the provided cross-validator.
 
-    The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to
-    split data and labels independently.
+    The actor keeps all the generated indices as its internal state so that it can be used
+    repeatedly for example to split data and labels independently.
 
-    The splits are provided in a range of output ports where a given fold with index i is delivered via ports:
+    The splits are provided in a range of output ports where a given fold with index i is delivered
+    via ports:
       * [2 * i]: trainset
       * [2 * i + 1]: testset
     """
@@ -112,7 +114,8 @@ class CVFoldable(
         self._indices = tuple(self._crossvalidator.split(features, labels, groups))  # tuple it so it can be pickled
 
     def apply(self, features: flow.Features) -> typing.Sequence[flow.Features]:  # pylint: disable=arguments-differ
-        """Transforming the input feature set into two outputs separating the label column into the second one.
+        """Transforming the input feature set into two outputs separating the label column into
+        the second one.
 
         Args:
             features: Input data set.
@@ -161,10 +164,11 @@ class CVFoldable(
 class PandasCVFolds(CVFoldable[pandas.DataFrame, pdtype.NDFrame, pandas.Series]):
     """Abstract n-folds splitter of train-test folds based on the provided cross-validator.
 
-    The actor keeps all the generated indices as its internal state so that it can be used repeatedly for example to
-    split data and labels independently.
+    The actor keeps all the generated indices as its internal state so that it can be used
+    repeatedly for example to split data and labels independently.
 
-    The splits are provided in a range of output ports where a given fold with index i is delivered via ports:
+    The splits are provided in a range of output ports where a given fold with index i is delivered
+    via ports:
       * [2 * i]: trainset
       * [2 * i + 1]: testset
     """
