@@ -21,7 +21,7 @@ Workflow is the backbone of the ML solution responsible for consistently stickin
 together. On the low level it is a *Task Dependency Graph* with edges representing data flows and
 vertices standing for the data transformations. This particular type of the graph is called
 *Directed Acyclic Graph* (DAG) - meaning the flows are oriented and can't form any cycles.
-Representing workflows using task graphs is crucial for scalable scheduling, distributed
+Representing workflows using task graphs is crucial for robust scheduling, scalable
 execution and runtime portability.
 
 .. caution::
@@ -75,22 +75,16 @@ follows:
     :name: flowcharts
 
     graph TD
-        TNT["NaNImputer().train"] -. state .-> ANA["NaNImputer().setstate.apply"]
-        TRFC["RFC(max_depth=3).train"] -. state .-> ARFC["RFC(max_depth=3).setstate.apply"]
         subgraph Train Mode
-        TF((Future)) --> TLE["LabelExtractor(column='foo').apply"];
-        TLE --> TG0(["Getter#0"]);
-        TLE --> TG1(["Getter#1"]);
-        TG0 -- features --> TNT;
-        TG1 -- labels --> TNT;
-        TG0 -- features --> TNA["NaNImputer().setstate.apply"];
-        TNT -- state --> TNA;
-        TNA --> TRFC;
-        TG1 -- labels --> TRFC;
+        ft((Future)) --> xta("LabelExtractor.apply()") -- L --> itt["NaNImputer.train()"] & ctt["RFC.train()"]
+        xta --> itt & ita("NaNImputer.apply()")
+        ita --> ctt
+        itt -. state .-> ita
         end
         subgraph Apply Mode
-        AF((Future)) --> ANA
-        ANA --> ARFC
+        fa((Future)) --> iaa("NaNImputer.apply()") --> caa("RFC.apply()")
+        itt -. state .-> iaa
+        ctt -. state .-> caa
         end
 
 The meaning of :doc:`operators <operator>` and how they are defined using :doc:`actors <actor>`
@@ -102,3 +96,4 @@ and their :doc:`interconnections <topology>` is described in details in the foll
     actor
     topology
     operator
+    study
