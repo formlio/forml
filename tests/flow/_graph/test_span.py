@@ -18,7 +18,7 @@
 """
 Graph unit tests.
 """
-# pylint: disable=no-self-use, protected-access
+# pylint: protected-access
 
 import pytest
 

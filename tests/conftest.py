@@ -18,7 +18,6 @@
 """
 Global ForML unit tests fixtures.
 """
-# pylint: disable=no-self-use
 import collections
 import datetime
 import multiprocessing

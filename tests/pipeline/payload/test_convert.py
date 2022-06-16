@@ -18,7 +18,6 @@
 """
 Conversion unit tests.
 """
-# pylint: disable=no-self-use
 import numpy
 import pandas
 

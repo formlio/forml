@@ -123,7 +123,7 @@ class Pandas:
             return self._encoding
 
         @classmethod
-        @functools.lru_cache(256)
+        @functools.lru_cache
         def _columns(cls, schema: dsl.Source.Schema) -> typing.Sequence[str]:
             """Get the column list for the given schema.
 
@@ -201,7 +201,7 @@ DECODERS: typing.Sequence[tuple[Decoder, layout.Encoding]] = (
 )
 
 
-@functools.lru_cache(256)
+@functools.lru_cache
 def get_decoder(source: layout.Encoding) -> Decoder:
     """Get a decoder suitable for the given source encoding.
 
@@ -217,7 +217,7 @@ def get_decoder(source: layout.Encoding) -> Decoder:
     raise forml.MissingError(f'No decoder for {source}')
 
 
-@functools.lru_cache(256)
+@functools.lru_cache
 def get_encoder(*targets: layout.Encoding) -> Encoder:
     """Get an encoder capable of producing one of the given target encodings.
 

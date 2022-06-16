@@ -18,7 +18,6 @@
 """
 ForML virtual registry unit tests.
 """
-# pylint: disable=no-self-use
 import typing
 
 import pytest

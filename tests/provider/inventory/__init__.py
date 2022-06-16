@@ -18,7 +18,6 @@
 """
 ForML persistent inventory unit tests.
 """
-# pylint: disable=no-self-use
 import abc
 import pickle
 import typing

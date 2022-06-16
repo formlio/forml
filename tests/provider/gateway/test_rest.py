@@ -18,7 +18,6 @@
 """
 ForML rest gateway unit tests.
 """
-# pylint: disable=no-self-use
 import contextlib
 import typing
 

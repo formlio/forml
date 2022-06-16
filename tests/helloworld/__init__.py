@@ -157,6 +157,7 @@ class Feed(io.Feed[str, str]):
             """Dummy parser that returns string keyword of `trainset` or `testset` depending on the number
             of projected columns."""
 
+            # pylint: disable=unnecessary-lambda-assignment
             resolve_feature = (
                 generate_alias
             ) = generate_expression = generate_join = generate_literal = generate_set = lambda *_: ''

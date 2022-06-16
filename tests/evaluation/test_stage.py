@@ -18,7 +18,6 @@
 """
 Evaluation stages unit tests.
 """
-# pylint: disable=no-self-use
 from sklearn import metrics, model_selection
 
 from forml import evaluation, testing

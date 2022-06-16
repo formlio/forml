@@ -223,7 +223,7 @@ class Importer:
         for feed in self._feeds:
             yield feed.instance
 
-    @functools.cache
+    @functools.lru_cache
     def match(self, source: 'dsl.Source') -> Feed:
         """Select a feed that can provide for (be used to construct) the given source.
 

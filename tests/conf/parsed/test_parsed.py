@@ -18,7 +18,6 @@
 """
 ForML section config unit tests.
 """
-# pylint: disable=no-self-use
 import abc
 import typing
 

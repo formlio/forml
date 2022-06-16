@@ -165,9 +165,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
                 return sql.column(feature.name)
             raise err
 
-    def generate_element(
-        self, origin: sql.Selectable, element: sql.ColumnElement
-    ) -> sql.ColumnElement:  # pylint: disable=no-self-use
+    def generate_element(self, origin: sql.Selectable, element: sql.ColumnElement) -> sql.ColumnElement:
         """Generate a field code.
 
         Args:
@@ -179,9 +177,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         """
         return sql.column(element.name, _selectable=origin)
 
-    def generate_alias(
-        self, feature: sql.ColumnElement, alias: str
-    ) -> sql.ColumnElement:  # pylint: disable=no-self-use
+    def generate_alias(self, feature: sql.ColumnElement, alias: str) -> sql.ColumnElement:
         """Generate feature alias code.
 
         Args:
@@ -280,7 +276,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
     def generate_query(
         self,
         source: sql.Selectable,
-        features: typing.Sequence[sql.ColumnElement],  # pylint: disable=no-self-use
+        features: typing.Sequence[sql.ColumnElement],
         where: typing.Optional[sql.ColumnElement],
         groupby: typing.Sequence[sql.ColumnElement],
         having: typing.Optional[sql.ColumnElement],
@@ -317,9 +313,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
                 query = query.offser(rows.offset)
         return query
 
-    def generate_reference(
-        self, instance: sql.Selectable, name: str
-    ) -> tuple[sql.Selectable, sql.Selectable]:  # pylint: disable=no-self-use
+    def generate_reference(self, instance: sql.Selectable, name: str) -> tuple[sql.Selectable, sql.Selectable]:
         """Generate a source reference (alias) definition.
 
         Args:

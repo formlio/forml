@@ -18,7 +18,6 @@
 """
 Project steuptools tests.
 """
-# pylint: disable=no-self-use
 import pytest
 import setuptools
 

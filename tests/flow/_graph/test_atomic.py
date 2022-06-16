@@ -18,7 +18,6 @@
 """
 Graph node unit tests.
 """
-# pylint: disable=no-self-use
 
 import abc
 

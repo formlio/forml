@@ -68,9 +68,7 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         composition = self._build(lower, upper, self._instance.project.pipeline, output=None)  # TO-DO: sink schema
         self._exec(composition.apply, self._instance.state(composition.persistent))
 
-    def tune(  # pylint: disable=no-self-use
-        self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
-    ) -> None:
+    def tune(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         """Run the tune mode.
 
         Args:

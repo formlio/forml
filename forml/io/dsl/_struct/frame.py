@@ -95,7 +95,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         def __repr__(cls):
             return f'{cls.__module__}:{cls.__qualname__}'
 
-        @functools.cache
+        @functools.lru_cache
         def __getitem__(cls, name: str) -> 'dsl.Field':
             try:
                 return getattr(cls, name)
@@ -218,7 +218,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         except KeyError as err:
             raise AttributeError(f'Invalid feature {name}') from err
 
-    @functools.cache
+    @functools.lru_cache
     def __getitem__(self, name: typing.Union[int, str]) -> typing.Any:
         try:
             return super().__getitem__(name)

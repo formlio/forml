@@ -99,7 +99,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
             Transformation result (ie predictions).
         """
 
-    def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:  # pylint: disable=no-self-use
+    def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:
         """The *train* mode entry point.
 
         Optional method engaging the *Train* (``features``) and *Label* (``label``) ports of stateful actors.
@@ -126,7 +126,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
             State as bytes.
         """
         if not self.is_stateful():
-            return bytes()
+            return b''
         LOGGER.debug('Getting %s state', self)
         return cloudpickle.dumps(self.__dict__)
 
@@ -149,7 +149,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         self.__dict__.update(cloudpickle.loads(state))
         self.set_params(**params)  # restore the original hyper-params
 
-    def get_params(self) -> typing.Mapping[str, typing.Any]:  # pylint: disable=no-self-use
+    def get_params(self) -> typing.Mapping[str, typing.Any]:
         """Get the current hyper-parameters of the actor.
 
         The *Params* output port representation.

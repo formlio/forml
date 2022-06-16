@@ -18,7 +18,6 @@
 """
 Pyfunc runner tests.
 """
-# pylint: disable=no-self-use
 
 import pytest
 

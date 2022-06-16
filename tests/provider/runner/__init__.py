@@ -18,7 +18,6 @@
 """
 Common runner implementations tests.
 """
-# pylint: disable=no-self-use
 
 import abc
 import multiprocessing

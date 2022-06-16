@@ -18,7 +18,6 @@
 """
 ForML mlflow registry unit tests.
 """
-# pylint: disable=no-self-use
 import os
 import random
 import signal

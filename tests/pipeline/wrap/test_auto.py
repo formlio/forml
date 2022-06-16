@@ -18,7 +18,6 @@
 """
 Auto-wrapping unit tests.
 """
-# pylint: disable=no-self-use
 import abc
 import sys
 import typing

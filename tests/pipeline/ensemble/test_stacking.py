@@ -18,7 +18,6 @@
 """
 Stacking ensembles unit tests.
 """
-# pylint: disable=no-self-use
 import pandas
 from sklearn import model_selection
 
