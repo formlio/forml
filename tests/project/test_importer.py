@@ -18,7 +18,6 @@
 """
 Project importer tests.
 """
-# pylint: disable=no-self-use
 import os
 
 import pytest

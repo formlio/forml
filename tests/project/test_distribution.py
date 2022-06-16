@@ -18,7 +18,6 @@
 """
 Project distribution tests.
 """
-# pylint: disable=no-self-use
 import os
 import pathlib
 

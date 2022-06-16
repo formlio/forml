@@ -18,7 +18,6 @@
 """
 Flow unit tests fixtures.
 """
-# pylint: disable=no-self-use
 
 import pytest
 

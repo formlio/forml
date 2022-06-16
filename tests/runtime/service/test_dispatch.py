@@ -17,7 +17,6 @@
 """
 Service runtime dispatch tests.
 """
-# pylint: disable=no-self-use
 import json
 import pickle
 

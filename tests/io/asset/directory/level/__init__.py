@@ -18,7 +18,6 @@
 """
 ForML asset directory unit tests.
 """
-# pylint: disable=no-self-use
 import typing
 
 import pytest

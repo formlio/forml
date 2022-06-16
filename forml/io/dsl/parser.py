@@ -250,7 +250,7 @@ class Visitor(
         except KeyError as err:
             raise dsl.UnprovisionedError(f'Unknown mapping for feature {feature}') from err
 
-    @functools.cache
+    @functools.lru_cache
     def generate_feature(self, feature: dsl.Feature) -> Feature:
         """Generate target code for the generic feature type.
 
@@ -351,7 +351,7 @@ class Visitor(
         except KeyError as err:
             raise dsl.UnprovisionedError(f'Unknown mapping for source {source}') from err
 
-    def generate_table(  # pylint: disable=no-self-use
+    def generate_table(
         self,
         table: Source,
         features: typing.Iterable[Feature],  # pylint: disable=unused-argument

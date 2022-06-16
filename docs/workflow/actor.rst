@@ -19,6 +19,8 @@ Task Actor
 Actor is the lowest level entity - a node in the task graph - representing an atomic black box
 transformation of the passing data.
 
+.. _actor-compatibility:
+
 .. important::
     ForML doesn't care neither about the particular internal processing functionality of any
     actors nor the actual types and formats of the data passed between them. All that ForML deals
@@ -46,22 +48,22 @@ engaged when in each of the particular actor modes:
 
     graph LR
         subgraph Actor
-        A[/apply-mode/]
-        T[\train-mode\]
+        A(apply-mode)
+        T[train-mode]
         end
         subgraph Input Ports
         AI1[/Apply 1\] --> A
         AI2[/Apply ...\] --> A
         AIM[/Apply M\] --> A
-        TI[\Train/] --> T
-        LI[\Labels/] --> T
+        TI[/Train/] --> T
+        LI[/Labels/] --> T
         SI[(State)] -. set .-> A & T
         PI>Params] -. set .-> A & T
         end
         subgraph Output Ports
-        A --> AO1[/Apply 1\]
-        A --> AO2[/Apply ...\]
-        A --> AON[/Apply N\]
+        A --> AO1[\Apply 1/]
+        A --> AO2[\Apply .../]
+        A --> AON[\Apply N/]
         T -. get .-> SO[(State)]
         A & T -. get .-> PO>Params]
         end
@@ -258,6 +260,11 @@ in the native implementations above):
                 """
                 df[column] = df[column].fillna(state)
                 return df
+
+.. important::
+   To have consistent naming convention for all actors regardless their implementation (whether
+   *native classes* or *decorated functions) - it should stick with the class naming convention,
+   i.e. the *CapitalizedWords*.
 
 .. _actor-mapped:
 

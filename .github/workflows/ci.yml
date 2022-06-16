@@ -31,11 +31,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version:
-        - "3.9"
+        - "3.10"
 
     steps:
     - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
@@ -49,7 +49,7 @@ jobs:
         sudo apt-get install graphviz
         pip install --upgrade tox
     - name: "Run tests"
-      run: tox -e clean,lint,py39,coverage
+      run: tox -e clean,lint,py310,coverage
     - name: "Upload test results"
       uses: actions/upload-artifact@v2
       with:

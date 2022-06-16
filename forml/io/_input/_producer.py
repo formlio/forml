@@ -80,8 +80,8 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
         LOGGER.debug('Starting ETL read using: %s', result)
         return self.format(query.schema, self.read(result, **self._kwargs))
 
-    @functools.cache
-    def _match_entry(  # pylint: disable=no-self-use
+    @functools.lru_cache
+    def _match_entry(
         self, query: dsl.Source.Schema, entry: dsl.Source.Schema
     ) -> tuple[bool, typing.Optional[typing.Sequence[int]]]:
         """Match the entry schema against the query.

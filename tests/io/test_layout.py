@@ -18,7 +18,6 @@
 """
 Payload tests.
 """
-# pylint: disable=no-self-use
 import pickle
 import typing
 

@@ -126,7 +126,7 @@ class Client:
         run.data.tags[key] = value
         return run
 
-    @functools.cache
+    @functools.lru_cache
     def get_or_create_experiment(self, name: str) -> entities.Experiment:
         """Get an experiment instance by name if exists or create a new one.
 
@@ -143,7 +143,7 @@ class Client:
             self._mlflow.restore_experiment(entity.experiment_id)
         return entity
 
-    @functools.cache
+    @functools.lru_cache
     def get_or_create_run(self, experiment: str, **tags: str) -> tuple[entities.Experiment, entities.Run]:
         """Get a run instance matching the given tags if exists or create a new one.
 
@@ -300,7 +300,7 @@ class Registry(asset.Registry, alias='mlflow'):
                 )
             except FileNotFoundError:
                 LOGGER.warning('No state %s under runid %s', sid, self._generations[project, release, generation])
-                return bytes()
+                return b''
             with artifact.open('rb') as statefile:
                 return statefile.read()
 

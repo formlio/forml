@@ -18,7 +18,6 @@
 """
 Evaluation methods unit tests.
 """
-# pylint: disable=no-self-use
 import pytest
 from sklearn import model_selection
 

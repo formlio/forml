@@ -18,7 +18,6 @@
 """
 ForML persistent unit tests.
 """
-# pylint: disable=no-self-use
 from forml.io import asset
 
 

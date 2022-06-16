@@ -76,6 +76,7 @@ intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'openschema': ('https://openschema.readthedocs.io/en/latest/', None),
     'openlake': ('https://openlake.readthedocs.io/en/latest/', None),
+    'sklearn': ('https://scikit-learn.org/stable/', None),
 }
 
 # Warn about all references where the target cannot be found

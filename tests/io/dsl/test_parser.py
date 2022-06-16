@@ -18,7 +18,6 @@
 """
 ETL code statement tests.
 """
-# pylint: disable=no-self-use
 import types
 import typing
 

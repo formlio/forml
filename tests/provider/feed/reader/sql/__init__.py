@@ -18,7 +18,6 @@
 """
 Common SQL parser tests.
 """
-# pylint: disable=no-self-use
 import abc
 import datetime
 import typing

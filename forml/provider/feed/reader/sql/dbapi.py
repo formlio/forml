@@ -130,7 +130,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
                 return feature.name
             raise err
 
-    def generate_element(self, origin: str, element: str) -> str:  # pylint: disable=no-self-use
+    def generate_element(self, origin: str, element: str) -> str:
         """Generate a field code.
 
         Args:
@@ -142,7 +142,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
         """
         return f'"{origin}"."{element}"'
 
-    def generate_alias(self, feature: str, alias: str) -> str:  # pylint: disable=no-self-use
+    def generate_alias(self, feature: str, alias: str) -> str:
         """Generate feature alias code.
 
         Args:
@@ -280,7 +280,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
     def generate_query(
         self,
         source: str,
-        features: typing.Sequence[str],  # pylint: disable=no-self-use
+        features: typing.Sequence[str],
         where: typing.Optional[str],
         groupby: typing.Sequence[str],
         having: typing.Optional[str],
@@ -319,7 +319,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
             query += f' {rows.count}'
         return query
 
-    def generate_reference(self, instance: str, name: str) -> tuple[str, str]:  # pylint: disable=no-self-use
+    def generate_reference(self, instance: str, name: str) -> tuple[str, str]:
         """Generate a source reference (alias) definition.
 
         Args:

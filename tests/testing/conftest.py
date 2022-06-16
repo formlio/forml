@@ -18,7 +18,6 @@
 """
 ForML testing unit tests fixtures.
 """
-# pylint: disable=no-self-use
 
 
 import typing

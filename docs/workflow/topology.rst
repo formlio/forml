@@ -67,17 +67,17 @@ This gives us the following disconnected workers:
 .. md-mermaid::
 
     graph LR
-        sfbi((i)) --> select_foobar --> sfbo((o))
-        szi((i)) --> select_baz --> szo((o))
-        ci1((i1)) & ci2((i2)) --> concat --> co((o))
-        dbi((i)) --> drop_bar --> dbo((o))
-        sri((i)) --> select_bar --> sro((o))
-        ibai((i)) --> impute_baz_apply --> ibao((o))
+        sfbi((i)) --> sfb(select_foobar) --> sfbo((o))
+        szi((i)) --> sz(select_baz) --> szo((o))
+        ci1((i1)) & ci2((i2)) --> c(concat) --> co((o))
+        dbi((i)) --> db(drop_bar) --> dbo((o))
+        sri((i)) --> sb(select_bar) --> sro((o))
+        ibai((i)) --> iba("impute_baz.apply()") --> ibao((o))
 
 .. note::
     All the actors we chose in this example work with Pandas payload - by no means this is some
-    official format required by ForML. As explained, ForML doesn't care about the payload and the
-    choice of compatible actors is responsibility of the implementor.
+    official format required by ForML. As :ref:`explained <actor-compatibility>`, ForML doesn't
+    care about the payload and the choice of compatible actors is responsibility of the implementor.
 
 Connecting Nodes
 ^^^^^^^^^^^^^^^^
@@ -112,10 +112,10 @@ Now, with that connections between our nodes, the topology looks shown:
 .. md-mermaid::
 
     graph LR
-        sfbi((i)) --> select_foobar -- "o(0)->i(0)" --> concat
-        sbi((i)) --> select_baz -- "o(0)->i(1)" --> concat
-        concat -- "o(0)->i(0)" --> drop_bar -- "o(0)->i(0)" --> impute_baz_apply --> ibao((o))
-        concat -- "o(0)->i(0)" --> select_bar --> sro((o))
+        sfbi((i)) --> sfb(select_foobar) -- "0-0" --> c(concat)
+        sbi((i)) --> sz(select_baz) -- "0-1" --> c
+        c -- "0-0" --> db(drop_bar) -- "0-0" --> iba("impute_baz.apply()") --> ibao((o))
+        c -- "0-0" --> sb(select_bar) --> sro((o))
 
 
 .. _topology-state:
@@ -157,14 +157,14 @@ original ``impute_baz_apply``. The task graph now looks like this:
 
     graph LR
         subgraph Group
-        impute_baz_apply
-        impute_baz_train
+        iba("impute_baz.apply()")
+        ibt["impute_baz.train()"]
         end
-        sfbi((i)) --> select_foobar -- "o(0)->i(0)" --> concat
-        sbi((i)) --> select_baz -- "o(0)->i(1)" --> concat
-        concat -- "o(0)->i(0)" --> drop_bar -- "o(0)->i(0)" --> impute_baz_apply --> ibao((o))
-        concat -- "o(0)->i(0)" --> select_bar -- "o(0)->Label" --> impute_baz_train
-        drop_bar -- "o(0)->Train" --> impute_baz_train
+        sfbi((i)) --> sfb(select_foobar) -- "0-0" --> c(concat)
+        sbi((i)) --> sz(select_baz) -- "0-1" --> c
+        c -- "0-0" --> db(drop_bar) -- "0-0" --> iba --> ibao((o))
+        c -- "0-0" --> sb(select_bar) -- "0-L" --> ibt
+        db -- "0-T" --> ibt
 
 
 .. caution::
@@ -186,7 +186,7 @@ the real connected worker-to-be is not know yet (e.g. when implementing an
 composed with). When connected to a real worker, the Future node will automatically collapse and
 disappear from the topology.
 
-The following example demonstrates the functionality of the *Future* nodes:
+The following example demonstrates the effect when using the *Future* nodes:
 
 .. code-block:: python
     :linenos:
@@ -204,8 +204,8 @@ The following example demonstrates the functionality of the *Future* nodes:
 .. md-mermaid::
 
     graph LR
-        worker1 --> f1((future1))
-        f2((future2)) --> worker2
+        w1(worker1) --> f1((future1))
+        f2((future2)) --> w2(worker2)
 
 
 As the diagram shows, we have ``worker1`` node connecting its first *apply* output port to the
@@ -221,7 +221,7 @@ after subscribing the ``future2`` node to the ``future1`` output, you can see ho
 .. md-mermaid::
 
     graph LR
-        worker1 --> worker2
+        w1(worker1) --> w2(worker2)
 
 
 .. warning::
@@ -280,15 +280,15 @@ system nodes plus connecting the relevant *State* ports (dotted lines):
 
 .. md-mermaid::
 
-    graph LR
+    graph TD
         subgraph Group
-        impute_baz_apply
-        impute_baz_train
+        iba("impute_baz.apply()")
+        ibt["impute_baz.train()"]
         end
-        sfbi((i)) --> select_foobar -- "o(0)->i(0)" --> concat
-        sbi((i)) --> select_baz -- "o(0)->i(1)" --> concat
-        concat -- "o(0)->i(0)" --> drop_bar -- "o(0)->i(0)" --> impute_baz_apply --> ibao((o))
-        concat -- "o(0)->i(0)" --> select_bar -- "o(0)->Label" --> impute_baz_train
-        drop_bar -- "o(0)->Train" --> impute_baz_train
-        impute_baz_train -. State .-> impute_baz_apply
-        l[(Loader)] -. State .-> impute_baz_train -. State .-> d[(Dumper)]
+        sfbi((i)) --> sfb(select_foobar) -- "0-0" --> c(concat)
+        sbi((i)) --> sz(select_baz) -- "0-1" --> c
+        c -- "0-0" --> db(drop_bar) -- "0-0" --> iba --> ibao((o))
+        c -- "0-0" --> sb(select_bar) -- "0-L" --> ibt
+        db -- "0-T" --> ibt
+        ibt -. state .-> iba
+        l[(loader)] -. state .-> ibt -. state .-> d[(dumper)]

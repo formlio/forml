@@ -84,7 +84,7 @@ class Test:
         """
         return self._launcher(suite.__operator__)
 
-    def raises(self, suite: 'testing.Suite') -> typing.ContextManager:  # pylint: disable=unused-argument, no-self-use
+    def raises(self, suite: 'testing.Suite') -> typing.ContextManager:  # pylint: disable=unused-argument
         """Context manager for wrapping raising assertions.
 
         Args:

@@ -18,7 +18,6 @@
 """
 ForML cli unit tests.
 """
-# pylint: disable=no-self-use
 import pathlib
 
 import pytest

@@ -39,7 +39,7 @@ Generic Implementation
 ----------------------
 
 Operators can implement whatever complex functionality based on any number of actors. They are
-using the :ref:`logical topology structures <topology-logical>` to implement the internal task
+using the :ref:`logical topology structures <topology-logical>` to define the internal task
 graph and its composition with the preceding operators.
 
 The base abstract class for implementing operators is the ``flow.Operator``:
@@ -72,20 +72,20 @@ The following diagram outlines the flows:
 
     graph LR
         subgraph Mapper Worker Group
-        tt("mapper@train-mode.train()")
+        tt["mapper@train-mode.train()"]
         ta("mapper@train-mode.apply()")
         aa("mapper@apply-mode.apply()")
         tt -. state .-> ta & aa
         end
         subgraph Trunk Heads
         ti((T)) --> tt & ta
-        li((L)) --> tt
+        li((L)) -- L --> tt
         ai((A)) --> aa
         end
         subgraph Trunk Tails
         ta --> to((T))
+        li -- L --> lo((L))
         aa --> ao((A))
-        li --> lo((L))
         end
 
 The segment between the ``A`` head/tail nodes represents the apply-mode task graph, while the
@@ -120,8 +120,14 @@ We can see the three workers (forked from the common instance to make them part 
 Note the operator is truly generic as the actual actor implementing the particular mapping
 function is provided as a parameter.
 
+
+.. _operator-composition:
+
+Operator Composition
+--------------------
+
 Given the ``mean_impute`` example actor :ref:`implemented earlier <actor-decorated>`, we can now
-create two imputation operators and use them to compose a simple pipeline using the ``>>`` syntax:
+create two imputation operators and use them to compose a simple workflow using the ``>>`` syntax:
 
 .. code-block:: python
 
@@ -135,22 +141,22 @@ That would render the following task graphs:
 
 .. md-mermaid::
 
-    graph LR
+    graph TD
         subgraph Foo Worker Group
-        tft("foo@train-mode.train()")
+        tft["foo@train-mode.train()"]
         tfa("foo@train-mode.apply()")
         afa("foo@apply-mode.apply()")
         tft -. state .-> tfa & afa
         end
         subgraph Bar Worker Group
-        tbt("bar@train-mode.train()")
+        tbt["bar@train-mode.train()"]
         tba("bar@train-mode.apply()")
         aba("bar@apply-mode.apply()")
         tbt -. state .-> tba & aba
         end
         subgraph Trunk Heads
         ti((T)) --> tft & tfa
-        li((L)) --> tft
+        li((L)) -- L --> tft
         ai((A)) --> afa
         end
         tfa --> tbt & tba
@@ -158,16 +164,38 @@ That would render the following task graphs:
         afa --> aba
         subgraph Trunk Tails
         tba --> to((T))
+        li -- L --> lo((L))
         aba --> ao((A))
-        li --> lo((L))
         end
 
+
+*Composition* is the operation described using the ML
+:ref:`workflow expressions <workflow-expression>` based on the individual operators, that allows to
+shape the entire task graph in a fully flexible manner.
+
+As shown, the pipeline composition expressions are using the ``>>`` syntax to compose two
+operators together. This can be chained further down engaging multiple operators.
+
+The ``.compose()`` method of each operator is receiving the composition *scope* - the upstream
+(left) side of the expression - in an *unexpanded* form allowing the ``.compose()`` implementation
+to expand it (by calling the ``scope.expand()``) itself as many times as needed.
+
+The *expansion* process triggers the chained ``.compose()`` calls of the upstream operators all
+the way up to the *origin* of the given composition *scope*. Explicit scoping can be defined using
+the intuitive parenthetical notation. That makes this operation non-associative - e.g. the
+expansion scope of operator ``C`` composition in expression ``A >> B >> C`` is the whole
+``A >> B``, while in expression ``A >> (B >> C)`` it is just the ``B`` operator.
+
+Further practical details of the composition concept are demonstrated in the :doc:`workflow case
+study <study>`.
+
+.. _operator-wrapped:
 
 Wrapped Operators
 -----------------
 
-Instead of implementing the entire base class, operators can in special cases be defined using
-the wrappers provided within the ``forml.pipeline.wrap`` package.
+Instead of implementing the entire ``flow.Operator`` base class, operators can in special cases be
+defined using the wrappers provided within the ``forml.pipeline.wrap`` package.
 
 This approach is applicable to basic ML entities based on *individual actors* like *transformers*
 or *estimators*.
@@ -188,8 +216,8 @@ Custom actors can be turned into operators easily by wrapping within the provide
 Auto-Wrapped Operators
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Another option for defining actors is reusing third-party implementations that are providing the
-desired functionality. We've already shown how these entities can be easily
+Another option for defining particular operators is reusing third-party implementations that are
+providing the desired functionality. We've already shown how these entities can be easily
 :ref:`mapped into ForML actors <actor-mapped>`. It can, however, be even easier to transparently
 *auto-wrap* them directly into ForML operators right upon importing. This can be achieved using
 the ``wrap.importer`` context manager:
@@ -200,7 +228,7 @@ the ``wrap.importer`` context manager:
 The default list of *auto-wrappers* is available as ``wrap.AUTO`` and contains the following
 instances:
 
-* :class:`asd <forml.pipeline.wrap.AutoSklearnTransformer>`
+* ``wrap.AutoSklearnTransformer>``
 * ``wrap.AutoSklearnClassifier``
 * ``wrap.AutoSklearnRegressor``
 
@@ -208,157 +236,3 @@ Custom auto-wrappers can be implemented by extending the ``wrap.Auto`` base clas
 
 .. autoclass:: forml.pipeline.wrap.Auto
     :members: match, apply
-
-
-.. _operator-composition:
-
-Composition Deep Dive
----------------------
-
-In the previous sections we've learned, that *composition* is the operation described using the ML
-:ref:`workflow expressions <workflow-expression>` based on the individual operators, that allows to
-shape the entire task graph in a fully flexible manner.
-
-As shown, the pipeline composition expressions are using the ``>>`` syntax to compose two
-operators together. This can be chained further down engaging multiple operators.
-
-The ``.compose()`` method of each operator is getting the *scope* - the upstream side of the
-expression - in an *unexpanded* form allowing the ``.compose()`` implementation to expand it (by
-calling the ``scope.expand()``) itself (as many times as needed).
-
-The *expansion* process triggers the chained ``.compose()`` calls of the upstream operators all
-the way up to the *origin* of the given expression *scope*. Explicit scoping can be defined using
-the intuitive parenthetical notation. That makes this operation non-associative - e.g. the
-expansion scope of operator ``C`` composition in expressions ``A >> B >> C`` is the whole
-``A >> B``, while in expression ``A >> (B >> C)`` it is just the ``B`` operator.
-
-
-To demonstrate the true power of the composition concept, let's implement a more complex operator
-- we can call it ``KFoldWrapper`` - with the following logic:
-
-#. prepends the train part of the composition scope with a 1:N stateless range-based *splitter*
-   Actor
-#. clones the task graph in the composition scope N-times and with each of its train segments:
-
-   #. attach head to the matching *splitter* output port
-   #. attach tail to the matching *stacker* input port
-
-#. finally sends the apply outputs from all of these N branches to N:1 *reducer* Actor
-
-The idea behind this operator is to train+apply the preceding scope in multiple parallel
-instances on range-split part of the data and stacking these partial results back together in
-train-mode using the *stacker* while reducing them into one value using the *reducer* when in
-apply-mode.
-
-Such operator can be implemented as follows:
-
-.. code-block:: python
-    :linenos:
-
-    from forml import flow
-
-    class KFoldWrapper(flow.Operator):
-        """Split-clone-reduce operator for wrapping its composition scope."""
-
-        def __init__(
-            self,
-            nfolds: int,
-            splitter_builder: flow.Builder,
-            stacker_builder: flow.Builder,
-            reducer_builder: flow.Builder,
-        ):
-            assert not (
-                splitter_builder.actor.is_stateful()
-                or stacker_builder.actor.is_stateful()
-                or reducer_builder.actor.is_stateful()
-            ), "Stateless expected"
-            self._nfolds = nfolds
-            self._splitter_builder = splitter_builder
-            self._stacker_builder = stacker_builder
-            self._reducer_builder = reducer_builder
-
-        def compose(self, scope: flow.Composable) -> flow.Trunk:
-            apply_head = flow.Future()  # virtual head nodes to prepend the entire scope
-            label_head = flow.Future()
-            splitter_trainmode_train = flow.Worker(self._splitter_builder, 1, self._nfolds)
-            splitter_trainmode_label = splitter_trainmode_train.fork()
-            stacker_trainmode_apply = flow.Worker(self._stacker_builder, self._nfolds, 1)
-            reducer_applymode_apply = flow.Worker(self._reducer_builder, self._nfolds, 1)
-            splitter_trainmode_label[0].subscribe(label_head[0])
-            for fid in range(self._nfolds):
-                # repeatedly expand the scope producing subgraph clone for each fold
-                branch = scope.expand()
-                branch.train.subscribe(splitter_trainmode_train[fid])
-                branch.label.subscribe(splitter_trainmode_label[fid])
-                branch.apply.subscribe(apply_head[0])
-                reducer_applymode_apply[fid].subscribe(branch.apply.publisher)
-                stacker_trainmode_apply[fid].subscribe(branch.train.publisher)
-            return flow.Trunk(
-                flow.Segment(apply_head, reducer_applymode_apply),
-                flow.Segment(splitter_trainmode_train, stacker_trainmode_apply),
-                flow.Segment(label_head, label_head),  # patch through the pre-split labels
-            )
-
-Note how it uses the :ref:`Future <topology-future>` nodes to create the virtual *heads* for
-some of its segments to prepend the entire composition scope. In each
-iteration, the ``for`` loop expands the *left* side of the composition scope producing the branch
-task graph to be wrapped. Its *train* and *label* input segments get attached to the relevant
-splitter ports, while the *apply* segment goes directly to the main apply-mode head node.
-
-Let's now implement an actual pipeline expression engaging this operator to demonstrate the
-composition functionality. For illustration, we also provide the possible implementations of
-``Splitter`` and ``Reducer`` actors (even though the internal actor implementation is from point
-of the operator logic irrelevant). We also reuse the ``impute_foo`` operator instance created
-previously.
-
-.. code-block:: python
-    :linenos:
-
-    import math
-    import pandas
-    import typing
-    from forml.pipeline import payload, wrap
-
-    @wrap.Actor.train
-    def Scaler(
-        mean: typing.Optional[pandas.Series],
-        features: pandas.DataFrame,
-        labels: pandas.Series,
-    ) -> pandas.Series:
-        """Train part of a simple scaler actor."""
-        return features.mean()
-
-    @wrap.Operator.mapper
-    @Scaler.apply
-    def Scaler(mean: pandas.Series, features: pandas.DataFrame) -> pandas.DataFrame:
-        """Apply part of a simple scaler actor wrapped as a mapper operator."""
-        return features - mean
-
-    @wrap.Actor.apply
-    def Splitter(
-        features: pandas.DataFrame,
-        *,
-        nfolds: int
-    ) -> typing.Sequence[pandas.DataFrame]:
-        """1:N range based splitter actor."""
-        chunk = math.ceil(len(features) / nfolds)
-        return [
-            features.iloc[i:i + chunk].reset_index(drop=True)
-            for i in range(0, nfolds * chunk, chunk)
-        ]
-
-    @wrap.Actor.apply
-    def Reducer(*folds: pandas.DataFrame) -> pandas.DataFrame:
-        """N:1 mean based reducer actor."""
-        full = pandas.concat(folds, axis='columns', copy=False)
-        return full.groupby(by=full.columns, axis='columns').mean()
-
-
-    kfold_wrapper = KFoldWrapper(
-        2,
-        Splitter.builder(nfolds=2),
-        payload.PandasConcat.builder(axis='index', ignore_index=True),
-        Reducer.builder(),
-    )
-
-    PIPELINE = impute_foo >> (Scaler() >> kfold_wrapper)

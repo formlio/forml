@@ -181,7 +181,7 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
         return value
 
     @classmethod
-    @functools.lru_cache(256)
+    @functools.lru_cache
     def parse(cls, value: str) -> typing.Sequence['Encoding']:
         """Parse the mime header value.
 
@@ -200,7 +200,7 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
             )
         )
 
-    @functools.cache
+    @functools.lru_cache
     def match(self, other: 'Encoding') -> bool:
         """Return ture if the other encoding matches ours including glob wildcards.
 

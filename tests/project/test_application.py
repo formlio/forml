@@ -18,7 +18,6 @@
 """
 Application descriptor tests.
 """
-# pylint: disable=no-self-use
 import pathlib
 import pickle
 import tempfile

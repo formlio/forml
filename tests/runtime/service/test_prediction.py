@@ -17,7 +17,6 @@
 """
 Service runtime worker tests.
 """
-# pylint: disable=no-self-use
 import multiprocessing
 
 import pytest

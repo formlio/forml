@@ -18,7 +18,6 @@
 """
 Graphviz runner tests.
 """
-# pylint: disable=no-self-use
 import multiprocessing
 import pathlib
 

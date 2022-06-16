@@ -133,7 +133,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     TAGFILE = 'tag.toml'
     PKGFILE = f'package.{prj.Package.FORMAT}'
 
-    @functools.cache
+    @functools.lru_cache
     def project(self, project: asset.Project.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -145,7 +145,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self / project
 
-    @functools.cache
+    @functools.lru_cache
     def release(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -158,7 +158,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.project(project) / str(release)
 
-    @functools.cache
+    @functools.lru_cache
     def generation(
         self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
@@ -174,7 +174,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.release(project, release) / str(generation)
 
-    @functools.cache
+    @functools.lru_cache
     def package(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
         """Package file path of given project name/release.
 
@@ -187,7 +187,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.release(project, release) / self.PKGFILE
 
-    @functools.cache
+    @functools.lru_cache
     def state(
         self,
         sid: uuid.UUID,
@@ -210,7 +210,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             generation = self.STAGEDIR
         return self.generation(project, release, generation) / f'{sid}.{self.STATESFX}'
 
-    @functools.cache
+    @functools.lru_cache
     def tag(
         self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
@@ -298,7 +298,7 @@ class Registry(asset.Registry, alias='posix'):
                 return statefile.read()
         except FileNotFoundError:
             LOGGER.warning('No state %s under %s', sid, path)
-            return bytes()
+            return b''
 
     def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
         path = self._path.state(sid, project, release)

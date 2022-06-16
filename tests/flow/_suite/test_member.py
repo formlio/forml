@@ -18,7 +18,6 @@
 """
 Flow segment unit tests.
 """
-# pylint: disable=no-self-use
 
 import pytest
 

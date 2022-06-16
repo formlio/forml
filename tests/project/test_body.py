@@ -18,7 +18,6 @@
 """
 Project tests.
 """
-# pylint: disable=no-self-use
 import typing
 
 import pytest

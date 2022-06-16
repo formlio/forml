@@ -18,7 +18,6 @@
 """
 Project component tests.
 """
-# pylint: disable=no-self-use
 import importlib
 import pathlib
 import types
