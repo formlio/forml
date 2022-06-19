@@ -16,8 +16,9 @@
 Titanic Challenge
 =================
 
-There is a complete ForML project available under ``tutorials/titanic/``. It is the famous `Titanic Challenge
-<https://www.kaggle.com/c/titanic>`_. We will use it here to demonstrate the typical ForML usecases.
+There is a complete ForML project available under ``tutorials/titanic/``. It is the famous
+`Titanic Challenge <https://www.kaggle.com/c/titanic>`_. We will use it here to demonstrate the
+typical ForML usecases.
 
 
 Initial Setup
@@ -33,7 +34,7 @@ Run the following shell command to create the initial :doc:`project structure<..
 
 .. code-block:: console
 
-    $ forml init --requirements=openschema,pandas,scikit-learn,numpy forml-tutorial-titanic
+    $ forml project init --requirements=openschema,pandas,scikit-learn,numpy forml-tutorial-titanic
 
 You should see a directory structure like this:
 
@@ -53,9 +54,9 @@ You should see a directory structure like this:
 Source Definition
 ^^^^^^^^^^^^^^^^^
 
-Let's edit the :file:`source.py` component supplying the project :ref:`datasource descriptor <project-source>` with
-a :doc:`DSL query<../../dsl>` against the particular :py:class:`Titanic schema from the Openschema catalog
-<openschema:openschema.kaggle.Titanic>`:
+Let's edit the :file:`source.py` component supplying the project :ref:`datasource descriptor
+<project-source>` with a :doc:`DSL query<../../dsl>` against the particular :py:class:`Titanic
+schema from the Openschema catalog <openschema:openschema.kaggle.Titanic>`:
 
 .. literalinclude:: ../../tutorials/titanic/titanic/source.py
   :language: python
@@ -65,8 +66,9 @@ a :doc:`DSL query<../../dsl>` against the particular :py:class:`Titanic schema f
 Evaluation Definition
 ^^^^^^^^^^^^^^^^^^^^^
 
-Finally, we fill-in the :ref:`evaluation descriptor <project-evaluation>` within the :file:`evaluation.py` which
-involves specifying the :doc:`evaluation strategy <../../evaluation>` including the particular metric:
+Finally, we fill-in the :ref:`evaluation descriptor <project-evaluation>` within the
+:file:`evaluation.py` which involves specifying the :doc:`evaluation strategy <../../evaluation>`
+including the particular metric:
 
 .. literalinclude:: ../../tutorials/titanic/titanic/evaluation.py
   :language: python
@@ -76,10 +78,12 @@ involves specifying the :doc:`evaluation strategy <../../evaluation>` including 
 Exploration with Jupyter
 ------------------------
 
-See the tutorial notebook stored in the demo project under ``examples/tutorial/titanic/notebooks/tutorial.ipynb`` for
-a step-by-step examples of working with ForML project in Jupyter.
+See the tutorial notebook stored in the demo project under
+``examples/tutorial/titanic/notebooks/tutorial.ipynb`` for a step-by-step examples of working
+with ForML project in Jupyter.
 
-Further details on the interactive style of work with ForML in general can be found in the :doc:`interactive` sections.
+Further details on the interactive style of work with ForML in general can be found in the
+:doc:`interactive` sections.
 
 
 Lifecycle Actions
@@ -114,8 +118,8 @@ Development Lifecycle Actions
 
         OK
 
-3. Try running the ``train`` mode on the *Graphviz* runner (called ``visual`` in our config ) to see the train task
-   graph:
+3. Try running the ``train`` mode on the *Graphviz* runner (called ``visual`` in our config ) to
+see the train task graph:
 
     .. code-block:: console
 
@@ -124,30 +128,32 @@ Development Lifecycle Actions
     .. image:: ../_static/images/titanic-train.png
        :align: center
 
-4. Run the ``eval`` mode on the (default) *Dask* runner (called ``compute`` in our config) to get the
-   cross-validation score:
+4. Run the ``eval`` mode on the (default) *Dask* runner (called ``compute`` in our config) to get
+the cross-validation score:
 
     .. code-block:: console
 
         $ python3 setup.py eval
         0.8379888268156425
 
-5. Create the project package artifact and upload it to the (default) filesystem registry (assuming the same release
-   doesn't already exist - otherwise increment the project version in the ``setup.py``):
+5. Create the project package artifact and upload it to the (default) filesystem registry
+(assuming the same release doesn't already exist - otherwise increment the project version in
+the ``setup.py``):
 
     .. code-block:: console
 
         $ python3 setup.py bdist_4ml upload
 
-   This should publish the project into your local filesystem forml registry making it available for the production
-   lifecycle. This becomes the first published :ref:`release <concept-persistence>` of this project versioned (according
-   to the version from :ref:`setup.py <project-setup>` as ``0.1.dev0``)
+   This should publish the project into your local filesystem forml registry making it available
+   for the production lifecycle. This becomes the first published :ref:`release
+   <concept-persistence>` of this project versioned (according to the version from :ref:`setup.py
+   <project-setup>` as ``0.1.dev0``)
 
 Production Lifecycle Actions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Production lifecycle doesn't need the project working copy so feel free to change the directory to another location
-before executing the commands.
+Production lifecycle doesn't need the project working copy so feel free to change the directory
+to another location before executing the commands.
 
 1. List the local registry confirming the project has been published as its first release:
 
@@ -159,11 +165,11 @@ before executing the commands.
         0.1.dev0
         $ forml model list forml-example-titanic 0.1.dev0
 
-   The output shows the project artifact is available in the registry as a release ``0.1.dev0`` not having any
-   generation yet (the last command not producing any output).
+   The output shows the project artifact is available in the registry as a release ``0.1.dev0``
+   not having any generation yet (the last command not producing any output).
 
-3. Train the project (using the default runner as per our config) to create the first generation of its models and list
-   the registry to confirm it got persisted:
+3. Train the project (using the default runner as per our config) to create the first generation
+   of its models and list the registry to confirm it got persisted:
 
     .. code-block:: console
 
@@ -196,11 +202,12 @@ before executing the commands.
 Deployment and Serving
 ----------------------
 
-There is a complete ForML project available under ``examples/tutorial/titanic/``. It is the famous `Titanic Challenge
-<https://www.kaggle.com/c/titanic>`_. We will use it here to demonstrate the typical ForML usecases.
+There is a complete ForML project available under ``examples/tutorial/titanic/``. It is the
+famous `Titanic Challenge <https://www.kaggle.com/c/titanic>`_. We will use it here to
+demonstrate the typical ForML usecases.
 
-Before you start, please make sure to install ForML as per the :doc:`installation instructions <../install>` and ideally
-also get familiar with the :doc:`ForML concepts <../concept>`.
+Before you start, please make sure to install ForML as per the :doc:`installation instructions
+<../install>` and ideally also get familiar with the :doc:`ForML concepts <../concept>`.
 
 Serving
 ^^^^^^^

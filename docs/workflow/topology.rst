@@ -35,8 +35,8 @@ abstract ``flow.Node`` structure and its subtype ``flow.Worker`` in particular.
 Creating a Worker
 ^^^^^^^^^^^^^^^^^
 
-Worker node gets created simply by providing a ``flow.Builder``
-:ref:`actor builder <actor-builder>` and the required number of the input and output (apply) ports:
+Worker node gets created simply by providing a :class:`flow.Builder <forml.flow.Builder>` and the
+required number of the input and output (apply) ports:
 
 .. code-block:: python
     :linenos:

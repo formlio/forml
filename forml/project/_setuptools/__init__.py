@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Distribution(dist.Distribution):  # pylint: disable=function-redefined
-    """Extended distribution type with extra forml attributes."""
+    """Extended distribution type with extra ForML attributes."""
 
     COMMANDS: typing.Mapping[str, type[setuptools.Command]] = {
         'train': launch.Train,

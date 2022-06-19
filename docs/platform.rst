@@ -18,8 +18,8 @@ Platform Setup
 
 Platform is a configuration-driven selection of particular *providers* implementing a number of abstract concepts:
 
-* :doc:`runner/index`
-* :doc:`registry/index`
+* :doc:`runner`
+* :doc:`registry`
 * :doc:`feed`
 * :doc:`sink`
 * :ref:`Serving components <serving-components>`
