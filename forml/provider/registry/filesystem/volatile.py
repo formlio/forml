@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Virtual registry is a dummy registry implementation that doesn't persist anything outside of the current runtime.
+Volatile registry is a dummy registry implementation that doesn't persist anything outside of the current runtime.
 """
 import collections
 import logging
@@ -33,14 +33,14 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Registry(posix.Registry, alias='virtual'):
-    """Virtual registry implementation provided as a non-distributed global registry persistent only during its
+class Registry(posix.Registry, alias='volatile'):
+    """Volatile registry implementation provided as a non-distributed global registry persistent only during its
     lifetime.
     """
 
     def __init__(self):
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
-            prefix='registry-virtual-', dir=asset.TMPDIR
+            prefix='registry-volatile-', dir=asset.TMPDIR
         )
         self._artifacts: dict['asset.Project.Key', dict['asset.Release.Key', 'prj.Artifact']] = collections.defaultdict(
             dict
@@ -57,7 +57,7 @@ class Registry(posix.Registry, alias='virtual'):
         return self._artifacts[project][release]
 
     def pull(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'prj.Package':
-        raise NotImplementedError('No packages in virtual repository')
+        raise NotImplementedError('No packages in volatile repository')
 
     def push(self, package: 'prj.Package') -> None:
         artifact = package.install(package.path)  # avoid copying by installing to self

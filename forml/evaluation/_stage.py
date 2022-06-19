@@ -29,7 +29,7 @@ if typing.TYPE_CHECKING:
 
 
 class ApplyScore(flow.Operator):
-    """Production in-sample evaluation result value operator.
+    """Production performance evaluation result value operator.
 
     This assumes pre-existing state of the pipeline trained previously.
 

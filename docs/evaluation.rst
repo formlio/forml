@@ -15,3 +15,27 @@
 
 Evaluation
 ==========
+
+
+.. autoclass:: forml.project.Evaluation
+
+metric...
+
+
+.. _evaluation-traintest
+
+Train-Test Evaluation
+---------------------
+
+.. autoclass:: forml.evaluation.HoldOut
+
+.. autoclass:: forml.evaluation.CrossVal
+
+
+
+.. _evaluation-prod
+
+Production Performance Monitoring
+---------------------------------
+
+drift detection

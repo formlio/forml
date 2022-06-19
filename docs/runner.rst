@@ -21,6 +21,16 @@ implementation of a system that can :ref:`execute <concept-execution>` the proje
 based on its description (its *Task Dependency Graph* in particular) is called the *Runner*.
 
 
+.. _runner-virtual:
+
+Virtual Launcher
+----------------
+
+Returned from :meth:`project.Artifact.launcher <forml.project.Artifact.launcher>`.
+
+.. autoclass:: forml.runtime.Virtual
+
+
 API
 ---
 

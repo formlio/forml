@@ -16,7 +16,7 @@
 Task Actor
 ==========
 
-Actor is the lowest level entity - a node in the task graph - representing an atomic black box
+Actor is the lowest level entity - a node in the task graph - representing an atomic black-box
 transformation of the passing data.
 
 .. _actor-compatibility:
@@ -69,7 +69,7 @@ engaged when in each of the particular actor modes:
         end
 
 
-There is a couple of different ways the ports can logically be grouped together:
+There is a couple of different ways the ports can be logically grouped together:
 
 **Level** - how are the ports configured:
     * *user* level ports (full lines in diagram) are explicitly connected by the implementor
@@ -111,9 +111,6 @@ with the desired functionality. The main parts of the API look as follows:
 
 .. autoclass:: forml.flow.Actor
    :members: apply, train, get_state, set_state, get_params, set_params, builder
-
-
-.. _actor-builder:
 
 .. autoclass:: forml.flow.Builder
 

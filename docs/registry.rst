@@ -16,24 +16,63 @@
 Model Persistence
 =================
 
-At :doc:`runtime <../platform>`, the :ref:`production lifecycle <lifecycle-production>` uses the model registry for storing
-:ref:`artifacts <concept-persistence>` of project *releases* as well as the models of its *generations*.
+There is a couple of *artifacts* derived from a typical ForML :doc:`project <project>` at
+certain stage of its :doc:`lifecycles <lifecycle>` as the runtime deliverables. ForML uses
+the *model registry* to persist these artifacts providing an interface for their follow-up
+management.
+
+.. note::
+   We use the term *model* more loosely including not just the involved *estimators* and/or
+   *regressors* but essentially any :doc:`stateful actor <workflow/actor>` in the pipeline.
+
+.. _registry-artifacts:
+
+Project Artifacts
+-----------------
+
+The two types of artifacts are code and states
+
+.. _registry-package:
+
+Release Package
+^^^^^^^^^^^^^^^
+
+The deployable project representation produced :ref:`upon releasing <lifecycle-release>` from
+within the :ref:`development lifecycle <lifecycle-development>` is the binary *ForML package*.
+It is a single monolithic object (typically a file with the ``.4ml`` suffix) containing all the
+project *principal components* bundled together with some *metadata* (in form of a ForML
+manifest) and especially all of its *runtime code dependencies* (as declared in the :ref:`project
+setup <project-setup>`).
+
+has unique version
+
+.. autoclass:: forml.project.Package
+
+Published as part of the release into :doc:`registry`.
+
+.. _registry-assets:
+
+Model Generation Assets
+^^^^^^^^^^^^^^^^^^^^^^^
+
+has incremental id
+
+binary byte blobs
+
+:ref:`production lifecycle <lifecycle-production>` upon training/tuning
+
+
+Model Registry Providers
+------------------------
+
+implementing the abstract ``io.asset.Registry``
+
+Configured as per :doc:`platform`.
 
 ForML can use multiple registries built upon different technologies. The available registry implementations are:
-
-
-API
----
-
-.. autoclass:: forml.io.asset.Registry
-    :members:
-
-
-Providers
----------
 
 .. autosummary::
 
    forml.provider.registry.filesystem.posix
-   forml.provider.registry.filesystem.virtual
+   forml.provider.registry.filesystem.volatile
    forml.provider.registry.mlflow

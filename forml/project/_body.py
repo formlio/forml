@@ -38,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Components(collections.namedtuple('Components', 'source, pipeline, evaluation')):
-    """Top level ForML project components holding the implementations of individual project components."""
+    """Tuple of all the principal components representing a ForML project."""
 
     source: 'project.Source'
     pipeline: flow.Composable
@@ -137,6 +137,13 @@ class Components(collections.namedtuple('Components', 'source, pipeline, evaluat
 class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     """Project artifact handle."""
 
+    path: typing.Optional[pathlib.Path]
+    """Filesystem path to the project source package root."""
+    package: str
+    """Project package name."""
+    modules: typing.Mapping[str, str]
+    """Project component module path mappings."""
+
     def __new__(
         cls,
         path: typing.Optional[typing.Union[str, pathlib.Path]] = None,
@@ -159,19 +166,26 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
     @property
     def components(self) -> Components:
-        """Extracting the project components from this artifact.
+        """Tuple of all the individual principal components from this project artifact.
 
         Returns:
-            Project components.
+            Tuple of project principal components.
         """
         return Components.load(self.package, self.path, **self.modules)
 
     @functools.cached_property
     def launcher(self) -> 'runtime.Virtual':
-        """Return the launcher configured with a virtual registry preloaded with this artifact.
+        """A runtime launcher configured with a volatile registry preloaded with this artifact.
+
+        This can be used to interactively execute the particular steps of the project development
+        lifecycle. The linked volatile registry is persistent only during the lifetime of this
+        artifact instance.
+
+        See the :class:`runtime.Virtual <forml.runtime.Virtual>` pseudo runner for more details
+        regarding the launcher API.
 
         Returns:
-            Launcher instance.
+            Virtual launcher instance.
         """
 
         class Manifest(types.ModuleType):

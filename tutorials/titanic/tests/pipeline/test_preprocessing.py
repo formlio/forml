@@ -27,7 +27,7 @@ from titanic.pipeline import preprocessing
 from forml import testing
 
 
-class TestParseTitle(testing.operator(preprocessing.parse_title)):
+class TestParseTitle(testing.operator(preprocessing.ParseTitle)):
     """Unit testing the stateless TitleParser transformer."""
 
     # Dataset fixtures
@@ -40,7 +40,7 @@ class TestParseTitle(testing.operator(preprocessing.parse_title)):
     valid_parsing = testing.Case(source='Name', target='Title').apply(INPUT).returns(EXPECTED, testing.pandas_equals)
 
 
-class TestImpute(testing.operator(preprocessing.impute)):
+class TestImpute(testing.operator(preprocessing.Impute)):
     """NaN Imputer unit tests."""
 
     def matcher(expected: pandas.DataFrame, actual: pandas.DataFrame) -> bool:  # pylint: disable=no-self-argument
@@ -64,6 +64,6 @@ class TestImpute(testing.operator(preprocessing.impute)):
     EXPECTED = pandas.DataFrame({'foo': [1.0, 4.0, 2.0], 'Embarked': ['X', 'S', 'Y'], 'Fare': [1.0, 2.0, 3.0]})
 
     # Test scenarios
-    invalid_params = testing.Case('foo').raises(TypeError, 'takes 1 positional argument but 2 were given')
+    invalid_params = testing.Case('foo').raises(TypeError, 'too many positional arguments')
     not_trained = testing.Case().apply(FEATURES).raises(RuntimeError, 'not trained')
     valid_imputation = testing.Case().train(FEATURES).apply(FEATURES).returns(EXPECTED, matcher)

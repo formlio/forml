@@ -56,14 +56,14 @@ STACK = ensemble.FullStack(  # here FullStack is the particular ensembler implem
 # And finally let's put together the actual pipeline composition using our preprocessing operators and the
 # model ensemble:
 PIPELINE = (
-    preprocessing.impute(random_state=42)
-    # >> payload.Dump(path='/tmp/tit/impute-$mode-$seq.csv')
-    >> preprocessing.parse_title(source='Name', target='Title')  # pylint: disable=no-value-for-parameter
-    >> preprocessing.encode(columns=['Sex', 'Embarked', 'Title', 'Pclass'])
+    preprocessing.Impute(random_state=42)
+    # >> payload.Dump(path='/tmp/titanic/impute-$mode-$seq.csv')
+    >> preprocessing.ParseTitle(source='Name', target='Title')  # pylint: disable=no-value-for-parameter
+    >> preprocessing.Encode(columns=['Sex', 'Embarked', 'Title', 'Pclass'])
     >> StandardScaler(copy=False)
-    # >> payload.Dump(path='/tmp/tit/pretrain-$mode-$seq.csv')
+    # >> payload.Dump(path='/tmp/titanic/pretrain-$mode-$seq.csv')
     >> STACK
-    # >> payload.Dump(path='/tmp/tit/stack-$mode-$seq.csv')
+    # >> payload.Dump(path='/tmp/titanic/stack-$mode-$seq.csv')
     >> LogisticRegression(random_state=42)
 )
 

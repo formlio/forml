@@ -94,8 +94,8 @@ Resources
 
     dsl
     io
-    sink
     feed
+    sink
     registry
     inventory
 

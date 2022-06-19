@@ -19,4 +19,4 @@
 Filesystem registry implementations.
 """
 
-__all__ = ['virtual', 'posix']
+__all__ = ['volatile', 'posix']

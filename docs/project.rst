@@ -16,134 +16,174 @@
 Project Organization
 ====================
 
-Starting New Project
---------------------
+Projects built on ForML are in principle software source-code collections consisting of a set of
+defined components organized as a python package. Their ultimate purpose is to enable an effective
+development leading to delivering (i.e. *releasing* a version of) a solution in form of a deployable
+:ref:`artifacts <registry-artifacts>`.
 
-ForML project can either be created manually from scratch by defining the `component structure`_ or simply using the
-``init`` subcommand of the ``forml`` :ref:`platform-cli`::
+While developing, ForML allows to execute the project source-code working copy by triggering its
+:ref:`development lifecycle actions <lifecycle-development>` or when visited in the
+:doc:`interactive mode <interactive>`.
 
-    $ forml init myproject
+.. attention::
+   Although not in scope of this documentation, all the general source-code management best
+   practices (version control, continuous integration/delivery etc.) are applicable to ForML
+   projects and should be integrated into the development process.
+
+To discover the structure of some real ForML project, it is worth exploring the available
+:doc:`tutorials <tutorials/titanic>`.
+
+
+Starting a New Project
+----------------------
+
+ForML project can be initialized either manually by implementing the `component structure`_  from
+scratch or simply via the ``init`` subcommand of the ``forml`` :ref:`platform-cli`:
+
+.. code-block:: console
+
+    $ forml project init myproject
 
 
 Component Structure
 -------------------
 
-ForML project is defined as a set of specific components wrapped into a python package with the usual
-:doc:`Setuptools <setuptools>` layout. The framework offers the
-*Convention over Configuration* approach for organizing the internal package structure, which means it automatically
-discovers the relevant project components if the author follows this convention (there is still an option to ignore the
-convention, but the author is then responsible for configuring all the otherwise automatic steps himself).
+ForML projects are essentially standard :doc:`Setuptools <setuptools:setuptools>` based python
+packages organized in a way to allow ForML to identify its *principal components* and to operate its
+:doc:`lifecycle <lifecycle>`.
 
-The convention is simply based on implementing specific python *modules* (or *packages*) within the project
-namespace root. ForML doesn't care whether the component is defined as a module (a file with ``.py`` suffix) or
-a package (a subdirectory with ``__init__.py`` file in it) since both have the same import syntax.
+The framework adopts the `Convention over Configuration
+<https://en.wikipedia.org/wiki/Convention_over_configuration>`_ approach for
+organizing the internal project structure to automatically discover the relevant
+components (it is still possible to ignore the convention and organize the project in an
+arbitrary way, but the author is then responsible for explicitly configuring all the otherwise
+automatic steps himself).
 
-These naming conventions for the different project components are described in the following subsections. The general
-project component structure wrapped within the python application layout might look similar to this::
+The potential project structure matching the ForML convention might look as the following tree::
 
     <project_name>
       ├── setup.py
       ├── <optional_project_namespace>
       │     └── <project_name>
       │          ├── __init__.py
-      │          ├── pipeline  # here the component is a package
+      │          ├── pipeline  # principal component as a package
       │          │    ├── __init__.py
-      │          │    ├── <moduleX>.py  # arbitrary user defined module
-      │          │    └── <moduleY>.py
-      │          ├── source.py
-      │          ├── evaluation.py  # here the component is just a module
-      │          ├── schedule.py
+      │          │    └── <moduleX>.py  # arbitrary module not part of the convention
+      │          ├── source.py  # principal component as a module
+      │          ├── evaluation.py
+      │          ├── <moduleY>.py  # another module not part of the convention
       │          └── tuning.py
       ├── tests
       │    ├── __init__.py
-      │    ├── test_pipeline.py
+      │    ├── test_<pipeline>.py  # actual name not part of the convention
       │    └── ...
-      ├── README.md
+      ├── README.md  # not part of the convention
+      ├── notebooks  # not part of the convention
+      │    └── ...
       └── ...
 
+Clearly, the overall structure doesn't look any special - pretty standard :doc:`setuptools
+<setuptools:setuptools>` project (plus some additional content). What makes it a ForML
+project is the particular modules and/or packages within that structure. Let's focus on each of
+these components in the following sections.
 
-The individual project components defined in the specific modules described below need to be hooked up into the ForML
-framework using the ``project.setup()`` as shown in the examples below.
-
-.. autofunction:: forml.project.setup
 
 .. _project-setup:
 
-Setup.py
-''''''''
+Setup.py Module
+^^^^^^^^^^^^^^^
 
-This is the standard :doc:`Setuptools <setuptools>` module with few extra features added to allow the project structure
-customization and integration of the *Research lifecycle* as described in :doc:`lifecycle` sections (ie the ``eval`` or
-``upload`` commands).
+This is the standard :doc:`Setuptools <setuptools:setuptools>` boostrap module with a little tweak
+to integrate the ForML principal component structure. It's placed directly in the project root
+directory.
 
-To hook in this extra functionality, the ``setup.py`` just needs to use the ``forml.project.Distribution`` as the
-custom setupttols ``disctlass`` . The rest is the usual ``setup.py`` content::
+To hook with the framework, the ``setup.py`` just needs to use the ``forml.project.Distribution``
+as the custom setuptools ``disctlass`` . The rest is the usual ``setup.py`` content:
 
+.. code-block:: python
+
+    import os
+    import setuptools
     from forml import project
 
     setuptools.setup(name='forml-example-titanic',
                      version='0.1.dev0',
-                     packages=setuptools.find_packages(include=['titanic*']),
+                     packages=setuptools.find_packages(include=['titanic*'], where=os.path.dirname(__file__)),
                      setup_requires=['forml'],
-                     install_requires=['scikit-learn', 'pandas', 'numpy', 'category_encoders==2.0.0'],
-                     distclass=project.Distribution)
+                     install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy'],
+                     distclass=project.Distribution)  # the key to integrate ForML
 
-.. note:: The specified ``version`` value will become the *release* identifier upon *uploading* (as part of the
-          *Research lifecycle*) thus needs to be a valid :pep:`440` version.
+.. note::
+    Upon publishing (in scope of the :ref:`development lifecycle <lifecycle-development>`), the
+    specified ``version`` value will become the *release* identifier thus needs to be a valid
+    :pep:`440` version.
 
-The project should carefully specify all of its dependencies using the ``install_requires`` parameter as these will be
-included in the released ``.4ml`` package.
+The project should carefully specify all of its dependencies using the ``install_requires``
+parameter as these will be included in the released :ref:`.4ml package artifact <registry-artifacts>`.
 
-The only addition provided on top of the original ``setuptools`` functionality is the ability to customize the
-conventional project component layout. If from some reason the user wants to divert from this convention, he can specify
-the custom locations of its project components using the ``component`` parameter as follows::
+One addition provided on top of the original ``setuptools`` functionality is the ability to
+customize the conventional ForML principal component layout. If, from some reason, the user wants to
+divert from the convention, the custom locations of its principal components can be specified using
+the ``component`` parameter as follows:
+
+.. code-block:: python
 
     setuptools.setup(...,
-                     component={'pipeline': 'path.to.my.custom.pipeline.module'})
+                     component={'pipeline': 'relative.path.to.my.custom.pipeline.module'})
+
+
+Principal Components
+^^^^^^^^^^^^^^^^^^^^
+
+These are the actual high-level blocks of the particular ForML solution provided as python
+*modules* (or *packages*) within the project package root.
+
+.. hint::
+    ForML doesn't care whether the principal component is defined as a module (a file with ``.py``
+    suffix) or a package (a subdirectory with ``__init__.py`` file in it) since both have the same
+    import syntax.
+
+To load each of the principal components, ForML relies on the ``project.setup()`` function as the
+expected component registration interface:
+
+.. autofunction:: forml.project.setup
+
 
 .. _project-pipeline:
 
-Pipeline Topology (``pipeline.py``)
-'''''''''''''''''''''''''''''''''''
+Pipeline Expression
+"""""""""""""""""""
 
-Pipeline definition is the heart of the project component structure. The framework needs to understand the
-pipeline as a *Directed Acyclic Task Dependency Graph*. For this purpose, it comes with a concept of *Operators* that
-the user is supplying with actual functionality (ie feature transformer, classifier) and *composing* together to
-define the final flow.
+Pipeline definition is the heart of the entire solution. It is provided in form of the
+:ref:`operator composition expression <operator-composition>`.
 
-The pipeline is specified in terms of the *workflow expression API* which is in detail described in the
-:doc:`workflow` sections.
+ForML expects this component to be provided as ``pipeline.py`` module or ``pipeline`` package
+under the project package root.
 
-Same as for the other project components, the final pipeline expression defined in the ``pipeline.py`` needs to be
-exposed to the framework via the ``project.setup()`` handler::
+.. code-block:: python
+   :caption: pipeline.py or pipeline/__init__.py
+   :linenos:
 
     from forml import project
-    from titanic.pipeline import preprocessing, model
+    from . import preprocessing, model  # project-specific implementations
 
-    FLOW = preprocessing.NaNImputer() >> model.LR(random_state=42, solver='lbfgs')
-    project.setup(FLOW)
+    PIPELINE = preprocessing.Imputer() >> model.Classifier(random_state=42)
+    project.setup(PIPELINE)
 
 
 .. _project-source:
 
-Dataset Specification (``source.py``)
-'''''''''''''''''''''''''''''''''''''
+Dataset Definition
+""""""""""""""""""
 
-This component is a fundamental part of the :doc:`IO concept<io>`. A project can define the ETL process of sourcing
-data into the pipeline using the :doc:`DSL <dsl>` referring to some :ref:`catalogized schemas
-<io-catalogized-schemas>` that are at runtime resolved via the available :doc:`feeds <feed>`.
+The ``source`` component provides the project with a definite while portable dataset description. It
+is specified using the :meth:`project.Source.query <forml.project.Source.query>` as a
+:ref:`DSL expression <dsl-query>` against some particular :ref:`catalogized
+schemas<io-catalogized-schemas>`.
 
-The source component is provided in form of a descriptor that's created using the ``.query()`` method as shown in the
-example below or documented in the :ref:`Source Descriptor Reference <io-source-descriptor>`.
-
-.. note:: The descriptor allows to further compose with other operators using the usual ``>>`` syntax. Source
-          composition domain is separate from the main pipeline so adding an operator to the source composition vs
-          pipeline composition might have a different effect.
-
-Part of the dataset specification can also be a reference to the *ordinal* column (used for determining data ranges for
-splitting or incremental operations) and *label* columns for supervised learning/evaluation.
-
-The Source descriptor again needs to be submitted to the framework using the ``project.setup()`` handler::
+.. code-block:: python
+   :caption: source.py or source/__init__.py
+   :linenos:
 
     from forml import project
     from forml.pipeline import payload
@@ -156,54 +196,42 @@ The Source descriptor again needs to be submitted to the framework using the ``p
         schema.Titanic.Age,
         schema.Titanic.SibSp,
         schema.Titanic.Parch,
-        schema.Titanic.Ticket,
         schema.Titanic.Fare,
-        schema.Titanic.Cabin,
         schema.Titanic.Embarked,
-    )
+    ).orderby(schema.Titanic.PassengerId)
 
-    SOURCE = project.Source.query(FEATURES, schema.Titanic.Survived) >> payload.ToPandas(columns=[f.name for f in FEATURES.schema])
+    SOURCE = (
+        project.Source.query(FEATURES, schema.Titanic.Survived)
+        >> payload.ToPandas(columns=[f.name for f in FEATURES.schema])
+    )
     project.setup(SOURCE)
 
 
 .. _project-evaluation:
 
-Evaluation Strategy (``evaluation.py``)
-'''''''''''''''''''''''''''''''''''''''
+Evaluation Strategy
+"""""""""""""""""""
 
-Definition of the model evaluation strategy for both the development (backtesting) and production
-:doc:`lifecycle <lifecycle>`.
+Definition of the :doc:`model evaluation strategy <evaluation>` for both the development and
+production :doc:`lifecycles <lifecycle>` provided as the
+:class:`project.Evaluation <forml.project.Evaluation>` descriptor.
 
-.. note:: The whole evaluation implementation is an interim and more robust concept with different API is on the
-   roadmap.
+.. code-block:: python
+   :caption: evaluation.py or evaluation/__init__.py
+   :linenos:
 
-The evaluation strategy again needs to be submitted to the framework using the ``project.setup()`` handler::
-
-    from sklearn import model_selection, metrics
+    from sklearn import metrics
     from forml import evaluation, project
 
     EVALUATION = project.Evaluation(
-        metric.Function(metrics.log_loss),
+        evaluation.Function(metrics.log_loss),
         evaluation.HoldOut(test_size=0.2, stratify=True, random_state=42),
     )
-    project.setup(EVAL)
-
-
-.. _project-tuning:
-
-Hyperparameter Tuning Strategy (``tuning.py``)
-''''''''''''''''''''''''''''''''''''''''''''''
-
-
-.. _project-schedule:
-
-Scheduling Rules (``schedule.py``)
-''''''''''''''''''''''''''''''''''
-
+    project.setup(EVALUATION)
 
 
 Tests
-'''''
+^^^^^
 
-ForML has a rich operator unit testing facility (see the :doc:`testing` sections) which can be integrated into the usual
-``tests/`` project structure.
+ForML has a rich operator unit testing facility which can be integrated into the usual ``tests/``
+project structure. This topic is extensively covered in a separate :doc:`testing` chapter.

@@ -16,14 +16,14 @@
 # under the License.
 
 """
-ForML virtual registry unit tests.
+ForML volatile registry unit tests.
 """
 import typing
 
 import pytest
 
 from forml.io import asset
-from forml.provider.registry.filesystem import virtual
+from forml.provider.registry.filesystem import volatile
 
 from .. import Registry
 
@@ -34,4 +34,4 @@ class TestRegistry(Registry):
     @staticmethod
     @pytest.fixture(scope='session')
     def constructor() -> typing.Callable[[], asset.Registry]:
-        return virtual.Registry
+        return volatile.Registry

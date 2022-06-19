@@ -35,8 +35,8 @@ provider = "pyfunc"
 [REGISTRY]
 default = "homedir"
 
-[REGISTRY.virtual]
-provider = "virtual"
+[REGISTRY.volatile]
+provider = "volatile"
 
 [REGISTRY.homedir]
 provider = "posix"

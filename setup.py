@@ -49,8 +49,6 @@ EXTRAS_DOCS = {
     'nbsphinx',
 }
 
-EXTRAS_PIPELINE = {'pandas', 'scikit-learn'}
-
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
 EXTRAS_MLFLOW = {'mlflow'}
@@ -59,16 +57,7 @@ EXTRAS_REST = {'starlette', 'uvicorn'}
 
 EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
-EXTRAS_ALL = (
-    EXTRAS_DASK
-    | EXTRAS_DEV
-    | EXTRAS_DOCS
-    | EXTRAS_PIPELINE
-    | EXTRAS_MLFLOW
-    | EXTRAS_GRAPHVIZ
-    | EXTRAS_REST
-    | EXTRAS_SQL
-)
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOCS | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_REST | EXTRAS_SQL
 
 setuptools.setup(
     name='forml',
@@ -82,13 +71,22 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
     setup_requires=['setuptools', 'wheel', 'toml'],
-    install_requires=['click', 'cloudpickle', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
+    install_requires=[
+        'click',
+        'cloudpickle',
+        'numpy',
+        'packaging>=20.0',
+        'pandas',
+        'pip',
+        'scikit-learn',
+        'setuptools',
+        'toml',
+    ],
     extras_require={
         'all': EXTRAS_ALL,
         'dask': EXTRAS_DASK,
         'dev': EXTRAS_DEV,
         'docs': EXTRAS_DOCS,
-        'pipeline': EXTRAS_PIPELINE,
         'graphviz': EXTRAS_GRAPHVIZ,
         'mlflow': EXTRAS_MLFLOW,
         'rest': EXTRAS_REST,

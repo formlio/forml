@@ -16,18 +16,20 @@
 Tutorials
 =========
 
-The easiest way to get started with ForML is to go through its practical tutorials presented in this chapter. Assuming
-you've already installed ForML as per the :doc:`installation instructions <../install>` and ideally
-also familiarized yourself with the :doc:`ForML concepts <../concept>`, you can now go straight through the following
-list of step-by-step examples demonstrating the ForML capabilities.
+The easiest way to get started with ForML is to go through its practical tutorials presented in
+this chapter. Assuming you've already installed ForML as per the :doc:`installation instructions
+<../install>` and ideally also familiarized yourself with the :doc:`ForML concepts <../concept>`,
+you can now go straight through the following list of step-by-step examples demonstrating the
+ForML capabilities.
 
 .. important::
     Before proceeding with any of the tutorials, make sure to configure your environment as per the
     :doc:`common setup instructions<common>`.
 
-The high-level list of the available tutorials is as follows:
+The list of the available tutorials is as follows:
 
-* :doc:`Pipeline demos <demos>` is a set of small *snippets* demonstrating the pipeline composition fundamentals.
+* :doc:`Pipeline demos <demos>` is a set of small *snippets* demonstrating the pipeline
+  composition fundamentals.
 * :doc:`Titanic challenge <titanic>` is a *complete* end-to-end ML project implemented using ForML.
 
 

@@ -40,12 +40,18 @@ LOGGER = logging.getLogger(__name__)
 
 
 def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
-    """Dummy component setup representing the API signature of the fake module injected by load.Component.setup.
+    """Interface for registering principal component instances.
+
+    This function is expected to be called exactly once from within every component module passing
+    the component instance.
+
+    The true implementation of this function is only provided when imported within the *component
+    loader context* (outside the context this is effectively no-op).
 
     Args:
-        instance: Component instance to be registered.
+        instance: Principal component instance to be registered.
     """
-    LOGGER.debug('Setup accessed outside of a Context')
+    LOGGER.debug('Principal component setup attempted outside of a loader context: %s', instance)
 
 
 class Source(typing.NamedTuple):
@@ -59,7 +65,9 @@ class Source(typing.NamedTuple):
         typing.Sequence[dsl.Feature],
         flow.Builder[flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
     ]
-    """Label type - either single column, multiple columns or generic label extracting actor (with two output ports)."""
+    """Label type - either single column, multiple columns or generic label extracting actor (with
+    two output ports).
+    """
 
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
@@ -99,14 +107,15 @@ class Source(typing.NamedTuple):
         apply: typing.Optional[dsl.Queryable] = None,
         ordinal: typing.Optional[dsl.Operable] = None,
     ) -> 'Source':
-        """Create new source component with the given parameters. All parameters are the DSL objects - either queries
-        or columns.
+        """Create new source component with the given parameters. All parameters are the DSL objects
+         - either queries or columns.
 
         Args:
             features: Query defining the train (and if same also the ``apply``) features.
             labels: (Sequence of) training label column(s) or label extraction actor builder.
-            apply: Optional query defining the apply features (if different from train ones). If provided, it must
-                   result in the same schema as the main provided via ``features``.
+            apply: Optional query defining the apply features (if different from train ones).
+                   If provided, it must result in the same schema as the main provided via
+                   ``features``.
             ordinal: Optional specification of an ordinal column.
 
         Returns:
@@ -145,7 +154,9 @@ class Virtual:
 
     def __init__(self, component: typing.Any, package: typing.Optional[str] = None):
         def onexec(_: types.ModuleType) -> None:
-            """Module onexec handler that fakes the component registration using the setup() method."""
+            """Module onexec handler that fakes the component registration using the setup()
+            method.
+            """
             LOGGER.debug('Accessing virtual component module')
             getattr(importlib.import_module(__name__), setup.__name__)(component)
 

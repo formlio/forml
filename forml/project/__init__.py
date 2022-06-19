@@ -46,14 +46,14 @@ def open(  # pylint: disable=redefined-builtin
     package: typing.Optional[str] = None,
     **modules: typing.Any,
 ) -> Artifact:
-    """Shortcut for getting a product artifact.
+    """Getting a programmatic handle to a local ForML project.
 
     Args:
-        path: Filesystem path to a package root.
-        package: Package name.
-        **modules: Project module mappings.
+        path: Filesystem path to the project source package root.
+        package: Project package name.
+        **modules: Project component module path mappings.
 
     Returns:
-        Product artifact.
+        Project artifact.
     """
     return Artifact(path, package, **modules)

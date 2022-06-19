@@ -28,6 +28,10 @@ The two main subsystems a platform uses to handle the pipeline I/O are described
 * :doc:`feed` - resolving project defined ETL and supplying the requested data
 * :doc:`sink` - consuming the pipeline output
 
+Payloads
+--------
+
+agnostic, compatibility is users choice/responsibility
 
 .. _io-catalogized-schemas:
 
@@ -58,6 +62,8 @@ producers. For private first-party datasets (ie. internal company data) this is 
 ForML) would just maintain a (private) package with schemas of their data sources. For public datasets (whose authors
 don't endorse ForML yet) this leaves it to some (not yet established) community maintained schema catalogs.
 
+TODO: openschema
+
 See the :doc:`dsl` for a schema implementation guide.
 
 .. _io-source-descriptor:
@@ -69,6 +75,14 @@ ForML projects specify their input data requirements (mainly the ETL :doc:`DSL <
 with other transforming operators) in form of a *source descriptor* (supplied within the :doc:`project structure
 <project>` using the :ref:`source.py <project-source>` component).
 
-This descriptor is created using the ``forml.project.Source.query()`` class method:
+Part of the dataset specification can also be a reference to the *ordinal* column (used for
+determining data ranges for splitting or incremental operations) and *label* columns for
+supervised learning/evaluation.
+
+This descriptor is created using the ``project.Source.query()`` class method:
 
 .. automethod:: forml.project.Source.query
+
+.. note:: The descriptor allows to further compose with other operators using the usual ``>>`` syntax. Source
+          composition scope is separate from the main pipeline so adding an operator to the source
+          composition vs pipeline composition might have a different effect.

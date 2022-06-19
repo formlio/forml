@@ -112,7 +112,7 @@ html_theme_options = {
     'repo_name': 'formlio/forml',
     'repo_type': 'github',
     'edit_uri': 'blob/main/docs',
-    # "google_analytics": ["UA-XXXXX", "auto"],
+    'google_analytics': ['G-GGNVJ2N8MF', 'auto'],
     'features': [
         # "navigation.expand",
         # "navigation.tabs",

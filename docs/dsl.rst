@@ -82,6 +82,8 @@ Following is the list of types (aka *kinds*) that can be used in schema field de
    forml.io.dsl.Struct
 
 
+.. _dsl-query:
+
 Query
 -----
 

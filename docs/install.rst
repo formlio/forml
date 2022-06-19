@@ -67,8 +67,6 @@ mechanism (i.e. using the OS package manager).
 +----------+---------------------------------------+----------------------------------------------------------------+
 | mlflow   | ``pip install 'forml[mlflow]'``       | Model registry backed by the MLFlow Tracking server            |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| pipeline | ``pip install 'forml[pipeline]'``     | Bunch of useful operators and actors shipped with ForML        |
-+----------+---------------------------------------+----------------------------------------------------------------+
 | rest     | ``pip install 'forml[rest]'``         | RESTful serving gateway                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | sql      | ``pip install 'forml[sql]'``          | SQL reader dependencies                                        |

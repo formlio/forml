@@ -32,7 +32,7 @@ from forml.pipeline import wrap
 
 @wrap.Operator.mapper
 @wrap.Actor.apply
-def parse_title(features: pandas.DataFrame, *, source: str, target: str) -> pandas.DataFrame:
+def ParseTitle(features: pandas.DataFrame, *, source: str, target: str) -> pandas.DataFrame:
     """Transformer extracting a person's title from the name string."""
 
     def get_title(name: str) -> str:
@@ -46,7 +46,7 @@ def parse_title(features: pandas.DataFrame, *, source: str, target: str) -> pand
 
 
 @wrap.Actor.train
-def impute(
+def Impute(
     state: typing.Optional[dict[str, float]],  # pylint: disable=unused-argument
     features: pandas.DataFrame,
     labels: pandas.Series,  # pylint: disable=unused-argument
@@ -61,8 +61,8 @@ def impute(
 
 
 @wrap.Operator.mapper
-@impute.apply
-def impute(
+@Impute.apply
+def Impute(
     state: dict[str, float], features: pandas.DataFrame, random_state: typing.Optional[int] = None
 ) -> pandas.DataFrame:
     """Apply part of a stateful transformer for missing values imputation."""
@@ -79,7 +79,7 @@ def impute(
 
 
 @wrap.Actor.train
-def encode(
+def Encode(
     state: typing.Optional[preprocessing.OneHotEncoder],  # pylint: disable=unused-argument
     features: pandas.DataFrame,
     labels: pandas.Series,  # pylint: disable=unused-argument
@@ -92,8 +92,8 @@ def encode(
 
 
 @wrap.Operator.mapper
-@encode.apply
-def encode(
+@Encode.apply
+def Encode(
     state: preprocessing.OneHotEncoder, features: pandas.DataFrame, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:
     """Apply part of a stateful encoder for the various categorical features."""
