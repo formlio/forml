@@ -33,6 +33,7 @@ While developing, ForML allows to execute the project source-code working copy b
 To discover the structure of some real ForML project, it is worth exploring the available
 :doc:`tutorials <tutorials/titanic>`.
 
+.. _project-init:
 
 Starting a New Project
 ----------------------

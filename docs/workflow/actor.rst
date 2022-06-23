@@ -27,6 +27,8 @@ transformation of the passing data.
     with is the actor interconnection within the overall flow topology - responsibility for their
     logical and functional compatibility is solely in hands of the implementor.
 
+.. _actor-type:
+
 The two main actor types are:
 
 #. Plain *stateless* actors which define output as a function applied just to their input.
@@ -48,7 +50,7 @@ engaged when in each of the particular actor modes:
 
     graph LR
         subgraph Actor
-        A(apply-mode)
+        A([apply-mode])
         T[train-mode]
         end
         subgraph Input Ports

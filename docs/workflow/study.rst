@@ -94,13 +94,13 @@ This straightforward implementation produces a ``PIPELINE`` represented using a 
 
     graph TD
         subgraph Train-mode
-        btl("Binarizer.apply()") -- L --> stt["Scaler.train()"] & ltt["LogisticRegression.train()"]
-        sta("Scaler.apply()") --> ltt
+        btl(["Binarizer.apply()"]) -- L --> stt["Scaler.train()"] & ltt["LogisticRegression.train()"]
+        sta(["Scaler.apply()"]) --> ltt
         stt -. state .-> sta
         end
 
         subgraph Apply-mode
-        saa("Scaler.apply()") --> laa("LogisticRegression.apply()")
+        saa(["Scaler.apply()"]) --> laa(["LogisticRegression.apply()"])
         stt -. state .-> saa
         ltt -. state .-> laa
         end
@@ -248,20 +248,20 @@ of the branches) to just ``2``. That leads to the following diagram:
 
     graph TD
         subgraph Train-mode
-        btl("Binarizer.apply()") -- L --> ftl("Splitter[L].apply()") & ltt["LogisticRegression.train()"]
-        fta("Splitter[F].apply()") -- F1 --> s1tt["Scaler[1].train()"] & s1ta("Scaler[1].apply()")
-        fta -- F2 --> s2tt["Scaler[2].train()"] & s2ta("Scaler[2].apply()")
+        btl(["Binarizer.apply()"]) -- L --> ftl(["Splitter[L].apply()"]) & ltt["LogisticRegression.train()"]
+        fta(["Splitter[F].apply()"]) -- F1 --> s1tt["Scaler[1].train()"] & s1ta(["Scaler[1].apply()"])
+        fta -- F2 --> s2tt["Scaler[2].train()"] & s2ta(["Scaler[2].apply()"])
         ftl -- L1 --> s1tt
         ftl -- L2 --> s2tt
         s1ta & s2ta --> cta
-        cta("Concat.apply()") --> ltt
+        cta(["Concat.apply()"]) --> ltt
         s1tt -. state .-> s1ta
         s2tt -. state .-> s2ta
         end
 
         subgraph Apply-mode
-        s1aa("Scaler[1].apply()") & s2aa("Scaler[2].apply()") --> raa("Mean.apply()")
-        raa --> laa("LogisticRegression.apply()")
+        s1aa(["Scaler[1].apply()"]) & s2aa(["Scaler[2].apply()"]) --> raa(["Mean.apply()"])
+        raa --> laa(["LogisticRegression.apply()"])
         ltt -. state .-> laa
         s1tt -. state .-> s1aa
         s2tt -. state .-> s2aa

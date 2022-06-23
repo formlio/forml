@@ -73,8 +73,8 @@ The following diagram outlines the flows:
     graph LR
         subgraph Mapper Worker Group
         tt["mapper@train-mode.train()"]
-        ta("mapper@train-mode.apply()")
-        aa("mapper@apply-mode.apply()")
+        ta(["mapper@train-mode.apply()"])
+        aa(["mapper@apply-mode.apply()"])
         tt -. state .-> ta & aa
         end
         subgraph Trunk Heads
@@ -144,14 +144,14 @@ That would render the following task graphs:
     graph TD
         subgraph Foo Worker Group
         tft["foo@train-mode.train()"]
-        tfa("foo@train-mode.apply()")
-        afa("foo@apply-mode.apply()")
+        tfa(["foo@train-mode.apply()"])
+        afa(["foo@apply-mode.apply()"])
         tft -. state .-> tfa & afa
         end
         subgraph Bar Worker Group
         tbt["bar@train-mode.train()"]
-        tba("bar@train-mode.apply()")
-        aba("bar@apply-mode.apply()")
+        tba(["bar@train-mode.apply()"])
+        aba(["bar@apply-mode.apply()"])
         tbt -. state .-> tba & aba
         end
         subgraph Trunk Heads

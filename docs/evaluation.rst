@@ -35,7 +35,9 @@ Train-Test Evaluation
 
 .. _evaluation-prod
 
-Production Performance Monitoring
----------------------------------
+Production Performance Reporting
+--------------------------------
+Measure the actual performance of the model as predictions against the (previously unseen) true
+labelled data.
 
 drift detection

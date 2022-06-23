@@ -16,15 +16,15 @@
 Lifecycle Management
 ====================
 
-Machine learning projects are operated using a typical set of actions applied in a specific
-order. This pattern is what we call a *lifecycle*. ForML supports two particular lifecycles
+Machine learning projects are handled using a typical set of actions applied in a specific
+order. This pattern is what we call a *lifecycle*. ForML supports two distinct lifecycles
 depending on the project stage.
 
 .. caution::
-   Do not confuse the lifecycles with *operational modes*. Forml projects can be operated in a
-   number of different modes (:ref:`cli/batch <platform-cli>` - as used in the examples bellow,
+   Do not confuse the lifecycles with *processing mechanism*. Forml projects can be operated in a
+   number of different ways (:ref:`cli/batch <platform-cli>` - as used in the examples bellow,
    :doc:`interactively <interactive>` or using the :doc:`serving engine <serving>`) each of which is
-   subject to a relevant lifecycle.
+   subject to a particular lifecycle.
 
 
 Iteration Accomplishment
@@ -32,7 +32,7 @@ Iteration Accomplishment
 
 The ultimate milestone of each of the lifecycles is the point of producing (a new instance of)
 the particular :ref:`runtime artifacts <registry-artifacts>`. This concludes the given iteration
-and the process can start over and/or transit between the two lifecycles.
+and the process can start over and/or transit between the two lifecycles back and forth.
 
 .. _lifecycle-generation:
 
@@ -53,7 +53,7 @@ Generations get transparently persisted in model registry as the :ref:`model gen
 
 .. _lifecycle-release:
 
-Release Rollout
+Release Roll-out
 ^^^^^^^^^^^^^^^
 
 The milestone of the :ref:`development lifecycle <lifecycle-development>` is the roll-out of a new
@@ -72,18 +72,43 @@ persisted in the :ref:`model registry <registry-package>`.
 Lifecycle Actions
 -----------------
 
+A simplified logical flow of the individual steps and interactions between the two lifecycles is
+illustrated by the following diagram:
+
+
+.. md-mermaid::
+    graph TD
+        subgraph development [Development Lifecycle]
+        implement(Explore / Implement) --> traineval(Test + Evaluate)
+        traineval -- Metrics --> release{Release?}
+        release -- No --> implement
+        release -- Yes --> package(Package) --> upload[(Upload)]
+        end
+        init((Init)) --> implement
+
+        subgraph production [Production Lifecycle]
+        renew{Renew?} -- Yes --> how{How?}
+        how -- Refresh --> train
+        how -- Reimplement --> implement
+        upload -- Release Roll-out --> train[Train / Tune]
+        train -- Generation Advancement --> apply([Apply / Serve])
+        apply --> applyeval(Evaluate)
+        applyeval -- Metrics --> renew
+        renew -- No --> apply
+        end
 
 .. _lifecycle-development:
 
 Development Lifecycle
 ^^^^^^^^^^^^^^^^^^^^^
 
-As the name suggests, this lifecycle is followed during the project development in scope of the
+As the name suggests, this lifecycle is exercised during the project development in scope of the
 :doc:`project source-code <project>` working copy. It is typically managed using the ``python
 setup.py <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the :ref:`virtual
 launcher <runner-virtual>` API when visited in the :doc:`interactive mode <interactive>`.
 
-The expected behaviour of the particular mode depends on the correct :doc:`project setup <project>`.
+The expected behaviour of the particular action depends on the correct :doc:`project setup
+<project>`.
 
 .. hint::
    Any :ref:`model generations <lifecycle-generation>` produced within the development lifecycle
@@ -114,24 +139,13 @@ Example:
 
     $ python3 setup.py eval
 
-Tune
-""""
-
-Run hyper-parameter tuning reporting the results (not implemented).
-
-Example:
-
-.. code-block:: console
-
-    $ python3 setup.py tune
-
 Train
 """""
 
-Run the :ref:`project pipeline <project-pipeline>` in the standard *train* mode. Even though this
-will produce a true generation of the defined models, it won't get persisted across the
-invocations making this mode useful merely for smoke-testing the training process (or displaying
-the task graph on the :doc:`Graphviz runner <runner/graphviz>`).
+Run the :ref:`project pipeline <project-pipeline>` in the standard :ref:`train mode
+<workflow-mode>`. Even though this will produce a true generation of the defined models, it won't
+get persisted across the invocations making this mode useful merely for smoke-testing the
+training process (or displaying the task graph on the :doc:`Graphviz runner <runner/graphviz>`).
 
 Example:
 
@@ -186,7 +200,7 @@ development, the production lifecycle no longer needs the project source-code wo
 operates solely on that published release package (plus potentially the previously persisted
 :ref:`model generations <registry-assets>`).
 
-The production lifecycle is either managed in batch mode using :ref:`the CLI <platform-cli>` or
+The production lifecycle is either managed in batch mode using the :ref:`CLI <platform-cli>` or
 embedded within a :doc:`serving engine <serving>`.
 
 The stages of the production lifecycle are:
@@ -194,8 +208,9 @@ The stages of the production lifecycle are:
 Train
 """""
 
-Fit (incrementally) the stateful parts of the pipeline using new labelled data producing a new *Generation* of
-the given release (unless explicit, the default release is the one with the highest version).
+Run the :ref:`project pipeline <project-pipeline>` in the :ref:`train mode <workflow-mode>` to
+produce :ref:`new generation <lifecycle-generation>` and persist it in the :doc:`model registry
+<registry>`.
 
 Example:
 
@@ -218,21 +233,28 @@ Example:
 Apply
 """""
 
-Run unlabelled data through a project *generation* (unless explicit, the default generation is the one with the
-highest version) producing transformed output (ie *predictions*).
+Run the previously trained :ref:`project pipeline <project-pipeline>` in the :ref:`apply
+mode <workflow-mode>` using an existing :ref:`model generation <lifecycle-generation>` (explicit
+version or by default the latest) loaded from the :doc:`model registry <registry>`.
 
-Example::
+Example:
 
 .. code-block:: console
 
     forml model apply forml-example-titanic
 
+.. seealso::
+   In addition to this commandline based batch mechanism, the :doc:`serving engine <serving>`
+   together with the :doc:`application concept <application>` is another way of performing the
+   apply action of the production lifecycle.
+
 Evaluate
 """"""""
 
-Measure the actual performance of the model as predictions against the (previously unseen) true labelled data.
+Perform the :ref:`production performance evaluation <evaluation-prod>` based on the
+:ref:`evaluation.py component <project-evaluation>` and report the metrics.
 
-Example::
+Example:
 
 .. code-block:: console
 

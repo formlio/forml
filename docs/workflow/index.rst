@@ -43,11 +43,26 @@ the following concepts:
 :doc:`Topology <topology>`
     is the particular interconnection of the individual actors determining their dependencies.
 
+.. _workflow-mode:
+
+ForML integrates the two-fold concept typical for supervised learning where the :ref:`stateful
+components <actor-type>` of the particular solution are operated in two distinct modes:
+
+#. The *train-mode* (aka *fit*) allowing the relevant components to acquire internal state
+   generalizing the processed data.
+#. *Apply-mode* (aka *predict*) where the previously trained components are applied to unseen
+   data to provide the estimated outcome.
+
+ForML uniquely builds this duality straight into its workflow architecture, hence the modality
+extends from the individual components to the entire workflow. Thus, each workflow is operated
+either in *train-mode* or *apply-mode*.
+
+
 .. important::
     While the other ML frameworks and platforms out there are typically *model-centric* (having
     their discrete *train* process produce *model(s)* that get separately deployed for serving
     the *predict* phase), ForML, in contrast, is rather *workflow-centric* - ensuring all the
-    steps (i.e. workflow) applied during the *predict* phase consistently reflect the original
+    steps (i.e. workflow) applied during the *apply-mode* consistently reflect the original
     *train* process. That's achieved by an inseparable integration of both the *train* as well as
     the *apply* (predict) representations of the specific ML scenario into a single ForML
     expression. Essentially every single ForML workflow expands into one of the two related task

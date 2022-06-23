@@ -67,12 +67,12 @@ This gives us the following disconnected workers:
 .. md-mermaid::
 
     graph LR
-        sfbi((i)) --> sfb(select_foobar) --> sfbo((o))
-        szi((i)) --> sz(select_baz) --> szo((o))
-        ci1((i1)) & ci2((i2)) --> c(concat) --> co((o))
-        dbi((i)) --> db(drop_bar) --> dbo((o))
-        sri((i)) --> sb(select_bar) --> sro((o))
-        ibai((i)) --> iba("impute_baz.apply()") --> ibao((o))
+        sfbi((i)) --> sfb([select_foobar]) --> sfbo((o))
+        szi((i)) --> sz([select_baz]) --> szo((o))
+        ci1((i1)) & ci2((i2)) --> c([concat]) --> co((o))
+        dbi((i)) --> db([drop_bar]) --> dbo((o))
+        sri((i)) --> sb([select_bar]) --> sro((o))
+        ibai((i)) --> iba(["impute_baz.apply()"]) --> ibao((o))
 
 .. note::
     All the actors we chose in this example work with Pandas payload - by no means this is some
@@ -112,10 +112,10 @@ Now, with that connections between our nodes, the topology looks shown:
 .. md-mermaid::
 
     graph LR
-        sfbi((i)) --> sfb(select_foobar) -- "0-0" --> c(concat)
-        sbi((i)) --> sz(select_baz) -- "0-1" --> c
-        c -- "0-0" --> db(drop_bar) -- "0-0" --> iba("impute_baz.apply()") --> ibao((o))
-        c -- "0-0" --> sb(select_bar) --> sro((o))
+        sfbi((i)) --> sfb([select_foobar]) -- "0-0" --> c([concat])
+        sbi((i)) --> sz([select_baz]) -- "0-1" --> c
+        c -- "0-0" --> db([drop_bar]) -- "0-0" --> iba(["impute_baz.apply()"]) --> ibao((o))
+        c -- "0-0" --> sb([select_bar]) --> sro((o))
 
 
 .. _topology-state:
@@ -157,13 +157,13 @@ original ``impute_baz_apply``. The task graph now looks like this:
 
     graph LR
         subgraph Group
-        iba("impute_baz.apply()")
+        iba(["impute_baz.apply()"])
         ibt["impute_baz.train()"]
         end
-        sfbi((i)) --> sfb(select_foobar) -- "0-0" --> c(concat)
-        sbi((i)) --> sz(select_baz) -- "0-1" --> c
-        c -- "0-0" --> db(drop_bar) -- "0-0" --> iba --> ibao((o))
-        c -- "0-0" --> sb(select_bar) -- "0-L" --> ibt
+        sfbi((i)) --> sfb([select_foobar]) -- "0-0" --> c([concat])
+        sbi((i)) --> sz([select_baz]) -- "0-1" --> c
+        c -- "0-0" --> db([drop_bar]) -- "0-0" --> iba --> ibao((o))
+        c -- "0-0" --> sb([select_bar]) -- "0-L" --> ibt
         db -- "0-T" --> ibt
 
 
@@ -204,8 +204,8 @@ The following example demonstrates the effect when using the *Future* nodes:
 .. md-mermaid::
 
     graph LR
-        w1(worker1) --> f1((future1))
-        f2((future2)) --> w2(worker2)
+        w1([worker1]) --> f1((future1))
+        f2((future2)) --> w2([worker2])
 
 
 As the diagram shows, we have ``worker1`` node connecting its first *apply* output port to the
@@ -221,7 +221,7 @@ after subscribing the ``future2`` node to the ``future1`` output, you can see ho
 .. md-mermaid::
 
     graph LR
-        w1(worker1) --> w2(worker2)
+        w1([worker1]) --> w2([worker2])
 
 
 .. warning::
@@ -282,13 +282,13 @@ system nodes plus connecting the relevant *State* ports (dotted lines):
 
     graph TD
         subgraph Group
-        iba("impute_baz.apply()")
+        iba(["impute_baz.apply()"])
         ibt["impute_baz.train()"]
         end
-        sfbi((i)) --> sfb(select_foobar) -- "0-0" --> c(concat)
-        sbi((i)) --> sz(select_baz) -- "0-1" --> c
-        c -- "0-0" --> db(drop_bar) -- "0-0" --> iba --> ibao((o))
-        c -- "0-0" --> sb(select_bar) -- "0-L" --> ibt
+        sfbi((i)) --> sfb([select_foobar]) -- "0-0" --> c([concat])
+        sbi((i)) --> sz([select_baz]) -- "0-1" --> c
+        c -- "0-0" --> db([drop_bar]) -- "0-0" --> iba --> ibao((o))
+        c -- "0-0" --> sb([select_bar]) -- "0-L" --> ibt
         db -- "0-T" --> ibt
         ibt -. state .-> iba
         l[(loader)] -. state .-> ibt -. state .-> d[(dumper)]

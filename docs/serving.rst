@@ -13,8 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Serving Mode
-============
+Serving Engine
+==============
 
 In addition to the basic :ref:`CLI driven <platform-cli>` isolated batch mode, ML projects implemented on ForML can be
 embedded into a dynamic serving layer and operated in an autonomous *full-cycle* fashion. This layer continuously serves

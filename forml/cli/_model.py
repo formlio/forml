@@ -47,7 +47,7 @@ class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, si
         parent: 'cli.Scope',
         runner: typing.Optional[str],
         registry: typing.Optional[str],
-        feed: typing.Optional[str],
+        feed: typing.Optional[typing.Sequence[str]],
         sink: typing.Optional[str],
     ):
         return super().__new__(
@@ -99,7 +99,7 @@ def group(
     context: core.Context,
     runner: typing.Optional[str],
     registry: typing.Optional[str],
-    feed: typing.Optional[str],
+    feed: typing.Optional[typing.Sequence[str]],
     sink: typing.Optional[str],
 ):
     """Model command group."""
