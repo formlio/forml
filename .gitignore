@@ -11,7 +11,6 @@ docs/_build
 *.egg-info
 .eggs
 htmlcov
-.idea
 .ipynb_checkpoints
 junit.xml
 *.log
@@ -19,5 +18,12 @@ junit.xml
 *.pyc
 .pytest_cache
 .tox
-.venv
+
+# IDEs
+.idea
+*.iml
 .vscode
+
+# venv
+.venv
+.python-version
