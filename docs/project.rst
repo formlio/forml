@@ -45,6 +45,7 @@ scratch or simply via the ``init`` subcommand of the ``forml`` :ref:`platform-cl
 
     $ forml project init myproject
 
+.. _project-structure
 
 Component Structure
 -------------------
@@ -141,8 +142,8 @@ These are the actual high-level blocks of the particular ForML solution provided
 
 .. hint::
     ForML doesn't care whether the principal component is defined as a module (a file with ``.py``
-    suffix) or a package (a subdirectory with ``__init__.py`` file in it) since both have the same
-    import syntax.
+    suffix) or a package (a subdirectory with :file:`__init__.py` file in it) since both have the
+    same import syntax.
 
 To load each of the principal components, ForML relies on the ``project.setup()`` function as the
 expected component registration interface:

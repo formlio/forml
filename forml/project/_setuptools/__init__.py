@@ -21,6 +21,7 @@ Customized setuptools.
 import inspect
 import logging
 import os
+import pathlib
 import sys
 import typing
 
@@ -47,16 +48,17 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
     def __init__(
         self,
         attrs: typing.Optional[typing.Mapping[str, typing.Any]] = None,
-        project_dir: str = os.path.dirname(sys.argv[0]),  # noqa: B008
+        project_dir: typing.Optional[typing.Union[pathlib.Path, str]] = None,
     ):
         # mapping between standard forml components and their implementing modules within the project
         self.component: typing.Mapping[str, str] = {}
         attrs = dict(attrs or ())
         attrs.setdefault('cmdclass', {}).update(self.COMMANDS)
         super().__init__(attrs)
+        project_dir = pathlib.Path(project_dir or os.path.dirname(sys.argv[0]))
         package_dir = self.package_dir or {}  # pylint: disable=access-member-before-definition
         package_dir.setdefault('', '.')
-        self.package_dir = {p: os.path.join(project_dir, d) for p, d in package_dir.items()}
+        self.package_dir = {p: str(project_dir / d) for p, d in package_dir.items()}
 
     def run_commands(self):
         """Overriding the default functionality to allow bypassing the execution if not called from setup.py:setup.

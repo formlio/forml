@@ -24,33 +24,34 @@ To install the pre-packaged version of ForML simply use ``pip``:
 
 .. code-block:: console
 
-    pip install forml
+    $ pip install forml
 
 
 Dependency Constraints
 ----------------------
 
-Being a framework, the ForML distribution package comes with unpinned dependencies to give enough flexibility to the
-client applications. For reproducibility, there is a ``constraints.txt`` provided to offer a known-to-be-working
-combination of all of the dependencies used by ForML. To install ForML using these dependencies, simply add the
-``--constraints`` to (any of the mentioned) ``pip install`` commands:
+Being a framework, the ForML distribution package comes with unpinned dependencies to give enough
+flexibility to the client applications. For reproducibility, there is a ``constraints.txt``
+provided to offer a known-to-be-working combination of all of the dependencies used by ForML. To
+install ForML using these dependencies, simply add the ``--constraint`` to (any of the mentioned)
+``pip install`` commands:
 
 .. code-block:: console
 
-    pip install --constraints https://raw.githubusercontent.com/formlio/forml/main/constraints.txt forml
+    $ pip install --constraint https://raw.githubusercontent.com/formlio/forml/main/constraints.txt forml
 
 Extra Features
 --------------
 
-ForML has several optional features with their own dependencies which can be pulled in during the installation like
-this:
+ForML has several optional features with their own dependencies which can be pulled in during the
+installation like this:
 
 .. code-block:: console
 
-    pip install 'forml[sql,dask]'
+    $ pip install 'forml[sql,dask]'
 
-Some of the features might have additional binary dependencies that need to be resolved using a system-dependant
-mechanism (i.e. using the OS package manager).
+Some of the features might have additional binary dependencies that need to be resolved using a
+system-dependant mechanism (i.e. using the OS package manager).
 
 +----------+---------------------------------------+----------------------------------------------------------------+
 | Feature  | Install Command                       | Description                                                    |

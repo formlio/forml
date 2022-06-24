@@ -290,8 +290,9 @@ easily mapped into a valid ForML actors using the ``@wrap.Actor.type`` wrapper f
 
 
 .. attention::
-    Rather then to just Actors, the third-party implementations are usually required to be
+    Rather then to just *actors*, the third-party implementations are usually required to be
     converted all the way to ForML :doc:`operators <operator>` to be eventually composable within
     the pipeline expressions. For this purpose, there is even easier method of turning those
-    implementations into operators with no effort using the ``@wrap.importer`` context manager -
-    see the :ref:`operator auto-wrapping <operator-autowrap>` section for more details.
+    implementations into operators with no effort using the
+    :func:`@wrap.importer <forml.pipeline.wrap.importer>` context manager - see the
+    :ref:`operator auto-wrapping <operator-autowrap>` section for more details.

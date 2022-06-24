@@ -10,8 +10,6 @@ alembic==1.8.0
     # via mlflow
 anyio==3.6.1
     # via starlette
-asgiref==3.5.2
-    # via uvicorn
 astroid==2.11.6
     # via pylint
 attrs==21.4.0
@@ -52,7 +50,7 @@ coverage==6.4.1
     # via pytest-cov
 dask==2022.6.0
     # via forml (setup.py)
-databricks-cli==0.16.8
+databricks-cli==0.17.0
     # via mlflow
 defusedxml==0.7.1
     # via nbconvert
@@ -80,7 +78,7 @@ flake8==4.0.1
     #   flake8-bugbear
     #   flake8-colors
     #   flake8-typing-imports
-flake8-bugbear==22.4.25
+flake8-bugbear==22.6.22
     # via forml (setup.py)
 flake8-colors==0.1.9
     # via forml (setup.py)
@@ -145,7 +143,7 @@ jupyterlab-pygments==0.2.2
     # via nbconvert
 lazy-object-proxy==1.7.1
     # via astroid
-libcst==0.4.4
+libcst==0.4.5
     # via pycln
 locket==1.0.0
     # via partd
@@ -186,7 +184,7 @@ nest-asyncio==1.5.5
     #   nbclient
 nodeenv==1.6.0
     # via pre-commit
-numpy==1.22.4
+numpy==1.23.0
     # via
     #   forml (setup.py)
     #   mlflow
@@ -203,7 +201,7 @@ packaging==21.3
     #   nbconvert
     #   pytest
     #   sphinx
-pandas==1.4.2
+pandas==1.4.3
     # via
     #   forml (setup.py)
     #   mlflow
@@ -238,7 +236,7 @@ protobuf==4.21.1
     # via mlflow
 py==1.11.0
     # via pytest
-pycln==1.3.3
+pycln==1.3.5
     # via forml (setup.py)
 pycodestyle==2.8.0
     # via flake8
@@ -254,7 +252,7 @@ pyhive==0.6.5
     # via forml (setup.py)
 pyjwt==2.4.0
     # via databricks-cli
-pylint==2.14.2
+pylint==2.14.3
     # via forml (setup.py)
 pyparsing==3.0.9
     # via packaging
@@ -285,7 +283,7 @@ pyyaml==6.0
     #   mlflow
     #   pre-commit
     #   pycln
-pyzmq==23.1.0
+pyzmq==23.2.0
     # via jupyter-client
 querystring-parser==1.2.4
     # via mlflow
@@ -348,7 +346,7 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
-sqlalchemy==1.4.37
+sqlalchemy==1.4.38
     # via
     #   alembic
     #   forml (setup.py)
@@ -357,7 +355,7 @@ sqlparse==0.4.2
     # via mlflow
 starlette==0.20.3
     # via forml (setup.py)
-tabulate==0.8.9
+tabulate==0.8.10
     # via databricks-cli
 threadpoolctl==3.1.0
     # via scikit-learn
@@ -403,7 +401,7 @@ typing-inspect==0.7.1
     # via libcst
 urllib3==1.26.9
     # via requests
-uvicorn==0.17.6
+uvicorn==0.18.1
     # via forml (setup.py)
 virtualenv==20.14.1
     # via pre-commit
@@ -411,7 +409,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.3.2
+websocket-client==1.3.3
     # via docker
 werkzeug==2.1.2
     # via flask

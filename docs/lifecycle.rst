@@ -61,13 +61,14 @@ The milestone of the :ref:`development lifecycle <lifecycle-development>` is the
 deployment. Releases are identified using the explicit versioning specified by the user as per the
 :ref:`project setup <project-setup>`.
 
-Upon :ref:`packaging <lifecycle-package>` and :ref:`uploading <lifecycle-upload>`, releases get
-persisted in the :ref:`model registry <registry-package>`.
+Upon releasing, the :ref:`ForML package <registry-package>` is produced and persisted in the
+model registry.
 
 .. caution::
    Given the different implementations, it is not possible to carry over states between generations
    of different releases.
 
+.. _lifecycle-actions:
 
 Lifecycle Actions
 -----------------
@@ -80,9 +81,9 @@ illustrated by the following diagram:
     graph TD
         subgraph development [Development Lifecycle]
         implement(Explore / Implement) --> traineval(Test + Evaluate)
-        traineval -- Metrics --> release{Release?}
-        release -- No --> implement
-        release -- Yes --> package(Package) --> upload[(Upload)]
+        traineval -- Metrics --> ready{Ready?}
+        ready -- No --> implement
+        ready -- Yes --> release[(Release)]
         end
         init((Init)) --> implement
 
@@ -90,7 +91,7 @@ illustrated by the following diagram:
         renew{Renew?} -- Yes --> how{How?}
         how -- Refresh --> train
         how -- Reimplement --> implement
-        upload -- Release Roll-out --> train[Train / Tune]
+        release -- Release Roll-out --> train[Train / Tune]
         train -- Generation Advancement --> apply([Apply / Serve])
         apply --> applyeval(Evaluate)
         applyeval -- Metrics --> renew
@@ -103,8 +104,8 @@ Development Lifecycle
 ^^^^^^^^^^^^^^^^^^^^^
 
 As the name suggests, this lifecycle is exercised during the project development in scope of the
-:doc:`project source-code <project>` working copy. It is typically managed using the ``python
-setup.py <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the :ref:`virtual
+:doc:`project source-code <project>` working copy. It is typically managed using the ``forml
+project <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the :ref:`virtual
 launcher <runner-virtual>` API when visited in the :doc:`interactive mode <interactive>`.
 
 The expected behaviour of the particular action depends on the correct :doc:`project setup
@@ -125,7 +126,7 @@ Example:
 
 .. code-block:: console
 
-    $ python3 setup.py test
+    $ forml project test
 
 Evaluate
 """"""""
@@ -137,7 +138,7 @@ Example:
 
 .. code-block:: console
 
-    $ python3 setup.py eval
+    $ forml project eval
 
 Train
 """""
@@ -151,34 +152,17 @@ Example:
 
 .. code-block:: console
 
-    $ python3 setup.py train
+    $ forml project train
 
-.. _lifecycle-package:
-
-Package
+Release
 """""""
 
-Create the distributable project artifact containing all of its dependencies in form of a
-:ref:`release package <registry-package>` (produced into the ``dist`` directory under the
-project root directory).
-
-Example:
-
-.. code-block:: console
-
-    $ python3 setup.py bdist_4ml
-
-.. _lifecycle-upload:
-
-Upload
-""""""
-
-Publish the *release package* into the configured :doc:`model registry<registry>`. This
-effectively constitutes a :ref:`release <lifecycle-release>` and the process can transition
-from here into the :ref:`production lifecycle <lifecycle-production>`.
+Build and publish the :ref:`release package <registry-package>` into the configured model
+registry. This effectively constitutes the :ref:`release roll-out <lifecycle-release>` and the
+process can transition from here into the :ref:`production lifecycle <lifecycle-production>`.
 
 .. warning::
-   Each :doc:`model registry <registry>` allows uploading only unique monotonically
+   Each :doc:`model registry <registry>` provider allows uploading only unique monotonically
    increasing releases per any given project, hence executing this stage twice against the
    same registry without incrementing the :ref:`project version <project-setup>` is an error.
 
@@ -186,7 +170,7 @@ Example:
 
 .. code-block:: console
 
-    $ python3 setup.py bdist_4ml upload
+    $ forml project release
 
 
 .. _lifecycle-production:
@@ -216,7 +200,7 @@ Example:
 
 .. code-block:: console
 
-    forml model train forml-example-titanic
+    $ forml model train forml-example-titanic
 
 Tune
 """"
@@ -228,7 +212,7 @@ Example:
 
 .. code-block:: console
 
-    forml model tune forml-example-titanic
+    $ forml model tune forml-example-titanic
 
 Apply
 """""
@@ -241,7 +225,7 @@ Example:
 
 .. code-block:: console
 
-    forml model apply forml-example-titanic
+    $ forml model apply forml-example-titanic
 
 .. seealso::
    In addition to this commandline based batch mechanism, the :doc:`serving engine <serving>`
@@ -258,4 +242,4 @@ Example:
 
 .. code-block:: console
 
-    forml model eval forml-example-titanic
+    $ forml model eval forml-example-titanic

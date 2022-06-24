@@ -23,7 +23,7 @@ Assuming you have no existing :doc:`feeds <../feed>` configured in your system y
 
 .. code-block:: console
 
-    pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
+    $ pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
 
 
 Let's now configure the local ForML :doc:`platform <../platform>` by adding the following content to your

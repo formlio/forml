@@ -19,12 +19,13 @@
 ForML command line interface.
 """
 import collections
+import functools
 import pathlib
+import sys
 import typing
 
 import click
 from click import core
-from setuptools import sandbox
 
 import forml
 from forml.io import dsl
@@ -39,12 +40,22 @@ class Scope(collections.namedtuple('Scope', 'parent, path')):
     parent: 'cli.Scope'
     path: pathlib.Path
 
-    def __new__(cls, parent: 'cli.Scope', path: typing.Optional[str]):
-        return super().__new__(cls, parent, pathlib.Path(path or '.'))
+    SETUP_NAME = 'setup.py'
 
-    def run_setup(self, *argv):
+    def __new__(cls, parent: 'cli.Scope', path: typing.Optional[str]):
+        return super().__new__(cls, parent, pathlib.Path(path or '.').absolute())
+
+    @functools.cached_property
+    def _setup_path(self) -> pathlib.Path:
+        """Get the absolute setup.py path."""
+        return self.path / self.SETUP_NAME
+
+    def run_setup(self, *argv: str, **options):
         """Interim hack to call the setup.py"""
-        sandbox.run_setup(self.path / 'setup.py', argv)
+        sys.argv[:] = [str(self._setup_path), *argv, *(a for k, v in options.items() if v for a in (f'--{k}', v))]
+        exec(  # pylint: disable=exec-used
+            self._setup_path.open().read(), {'__file__': sys.argv[0], '__name__': '__main__'}
+        )
 
 
 @click.group(name='project')
@@ -88,7 +99,7 @@ def train(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Train the project."""
-    scope.run_setup('train')
+    scope.run_setup('train', runner=runner, feed=feed, lower=lower, upper=upper)
 
 
 @group.command(name='eval')
@@ -105,7 +116,7 @@ def evaluate(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Evaluate the project."""
-    scope.run_setup('eval')
+    scope.run_setup('eval', runner=runner, feed=feed, lower=lower, upper=upper)
 
 
 @group.command()
