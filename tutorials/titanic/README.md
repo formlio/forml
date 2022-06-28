@@ -21,4 +21,4 @@ ForML Example Project Implementing the Titanic Solution
 =======================================================
 
 
-See to the [forml/docs/tutorial.rst](../../../docs/tutorial.rst) for the main tutorial refering to this demo project.
+See to the [forml/docs/tutorials/titanic.rst](../../docs/tutorials/titanic.rst) for the main tutorial refering to this demo project.
