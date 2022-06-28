@@ -18,7 +18,7 @@
 """
 ForML testing matchers unit tests.
 """
-# pylint: disable=protected-access,no-self-use
+# pylint: disable=protected-access
 
 import pandas
 import pytest

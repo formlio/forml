@@ -241,7 +241,7 @@ class Stateful(Type[tuple[typing.Callable[..., State], typing.Callable[..., flow
 
         def get_state(self) -> bytes:
             if self._state is None:
-                return bytes()
+                return b''
             return cloudpickle.dumps(self._state)
 
         def set_state(self, state: bytes) -> None:

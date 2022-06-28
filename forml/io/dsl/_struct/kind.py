@@ -28,19 +28,22 @@ import typing
 
 from .. import _exception
 
+if typing.TYPE_CHECKING:
+    from forml.io import dsl
+
 
 class Meta(abc.ABCMeta):
     """Meta class for all kinds."""
 
     @property
-    def __subkinds__(cls) -> typing.Iterable[type['Any']]:
+    def __subkinds__(cls) -> typing.Iterable[type['dsl.Any']]:
         """Return all non-abstract sub-classes of given kind class.
 
         Returns:
             Iterable of all sub-kinds.
         """
 
-        def scan(subs: typing.Iterable[type['Any']]) -> typing.Iterable[type['Any']]:
+        def scan(subs: typing.Iterable[type['dsl.Any']]) -> typing.Iterable[type['dsl.Any']]:
             """Scan the class subtree of given types.
 
             Args:
@@ -60,7 +63,7 @@ class Singleton(Meta):
     def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
         instance = None
 
-        def new(cls: type['Any']) -> 'Any':
+        def new(cls: type['dsl.Any']) -> 'dsl.Any':
             """Injected class new method ensuring singletons are only created."""
             nonlocal instance
             if not instance:
@@ -110,7 +113,7 @@ class Any(metaclass=Meta):
         return self.__class__.__name__
 
     @classmethod
-    def match(cls, kind: 'Any') -> bool:
+    def match(cls, kind: 'dsl.Any') -> bool:
         """Check given kind is of our type.
 
         Args:
@@ -122,7 +125,7 @@ class Any(metaclass=Meta):
         return isinstance(kind, cls)
 
     @classmethod
-    def ensure(cls, kind: 'Any') -> 'Any':
+    def ensure(cls, kind: 'dsl.Any') -> 'dsl.Any':
         """Ensure given kind is of our type.
 
         Args:
@@ -221,21 +224,21 @@ class Compound(Any, tuple):
 class Array(Compound):
     """Array data type class."""
 
-    element: Any = property(operator.itemgetter(0))
+    element: 'dsl.Any' = property(operator.itemgetter(0))
     __type__ = typing.Sequence
 
-    def __new__(cls, element: Any):
+    def __new__(cls, element: 'dsl.Any'):
         return tuple.__new__(cls, [element])
 
 
 class Map(Compound):
     """Map data type class."""
 
-    key: Any = property(operator.itemgetter(0))
-    value: Any = property(operator.itemgetter(1))
+    key: 'dsl.Any' = property(operator.itemgetter(0))
+    value: 'dsl.Any' = property(operator.itemgetter(1))
     __type__ = typing.Mapping
 
-    def __new__(cls, key: Any, value: Any):
+    def __new__(cls, key: 'dsl.Any', value: 'dsl.Any'):
         return tuple.__new__(cls, [key, value])
 
 
@@ -253,11 +256,11 @@ class Struct(Compound):
 
     __type__ = object
 
-    def __new__(cls, **element: Any):
+    def __new__(cls, **element: 'dsl.Any'):
         return tuple.__new__(cls, [cls.Element(n, k) for n, k in element.items()])
 
 
-def reflect(value: typing.Any) -> Any:
+def reflect(value: typing.Any) -> 'dsl.Any':
     """Get the type of the provided value.
 
     Args:
@@ -268,7 +271,7 @@ def reflect(value: typing.Any) -> Any:
     """
 
     def same(seq: typing.Iterable[typing.Any]) -> bool:
-        """Return true if all elements of a non-empty sequence have same type.
+        """Return true if all elements of a non-empty sequence have the same type.
 
         Args:
             seq: Sequence of elements to check.

@@ -37,20 +37,28 @@ from forml.io import asset
 
 from . import _body, _importer
 
+if typing.TYPE_CHECKING:
+    from forml import project
+
+
 LOGGER = logging.getLogger(__name__)
 
 
 class Package(collections.namedtuple('Package', 'path, manifest')):
-    """Distribution package."""
+    """ForML artifact representing a complete project code packaged for distribution."""
 
     path: pathlib.Path
-    manifest: 'Manifest'
+    manifest: 'project.Manifest'
 
     FORMAT = '4ml'
     COMPRESSION = zipfile.ZIP_DEFLATED
     PYSFX = re.compile(r'\.py[co]?$')
 
     def __new__(cls, path: typing.Union[str, pathlib.Path]):
+        """
+        Args:
+            path: Filesystem path pointing to the package file.
+        """
         path = pathlib.Path(path)
         return super().__new__(cls, path.resolve(), Manifest.read(path))
 
@@ -59,9 +67,12 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 
     @classmethod
     def create(
-        cls, source: typing.Union[str, pathlib.Path], manifest: 'Manifest', path: typing.Union[str, pathlib.Path]
+        cls,
+        source: typing.Union[str, pathlib.Path],
+        manifest: 'project.Manifest',
+        path: typing.Union[str, pathlib.Path],
     ) -> 'Package':
-        """Create new package from given source tree.
+        """Create new package from the given source tree.
 
         Args:
             source: Filesystem path to the root of directory tree to be packaged.
@@ -110,8 +121,8 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
             writeall(pathlib.Path(source), package)
         return cls(path)
 
-    def install(self, path: typing.Union[str, pathlib.Path]) -> '_body.Artifact':
-        """Return the project artifact based on this package mounted on given path.
+    def install(self, path: typing.Union[str, pathlib.Path]) -> 'project.Artifact':
+        """Return the project artifact based on this package mounted on the given path.
 
         Args:
             path: Target install path.
@@ -163,7 +174,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 
 
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
-    """Distribution manifest implementation."""
+    """ForML distribution package metadata manifest."""
 
     name: asset.Project.Key
     version: asset.Release.Key
@@ -189,6 +200,13 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         package: str,
         **modules: str,
     ):
+        """
+        Args:
+            name: Project name.
+            version: Project release version.
+            package: Full python package name containing the project principal components.
+            modules: Individual project components mapping (if non-conventional).
+        """
         return super().__new__(
             cls, asset.Project.Key(name), asset.Release.Key(version), package, types.MappingProxyType(modules)
         )
@@ -212,30 +230,19 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         """
         return pathlib.Path(base) / f'{cls.MODULE}.py'
 
-    def write(self, path: typing.Union[str, pathlib.Path]) -> None:
-        """Write the manifest to given path (directory).
-
-        Args:
-            path: Directory to write the manifest into.
-        """
-        path = self.path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open('w') as manifest:
-            manifest.write(
-                self.TEMPLATE.substitute(
-                    name=self.name, version=self.version, package=self.package, modules=json.dumps(dict(self.modules))
-                )
-            )
-
     @classmethod
-    def read(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> 'Manifest':
-        """Import the manifest content.
+    def read(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> 'project.Manifest':
+        """Load the manifest from the given path.
 
         Args:
-            path: Path to import from.
+            path: Path to read the manifest from (defaults to all of :data:`python:sys.path`).
 
         Returns:
             Manifest instance.
+
+        Raises:
+            forml.MissingError: Not a ForML package manifest.
+            forml.InvalidError: Corrupt ForML package manifest.
         """
         try:
             module = _importer.isolated(cls.MODULE, path)
@@ -248,3 +255,18 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
             if cls.MODULE in sys.modules:
                 del sys.modules[cls.MODULE]
         return manifest
+
+    def write(self, path: typing.Union[str, pathlib.Path]) -> None:
+        """Write the manifest to the given path (directory).
+
+        Args:
+            path: Directory to write the manifest into.
+        """
+        path = self.path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open('w') as manifest:
+            manifest.write(
+                self.TEMPLATE.substitute(
+                    name=self.name, version=self.version, package=self.package, modules=json.dumps(dict(self.modules))
+                )
+            )

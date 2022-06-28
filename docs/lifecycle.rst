@@ -39,14 +39,13 @@ and the process can start over and/or transit between the two lifecycles back an
 Generation Advancement
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Whenever the given pipeline is *trained* (incrementally or from scratch) and/or *tuned*, a new
-*generation* of the models is produced. ForML is implicitly tagging generations simply by
-incremental *integer identifier* starting from ``1`` (relatively to the same *release*).
+Whenever the given pipeline is :ref:`trained <workflow-mode>` (incrementally or from scratch)
+and/or *tuned*, a new *generation* of its models is produced.
 
-New generations are typically produced to refresh the models using new data
-while keeping the same pipeline implementation. Updating the models of the same release allows (if
-supported by the given models) to carry the state over from previous generations to the next by
-incrementally training only on the new data obtained since the previous training.
+This typically happens to refresh the models using new data while keeping the same pipeline
+implementation. Updating the models of the same release allows (if supported by the given models)
+to carry the state over from previous generations to the next by incrementally training only on
+the new data obtained since the previous training.
 
 Generations get transparently persisted in model registry as the :ref:`model generation assets
 <registry-assets>`.
@@ -54,12 +53,11 @@ Generations get transparently persisted in model registry as the :ref:`model gen
 .. _lifecycle-release:
 
 Release Roll-out
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 The milestone of the :ref:`development lifecycle <lifecycle-development>` is the roll-out of a new
 *release*. It is essentially a new version of the project *code implementation* published for
-deployment. Releases are identified using the explicit versioning specified by the user as per the
-:ref:`project setup <project-setup>`.
+deployment.
 
 Upon releasing, the :ref:`ForML package <registry-package>` is produced and persisted in the
 model registry.
@@ -146,7 +144,8 @@ Train
 Run the :ref:`project pipeline <project-pipeline>` in the standard :ref:`train mode
 <workflow-mode>`. Even though this will produce a true generation of the defined models, it won't
 get persisted across the invocations making this mode useful merely for smoke-testing the
-training process (or displaying the task graph on the :doc:`Graphviz runner <runner/graphviz>`).
+training process (or displaying the task graph on the :class:`Graphviz runner
+<forml.provider.runner.graphviz.Runner>`).
 
 Example:
 

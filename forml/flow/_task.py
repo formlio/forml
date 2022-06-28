@@ -79,8 +79,8 @@ Result = typing.TypeVar('Result')
 class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
     """Abstract actor base class.
 
-    This is a generic class with parametric input types ``flow.Features``, ``flow.Labels`` and output type
-    ``flow.Result``.
+    This is a generic class with parametric input types ``flow.Features``, ``flow.Labels`` and
+    output type ``flow.Result``.
     """
 
     def __repr__(self):
@@ -102,9 +102,11 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
     def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:
         """The *train* mode entry point.
 
-        Optional method engaging the *Train* (``features``) and *Label* (``label``) ports of stateful actors.
+        Optional method engaging the *Train* (``features``) and *Label* (``label``) ports of
+        stateful actors.
 
-        Unlike with the multiple apply-mode feature ports, there can only be a single train-mode feature port.
+        Unlike with the multiple apply-mode feature ports, there can only be a single train-mode
+        feature port.
 
         Args:
             features: Train feature-set.
@@ -117,10 +119,11 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
 
         The *State* output port representation.
 
-        The particular bytes-encoding of the returned value can be arbitrary as long as it is acceptable by
-        the companion ``.set_state()`` method.
+        The particular bytes-encoding of the returned value can be arbitrary as long as it is
+        acceptable by the companion ``.set_state()`` method.
 
-        The default implementation is using Python Pickle for serializing the entire actor object.
+        The default implementation is using :doc:`Python Pickle <python:library/pickle>` for
+        serializing the entire actor object.
 
         Returns:
             State as bytes.
@@ -135,7 +138,8 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
 
         The *State* input port representation.
 
-        The default implementation is interpreting the state as the entire actor object serialized by Python Pickle.
+        The default implementation is interpreting the state as the entire actor object serialized
+        by :doc:`Python Pickle <python:library/pickle>`.
 
         Args:
             state: bytes to be used as internal state.
@@ -154,7 +158,8 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
 
         The *Params* output port representation.
 
-        All the values returned by this method must be acceptable by the companion ``.set_params()``.
+        All the values returned by this method must be acceptable by the companion
+        ``.set_params()``.
 
         The default implementation return empty mapping.
 
@@ -168,8 +173,8 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
 
         The *Params* input port representation.
 
-        The implementation of this method can choose to accept only a subset of the constructor arguments if some of
-        them are not expected to be changed during the lifetime.
+        The implementation of this method can choose to accept only a subset of the constructor
+        arguments if some of them are not expected to be changed during the lifetime.
 
         Args:
             params: New hyper-parameters as kwargs.
@@ -208,7 +213,9 @@ _Actor = typing.TypeVar('_Actor', bound=Actor)
 
 @typing.final
 class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, args, kwargs')):
-    """Actor builder holding all the required init configuration for instantiating the particular actor."""
+    """Actor builder holding all the required init configuration for instantiating the particular
+    actor.
+    """
 
     actor: type[_Actor]
     args: tuple[typing.Any]

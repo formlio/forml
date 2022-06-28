@@ -18,7 +18,7 @@
 """
 ForML config unit tests.
 """
-# pylint: disable=protected-access,no-self-use
+# pylint: disable=protected-access
 import pathlib
 import types
 import typing

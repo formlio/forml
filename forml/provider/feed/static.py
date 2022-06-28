@@ -25,11 +25,17 @@ from forml.io import dsl, layout
 
 
 class Feed(io.Feed[None, layout.Array]):
-    """Static feed is initialized with actual data which can only be returned in primitive column-wise fashion. No
-    advanced ETL can be applied.
+    """Dummy feed with statically initialized content.
+
+    Static feed is pre-configured with actual data which can only be returned in primitive
+    column-wise fashion. No advanced ETL can be applied.
     """
 
     def __init__(self, data: typing.Mapping[dsl.Table, layout.ColumnMajor]):
+        """
+        Args:
+            data: Mapping of table descriptors and their content.
+        """
         super().__init__()
         self._sources: typing.Mapping[dsl.Source, None] = types.MappingProxyType({t: None for t in data})
         self._features: typing.Mapping[dsl.Feature, layout.Array] = types.MappingProxyType(

@@ -32,7 +32,12 @@ from forml.pipeline import wrap
 
 @wrap.Operator.mapper
 @wrap.Actor.apply
-def ParseTitle(features: pandas.DataFrame, *, source: str, target: str) -> pandas.DataFrame:
+def ParseTitle(  # pylint: disable=invalid-name
+    features: pandas.DataFrame,
+    *,
+    source: str,
+    target: str,
+) -> pandas.DataFrame:
     """Transformer extracting a person's title from the name string."""
 
     def get_title(name: str) -> str:
@@ -46,7 +51,7 @@ def ParseTitle(features: pandas.DataFrame, *, source: str, target: str) -> panda
 
 
 @wrap.Actor.train
-def Impute(
+def Impute(  # pylint: disable=invalid-name
     state: typing.Optional[dict[str, float]],  # pylint: disable=unused-argument
     features: pandas.DataFrame,
     labels: pandas.Series,  # pylint: disable=unused-argument
@@ -62,7 +67,7 @@ def Impute(
 
 @wrap.Operator.mapper
 @Impute.apply
-def Impute(
+def Impute(  # pylint: disable=invalid-name
     state: dict[str, float], features: pandas.DataFrame, random_state: typing.Optional[int] = None
 ) -> pandas.DataFrame:
     """Apply part of a stateful transformer for missing values imputation."""
@@ -79,7 +84,7 @@ def Impute(
 
 
 @wrap.Actor.train
-def Encode(
+def Encode(  # pylint: disable=invalid-name
     state: typing.Optional[preprocessing.OneHotEncoder],  # pylint: disable=unused-argument
     features: pandas.DataFrame,
     labels: pandas.Series,  # pylint: disable=unused-argument
@@ -93,7 +98,7 @@ def Encode(
 
 @wrap.Operator.mapper
 @Encode.apply
-def Encode(
+def Encode(  # pylint: disable=invalid-name
     state: preprocessing.OneHotEncoder, features: pandas.DataFrame, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:
     """Apply part of a stateful encoder for the various categorical features."""

@@ -20,7 +20,7 @@ ForML provides a custom testing framework for user-defined operators. It is buil
 standard :doc:`unittest library <python:library/unittest>` with an API specialized to cover all the
 standard operator outcomes while minimizing any boiler-plating.
 
-The tests need to be placed under the :file:`tests/` folder of your :doc:`project
+The tests need to be placed under the :file:`tests/` folder of your :ref:`project
 <project-structure>` (note ``unittest`` requires all test files and the :file:`tests/` directory
 itself to be python modules hence it needs to contain the appropriate
 :file:`__init__.py` files).

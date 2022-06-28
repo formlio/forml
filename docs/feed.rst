@@ -24,6 +24,18 @@ Feed is a :doc:`runtime platform <platform>` component responsible for resolving
    forml.provider.feed.static.Feed
    openlake.Local
 
+Feed Providers
+--------------
+
+Among the different *provider* types, :doc:`Feeds <feed>` are unique as each instance usually needs to be special
+implementation specific to the given platform. Part of the feed functionality is to resolve the :ref:`catalogized
+schemas <io-catalogized-schemas>` to the physical datasets known to the platform. This might not be always possible via
+configuration and the whole feed needs to be implemented as code. For this purpose, the *system* and *user*
+configuration directories are also potentially searched by the provider importer so that the custom feeds can be placed
+there.
+
+For the special case of the public datasets described using the :doc:`Openschema catalog<openschema:index>`, there is a
+lightweight feed provided in form of the installable :doc:`Openlake package<openlake:install>`.
 
 Reader
 ------

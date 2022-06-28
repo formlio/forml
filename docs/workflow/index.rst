@@ -44,6 +44,7 @@ the following concepts:
     is the particular interconnection of the individual actors determining their dependencies.
 
 .. _workflow-mode:
+.. rubric:: Workflow Modes
 
 ForML integrates the two-fold concept typical for supervised learning where the :ref:`stateful
 components <actor-type>` of the particular solution are operated in two distinct modes:
@@ -70,6 +71,7 @@ either in *train-mode* or *apply-mode*.
 
 
 .. _workflow-expression:
+.. rubric:: Workflow Expression
 
 The high-level API for describing a workflow allows to :ref:`compose an operator expressions
 <operator-composition>` using the following syntax:
@@ -91,13 +93,13 @@ follows:
 
     graph TD
         subgraph Train Mode
-        ft((Future)) --> xta("LabelExtractor.apply()") -- L --> itt["NaNImputer.train()"] & ctt["RFC.train()"]
-        xta --> itt & ita("NaNImputer.apply()")
+        ft((Future)) --> xta(["LabelExtractor.apply()"]) -- L --> itt["NaNImputer.train()"] & ctt["RFC.train()"]
+        xta --> itt & ita(["NaNImputer.apply()"])
         ita --> ctt
         itt -. state .-> ita
         end
         subgraph Apply Mode
-        fa((Future)) --> iaa("NaNImputer.apply()") --> caa("RFC.apply()")
+        fa((Future)) --> iaa(["NaNImputer.apply()"]) --> caa(["RFC.apply()"])
         itt -. state .-> iaa
         ctt -. state .-> caa
         end

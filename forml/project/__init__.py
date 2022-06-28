@@ -51,7 +51,7 @@ def open(  # pylint: disable=redefined-builtin
     Args:
         path: Filesystem path to the project source package root.
         package: Project package name.
-        **modules: Project component module path mappings.
+        modules: Project component module path mappings.
 
     Returns:
         Project artifact.

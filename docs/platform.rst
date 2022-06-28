@@ -16,31 +16,15 @@
 Platform Setup
 ==============
 
-Platform is a configuration-driven selection of particular *providers* implementing a number of abstract concepts:
+Platform is a configuration-driven selection of particular :doc:`providers <provider>`:
 
-* :doc:`runner`
-* :doc:`registry`
-* :doc:`feed`
-* :doc:`sink`
-* :ref:`Serving components <serving-components>`
-
-ForML uses an internal *bank* of available provider implementations of the different possible types. Provider instances
-are registered in this bank using one of two possible *references*:
-
-* provider's *fully qualified class name* - for example, the ``forml.provider.runner.dask:Runner``
-* for convenience, each provider can also optionally have an *alias* defined by its author - ie ``dask``
-
-.. note:: For any provider implementation to be placed into the ForML provider bank, it needs to get imported somehow.
-          When the bank is queried for any provider instance using its reference, it either is matched and returned or
-          ForML attempts to import it. If it is queried using the fully qualified class name, it is clear where to
-          import it from (assuming the module is on ``sys.path``). If it is however referenced by the alias, ForML only
-          considers providers from the :doc:`main library <lib>` shipped with ForML. This means external providers
-          cannot be referenced using their aliases as ForML has no chance knowing where to import them from.
+.. _platform-config:
 
 Configuration File
 ------------------
-ForML platform uses the `TOML <https://github.com/toml-lang/toml>`_ configuration file format. The system will try to
-locate and merge the ``config.toml`` in the following places (in order of parsing/merging - later overrides previous):
+ForML platform uses the `TOML <https://github.com/toml-lang/toml>`_ configuration file format.
+The system will try to locate and merge the :file:`config.toml` in the following places (in order
+of parsing/merging - later overrides previous):
 
 +-----------------+--------------------------------------------------------------------+
 | Location        | Meaning                                                            |
@@ -52,11 +36,13 @@ locate and merge the ``config.toml`` in the following places (in order of parsin
 | ``$FORML_HOME`` | Alternative **user** configuration to the *homedir* configuration  |
 +-----------------+--------------------------------------------------------------------+
 
-.. note:: Both the *system* and the *user* config locations are also appended to the runtime ``sys.path`` so any python
+.. note:: Both the *system* and the *user* config locations are also appended to the runtime :data:`python:sys.path` so any python
           modules stored into the config directories are potentially importable. This can be useful for the custom
           `Feed Providers`_ implementations.
 
-Example ForML platform configuration::
+Example ForML platform configuration:
+
+.. code-block:: toml
 
     logcfg = "logging.ini"
 
@@ -103,19 +89,6 @@ taken from the ``default`` reference from the main ``[RUNNER]`` config section.
 All of the provider configurations must contain the option ``provider`` referring to the provider key used by the
 internal ForML bank mentioned above. Any other options specified within the provider section are considered to be
 arbitrary configuration arguments specific to given provider implementation.
-
-Feed Providers
---------------
-
-Among the different *provider* types, :doc:`Feeds <feed>` are unique as each instance usually needs to be special
-implementation specific to the given platform. Part of the feed functionality is to resolve the :ref:`catalogized
-schemas <io-catalogized-schemas>` to the physical datasets known to the platform. This might not be always possible via
-configuration and the whole feed needs to be implemented as code. For this purpose, the *system* and *user*
-configuration directories are also potentially searched by the provider importer so that the custom feeds can be placed
-there.
-
-For the special case of the public datasets described using the :doc:`Openschema catalog<openschema:index>`, there is a
-lightweight feed provided in form of the installable :doc:`Openlake package<openlake:install>`.
 
 Logging
 -------

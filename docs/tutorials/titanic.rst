@@ -59,6 +59,8 @@ Let's edit the :file:`source.py` component supplying the project :ref:`datasourc
 schema from the Openschema catalog <openschema:openschema.kaggle.Titanic>`:
 
 .. literalinclude:: ../../tutorials/titanic/titanic/source.py
+  :caption: titanic/source.py
+  :linenos:
   :language: python
   :start-at: import
 
@@ -71,6 +73,8 @@ Finally, we fill-in the :ref:`evaluation descriptor <project-evaluation>` within
 including the particular metric:
 
 .. literalinclude:: ../../tutorials/titanic/titanic/evaluation.py
+  :caption: titanic/evaluation.py
+  :linenos:
   :language: python
   :start-at: import
 

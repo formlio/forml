@@ -45,7 +45,7 @@ scratch or simply via the ``init`` subcommand of the ``forml`` :ref:`platform-cl
 
     $ forml project init myproject
 
-.. _project-structure
+.. _project-structure:
 
 Component Structure
 -------------------
@@ -133,6 +133,8 @@ the ``component`` parameter as follows:
     setuptools.setup(...,
                      component={'pipeline': 'relative.path.to.my.custom.pipeline.module'})
 
+
+.. _project-principal:
 
 Principal Components
 ^^^^^^^^^^^^^^^^^^^^

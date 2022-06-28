@@ -41,7 +41,6 @@ EXTRAS_DEV = {
 
 EXTRAS_DOCS = {
     'sphinx',
-    'sphinx-autodoc-typehints',
     'sphinx-copybutton',
     'sphinx-immaterial',
     'sphinxcontrib-details-directive',

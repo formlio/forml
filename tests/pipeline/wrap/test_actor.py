@@ -38,7 +38,7 @@ class TestClass:
         class Replace:
             """Actor wrapped class."""
 
-            get_params = set_params = lambda: None
+            get_params = set_params = lambda: None  # pylint: disable=unnecessary-lambda-assignment
 
             def __init__(self, case: bool = False):
                 self._case: bool = case
@@ -75,7 +75,7 @@ class TestClass:
             class Bar:  # pylint: disable=unused-variable
                 """Dummy."""
 
-                fit = predict = get_params = lambda: None
+                fit = predict = get_params = lambda: None  # pylint: disable=unnecessary-lambda-assignment
 
     def test_actor(self, actor: type[flow.Actor]):
         """Stateless actor test."""

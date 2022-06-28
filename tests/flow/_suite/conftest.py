@@ -32,9 +32,9 @@ def operator(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Arra
     class Operator(flow.Operator):
         """Operator mock."""
 
-        def compose(self, left: flow.Composable) -> flow.Trunk:
+        def compose(self, scope: flow.Composable) -> flow.Trunk:
             """Dummy composition."""
-            track = left.expand()
+            track = scope.expand()
             trainer = flow.Worker(actor_builder, 1, 1)
             applier = trainer.fork()
             extractor = flow.Worker(actor_builder, 1, 1)
@@ -51,7 +51,7 @@ def origin(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array,
     class Operator(flow.Operator):
         """Operator mock."""
 
-        def compose(self, left: flow.Composable) -> flow.Trunk:
+        def compose(self, scope: flow.Composable) -> flow.Trunk:  # pylint: disable=unused-argument
             """Dummy composition."""
             trainer = flow.Worker(actor_builder, 1, 1)
             applier = trainer.fork()

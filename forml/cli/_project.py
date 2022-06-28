@@ -53,9 +53,12 @@ class Scope(collections.namedtuple('Scope', 'parent, path')):
     def run_setup(self, *argv: str, **options):
         """Interim hack to call the setup.py"""
         sys.argv[:] = [str(self._setup_path), *argv, *(a for k, v in options.items() if v for a in (f'--{k}', v))]
-        exec(  # pylint: disable=exec-used
-            self._setup_path.open().read(), {'__file__': sys.argv[0], '__name__': '__main__'}
-        )
+        try:
+            exec(  # pylint: disable=exec-used
+                self._setup_path.open().read(), {'__file__': sys.argv[0], '__name__': '__main__'}
+            )
+        except FileNotFoundError as err:
+            raise forml.MissingError(f'Invalid ForML project: {err}') from err
 
 
 @click.group(name='project')

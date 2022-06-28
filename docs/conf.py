@@ -32,9 +32,13 @@ http://www.sphinx-doc.org/en/master/config
 import os
 import sys
 
+from sphinx import application
+from sphinx.ext import autosummary
+
 sys.path.insert(0, os.path.abspath('..'))
 
 import forml  # pylint: disable=wrong-import-position; # noqa: E402
+from forml import provider  # pylint: disable=wrong-import-position; # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
@@ -60,7 +64,6 @@ extensions = [
     'sphinx_copybutton',
     'sphinxcontrib.details.directive',
     'nbsphinx',
-    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -72,6 +75,7 @@ templates_path = ['_templates']
 exclude_patterns = ['_build']
 
 intersphinx_mapping = {
+    'mlflow': ('https://mlflow.org/docs/latest/', None),
     'openlake': ('https://openlake.readthedocs.io/en/latest/', None),
     'openschema': ('https://openschema.readthedocs.io/en/latest/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
@@ -157,7 +161,7 @@ html_theme_options = {
 # -- Options for sphinx.ext.autodoc --------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 autoclass_content = 'both'
-autodoc_typehints = 'description'
+autodoc_typehints = 'signature'
 autosummary_generate = True
 autodoc_member_order = 'bysource'
 
@@ -165,12 +169,6 @@ autodoc_member_order = 'bysource'
 # -- Options for sphinx.ext.napoleon -------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_numpy_docstring = False
-napoleon_use_rtype = False
-napoleon_include_init_with_doc = True
-
-
-# -- Options for sphinx_autodoc_typehints --------------------------------------
-# See: https://pypi.org/project/sphinx-autodoc-typehints/
 
 
 # -- Options for sphinx_immaterial --------------------------------------
@@ -189,3 +187,22 @@ object_description_options = [
 # -- Options for nbsphinx --------------------------------------
 # See: https://nbsphinx.readthedocs.io/en/latest/
 nbsphinx_requirejs_path = ''
+
+
+class Autosummary(autosummary.Autosummary):
+    """Patched Autosummary with custom formatting for ForML providers."""
+
+    @staticmethod
+    def __format_name(display_name, sig, summary, real_name):
+        """Custom name formatting."""
+        if display_name.startswith(provider.__name__):
+            display_name = display_name.rsplit('.', 2)[-2].title()
+        return display_name, sig, summary, real_name
+
+    def get_items(self, names):
+        return [self.__format_name(*i) for i in super().get_items(names)]
+
+
+def setup(app: application.Sphinx):
+    """Sphinx setup hook."""
+    app.add_directive('autosummary', Autosummary)

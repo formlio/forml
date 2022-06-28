@@ -13,31 +13,10 @@
     specific language governing permissions and limitations
     under the License.
 
-Evaluation
-==========
+{% set provider = module.rsplit('.', 1)[-1] %}
+{{ (provider + ' ' + name) | title | escape | underline}}
 
 
-.. autoclass:: forml.project.Evaluation
+.. currentmodule:: {{ module }}
 
-metric...
-
-
-.. _evaluation-traintest:
-
-Train-Test Evaluation
----------------------
-
-.. autoclass:: forml.evaluation.HoldOut
-
-.. autoclass:: forml.evaluation.CrossVal
-
-
-
-.. _evaluation-prod:
-
-Production Performance Reporting
---------------------------------
-Measure the actual performance of the model as predictions against the (previously unseen) true
-labelled data.
-
-drift detection
+.. autoclass:: {{ objname }}

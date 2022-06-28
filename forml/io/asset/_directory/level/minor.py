@@ -114,6 +114,12 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         tuning: typing.Optional[Tuning] = None,
         states: typing.Optional[typing.Sequence[uuid.UUID]] = None,
     ):
+        """
+        Args:
+            training: Generation training information.
+            tuning: Generation tuning information.
+            states: Sequence of state asset IDs.
+        """
         return super().__new__(cls, training or cls.Training(), tuning or cls.Tuning(), tuple(states or []))
 
     def __bool__(self):
@@ -182,7 +188,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
 
     @classmethod
     def loads(cls, raw: bytes) -> 'Tag':
-        """Loaded the dumped tag.
+        """Load the previously dumped tag.
 
         Args:
             raw: Serialized tag representation to be loaded.
@@ -284,7 +290,7 @@ class Generation(_directory.Level):
             Serialized state.
         """
         if not self.tag.training:
-            return bytes()
+            return b''
         if isinstance(key, int):
             key = self.tag.states[key]
         if key not in self.tag.states:

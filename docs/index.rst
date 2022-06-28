@@ -109,3 +109,4 @@ Resources
     platform
     runner
     serving
+    provider

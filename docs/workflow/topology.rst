@@ -124,7 +124,7 @@ Dealing with Worker State
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sofar we've discussed only the *apply-mode* connections. For *stateful* nodes (i.e. nodes
-representing :doc:`stateful actors <actor>`), we also need to take care of the *train-mode*
+representing :ref:`stateful actors <actor-type>`), we also need to take care of the *train-mode*
 connections to their *Train* and *Label* ports. This is achieved simply by using the ``.train()``
 method on the worker object:
 
@@ -133,7 +133,7 @@ method on the worker object:
 Training and applying even the same worker are two distinct tasks, hence they need to be
 represented using two related but separate worker nodes. ForML transparently manages these
 related workers using a ``flow.Worker.Group`` instance. All workers in the same *group* have the
-same shape and share the same :ref:`actor builder <actor-builder>` instance.
+same shape and share the same :class:`actor builder <forml.flow.Builder>` instance.
 
 Based on the group membership (and the general context), ForML automatically handles the runtime
 state management between the different modes of the same actor (the :ref:`State ports

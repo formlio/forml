@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Registry integration based on MLFlow Tracking Server.
+Model registry implementation based on the MLFlow Tracking Server.
 """
 import collections
 import functools
@@ -172,12 +172,31 @@ class Client:
 
 
 class Registry(asset.Registry, alias='mlflow'):
-    """ForML registry implementation backed by MLFlow tracking server."""
+    """ForML model registry implementation backed by the MLFlow Tracking Server.
+
+    :doc:`MLflow model registry <mlflow:model-registry>`
+
+    virtual repo
+
+    :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [REGISTRY]
+        default = "mlflow"
+
+        [REGISTRY.mlflow]
+        provider = "mlflow"
+        tracking_uri = "http://127.0.0.1:5000"
+
+    """
 
     class Root(collections.namedtuple('Root', 'project, repoid')):
         """Helper container for representing the registry root level.
 
-        To support the concept of virtual registries, the experiment name is the project name suffixed by the repoid.
+        To support the concept of virtual registries, the experiment name is the project name
+        suffixed by the repoid.
         """
 
         project: asset.Project.Key
@@ -233,6 +252,16 @@ class Registry(asset.Registry, alias='mlflow'):
         repoid: str = DEFAULT_REPOID,
         staging: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
+        """
+        Args:
+            tracking_uri: Address of local or remote tracking server. See the :ref:`MLflow docs
+                          <mlflow:where_runs_are_recorded>` for more info.
+            registry_uri: Address of local or remote model registry server. Defaults to the
+                          ``tracking_uri``.
+            repoid: Optional virtual repository ID.
+            staging: Filesystem location reachable from all runner nodes to be used for
+                     :meth:`package mounting <forml.io.asset.Registry.mount>`.
+        """
         super().__init__(staging)
         self._client = Client(tracking_uri, registry_uri, common_tags={self.TAG_REPOID: repoid})
         self._repoid: str = repoid
@@ -360,7 +389,8 @@ class Registry(asset.Registry, alias='mlflow'):
         return self._releases[project, release]
 
     def _get_unbound_generation(self, project: asset.Project.Key, release: asset.Release.Key) -> entities.Run:
-        """Get the run instance for unbounded generation under the given release if exists or create a new one.
+        """Get the run instance for unbounded generation under the given release if exists or create
+        a new one.
 
         Args:
             project: Project key.

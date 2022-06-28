@@ -18,8 +18,6 @@
 """
 Graph unit tests.
 """
-# pylint: protected-access
-
 import pytest
 
 from forml import flow
@@ -127,13 +125,13 @@ class TestSegment:
     def test_copy(self, segment: flow.Segment):
         """Testing copying segment nodes."""
         copy = segment.copy()
-        assert copy._head.gid == segment._head.gid
+        assert copy._head.gid == segment._head.gid  # pylint: disable=protected-access
 
     def test_pubsub(self, segment: flow.Segment, simple: flow.Worker, multi: flow.Worker):
         """Testing segment publishing."""
         multi.train(segment.publisher, segment.publisher)
         segment.subscribe(simple[0])
-        assert flow.Segment(simple)._tail is segment._tail
+        assert flow.Segment(simple)._tail is segment._tail  # pylint: disable=protected-access
 
     def test_follows(self, segment: flow.Segment, presegment: flow.Segment):
         """Testing subsegment checking."""

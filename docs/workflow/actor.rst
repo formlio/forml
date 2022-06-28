@@ -34,7 +34,7 @@ The two main actor types are:
 #. Plain *stateless* actors which define output as a function applied just to their input.
 #. More complex *stateful* actors produce output based on not just the input but also their inner
    *state* which it acquires during separate phase called *train*. We then distinguish between the
-   *train-mode* and *apply-mode* in which the stateful actors operate.
+   :ref:`train-mode and apply-mode <workflow-mode>` in which the stateful actors operate.
 
 
 .. _actor-ports:
