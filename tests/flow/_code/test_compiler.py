@@ -51,8 +51,8 @@ def segment(node1: flow.Worker, node2: flow.Worker, node3: flow.Worker):
     return flow.Segment(node1)
 
 
-def test_generate(
+def test_compile(
     segment: flow.Segment, valid_instance: asset.Instance, node1: flow.Worker, node2: flow.Worker, node3: flow.Worker
 ):
     """Compiler generate test."""
-    flow.generate(segment, valid_instance.state((node1.gid, node2.gid, node3.gid)))
+    flow.compile(segment, valid_instance.state((node1.gid, node2.gid, node3.gid)))

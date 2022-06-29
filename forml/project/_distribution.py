@@ -45,7 +45,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Package(collections.namedtuple('Package', 'path, manifest')):
-    """ForML artifact representing a complete project code packaged for distribution."""
+    """ForML artifact representing a complete project code together with all of its dependencies
+    packaged for distribution."""
 
     path: pathlib.Path
     manifest: 'project.Manifest'
@@ -84,7 +85,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
         """
 
         def writeall(level: pathlib.Path, archive: zipfile.ZipFile, root: typing.Optional[pathlib.Path] = None) -> None:
-            """Recursive helper for adding directory tree content to an zip archive.
+            """Recursive helper for adding directory tree content to a zip archive.
 
             Args:
                 level: Level to be added.

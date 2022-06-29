@@ -125,3 +125,15 @@ Offline agent is the backend service responsible for doing all the heavy process
 
 * (incremental) *training* and *tuning* of new model generations (pushed to the :doc:`model registry<registry/index>`)
 * *evaluating* project performance (pushed to the `PerfDB`_)
+
+
+
+
+Gateway Providers
+-----------------
+
+.. autosummary::
+   :template: provider.rst
+   :nosignatures:
+
+   forml.provider.gateway.rest.Gateway

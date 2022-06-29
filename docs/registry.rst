@@ -23,7 +23,7 @@ at rest.
 
 .. note::
    We use the term *model* more loosely including not just the involved *estimators* but
-   essentially any :doc:`stateful actor <workflow/actor>` in the pipeline.
+   essentially any :doc:`stateful actor <workflow/actor>` in the entire pipeline.
 
 .. _registry-artifacts:
 
@@ -129,17 +129,29 @@ The metadata associated with each generation is provided in form of a :class:`io
 Persistence API
 ---------------
 
+Low-level
+^^^^^^^^^
+
+The low-level persistence interface is used mainly by the :ref:`registry providers
+<registry-providers>`.
+
 .. autoclass:: forml.project.Package
-   :members: create, install
 
 .. autoclass:: forml.project.Manifest
-   :members: read, write
 
 .. autoclass:: forml.io.asset.Tag
-   :members: dumps, loads
 
 .. autoclass:: forml.io.asset.Registry
-   :members: projects, releases, generations, mount, push, pull, read, write, open, close
+   :members: mount
+
+High-level
+^^^^^^^^^^
+
+The following is the high-level persistence interface as used by the :doc:`runners <runner>`.
+
+.. autoclass:: forml.io.asset.State
+
+.. autoclass:: forml.io.asset.Instance
 
 
 .. _registry-providers:
@@ -150,7 +162,7 @@ Registry Providers
 ForML comes with a number of :doc:`providers <provider>` implementing the
 :class:`io.asset.Registry <forml.io.asset.Registry>` interface. To make them available
 for the ForML runtime, selected providers need to be configured within the common :doc:`platform
-setup <platform>`.
+setup <platform>` using the ``[REGISTRY.*]`` sections.
 
 The official registry providers are:
 

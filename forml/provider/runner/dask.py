@@ -32,7 +32,21 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Runner(runtime.Runner, alias='dask'):
-    """Dask based runner implementation."""
+    """ForML runner implementation using the :doc:`Dask computing library <dask:index>` as the
+    execution platform.
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [RUNNER.compute]
+        provider = "dask"
+        scheduler = "threaded"
+
+    Select the ``dask`` :ref:`extras to install <install-extras>` ForML together with the Dask
+    support.
+    """
 
     class Dag(dict):
         """Dask DAG builder."""
@@ -66,7 +80,7 @@ class Runner(runtime.Runner, alias='dask'):
 
                 return functools.reduce(nonnull, leaves, None)
 
-        def __init__(self, symbols: typing.Sequence[flow.Symbol]):
+        def __init__(self, symbols: typing.Collection[flow.Symbol]):
             tasks: dict[int, tuple[flow.Instruction, int]] = {id(i): (i, *(id(p) for p in a)) for i, a in symbols}
             assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
@@ -94,15 +108,17 @@ class Runner(runtime.Runner, alias='dask'):
         sink: typing.Optional[io.Sink] = None,
         scheduler: typing.Optional[str] = None,
     ):
+        """
+        Args:
+            scheduler: Name of the chosen Dask scheduler. Supported options are:
+
+                       * ``threaded``
+                       * ``multiprocessing``
+        """
         super().__init__(instance, feed, sink)
         self._scheduler: str = scheduler or self.SCHEDULER
 
-    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
-        """Actual run action to be implemented according to the specific runtime.
-
-        Args:
-            symbols: task graph to be executed.
-        """
+    def _run(self, symbols: typing.Collection[flow.Symbol]) -> None:
         dag = self.Dag(symbols)
         LOGGER.debug('Dask DAG: %s', dag)
         importlib.import_module(f'{dask.__name__}.{self._scheduler}').get(dag, dag.output)

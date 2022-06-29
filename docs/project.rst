@@ -161,8 +161,8 @@ Pipeline Expression
 Pipeline definition is the heart of the entire solution. It is provided in form of the
 :ref:`operator composition expression <operator-composition>`.
 
-ForML expects this component to be provided as ``pipeline.py`` module or ``pipeline`` package
-under the project package root.
+ForML expects this component to be provided as :file:`pipeline.py` module or :file:`pipeline`
+package under the project package root.
 
 .. code-block:: python
    :caption: pipeline.py or pipeline/__init__.py
@@ -237,5 +237,6 @@ production :doc:`lifecycles <lifecycle>` provided as the
 Tests
 ^^^^^
 
-ForML has a rich operator unit testing facility which can be integrated into the usual ``tests/``
-project structure. This topic is extensively covered in a separate :doc:`testing` chapter.
+ForML has a rich operator unit testing facility which can be integrated into the usual
+:file:`tests/` project structure. This topic is extensively covered in a separate :doc:`testing`
+chapter.

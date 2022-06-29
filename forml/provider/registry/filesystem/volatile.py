@@ -40,8 +40,9 @@ class Registry(posix.Registry, alias='volatile'):
 
     All content is stored using a local temporal directory auto-purged upon garbage collection.
 
-    This registry is used by the :ref:`virtual launcher <runner-virtual>`. Defining it explicitly
-    using the :ref:`platform configuration <platform-config>` is not usually needed.
+    This registry is internally used by the :class:`Virtual launcher <forml.runtime.Virtual>`.
+    Defining it explicitly using the :ref:`platform configuration <platform-config>` for other
+    runtime mechanisms is usually pointless (not invalid though).
     """
 
     def __init__(self):

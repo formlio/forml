@@ -32,13 +32,15 @@ from . import _agent, _service
 
 LOGGER = logging.getLogger(__name__)
 
+Provider = typing.TypeVar('Provider', bound=provmod.Service)
+
 
 def ensure_instance(
     config_or_instance: typing.Union[provcfg.Section, provmod.Service],
-    provider: type[provmod.Service],
+    provider: type[Provider],
     *args,
     **kwargs,
-) -> provmod.Service:
+) -> Provider:
     """Helper for returning a provider instance.
 
     Args:

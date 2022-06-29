@@ -37,14 +37,14 @@ class Meta(abc.ABCMeta):
 
     @property
     def __subkinds__(cls) -> typing.Iterable[type['dsl.Any']]:
-        """Return all non-abstract sub-classes of given kind class.
+        """Return all non-abstract sub-classes of the given kind class.
 
         Returns:
             Iterable of all sub-kinds.
         """
 
         def scan(subs: typing.Iterable[type['dsl.Any']]) -> typing.Iterable[type['dsl.Any']]:
-            """Scan the class subtree of given types.
+            """Scan the class subtree of the given types.
 
             Args:
                 subs: Iterable of classes to descend from.
@@ -92,7 +92,9 @@ class Any(metaclass=Meta):
     @property
     @abc.abstractmethod
     def __cardinality__(self) -> int:
-        """Cardinality (relative size) of given kind. Useful to for example distinguish largest subkind of given kind.
+        """Cardinality (relative size) of the given kind.
+
+        Useful to for example distinguish largest sub-kind of the given kind.
 
         Returns:
             Cardinality value.
@@ -114,7 +116,7 @@ class Any(metaclass=Meta):
 
     @classmethod
     def match(cls, kind: 'dsl.Any') -> bool:
-        """Check given kind is of our type.
+        """Check the given kind is of our type.
 
         Args:
             kind: Kind to be verified.
@@ -126,7 +128,7 @@ class Any(metaclass=Meta):
 
     @classmethod
     def ensure(cls, kind: 'dsl.Any') -> 'dsl.Any':
-        """Ensure given kind is of our type.
+        """Ensure the given kind is of our type.
 
         Args:
             kind: Kind to be verified.

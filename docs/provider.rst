@@ -16,6 +16,8 @@
 Providers Library
 =================
 
+TODO: decoupled from any specific technology...
+
 ForML uses an internal *bank* of available provider implementations of the different possible types.
 Provider instances are registered in this bank using one of two possible *references*:
 

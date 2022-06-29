@@ -16,35 +16,49 @@
 Pipeline Runner
 ===============
 
-The main point of the :doc:`runtime platform <../platform>` is to run the :doc:`projects <../project>`. The specific
-implementation of a system that can :ref:`execute <concept-execution>` the project :doc:`lifecycle <../lifecycle>`
-based on its description (its *Task Dependency Graph* in particular) is called the *Runner*.
+To perform particular :doc:`lifecycle action <lifecycle>` of any given :doc:`project <project>`,
+ForML delegates the :doc:`workflow topology <workflow/topology>` compiled into a :ref:`portable set
+of instructions <topology-compiler>` to a selected :ref:`runner provider <runner-providers>` for
+its execution.
+
+The runner is the foremost elementary component of the :doc:`runtime platform <platform>` carrying
+out the compute function on top of the entire IO layer (represented by the :doc:`feed <feed>`,
+:doc:`sink <sink>` and the :doc:`registry <registry>` providers).
+
+The pluggable provider model of the runner concept conveniently allows to mix and match different
+processing technologies for different workloads as these typically come with varying
+performance criteria regarding the particular use-case (e.g. low latency for online serving vs
+large throughput for offline training).
+
+.. _runner-mechanism:
+.. rubric:: Runtime Mechanism
+
+There are three different execution mechanisms engaging the pipeline runners under the hood:
+
+* The :ref:`command-line driven <platform-cli>` batch processing.
+* Execution in the :doc:`interactive mode <interactive>` using the :class:`Virtual launcher
+  <forml.runtime.Virtual>`.
+* Spinning up the :doc:`serving engine <serving>` using a particular application gateway provider.
 
 
-.. _runner-virtual:
-
-Virtual Launcher
-----------------
-
-Returned from :meth:`project.Artifact.launcher <forml.project.Artifact.launcher>`.
-
-.. autoclass:: forml.runtime.Virtual
-
-
-API
----
+Runner API
+----------
 
 .. autoclass:: forml.runtime.Runner
-    :members:
+    :members: _run
 
 
-Providers
----------
+.. _runner-providers:
+
+Runner Providers
+----------------
 
 The available runner implementations are:
 
 .. autosummary::
+   :template: provider.rst
+   :nosignatures:
 
-   forml.provider.runner.dask
-   forml.provider.runner.graphviz
-   forml.provider.runner.pyfunc
+   forml.provider.runner.dask.Runner
+   forml.provider.runner.graphviz.Runner
+   forml.provider.runner.pyfunc.Runner

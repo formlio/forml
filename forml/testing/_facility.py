@@ -108,8 +108,8 @@ class Launcher:
     class Action:
         """Customized launcher actions exposed to testing routines."""
 
-        def __init__(self, handler: runtime.Virtual, sniffer: payload.Sniff):
-            self._handler: runtime.Virtual = handler
+        def __init__(self, handler: runtime.Virtual.Handler, sniffer: payload.Sniff):
+            self._handler: runtime.Virtual.Handler = handler
             self._sniffer: payload.Sniff = sniffer
 
         def apply(self) -> typing.Any:

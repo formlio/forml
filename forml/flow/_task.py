@@ -187,8 +187,8 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         """Creating a builder instance for this actor.
 
         Args:
-            *args: Positional params.
-            **kwargs: Keyword params.
+            args: Positional params.
+            kwargs: Keyword params.
 
         Returns:
             Actor builder instance.
@@ -225,8 +225,8 @@ class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, 
         """
         Args:
             actor: Target actor class.
-            *args: Actor positional arguments.
-            **kwargs: Actor keyword arguments.
+            args: Actor positional arguments.
+            kwargs: Actor keyword arguments.
         """
         inspect.signature(actor).bind_partial(*args, **kwargs)
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))

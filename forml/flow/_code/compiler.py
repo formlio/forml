@@ -264,15 +264,18 @@ class Table(span.Visitor, typing.Iterable):
         self.add(node)
 
 
-def generate(segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None) -> 'typing.Sequence[flow.Symbol]':
-    """Generate the symbol code based on given flow segment.
+def compile(  # pylint: disable=redefined-builtin
+    segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None
+) -> typing.Collection['flow.Symbol']:
+    """Generate the portable low-level runtime symbol table representing the given flow topology
+    segment augmented with all the necessary system instructions.
 
     Args:
-        segment: Flow segment to generate the symbols for.
-        assets: Runtime assets dependencies.
+        segment: Flow typology segment to generate the symbol table for.
+        assets: Runtime state asset accessors for all the involved persistent workers.
 
     Returns:
-        Sequence of symbol code.
+        The portable runtime symbol table.
     """
     table = Table(assets)
     segment.accept(table)

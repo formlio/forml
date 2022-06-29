@@ -19,7 +19,7 @@
 ForML flow logic.
 """
 
-from ._code.compiler import generate
+from ._code.compiler import compile  # pylint: disable=redefined-builtin
 from ._code.target import Instruction, Symbol
 from ._code.target.system import Committer, Dumper, Getter, Loader
 from ._code.target.user import Apply, Functor, Preset, Train
@@ -42,7 +42,7 @@ __all__ = [
     'Functor',
     'Features',
     'Future',
-    'generate',
+    'compile',
     'Getter',
     'Instruction',
     'Labels',

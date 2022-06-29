@@ -76,6 +76,8 @@ templates_path = ['_templates']
 exclude_patterns = ['_build']
 
 intersphinx_mapping = {
+    'dask': ('https://docs.dask.org/en/stable/', None),
+    'graphviz': ('https://graphviz.readthedocs.io/en/stable/', None),
     'mlflow': ('https://mlflow.org/docs/latest/', None),
     'openlake': ('https://openlake.readthedocs.io/en/latest/', None),
     'openschema': ('https://openschema.readthedocs.io/en/latest/', None),

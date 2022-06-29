@@ -18,8 +18,6 @@ Interactive Mode
 
 ForML can also be used interactively. For now the best resource covering this topic is the :doc:`tutorial`.
 
-...using the :ref:`virtual launcher <runner-virtual>`
-
 often in combination with virtual registry...
 
 Project Handle
@@ -33,3 +31,9 @@ programmatic interface allowing to access the ``project.Artifact`` handle using 
 
 .. autoclass:: forml.project.Artifact
    :members: components, launcher
+
+
+Virtual Launcher
+----------------
+
+.. autoclass:: forml.runtime.Virtual

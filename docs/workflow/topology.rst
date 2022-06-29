@@ -259,21 +259,21 @@ segment for its *label* task graph.
 .. autoclass:: forml.flow.Trunk
    :members: extend, use
 
+.. _topology-compiler:
 
-Compiler
---------
+Flow Compiler
+-------------
 
 While representing the task graph using linked structures is practical for implementing the
-user-level API, more efficient structure for its actual runtime execution is the (actor)
-*adjacency matrix* produced by the internal ForML compiler.
+user-level API, more efficient structure for its actual :doc:`runtime execution <../runner>`
+is the (actor) *adjacency matrix* produced by the internal flow compiler.
 
 ForML uses its compiler to:
 
 #. Augment the task graph by adding any necessary system-level nodes (e.g. to automatically
    manage persistence of any :doc:`stateful actors <actor>`).
 #. Optimizing the task graph by removing any irrelevant or redundant parts.
-#. Generating the adjacency matrix representation suitable for runtime execution.
-
+#. Generating a portable set of instructions suitable for runtime execution.
 
 See our existing topology enhanced by the compiler with adding the state *Dumper* and *Loader*
 system nodes plus connecting the relevant *State* ports (dotted lines):
@@ -292,3 +292,13 @@ system nodes plus connecting the relevant *State* ports (dotted lines):
         db -- "0-T" --> ibt
         ibt -. state .-> iba
         l[(loader)] -. state .-> ibt -. state .-> d[(dumper)]
+
+
+Following is a brief description of the compiler API:
+
+.. autofunction:: forml.flow.compile
+
+.. autoclass:: forml.flow.Symbol
+
+.. autoclass:: forml.flow.Instruction
+   :members: execute

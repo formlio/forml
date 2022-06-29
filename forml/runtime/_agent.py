@@ -31,7 +31,13 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runner.path):
-    """Abstract base runner class to be extended by particular runner implementations."""
+    """Base class for implementing ForML runner providers.
+
+    The public API allows to perform all the standard actions of the :doc:`ForML lifecycles
+    <lifecycle>`.
+
+    All that needs to be supplied by the provider is the abstract ``._run()`` method.
+    """
 
     _METRIC_SCHEMA = dsl.Schema.from_fields(dsl.Field(dsl.Float(), name='Metric'))
 
@@ -42,6 +48,13 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         sink: typing.Optional[io.Sink] = None,
         **_,
     ):
+        """
+        Args:
+            instance: Particular instance of the persistent artifacts to be executed.
+            feed: Optional input feed instance to retrieve the data from (falls back to the default
+                  configured feed).
+            sink: Output sink instance (no output is produced if omitted).
+        """
         self._instance: asset.Instance = instance or asset.Instance()
         self._feed: io.Feed = feed or io.Feed()
         self._sink: typing.Optional[io.Sink] = sink
@@ -158,15 +171,14 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         Returns:
             Optional return value.
         """
-        return self._run(flow.generate(segment, assets))
+        return self._run(flow.compile(segment, assets))
 
     @abc.abstractmethod
-    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
-        """Actual run action to be implemented according to the specific runtime.
+    def _run(self, symbols: typing.Collection[flow.Symbol]) -> None:
+        """Actual run action implementation using the specific provider execution technology.
 
         Args:
-            symbols: task graph to be executed.
-
-        Returns:
-            Optional pipeline return value.
+            symbols: Collection of portable symbols representing the workflow task graph to be
+                     executed as produced by the :func:`flow.compile() <forml.flow.compile>`
+                     function.
         """

@@ -197,7 +197,7 @@ class Operator(flow.Operator, metaclass=abc.ABCMeta):
     When used as a decorator, this method creates an *operator* engaging the wrapped *actor* in
     the *apply-mode*. If *stateful*, the actor also gets normally trained in *train-mode* (but
     doesn't get applied to the train-mode features unless also decorated with the ``@train``
-    decorator!)::
+    decorator!).
 
     Example usage with a wrapped *stateful* actor::
 

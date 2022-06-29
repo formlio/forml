@@ -38,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Components(collections.namedtuple('Components', 'source, pipeline, evaluation')):
-    """Tuple of all the principal components representing a ForML project."""
+    """Tuple of all the principal components constituting a ForML project."""
 
     source: 'project.Source'
     pipeline: flow.Composable
@@ -165,11 +165,11 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         return hash(self.path) ^ hash(self.package) ^ hash(tuple(sorted(self.modules.items())))
 
     @property
-    def components(self) -> Components:
+    def components(self) -> 'project.Components':
         """Tuple of all the individual principal components from this project artifact.
 
         Returns:
-            Tuple of project principal components.
+            Tuple of the project :ref:`principal components <project-principal>`.
         """
         return Components.load(self.package, self.path, **self.modules)
 
@@ -177,7 +177,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     def launcher(self) -> 'runtime.Virtual':
         """A runtime launcher configured with a volatile registry preloaded with this artifact.
 
-        This can be used to interactively execute the particular steps of the project development
+        This can be used to interactively execute the particular actions of the project development
         lifecycle. The linked volatile registry is persistent only during the lifetime of this
         artifact instance.
 

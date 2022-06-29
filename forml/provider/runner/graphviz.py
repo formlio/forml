@@ -31,7 +31,23 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Runner(runtime.Runner, alias='graphviz'):
-    """Graphviz based runner implementation."""
+    """(Pseudo)runner using the :doc:`Graphviz drawing software <graphviz:index>` for rendering
+    graphical visualization of the workflow task graph.
+
+    The workflow obviously doesn't get really executed!
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [RUNNER.visual]
+        provider = "graphviz"
+        format = "png"
+
+    Select the ``graphviz`` :ref:`extras to install <install-extras>` ForML together with the
+    Graphviz support.
+    """
 
     FILEPATH = f'{conf.APPNAME}.dot'
 
@@ -44,12 +60,19 @@ class Runner(runtime.Runner, alias='graphviz'):
         view: bool = True,
         **gvkw: typing.Any,
     ):
+        """
+        Args:
+            filepath: Target path for producing the DOT file.
+            view: If True, open the rendered result with the default application.
+            gvkw: Any of the supported (and non-colliding) :class:`graphviz.Digraph` keyword
+                  arguments.
+        """
         super().__init__(instance, feed, sink)
         self._filepath: pathlib.Path = pathlib.Path(filepath or self.FILEPATH)
         self._view: bool = view
         self._gvkw: typing.Mapping[str, typing.Any] = gvkw
 
-    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
+    def _run(self, symbols: typing.Collection[flow.Symbol]) -> None:
         dot: grviz.Digraph = grviz.Digraph(**self._gvkw)
         for sym in symbols:
             attrs = dict(shape='ellipse', style='rounded')

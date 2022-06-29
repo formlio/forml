@@ -21,10 +21,9 @@ order. This pattern is what we call a *lifecycle*. ForML supports two distinct l
 depending on the project stage.
 
 .. caution::
-   Do not confuse the lifecycles with *processing mechanism*. Forml projects can be operated in a
-   number of different ways (:ref:`cli/batch <platform-cli>` - as used in the examples bellow,
-   :doc:`interactively <interactive>` or using the :doc:`serving engine <serving>`) each of which is
-   subject to a particular lifecycle.
+   Do not confuse the lifecycles with the :ref:`runtime mechanism <runner-mechanism>`. ForML
+   projects can be operated in a number of different ways each of which is still subject to a
+   particular lifecycle.
 
 
 Iteration Accomplishment
@@ -103,15 +102,18 @@ Development Lifecycle
 
 As the name suggests, this lifecycle is exercised during the project development in scope of the
 :doc:`project source-code <project>` working copy. It is typically managed using the ``forml
-project <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the :ref:`virtual
-launcher <runner-virtual>` API when visited in the :doc:`interactive mode <interactive>`.
+project <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the
+:class:`runtime.Virtual <forml.runtime.Virtual>` launcher when visited in the :doc:`interactive
+mode <interactive>`.
 
 The expected behaviour of the particular action depends on the correct :doc:`project setup
 <project>`.
 
 .. hint::
    Any :ref:`model generations <lifecycle-generation>` produced within the development lifecycle
-   are stored using a volatile registry which is not persistent across multiple python sessions.
+   are stored using the :class:`Volatile registry
+   <forml.provider.registry.filesystem.volatile.Registry>` which is not persistent across multiple
+   python sessions.
 
 The development lifecycle actions are:
 

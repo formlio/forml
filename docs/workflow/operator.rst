@@ -228,9 +228,8 @@ the ``wrap.importer`` context manager:
 The default list of *auto-wrappers* is available as ``wrap.AUTO`` and contains the following
 instances:
 
-* ``wrap.AutoSklearnTransformer>``
-* ``wrap.AutoSklearnClassifier``
-* ``wrap.AutoSklearnRegressor``
+.. autoattribute:: forml.pipeline.wrap.AUTO
+
 
 Custom auto-wrappers can be implemented by extending the ``wrap.Auto`` base class:
 

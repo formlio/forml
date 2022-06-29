@@ -131,8 +131,12 @@ class AutoSklearnRegressor(AutoClass[type[sklbase.RegressorMixin]]):
         return super().__new__(cls, sklbase.RegressorMixin, wrap)
 
 
-# Default list of auto-wrapper implementations.
-AUTO = [AutoSklearnTransformer(), AutoSklearnClassifier(), AutoSklearnRegressor()]
+#: Default list of auto-wrapper implementations.
+AUTO = [
+    AutoSklearnTransformer(),
+    AutoSklearnClassifier(),
+    AutoSklearnRegressor(),
+]
 
 
 def _walk(owner: object, *attrs: str, seen: typing.Optional[set] = None) -> typing.Iterable[tuple[object, str, object]]:
