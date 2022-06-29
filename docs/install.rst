@@ -40,6 +40,8 @@ install ForML using these dependencies, simply add the ``--constraint`` to (any 
 
     $ pip install --constraint https://raw.githubusercontent.com/formlio/forml/main/constraints.txt forml
 
+.. _install-extras:
+
 Extra Features
 --------------
 

@@ -94,12 +94,16 @@ Each ForML package is published with explicit version as specified in the :ref:`
 <project-setup>` at the time of releasing. All registry providers require packages of the same
 project to have unique monotonically increasing version numbers.
 
-.. _registry_staging:
+.. _registry-staging:
+
+Package Staging
+"""""""""""""""
 
 Registry providers might internally persist packages in arbitrary format. In order to launch their
 code using a :doc:`runner <runner>`, however, they need to be
 :meth:`mounted <forml.io.asset.Registry.mount>` and exposed using a posix filesystem path known as
-the *staging path* reachable from all runner nodes.
+the *staging path* reachable from all runner nodes (for distributed deployment this implies shared
+network posix filesystem).
 
 .. _registry-assets:
 

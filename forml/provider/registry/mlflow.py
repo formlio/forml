@@ -172,24 +172,24 @@ class Client:
 
 
 class Registry(asset.Registry, alias='mlflow'):
-    """ForML model registry implementation backed by the MLFlow Tracking Server.
+    """ForML model registry implementation using the :doc:`MLflow Tracking Server <mlflow:tracking>`
+    as the artifact storage.
 
-    :doc:`MLflow model registry <mlflow:model-registry>`
+    Multiple ForML model registries can be hosted on single MLflow server in parallel using the
+    *virtual* repositories distinguished by the ``repoid`` parameter.
 
-    virtual repo
-
-    :ref:`platform configuration <platform-config>`:
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
        :caption: config.toml
 
-        [REGISTRY]
-        default = "mlflow"
-
-        [REGISTRY.mlflow]
+        [REGISTRY.mlflocal]
         provider = "mlflow"
         tracking_uri = "http://127.0.0.1:5000"
+        staging = "/mnt/forml/.stage"
 
+    Select the ``mlflow`` :ref:`extras to install <install-extras>` ForML together with the MLflow
+    support.
     """
 
     class Root(collections.namedtuple('Root', 'project, repoid')):
@@ -260,7 +260,8 @@ class Registry(asset.Registry, alias='mlflow'):
                           ``tracking_uri``.
             repoid: Optional virtual repository ID.
             staging: Filesystem location reachable from all runner nodes to be used for
-                     :meth:`package mounting <forml.io.asset.Registry.mount>`.
+                     :ref:`package staging <registry-staging>` (defaults to a local temporal
+                     directory (invalid for distributed runners)).
         """
         super().__init__(staging)
         self._client = Client(tracking_uri, registry_uri, common_tags={self.TAG_REPOID: repoid})

@@ -33,13 +33,10 @@ Provider instances are registered in this bank using one of two possible *refere
    referenced using their aliases as ForML has no chance knowing where to import them from.
 
 
-
-implementing a number
-of abstract concepts:
-
-
 Model Registries
 ----------------
+
+Official :doc:`model persistence <registry>` providers:
 
 .. autosummary::
    :template: provider.rst

@@ -31,9 +31,10 @@ http://www.sphinx-doc.org/en/master/config
 #
 import os
 import sys
+import typing
 
 from sphinx import application
-from sphinx.ext import autosummary
+from sphinx.ext import autodoc, autosummary
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -189,6 +190,24 @@ object_description_options = [
 nbsphinx_requirejs_path = ''
 
 
+class ProviderDocumenter(autodoc.ClassDocumenter):
+    """Custom documenter for ForML provider implementations to workaround autodoc's signature
+    detection problems.
+    """
+
+    @classmethod
+    def can_document_member(cls, member: typing.Any, membername: str, isattr: bool, parent: typing.Any) -> bool:
+        return super().can_document_member(member, membername, isattr, parent) and issubclass(member, provider.Service)
+
+    def get_attr(self, obj: typing.Any, name: str, *defargs: typing.Any) -> typing.Any:
+        """Autodoc is detecting ForML providers to have __call__ (due to their metaclass) and takes
+        the signature from there instead of __init__.
+        """
+        if name == '__call__':
+            return None
+        return super().get_attr(obj, name, *defargs)
+
+
 class Autosummary(autosummary.Autosummary):
     """Patched Autosummary with custom formatting for ForML providers."""
 
@@ -205,4 +224,5 @@ class Autosummary(autosummary.Autosummary):
 
 def setup(app: application.Sphinx):
     """Sphinx setup hook."""
+    app.add_autodocumenter(ProviderDocumenter)
     app.add_directive('autosummary', Autosummary)

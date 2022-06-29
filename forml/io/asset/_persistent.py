@@ -32,7 +32,7 @@ from forml import conf, provider
 from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
 
 if typing.TYPE_CHECKING:
-    from forml import project as prj
+    from forml import project
     from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -60,7 +60,8 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
         """
         Args:
             staging: Filesystem location reachable from all runner nodes to be used for
-                     :meth:`package mounting <forml.io.asset.Registry.mount>`.
+                     :ref:`package staging <registry-staging>` (defaults to a local temporal
+                     directory (invalid for distributed runners)).
         """
         if not staging:
             LOGGER.warning('Using temporal non-distributed staging for %s', self)
@@ -113,7 +114,7 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
         """
         raise NotImplementedError()
 
-    def mount(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'prj.Artifact':
+    def mount(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'project.Artifact':
         """Pull and install the given project/release package using the *staging* filesystem
         location available to all runner nodes.
 
@@ -134,7 +135,7 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
             raise forml.MissingError(f'Package artifact {project}-{release} not found') from err
 
     @abc.abstractmethod
-    def push(self, package: 'prj.Package') -> None:
+    def push(self, package: 'project.Package') -> None:
         """Start a new release of a (possibly new) project based on the given package artifact.
 
         Args:
@@ -143,7 +144,7 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def pull(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'prj.Package':
+    def pull(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'project.Package':
         """Return the package of the given *existing* release.
 
         Args:
@@ -238,7 +239,7 @@ class Inventory(provider.Service, default=provcfg.Inventory.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get(self, application: str) -> 'prj.Descriptor':
+    def get(self, application: str) -> 'project.Descriptor':
         """Retrieve the descriptor for the given application.
 
         Only application returned by ``.list()`` can be requested.
@@ -252,7 +253,7 @@ class Inventory(provider.Service, default=provcfg.Inventory.default, path=provcf
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def put(self, descriptor: 'prj.Descriptor.Handle') -> None:
+    def put(self, descriptor: 'project.Descriptor.Handle') -> None:
         """Store the application descriptor into the inventory.
 
         Existing application with the same name gets overwritten.

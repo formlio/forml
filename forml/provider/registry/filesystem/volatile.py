@@ -16,7 +16,8 @@
 # under the License.
 
 """
-Volatile registry is a dummy registry implementation that doesn't persist anything outside of the current runtime.
+Volatile registry is a dummy registry implementation that doesn't persist anything outside
+the current runtime.
 """
 import collections
 import logging
@@ -34,11 +35,17 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Registry(posix.Registry, alias='volatile'):
-    """Volatile registry implementation provided as a non-distributed global registry persistent only during its
-    lifetime.
+    """Dummy registry implementation provided as a temporal non-distributed registry persistent
+    only during its lifetime.
+
+    All content is stored using a local temporal directory auto-purged upon garbage collection.
+
+    This registry is used by the :ref:`virtual launcher <runner-virtual>`. Defining it explicitly
+    using the :ref:`platform configuration <platform-config>` is not usually needed.
     """
 
     def __init__(self):
+        """No parameters accepted."""  # to avoid inheriting the parent docstring for autodoc
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
             prefix='registry-volatile-', dir=asset.TMPDIR
         )
