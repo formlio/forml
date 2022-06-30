@@ -127,6 +127,10 @@ Offline agent is the backend service responsible for doing all the heavy process
 * *evaluating* project performance (pushed to the `PerfDB`_)
 
 
+Gateway API
+-----------
+
+.. autoclass:: forml.runtime.Gateway
 
 
 Gateway Providers

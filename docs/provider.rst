@@ -38,7 +38,7 @@ Provider instances are registered in this bank using one of two possible *refere
 Model Registries
 ----------------
 
-Official :doc:`model persistence <registry>` providers:
+Base: :class:`forml.io.asset.Registry`
 
 .. autosummary::
    :template: provider.rst
@@ -53,6 +53,8 @@ Official :doc:`model persistence <registry>` providers:
 Runners
 -------
 
+Base: :class:`forml.runtime.Runner`
+
 .. autosummary::
    :template: provider.rst
    :nosignatures:
@@ -66,6 +68,8 @@ Runners
 Application Inventories
 -----------------------
 
+Base: :class:`forml.io.asset.Inventory`
+
 .. autosummary::
    :template: provider.rst
    :nosignatures:
@@ -75,6 +79,8 @@ Application Inventories
 
 Feeds
 -----
+
+Base: :class:`forml.io.Feed`
 
 .. autosummary::
    :template: provider.rst
@@ -86,6 +92,8 @@ Feeds
 Sinks
 -----
 
+Base: :class:`forml.io.Sink`
+
 .. autosummary::
    :template: provider.rst
    :nosignatures:
@@ -95,6 +103,8 @@ Sinks
 
 Gateways
 --------
+
+Base: :class:`forml.runtime.Gateway`
 
 .. autosummary::
    :template: provider.rst
