@@ -86,10 +86,20 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'setuptools': ('https://setuptools.pypa.io/en/latest/', None),
     'sklearn': ('https://scikit-learn.org/stable/', None),
+    'sqlalchemy': ('https://docs.sqlalchemy.org/en/latest/', None),
 }
 
 # Warn about all references where the target cannot be found
-nitpicky = False
+nitpicky = True
+_target_blacklist = {
+    'py:class': (
+        'pandas.core.generic.NDFrame',
+        '_Actor',
+        r'.+\[.*dsl.Ordering.Direction.*\].*',
+    ),
+    'py:.*': (r'(?:forml|asset|dsl|flow|project)\..*',),
+}
+nitpick_ignore_regex = [(k, v) for k, t in _target_blacklist.items() for v in t]
 
 # -- Options for HTML output -------------------------------------------------
 

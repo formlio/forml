@@ -18,7 +18,6 @@
 Runtime service facility.
 """
 import abc
-import asyncio
 import logging
 import typing
 
@@ -27,6 +26,10 @@ from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-impo
 from forml.io import asset, layout
 
 from . import dispatch
+
+if typing.TYPE_CHECKING:
+    import asyncio
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +43,7 @@ class Engine:
         registry: asset.Registry,
         feeds: io.Importer,
         processes: typing.Optional[int] = None,
-        loop: typing.Optional[asyncio.AbstractEventLoop] = None,
+        loop: typing.Optional['asyncio.AbstractEventLoop'] = None,
     ):
         self._wrapper: dispatch.Wrapper = dispatch.Wrapper(inventory, registry, processes, loop)
         self._dealer: dispatch.Dealer = dispatch.Dealer(feeds, processes, loop)
@@ -77,7 +80,7 @@ class Gateway(provider.Service, default=provcfg.Gateway.default, path=provcfg.Ga
         registry: typing.Optional[asset.Registry] = None,
         feeds: typing.Optional[io.Importer] = None,
         processes: typing.Optional[int] = None,
-        loop: typing.Optional[asyncio.AbstractEventLoop] = None,
+        loop: typing.Optional['asyncio.AbstractEventLoop'] = None,
         **_,
     ):
         if not inventory:
