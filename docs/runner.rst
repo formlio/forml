@@ -30,7 +30,7 @@ processing technologies for different workloads as these typically come with var
 performance criteria regarding the particular use-case (e.g. low latency for online serving vs
 large throughput for offline training).
 
-There are three different :ref:`execution mechanisms <platform-mechanism>` each engaging the
+There are three different :ref:`execution mechanisms <platform-execution>` each engaging the
 pipeline runners under the hood.
 
 

@@ -204,8 +204,8 @@ or *estimators*.
 Simple Decorated Operators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Custom actors can be turned into operators easily by wrapping within the provided ``wrap.Operator
-.*`` decorators:
+Custom actors can be turned into operators easily by wrapping within the provided
+``wrap.Operator.*`` decorators:
 
 .. autoclass:: forml.pipeline.wrap.Operator
    :members: apply, train, label, mapper

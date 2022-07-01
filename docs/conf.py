@@ -78,6 +78,7 @@ exclude_patterns = ['_build']
 intersphinx_mapping = {
     'dask': ('https://docs.dask.org/en/stable/', None),
     'graphviz': ('https://graphviz.readthedocs.io/en/stable/', None),
+    'jupyter': ('https://docs.jupyter.org/en/latest/', None),
     'mlflow': ('https://mlflow.org/docs/latest/', None),
     'openlake': ('https://openlake.readthedocs.io/en/latest/', None),
     'openschema': ('https://openschema.readthedocs.io/en/latest/', None),
@@ -105,7 +106,6 @@ nitpick_ignore_regex = [(k, v) for k, t in _target_blacklist.items() for v in t]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
 html_theme = 'sphinx_immaterial'
 
 # Set link name generated in the top bar.

@@ -31,7 +31,7 @@ While developing, ForML allows to execute the project source-code working copy b
    projects and should be integrated into the development process.
 
 To discover the structure of some real ForML project, it is worth exploring the available
-:doc:`tutorials <tutorials/titanic>`.
+:doc:`tutorials <tutorials/index>`.
 
 .. _project-init:
 

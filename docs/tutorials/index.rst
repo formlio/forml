@@ -22,20 +22,43 @@ this chapter. Assuming you've already installed ForML as per the :doc:`installat
 you can now go straight through the following list of step-by-step examples demonstrating the
 ForML capabilities.
 
-.. important::
-    Before proceeding with any of the tutorials, make sure to configure your environment as per the
-    :doc:`common setup instructions<common>`.
+.. _tutorial-common:
+.. rubric:: Common Setup
 
-The list of the available tutorials is as follows:
+The tutorials depend on the following initial environment configuration:
+
+Assuming you have no existing :doc:`feeds <../feed>` configured in your system yet, let's install
+the :doc:`Openlake feed<openlake:install>`:
+
+.. code-block:: console
+
+    $ pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
+
+
+Let's now configure the local ForML :doc:`platform <../platform>` by adding the following content to
+your :file:`~/.forml/config.toml`:
+
+.. literalinclude:: ../../tutorials/config.toml
+  :language: toml
+  :start-after: # under the License.
+
+
+Your local environment is now ready to perform all the runtime actions demonstrated in these
+tutorials.
+
+
+.. rubric:: Tutorials List
+
+The list of the available tutorials is:
 
 * :doc:`Pipeline demos <demos>` is a set of small *snippets* demonstrating the pipeline
   composition fundamentals.
-* :doc:`Titanic challenge <titanic>` is a *complete* end-to-end ML project implemented using ForML.
+* :doc:`Titanic challenge <titanic/index>` is a *complete* end-to-end ML project implemented using
+  ForML.
 
 
 .. toctree::
     :hidden:
 
-    common
     demos
-    titanic
+    titanic/index

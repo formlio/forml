@@ -26,8 +26,8 @@ from titanic.pipeline import preprocessing
 from forml import project
 from forml.pipeline import ensemble, wrap
 
-# Let's import number of the sklearn classifiers:
-# using the ``wrap.importer`` they'll transparently get converted into ForML operators
+# Let's import a number of the sklearn classifiers:
+# using the ``wrap.importer``, they'll transparently get converted into ForML operators
 with wrap.importer():
     # pylint: disable=ungrouped-imports
     from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
@@ -39,7 +39,7 @@ with wrap.importer():
     from sklearn.tree import DecisionTreeClassifier
 
 
-# Ensembling number of base models using the Stacking Generalization:
+# Ensembling a number of base models using the Stacking Generalization:
 STACK = ensemble.FullStack(  # here FullStack is the particular ensembler implementation
     GradientBoostingClassifier(random_state=42),
     SVC(kernel='rbf', random_state=42, probability=True),
@@ -48,13 +48,13 @@ STACK = ensemble.FullStack(  # here FullStack is the particular ensembler implem
     GaussianNB(),
     RandomForestClassifier(n_estimators=10, criterion='entropy', random_state=42),
     DecisionTreeClassifier(criterion='entropy', random_state=42),
-    # and selecting ``StratifiedKFold`` as the internal cross-validator for generating the stack folds
+    # and selecting ``StratifiedKFold`` as the cross-validator for generating the stack folds
     crossvalidator=model_selection.StratifiedKFold(n_splits=2, shuffle=True, random_state=42),
 )
 
 
-# And finally let's put together the actual pipeline composition using our preprocessing operators and the
-# model ensemble:
+# And finally, let's put together the actual pipeline composition using our preprocessing operators
+# and the model ensemble:
 PIPELINE = (
     preprocessing.Impute(random_state=42)
     # >> payload.Dump(path='/tmp/titanic/impute-$mode-$seq.csv')

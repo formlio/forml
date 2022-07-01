@@ -104,8 +104,8 @@ Params  system  both       1         1      Hyper-parameter getter/setter ports.
     we stay focused rather on the Actor itself.
 
 
-API
----
+Interface
+---------
 
 The actor API is defined using an abstract class of ``flow.Actor``. The generic way of
 implementing user-defined actors is to simply extend this class providing the relevant methods
@@ -116,6 +116,7 @@ with the desired functionality. The main parts of the API look as follows:
 
 .. autoclass:: forml.flow.Builder
 
+.. _actor-implementation:
 
 Implementation
 --------------
@@ -262,7 +263,7 @@ in the native implementations above):
 
 .. important::
    To have consistent naming convention for all actors regardless their implementation (whether
-   *native classes* or *decorated functions) - it should stick with the class naming convention,
+   *native classes* or *decorated functions*) - it should stick with the class naming convention,
    i.e. the *CapitalizedWords*.
 
 .. _actor-mapped:

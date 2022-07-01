@@ -13,25 +13,19 @@
     specific language governing permissions and limitations
     under the License.
 
-Common Setup
-============
+Titanic Challenge
+=================
 
-The tutorials depend on the following initial environment configuration:
-
-Assuming you have no existing :doc:`feeds <../feed>` configured in your system yet, let's install the
-:doc:`Openlake feed<openlake:install>`:
-
-.. code-block:: console
-
-    $ pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
+There is a complete ForML project available under ``tutorials/titanic/``. It is the famous
+`Titanic Challenge <https://www.kaggle.com/c/titanic>`_. We will use it here to demonstrate the
+typical ForML usecases.
 
 
-Let's now configure the local ForML :doc:`platform <../platform>` by adding the following content to your
-:file:`~/.forml/config.toml`:
+.. toctree::
+    :maxdepth: 2
 
-.. literalinclude:: ../../tutorials/config.toml
-  :language: toml
-  :start-after: # under the License.
-
-
-Your local environment is now ready to perform all the runtime actions demonstrated in these tutorials.
+    setup
+    Exploration with Jupyter <exploration>
+    pipeline
+    lifecycle
+    serving

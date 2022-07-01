@@ -18,6 +18,8 @@
 """
 Transformers useful for the Titanic dataset pre-processing.
 """
+# pylint: disable=invalid-name, unused-argument
+
 import typing
 
 import numpy
@@ -26,13 +28,14 @@ from sklearn import preprocessing
 
 from forml.pipeline import wrap
 
-# There is a number of different ways ForML allows to implement actors/operators. Here we use the simplest approach
-# of wrapping plain functions using the decorators from the ``forml.pipeline.wrap`` package:
+# There is a number of different ways ForML allows to implement actors/operators. Here we use the
+# easiest approach of wrapping plain functions using the decorators from the ``forml.pipeline.wrap``
+# package:
 
 
 @wrap.Operator.mapper
 @wrap.Actor.apply
-def ParseTitle(  # pylint: disable=invalid-name
+def ParseTitle(
     features: pandas.DataFrame,
     *,
     source: str,
@@ -50,12 +53,13 @@ def ParseTitle(  # pylint: disable=invalid-name
     return features.drop(columns=source)
 
 
+# sphinx: Impute start
 @wrap.Actor.train
-def Impute(  # pylint: disable=invalid-name
-    state: typing.Optional[dict[str, float]],  # pylint: disable=unused-argument
+def Impute(
+    state: typing.Optional[dict[str, float]],
     features: pandas.DataFrame,
-    labels: pandas.Series,  # pylint: disable=unused-argument
-    random_state: typing.Optional[int] = None,  # pylint: disable=unused-argument
+    labels: pandas.Series,
+    random_state: typing.Optional[int] = None,
 ) -> dict[str, float]:
     """Train part of a stateful transformer for missing values imputation."""
     return {
@@ -67,7 +71,7 @@ def Impute(  # pylint: disable=invalid-name
 
 @wrap.Operator.mapper
 @Impute.apply
-def Impute(  # pylint: disable=invalid-name
+def Impute(
     state: dict[str, float], features: pandas.DataFrame, random_state: typing.Optional[int] = None
 ) -> pandas.DataFrame:
     """Apply part of a stateful transformer for missing values imputation."""
@@ -76,18 +80,22 @@ def Impute(  # pylint: disable=invalid-name
         age_rnd = numpy.random.default_rng(random_state).integers(
             state['age_avg'] - state['age_std'], state['age_avg'] + state['age_std'], size=age_nan.sum()
         )
-        features.loc[age_nan, 'Age'] = age_rnd
-    features['Embarked'].fillna('S', inplace=True)
-    features['Fare'].fillna(state['fare_avg'], inplace=True)
+        features.loc[age_nan, 'Age'] = age_rnd  # random age with same distribution
+    features['Embarked'].fillna('S', inplace=True)  # assuming Southampton
+    features['Fare'].fillna(state['fare_avg'], inplace=True)  # mean fare
     assert not features.isna().any().any(), 'NaN still'
     return features
 
 
+# sphinx: Impute end
+
+
+# sphinx: Encode start
 @wrap.Actor.train
-def Encode(  # pylint: disable=invalid-name
-    state: typing.Optional[preprocessing.OneHotEncoder],  # pylint: disable=unused-argument
+def Encode(
+    state: typing.Optional[preprocessing.OneHotEncoder],
     features: pandas.DataFrame,
-    labels: pandas.Series,  # pylint: disable=unused-argument
+    labels: pandas.Series,
     columns: typing.Sequence[str],
 ) -> preprocessing.OneHotEncoder:
     """Train part of a stateful encoder for the various categorical features."""
@@ -98,7 +106,7 @@ def Encode(  # pylint: disable=invalid-name
 
 @wrap.Operator.mapper
 @Encode.apply
-def Encode(  # pylint: disable=invalid-name
+def Encode(
     state: preprocessing.OneHotEncoder, features: pandas.DataFrame, columns: typing.Sequence[str]
 ) -> pandas.DataFrame:
     """Apply part of a stateful encoder for the various categorical features."""
@@ -106,3 +114,6 @@ def Encode(  # pylint: disable=invalid-name
     result = pandas.concat((features.drop(columns=columns), onehot), axis='columns')
     result.columns = [str(c) for c in result.columns]
     return result
+
+
+# sphinx: Encode end

@@ -13,101 +13,29 @@
     specific language governing permissions and limitations
     under the License.
 
-Providers Architecture
-======================
+Providers Library
+=================
 
-TODO: decoupled from any specific technology...
+ForML providers are *plugins* implementing particular functionality defined within the framework
+using an abstract interface to decouple itself from specific technologies allowing for a greater
+operational flexibility.
 
-ForML uses an internal *bank* of available provider implementations of the different possible types.
-Provider instances are registered in this bank using one of two possible *references*:
-
-* provider's *fully qualified class name* - for example, the ``forml.provider.runner.dask:Runner``
-* for convenience, each provider can also optionally have an *alias* defined by its author - ie
-  ``dask``
-
-.. caution::
-   For any provider implementation to be placed into the ForML provider bank, it needs to get
-   imported somehow. When the bank is queried for any provider instance using its reference, it
-   either is matched and returned or ForML attempts to import it. If it is queried using the
-   fully qualified class name, it is clear where to import it from (assuming the module is on
-   :data:`python:sys.path`). If it is however referenced by the alias, ForML only considers
-   providers from the main library shipped with ForML. This means external providers cannot be
-   referenced using their aliases as ForML has no chance knowing where to import them from.
-
-Configuration
--------------
-
-TODO
+Providers become available for runtime operations after being :ref:`properly configured
+<platform-config>` within the given platform.
 
 
-.. code-block:: toml
-   :caption: config.toml
-   :linenos:
-
-    logcfg = "logging.ini"
-
-    [RUNNER]
-    default = "compute"
-
-    [RUNNER.compute]
-    provider = "dask"
-    scheduler = "multiprocessing"
-
-    [RUNNER.visual]
-    provider = "graphviz"
-    format = "png"
-
-
-    [REGISTRY]
-    default = "homedir"
-
-    [REGISTRY.homedir]
-    provider = "posix"
-    #path = ~/.forml/registry
-
-
-    [FEED]
-    default = ["openlake"]
-
-    [FEED.openlake]
-    provider = "openlake:Local"
-
-
-    [SINK]
-    default = "stdout"
-
-    [SINK.stdout]
-    provider = "stdout"
-
-
-    [INVENTORY]
-    default = "homedir"
-
-    [INVENTORY.homedir]
-    provider = "posix"
-    #path = ~/.forml/inventory
-
-
-The file can contain configurations of multiple different provider instances labelled with custom alias - here for
-example the ``[RUNNER.compute]`` and ``[RUNNER.visual]`` are two configurations of different runners. The actual runner
-instance used at runtime out of these two configured is either user-selected (ie the ``-R``
-:ref:`CLI <platform-cli>` argument) or taken from the ``default`` reference from the main
-``[RUNNER]`` config section.
-
-
-All of the provider configurations must contain the option ``provider`` referring to the provider key used by the
-internal ForML bank mentioned above. Any other options specified within the provider section are considered to be
-arbitrary configuration arguments specific to given provider implementation.
-
-
-Provider Library
-----------------
+.. seealso::
+    This page is merely a summarizing list of all the official providers shipped with ForML. API
+    documentation as well as comprehensive description of their logical concepts is covered
+    in individual chapters dedicated to each of the provider types respectively (linked in
+    subsections below).
 
 
 Model Registries
-^^^^^^^^^^^^^^^^
+----------------
 
-Base: :class:`forml.io.asset.Registry`
+ForML delegates responsibility for :doc:`model persistence <registry>` to model registry providers
+implementing the abstract :class:`forml.io.asset.Registry` base class.
 
 .. autosummary::
    :template: provider.rst
@@ -120,9 +48,10 @@ Base: :class:`forml.io.asset.Registry`
 
 
 Runners
-^^^^^^^
+-------
 
-Base: :class:`forml.runtime.Runner`
+Actual execution of the :doc:`ForML workflows <workflow/index>` is performed by the
+:doc:`pipeline runner <runner>` providers implementing the :class:`forml.runtime.Runner` base class.
 
 .. autosummary::
    :template: provider.rst
@@ -134,22 +63,12 @@ Base: :class:`forml.runtime.Runner`
    forml.provider.runner.pyfunc.Runner
 
 
-Application Inventories
-^^^^^^^^^^^^^^^^^^^^^^^
-
-Base: :class:`forml.io.asset.Inventory`
-
-.. autosummary::
-   :template: provider.rst
-   :nosignatures:
-   :toctree: _auto
-
-   forml.provider.inventory.posix.Inventory
-
 Feeds
-^^^^^
+-----
 
-Base: :class:`forml.io.Feed`
+To decouple projects from any physical data sources, ForML is using a generic :doc:`query DSL <dsl>`
+working with logical schemas that only at runtime get resolved to actual data provided by the
+platform-configured :doc:`set of feeds <feed>` implementing the :class:`forml.io.Feed` base class.
 
 .. autosummary::
    :template: provider.rst
@@ -159,10 +78,13 @@ Base: :class:`forml.io.Feed`
    forml.provider.feed.static.Feed
    openlake.Local
 
-Sinks
-^^^^^
 
-Base: :class:`forml.io.Sink`
+Sinks
+-----
+
+Reciprocally to the Feeds_ system, ForML is using :doc:`sink <sink>` providers for submitting the
+:doc:`workflow <workflow/index>` results according to the particular implementation of the
+:class:`forml.io.Sink` base class.
 
 .. autosummary::
    :template: provider.rst
@@ -171,10 +93,28 @@ Base: :class:`forml.io.Sink`
 
    forml.provider.sink.stdout.Sink
 
-Gateways
-^^^^^^^^
 
-Base: :class:`forml.runtime.Gateway`
+Application Inventories
+-----------------------
+
+For managing the high-level :doc:`application descriptors <application>` driving the :doc:`serving
+<serving>` layer, ForML defers to the :doc:`inventory <inventory>` providers implementing the
+:class:`forml.io.asset.Inventory` base class.
+
+.. autosummary::
+   :template: provider.rst
+   :nosignatures:
+   :toctree: _auto
+
+   forml.provider.inventory.posix.Inventory
+
+
+Gateways
+--------
+
+The :doc:`serving layer <serving>` representing one of the possible :ref:`execution mechanisms
+<platform-execution>` is using the gateway providers implementing the :class:`forml.runtime.Gateway`
+base class.
 
 .. autosummary::
    :template: provider.rst

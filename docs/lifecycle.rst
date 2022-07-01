@@ -21,7 +21,7 @@ order. This pattern is what we call a *lifecycle*. ForML supports two distinct l
 depending on the project stage.
 
 .. caution::
-   Do not confuse the lifecycles with the :ref:`execution mechanism <platform-mechanism>`. ForML
+   Do not confuse the lifecycles with the :ref:`execution mechanism <platform-execution>`. ForML
    projects can be operated in a number of different ways each of which is still subject to a
    particular lifecycle.
 

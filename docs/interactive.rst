@@ -16,7 +16,21 @@
 Interactive Mode
 ================
 
-ForML can also be used interactively. For now the best resource covering this topic is the :doc:`tutorial`.
+To enable practical *research and development* of ForML :doc:`projects <project>`, the framework
+allows in one of its :ref:`execution mechanisms <platform-execution>` to compose and operate its
+:doc:`workflows <workflow/index>` interactively. Generally, this can be utilized in REPL
+(*read-evaluate-print-loop*) based terminals or more typically using high-level frontend interfaces
+like the popular :doc:`Jupyter <jupyter:index>` notebooks.
+
+.. note::
+    ForML still remains grounded in the *code-first* principle of implementing the ML solution
+    as a software :doc:`project <project>` as opposed to some of the native *notebook-first*
+    oriented methodologies. The interactive mode is designed primarily for exploration rather than
+    implementation of the eventual solution.
+
+
+ForML can also be used interactively. For now, the best resource covering this topic is the
+:doc:`tutorial`.
 
 often in combination with virtual registry...
 

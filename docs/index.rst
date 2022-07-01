@@ -105,8 +105,13 @@ Resources
     :caption: Runtime Operations
 
     lifecycle
-    interactive
     platform
     runner
+    interactive
     serving
+
+
+.. toctree::
+    :hidden:
+
     provider

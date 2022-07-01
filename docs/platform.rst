@@ -38,15 +38,15 @@ ForML platform uses the `TOML <https://github.com/toml-lang/toml>`_ file format 
 configuration. The system will try to locate and merge the :file:`config.toml` file instances in
 the following directories (in order of parsing/merging - later overrides previous):
 
-+-----------------+----------------------------------------------------------------------------+
-| Location        | Meaning                                                                    |
-+=================+============================================================================+
-| ``/etc/forml/`` | *System*-wide global configuration directory                               |
-+-----------------+----------------------------------------------------------------------------+
-| ``~/.forml/``   | *User* homedir configuration (unless overridden by ``$FORML_HOME`` )       |
-+-----------------+----------------------------------------------------------------------------+
-| ``$FORML_HOME`` | Environment variable driven location of the *user* configuration directory |
-+-----------------+----------------------------------------------------------------------------+
++-----------------+-------------------------------------------------------------------------------+
+| Location        | Meaning                                                                       |
++=================+===============================================================================+
+| ``/etc/forml/`` | *System*-wide global configuration directory                                  |
++-----------------+-------------------------------------------------------------------------------+
+| ``~/.forml/``   | *User* homedir configuration (unless overridden by the :envvar:`$FORML_HOME` )|
++-----------------+-------------------------------------------------------------------------------+
+| ``$FORML_HOME`` | Environment variable driven location of the *user* configuration directory    |
++-----------------+-------------------------------------------------------------------------------+
 
 .. note::
    Both the *system* and the *user* config locations are also appended to the runtime
@@ -62,9 +62,68 @@ Following is the default content of the ForML platform configuration file:
    :start-after: # under the License.
 
 
-The majority of the configuration file deals with setting up all the different *providers*. This is
-covered in great detail in the standalone chapter dedicated to the :doc:`providers
-architecture <provider>` specifically.
+Providers Settings
+""""""""""""""""""
+
+The majority of the configuration file deals with setting up all the different :doc:`providers
+<provider>`. The file can contain multiple instances of preconfigured providers ready to be
+selected for a particular execution.
+
+The common structure for the provider configuration sections is:
+
+.. code-block:: ini
+
+    [<PROVIDER TYPE>]
+    default = "<instance alias>"
+
+    [<PROVIDER TYPE>.<instance alias>]
+    provider = "<provider reference>"
+    <provider option X> = <value X>
+    ...
+
+The meaning of the different placeholders and keywords is:
+
+``<PROVIDER TYPE>``:
+    One of the six types of provider abstractions used by ForML in *uppercase*:
+
+    * ``REGISTRY`` - for :doc:`Model registry <registry>` providers
+    * ``RUNNER`` - for :doc:`Pipeline runner <runner>` providers
+    * ``FEED`` - for :doc:`Source feed <feed>` providers
+    * ``SINK`` - for :doc:`Output sink <sink>` providers
+    * ``INVENTORY`` - for :doc:`Application inventory <inventory>` providers
+    * ``GATEWAY`` - for :doc:`Serving gateway <serving>` providers
+
+    Each of the provider type root section nominates one of its instances using the ``default``
+    keyword to pre-select a configuration instance for situations when no explicit choice is
+    specified during some particular execution.
+
+    .. attention::
+       The ``FEED`` provider type can specify a list of *multiple* instances as *default*
+       (contextual :ref:`feed selection <feed-selection>` is then performed at runtime).
+
+``<instance alias>``:
+    Each of the individual provider config instances is identified using its arbitrary *alias*.
+    This alias can also be used later to explicitly choose some particular config instance when
+    triggering an execution (ie using the ``-R`` :ref:`CLI <platform-cli>` argument).
+
+``<provider reference>``:
+    Each configuration instance must point to its :doc:`provider implementation <provider>` using
+    the ``provider`` keyword. The reference can have one of two potential forms:
+
+    * the canonical *fully qualified class name* specified as ``<full.module.path>:<class.name>`` -
+      for example the :class:`forml.provider.runner.dask:Runner <forml.provider.runner.dask.Runner>`
+    * the convenient *shortcut* (if defined by its implementor) - ie ``dask``
+
+    .. caution::
+       Shortcut references can only be used for auto-discovered provider implementations (typically
+       those shipped with ForML). Any external implementations can only be referenced using the
+       canonical form (plus the referred provider module must be on :data:`python:sys.path` so
+       that it can be imported).
+
+``<provider option X>``:
+    Any other options specified within the provider config instance section are considered to be
+    arbitrary arguments specific to given provider implementation and will be passed to its
+    constructor.
 
 
 Logging
@@ -76,7 +135,7 @@ customized using a :ref:`special config file <python:logging-config-fileformat>`
 top-level ``logcfg`` option in the main :ref:`config.toml <platform-config>`.
 
 
-.. _platform-mechanism:
+.. _platform-execution:
 
 Execution Mechanisms
 --------------------

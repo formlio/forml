@@ -31,7 +31,7 @@ The testing framework is available after importing the ``forml.testing`` module:
 
     from forml import testing
 
-See the :doc:`tutorials <tutorials/titanic>` for a real case unit test implementations.
+See the :doc:`tutorials <tutorials/index>` for a real case unit test implementations.
 
 
 Operator Test Case Outcome Assertions
