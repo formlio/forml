@@ -44,8 +44,9 @@ class Runner(runtime.Runner, alias='dask'):
         provider = "dask"
         scheduler = "threaded"
 
-    Select the ``dask`` :ref:`extras to install <install-extras>` ForML together with the Dask
-    support.
+    Important:
+        Select the ``dask`` :ref:`extras to install <install-extras>` ForML together with the Dask
+        support.
     """
 
     class Dag(dict):
@@ -85,9 +86,9 @@ class Runner(runtime.Runner, alias='dask'):
             assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'
-            if len(leaves) > 1:
+            if (leaves_len := len(leaves)) > 1:
                 LOGGER.debug(
-                    'Dag output based on %d leaves: %s', len(leaves), ','.join(repr(tasks[n][0]) for n in leaves)
+                    'Dag output based on %d leaves: %s', leaves_len, ','.join(repr(tasks[n][0]) for n in leaves)
                 )
                 output = self.Output()
                 self.output = id(output)

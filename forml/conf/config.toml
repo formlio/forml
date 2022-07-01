@@ -22,7 +22,7 @@ default = "dask"
 
 [RUNNER.dask]
 provider = "dask"
-scheduler = "multiprocessing"
+scheduler = "threaded"
 
 [RUNNER.graphviz]
 provider = "graphviz"
@@ -61,7 +61,7 @@ provider = "posix"
 
 
 [GATEWAY]
-default = "http"
+default = "rest"
 
-[GATEWAY.http]
+[GATEWAY.rest]
 provider = "rest"

@@ -82,6 +82,7 @@ intersphinx_mapping = {
     'openlake': ('https://openlake.readthedocs.io/en/latest/', None),
     'openschema': ('https://openschema.readthedocs.io/en/latest/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+    'pip': ('https://pip.pypa.io/en/stable/', None),
     'python': ('https://docs.python.org/3', None),
     'setuptools': ('https://setuptools.pypa.io/en/latest/', None),
     'sklearn': ('https://scikit-learn.org/stable/', None),

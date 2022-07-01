@@ -13,112 +13,106 @@
     specific language governing permissions and limitations
     under the License.
 
-Platform Setup
-==============
+Runtime Platform
+================
 
-Platform is a configuration-driven selection of particular :doc:`providers <provider>`:
+ForML platform is an environment configured to allow performing particular :doc:`lifecycle
+actions <lifecycle>` on a general ForML :doc:`project <project>`. Thanks to the plugable
+:doc:`provider architecture <provider>`, a ForML platform can be built up using a number of
+different technologies optimized for specific use-cases while keeping the same interface
+and thus guaranteeing portability of the implemented projects.
+
+
+Setup
+-----
+
+Make sure to :doc:`install<install>` all the necessary ForML components before proceeding to the
+next sections.
 
 .. _platform-config:
 
 Configuration File
-------------------
-ForML platform uses the `TOML <https://github.com/toml-lang/toml>`_ configuration file format.
-The system will try to locate and merge the :file:`config.toml` in the following places (in order
-of parsing/merging - later overrides previous):
+^^^^^^^^^^^^^^^^^^
 
-+-----------------+--------------------------------------------------------------------+
-| Location        | Meaning                                                            |
-+=================+====================================================================+
-| ``/etc/forml``  | **System**-wide global configuration                               |
-+-----------------+--------------------------------------------------------------------+
-| ``~/.forml``    | **User** homedir configuration (unless ``$FORML_HOME`` is set)     |
-+-----------------+--------------------------------------------------------------------+
-| ``$FORML_HOME`` | Alternative **user** configuration to the *homedir* configuration  |
-+-----------------+--------------------------------------------------------------------+
+ForML platform uses the `TOML <https://github.com/toml-lang/toml>`_ file format for its
+configuration. The system will try to locate and merge the :file:`config.toml` file instances in
+the following directories (in order of parsing/merging - later overrides previous):
 
-.. note:: Both the *system* and the *user* config locations are also appended to the runtime :data:`python:sys.path` so any python
-          modules stored into the config directories are potentially importable. This can be useful for the custom
-          `Feed Providers`_ implementations.
++-----------------+----------------------------------------------------------------------------+
+| Location        | Meaning                                                                    |
++=================+============================================================================+
+| ``/etc/forml/`` | *System*-wide global configuration directory                               |
++-----------------+----------------------------------------------------------------------------+
+| ``~/.forml/``   | *User* homedir configuration (unless overridden by ``$FORML_HOME`` )       |
++-----------------+----------------------------------------------------------------------------+
+| ``$FORML_HOME`` | Environment variable driven location of the *user* configuration directory |
++-----------------+----------------------------------------------------------------------------+
 
-Example ForML platform configuration:
+.. note::
+   Both the *system* and the *user* config locations are also appended to the runtime
+   :data:`python:sys.path` so any python modules stored into the config directories are potentially
+   importable. This can be useful for custom :doc:`feed provider <feed>` implementations.
 
-.. code-block:: toml
+Following is the default content of the ForML platform configuration file:
 
-    logcfg = "logging.ini"
-
-    [RUNNER]
-    default = "compute"
-
-    [RUNNER.compute]
-    provider = "dask"
-    scheduler = "multiprocessing"
-
-    [RUNNER.visual]
-    provider = "graphviz"
-    format = "png"
+.. literalinclude:: ../forml/conf/config.toml
+   :caption: config.toml (default)
+   :linenos:
+   :language: toml
+   :start-after: # under the License.
 
 
-    [REGISTRY]
-    default = "homedir"
+The majority of the configuration file deals with setting up all the different *providers*. This is
+covered in great detail in the standalone chapter dedicated to the :doc:`providers
+architecture <provider>` specifically.
 
-    [REGISTRY.homedir]
-    provider = "posix"
-    #path = ~/.forml/registry
-
-
-    [SINK]
-    default = "stdout"
-
-    [SINK.stdout]
-    provider = "stdout"
-
-
-    [INVENTORY]
-    default = "homedir"
-
-    [INVENTORY.homedir]
-    provider = "posix"
-    #path = ~/.forml/inventory
-
-
-The file can contain configurations of multiple different provider instances labelled with custom alias - here for
-example the ``[RUNNER.compute]`` and ``[RUNNER.visual]`` are two configurations of different runners. The actual runner
-instance used at runtime out of these two configured is either user-selected (ie the ``-R`` `CLI`_ argument) or
-taken from the ``default`` reference from the main ``[RUNNER]`` config section.
-
-All of the provider configurations must contain the option ``provider`` referring to the provider key used by the
-internal ForML bank mentioned above. Any other options specified within the provider section are considered to be
-arbitrary configuration arguments specific to given provider implementation.
 
 Logging
--------
+^^^^^^^
 
-Python logger is used throughout the framework to emit various logging messages. The logging config can be customized
-using a config file specified in the top-level ``logcfg`` option in the main `configuration file`_.
+The :doc:`python logger <python:library/logging>` is used throughout the framework to emit
+various logging messages. The :doc:`logging config <python:library/logging.config>` can be
+customized using a :ref:`special config file <python:logging-config-fileformat>` referenced in the
+top-level ``logcfg`` option in the main :ref:`config.toml <platform-config>`.
+
+
+.. _platform-mechanism:
+
+Execution Mechanisms
+--------------------
+
+ForML is using the pluggable :doc:`pipeline runners <runner>` to perform all the
+possible :doc:`lifecycle actions <lifecycle>`. There are three different mechanisms to carry out
+the execution:
+
+* The :ref:`command-line driven <platform-cli>` batch processing.
+* Execution in the :doc:`interactive mode <interactive>` using the :class:`Virtual launcher
+  <forml.runtime.Virtual>`.
+* Spinning up the :doc:`serving engine <serving>` using a particular application gateway provider.
+
 
 .. _platform-cli:
 
-CLI
----
+Command-line Interface
+^^^^^^^^^^^^^^^^^^^^^^
 
-The production :doc:`lifecycle <lifecycle>` management can be fully operated in a batch mode from command-line using
-the following syntax:
+The :doc:`lifecycle <lifecycle>` management can be fully operated in batch mode using the
+command-line interface - see the integrated help for more details:
 
-.. code-block:: none
+.. code-block:: console
 
-    Usage: forml model [OPTIONS] COMMAND [ARGS]...
+    $ forml --help
+    Usage: forml [OPTIONS] COMMAND [ARGS]...
 
-      Model command group.
+      Lifecycle Management for Datascience Projects.
 
     Options:
-      -R, --runner TEXT    Runtime runner reference.
-      -P, --registry TEXT  Persistent registry reference.
-      -I, --feed TEXT      Input feed references.
-      -O, --sink TEXT      Output sink reference.
-      --help               Show this message and exit.
+      -C, --config PATH               Additional config file.
+      -L, --loglevel [debug|info|warning|error]
+                                      Global loglevel to use.
+      --help                          Show this message and exit.
 
     Commands:
-      apply  Apply the given (or default) generation.
-      eval   Evaluate predictions of the given (or default) generation.
-      train  Train new generation of the given (or default) project release.
-      tune   Tune new generation of the given (or default) project release.
+      application  Application command group.
+      model        Model command group (production lifecycle).
+      project      Project command group (development lifecycle).

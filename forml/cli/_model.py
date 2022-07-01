@@ -102,7 +102,7 @@ def group(
     feed: typing.Optional[typing.Sequence[str]],
     sink: typing.Optional[str],
 ):
-    """Model command group."""
+    """Model command group (production lifecycle)."""
     context.obj = Scope(context.obj, runner, registry, feed, sink)
 
 

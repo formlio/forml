@@ -13,8 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
-Providers Library
-=================
+Providers Architecture
+======================
 
 TODO: decoupled from any specific technology...
 
@@ -34,9 +34,78 @@ Provider instances are registered in this bank using one of two possible *refere
    providers from the main library shipped with ForML. This means external providers cannot be
    referenced using their aliases as ForML has no chance knowing where to import them from.
 
+Configuration
+-------------
+
+TODO
+
+
+.. code-block:: toml
+   :caption: config.toml
+   :linenos:
+
+    logcfg = "logging.ini"
+
+    [RUNNER]
+    default = "compute"
+
+    [RUNNER.compute]
+    provider = "dask"
+    scheduler = "multiprocessing"
+
+    [RUNNER.visual]
+    provider = "graphviz"
+    format = "png"
+
+
+    [REGISTRY]
+    default = "homedir"
+
+    [REGISTRY.homedir]
+    provider = "posix"
+    #path = ~/.forml/registry
+
+
+    [FEED]
+    default = ["openlake"]
+
+    [FEED.openlake]
+    provider = "openlake:Local"
+
+
+    [SINK]
+    default = "stdout"
+
+    [SINK.stdout]
+    provider = "stdout"
+
+
+    [INVENTORY]
+    default = "homedir"
+
+    [INVENTORY.homedir]
+    provider = "posix"
+    #path = ~/.forml/inventory
+
+
+The file can contain configurations of multiple different provider instances labelled with custom alias - here for
+example the ``[RUNNER.compute]`` and ``[RUNNER.visual]`` are two configurations of different runners. The actual runner
+instance used at runtime out of these two configured is either user-selected (ie the ``-R``
+:ref:`CLI <platform-cli>` argument) or taken from the ``default`` reference from the main
+``[RUNNER]`` config section.
+
+
+All of the provider configurations must contain the option ``provider`` referring to the provider key used by the
+internal ForML bank mentioned above. Any other options specified within the provider section are considered to be
+arbitrary configuration arguments specific to given provider implementation.
+
+
+Provider Library
+----------------
+
 
 Model Registries
-----------------
+^^^^^^^^^^^^^^^^
 
 Base: :class:`forml.io.asset.Registry`
 
@@ -51,7 +120,7 @@ Base: :class:`forml.io.asset.Registry`
 
 
 Runners
--------
+^^^^^^^
 
 Base: :class:`forml.runtime.Runner`
 
@@ -66,7 +135,7 @@ Base: :class:`forml.runtime.Runner`
 
 
 Application Inventories
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Base: :class:`forml.io.asset.Inventory`
 
@@ -78,7 +147,7 @@ Base: :class:`forml.io.asset.Inventory`
    forml.provider.inventory.posix.Inventory
 
 Feeds
------
+^^^^^
 
 Base: :class:`forml.io.Feed`
 
@@ -88,9 +157,10 @@ Base: :class:`forml.io.Feed`
    :toctree: _auto
 
    forml.provider.feed.static.Feed
+   openlake.Local
 
 Sinks
------
+^^^^^
 
 Base: :class:`forml.io.Sink`
 
@@ -102,7 +172,7 @@ Base: :class:`forml.io.Sink`
    forml.provider.sink.stdout.Sink
 
 Gateways
---------
+^^^^^^^^
 
 Base: :class:`forml.runtime.Gateway`
 

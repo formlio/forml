@@ -45,8 +45,10 @@ class Runner(runtime.Runner, alias='graphviz'):
         provider = "graphviz"
         format = "png"
 
-    Select the ``graphviz`` :ref:`extras to install <install-extras>` ForML together with the
-    Graphviz support.
+    Important:
+        Select the ``graphviz`` :ref:`extras to install <install-extras>` ForML together with the
+        Graphviz support. Additionally, download and install also the `native Graphviz system
+        binary <https://www.graphviz.org/download/>`_ (OS specific procedure).
     """
 
     FILEPATH = f'{conf.APPNAME}.dot'

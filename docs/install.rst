@@ -20,7 +20,7 @@ Installation
 Getting ForML
 -------------
 
-To install the pre-packaged version of ForML simply use ``pip``:
+To install the pre-packaged version of ForML simply use :doc:`pip <pip:cli/pip_install>`:
 
 .. code-block:: console
 
@@ -31,10 +31,10 @@ Dependency Constraints
 ----------------------
 
 Being a framework, the ForML distribution package comes with unpinned dependencies to give enough
-flexibility to the client applications. For reproducibility, there is a ``constraints.txt``
-provided to offer a known-to-be-working combination of all of the dependencies used by ForML. To
-install ForML using these dependencies, simply add the ``--constraint`` to (any of the mentioned)
-``pip install`` commands:
+flexibility to the client applications. For reproducibility, there is the :file:`constraints.txt`
+:ref:`constraints file <pip:constraints files>` provided to offer a *known-to-be-working*
+combination of all the dependencies used by ForML. To install ForML using these dependencies,
+simply add the ``--constraint`` to (any of the mentioned) ``pip install`` commands:
 
 .. code-block:: console
 
@@ -60,17 +60,20 @@ system-dependant mechanism (i.e. using the OS package manager).
 +==========+=======================================+================================================================+
 | all      | ``pip install 'forml[all]'``          | All extra features                                             |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| dask     | ``pip install 'forml[dask]'``         | The Dask runner                                                |
+| dask     | ``pip install 'forml[dask]'``         | The :class:`Dask runner <forml.provider.runner.dask.Runner>`   |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | dev      | ``pip install 'forml[dev]'``          | ForML development tools                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | docs     | ``pip install 'forml[docs]'``         | Documentation publishing dependencies                          |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| graphviz | ``pip install 'forml[graphviz]'``     | The Graphviz pseudo-runner (also requires ``graphviz`` binary) |
+| graphviz | ``pip install 'forml[graphviz]'``     | The :class:`Graphviz pseudo-runner                             |
+|          |                                       | <forml.provider.runner.graphviz.Runner>`                       |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| mlflow   | ``pip install 'forml[mlflow]'``       | Model registry backed by the MLFlow Tracking server            |
+| mlflow   | ``pip install 'forml[mlflow]'``       | The :class:`MLflow model registry                              |
+|          |                                       | <forml.provider.registry.mlflow.Registry>`                     |
 +----------+---------------------------------------+----------------------------------------------------------------+
-| rest     | ``pip install 'forml[rest]'``         | RESTful serving gateway                                        |
+| rest     | ``pip install 'forml[rest]'``         | The :class:`RESTful serving gateway                            |
+|          |                                       | <forml.provider.gateway.rest.Gateway>`                         |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | sql      | ``pip install 'forml[sql]'``          | SQL reader dependencies                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+

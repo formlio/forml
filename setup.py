@@ -46,6 +46,7 @@ EXTRAS_DOCS = {
     'sphinxcontrib-details-directive',
     'sphinxcontrib-napoleon',
     'nbsphinx',
+    'openlake',
 }
 
 EXTRAS_GRAPHVIZ = {'graphviz'}

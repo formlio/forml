@@ -30,15 +30,8 @@ processing technologies for different workloads as these typically come with var
 performance criteria regarding the particular use-case (e.g. low latency for online serving vs
 large throughput for offline training).
 
-.. _runner-mechanism:
-.. rubric:: Runtime Mechanism
-
-There are three different execution mechanisms engaging the pipeline runners under the hood:
-
-* The :ref:`command-line driven <platform-cli>` batch processing.
-* Execution in the :doc:`interactive mode <interactive>` using the :class:`Virtual launcher
-  <forml.runtime.Virtual>`.
-* Spinning up the :doc:`serving engine <serving>` using a particular application gateway provider.
+There are three different :ref:`execution mechanisms <platform-mechanism>` each engaging the
+pipeline runners under the hood.
 
 
 Runner API

@@ -188,8 +188,9 @@ class Registry(asset.Registry, alias='mlflow'):
         tracking_uri = "http://127.0.0.1:5000"
         staging = "/mnt/forml/.stage"
 
-    Select the ``mlflow`` :ref:`extras to install <install-extras>` ForML together with the MLflow
-    support.
+    Important:
+        Select the ``mlflow`` :ref:`extras to install <install-extras>` ForML together with the
+        MLflow support.
     """
 
     class Root(collections.namedtuple('Root', 'project, repoid')):

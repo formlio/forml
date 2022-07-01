@@ -19,10 +19,6 @@ Source Feed
 Feed is a :doc:`runtime platform <platform>` component responsible for resolving the :doc:`project defined <project>`
 :doc:`ETL query <dsl>` providing the requested data.
 
-.. autosummary::
-
-   forml.provider.feed.static.Feed
-   openlake.Local
 
 Feed Providers
 --------------
@@ -36,6 +32,15 @@ there.
 
 For the special case of the public datasets described using the :doc:`Openschema catalog<openschema:index>`, there is a
 lightweight feed provided in form of the installable :doc:`Openlake package<openlake:install>`.
+
+
+.. autosummary::
+   :template: provider.rst
+   :nosignatures:
+
+   forml.provider.feed.static.Feed
+   openlake.Local
+
 
 Reader
 ------
