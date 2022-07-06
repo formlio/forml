@@ -22,7 +22,7 @@ this chapter. Assuming you've already installed ForML as per the :doc:`installat
 you can now go straight through the following list of step-by-step examples demonstrating the
 ForML capabilities.
 
-.. _tutorial-common:
+.. _tutorial-setup:
 .. rubric:: Common Setup
 
 The tutorials depend on the following initial environment configuration:

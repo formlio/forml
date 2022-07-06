@@ -16,9 +16,12 @@
 Unit Testing
 ============
 
-ForML provides a custom testing framework for user-defined operators. It is built on top of the
-standard :doc:`unittest library <python:library/unittest>` with an API specialized to cover all the
-standard operator outcomes while minimizing any boiler-plating.
+ForML provides a custom testing framework for user-defined :doc:`operators <workflow/operator>`. It
+is built on top of the standard :doc:`unittest library <python:library/unittest>` with an API
+specialized to cover all the standard operator outcomes while minimizing any boiler-plating.
+Internally it uses the :class:`Virtual launcher <forml.runtime.Virtual>` to carry out the
+particular test scenarios as a genuine ForML :doc:`workflow <workflow/index>` wrapping the tested
+operator.
 
 The tests need to be placed under the :file:`tests/` folder of your :ref:`project
 <project-structure>` (note ``unittest`` requires all test files and the :file:`tests/` directory
@@ -31,7 +34,8 @@ The testing framework is available after importing the ``forml.testing`` module:
 
     from forml import testing
 
-See the :doc:`tutorials <tutorials/index>` for a real case unit test implementations.
+.. seealso::
+    See the :doc:`tutorials <tutorials/index>` for a real case unit test implementations.
 
 
 Operator Test Case Outcome Assertions

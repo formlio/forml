@@ -20,7 +20,7 @@ Feed is a :doc:`runtime platform <platform>` component responsible for resolving
 :doc:`ETL query <dsl>` providing the requested data.
 
 
-.. _feed_selection:
+.. _feed-selection:
 
 Contextual Feed Selection
 -------------------------

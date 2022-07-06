@@ -59,7 +59,7 @@ agent bootstrapping or periodical cache refreshing while others are synchronous 
 
 1. Fetching the serving manifest from the *project roster*.
 2. Selecting a particular model generation using the dynamic *rollout strategy* as defined in the serving manifest.
-3. Loading the selected model generation from the :doc:`model registry<registry/index>`.
+3. Loading the selected model generation from the :doc:`model registry<registry>`.
 4. Fetching all missing input features for augmenting the particular request according to the project
    :ref:`input DSL <concept-dsl>`.
 5. Running the prediction pipeline and responding with the result.
@@ -123,7 +123,7 @@ Offline Agent
 
 Offline agent is the backend service responsible for doing all the heavy processing of:
 
-* (incremental) *training* and *tuning* of new model generations (pushed to the :doc:`model registry<registry/index>`)
+* (incremental) *training* and *tuning* of new model generations (pushed to the :doc:`model registry<registry>`)
 * *evaluating* project performance (pushed to the `PerfDB`_)
 
 

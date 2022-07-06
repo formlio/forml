@@ -84,8 +84,8 @@ Workflow Expression API
 
         FLOW = SimpleImputer(strategy='mean') >> LogisticRegression(max_iter=3, solver='lbfgs')
 
-    More on the *Operators* and *Actors* is discussed in the :doc:`workflow` sections. See also the :doc:`lifecycle`
-    sections for details on the supported pipeline modes.
+    More on the *Operators* and *Actors* is discussed in the :doc:`workflow/index` sections. See
+    also the :doc:`lifecycle` sections for details on the supported pipeline modes.
 
 
 Runtime Independence
@@ -118,7 +118,7 @@ Persistence
     belong to one *Release*.
 
     Both Releases and Generations are *project artifacts* that require persistent runtime storage called *Registry*
-    that allows publishing, locating and fetching these entities. See the :doc:`registry/index` section for the list of
+    that allows publishing, locating and fetching these entities. See the :doc:`registry` section for the list of
     existing registry implementations and their configurations.
 
 .. _concept-execution:
@@ -127,5 +127,5 @@ Execution
     At runtime, the native actor DAG produced through the operator composition gets transformed to a representation
     of the selected third-party task dependency *runner* and the actual execution is carried under its control.
 
-    The list of supported runners shipped with ForML and their documentation can be found in the :doc:`runner/index`
+    The list of supported runners shipped with ForML and their documentation can be found in the :doc:`runner`
     section.

@@ -35,7 +35,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Registry(posix.Registry, alias='volatile'):
-    """Dummy registry implementation provided as a temporal non-distributed registry persistent
+    """(Pseudo)registry implementation provided as a temporal non-distributed storage persistent
     only during its lifetime.
 
     All content is stored using a local temporal directory auto-purged upon garbage collection.

@@ -17,8 +17,8 @@ Interactive Mode
 ================
 
 To enable practical *research and development* of ForML :doc:`projects <project>`, the framework
-allows in one of its :ref:`execution mechanisms <platform-execution>` to compose and operate its
-:doc:`workflows <workflow/index>` interactively. Generally, this can be utilized in REPL
+allows as one of its :ref:`execution mechanisms <platform-execution>` to compose and operate its
+:doc:`workflows <workflow/index>` *interactively*. Generally, this can be utilized within REPL
 (*read-evaluate-print-loop*) based terminals or more typically using high-level frontend interfaces
 like the popular :doc:`Jupyter <jupyter:index>` notebooks.
 
@@ -28,11 +28,8 @@ like the popular :doc:`Jupyter <jupyter:index>` notebooks.
     oriented methodologies. The interactive mode is designed primarily for exploration rather than
     implementation of the eventual solution.
 
-
-ForML can also be used interactively. For now, the best resource covering this topic is the
-:doc:`tutorial`.
-
-often in combination with virtual registry...
+This chapter describes the individual tools allowing to use ForML interactively. Please refer to
+the :doc:`tutorials <tutorials/index>` for actual examples demonstrating this principle in action.
 
 Project Handle
 --------------
@@ -40,6 +37,7 @@ Project Handle
 To operate ForML projects interactively, the framework provides the following
 programmatic interface allowing to access the ``project.Artifact`` handle using the
 ``project.open()`` function.
+
 
 .. autofunction:: forml.project.open
 
@@ -49,5 +47,11 @@ programmatic interface allowing to access the ``project.Artifact`` handle using 
 
 Virtual Launcher
 ----------------
+
+The Virtual launcher represents one of the possible :ref:`execution mechanisms
+<platform-execution>`. It is a wrapper around the low-level :doc:`runner <runner>` and :doc:`feed
+<feed>` concepts designed specifically for *interactive* operations (internally it is also used by
+the :doc:`testing framework <testing>`).
+
 
 .. autoclass:: forml.runtime.Virtual

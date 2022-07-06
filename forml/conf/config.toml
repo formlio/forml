@@ -26,7 +26,7 @@ scheduler = "threaded"
 
 [RUNNER.graphviz]
 provider = "graphviz"
-format = "png"
+format = "svg"
 
 [RUNNER.pyfunc]
 provider = "pyfunc"

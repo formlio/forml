@@ -45,7 +45,7 @@ EXTRAS_DOCS = {
     'sphinx-immaterial',
     'sphinxcontrib-details-directive',
     'sphinxcontrib-napoleon',
-    'nbsphinx',
+    'nbsphinx',  # also needs pandoc binary
     'openlake',
 }
 

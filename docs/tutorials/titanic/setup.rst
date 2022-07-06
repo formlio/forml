@@ -18,7 +18,7 @@ Initial Setup
 =============
 
 Before diving into the actual implementation, we need to go through a couple of setup procedures
-(in addition to those :ref:`common to all tutorials <tutorial-common>`).
+(in addition to those :ref:`common to all tutorials <tutorial-setup>`).
 
 
 Starting a New Project

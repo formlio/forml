@@ -20,8 +20,9 @@ After finishing the :doc:`exploration <exploration>`, we can proceed to implemen
 ML solution in form of the ForML project :ref:`pipeline component <project-pipeline>`.
 
 For cleaner structuring, we change the ``pipeline`` component from a flat module to a hierarchical
-package and add a skeleton for our ``titanic.pipeline.preprocessing`` module together with its
-unit tests under :file:`tests/pipeline/test_preprocessing.py` that we are going to implement later.
+package (which is :ref:`semantically identical <project-principal>`) and add a skeleton for our
+``titanic.pipeline.preprocessing`` module together with its unit tests under
+:file:`tests/pipeline/test_preprocessing.py` that we are going to implement later.
 The project structure now looks as follows:
 
 .. code-block:: console
@@ -45,11 +46,11 @@ The project structure now looks as follows:
     └── setup.py
 
 
-Custom Operators
-----------------
+Custom Preprocessing Operators
+------------------------------
 
 In addition to the ``Imputer`` operator we've created in scope of our :doc:`exploration
-<exploration>`, let's improve our preprocessing with a couple more operators. We stick with the
+<exploration>`, let's improve our preprocessing with a couple more operators. We stick to the
 simple ``@wrap`` technique for implementing :ref:`actors <actor-decorated>` and eventually
 :ref:`operators <operator-wrapped>`.
 
@@ -69,7 +70,7 @@ Encode
 ^^^^^^
 
 The :class:`OneHotEncoder <sklearn:sklearn.preprocessing.OneHotEncoder>` we used in our
-:doc:`baseline pipeline <exploration>` was applied bluntly to all columns including those
+:doc:`baseline workflow <exploration>` was applied bluntly to all columns including those
 non-categorical ones. Let's improve it by creating a custom operator with parametrized selection of
 the encoded columns:
 
@@ -80,12 +81,12 @@ the encoded columns:
   :start-after: sphinx: Encode start
   :end-before: sphinx: Encode end
 
+.. _titanic-pipeline-tests:
 
 Writing Unit Tests
 ------------------
 
 As a best practice, let's define :doc:`unit tests <../../testing>` for our operators.
-
 
 .. literalinclude:: ../../../tutorials/titanic/tests/pipeline/test_preprocessing.py
   :caption: tests/pipeline/test_preprocessing.py
@@ -94,19 +95,29 @@ As a best practice, let's define :doc:`unit tests <../../testing>` for our opera
   :start-at: import
 
 
-
 Pipeline Expression
 -------------------
 
+With all of the preprocessing operators now ready, we can proceed to defining the actual
+:ref:`workflow expression <workflow-expression>` for the :ref:`pipeline component
+<project-pipeline>` within the :file:`titanic/pipeline/__init__.py`.
 
-:ref:`<workflow-expression>`
+Unlike in our :doc:`baseline workflow <exploration>`, we are going to use multiple classifiers
+stacked together using the :class:`pipeline.ensemble.FullStack <forml.pipeline.ensemble.FullStack>`
+ensembler. Each of the individual models is native :doc:`Scikit-learn classifier
+<sklearn:supervised_learning>` auto-wrapped into a ForML operator using the
+:func:`pipeline.wrap.importer() <forml.pipeline.wrap.importer>` context manager.
 
-The file again ends with call to the :func:`project.setup()
-<forml.project.setup>` to register the component within the framework.
-
+The file again ends with
+call to the :func:`project.setup() <forml.project.setup>` to register the component within the
+framework.
 
 .. literalinclude:: ../../../tutorials/titanic/titanic/pipeline/__init__.py
   :caption: titanic/pipeline/__init__.py
   :linenos:
   :language: python
   :start-at: import
+
+
+:ref:`Component-wise <project-structure>`, this makes are project complete, allowing us to
+further :doc:`progress its lifecycle <lifecycle>`.

@@ -17,14 +17,17 @@
 Lifecycle Actions
 =================
 
-We will exercise the standard :ref:`lifecycle actions <lifecycle-actions>`.
+After completing :doc:`the first version of our pipeline <pipeline>` component, the project is
+ready to iterate through its :ref:`lifecycle <lifecycle-actions>`. Let's perform the standard
+actions using the :ref:`CLI <platform-cli>` as the :ref:`execution mechanism <platform-execution>`.
 
 
-Development Lifecycle Actions
------------------------------
+Development Lifecycle
+---------------------
 
-1. Change directory to the root of the ``titanic`` project working copy.
-2. Let's first run all the operator unit tests to confirm the project is in a good shape:
+1. Change directory to the root of the :file:`forml-tutorial-titanic` project working copy.
+2. Let's first run all the :ref:`defined operator unit tests <titanic-pipeline-tests>` to confirm
+   the project is in a good shape:
 
    .. code-block:: console
 
@@ -47,41 +50,44 @@ Development Lifecycle Actions
 
        OK
 
-3. Try running the ``train`` action on the *Graphviz* runner (called ``visual`` in our config ) to
-   see the train task graph:
+3. Try running the ``train`` action on the :class:`Graphviz runner
+   <forml.provider.runner.graphviz.Runner>` (called ``visual`` in our :ref:`config
+   <tutorial-setup>`) to see the train task graph:
 
    .. code-block:: console
 
        $ forml project train --runner visual
 
    .. image:: ../../_static/images/titanic-train.png
-      :align: center
+      :target: ../../_static/images/titanic-train.png
 
-4. Run the ``eval`` action on the (default) :class:`Dask <forml.provider.runner.dask.Runner>`
-runner (called ``compute`` in our config) to get the cross-validation score:
+4. Run the ``eval`` action on the (default) :class:`Dask runner <forml.provider.runner.dask.Runner>`
+   (called ``compute`` in our :ref:`config <tutorial-setup>`) to get the cross-validation score:
 
    .. code-block:: console
 
        $ forml project eval
        0.8379888268156425
 
-5. Create the project package artifact and upload it to the (default) filesystem registry
-   (assuming the same release doesn't already exist - otherwise increment the project version in
-   the :ref:`setup.py <project-setup>`):
+   ...great, we've managed to improve from our :doc:`baseline workflow <exploration>`!
+
+5. Create the project package artifact and upload it to the (default as per our :ref:`config
+   <tutorial-setup>`) filesystem :doc:`registry <../../registry>` (assuming the same release doesn't
+   already exist - otherwise increment the project version in the :ref:`setup.py <project-setup>`):
 
    .. code-block:: console
 
        $ forml project release
 
    This should publish the project into your local filesystem :doc:`model registry <../../registry>`
-   making it available for the production lifecycle. This becomes the first published :ref:`release
+   making it available for the production lifecycle. It becomes the first published :ref:`release
    <registry-package>` of this project versioned as ``0.1.dev0`` (according to the version from
    :ref:`setup.py <project-setup>`).
 
-Production Lifecycle Actions
-----------------------------
+Production Lifecycle
+--------------------
 
-:ref:`Production lifecycle <lifecycle-production>` doesn't need the project working copy so feel
+:ref:`Production lifecycle <lifecycle-production>` doesn't need the project working copy, so feel
 free to change the directory to another location before executing the commands.
 
 1. List the local registry confirming the project has been published as its first release:
@@ -97,9 +103,9 @@ free to change the directory to another location before executing the commands.
    The output shows the project artifact is available in the registry as a release ``0.1.dev0``
    not having any generation yet (the last command not producing any output).
 
-3. Train the project (using the default runner as per our config) to create the first
-   :ref:`generation <registry-assets>` of its models and list the registry to confirm it got
-   persisted:
+3. Train the project (using the default runner as per our :ref:`config <tutorial-setup>`) to create
+   the first :ref:`generation <registry-assets>` of its models and list the registry to confirm it
+   got persisted:
 
    .. code-block:: console
 
@@ -107,9 +113,10 @@ free to change the directory to another location before executing the commands.
        $ forml model list forml-example-titanic 0.1.dev0
        1
 
-   Now we have our first generation of the titanic models available in the registry.
+   Now we have our first :ref:`generation <registry-assets>` of the titanic models available in the
+   registry.
 
-3. Apply the trained generation to get the predictions:
+3. Apply the trained generation to the testset to get the predictions:
 
    .. code-block:: console
 
@@ -121,10 +128,11 @@ free to change the directory to another location before executing the commands.
        0.3860998  0.38041917 0.3885712 ]
 
 4. Run the ``apply`` mode alternatively on the :class:`Graphviz
-<forml.provider.runner.graphviz.Runner>` runner to explore its task graph:
+   <forml.provider.runner.graphviz.Runner>` runner to explore its task graph:
 
    .. code-block:: console
 
        $ forml model -R visual apply forml-example-titanic
 
    .. image:: ../../_static/images/titanic-apply.png
+      :target: ../../_static/images/titanic-apply.png

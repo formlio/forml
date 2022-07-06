@@ -21,6 +21,7 @@ Actor related actions/instruction.
 import abc
 import collections
 import functools
+import inspect
 import logging
 import typing
 
@@ -68,6 +69,17 @@ class Action(abc.ABC):
         """
         return self, args
 
+    def __contains__(self, action: type['Action']) -> bool:
+        """Check whether the given action type is performed in our scope.
+
+        Args:
+            action: Type of action to be searched for.
+
+        Returns:
+            True if our action involves the given action type.
+        """
+        return inspect.isclass(action) and isinstance(self, action)
+
 
 Value = typing.TypeVar('Value')
 
@@ -91,6 +103,9 @@ class Preset(typing.Generic[Value], Action, metaclass=abc.ABCMeta):
         if value:
             self.set(actor, value)
         return self._action.reduce(actor, *args)
+
+    def __contains__(self, action: type[Action]) -> bool:
+        return super().__contains__(action) or self._action.__contains__(action)
 
     @abc.abstractmethod
     def set(self, actor: 'flow.Actor', value: Value) -> None:

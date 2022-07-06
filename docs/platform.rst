@@ -43,7 +43,7 @@ the following directories (in order of parsing/merging - later overrides previou
 +=================+===============================================================================+
 | ``/etc/forml/`` | *System*-wide global configuration directory                                  |
 +-----------------+-------------------------------------------------------------------------------+
-| ``~/.forml/``   | *User* homedir configuration (unless overridden by the :envvar:`$FORML_HOME` )|
+| ``~/.forml/``   | *User* homedir configuration (unless overridden by the ``$FORML_HOME`` )      |
 +-----------------+-------------------------------------------------------------------------------+
 | ``$FORML_HOME`` | Environment variable driven location of the *user* configuration directory    |
 +-----------------+-------------------------------------------------------------------------------+

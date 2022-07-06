@@ -75,9 +75,13 @@ class TestApply(Functor):
         """Test the functor call."""
         with pytest.raises(RuntimeError, match='not trained'):
             functor(testset)
+        base_action = type(functor.action)
+        assert base_action in functor.action
         functor = functor.preset_state()
+        assert base_action in functor.action
         assert functor(actor_state, testset) == actor_prediction
         functor = functor.preset_params()
+        assert base_action in functor.action
         assert functor(hyperparams, actor_state, testset) == actor_prediction
 
 

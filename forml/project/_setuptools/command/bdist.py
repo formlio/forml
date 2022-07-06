@@ -68,7 +68,7 @@ class Package(setuptools.Command):
 
     def run(self) -> None:
         """Trigger the packaging process."""
-        import pip._internal as pip  # pylint: disable=import-outside-toplevel
+        import pip._internal.cli.main as pip  # pylint: disable=import-outside-toplevel
 
         pip.main(
             [
