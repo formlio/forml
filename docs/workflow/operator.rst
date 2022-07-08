@@ -70,22 +70,22 @@ The following diagram outlines the flows:
 
 .. md-mermaid::
 
-    graph LR
+    flowchart LR
         subgraph Mapper Worker Group
-        tt["mapper@train-mode.train()"]
-        ta(["mapper@train-mode.apply()"])
-        aa(["mapper@apply-mode.apply()"])
-        tt -. state .-> ta & aa
+            tt["mapper@train-mode.train()"]
+            ta(["mapper@train-mode.apply()"])
+            aa(["mapper@apply-mode.apply()"])
+            tt -. state .-> ta & aa
         end
         subgraph Trunk Heads
-        ti((T)) --> tt & ta
-        li((L)) -- L --> tt
-        ai((A)) --> aa
+            ti((T)) --> tt & ta
+            li((L)) -- L --> tt
+            ai((A)) --> aa
         end
         subgraph Trunk Tails
-        ta --> to((T))
-        li -- L --> lo((L))
-        aa --> ao((A))
+            ta --> to((T))
+            li -- L --> lo((L))
+            aa --> ao((A))
         end
 
 The segment between the ``A`` head/tail nodes represents the apply-mode task graph, while the
@@ -141,31 +141,31 @@ That would render the following task graphs:
 
 .. md-mermaid::
 
-    graph TD
+    flowchart TD
         subgraph Foo Worker Group
-        tft["foo@train-mode.train()"]
-        tfa(["foo@train-mode.apply()"])
-        afa(["foo@apply-mode.apply()"])
-        tft -. state .-> tfa & afa
+            tft["foo@train-mode.train()"]
+            tfa(["foo@train-mode.apply()"])
+            afa(["foo@apply-mode.apply()"])
+            tft -. state .-> tfa & afa
         end
         subgraph Bar Worker Group
-        tbt["bar@train-mode.train()"]
-        tba(["bar@train-mode.apply()"])
-        aba(["bar@apply-mode.apply()"])
-        tbt -. state .-> tba & aba
+            tbt["bar@train-mode.train()"]
+            tba(["bar@train-mode.apply()"])
+            aba(["bar@apply-mode.apply()"])
+            tbt -. state .-> tba & aba
         end
         subgraph Trunk Heads
-        ti((T)) --> tft & tfa
-        li((L)) -- L --> tft
-        ai((A)) --> afa
+            ti((T)) --> tft & tfa
+            li((L)) -- L --> tft
+            ai((A)) --> afa
         end
         tfa --> tbt & tba
         li --> tbt
         afa --> aba
         subgraph Trunk Tails
-        tba --> to((T))
-        li -- L --> lo((L))
-        aba --> ao((A))
+            tba --> to((T))
+            li -- L --> lo((L))
+            aba --> ao((A))
         end
 
 

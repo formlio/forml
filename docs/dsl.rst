@@ -22,6 +22,8 @@ custom DSL (*domain-specific language*) that's at :doc:`runtime <../platform>` i
 
 The two main features of the DSL grammar is the `schema`_ declaration and the `query`_ syntax.
 
+.. _dsl-schema:
+
 Schema
 ------
 
@@ -52,7 +54,7 @@ a *date* field ``dob`` (aliased as ``birthday``) plus its extended version ``Stu
 * field ordering is based on the in-class definition order, fields from parent classes come before fields of child
   classes, overriding a field doesn't change its position
 
-Schemas are expected to be published in form of :ref:`catalogs <io-catalogized-schemas>` which can be imported by both
+Schemas are expected to be published in form of :ref:`catalogs <io-schemas>` which can be imported by both
 :doc:`projects <../project>` and :doc:`platforms <../platform>` making them the mapping intermediaries.
 
 In :ref:`project sources <project-source>`, schemas can be used for specifying actual DSL *queries*. Any declared schema

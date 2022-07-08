@@ -66,7 +66,7 @@ This gives us the following disconnected workers:
 
 .. md-mermaid::
 
-    graph LR
+    flowchart LR
         sfbi((i)) --> sfb([select_foobar]) --> sfbo((o))
         szi((i)) --> sz([select_baz]) --> szo((o))
         ci1((i1)) & ci2((i2)) --> c([concat]) --> co((o))
@@ -76,8 +76,9 @@ This gives us the following disconnected workers:
 
 .. note::
     All the actors we chose in this example work with Pandas payload - by no means this is some
-    official format required by ForML. As :ref:`explained <actor-compatibility>`, ForML doesn't
-    care about the payload and the choice of compatible actors is responsibility of the implementor.
+    official format required by ForML. ForML doesn't care about the :ref:`particular payload
+    <io-payload>` and the choice of *mutually compatible* actors is an exclusive responsibility of
+    the implementor.
 
 Connecting Nodes
 ^^^^^^^^^^^^^^^^
@@ -111,7 +112,7 @@ Now, with that connections between our nodes, the topology looks shown:
 
 .. md-mermaid::
 
-    graph LR
+    flowchart LR
         sfbi((i)) --> sfb([select_foobar]) -- "0-0" --> c([concat])
         sbi((i)) --> sz([select_baz]) -- "0-1" --> c
         c -- "0-0" --> db([drop_bar]) -- "0-0" --> iba(["impute_baz.apply()"]) --> ibao((o))
@@ -155,10 +156,10 @@ original ``impute_baz_apply``. The task graph now looks like this:
 
 .. md-mermaid::
 
-    graph LR
+    flowchart LR
         subgraph Group
-        iba(["impute_baz.apply()"])
-        ibt["impute_baz.train()"]
+            iba(["impute_baz.apply()"])
+            ibt["impute_baz.train()"]
         end
         sfbi((i)) --> sfb([select_foobar]) -- "0-0" --> c([concat])
         sbi((i)) --> sz([select_baz]) -- "0-1" --> c
@@ -203,7 +204,7 @@ The following example demonstrates the effect when using the *Future* nodes:
 
 .. md-mermaid::
 
-    graph LR
+    flowchart LR
         w1([worker1]) --> f1((future1))
         f2((future2)) --> w2([worker2])
 
@@ -220,7 +221,7 @@ after subscribing the ``future2`` node to the ``future1`` output, you can see ho
 
 .. md-mermaid::
 
-    graph LR
+    flowchart LR
         w1([worker1]) --> w2([worker2])
 
 
@@ -280,10 +281,10 @@ system nodes plus connecting the relevant *State* ports (dotted lines):
 
 .. md-mermaid::
 
-    graph TD
+    flowchart TD
         subgraph Group
-        iba(["impute_baz.apply()"])
-        ibt["impute_baz.train()"]
+            iba(["impute_baz.apply()"])
+            ibt["impute_baz.train()"]
         end
         sfbi((i)) --> sfb([select_foobar]) -- "0-0" --> c([concat])
         sbi((i)) --> sz([select_baz]) -- "0-1" --> c

@@ -35,8 +35,10 @@ Project Handle
 --------------
 
 To operate ForML projects interactively, the framework provides the following
-programmatic interface allowing to access the ``project.Artifact`` handle using the
-``project.open()`` function.
+programmatic interface allowing to access the :class:`project.Artifact <forml.project.Artifact>`
+handle using either the :func:`project.open() <forml.project.open>` function or interactively
+binding any :class:`project.Source <forml.project.Source>` instance with a custom pipeline using the
+:meth:`.bind() <forml.project.Source.bind>` method.
 
 
 .. autofunction:: forml.project.open

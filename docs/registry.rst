@@ -41,40 +41,39 @@ particular instance of the ``posix`` registry provider holding a single :doc:`pr
 
 
 .. md-mermaid::
-    :name: flowcharts
 
     flowchart LR
-    subgraph reg1 ["Registry [posix]"]
-    subgraph prj1 ["Project [forml-titanic-example]"]
-    subgraph rel1 ["Release [0.1.dev0]"]
-    direction LR
-    pkg111[(package.4ml)]
-    subgraph gen1111 ["Generation [1]"]
-    direction TB
-    act11111[(asset1)]
-    act11112[(asset2)]
-    tag1111>tag.toml]
-    end
-    subgraph gen1112 ["Generation [2]"]
-    direction TB
-    act11121[(asset1)]
-    act11122[(asset2)]
-    tag1112>tag.toml]
-    end
-    end
-    subgraph rel2 ["Release [1.3.dev12]"]
-    direction LR
-    pkg112[(package.4ml)]
-    subgraph gen1121 ["Generation [1]"]
-    direction TB
-    act11211[(asset1)]
-    act11212[(asset2)]
-    act11213[(asset3)]
-    tag1121>tag.toml]
-    end
-    end
-    end
-    end
+        subgraph reg1 ["Registry [posix]"]
+            subgraph prj1 ["Project [forml-titanic-example]"]
+                subgraph rel1 ["Release [0.1.dev0]"]
+                    direction LR
+                    pkg111[(package.4ml)]
+                    subgraph gen1111 ["Generation [1]"]
+                        direction TB
+                        act11111[(asset1)]
+                        act11112[(asset2)]
+                        tag1111>tag.toml]
+                    end
+                    subgraph gen1112 ["Generation [2]"]
+                        direction TB
+                        act11121[(asset1)]
+                        act11122[(asset2)]
+                        tag1112>tag.toml]
+                    end
+                end
+                subgraph rel2 ["Release [1.3.dev12]"]
+                    direction LR
+                    pkg112[(package.4ml)]
+                    subgraph gen1121 ["Generation [1]"]
+                        direction TB
+                        act11211[(asset1)]
+                        act11212[(asset2)]
+                        act11213[(asset3)]
+                        tag1121>tag.toml]
+                    end
+                end
+            end
+        end
 
 
 .. _registry-package:

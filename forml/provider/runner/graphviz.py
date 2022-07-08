@@ -34,6 +34,8 @@ class Runner(runtime.Runner, alias='graphviz'):
     """(Pseudo)runner using the :doc:`Graphviz drawing software <graphviz:index>` for rendering
     graphical visualization of the workflow task graph.
 
+    The workflow obviously doesn't get really executed!
+
     For better readability, the runner is using the following shapes to plot the different objects:
 
     ============= ===========================================
@@ -47,8 +49,6 @@ class Runner(runtime.Runner, alias='graphviz'):
      Dotted edge    State transfer.
     ============= ===========================================
 
-    The workflow obviously doesn't get really executed!
-
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
@@ -58,8 +58,9 @@ class Runner(runtime.Runner, alias='graphviz'):
         provider = "graphviz"
         format = "svg"
         engine = "dot"
-        graph_attr = { rankdir = "LR", "bgcolor" = "transparent" }
-        node_attr = {  }
+        graph_attr = { rankdir = "LR", bgcolor = "transparent" }
+        node_attr = { nodesep = "0.75", ranksep = "0.75" }
+        edge_attr = { weight = "1.2" }
 
     Important:
         Select the ``graphviz`` :ref:`extras to install <install-extras>` ForML together with the

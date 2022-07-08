@@ -92,8 +92,8 @@ Resources
     :hidden:
     :caption: Data Management
 
-    dsl
     io
+    dsl
     feed
     sink
     registry

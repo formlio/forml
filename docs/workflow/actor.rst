@@ -23,9 +23,10 @@ transformation of the passing data.
 
 .. important::
     ForML doesn't care neither about the particular internal processing functionality of any
-    actors nor the actual types and formats of the data passed between them. All that ForML deals
-    with is the actor interconnection within the overall flow topology - responsibility for their
-    logical and functional compatibility is solely in hands of the implementor.
+    actors nor the actual types and formats of the :ref:`data passed between them <io-payload>`.
+    All that ForML deals with is the actor interconnection within the overall :doc:`flow topology
+    <topology>` - responsibility for their logical and functional compatibility is solely in
+    hands of the implementor.
 
 .. _actor-type:
 
@@ -48,26 +49,26 @@ engaged when in each of the particular actor modes:
 
 .. md-mermaid::
 
-    graph LR
+    flowchart LR
         subgraph Actor
-        A([apply-mode])
-        T[train-mode]
+            A([apply-mode])
+            T[train-mode]
         end
         subgraph Input Ports
-        AI1[/Apply 1\] --> A
-        AI2[/Apply ...\] --> A
-        AIM[/Apply M\] --> A
-        TI[/Train/] --> T
-        LI[/Labels/] --> T
-        SI[(State)] -. set .-> A & T
-        PI>Params] -. set .-> A & T
+            AI1[/Apply 1\] --> A
+            AI2[/Apply ...\] --> A
+            AIM[/Apply M\] --> A
+            TI[/Train/] --> T
+            LI[/Labels/] --> T
+            SI[(State)] -. set .-> A & T
+            PI>Params] -. set .-> A & T
         end
         subgraph Output Ports
-        A --> AO1[\Apply 1/]
-        A --> AO2[\Apply .../]
-        A --> AON[\Apply N/]
-        T -. get .-> SO[(State)]
-        A & T -. get .-> PO>Params]
+            A --> AO1[\Apply 1/]
+            A --> AO2[\Apply .../]
+            A --> AON[\Apply N/]
+            T -. get .-> SO[(State)]
+            A & T -. get .-> PO>Params]
         end
 
 

@@ -70,30 +70,27 @@ model registry.
 Lifecycle Actions
 -----------------
 
-A simplified logical flow of the individual steps and interactions between the two lifecycles is
+A simplified logical flow of the individual steps and transitions between the two lifecycles is
 illustrated by the following diagram:
 
 
 .. md-mermaid::
-    graph TD
+
+    flowchart TB
+        subgraph production [Production Lifecycle]
+            train[Train / Tune] -- Generation Advancement --> apply([Apply / Serve])
+            apply --> applyeval(Evaluate)
+            applyeval -- Metrics --> renew{Renew?} -- No --> apply
+            renew -- Yes --> how{How?} -- Refresh --> train
+        end
+
         subgraph development [Development Lifecycle]
-        implement(Explore / Implement) --> traineval(Test + Evaluate)
-        traineval -- Metrics --> ready{Ready?}
-        ready -- No --> implement
-        ready -- Yes --> release[(Release)]
+            how -- Reimplement --> implement(Explore / Implement)
+            implement --> traineval(Test + Evaluate)
+            traineval --> ready{Ready?} -- No --> implement
+            ready -- Yes --> release[(Release)] -- Release Roll-out --> train
         end
         init((Init)) --> implement
-
-        subgraph production [Production Lifecycle]
-        renew{Renew?} -- Yes --> how{How?}
-        how -- Refresh --> train
-        how -- Reimplement --> implement
-        release -- Release Roll-out --> train[Train / Tune]
-        train -- Generation Advancement --> apply([Apply / Serve])
-        apply --> applyeval(Evaluate)
-        applyeval -- Metrics --> renew
-        renew -- No --> apply
-        end
 
 .. _lifecycle-development:
 

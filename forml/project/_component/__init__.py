@@ -36,6 +36,9 @@ from forml.io import dsl, layout
 from .. import _body, _importer
 from .._component import virtual
 
+if typing.TYPE_CHECKING:
+    from forml import project
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -55,18 +58,40 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
 
 
 class Source(typing.NamedTuple):
-    """Feed independent data source component."""
+    """ForML data-source descriptor representing the ETL operation to be carried out at runtime
+    to deliver the required input payload to the project pipeline.
 
-    extract: 'Source.Extract'
+    The descriptor is combination of an *extraction* DSL query and an optional *transformation*
+    workflow.
+
+    Attention:
+        Instances are supposed to be created using the ``.query()`` method rather than calling the
+        constructor directly.
+    """
+
+    extract: 'project.Source.Extract'
+    """A DSL query to be performed by the eventual platform Feed representing the *extraction*
+    part of the ETL process. The value is assembled directly from the parameters of the ``.query()``
+    method."""
     transform: typing.Optional[flow.Composable] = None
+    """A workflow to be expanded into a regular task graph representing the optional
+    *transformation* part of the ETL process. The value is accrued from (potentially repeated)
+    chaining of the Source instance with workflow *operators* using the ``>>`` composition-like
+    syntax.
+
+    Examples:
+        >>> ETL = project.Source.query(
+        ...     schema.FooBar.select(schema.FooBar.foo)
+        ... ) >> payload.ToPandas() >> payload.Apply(lambda df: df.dropna())
+    """
 
     Labels = typing.Union[
         dsl.Feature,
         typing.Sequence[dsl.Feature],
         flow.Builder[flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
     ]
-    """Label type - either single column, multiple columns or generic label extracting actor (with
-    two output ports).
+    """Label type - either a single column, multiple columns or a generic label extracting actor
+    (with two output ports).
     """
 
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
@@ -74,14 +99,14 @@ class Source(typing.NamedTuple):
 
         train: dsl.Query
         apply: dsl.Query
-        labels: typing.Optional['Source.Labels']
+        labels: typing.Optional['project.Source.Labels']
         ordinal: typing.Optional[dsl.Operable]
 
         def __new__(
             cls,
             train: dsl.Queryable,
             apply: dsl.Queryable,
-            labels: typing.Optional['Source.Labels'],
+            labels: typing.Optional['project.Source.Labels'],
             ordinal: typing.Optional[dsl.Operable],
         ):
             train = train.query
@@ -103,38 +128,43 @@ class Source(typing.NamedTuple):
     def query(
         cls,
         features: dsl.Queryable,
-        labels: typing.Optional['Source.Labels'] = None,
+        labels: typing.Optional['project.Source.Labels'] = None,
         apply: typing.Optional[dsl.Queryable] = None,
         ordinal: typing.Optional[dsl.Operable] = None,
-    ) -> 'Source':
-        """Create new source component with the given parameters. All parameters are the DSL objects
-         - either queries or columns.
+    ) -> 'project.Source':
+        """Factory method for creating a new Source descriptor instance with the given *extraction*
+        parameters.
 
         Args:
-            features: Query defining the train (and if same also the ``apply``) features.
-            labels: (Sequence of) training label column(s) or label extraction actor builder.
-            apply: Optional query defining the apply features (if different from train ones).
-                   If provided, it must result in the same schema as the main provided via
-                   ``features``.
-            ordinal: Optional specification of an ordinal column.
+            features: A DSL query defining the *train-mode* (and implicitly also the *apply-mode*)
+                      dataset. The features must not contain any columns specified in the ``labels``
+                      parameter.
+            labels: Training label (or a sequence of) column(s) or a label extraction actor builder
+                    (single input and two output ports of *[features, labels]*).
+            apply: Optional query defining the explicit *apply-mode* features (if different from
+                   the train ones). If provided, it must result in the same layout as the main one
+                   provided via ``features``.
+            ordinal: Optional specification of an *ordinal* column defining the relative ordering of
+                     the data records. If provided, the workflow can be launched with optional
+                     ``lower`` and/or ``upper`` parameters specifying the requested data range.
 
         Returns:
             Source component instance.
         """
         return cls(cls.Extract(features, apply or features, labels, ordinal))  # pylint: disable=no-member
 
-    def __rshift__(self, transform: flow.Composable) -> 'Source':
+    def __rshift__(self, transform: flow.Composable) -> 'project.Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
-    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> '_body.Artifact':
-        """Create an artifact from this source and given pipeline.
+    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> 'project.Artifact':
+        """Create a virtual *project handle* from this *Source* and the given *pipeline* component.
 
         Args:
-            pipeline: Pipeline to create the artifact with.
-            **modules: Other optional artifact modules.
+            pipeline: Pipeline component to create the virtual project handle from.
+            modules: Optional modules representing the other project components.
 
         Returns:
-            Project artifact instance.
+            Virtual project handle.
         """
         return _body.Artifact(source=self, pipeline=pipeline, **modules)
 

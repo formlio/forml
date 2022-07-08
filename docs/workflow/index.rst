@@ -33,15 +33,11 @@ execution and runtime portability.
 ForML is providing a convenient API for defining complex workflows using simple notation based on
 the following concepts:
 
-:doc:`Operators <operator>`
-    are high-level pipeline macro-instructions that can be composed together and eventually
-    expand into the task graph.
-
-:doc:`Actors <actor>`
-    are the low-level task primitives representing the graph vertices.
-
-:doc:`Topology <topology>`
-    is the particular interconnection of the individual actors determining their dependencies.
+* :doc:`Operators <operator>` are high-level pipeline macro-instructions that can be composed
+  together and eventually expand into the task graph
+* :doc:`Actors <actor>` are the low-level task primitives representing the graph vertices
+* :doc:`Topology <topology>` is the particular interconnection of the individual actors
+  determining their dependencies.
 
 .. _workflow-mode:
 .. rubric:: Workflow Modes
@@ -89,19 +85,18 @@ expression might render a workflow with the two *train* and *apply* task graphs 
 follows:
 
 .. md-mermaid::
-    :name: flowcharts
 
-    graph TD
+    flowchart TD
         subgraph Train Mode
-        ft((Future)) --> xta(["LabelExtractor.apply()"]) -- L --> itt["NaNImputer.train()"] & ctt["RFC.train()"]
-        xta --> itt & ita(["NaNImputer.apply()"])
-        ita --> ctt
-        itt -. state .-> ita
+            ft((Future)) --> xta(["LabelExtractor.apply()"]) -- L --> itt["NaNImputer.train()"] & ctt["RFC.train()"]
+            xta --> itt & ita(["NaNImputer.apply()"])
+            ita --> ctt
+            itt -. state .-> ita
         end
         subgraph Apply Mode
-        fa((Future)) --> iaa(["NaNImputer.apply()"]) --> caa(["RFC.apply()"])
-        itt -. state .-> iaa
-        ctt -. state .-> caa
+            fa((Future)) --> iaa(["NaNImputer.apply()"]) --> caa(["RFC.apply()"])
+            itt -. state .-> iaa
+            ctt -. state .-> caa
         end
 
 The meaning of :doc:`operators <operator>` and how they are defined using :doc:`actors <actor>`

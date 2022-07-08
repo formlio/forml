@@ -22,7 +22,7 @@ default = "dask"
 
 [RUNNER.dask]
 provider = "dask"
-scheduler = "threaded"
+scheduler = "multiprocessing"
 
 [RUNNER.graphviz]
 provider = "graphviz"

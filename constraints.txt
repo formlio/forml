@@ -82,7 +82,7 @@ flake8==4.0.1
     #   flake8-bugbear
     #   flake8-colors
     #   flake8-typing-imports
-flake8-bugbear==22.6.22
+flake8-bugbear==22.7.1
     # via forml (setup.py)
 flake8-colors==0.1.9
     # via forml (setup.py)
@@ -118,7 +118,7 @@ idna==3.3
     # via
     #   anyio
     #   requests
-imagesize==1.3.0
+imagesize==1.4.1
     # via sphinx
 importlib-metadata==4.12.0
     # via mlflow
@@ -138,11 +138,11 @@ jinja2==3.1.2
     #   sphinx
 joblib==1.1.0
     # via scikit-learn
-jsonschema==4.6.1
+jsonschema==4.6.2
     # via nbformat
 jupyter-client==7.3.4
     # via nbclient
-jupyter-core==4.10.0
+jupyter-core==4.11.1
     # via
     #   jupyter-client
     #   nbconvert
@@ -151,7 +151,7 @@ jupyterlab-pygments==0.2.2
     # via nbconvert
 lazy-object-proxy==1.7.1
     # via astroid
-libcst==0.4.5
+libcst==0.4.6
     # via pycln
 locket==1.0.0
     # via partd
@@ -175,7 +175,7 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   typing-inspect
-nbclient==0.6.5
+nbclient==0.6.6
     # via nbconvert
 nbconvert==6.5.0
     # via nbsphinx
@@ -255,7 +255,7 @@ py==1.11.0
     # via pytest
 pyarrow==8.0.0
     # via openlake
-pycln==1.3.5
+pycln==2.0.1
     # via forml (setup.py)
 pycodestyle==2.8.0
     # via flake8
@@ -346,7 +346,7 @@ sphinx==5.0.2
     #   sphinxcontrib-details-directive
 sphinx-copybutton==0.5.0
     # via forml (setup.py)
-sphinx-immaterial==0.7.3
+sphinx-immaterial==0.8.0
     # via forml (setup.py)
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
@@ -395,13 +395,13 @@ tomli==2.0.1
     #   pep517
     #   pylint
     #   pytest
-tomlkit==0.11.0
+tomlkit==0.11.1
     # via pylint
 toolz==0.11.2
     # via
     #   dask
     #   partd
-tornado==6.1
+tornado==6.2
     # via jupyter-client
 traitlets==5.3.0
     # via
@@ -411,9 +411,9 @@ traitlets==5.3.0
     #   nbconvert
     #   nbformat
     #   nbsphinx
-typer==0.4.1
+typer==0.4.2
     # via pycln
-typing-extensions==4.2.0
+typing-extensions==4.3.0
     # via
     #   libcst
     #   pydantic
@@ -421,7 +421,7 @@ typing-extensions==4.2.0
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-urllib3==1.26.9
+urllib3==1.26.10
     # via requests
 uvicorn==0.18.2
     # via forml (setup.py)
