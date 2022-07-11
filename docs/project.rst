@@ -182,7 +182,7 @@ Dataset Definition
 
 The ``source`` component provides the project with a definite while portable dataset description. It
 is specified using the :meth:`project.Source.query <forml.project.Source.query>` as a
-:ref:`DSL expression <dsl-query>` against some particular :ref:`catalogued schemas <io-schemas>`.
+:ref:`DSL expression <dsl-query>` against some particular :ref:`schema catalog <io-catalog>`.
 
 .. code-block:: python
    :caption: source.py or source/__init__.py

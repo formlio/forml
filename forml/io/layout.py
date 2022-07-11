@@ -29,19 +29,29 @@ import typing
 
 import numpy
 
-from forml.io import dsl
-
-Array = typing.Sequence[typing.Any]  # Sequence of items (n-dimensional but only the top one need to be accessible)
-ColumnMajor = Array  # Sequence of columns of any type (columnar, column-wise semantic)
-RowMajor = Array  # Sequence of rows of any type (row-wise semantic)
+#: Sequence of items (n-dimensional but only the top one need to be accessible).
+Array = typing.Sequence[typing.Any]
+#: Sequence of columns of any type (columnar, column-wise semantic).
+ColumnMajor = Array
+#: Sequence of rows of any type (row-wise semantic).
+RowMajor = Array
 Native = typing.TypeVar('Native')
+
+if typing.TYPE_CHECKING:
+    from forml.io import dsl, layout  # pylint: disable=import-self
 
 
 class Tabular:
-    """Dataset interface providing both row/column oriented representation of the underlying data."""
+    """Dataset interface providing both *row* and *column* oriented representation of the underlying
+    data.
+
+    This is a minimalistic interface to be used internally for data payload as returned by Feed
+    ``Reader`` only to be converted to ``RowMajor`` representation once leaving the Feed
+    ``extraction`` stage.
+    """
 
     @abc.abstractmethod
-    def to_columns(self) -> ColumnMajor:
+    def to_columns(self) -> 'layout.ColumnMajor':
         """Get the dataset in a column oriented structure.
 
         Returns:
@@ -49,7 +59,7 @@ class Tabular:
         """
 
     @abc.abstractmethod
-    def to_rows(self) -> RowMajor:
+    def to_rows(self) -> 'layout.RowMajor':
         """Get the dataset in a row oriented structure.
 
         Returns:
@@ -57,18 +67,18 @@ class Tabular:
         """
 
     @abc.abstractmethod
-    def take_rows(self, indices: typing.Sequence[int]) -> 'Tabular':
+    def take_rows(self, indices: typing.Sequence[int]) -> 'layout.Tabular':
         """Slice the table returning new instance with just the selected rows.
 
         Args:
-            indices: Column indices to take.
+            indices: Row indices to take.
 
         Returns:
             New Tabular instance with just the given rows taken.
         """
 
     @abc.abstractmethod
-    def take_columns(self, indices: typing.Sequence[int]) -> 'Tabular':
+    def take_columns(self, indices: typing.Sequence[int]) -> 'layout.Tabular':
         """Slice the table returning new instance with just the selected columns.
 
         Args:
@@ -104,7 +114,7 @@ class Dense(Tabular):
         return data if isinstance(data, numpy.ndarray) else numpy.array(data, dtype=object)
 
     @classmethod
-    def from_columns(cls, columns: ColumnMajor) -> 'Dense':
+    def from_columns(cls, columns: 'layout.ColumnMajor') -> 'layout.Dense':
         """Helper for creating Tabular from sequence of columns.
 
         Args:
@@ -116,7 +126,7 @@ class Dense(Tabular):
         return cls(cls._to_ndarray(columns).T)
 
     @classmethod
-    def from_rows(cls, rows: RowMajor) -> 'Dense':
+    def from_rows(cls, rows: 'layout.RowMajor') -> 'layout.Dense':
         """Helper for creating Tabular from sequence of rows.
 
         Args:
@@ -127,45 +137,58 @@ class Dense(Tabular):
         """
         return cls(cls._to_ndarray(rows))
 
-    def to_columns(self) -> ColumnMajor:
+    def to_columns(self) -> 'layout.ColumnMajor':
         return self._rows.T
 
-    def to_rows(self) -> RowMajor:
+    def to_rows(self) -> 'layout.RowMajor':
         return self._rows
 
-    def take_rows(self, indices: typing.Sequence[int]) -> 'Dense':
+    def take_rows(self, indices: typing.Sequence[int]) -> 'layout.Dense':
         return self.from_rows(self._rows.take(indices, axis=0))
 
-    def take_columns(self, indices: typing.Sequence[int]) -> 'Dense':
+    def take_columns(self, indices: typing.Sequence[int]) -> 'layout.Dense':
         return self.from_columns(self._rows.T.take(indices, axis=0))
 
 
 class Entry(typing.NamedTuple):
-    """Product level input type."""
+    """Internal representation of the decoded ``Request`` payload."""
 
-    schema: dsl.Source.Schema
-    data: Tabular
+    schema: 'dsl.Source.Schema'
+    data: 'layout.Tabular'
 
 
 class Outcome(typing.NamedTuple):
-    """Product level output type."""
+    """Internal result payload representation to be encoded as ``Response``."""
 
-    schema: dsl.Source.Schema
-    data: RowMajor
+    schema: 'dsl.Source.Schema'
+    data: 'layout.RowMajor'
 
 
 _CSV = re.compile(r'\s*,\s*')
 
 
 class Encoding(collections.namedtuple('Encoding', 'kind, options')):
-    """Content encoding representation."""
+    """Content encoding representation to be used by the Serving gateways.
+
+    Examples:
+        >>> ENC = layout.Encoding('application/json', charset='UTF-8')
+        >>> ENC.header
+        'application/json; charset=UTF-8'
+        >>> layout.Encoding.parse('image/GIF; q=0.6; a=x, image/jpeg; q=0.7; b=y')
+        (Encoding(kind='image/jpeg', options={'b': 'y'}), Encoding(kind='image/gif', options={'a': 'x'}))
+    """
 
     kind: str
     """Content type label."""
     options: typing.Mapping[str, str]
     """Encoding options."""
 
-    def __new__(cls, kind: str, **options: str):
+    def __new__(cls, kind: str, /, **options: str):
+        """
+        Args:
+            kind: Content type label
+            options: Encoding options.
+        """
         return super().__new__(cls, kind.strip().lower(), types.MappingProxyType(options))
 
     @functools.cached_property
@@ -173,7 +196,7 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
         """Get the header-formatted representation of this encoding.
 
         Returns:
-            Header formatted representation.
+            Header-formatted representation.
         """
         value = self.kind
         if self.options:
@@ -182,14 +205,14 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
 
     @classmethod
     @functools.lru_cache
-    def parse(cls, value: str) -> typing.Sequence['Encoding']:
-        """Parse the mime header value.
+    def parse(cls, value: str) -> typing.Sequence['layout.Encoding']:
+        """Parse the content type header value.
 
         Args:
-            value: Comma separated list of mime values and their parameters
+            value: Comma separated list of content type values and their parameters.
 
         Returns:
-            Sequence of the mime values ordered according to the provided priority.
+            Sequence of the ``Encoding`` instances ordered according to the provided priority.
         """
         return tuple(
             cls(m, **{k: v for k, v in o.items() if k != 'q'})
@@ -201,11 +224,14 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
         )
 
     @functools.lru_cache
-    def match(self, other: 'Encoding') -> bool:
+    def match(self, other: 'layout.Encoding') -> bool:
         """Return ture if the other encoding matches ours including glob wildcards.
 
+        Encoding matches if its kind fits our kind as a pattern (including potential glob wildcards)
+        while all of our options are subset of the other options.
+
         Args:
-            other: Encoding to match against this - must not contain wildcards.
+            other: Encoding to match against this. Must not contain wildcards!
 
         Returns:
             True if matches.
@@ -227,12 +253,12 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
 
 
 class Request(collections.namedtuple('Request', 'payload, encoding, params, accept')):
-    """Application level request object."""
+    """Serving gateway request object."""
 
     class Decoded(typing.NamedTuple):
         """Decoded request case class."""
 
-        entry: Entry
+        entry: 'layout.Entry'
         """Input data."""
 
         scope: typing.Any = None
@@ -241,22 +267,29 @@ class Request(collections.namedtuple('Request', 'payload, encoding, params, acce
     payload: bytes
     """Encoded payload."""
 
-    encoding: Encoding
+    encoding: 'layout.Encoding'
     """Encoding media type."""
 
     params: typing.Mapping[str, typing.Any]
     """Optional application-level parameters."""
 
-    accept: tuple[Encoding]
+    accept: tuple['layout.Encoding']
     """Accepted response media type."""
 
     def __new__(
         cls,
         payload: bytes,
-        encoding: Encoding,
+        encoding: 'layout.Encoding',
         params: typing.Optional[typing.Mapping[str, typing.Any]] = None,
-        accept: typing.Optional[typing.Sequence[Encoding]] = None,
+        accept: typing.Optional[typing.Sequence['layout.Encoding']] = None,
     ):
+        """
+        Args:
+            payload: Raw encoded payload.
+            encoding: Content type encoding instance.
+            params: Optional application-level parameters.
+            accept: Content types request for the eventual ``Response``.
+        """
         return super().__new__(
             cls, payload, encoding, types.MappingProxyType(dict(params or {})), tuple(accept or [encoding])
         )
@@ -266,13 +299,18 @@ class Request(collections.namedtuple('Request', 'payload, encoding, params, acce
 
 
 class Response(typing.NamedTuple):
-    """Application level response object."""
+    """Serving gateway response object.
+
+    Args:
+        payload: Raw encoded payload.
+        encoding: Content type encoding instance.
+    """
 
     payload: bytes
     """Encoded payload."""
 
-    encoding: Encoding
-    """Encoding media type."""
+    encoding: 'layout.Encoding'
+    """Encoding content type."""
 
 
 class Stats(typing.NamedTuple):

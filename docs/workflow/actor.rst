@@ -29,6 +29,7 @@ transformation of the passing data.
     hands of the implementor.
 
 .. _actor-type:
+.. rubric:: Actor Types
 
 The two main actor types are:
 
@@ -36,6 +37,9 @@ The two main actor types are:
 #. More complex *stateful* actors produce output based on not just the input but also their inner
    *state* which it acquires during separate phase called *train*. We then distinguish between the
    :ref:`train-mode and apply-mode <workflow-mode>` in which the stateful actors operate.
+   The framework transparently manages the actor state using its :meth:`.get_state()
+   <forml.flow.Actor.get_state>`/:meth:`.set_state() <forml.flow.Actor.get_state>` methods and the
+   :doc:`model registry <../registry>`.
 
 
 .. _actor-ports:

@@ -15,3 +15,11 @@
 
 Pipeline Library
 ================
+
+.. autosummary::
+   :nosignatures:
+   :toctree: _auto
+
+    forml.pipeline.ensemble
+    forml.pipeline.payload
+    forml.pipeline.wrap

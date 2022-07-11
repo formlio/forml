@@ -48,7 +48,7 @@ components <actor-type>` of the particular solution are operated in two distinct
 #. The *train-mode* (aka *fit*) allowing the relevant components to acquire internal state
    generalizing the processed data.
 #. *Apply-mode* (aka *predict*) where the previously trained components are applied to unseen
-   data to provide the estimated outcome.
+   data to predict the estimated outcome.
 
 ForML uniquely builds this duality straight into its workflow architecture, hence the modality
 extends from the individual components to the entire workflow. Thus, each workflow is operated

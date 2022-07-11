@@ -159,12 +159,21 @@ class Source(typing.NamedTuple):
     def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> 'project.Artifact':
         """Create a virtual *project handle* from this *Source* and the given *pipeline* component.
 
+        The typical use-case is :doc:`interactive <interactive>` execution.
+
         Args:
             pipeline: Pipeline component to create the virtual project handle from.
             modules: Optional modules representing the other project components.
 
         Returns:
             Virtual project handle.
+
+        Examples:
+            >>> PIPELINE = payload.Apply(lambda df: df.dropna())
+            >>> SOURCE = project.Source.query(
+            ...     schema.FooBar.select(schema.FooBar.foo)
+            ... )
+            >>> SOURCE.bind(PIPELINE).launcher.apply()
         """
         return _body.Artifact(source=self, pipeline=pipeline, **modules)
 
