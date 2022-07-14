@@ -328,7 +328,11 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
 
 
 class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]):
-    """SQLAlchemy based reader."""
+    """:doc:`SQLAlchemy <sqlalchemy:index>` based reader.
+
+    Using the :doc:`SQLAlchemy core <sqlalchemy:core/index>` for accessing any compatible SQL
+    engine.
+    """
 
     def __init__(
         self,

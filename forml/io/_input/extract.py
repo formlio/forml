@@ -130,6 +130,7 @@ class Operator(flow.Operator):
         return flow.Trunk(apply, train, label)
 
 
+#: Callable interface for parsing a DSL query and resolving it using its linked storage.
 Producer = typing.Callable[[dsl.Query, typing.Optional[layout.Entry]], layout.Tabular]
 Output = typing.TypeVar('Output')
 
@@ -164,7 +165,9 @@ class TableDriver(Driver[layout.Tabular]):
 
 
 class RowDriver(Driver[layout.RowMajor]):
-    """Specialized version of the actor that returns the data already converted to layout.RowMajor format."""
+    """Specialized version of the actor that returns the data already converted to layout.RowMajor
+    format.
+    """
 
     def apply(self, entry: typing.Optional[layout.Entry] = None) -> layout.RowMajor:
         return self._read(entry).to_rows()

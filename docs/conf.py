@@ -61,6 +61,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
+    'sphinx.ext.todo',
     'sphinx_immaterial',
     'sphinx_copybutton',
     'sphinxcontrib.details.directive',
@@ -94,9 +95,13 @@ intersphinx_mapping = {
 nitpicky = True
 _target_blacklist = {
     'py:class': (
-        'pandas.core.generic.NDFrame',
         '_Actor',
+        '^conf.Feed',
         r'.+\[.*dsl.Ordering.Direction.*\].*',
+        r'^io\.(?:Consumer|Producer)',
+        r'^layout\.(?:ColumnMajor|RowMajor|Native)',
+        'pandas.core.generic.NDFrame',
+        r'^parser\.(?:Source|Feature|Visitor)',
     ),
     'py:.*': (r'(?:forml|asset|dsl|flow|project)\..*',),
 }
@@ -183,6 +188,11 @@ autodoc_member_order = 'bysource'
 # -- Options for sphinx.ext.napoleon -------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_numpy_docstring = False
+
+
+# -- Options for sphinx.ext.todo --------------------------------------------
+# See: https://www.sphinx-doc.org/en/master/usage/extensions/todo.html
+todo_include_todos = True
 
 
 # -- Options for sphinx_immaterial --------------------------------------

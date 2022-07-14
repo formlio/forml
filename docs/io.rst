@@ -61,11 +61,17 @@ A *schema catalog* is a logical collection of :ref:`schemas <dsl-schema>` which 
 :doc:`projects <project>` and :doc:`platforms <platform>` - can use as a mutual data reference. It
 is neither a service nor a system, rather a passive set of namespaced descriptors implemented
 simply as a *python package* that must be available to both the project expecting the particular
-data and the platform supposed to serve that project. When a project workflow is submitted to any
-given platform, it attempts to resolve the schemas referred in the :ref:`source query
-<io-source>` using the configured :doc:`feed providers <feed>`, and only when all of these schema
-dependencies can be satisfied with the available data sources, the platform is able to launch
-that workflow.
+data and the platform supposed to serve that project.
+
+.. _io-resolving:
+
+Content Resolving
+^^^^^^^^^^^^^^^^^
+
+When a project workflow is submitted to any given platform, it attempts to resolve the schemas
+referred in the :ref:`source query <io-source>` using the configured :doc:`feed providers
+<feed>`, and only when all of these schema dependencies can be satisfied with the available data
+sources, the platform is able to launch that workflow.
 
 The following diagram demonstrates the trilateral relationship between *projects*, *schema
 catalogs* and *platform feeds* - establishing the mechanism of the decoupled data access:
@@ -131,6 +137,10 @@ It tells the following story:
    particular query by that selected feed, which results in :ref:`data payload <io-payload>`
    entering the project workflow.
 
+
+Publishing
+^^^^^^^^^^
+
 An obvious aspect of the schema catalogs is their *decentralization*. Since they are
 implemented as python packages, they can be easily distributed using the standard means
 for python package publishing. Currently, there is no naming convention for the schema definition
@@ -172,19 +182,21 @@ with the passing data.
 Core Payload Exchange
 ^^^^^^^^^^^^^^^^^^^^^
 
-The core ForML runtime deals with the following payload types:
+Payload-wise, the core ForML runtime is pretty generic, dealing only with few tiny interfaces to
+handle the necessary exchange with absolutely minimal footprint. Following is the list of the
+involved core payload types:
 
 +------------------------+------------------------+------------------------------------------------+
 | Producer Side          | Consumer Side          | Exchange Protocol                              |
 +========================+========================+================================================+
-| Origin data at rest    | Platform :doc:`Feed    | Each *feed* acts as an adapter designed        |
-|                        | <feed>` Reader         | specifically for the given origin format.      |
+| Origin data at rest    | Feed :class:`Reader    | Each *feed* acts as an adapter designed        |
+|                        | <forml.io.Feed.Reader>`| specifically for the given origin format.      |
 +------------------------+------------------------+------------------------------------------------+
-| :doc:`Feed <feed>`     | :doc:`Feed <feed>`     | Defined using the :class:`io.layout.Tabular    |
-| Reader                 | Extractor stage        | <forml.io.layout.Tabular>` interface.          |
+| Feed :class:`Reader    | :doc:`Feed <feed>`     | Defined using the :class:`io.layout.Tabular    |
+| <forml.io.Feed.Reader>`| Slicer                 | <forml.io.layout.Tabular>` interface.          |
 +------------------------+------------------------+------------------------------------------------+
 | :doc:`Feed <feed>`     | Project :doc:`Pipeline | Defined using the :class:`io.layout.RowMajor   |
-| Extractor stage        | <workflow/topology>`   | <forml.io.layout.RowMajor>` interface.         |
+| Slicer                 | <workflow/topology>`   | <forml.io.layout.RowMajor>` interface.         |
 +------------------------+------------------------+------------------------------------------------+
 | :doc:`Actor            | :doc:`Actor            | No specific format required, choice of         |
 | <workflow/actor>`      | <workflow/actor>`      | mutually compatible actors is responsibility   |
@@ -231,8 +243,8 @@ exchanges using the following structures:
 | Serving :doc:`Gateway  | Serving :doc:`Engine   | Using the :class:`io.layout.Request            |
 | <serving>`             | <serving>`             | <forml.io.layout.Request>` structure.          |
 +------------------------+------------------------+------------------------------------------------+
-| Serving :doc:`Engine   | :doc:`Feed <feed>`     | Passing the decoded :class:`io.layout.Entry    |
-| <serving>`             | Reader                 | <forml.io.layout.Entry>` to the given feed     |
+| Serving :doc:`Engine   | Feed :class:`Reader    | Passing the decoded :class:`io.layout.Entry    |
+| <serving>`             | <forml.io.Feed.Reader>`| <forml.io.layout.Entry>` to the given feed     |
 |                        |                        | for potential augmentation.                    |
 +------------------------+------------------------+------------------------------------------------+
 | :doc:`Sink <sink>`     | Serving :doc:`Engine   | Using the :class:`io.layout.Outcome            |

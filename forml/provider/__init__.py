@@ -55,7 +55,7 @@ class Reference:
         return Qualifier(module, qualname)
 
     @abc.abstractmethod
-    def paths(self, base: typing.Optional[typing.Iterable['Bank.Segment']] = None) -> typing.Iterable['Bank.Segment']:
+    def paths(self, base: typing.Optional[typing.Iterable['Bank.Path']] = None) -> typing.Iterable['Bank.Path']:
         """Return potential search paths for importing this referenced provider.
 
         Args:
@@ -76,7 +76,7 @@ class Qualifier(collections.namedtuple('Qualifier', 'module, qualname'), Referen
     def __repr__(self):
         return f'{self.module}{self.DELIMITER}{self.qualname}'
 
-    def paths(self, base: typing.Optional[typing.Iterable['Bank.Segment']] = None) -> typing.Iterable['Bank.Segment']:
+    def paths(self, base: typing.Optional[typing.Iterable['Bank.Path']] = None) -> typing.Iterable['Bank.Path']:
         return tuple([Bank.Path(self.module, explicit=False)])
 
 
@@ -88,11 +88,11 @@ class Alias(str, Reference):
             raise ValueError(f'Invalid alias: {value}')
         return super().__new__(cls, value)
 
-    def paths(self, base: typing.Optional[typing.Iterable['Bank.Segment']] = None) -> typing.Iterable['Bank.Segment']:
+    def paths(self, base: typing.Optional[typing.Iterable['Bank.Path']] = None) -> typing.Iterable['Bank.Path']:
         return tuple(b / self for b in base or [])
 
 
-class Bank(collections.namedtuple('Registry', 'provider, paths')):
+class Bank(collections.namedtuple('Bank', 'provider, paths')):
     """Registry of providers of certain interface. It is a tuple of (not-yet-imported) search paths and already
     imported providers.
     """
@@ -109,7 +109,7 @@ class Bank(collections.namedtuple('Registry', 'provider, paths')):
         def __eq__(self, other):
             return other.__class__ is self.__class__ and other.value == self.value
 
-        def __truediv__(self, suffix: str) -> 'Bank.Segment':
+        def __truediv__(self, suffix: str) -> 'Bank.Path':
             return Bank.Path(f'{self.value}.{suffix}', explicit=False)
 
         def load(self) -> None:

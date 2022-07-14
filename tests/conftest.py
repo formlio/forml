@@ -291,7 +291,7 @@ def valid_instance(
 
 
 @pytest.fixture(scope='session')
-def source_query(project_components) -> dsl.Query:
+def source_query(project_components: prj.Components) -> dsl.Query:
     """Query fixture."""
     return project_components.source.extract.train
 

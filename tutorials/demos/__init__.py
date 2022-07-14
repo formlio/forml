@@ -25,7 +25,7 @@ import pandas as pd
 from forml import project
 from forml.io import dsl
 from forml.pipeline import payload, wrap
-from forml.provider.feed import static
+from forml.provider.feed import swiss
 
 with wrap.importer():  # automatically converting the particular SKLearn classes to ForML operators
     from sklearn.ensemble import GradientBoostingClassifier as GBC
@@ -57,7 +57,7 @@ class Demo(dsl.Schema):
 DATA = [[1, 1, 1, 0, 0, 0], [10, 11, 12, 13, 14, 15]]
 
 
-class Feed(static.Feed):
+class Feed(swiss.Feed):
     """Demo feed."""
 
     def __init__(self):

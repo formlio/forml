@@ -333,7 +333,7 @@ class Parser(parsmod.Visitor[str, str]):  # pylint: disable=unsubscriptable-obje
 
 
 class Reader(io.Feed.Reader[str, str, layout.RowMajor], metaclass=abc.ABCMeta):
-    """SQL reader base class for PEP249 compliant DB APIs."""
+    """SQL reader base class for :pep:`249` compliant DB APIs."""
 
     @classmethod
     @abc.abstractmethod

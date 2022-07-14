@@ -20,6 +20,8 @@ DSL structures.
 import itertools
 import typing
 
+import forml
+
 from . import frame
 from . import kind as kindmod
 
@@ -49,7 +51,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     """Base class for table (schema) definitions.
 
     Note the meta class is actually going to turn it into an instance of frame.Table which itself has a ``.schema``
-    attribute derived from this class and represented using dsl.Source.Schema.
+    attribute derived from this class and represented using ``dsl.Source.Schema``.
     """
 
     @staticmethod
@@ -86,3 +88,29 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
             for i, (v, n) in enumerate(itertools.zip_longest(record, names))
         )
         return cls.from_fields(*fields, title=title)
+
+    @classmethod
+    def from_path(cls, path: str) -> 'dsl.Table':
+        """Utility for importing a schema table from the given path.
+
+        Args:
+            path: Schema path in form of ``full.module.path:schema.qualified.ClassName``.
+
+        Returns: Imported schema table.
+        """
+        try:
+            module, schema = path.split(':', 1)
+        except ValueError as err:
+            raise forml.InvalidError(f'Not a schema path: {path}') from err
+        try:
+            result = __import__(module, fromlist=[schema])
+        except ModuleNotFoundError as err:
+            raise forml.MissingError(f'No such module: {module}') from err
+        for qualifier in schema.split('.'):
+            try:
+                result = getattr(result, qualifier)
+            except AttributeError as err:
+                raise forml.MissingError(f'No such schema: {schema}') from err
+        if not isinstance(result, frame.Table):
+            raise forml.InvalidError(f'Not a schema: {result}')
+        return result

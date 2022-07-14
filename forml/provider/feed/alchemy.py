@@ -1,0 +1,87 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+"""
+SQLAlchemy based feed implementation.
+"""
+import re
+import types
+import typing
+
+import sqlalchemy
+from sqlalchemy import sql
+
+import forml
+from forml import io
+from forml.io import dsl
+from forml.provider.feed.reader.sql import alchemy
+
+
+class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
+    """Generic SQL feed based on :doc:`SQLAlchemy <sqlalchemy:index>`.
+
+    The hosted datasets need to be declared using a proper :ref:`content resolver <io-resolving>`
+    configuration specified using the ``sources`` option.
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [FEED.sql]
+        provider = "alchemy"
+        connection = "mysql+pymysql://john:smith@localhost/"
+        [FEED.sql.sources]
+        "openschema.kaggle:Titanic" = "kaggle.titanic"
+        "my.custom.catalog:MySchema" = "foobar.baz"
+
+    Important:
+        Select the ``sql`` :ref:`extras to install <install-extras>` ForML together with the
+        SQLAlchemy support.
+    """
+
+    _TABLE_NAME = re.compile(r'(?:([\w.]+)\.)?(\w+)')
+
+    class Reader(alchemy.Reader):
+        """Using the SQLAlchemy reader as is."""
+
+    def __init__(self, sources: typing.Mapping[typing.Union[dsl.Source, str], str], **readerkw):
+        """
+        Args:
+            sources: The mapping of :ref:`schema catalogs <io-catalog>` to the DB tables.
+            connection: The :doc:`SQLAlchemy connection <sqlalchemy:core/connections>` string.
+            readerkw: Optional keywords for the :func:`pandas.read_sql <pandas:pandas.read_sql>`.
+        """
+
+        def ensure_source(src: typing.Union[dsl.Source, str]) -> dsl.Source:
+            if isinstance(src, str):
+                src = dsl.Schema.from_path(src)
+            return src
+
+        def table(name: str) -> sqlalchemy.table:
+            if not (match := self._TABLE_NAME.fullmatch(name)):
+                raise forml.InvalidError(f'Invalid table name: {name}')
+            schema, name = match.groups()
+            return sqlalchemy.table(name, schema=schema)
+
+        self._sources: typing.Mapping[dsl.Source, sql.Selectable] = {
+            ensure_source(s): table(t) for s, t in sources.items()
+        }
+        super().__init__(**readerkw)
+
+    @property
+    def sources(self) -> typing.Mapping[dsl.Source, sql.Selectable]:
+        return types.MappingProxyType(self._sources)

@@ -34,9 +34,9 @@ next sections.
 Configuration File
 ^^^^^^^^^^^^^^^^^^
 
-ForML platform uses the `TOML <https://github.com/toml-lang/toml>`_ file format for its
-configuration. The system will try to locate and merge the :file:`config.toml` file instances in
-the following directories (in order of parsing/merging - later overrides previous):
+ForML platform uses the `TOML <https://toml.io/>`_ file format for its configuration. The system
+will try to locate and merge the :file:`config.toml` file instances in the following directories
+(in order of parsing/merging - later overrides previous):
 
 +-----------------+-------------------------------------------------------------------------------+
 | Location        | Meaning                                                                       |
@@ -51,7 +51,7 @@ the following directories (in order of parsing/merging - later overrides previou
 .. note::
    Both the *system* and the *user* config locations are also appended to the runtime
    :data:`python:sys.path` so any python modules stored into the config directories are potentially
-   importable. This can be useful for custom :doc:`feed provider <feed>` implementations.
+   importable. This can be useful for custom :ref:`feed provider <feed-setup>` implementations.
 
 Following is the default content of the ForML platform configuration file:
 

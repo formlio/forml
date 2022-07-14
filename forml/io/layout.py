@@ -46,8 +46,8 @@ class Tabular:
     data.
 
     This is a minimalistic interface to be used internally for data payload as returned by Feed
-    ``Reader`` only to be converted to ``RowMajor`` representation once leaving the Feed
-    ``extraction`` stage.
+    ``Reader`` only to be immediately turned to ``RowMajor`` representation once leaving the Feed
+    ``Slicer``.
     """
 
     @abc.abstractmethod

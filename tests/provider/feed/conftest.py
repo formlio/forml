@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Global ForML unit tests fixtures.
+Feed ForML unit tests fixtures.
 """
 import datetime
 
@@ -27,20 +27,41 @@ from forml.io import dsl
 
 
 @pytest.fixture(scope='session')
-def student_data(student_table: dsl.Table) -> pandas.DataFrame:
-    """Student table fixture."""
+def person_data(person_table: dsl.Table) -> pandas.DataFrame:
+    """Person table fixture."""
     return pandas.DataFrame(
         [
-            ['smith', datetime.date(2012, 8, 20), 3, 1.1, 1, datetime.datetime(2019, 4, 3)],
-            ['brown', datetime.date(2014, 3, 11), 2, 1.4, 1, datetime.datetime(2019, 4, 5)],
-            ['white', datetime.date(2017, 1, 1), 1, -3, 2, datetime.datetime(2019, 4, 1)],
+            ['white', datetime.date(2017, 1, 1)],
+            ['harris', datetime.date(2016, 8, 6)],
+            ['black', datetime.date(2013, 7, 27)],
+            ['smith', datetime.date(2015, 6, 19)],
+            ['brown', datetime.date(2014, 3, 11)],
         ],
-        columns=(c.name for c in student_table.features),
+        columns=[c.name for c in person_table.features],
     )
+
+
+@pytest.fixture(scope='session')
+def student_data(person_data: pandas.DataFrame, student_table: dsl.Table) -> pandas.DataFrame:
+    """Student table fixture."""
+    extra = pandas.DataFrame(
+        [
+            [1, -3, 2, datetime.datetime(2019, 4, 4)],
+            [3, 3.2, 3, datetime.datetime(2019, 4, 3)],
+            [1, 2.3, 2, datetime.datetime(2019, 4, 2)],
+            [1, 1.1, 1, datetime.datetime(2019, 4, 1)],
+            [2, 0, 1, datetime.datetime(2019, 4, 5)],
+        ],
+    )
+    data = pandas.concat([person_data, extra], axis='columns', ignore_index=True)
+    data.columns = [c.name for c in student_table.features]
+    return data
 
 
 @pytest.fixture(scope='session')
 def school_data(school_table: dsl.Table) -> pandas.DataFrame:
     """School table fixture."""
 
-    return pandas.DataFrame([[1, 'prodigy'], [2, 'dummies']], columns=(c.name for c in school_table.features))
+    return pandas.DataFrame(
+        [[1, 'oxford'], [2, 'cambridge'], [3, 'stanford']], columns=[c.name for c in school_table.features]
+    )

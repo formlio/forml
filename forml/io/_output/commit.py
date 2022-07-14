@@ -47,6 +47,7 @@ class Operator(flow.Operator):
         return scope.expand().extend(apply, train)
 
 
+#: Callable interface for committing the produced data.
 Consumer = typing.Callable[[layout.RowMajor], layout.Outcome]
 
 

@@ -70,7 +70,6 @@ Kinds
 Following is the list of types (aka *kinds*) that can be used in schema field definitions:
 
 .. autosummary::
-   :toctree: _auto
 
    forml.io.dsl.Boolean
    forml.io.dsl.Integer
@@ -86,12 +85,33 @@ Following is the list of types (aka *kinds*) that can be used in schema field de
 
 .. _dsl-query:
 
-Query
------
+Query Language
+--------------
+
+
+Base Primitives
+^^^^^^^^^^^^^^^
+
+.. autoclass:: forml.io.dsl.Source
+.. autoclass:: forml.io.dsl.Feature
+
+Parser
+^^^^^^
+
+.. autoclass:: forml.io.dsl.parser.Visitor
+
+
+Syntax
+^^^^^^
 
 The DSL allows to specify a rich ETL procedure of retrieving the data in any required shape or form. This can be
 achieved through the *query* API that's available on top of any `schema`_ object. Important feature of the query syntax
 is also the support for column `expressions`_.
+
+Following is the list of the query API methods:
+
+.. autoclass:: forml.io.dsl.Query
+   :members: features, schema, select, join, groupby, having, where, limit, orderby
 
 Example query might look like::
 
@@ -102,22 +122,8 @@ Example query might look like::
             .orderby(student.level, student.score)
             .limit(10)
 
-
-Following is the list of the query API methods:
-
-.. autoattribute:: forml.io.dsl.Query.features
-.. autoattribute:: forml.io.dsl.Query.schema
-.. automethod:: forml.io.dsl.Query.select
-.. automethod:: forml.io.dsl.Query.join
-.. automethod:: forml.io.dsl.Query.groupby
-.. automethod:: forml.io.dsl.Query.having
-.. automethod:: forml.io.dsl.Query.where
-.. automethod:: forml.io.dsl.Query.limit
-.. automethod:: forml.io.dsl.Query.orderby
-
-
 Expressions
-^^^^^^^^^^^
+"""""""""""
 
 Any schema field representing a data column can be involved in a *column expression*. All the schema field objects
 implement number native of operators, that can be used to directly form an expression. Furthermore, there are separate
@@ -139,7 +145,7 @@ The native operators available directly on the field instances are:
 
 
 Functions
-^^^^^^^^^
+"""""""""
 
 There is also a bunch of functions available to be used within the query expressions:
 

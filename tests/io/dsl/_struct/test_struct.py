@@ -24,6 +24,7 @@ import cloudpickle
 import numpy
 import pytest
 
+import forml
 from forml.io import dsl, layout
 
 
@@ -64,3 +65,16 @@ class TestSchema:
     def test_from_record(self, record: layout.Native, names: typing.Sequence[str], fields: typing.Sequence[dsl.Any]):
         """Test the schema inference."""
         assert list(dsl.Schema.from_record(record, *names)) == fields  # pylint: disable=not-an-iterable
+
+    def test_from_path(self, person_table: dsl.Table):
+        """Test the schema importing."""
+        module = person_table.schema.__module__
+        assert dsl.Schema.from_path(f'{module}:{person_table.__class__.__qualname__}') == person_table
+        with pytest.raises(forml.InvalidError, match='Not a schema path:'):
+            dsl.Schema.from_path('foobar')
+        with pytest.raises(forml.InvalidError, match='Not a schema:'):
+            dsl.Schema.from_path(f'{module}:PACKAGE')
+        with pytest.raises(forml.MissingError, match='No such schema:'):
+            dsl.Schema.from_path(f'{module}:fobar')
+        with pytest.raises(forml.MissingError, match='No such module:'):
+            dsl.Schema.from_path('123foobar:baz')

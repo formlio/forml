@@ -26,6 +26,9 @@ from forml.conf.parsed import provider as provcfg
 from .. import dsl
 from . import _consumer, commit
 
+if typing.TYPE_CHECKING:
+    from forml import io
+
 
 class Sink(provider.Service, default=provcfg.Sink.default, path=provcfg.Sink.path):
     """Sink is an implementation of a specific data consumer."""
@@ -45,7 +48,7 @@ class Sink(provider.Service, default=provcfg.Sink.default, path=provcfg.Sink.pat
         return publisher.expand()
 
     @classmethod
-    def consumer(cls, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any) -> commit.Consumer:
+    def consumer(cls, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any) -> 'io.Consumer':
         """Return the reader instance of this feed (any callable, presumably extract.Reader).
 
         Args:

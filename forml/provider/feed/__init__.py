@@ -19,4 +19,4 @@
 Feed implementations.
 """
 
-__all__ = ['static']
+__all__ = ['alchemy', 'swiss']
