@@ -23,22 +23,26 @@ import typing
 from forml import flow, provider
 from forml.conf.parsed import provider as provcfg
 
-from .. import dsl
 from . import _consumer, commit
 
 if typing.TYPE_CHECKING:
     from forml import io
+    from forml.io import dsl
 
 
 class Sink(provider.Service, default=provcfg.Sink.default, path=provcfg.Sink.path):
-    """Sink is an implementation of a specific data consumer."""
+    """Abstract base class for pipeline output sink providers.
+
+    It integrates the concept of a ``Writer`` provided using the :meth:`consumer` method
+    or by overriding the inner ``.Writer`` class.
+    """
 
     Writer = _consumer.Writer
 
     def __init__(self, **writerkw):
         self._writerkw: dict[str, typing.Any] = writerkw
 
-    def save(self, schema: typing.Optional[dsl.Source.Schema]) -> flow.Trunk:
+    def save(self, schema: typing.Optional['dsl.Source.Schema']) -> flow.Trunk:
         """Provide a pipeline composable segment implementing the publish action.
 
         Returns:
@@ -48,11 +52,22 @@ class Sink(provider.Service, default=provcfg.Sink.default, path=provcfg.Sink.pat
         return publisher.expand()
 
     @classmethod
-    def consumer(cls, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any) -> 'io.Consumer':
-        """Return the reader instance of this feed (any callable, presumably extract.Reader).
+    def consumer(cls, schema: typing.Optional['dsl.Source.Schema'], **kwargs: typing.Any) -> 'io.Consumer':
+        """Consumer factory method.
+
+        A ``Consumer`` is a generic callable interface most typically represented using the
+        :class:`forml.io.Sink.Writer` implementation whose task is to commit the pipeline output
+        using an external media layer.
+
+        Unless overloaded, the method returns an instance of ``cls.Writer`` (which might be easier
+        to extend without needing to overload this method).
+
+        Note:
+            For compatibility with the :doc:`serving mode <serving>`, the callable ``Consumer`` is
+            (contraintuitively) expected to provide a return value.
 
         Args:
-            schema: Product schema.
+            schema: Result schema.
             kwargs: Optional writer keyword arguments.
 
         Returns:

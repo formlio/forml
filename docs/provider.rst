@@ -31,6 +31,55 @@ Providers become available for runtime operations after being :ref:`properly con
     subsections below).
 
 
+.. _provider-custom:
+.. rubric:: Custom Provider Setup
+
+In addition to the existing providers, users might find themselves requiring to implement their
+bespoke instances. To avoid having to always release and deploy these providers as true code
+artifacts, ForML allows to alternatively treat them in rather more config-like manner.
+
+For this purpose, the standard :ref:`config directories <platform-config>` are valid locations
+for hosting python modules with bespoke provider implementations available to the particular runtime
+platform.
+
+Following is an example of a custom :doc:`Feed <feed>` setup (even though this one could well be
+solved using the existing generic :class:`Alchemy Feed <forml.provider.feed.alchemy.Feed>` or -
+given the particular dataset - even more easily using the :doc:`Openlake Feed <openlake:index>`):
+
+.. code-block:: python
+   :caption: ~/.forml/foobar.py
+   :linenos:
+
+    from forml import io
+    from forml.provider.feed.reader.sql import alchemy
+    from openschema import kaggle
+    import sqlalchemy
+
+
+    class Baz(io.Feed):
+        """Custom feed example."""
+
+        class Reader(alchemy.Reader):
+            """Using the existing SQLAlchemy reader."""
+
+        @property
+        def sources(self):
+            """This feed can serve just one and only dataset - the ``titanic`` table mapped to
+               the ``kaggle.Titanic`` schema."""
+
+            return {kaggle.Titanic: sqlalchemy.table('titanic')}
+
+This custom ``foobar:Baz`` feed provider can now be added to the :ref:`platform config
+<platform-config>`:
+
+.. code-block:: toml
+   :caption: ~/.forml/config.toml
+
+    [FEED.foobar]
+    provider = "foobar:Baz"
+    connection = "sqlite:////tmp/foobar.db"
+
+
 Model Registries
 ----------------
 

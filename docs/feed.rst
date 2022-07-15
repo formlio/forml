@@ -82,50 +82,7 @@ Existing generic Feed implementations can be :ref:`configured <platform-config>`
 <io-catalog>` and the hosted data-sources) might, however, require to declare *bespoke
 Feed providers* using not just parametric configuration but rather directly as a non-generic code.
 
-Such feeds would typically still inherit most parts from existing implementations and only fill-in
-the specific content resolver mappings. To avoid having to release and deploy these feeds as true
-code artifacts, ForML allows to treat them rather in more config-like manner.
-
-For this purpose, the standard :ref:`config directories <platform-config>` are valid locations
-for hosting python modules with bespoke Feed providers available to the particular runtime
-platform.
-
-Following is an example of a custom Feed setup (even though this one could well be solved
-using the existing generic :class:`Alchemy Feed <forml.provider.feed.alchemy.Feed>` or - given the
-particular dataset - even more easily using the :doc:`Openlake Feed <openlake:index>`):
-
-.. code-block:: python
-   :caption: ~/.forml/foobar.py
-   :linenos:
-
-    from forml import io
-    from forml.provider.feed.reader.sql import alchemy
-    from openschema import kaggle
-    import sqlalchemy
-
-
-    class Baz(io.Feed):
-        """Custom feed example."""
-
-        class Reader(alchemy.Reader):
-            """Using the existing SQLAlchemy reader."""
-
-        @property
-        def sources(self):
-            """This feed can serve just one and only dataset - the ``titanic`` table mapped to
-               the ``kaggle.Titanic`` schema."""
-
-            return {kaggle.Titanic: sqlalchemy.table('titanic')}
-
-This custom ``foobar:Baz`` feed provider can now be added to the :ref:`platform config
-<platform-config>`:
-
-.. code-block:: toml
-   :caption: ~/.forml/config.toml
-
-    [FEED.foobar]
-    provider = "foobar:Baz"
-    connection = "sqlite:////tmp/foobar.db"
+For more details, see the :ref:`custom provider <provider-custom>` setup instructions.
 
 
 Feed Providers

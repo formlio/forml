@@ -51,7 +51,7 @@ will try to locate and merge the :file:`config.toml` file instances in the follo
 .. note::
    Both the *system* and the *user* config locations are also appended to the runtime
    :data:`python:sys.path` so any python modules stored into the config directories are potentially
-   importable. This can be useful for custom :ref:`feed provider <feed-setup>` implementations.
+   importable. This can be useful for :ref:`custom provider <provider-custom>` implementations.
 
 Following is the default content of the ForML platform configuration file:
 

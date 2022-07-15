@@ -16,15 +16,43 @@
 Output Sink
 ===========
 
-Sink is a :doc:`runtime platform <platform>` component responsible for consuming the produced output.
+Sink is a :doc:`runtime platform <platform>` component responsible for processing the output
+produced upon executing one of the :ref:`lifecycle actions<lifecycle-actions>` of the particular
+:ref:`project pipeline <project-pipeline>`.
 
-.. autosummary::
+It is a (much simpler) logical counterpart to the :doc:`feed concept <feed>`.
 
-   forml.provider.sink.stdout
+Individual sink providers are mostly relevant to :ref:`batch mode <platform-execution>`. The concept
+is still used also in the :doc:`serving mode <serving>`, but the component is embedded in the engine
+which transparently deals with the output.
 
+Architecture
+------------
 
-API
----
+From the high-level perspective, Sink mirrors the :doc:`feed design <feed>` with flow inversion.
+It relies on a particular :class:`Writer <forml.io.Writer>` implementation acting as an adapter
+between the pipeline output and the external media layer.
+
+When launching the pipeline, ForML :doc:`runner <runner>` expands the Sink into a closing
+task within the assembled :doc:`workflow <workflow/index>` making it a native part of the final
+DAG to be executed.
+
+The core Sink API looks as follows:
 
 .. autoclass:: forml.io.Sink
-    :members:
+    :members: consumer
+
+.. autoclass:: forml.io.Sink.Writer
+   :members: format, write
+
+
+Sink Providers
+--------------
+
+The available Sink implementations are:
+
+.. autosummary::
+   :template: provider.rst
+   :nosignatures:
+
+   forml.provider.sink.stdout.Sink

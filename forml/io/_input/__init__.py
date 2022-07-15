@@ -52,7 +52,7 @@ class Feed(
 
     The need for implementing the content resolver mapping specifically for each particular platform
     makes it more difficult to setup Feed providers using just the parametric configuration and
-    often ends up requiring to actually implement the Feed (or at least the final resolver part)
+    might end up requiring to actually implement the Feed (or at least the final resolver part)
     explicitly as a code.
 
     Important:

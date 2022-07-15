@@ -159,7 +159,7 @@ Pipeline Expression
 """""""""""""""""""
 
 Pipeline definition is the heart of the entire solution. It is provided in form of the
-:ref:`operator composition expression <operator-composition>`.
+:ref:`workflow expression <workflow-expression>`.
 
 ForML expects this component to be provided as :file:`pipeline.py` module or :file:`pipeline`
 package under the project package root.

@@ -25,13 +25,23 @@ from forml.io import layout
 
 
 class Sink(io.Sink, alias='stdout'):
-    """Stdout sink."""
+    """Sink implementation committing the pipeline result to the *standard output* of the execution
+    process.
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [SINK.print]
+        provider = "stdout"
+    """
 
     class Writer(io.Sink.Writer[layout.Native]):
         """Sink writer implementation."""
 
         @classmethod
-        def write(cls, data: layout.Native, **kwargs: typing.Any) -> None:
+        def write(cls, data: 'layout.Native', **kwargs: typing.Any) -> None:
             if data is not None:
                 print(data, **kwargs)
             return data
