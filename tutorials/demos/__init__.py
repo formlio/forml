@@ -25,7 +25,7 @@ import pandas as pd
 from forml import project
 from forml.io import dsl
 from forml.pipeline import payload, wrap
-from forml.provider.feed import swiss
+from forml.provider.feed import monolite
 
 with wrap.importer():  # automatically converting the particular SKLearn classes to ForML operators
     from sklearn.ensemble import GradientBoostingClassifier as GBC
@@ -57,12 +57,5 @@ class Demo(dsl.Schema):
 DATA = [[1, 1, 1, 0, 0, 0], [10, 11, 12, 13, 14, 15]]
 
 
-class Feed(swiss.Feed):
-    """Demo feed."""
-
-    def __init__(self):
-        super().__init__({Demo: DATA})
-
-
-FEED = Feed()
+FEED = monolite.Feed(inline={Demo: DATA})
 SOURCE = project.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.ToPandas(columns=['Age'])

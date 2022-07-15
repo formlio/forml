@@ -75,8 +75,8 @@ platform-configured :doc:`set of feeds <feed>` implementing the :class:`forml.io
    :nosignatures:
    :toctree: _auto
 
-   forml.provider.feed.static.Feed
    forml.provider.feed.alchemy.Feed
+   forml.provider.feed.monolite.Feed
    openlake.Local
 
 

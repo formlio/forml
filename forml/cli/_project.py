@@ -102,7 +102,7 @@ def train(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Train the project."""
-    scope.run_setup('train', runner=runner, feed=feed, lower=lower, upper=upper)
+    scope.run_setup('train', runner=runner, feed=','.join(feed), lower=lower, upper=upper)
 
 
 @group.command(name='eval')
@@ -119,7 +119,7 @@ def evaluate(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Evaluate the project."""
-    scope.run_setup('eval', runner=runner, feed=feed, lower=lower, upper=upper)
+    scope.run_setup('eval', runner=runner, feed=','.join(feed), lower=lower, upper=upper)
 
 
 @group.command()

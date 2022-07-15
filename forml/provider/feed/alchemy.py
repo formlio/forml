@@ -33,8 +33,13 @@ from forml.provider.feed.reader.sql import alchemy
 class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
     """Generic SQL feed based on :doc:`SQLAlchemy <sqlalchemy:index>`.
 
-    The hosted datasets need to be declared using a proper :ref:`content resolver <io-resolving>`
-    configuration specified using the ``sources`` option.
+    All the hosted datasets need to be declared using a proper :ref:`content resolver
+    <io-resolving>` mapping specified using the ``sources`` option with keys representing the fully
+    qualified schema name formatted as ``<full.module.path>:<qualified.Class.Name>`` and the values
+    should refer to the physical table names like ``<database>.<table>``.
+
+    Attention:
+        All the referenced :ref:`schema catalogs <io-catalog>` must be installed.
 
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
@@ -46,7 +51,7 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
         connection = "mysql+pymysql://john:smith@localhost/"
         [FEED.sql.sources]
         "openschema.kaggle:Titanic" = "kaggle.titanic"
-        "my.custom.catalog:MySchema" = "foobar.baz"
+        "foobar.schemas:Foo.Baz" = "foobar.baz"
 
     Important:
         Select the ``sql`` :ref:`extras to install <install-extras>` ForML together with the
@@ -58,12 +63,16 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
     class Reader(alchemy.Reader):
         """Using the SQLAlchemy reader as is."""
 
-    def __init__(self, sources: typing.Mapping[typing.Union[dsl.Source, str], str], **readerkw):
+    def __init__(
+        self,
+        sources: typing.Mapping[typing.Union[dsl.Source, str], str],
+        **readerkw,
+    ):
         """
         Args:
             sources: The mapping of :ref:`schema catalogs <io-catalog>` to the DB tables.
-            connection: The :doc:`SQLAlchemy connection <sqlalchemy:core/connections>` string.
-            readerkw: Optional keywords for the :func:`pandas.read_sql <pandas:pandas.read_sql>`.
+            readerkw: Optional keywords typically for the :func:`pandas.read_sql
+                      <pandas:pandas.read_sql>`.
         """
 
         def ensure_source(src: typing.Union[dsl.Source, str]) -> dsl.Source:

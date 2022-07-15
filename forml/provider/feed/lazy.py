@@ -82,25 +82,19 @@ class _Columns(dsl.Source.Visitor, dsl.Feature.Visitor):
     def visit_join(self, source: dsl.Join) -> None:
         if source.condition is not None:
             source.condition.accept(self)
-        # self._items.update(dsl.Column.dissect(source.condition))
         super().visit_join(source)
 
     def visit_query(self, source: dsl.Query) -> None:
         for feature in source.features:
             feature.accept(self)
-        # self._items.update(dsl.Column.dissect(*source.features))
         if source.prefilter is not None:
             source.prefilter.accept(self)
-            # self._items.update(dsl.Column.dissect(source.prefilter))
         for grouping in source.grouping:
             grouping.accept(self)
-        # self._items.update(dsl.Column.dissect(*source.grouping))
         if source.postfilter is not None:
             source.postfilter.accept(self)
-            # self._items.update(dsl.Column.dissect(source.postfilter))
         for ordering in source.ordering:
             ordering.feature.accept(self)
-            # self._items.update(dsl.Column.dissect(ordering.feature))
         super().visit_query(source)
 
 
@@ -108,7 +102,10 @@ Partition = typing.TypeVar('Partition')
 
 
 class Origin(typing.Generic[Partition], metaclass=abc.ABCMeta):
-    """Origin base class."""
+    """Origin base class.
+
+    It is an interface for fetching partitions of abstract data-sources.
+    """
 
     DTYPES: typing.Mapping[dsl.Any, type] = {
         dsl.Integer(): int,
@@ -141,7 +138,7 @@ class Origin(typing.Generic[Partition], metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def source(self) -> dsl.Queryable:
+    def source(self) -> dsl.Source:
         """The source query this origin provides."""
 
     @abc.abstractmethod
@@ -173,10 +170,10 @@ class Origin(typing.Generic[Partition], metaclass=abc.ABCMeta):
 
 
 class Feed(alchemy.Feed):
-    """Dummy feed with statically initialized content.
+    """Special feed allowing to lazily pull origin data from their generic sources.
 
-    Static feed is pre-configured with actual data which can only be returned in primitive
-    column-wise fashion. No advanced ETL can be applied.
+    Due to the non-trivial configuration, this feed is expected to be extended by more specific
+    implementations rather than being used as a final feed provider.
     """
 
     class Reader(alchemy.Feed.Reader):

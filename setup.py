@@ -70,7 +70,7 @@ setuptools.setup(
     license='Apache License 2.0',
     packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
     package_data={'forml.conf': ['config.toml', 'logging.ini']},
-    setup_requires=['setuptools', 'wheel', 'toml'],
+    setup_requires=['setuptools', 'wheel', 'tomli'],
     install_requires=[
         'click',
         'cloudpickle',
@@ -80,7 +80,7 @@ setuptools.setup(
         'pip',
         'scikit-learn',
         'setuptools',
-        'toml',
+        'tomli',
     ],
     extras_require={
         'all': EXTRAS_ALL,

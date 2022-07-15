@@ -125,7 +125,7 @@ This custom ``foobar:Baz`` feed provider can now be added to the :ref:`platform 
 
     [FEED.foobar]
     provider = "foobar:Baz"
-    con = "sqlite:////tmp/foobar.db"
+    connection = "sqlite:////tmp/foobar.db"
 
 
 Feed Providers
@@ -137,6 +137,6 @@ The available Feed implementations are:
    :template: provider.rst
    :nosignatures:
 
-   forml.provider.feed.static.Feed
    forml.provider.feed.alchemy.Feed
+   forml.provider.feed.monolite.Feed
    openlake.Local

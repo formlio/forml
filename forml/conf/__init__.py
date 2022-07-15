@@ -25,9 +25,8 @@ import tempfile
 import types
 import typing
 
-import toml
+import tomli
 
-import forml
 from forml.provider import feed, gateway, inventory, registry, runner, sink
 
 
@@ -114,13 +113,14 @@ class Parser(dict):
             path: Path to file to parse.
         """
         try:
-            self.update(toml.load(path))
+            with open(path, 'rb') as cfg:
+                self.update(tomli.load(cfg))
         except FileNotFoundError:  # not an error (ignore)
             pass
         except PermissionError as err:  # soft error (warn)
             self._errors[path] = err
         except ValueError as err:  # hard error (abort)
-            raise forml.InvalidError(f'Invalid config file {path}: {err}') from err
+            raise RuntimeError(f'Invalid config file {path}: {err}') from err
         else:
             self._sources.append(path)
 

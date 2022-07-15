@@ -24,7 +24,7 @@ import pytest
 
 from forml import io
 from forml.io import dsl
-from forml.provider.feed import swiss
+from forml.provider.feed import monolite
 
 from . import Feed
 
@@ -54,4 +54,6 @@ class TestFeed(Feed):
         school_csv: pathlib.Path,
     ) -> io.Feed:
         """Feed fixture."""
-        return swiss.Feed(data={person_table: person_data, student_table: student_data}, csv={school_table: school_csv})
+        return monolite.Feed(
+            inline={person_table: person_data, student_table: student_data}, csv={school_table: school_csv}
+        )

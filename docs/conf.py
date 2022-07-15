@@ -102,6 +102,7 @@ _target_blacklist = {
         r'^layout\.(?:ColumnMajor|RowMajor|Native)',
         'pandas.core.generic.NDFrame',
         r'^parser\.(?:Source|Feature|Visitor)',
+        'sqlalchemy.engine.interfaces.Connectable',
     ),
     'py:.*': (r'(?:forml|asset|dsl|flow|project)\..*',),
 }

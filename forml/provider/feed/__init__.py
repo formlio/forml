@@ -19,4 +19,4 @@
 Feed implementations.
 """
 
-__all__ = ['alchemy', 'swiss']
+__all__ = ['alchemy', 'monolite']
