@@ -40,6 +40,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import forml  # pylint: disable=wrong-import-position; # noqa: E402
 from forml import provider  # pylint: disable=wrong-import-position; # noqa: E402
+from forml.io import dsl  # pylint: disable=wrong-import-position; # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
@@ -214,22 +215,39 @@ object_description_options = [
 nbsphinx_requirejs_path = ''
 
 
-class ProviderDocumenter(autodoc.ClassDocumenter):
-    """Custom documenter for ForML provider implementations to workaround autodoc's signature
-    detection problems.
-    """
+class ClassDocumenter(autodoc.ClassDocumenter):
+    """Custom class documenter with ForML specific workarounds."""
 
-    @classmethod
-    def can_document_member(cls, member: typing.Any, membername: str, isattr: bool, parent: typing.Any) -> bool:
-        return super().can_document_member(member, membername, isattr, parent) and issubclass(member, provider.Service)
+    def import_object(self, raiseerror: bool = False) -> bool:
+        """The dsl.Schema is not rendered properly due to the fact it is an object rather than a
+        class.
+        """
+        ret = super().import_object(raiseerror)
+        if isinstance(self.object, dsl.Schema.__class__):
+            self.object = self.object.__class__
+            self.doc_as_attr = False
+        return ret
 
     def get_attr(self, obj: typing.Any, name: str, *defargs: typing.Any) -> typing.Any:
         """Autodoc is detecting ForML providers to have __call__ (due to their metaclass) and takes
         the signature from there instead of __init__.
         """
-        if name == '__call__':
+        if obj is provider.Meta and name == '__call__':
             return None
         return super().get_attr(obj, name, *defargs)
+
+
+class MethodDocumenter(autodoc.MethodDocumenter):
+    """Custom method documenter with ForML specific workarounds."""
+
+    def import_object(self, raiseerror: bool = False) -> bool:
+        """The dsl.Schema methods are not rendered properly due to the fact it is an object rather
+        than a class.
+        """
+        ret = super().import_object(raiseerror)
+        if isinstance(self.parent, dsl.Schema.__class__):
+            self.parent = self.parent.__class__
+        return ret
 
 
 class Autosummary(autosummary.Autosummary):
@@ -240,6 +258,8 @@ class Autosummary(autosummary.Autosummary):
         """Custom name formatting."""
         if display_name.startswith(provider.__name__):
             display_name = display_name.rsplit('.', 2)[-2].title()
+        elif display_name.startswith(dsl.__name__):
+            display_name = display_name.rsplit('.', 1)[-1]
         return display_name, sig, summary, real_name
 
     def get_items(self, names):
@@ -248,5 +268,6 @@ class Autosummary(autosummary.Autosummary):
 
 def setup(app: application.Sphinx):
     """Sphinx setup hook."""
-    app.add_autodocumenter(ProviderDocumenter)
+    app.add_autodocumenter(ClassDocumenter)
+    app.add_autodocumenter(MethodDocumenter)
     app.add_directive('autosummary', Autosummary)

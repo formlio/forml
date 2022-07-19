@@ -25,15 +25,15 @@ import typing
 
 from forml import flow
 from forml.io import dsl as dslmod
-from forml.io import layout
+from forml.io import layout as laymod
 
 if typing.TYPE_CHECKING:
-    from forml.io import dsl  # pylint: disable=reimported
+    from forml.io import dsl, layout  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
+class Writer(typing.Generic[laymod.Native], metaclass=abc.ABCMeta):
     """Generic writer base class matching the *Sink consumer* interface.
 
     It is a low-level output component responsible for committing the actual pipeline output to the
@@ -48,13 +48,13 @@ class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, data: layout.RowMajor) -> 'layout.Outcome':
+    def __call__(self, data: 'layout.RowMajor') -> 'layout.Outcome':
         if not self._schema:
             LOGGER.warning('Inferring unknown output schema')
             self._schema = dslmod.Schema.from_record(data[0])
         LOGGER.debug('Starting to publish')
         self.write(self.format(self._schema, data), **self._kwargs)
-        return layout.Outcome(self._schema, data)
+        return laymod.Outcome(self._schema, data)
 
     @classmethod
     def format(

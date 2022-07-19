@@ -39,6 +39,8 @@ DAG to be executed.
 
 The core Sink API looks as follows:
 
+.. autodata:: forml.io.Consumer
+
 .. autoclass:: forml.io.Sink
     :members: consumer
 

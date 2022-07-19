@@ -30,10 +30,22 @@ if typing.TYPE_CHECKING:
 
 
 class Field(typing.NamedTuple):
-    """Schema field class."""
+    """Schema field class.
+
+    When defined as class attributes on a particular :class:`dsl.Schema <forml.io.dsl.Schema>`
+    object, these instances represent the individual fields of the logical data-source.
+    """
 
     kind: 'dsl.Any'
+    """Mandatory field data type.
+
+    The value must be one of the :class:`dsl.Any <forml.io.dsl.Any>` data type instances.
+    """
     name: typing.Optional[str] = None
+    """Optional explicit field name.
+
+     By default, the field name is derived from the class attribute name.
+     """
 
     def renamed(self, name: typing.Optional[str]) -> 'dsl.Field':
         """Return copy of the field with the new name.
@@ -48,22 +60,89 @@ class Field(typing.NamedTuple):
 
 
 class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
-    """Base class for table (schema) definitions.
+    """DSL base class for table (schema) definitions.
 
-    Note the meta class is actually going to turn it into an instance of frame.Table which itself has a ``.schema``
-    attribute derived from this class and represented using ``dsl.Source.Schema``.
+    A Schema is a logical representation of a particular dataset. Together with the
+    :class:`dsl.Field <forml.io.dsl.Field>`, this class provides the *schema definition* API
+    which can be used in two operational modes:
+
+    Declarative Mode
+        The primary approach for schema definition is based on the *class inheritance* syntax with
+        individual class attributes declared as the :class:`dsl.Field <forml.io.dsl.Field>`
+        instances representing the schema *fields*.
+
+        This concept is based on the following rules:
+
+        * the default *field name* is the class attribute name unless explicitly defined using the
+          :attr:`dsl.Field.name <forml.io.dsl.Field.name>` parameter
+        * schemas can be hierarchically extended further down
+        * extended fields can override same-name fields from parents
+        * field ordering is based on the in-class definition order, fields from parent classes
+          come before fields of child classes; overriding a field doesn't change its position
+
+        .. attention::
+            To transparently provide the *query statement* interface on top of the defined schemas,
+            the internal class handler magically turns all children inheritted from ``dsl.Schema``
+            to *instances* of :class:`dsl.Table <forml.io.dsl.Table>` (which itself has a
+            :attr:`.schema <forml.io.dsl.Table.schema>` attribute derived from this class) instead
+            of the intuitively expected *subclass* of the ``dsl.Schema`` parent.
+
+    Functional Mode
+        Additionally, schemas can be retrieved in a number of alternative ways implemented by the
+        following factory methods:
+
+        * :attr:`from_fields`
+        * :attr:`from_record`
+        * :attr:`from_path`
+
+    Schema fields can either be referenced using the pythonic *attribute-getter* syntax like
+    ``<Schema>.<field_name>`` or alternatively (e.g. if the field name is not a valid python
+    identifier) using the *item-getter* syntax as ``<Schema>[<field_name>]``.
+
+    Examples:
+        Following is an example of the declarative syntax:
+
+        .. code-block:: python
+
+            class Person(dsl.Schema):
+                '''Base schema.'''
+
+                surname = dsl.Field(dsl.String())
+                dob = dsl.Field(dsl.Date(), 'birthday')
+
+            class Student(Person):
+                '''Extended schema.'''
+
+                level = dsl.Field(dsl.Integer())
+                score = dsl.Field(dsl.Float())
+
+        That's a declaration of two data-sources - a generic ``Person`` with a *string* field called
+        ``surname`` and a *date* field ``dob`` aliased as ``birthday`` plus its extended version
+        ``Student`` with two more fields - *integer* ``level`` and *float* ``score``.
+
+        This schema can be used to formulate a query statement as shown:
+
+        >>> ETL = Student\\
+        ... .select(Student.surname.alias('name'), Student.dob)\\
+        ... .where(Student.score > 80)
     """
 
     @staticmethod
     def from_fields(*fields: 'dsl.Field', title: typing.Optional[str] = None) -> 'dsl.Source.Schema':
-        """Utility for programmatic schema assembly.
+        """Utility for functional schema assembly.
 
         Args:
-            *fields: Schema field list.
+            fields: Schema field list.
             title: Optional schema name.
 
         Returns:
             Assembled schema.
+
+        Examples:
+            >>> SCHEMA = dsl.Schema.from_fields(
+            ... dsl.Field(dsl.Integer(), name='A'),
+            ... dsl.Field(dsl.String(), name='B'),
+            ... )
         """
         return frame.Source.Schema(title or 'Schema', tuple(), {f'_{i}': f for i, f in enumerate(fields)})
 
@@ -71,15 +150,21 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
     def from_record(
         cls, record: 'layout.Native', *names: str, title: typing.Optional[str] = None
     ) -> 'dsl.Source.Schema':
-        """Utility for programmatic schema inference.
+        """Utility for functional schema inference.
 
         Args:
-            record: Scalar or vector representing single record for which the schema should be inferred.
+            record: Scalar or vector representing single record from which the schema should be
+                    inferred.
             names: Optional field names.
             title: Optional schema name.
 
         Returns:
             Inferred schema.
+
+        Examples:
+            >>> SCHEMA = dsl.Schema.from_record(
+            ... ['foobar', 37], 'name', 'age', title='Person'
+            ... )
         """
         if not hasattr(record, '__len__') or isinstance(record, (str, bytes)):  # wrap if scalar
             record = [record]
@@ -96,7 +181,11 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
         Args:
             path: Schema path in form of ``full.module.path:schema.qualified.ClassName``.
 
-        Returns: Imported schema table.
+        Returns:
+            Imported schema table.
+
+        Examples:
+            >>> SCHEMA = dsl.Schema.from_path('foo.bar:Baz')
         """
         try:
             module, schema = path.split(':', 1)

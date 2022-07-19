@@ -56,10 +56,12 @@ class Source(metaclass=abc.ABCMeta):
         assert source['surname'] == student_table['surname']
         assert source.birthday == student_table.birthday
         assert source['birthday'] == student_table['birthday']
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError, match='Invalid feature'):
             _ = student_table.xyz
         with pytest.raises(KeyError):
             _ = student_table['xyz']
+        with pytest.raises(AttributeError, match='Invalid feature'):
+            _ = source.__mro__
 
     def test_schema(self, source: frame.Source):
         """Test the reported schema."""

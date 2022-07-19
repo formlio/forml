@@ -42,6 +42,8 @@ DAG to be executed.
 
 The core Feed API looks as follows:
 
+.. autodata:: forml.io.Producer
+
 .. autoclass:: forml.io.Feed
    :members: producer, sources, features
 

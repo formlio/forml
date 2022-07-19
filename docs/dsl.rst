@@ -16,60 +16,58 @@
 Data Source DSL
 ===============
 
-To allow projects :ref:`specifying <project-source>` their data requirements in a portable way, ForML comes with its
-custom DSL (*domain-specific language*) that's at :doc:`runtime <../platform>` interpreted by the
-:doc:`feeds subsystem <../feed>` to deliver the requested data.
+To allow :ref:`projects to declare <project-source>` their data requirements in a portable way
+independently of any particular storage technology and data formats, ForML comes with its custom
+*Data Source DSL* (domain-specific language) which gets interpreted at :ref:`runtime
+<platform-execution>` by the :doc:`feeds subsystem <feed>` performing the :ref:`content resolution
+<io-resolving>` routine to deliver the requested datasets.
 
-The two main features of the DSL grammar is the `schema`_ declaration and the `query`_ syntax.
+Conceptually, it is an *internal* DSL (i.e. within Python grammar) based on *declarative* style of
+specifying the data profiles using the following two main constructs:
+
+* :ref:`schema definition <dsl-schema>` syntax for logical representation of individual datasets
+* :ref:`query statement <dsl-query>` notation for declaring the project data requirements
+
+.. important::
+    Do not confuse the DSL with an ORM framework. The DSL entities are not used to manage any data
+    directly. Its sole purpose is to describe the data sources independently of data access
+    mechanism in the same way the :ref:`workflow expression <workflow-expression>` describe the
+    processing logic independently of the execution mechanism. In both cases, the abstract
+    descriptions get *transcoded* to runtime-specific instructions when launched.
 
 .. _dsl-schema:
 
-Schema
-------
+Schema Definition
+-----------------
 
-Schema is the abstract description of the particular datasource structure in terms of its column attributes (currently
-a *name* and a *kind*). A schema is simply declared by extending the schema base class ``forml.io.dsl.Schema``
-and defining its fields as class attributes with values represented by ``forml.io.dsl.Field``. For example::
+The schema definition API is the core part of the DSL. A schema is the virtual intermediary
+allowing to decouple data solutions (ForML projects) from physical data instances, and :ref:`linking
+each other <io-resolving>` directly only at runtime using selected :doc:`feed providers <feed>`.
 
-    class Person(dsl.Schema):
-        """Base schema."""
+To become available to both :doc:`projects <project>` and :doc:`platforms <platform>`, schemas
+need to be published in form of :ref:`schema catalogs <io-catalog>`.
+Once declared, schemas can be used to formulate complex :ref:`query statements <dsl-query>` -
+most notably as formal descriptions of the :ref:`project data-source <project-source>`
+requirements.
 
-        surname = dsl.Field(dsl.String())
-        dob = dsl.Field(dsl.Date(), 'birthday')
+The schema definition API is based on the following structures:
 
-    class Student(Person):
-        """Extended schema."""
+.. autoclass:: forml.io.dsl.Schema
+   :members: from_fields, from_record, from_path
 
-        level = dsl.Field(dsl.Integer())
-        score = dsl.Field(dsl.Float())
+.. autoclass:: forml.io.dsl.Field
+   :members: kind, name
 
-Here we defined schemas of two potential datasources - a generic ``Person`` with a *string* field called ``surname`` and
-a *date* field ``dob`` (aliased as ``birthday``) plus its extended version ``Student`` with two more fields -
-*integer* ``level`` and *float* ``score``. The schema declaration API is based on the following rules:
 
-* the default field name is the class attribute name unless explicitly defined as the ``Field`` parameter
-* a field must be associated with one of the supported `kinds`_
-* schemas can be extended
-* extended fields can override same name fields from parents
-* field ordering is based on the in-class definition order, fields from parent classes come before fields of child
-  classes, overriding a field doesn't change its position
+.. _dsl-kinds:
 
-Schemas are expected to be published in form of :ref:`catalogs <io-catalog>` which can be imported by both
-:doc:`projects <../project>` and :doc:`platforms <../platform>` making them the mapping intermediaries.
-
-In :ref:`project sources <project-source>`, schemas can be used for specifying actual DSL *queries*. Any declared schema
-is a fully *queryable* object so you can use all the `query`_ features as described below.
-
-When referring to a schema field, one can use either the form of a attribute-getter like ``<Schema>.<field_name>`` or
-alternatively (if for example the field name is not a valid python identifier) using the item-getter as
-``<schema>['<field_name>']``.
-
-Kinds
-^^^^^
+Type System - DSL Kinds
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Following is the list of types (aka *kinds*) that can be used in schema field definitions:
 
 .. autosummary::
+   :nosignatures:
 
    forml.io.dsl.Boolean
    forml.io.dsl.Integer
@@ -85,9 +83,10 @@ Following is the list of types (aka *kinds*) that can be used in schema field de
 
 .. _dsl-query:
 
-Query Language
---------------
+Query Statement
+---------------
 
+TODO: explain SQL resemblance
 
 Base Primitives
 ^^^^^^^^^^^^^^^
@@ -149,6 +148,6 @@ Functions
 
 There is also a bunch of functions available to be used within the query expressions:
 
-.. automodule:: forml.io.dsl.function
-   :imported-members:
-   :members:
+xx.. automodule:: forml.io.dsl.function
+xx   :imported-members:
+xx   :members:

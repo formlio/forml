@@ -26,17 +26,17 @@ import typing
 
 import forml
 from forml import flow
-from forml.io import layout
+from forml.io import layout as laymod
 from forml.io.dsl import parser as parsmod
 
 if typing.TYPE_CHECKING:
-    from forml.io import dsl
+    from forml.io import dsl, layout  # pylint: disable=reimported
     from forml.io.dsl import parser  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], metaclass=abc.ABCMeta):
+class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], metaclass=abc.ABCMeta):
     """Generic reader base class matching the *Feed producer* interface.
 
     It is a low-level input component responsible for parsing a generic data request in form
@@ -170,7 +170,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, layout.Native], met
         Returns:
             Data formatted into the ``layout.Tabular`` format.
         """
-        return layout.Dense.from_rows(data)
+        return laymod.Dense.from_rows(data)
 
     @classmethod
     @abc.abstractmethod

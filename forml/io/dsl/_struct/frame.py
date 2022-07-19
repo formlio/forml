@@ -98,11 +98,14 @@ class Source(tuple, metaclass=abc.ABCMeta):
         @functools.lru_cache
         def __getitem__(cls, name: str) -> 'dsl.Field':
             try:
-                return getattr(cls, name)
+                item = getattr(cls, name)
             except AttributeError:
                 for field in cls:  # pylint: disable=not-an-iterable
                     if name == field.name:
                         return field
+            else:
+                if isinstance(item, _struct.Field):
+                    return item
             raise KeyError(f'Unknown field {name}')
 
         def __iter__(cls) -> typing.Iterator['dsl.Field']:
@@ -537,11 +540,11 @@ class Table(Origin):
     This type can be used either as metaclass or as a base class to inherit from.
     """
 
-    schema: Source.Schema = property(operator.itemgetter(0))
+    schema: 'dsl.Source.Schema' = property(operator.itemgetter(0))
 
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
-        schema: typing.Union[str, Source.Schema],
+        schema: typing.Union[str, 'dsl.Source.Schema'],
         bases: typing.Optional[tuple[type]] = None,
         namespace: typing.Optional[dict[str, typing.Any]] = None,
     ):
@@ -572,17 +575,17 @@ class Table(Origin):
 class Query(Queryable):
     """Generic source descriptor."""
 
-    source: Source = property(operator.itemgetter(0))
+    source: 'dsl.Source' = property(operator.itemgetter(0))
     selection: tuple['dsl.Feature'] = property(operator.itemgetter(1))
     prefilter: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
     grouping: tuple['dsl.Operable'] = property(operator.itemgetter(3))
     postfilter: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(4))
     ordering: tuple['dsl.Ordering'] = property(operator.itemgetter(5))
-    rows: typing.Optional[Rows] = property(operator.itemgetter(6))
+    rows: typing.Optional['dsl.Rows'] = property(operator.itemgetter(6))
 
     def __new__(
         cls,
-        source: Source,
+        source: 'dsl.Source',
         selection: typing.Optional[typing.Iterable['dsl.Feature']] = None,
         prefilter: typing.Optional['dsl.Predicate'] = None,
         grouping: typing.Optional[typing.Iterable['dsl.Operable']] = None,
@@ -596,7 +599,7 @@ class Query(Queryable):
                 ]
             ]
         ] = None,
-        rows: typing.Optional[Rows] = None,
+        rows: typing.Optional['dsl.Rows'] = None,
     ):
         def ensure_subset(*features: 'dsl.Feature') -> typing.Sequence['dsl.Feature']:
             """Ensure the provided features is a valid subset of the available source features.

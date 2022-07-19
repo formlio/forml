@@ -23,7 +23,9 @@ import typing
 
 import forml
 from forml import flow
-from forml.io import layout
+
+if typing.TYPE_CHECKING:
+    from forml.io import layout
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,10 +33,10 @@ LOGGER = logging.getLogger(__name__)
 class Operator(flow.Operator):
     """Basic publisher operator."""
 
-    def __init__(self, writer: flow.Builder[flow.Actor[layout.RowMajor, None, layout.Native]]):
+    def __init__(self, writer: flow.Builder[flow.Actor['layout.RowMajor', None, 'layout.Native']]):
         if writer.actor.is_stateful():
             raise forml.InvalidError('Stateful actor invalid for a publisher')
-        self._writer: flow.Builder[flow.Actor[layout.RowMajor, None, layout.Native]] = writer
+        self._writer: flow.Builder[flow.Actor['layout.RowMajor', None, 'layout.Native']] = writer
 
     def compose(self, scope: flow.Composable) -> flow.Trunk:
         """Compose the publisher segment trunk.
@@ -48,10 +50,10 @@ class Operator(flow.Operator):
 
 
 #: Callable interface for committing the produced data.
-Consumer = typing.Callable[[layout.RowMajor], layout.Outcome]
+Consumer = typing.Callable[['layout.RowMajor'], 'layout.Outcome']
 
 
-class Driver(flow.Actor[layout.RowMajor, None, layout.Outcome]):
+class Driver(flow.Actor['layout.RowMajor', None, 'layout.Outcome']):
     """Data publishing actor using the provided writer to store the data."""
 
     def __init__(self, consumer: Consumer):
@@ -60,5 +62,5 @@ class Driver(flow.Actor[layout.RowMajor, None, layout.Outcome]):
     def __repr__(self):
         return repr(self._consumer)
 
-    def apply(self, data: layout.RowMajor) -> layout.Outcome:
+    def apply(self, data: 'layout.RowMajor') -> 'layout.Outcome':
         return self._consumer(data)
