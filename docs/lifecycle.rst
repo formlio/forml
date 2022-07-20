@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _lifecycle:
+
 Lifecycle Management
 ====================
 
@@ -98,12 +100,12 @@ Development Lifecycle
 ^^^^^^^^^^^^^^^^^^^^^
 
 As the name suggests, this lifecycle is exercised during the project development in scope of the
-:doc:`project source-code <project>` working copy. It is typically managed using the ``forml
+:ref:`project source-code <project>` working copy. It is typically managed using the ``forml
 project <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the
-:class:`runtime.Virtual <forml.runtime.Virtual>` launcher when visited in the :doc:`interactive
+:class:`runtime.Virtual <forml.runtime.Virtual>` launcher when visited in the :ref:`interactive
 mode <interactive>`.
 
-The expected behaviour of the particular action depends on the correct :doc:`project setup
+The expected behaviour of the particular action depends on the correct :ref:`project setup
 <project>`.
 
 .. hint::
@@ -117,7 +119,7 @@ The development lifecycle actions are:
 Test
 """"
 
-Simply run through the unit tests defined as per the :doc:`testing` framework.
+Simply run through the unit tests defined as per the :ref:`testing` framework.
 
 Example:
 
@@ -160,7 +162,7 @@ registry. This effectively constitutes the :ref:`release roll-out <lifecycle-rel
 process can transition from here into the :ref:`production lifecycle <lifecycle-production>`.
 
 .. warning::
-   Each :doc:`model registry <registry>` provider allows uploading only unique monotonically
+   Each :ref:`model registry <registry>` provider allows uploading only unique monotonically
    increasing releases per any given project, hence executing this stage twice against the
    same registry without incrementing the :ref:`project version <project-setup>` is an error.
 
@@ -183,7 +185,7 @@ operates solely on that published release package (plus potentially the previous
 :ref:`model generations <registry-assets>`).
 
 The production lifecycle is either managed in batch mode using the :ref:`CLI <platform-cli>` or
-embedded within a :doc:`serving engine <serving>`.
+embedded within a :ref:`serving engine <serving>`.
 
 The stages of the production lifecycle are:
 
@@ -191,7 +193,7 @@ Train
 """""
 
 Run the :ref:`project pipeline <project-pipeline>` in the :ref:`train mode <workflow-mode>` to
-produce :ref:`new generation <lifecycle-generation>` and persist it in the :doc:`model registry
+produce :ref:`new generation <lifecycle-generation>` and persist it in the :ref:`model registry
 <registry>`.
 
 Example:
@@ -217,7 +219,7 @@ Apply
 
 Run the previously trained :ref:`project pipeline <project-pipeline>` in the :ref:`apply
 mode <workflow-mode>` using an existing :ref:`model generation <lifecycle-generation>` (explicit
-version or by default the latest) loaded from the :doc:`model registry <registry>`.
+version or by default the latest) loaded from the :ref:`model registry <registry>`.
 
 Example:
 
@@ -226,8 +228,8 @@ Example:
     $ forml model apply forml-example-titanic
 
 .. seealso::
-   In addition to this commandline based batch mechanism, the :doc:`serving engine <serving>`
-   together with the :doc:`application concept <application>` is another way of performing the
+   In addition to this commandline based batch mechanism, the :ref:`serving engine <serving>`
+   together with the :ref:`application concept <application>` is another way of performing the
    apply action of the production lifecycle.
 
 Evaluate

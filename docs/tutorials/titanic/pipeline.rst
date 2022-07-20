@@ -86,7 +86,7 @@ the encoded columns:
 Writing Unit Tests
 ------------------
 
-As a best practice, let's define :doc:`unit tests <../../testing>` for our operators.
+As a best practice, let's define :ref:`unit tests <testing>` for our operators.
 
 .. literalinclude:: ../../../tutorials/titanic/tests/pipeline/test_preprocessing.py
   :caption: tests/pipeline/test_preprocessing.py

@@ -93,7 +93,7 @@ Resources
     :caption: Data Management
 
     io
-    dsl
+    dsl/index
     feed
     sink
     registry

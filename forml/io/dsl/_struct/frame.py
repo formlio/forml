@@ -51,10 +51,22 @@ class Rows(typing.NamedTuple):
 
 
 class Source(tuple, metaclass=abc.ABCMeta):
-    """Source base class."""
+    """Base class of the *tabular* data frame sources.
+
+    Source is anything that can be used to obtain tabular data *FROM*. It is a logical collection
+    of :class:`dsl.Feature <forml.io.dsl.Feature>` instances represented by its :attr:`schema`.
+    """
 
     class Schema(type):
-        """Meta class for schema type ensuring consistent hashing."""
+        """Meta-class for schema types construction.
+
+        It guarantees consistent hashing and comparability for equality of the produced schema
+        classes.
+
+        .. seealso::
+            This meta-class is used internally, see the :class:`dsl.Schema <forml.io.dsl.Schema>`
+            for schema frontend API.
+        """
 
         def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
             seen = set()
@@ -194,27 +206,6 @@ class Source(tuple, metaclass=abc.ABCMeta):
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join(repr(a) for a in self)})'
 
-    @functools.cached_property
-    def features(self) -> typing.Sequence['dsl.Feature']:
-        """Get the list of features supplied by this source.
-
-        Returns:
-            Sequence of supplying features.
-        """
-
-    @functools.cached_property
-    def schema(self) -> 'dsl.Source.Schema':
-        """Get the schema type for this source.
-
-        Returns:
-            Schema type.
-        """
-        return self.Schema(
-            self.__class__.__name__,
-            (_struct.Schema.schema,),
-            {(c.name or f'_{i}'): _struct.Field(c.kind, c.name) for i, c in enumerate(self.features)},
-        )
-
     def __getattr__(self, name: str) -> 'dsl.Feature':
         try:
             return self[name]
@@ -240,106 +231,54 @@ class Source(tuple, metaclass=abc.ABCMeta):
             visitor: Visitor instance.
         """
 
+    @functools.cached_property
+    def schema(self) -> 'dsl.Source.Schema':
+        """Schema type representing this source.
 
-class Join(Source):
-    """Source made of two join-combined subsources."""
-
-    @enum.unique
-    class Kind(enum.Enum):
-        """Join type."""
-
-        INNER = 'inner'
-        LEFT = 'left'
-        RIGHT = 'right'
-        FULL = 'full'
-        CROSS = 'cross'
-
-        def __repr__(self):
-            return f'<{self.value}-join>'
-
-    left: 'dsl.Origin' = property(operator.itemgetter(0))
-    right: 'dsl.Origin' = property(operator.itemgetter(1))
-    condition: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
-    kind: 'dsl.Join.Kind' = property(operator.itemgetter(3))
-
-    def __new__(
-        cls,
-        left: 'dsl.Origin',
-        right: 'dsl.Origin',
-        condition: typing.Optional['dsl.Predicate'] = None,
-        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
-    ):
-        kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
-        if condition is not None:
-            if kind is cls.Kind.CROSS:
-                raise _exception.GrammarError('Illegal use of condition for cross-join')
-            condition = series.Cumulative.ensure_notin(series.Predicate.ensure_is(condition))
-            if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.features, *right.features)):
-                raise _exception.GrammarError(
-                    f'({condition}) not a subset of source features ({left.features}, {right.features})'
-                )
-        return super().__new__(cls, left, right, condition, kind)
-
-    def __repr__(self):
-        return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
+        Returns:
+            Schema type.
+        """
+        return self.Schema(
+            self.__class__.__name__,
+            (_struct.Schema.schema,),
+            {(c.name or f'_{i}'): _struct.Field(c.kind, c.name) for i, c in enumerate(self.features)},
+        )
 
     @functools.cached_property
+    @abc.abstractmethod
     def features(self) -> typing.Sequence['dsl.Feature']:
-        return self.left.features + self.right.features
+        """List of features logically contained in or potentially produced by this source.
 
-    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
-        visitor.visit_join(self)
-
-
-class Set(Source):
-    """Source made of two set-combined subsources."""
-
-    @enum.unique
-    class Kind(enum.Enum):
-        """Set type."""
-
-        UNION = 'union'
-        INTERSECTION = 'intersection'
-        DIFFERENCE = 'difference'
-
-    left: 'dsl.Source' = property(operator.itemgetter(0))
-    right: 'dsl.Source' = property(operator.itemgetter(1))
-    kind: 'dsl.Set.Kind' = property(operator.itemgetter(2))
-
-    def __new__(cls, left: 'dsl.Source', right: 'dsl.Source', kind: 'dsl.Set.Kind'):
-        return super().__new__(cls, left, right, kind)
-
-    def __repr__(self):
-        return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
-
-    @functools.cached_property
-    def features(self) -> typing.Sequence['dsl.Feature']:
-        return self.left.features + self.right.features
-
-    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
-        visitor.visit_set(self)
-
-
-class Queryable(Source, metaclass=abc.ABCMeta):
-    """Base class for queryable sources."""
+        Returns:
+            Sequence of contained features.
+        """
 
     @property
     def query(self) -> 'dsl.Query':
-        """Return query instance of this queryable.
+        """Query equivalent of this source.
 
         Returns:
             Query instance.
         """
         return Query(self)
 
-    def reference(self, name: typing.Optional[str] = None) -> 'dsl.Reference':
-        """Use an independent reference to this Source (ie for self-join conditions).
-
-        Args:
-            name: Optional alias to be used for this reference.
+    @property
+    def statement(self) -> 'dsl.Statement':
+        """Statement equivalent of this source.
 
         Returns:
-            New reference to this table.
+            Statement instance.
+        """
+        return self.query
+
+    def reference(self, name: typing.Optional[str] = None) -> 'dsl.Reference':
+        """Get an independent reference to this Source (ie for self-join conditions).
+
+        Args:
+            name: Optional alias to be used for this reference (random by default).
+
+        Returns:
+            New reference to this source.
         """
         return Reference(self, name)
 
@@ -351,6 +290,85 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             Source instance.
         """
         return self
+
+    def union(self, other: 'dsl.Source') -> 'dsl.Set':
+        """Create new source as a set union of this and the other source.
+
+        Args:
+            other: Source to union with.
+
+        Returns:
+            Set instance.
+        """
+        return Set(self, other, Set.Kind.UNION)
+
+    def intersection(self, other: 'dsl.Source') -> 'dsl.Set':
+        """Create new source as a set intersection of this and the other source.
+
+        Args:
+            other: Source to intersect with.
+
+        Returns:
+            Set instance.
+        """
+        return Set(self, other, Set.Kind.INTERSECTION)
+
+    def difference(self, other: 'dsl.Source') -> 'dsl.Set':
+        """Create new source as a set difference of this and the other source.
+
+        Args:
+            other: Source to difference with.
+
+        Returns:
+            Set instance.
+        """
+        return Set(self, other, Set.Kind.DIFFERENCE)
+
+
+class Statement(Source, metaclass=abc.ABCMeta):
+    """Base class for complete statements.
+
+    Complete statements are :class:`forml.io.dsl.Query` and :class:`forml.io.dsl.Set`.
+    """
+
+
+class Set(Statement):
+    """Source made of two set-combined sub-statements."""
+
+    @enum.unique
+    class Kind(enum.Enum):
+        """Set type."""
+
+        UNION = 'union'
+        INTERSECTION = 'intersection'
+        DIFFERENCE = 'difference'
+
+    left: 'dsl.Statement' = property(operator.itemgetter(0))
+    right: 'dsl.Statement' = property(operator.itemgetter(1))
+    kind: 'dsl.Set.Kind' = property(operator.itemgetter(2))
+
+    def __new__(cls, left: 'dsl.Source', right: 'dsl.Source', kind: 'dsl.Set.Kind'):
+        if left.schema != right.schema:
+            raise _exception.GrammarError('Incompatible sources')
+        return super().__new__(cls, left.statement, right.statement, kind)
+
+    def __repr__(self):
+        return f'{repr(self.left)} {self.kind.value} {repr(self.right)}'
+
+    @property
+    def statement(self) -> 'dsl.Statement':
+        return self
+
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Feature']:
+        return self.left.features + self.right.features
+
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
+        visitor.visit_set(self)
+
+
+class Queryable(Source, metaclass=abc.ABCMeta):
+    """Base class for queryable sources."""
 
     def select(self, *features: 'dsl.Feature') -> 'dsl.Query':
         """Specify the output features to be provided (projection).
@@ -388,24 +406,6 @@ class Queryable(Source, metaclass=abc.ABCMeta):
             Query instance.
         """
         return self.query.having(condition)
-
-    def join(
-        self,
-        other: 'Origin',
-        condition: typing.Optional['dsl.Predicate'] = None,
-        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
-    ) -> 'dsl.Query':
-        """Join with another datasource.
-
-        Args:
-            other: Source to join with.
-            condition: Feature expression as the join condition.
-            kind: Type of the join operation (INNER, LEFT, RIGHT, FULL CROSS).
-
-        Returns:
-            Query instance.
-        """
-        return self.query.join(other, condition, kind)
 
     def groupby(self, *features: 'dsl.Operable') -> 'dsl.Query':
         """Aggregation specifiers.
@@ -448,45 +448,12 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         """
         return self.query.limit(count, offset)
 
-    def union(self, other: 'dsl.Queryable') -> 'dsl.Query':
-        """Set union with the other source.
-
-        Args:
-            other: Query to union with.
-
-        Returns:
-            Query instance.
-        """
-        return self.query.union(other)
-
-    def intersection(self, other: 'dsl.Queryable') -> 'dsl.Query':
-        """Set intersection with the other source.
-
-        Args:
-            other: Query to intersect with.
-
-        Returns:
-            Query instance.
-        """
-        return self.query.intersection(other)
-
-    def difference(self, other: 'dsl.Queryable') -> 'dsl.Query':
-        """Set difference with the other source.
-
-        Args:
-            other: Query to difference with.
-
-        Returns:
-            Query instance.
-        """
-        return self.query.difference(other)
-
 
 class Origin(Queryable, metaclass=abc.ABCMeta):
-    """Origin is a queryable that can be referenced by some handle (rather than just a statement itself) - effectively
-    a Table or a subquery with a Reference.
+    """Origin is a queryable that can be referenced by some handle (rather than just a statement
+    itself) - effectively a ``Table`` or a subquery within a ``Reference``.
 
-    Its features are represented using series.Element.
+    Its features are represented using :class:`forml.io.dsl.Element <dsl.Element>`.
     """
 
     @property
@@ -498,18 +465,91 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
             Sequence of dsl.Field instances.
         """
 
+    def join(
+        self,
+        other: 'dsl.Origin',
+        condition: typing.Optional['dsl.Predicate'] = None,
+        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
+    ) -> 'dsl.Join':
+        """Join with another datasource.
+
+        Args:
+            other: Source to join with.
+            condition: Feature expression as the join condition.
+            kind: Type of the join operation (``INNER``, ``LEFT``, ``RIGHT``, ``FULL``, ``CROSS``).
+
+        Returns:
+            Join instance.
+        """
+        return Join(self, other, condition, kind)
+
+
+class Join(Origin):
+    """Source made of two join-combined subsources."""
+
+    @enum.unique
+    class Kind(enum.Enum):
+        """Join type."""
+
+        INNER = 'inner'
+        """Inner join type."""
+        LEFT = 'left'
+        """Left outer join type."""
+        RIGHT = 'right'
+        """Right outer join type."""
+        FULL = 'full'
+        """Full join type."""
+        CROSS = 'cross'
+        """Cross join type."""
+
+        def __repr__(self):
+            return f'<{self.value}-join>'
+
+    left: 'dsl.Origin' = property(operator.itemgetter(0))
+    right: 'dsl.Origin' = property(operator.itemgetter(1))
+    condition: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
+    kind: 'dsl.Join.Kind' = property(operator.itemgetter(3))
+
+    def __new__(
+        cls,
+        left: 'dsl.Origin',
+        right: 'dsl.Origin',
+        condition: typing.Optional['dsl.Predicate'] = None,
+        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
+    ):
+        kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
+        if condition is not None:
+            if kind is cls.Kind.CROSS:
+                raise _exception.GrammarError('Illegal use of condition for cross-join')
+            condition = series.Cumulative.ensure_notin(series.Predicate.ensure_is(condition))
+            if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.features, *right.features)):
+                raise _exception.GrammarError(
+                    f'({condition}) not a subset of source features ({left.features}, {right.features})'
+                )
+        return super().__new__(cls, left, right, condition, kind)
+
+    def __repr__(self):
+        return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'
+
+    @functools.cached_property
+    def features(self) -> typing.Sequence['dsl.Element']:
+        return self.left.features + self.right.features
+
+    def accept(self, visitor: 'dsl.Source.Visitor') -> None:
+        visitor.visit_join(self)
+
 
 class Reference(Origin):
-    """Reference is a wrapper around a queryable that associates it with a (possibly random) name."""
+    """Reference is a wrapper around a source that associates it with a (possibly random) name."""
 
     _NAMELEN: int = 8
-    instance: Queryable = property(operator.itemgetter(0))
+    instance: 'dsl.Source' = property(operator.itemgetter(0))
     name: str = property(operator.itemgetter(1))
 
-    def __new__(cls, instance: Queryable, name: typing.Optional[str] = None):
+    def __new__(cls, instance: 'dsl.Source', name: typing.Optional[str] = None):
         if not name:
             name = ''.join(random.choice(string.ascii_lowercase) for _ in range(cls._NAMELEN))
-        return super().__new__(cls, instance, name)
+        return super().__new__(cls, instance.instance, name)
 
     def __repr__(self):
         return f'{self.name}=[{repr(self.instance)}]'
@@ -519,11 +559,8 @@ class Reference(Origin):
         return tuple(series.Element(self, c.name) for c in self.instance.features)
 
     @property
-    def schema(self) -> Source.Schema:
+    def schema(self) -> 'dsl.Source.Schema':
         return self.instance.schema
-
-    def reference(self, name: typing.Optional[str] = None) -> 'dsl.Reference':
-        return Reference(self.instance, name)
 
     def accept(self, visitor: 'dsl.Source.Visitor') -> None:
         """Visitor acceptor.
@@ -539,8 +576,6 @@ class Table(Origin):
 
     This type can be used either as metaclass or as a base class to inherit from.
     """
-
-    schema: 'dsl.Source.Schema' = property(operator.itemgetter(0))
 
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
@@ -564,6 +599,10 @@ class Table(Origin):
     def __repr__(self):
         return self.schema.__name__
 
+    @property
+    def schema(self) -> 'dsl.Source.Schema':
+        return self[0]
+
     @functools.cached_property
     def features(self) -> typing.Sequence['dsl.Column']:
         return tuple(series.Column(self, f.name) for f in self.schema)
@@ -572,7 +611,7 @@ class Table(Origin):
         visitor.visit_table(self)
 
 
-class Query(Queryable):
+class Query(Queryable, Statement):
     """Generic source descriptor."""
 
     source: 'dsl.Source' = property(operator.itemgetter(0))
@@ -676,22 +715,6 @@ class Query(Queryable):
         if self.postfilter is not None:
             condition &= self.postfilter
         return Query(self.source, self.selection, self.prefilter, self.grouping, condition, self.ordering, self.rows)
-
-    def join(
-        self,
-        other: Queryable,
-        condition: typing.Optional['dsl.Predicate'] = None,
-        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
-    ) -> 'dsl.Query':
-        return Query(
-            Join(self.source, other, condition, kind),
-            self.selection,
-            self.prefilter,
-            self.grouping,
-            self.postfilter,
-            self.ordering,
-            self.rows,
-        )
 
     def groupby(self, *features: 'dsl.Operable') -> 'dsl.Query':
         return Query(self.source, self.selection, self.prefilter, features, self.postfilter, self.ordering, self.rows)

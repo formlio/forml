@@ -41,31 +41,35 @@ class _Columns(dsl.Source.Visitor, dsl.Feature.Visitor):
         self._items: set[dsl.Column] = set()
 
     @classmethod
-    def extract(cls, query: dsl.Query) -> typing.Iterable[tuple[dsl.Table, typing.Collection[dsl.Column]]]:
+    def extract(
+        cls, statement: 'dsl.Statement'
+    ) -> typing.Iterable[tuple['dsl.Table', typing.Collection['dsl.Column']]]:
         """Frontend method for extracting all involved columns from the given query.
 
         Args:
-            query: Query to extract the columns from.
+            statement: Query to extract the columns from.
 
         Return:
             Iterable of tuples of table-grouped columns involved in the query.
         """
         return (
             (t, frozenset(g))
-            for t, g in itertools.groupby(sorted(cls()(query), key=lambda c: repr(c.origin)), key=lambda c: c.origin)
+            for t, g in itertools.groupby(
+                sorted(cls()(statement), key=lambda c: repr(c.origin)), key=lambda c: c.origin
+            )
         )
 
-    def __call__(self, query: dsl.Query) -> typing.Iterable[dsl.Column]:
+    def __call__(self, statement: 'dsl.Statement') -> typing.Iterable['dsl.Column']:
         """Apply this visitor to the given query.
 
         Args:
-            query: Query to dissect.
+            statement: Query to dissect.
 
         Returns:
             Set of dsl.Column instances involved in the query.
         """
         self._items = set()
-        query.accept(self)
+        statement.accept(self)
         return frozenset(self._items)
 
     def visit_element(self, feature: 'dsl.Element') -> None:
@@ -79,12 +83,12 @@ class _Columns(dsl.Source.Visitor, dsl.Feature.Visitor):
                 feature.origin.instance.accept(self)
         super().visit_element(feature)
 
-    def visit_join(self, source: dsl.Join) -> None:
+    def visit_join(self, source: 'dsl.Join') -> None:
         if source.condition is not None:
             source.condition.accept(self)
         super().visit_join(source)
 
-    def visit_query(self, source: dsl.Query) -> None:
+    def visit_query(self, source: 'dsl.Query') -> None:
         for feature in source.features:
             feature.accept(self)
         if source.prefilter is not None:
@@ -217,12 +221,12 @@ class Feed(alchemy.Feed):
             origins: typing.Iterable[Origin[Partition]],
         ):
             self._loaded: dict[Origin[Partition], frozenset[Partition]] = {}
-            self._origins: dict[dsl.Queryable, Origin[Partition]] = {o.source: o for o in origins}
+            self._origins: dict[dsl.Source, Origin[Partition]] = {o.source: o for o in origins}
             self._backend: Feed.Reader.Backend = self.Backend()
             super().__init__(sources, features, self._backend)
 
-        def __call__(self, query: dsl.Query, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
-            for table, columns in _Columns.extract(query):
+        def __call__(self, statement: dsl.Statement, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
+            for table, columns in _Columns.extract(statement):
                 LOGGER.debug('Request for %s using columns: %s', table, columns)
                 if table not in self._origins:
                     raise forml.MissingError(f'Unknown origin for table {table}')
@@ -231,7 +235,7 @@ class Feed(alchemy.Feed):
                 if origin not in self._loaded or not self._loaded[origin].symmetric_difference(partitions):
                     origin(partitions).to_sql(origin.key, self._backend, index=False, if_exists='replace')
                     self._loaded[origin] = frozenset(partitions)
-            return super().__call__(query, entry)
+            return super().__call__(statement, entry)
 
     def __init__(self, *origins: Origin[Partition], **readerkw):
         self._sources: typing.Mapping[dsl.Source, sql.Selectable] = {o.source: sqlalchemy.table(o.key) for o in origins}

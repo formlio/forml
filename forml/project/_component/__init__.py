@@ -97,20 +97,20 @@ class Source(typing.NamedTuple):
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
 
-        train: dsl.Query
-        apply: dsl.Query
+        train: dsl.Statement
+        apply: dsl.Statement
         labels: typing.Optional['project.Source.Labels']
         ordinal: typing.Optional[dsl.Operable]
 
         def __new__(
             cls,
-            train: dsl.Queryable,
-            apply: dsl.Queryable,
+            train: dsl.Source,
+            apply: dsl.Source,
             labels: typing.Optional['project.Source.Labels'],
             ordinal: typing.Optional[dsl.Operable],
         ):
-            train = train.query
-            apply = apply.query
+            train = train.statement
+            apply = apply.statement
             if labels is not None and not isinstance(labels, flow.Builder):
                 if isinstance(labels, dsl.Feature):
                     lseq = [labels]
@@ -127,9 +127,9 @@ class Source(typing.NamedTuple):
     @classmethod
     def query(
         cls,
-        features: dsl.Queryable,
+        features: dsl.Source,
         labels: typing.Optional['project.Source.Labels'] = None,
-        apply: typing.Optional[dsl.Queryable] = None,
+        apply: typing.Optional[dsl.Source] = None,
         ordinal: typing.Optional[dsl.Operable] = None,
     ) -> 'project.Source':
         """Factory method for creating a new Source descriptor instance with the given *extraction*

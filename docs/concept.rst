@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _concept:
+
 Concept
 =======
 
@@ -51,7 +53,7 @@ Project Component Structure
     some common basic structure that can be understood across projects and help (not only) ForML itself to understand
     the project just by visiting the expected places.
 
-    More details about the project layout are explained in the :doc:`project` sections.
+    More details about the project layout are explained in the :ref:`project` sections.
 
 .. _concept-dsl:
 
@@ -69,7 +71,7 @@ Data Source DSL
                 .where(student.score < 2) \
                 .orderby(student.level, student.score)
 
-    Full guide and the DSL references can be found in the :doc:`dsl` sections.
+    Full guide and the DSL references can be found in the :ref:`dsl` sections.
 
 .. _concept-workflow:
 
@@ -84,8 +86,8 @@ Workflow Expression API
 
         FLOW = SimpleImputer(strategy='mean') >> LogisticRegression(max_iter=3, solver='lbfgs')
 
-    More on the *Operators* and *Actors* is discussed in the :doc:`workflow/index` sections. See
-    also the :doc:`lifecycle` sections for details on the supported pipeline modes.
+    More on the *Operators* and *Actors* is discussed in the :ref:`workflow` sections. See
+    also the :ref:`lifecycle` sections for details on the supported pipeline modes.
 
 
 Runtime Independence
@@ -94,7 +96,8 @@ Runtime Independence
 ForML has been carefully designed to entirely abstract away all of the fundamental runtime dependencies so that project
 implementation is decoupled from any particular execution mechanism, storage technology, or data format. This allows
 running the same unchanged project against an arbitrary combination of these runtime *providers*. Specific providers are
-selected by the configuration of the runtime environment called simply the :doc:`Platform <platform>`.
+selected by the configuration of the runtime environment called simply the :ref:`Platform
+<platform>`.
 
 .. _concept-io:
 
@@ -108,7 +111,7 @@ Data Providers & Result Consumers
     Similarly, any output produced by the ForML pipeline gets captured by the platform and sent to a configured *sink*.
     A platform can specify different sink provider for each pipeline mode.
 
-    See the :doc:`io` sections for more info about the related concepts.
+    See the :ref:`io` sections for more info about the related concepts.
 
 .. _concept-persistence:
 
@@ -118,8 +121,8 @@ Persistence
     belong to one *Release*.
 
     Both Releases and Generations are *project artifacts* that require persistent runtime storage called *Registry*
-    that allows publishing, locating and fetching these entities. See the :doc:`registry` section for the list of
-    existing registry implementations and their configurations.
+    that allows publishing, locating and fetching these entities. See the :ref:`registry` section
+    for the list of existing registry implementations and their configurations.
 
 .. _concept-execution:
 
@@ -127,5 +130,5 @@ Execution
     At runtime, the native actor DAG produced through the operator composition gets transformed to a representation
     of the selected third-party task dependency *runner* and the actual execution is carried under its control.
 
-    The list of supported runners shipped with ForML and their documentation can be found in the :doc:`runner`
-    section.
+    The list of supported runners shipped with ForML and their documentation can be found in the
+    :ref:`runner` section.

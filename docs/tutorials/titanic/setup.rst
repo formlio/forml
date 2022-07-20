@@ -24,7 +24,7 @@ Before diving into the actual implementation, we need to go through a couple of 
 Starting a New Project
 ----------------------
 
-Run the following shell command to create the initial :doc:`project structure<../../project>`:
+Run the following shell command to create the initial :ref:`project structure <project>`:
 
 .. code-block:: console
 
@@ -48,7 +48,7 @@ Source Definition
 -----------------
 
 Let's edit the :file:`source.py` component supplying the project :ref:`datasource descriptor
-<project-source>` with a :doc:`DSL query <../../dsl>` against the particular :py:class:`Titanic
+<project-source>` with a :ref:`DSL query <dsl>` against the particular :py:class:`Titanic
 schema from the Openschema catalog <openschema:openschema.kaggle.Titanic>`. Note the essential call
 to the :func:`project.setup() <forml.project.setup>` at the end registering the component within
 the framework.
@@ -64,7 +64,7 @@ Evaluation Definition
 ---------------------
 
 Finally, we fill-in the :ref:`evaluation descriptor <project-evaluation>` within the
-:file:`evaluation.py` which involves specifying the :doc:`evaluation strategy <../../evaluation>`
+:file:`evaluation.py` which involves specifying the :ref:`evaluation strategy <evaluation>`
 including the particular metric. The file again ends with call to the :func:`project.setup()
 <forml.project.setup>` to register the component within the framework.
 

@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _actor:
+
 Task Actor
 ==========
 
@@ -24,7 +26,7 @@ transformation of the passing data.
 .. important::
     ForML doesn't care neither about the particular internal processing functionality of any
     actors nor the actual types and formats of the :ref:`data passed between them <io-payload>`.
-    All that ForML deals with is the actor interconnection within the overall :doc:`flow topology
+    All that ForML deals with is the actor interconnection within the overall :ref:`flow topology
     <topology>` - responsibility for their logical and functional compatibility is solely in
     hands of the implementor.
 
@@ -39,7 +41,7 @@ The two main actor types are:
    :ref:`train-mode and apply-mode <workflow-mode>` in which the stateful actors operate.
    The framework transparently manages the actor state using its :meth:`.get_state()
    <forml.flow.Actor.get_state>`/:meth:`.set_state() <forml.flow.Actor.get_state>` methods and the
-   :doc:`model registry <../registry>`.
+   :ref:`model registry <registry>`.
 
 
 .. _actor-ports:
@@ -47,7 +49,7 @@ The two main actor types are:
 Ports
 -----
 
-ForML actors have number of input and output *ports* for the mutual :doc:`interconnection
+ForML actors have number of input and output *ports* for the mutual :ref:`interconnection
 <topology>` within the task graph. The following diagram shows how the different ports might get
 engaged when in each of the particular actor modes:
 
@@ -105,7 +107,7 @@ Params  system  both       1         1      Hyper-parameter getter/setter ports.
 
 .. seealso::
 
-    The actual port management is discussed in great detail in the :doc:`topology` chapter, here
+    The actual port management is discussed in great detail in the :ref:`topology` chapter, here
     we stay focused rather on the Actor itself.
 
 
@@ -211,7 +213,7 @@ Decorated Function Actors
 
 Less verbose option for defining actors is based on wrapping user-defined functions using the
 ``@wrap.Actor.train`` and/or ``@wrap.Actor.apply`` decorators from the
-:doc:`Pipeline Library <../pipeline>` (the following examples match exactly the functionality as
+:ref:`Pipeline Library <pipeline>` (the following examples match exactly the functionality as
 in the native implementations above):
 
 .. md-tab-set::
@@ -278,7 +280,7 @@ Mapped Actors
 
 Third-party implementations that are logically compatible with the ForML actor concept can be
 easily mapped into a valid ForML actors using the ``@wrap.Actor.type`` wrapper from the
-:doc:`Pipeline Library <../pipeline>`:
+:ref:`Pipeline Library <pipeline>`:
 
 .. code-block:: python
     :linenos:
@@ -297,7 +299,7 @@ easily mapped into a valid ForML actors using the ``@wrap.Actor.type`` wrapper f
 
 .. attention::
     Rather then to just *actors*, the third-party implementations are usually required to be
-    converted all the way to ForML :doc:`operators <operator>` to be eventually composable within
+    converted all the way to ForML :ref:`operators <operator>` to be eventually composable within
     the pipeline expressions. For this purpose, there is even easier method of turning those
     implementations into operators with no effort using the
     :func:`@wrap.importer <forml.pipeline.wrap.importer>` context manager - see the

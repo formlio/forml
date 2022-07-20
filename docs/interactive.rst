@@ -13,23 +13,25 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _interactive:
+
 Interactive Mode
 ================
 
-To enable practical *research and development* of ForML :doc:`projects <project>`, the framework
+To enable practical *research and development* of ForML :ref:`projects <project>`, the framework
 allows as one of its :ref:`execution mechanisms <platform-execution>` to compose and operate its
-:doc:`workflows <workflow/index>` *interactively*. Generally, this can be utilized within REPL
+:ref:`workflows <workflow>` *interactively*. Generally, this can be utilized within REPL
 (*read-evaluate-print-loop*) based terminals or more typically using high-level frontend interfaces
 like the popular :doc:`Jupyter <jupyter:index>` notebooks.
 
 .. note::
     ForML still remains grounded in the *code-first* principle of implementing the ML solution
-    as a software :doc:`project <project>` as opposed to some of the native *notebook-first*
+    as a software :ref:`project <project>` as opposed to some of the native *notebook-first*
     oriented methodologies. The interactive mode is designed primarily for exploration rather than
     implementation of the eventual solution.
 
 This chapter describes the individual tools allowing to use ForML interactively. Please refer to
-the :doc:`tutorials <tutorials/index>` for actual examples demonstrating this principle in action.
+the :ref:`tutorials <tutorials>` for actual examples demonstrating this principle in action.
 
 Project Handle
 --------------
@@ -51,9 +53,9 @@ Virtual Launcher
 ----------------
 
 The Virtual launcher represents one of the possible :ref:`execution mechanisms
-<platform-execution>`. It is a wrapper around the low-level :doc:`runner <runner>` and :doc:`feed
+<platform-execution>`. It is a wrapper around the low-level :ref:`runner <runner>` and :ref:`feed
 <feed>` concepts designed specifically for *interactive* operations (internally it is also used by
-the :doc:`testing framework <testing>`).
+the :ref:`testing framework <testing>`).
 
 
 .. autoclass:: forml.runtime.Virtual

@@ -43,26 +43,27 @@ class Statement(typing.NamedTuple):
     class Prepared(typing.NamedTuple):
         """Statement bound with particular lower/upper parameters."""
 
-        query: 'dsl.Query'
+        statement: 'dsl.Statement'
         ordinal: typing.Optional['dsl.Operable']
 
         def __call__(
             self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
-        ) -> 'dsl.Query':
-            query = self.query
+        ) -> 'dsl.Statement':
+            statement = self.statement
             if self.ordinal is not None:
+                statement = statement.query
                 if lower:
-                    query = query.where(self.ordinal >= lower)
+                    statement = statement.where(self.ordinal >= lower)
                 if upper:
-                    query = query.where(self.ordinal < upper)
+                    statement = statement.where(self.ordinal < upper)
             elif lower or upper:
                 raise forml.UnexpectedError('Bounds provided but source not ordinal')
-            return query
+            return statement
 
     @classmethod
     def prepare(
         cls,
-        query: 'dsl.Query',
+        statement: 'dsl.Statement',
         ordinal: typing.Optional['dsl.Operable'],
         lower: typing.Optional['dsl.Native'] = None,
         upper: typing.Optional['dsl.Native'] = None,
@@ -70,7 +71,7 @@ class Statement(typing.NamedTuple):
         """Bind the particular lower/upper parameters with this prepared statement.
 
         Args:
-            query: Base statement query.
+            statement: Base statement query.
             ordinal: Optional ordinal column specification.
             lower: Optional lower ordinal value.
             upper:  Optional upper ordinal value.
@@ -78,9 +79,9 @@ class Statement(typing.NamedTuple):
         Returns:
             Prepared statement binding.
         """
-        return cls(cls.Prepared(query, ordinal), lower, upper)  # pylint: disable=no-member
+        return cls(cls.Prepared(statement, ordinal), lower, upper)  # pylint: disable=no-member
 
-    def __call__(self) -> 'dsl.Query':
+    def __call__(self) -> 'dsl.Statement':
         """Expand the statement with the provided lower/upper parameters.
 
         Returns:
@@ -134,8 +135,8 @@ class Operator(flow.Operator):
         return flow.Trunk(apply, train, label)
 
 
-#: Callable interface for parsing a DSL query and resolving it using its linked storage.
-Producer = typing.Callable[['dsl.Query', typing.Optional['layout.Entry']], 'layout.Tabular']
+#: Callable interface for parsing a DSL statement and resolving it using its linked storage.
+Producer = typing.Callable[['dsl.Statement', typing.Optional['layout.Entry']], 'layout.Tabular']
 Output = typing.TypeVar('Output')
 
 

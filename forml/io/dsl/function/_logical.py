@@ -16,30 +16,18 @@
 # under the License.
 
 """
-Aggregate functions.
+Logical operators.
+
+Logical operators
+-----------------
+
+The following native logical operators are available directly on the field instances:
+
+============ ============================
+  Operator     Description
+============ ============================
+  ``&``        Logical *AND*
+  ``|``        Logical *OR*
+  ``~``        Logical *NOT*
+============ ============================
 """
-
-from .._struct import kind as kindmod
-from .._struct import series
-
-
-class Count(series.Aggregate, series.Univariate):
-    """Number of the input rows."""
-
-    kind: kindmod.Integer = kindmod.Integer()
-
-
-class Avg(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Average of the feature values."""
-
-
-class Max(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Maximum of the feature values."""
-
-
-class Min(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Minimum of the feature values."""
-
-
-class Sum(series.Arithmetic, series.Aggregate, series.Univariate):
-    """Sum of the feature values."""

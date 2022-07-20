@@ -34,10 +34,10 @@ if typing.TYPE_CHECKING:
 class Origin(lazy.Origin[None], metaclass=abc.ABCMeta):
     """Base class for data origin handlers."""
 
-    def __init__(self, source: typing.Union[dsl.Source, str]):
+    def __init__(self, source: typing.Union['dsl.Source', str]):
         if isinstance(source, str):
             source = dsl.Source.from_path(source)
-        self._source: dsl.Source = source
+        self._source: 'dsl.Source' = source
 
     @classmethod
     def parse_config(cls, config: typing.Any) -> typing.Mapping[str, typing.Any]:  # pylint: disable=unused-argument
@@ -55,7 +55,7 @@ class Origin(lazy.Origin[None], metaclass=abc.ABCMeta):
         return {}
 
     @classmethod
-    def create(cls, setup: typing.Mapping[typing.Union[dsl.Source, str], typing.Any]) -> typing.Sequence['Origin']:
+    def create(cls, setup: typing.Mapping[typing.Union['dsl.Source', str], typing.Any]) -> typing.Sequence['Origin']:
         """Factory method for creating origin instances out of the setup mapping.
 
         Args:
@@ -68,7 +68,7 @@ class Origin(lazy.Origin[None], metaclass=abc.ABCMeta):
         return tuple(cls(s, **cls.parse_config(o)) for s, o in setup.items())
 
     @property
-    def source(self) -> dsl.Source:
+    def source(self) -> 'dsl.Source':
         """The DSL source description of this origin.
 
         The left side of the content resolving mapping (e.g. a ``dsl.Table`` schema).
@@ -91,7 +91,7 @@ class Origin(lazy.Origin[None], metaclass=abc.ABCMeta):
 class Inline(Origin):
     """Inline data origin."""
 
-    def __init__(self, schema: typing.Union[dsl.Source, str], content: 'layout.RowMajor'):
+    def __init__(self, schema: typing.Union['dsl.Source', str], content: 'layout.RowMajor'):
         super().__init__(schema)
         self._content: pandas.DataFrame = pandas.DataFrame(content, columns=self.names)
 
@@ -108,7 +108,7 @@ class Csv(Origin):
 
     OPTIONS = {'parse_dates': True, 'header': 0}
 
-    def __init__(self, schema: typing.Union[dsl.Source, str], path: typing.Union[pathlib.Path, str], **kwargs):
+    def __init__(self, schema: typing.Union['dsl.Source', str], path: typing.Union[pathlib.Path, str], **kwargs):
         super().__init__(schema)
         self._path: typing.Union[pathlib.Path, str] = path
         self._kwargs = self.OPTIONS | {'names': self.names} | kwargs
@@ -176,10 +176,10 @@ class Feed(lazy.Feed, alias='monolite'):
 
     def __init__(
         self,
-        inline: typing.Optional[typing.Mapping[typing.Union[dsl.Source, str], 'layout.RowMajor']] = None,
+        inline: typing.Optional[typing.Mapping[typing.Union['dsl.Source', str], 'layout.RowMajor']] = None,
         csv: typing.Optional[
             typing.Mapping[
-                typing.Union[dsl.Source, str],
+                typing.Union['dsl.Source', str],
                 typing.Union[pathlib.Path, str, typing.Mapping[str, typing.Any]],
             ]
         ] = None,

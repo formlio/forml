@@ -55,7 +55,11 @@ def cast(value: typing.Any) -> 'dsl.Feature':
 
 
 class Feature(tuple, metaclass=abc.ABCMeta):
-    """Base class for feature types (ie fields or select expressions)."""
+    """Base class of the individual *columnar* data series features.
+
+    Feature is anything that can be used as a handle to a single columnar data. It is a
+    homogenous series of data with the same :attr:`kind`.
+    """
 
     class Visitor:
         """Feature visitor."""
@@ -147,13 +151,12 @@ class Feature(tuple, metaclass=abc.ABCMeta):
     def __hash__(self):
         return hash(self.__class__) ^ super().__hash__()
 
-    @property
     @abc.abstractmethod
-    def name(self) -> typing.Optional[str]:
-        """Feature name.
+    def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
+        """Visitor acceptor.
 
-        Returns:
-            Name string.
+        Args:
+            visitor: Visitor instance.
         """
 
     @property
@@ -165,21 +168,25 @@ class Feature(tuple, metaclass=abc.ABCMeta):
             Type.
         """
 
-    @abc.abstractmethod
-    def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
-        """Visitor acceptor.
+    def alias(self, alias: str) -> 'dsl.Aliased':
+        """Use an alias for this feature.
 
         Args:
-            visitor: Visitor instance.
+            alias: Aliased feature name.
+
+        Returns:
+            New feature instance with the given alias.
         """
+        return Aliased(self, alias)
 
     @property
     @abc.abstractmethod
     def operable(self) -> 'dsl.Operable':
-        """Return the operable of this feature (apart from Aliased, operable is the feature itself).
+        """Return the operable representation of this feature (apart from Aliased, operable is
+        the feature itself).
 
         Returns:
-            Feature's operable.
+            Feature's operable representation.
         """
 
     @classmethod
@@ -264,7 +271,9 @@ def featurize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 
 
 class Operable(Feature, metaclass=abc.ABCMeta):
-    """Base class for features that can be used in expressions, conditions, grouping and/or ordering definitions."""
+    """Base class for features that can be used in expressions, conditions, grouping and/or
+    ordering definitions.
+    """
 
     @property
     def operable(self) -> 'dsl.Operable':
@@ -274,17 +283,6 @@ class Operable(Feature, metaclass=abc.ABCMeta):
     def ensure_is(cls, feature: 'dsl.Feature') -> 'dsl.Operable':
         """Ensure given given feature is an Operable."""
         return super().ensure_is(feature).operable
-
-    def alias(self, alias: str) -> 'dsl.Aliased':
-        """Use an alias for this feature.
-
-        Args:
-            alias: Aliased feature name.
-
-        Returns:
-            New feature instance with given alias.
-        """
-        return Aliased(self, alias)
 
     __hash__ = Feature.__hash__  # otherwise gets overwritten to None due to redefined __eq__
 
@@ -492,15 +490,6 @@ class Literal(Operable):
     def __repr__(self):
         return repr(self.value)
 
-    @property
-    def name(self) -> None:
-        """Literal has no name without an explicit aliasing.
-
-        Returns:
-            None.
-        """
-        return None
-
     def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
         """Visitor acceptor.
 
@@ -550,15 +539,6 @@ class Column(Element):
 
 class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions."""
-
-    @property
-    def name(self) -> None:
-        """Expression has no name without an explicit aliasing.
-
-        Returns:
-            None.
-        """
-        return None
 
     def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
         visitor.visit_expression(self)
@@ -626,8 +606,8 @@ class Predicate(metaclass=abc.ABCMeta):
     """Base class for Logical and Comparison operators."""
 
     class Factors(typing.Mapping['dsl.Table', 'dsl.Factors']):
-        """Mapping (read-only) of predicate factors to their tables. Factor is a predicate which is involving exactly
-        one and only table.
+        """Mapping (read-only) of predicate factors to their tables. Factor is a predicate which is
+        involving exactly one and only table.
         """
 
         def __init__(self, *predicates: 'dsl.Predicate'):
@@ -694,10 +674,11 @@ class Predicate(metaclass=abc.ABCMeta):
 
     @classmethod
     def ensure_is(cls: type['dsl.Operable'], feature: 'dsl.Operable') -> 'dsl.Operable':
-        """Ensure given feature is a predicate. Since this mixin class is supposed to be used as a first base class of
-        its feature implementors, this will mask the Feature.ensure_is API. Here we add special implementation depending
-        on whether it is used directly on the Predicate class or its bare mixin subclasses or the actual Feature
-        implementation using this mixin.
+        """Ensure given feature is a predicate. Since this mixin class is supposed to be used as
+        a first base class of its feature implementors, this will mask the Feature.ensure_is API.
+        Here we add special implementation depending on whether it is used directly on the
+        ``Predicate`` class or its bare mixin subclasses or the actual Feature implementation
+        using this mixin.
 
         Args:
             feature: 'dsl.Feature' instance to be checked for its compliance.
@@ -758,11 +739,12 @@ class Comparison(Predicate):
     """Mixin for comparison operators."""
 
     class Pythonic(Operable):
-        """Semi proxy/lazy wrapper allowing native Python features like sorting or equality tests to work transparently
-        without raising the syntax errors implemented in the constructors of the actual Comparison types.
+        """Semi proxy/lazy wrapper allowing native Python features like sorting or equality tests
+        to work transparently without raising the syntax errors implemented in the constructors of
+        the actual Comparison types.
 
-        This instance is expected to be used only internally by Python itself. All code within ForML is supposed to use
-        the extracted .operable instance of the true Comparison type.
+        This instance is expected to be used only internally by Python itself. All code within ForML
+        is supposed to use the extracted .operable instance of the true Comparison type.
         """
 
         operator: type[Infix] = property(opermod.itemgetter(0))
@@ -778,10 +760,6 @@ class Comparison(Predicate):
             if self.operator is LessThan:
                 return repr(self.left) < repr(self.right)
             raise RuntimeError(f'Unexpected Pythonic comparison using {self.operator}')
-
-        @property
-        def name(self) -> typing.Optional[str]:
-            raise RuntimeError('Pythonic comparison proxy used as a feature')
 
         @property
         def kind(self) -> 'dsl.Any':
@@ -841,11 +819,13 @@ class Equal(Comparison, Infix):
     symbol = '=='
 
     def __bool__(self):
-        """Since this instance is also returned when python internally compares two Feature instances for equality (ie
-        when the instance is stored within a hash-based container), we want to evaluate the boolean value for python
-        perspective of the objects (rather than just the ETL perspective of the data).
+        """Since this instance is also returned when python internally compares two Feature
+        instances for equality (i.e. when the instance is stored within a hash-based container), we
+        want to evaluate the boolean value for python perspective of the objects (rather than just
+        the ETL perspective of the data).
 
-        Note this doesn't reflect mathematical commutativity - order of potential sub-expression operands matters.
+        Note this doesn't reflect mathematical commutativity - order of potential sub-expression
+        operands matters.
         """
         return hash(self.left) == hash(self.right)
 
@@ -987,15 +967,6 @@ class Window(Cumulative):
         frame: typing.Optional = None,
     ):
         return super().__new__(cls, function, tuple(partition), Ordering.make(ordering or []), frame)
-
-    @property
-    def name(self) -> None:
-        """Window has no name without an explicit aliasing.
-
-        Returns:
-            None.
-        """
-        return None
 
     @property
     def kind(self) -> 'dsl.Any':

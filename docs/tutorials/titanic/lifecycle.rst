@@ -13,7 +13,6 @@
     specific language governing permissions and limitations
     under the License.
 
-
 Lifecycle Actions
 =================
 
@@ -72,14 +71,14 @@ Development Lifecycle
    ...great, we've managed to improve from our :doc:`baseline workflow <exploration>`!
 
 5. Create the project package artifact and upload it to the (default as per our :ref:`config
-   <tutorial-setup>`) filesystem :doc:`registry <../../registry>` (assuming the same release doesn't
+   <tutorial-setup>`) filesystem :ref:`registry <registry>` (assuming the same release doesn't
    already exist - otherwise increment the project version in the :ref:`setup.py <project-setup>`):
 
    .. code-block:: console
 
        $ forml project release
 
-   This should publish the project into your local filesystem :doc:`model registry <../../registry>`
+   This should publish the project into your local filesystem :ref:`model registry <registry>`
    making it available for the production lifecycle. It becomes the first published :ref:`release
    <registry-package>` of this project versioned as ``0.1.dev0`` (according to the version from
    :ref:`setup.py <project-setup>`).

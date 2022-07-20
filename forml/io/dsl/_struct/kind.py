@@ -64,7 +64,7 @@ class Singleton(Meta):
         instance = None
 
         def new(cls: type['dsl.Any']) -> 'dsl.Any':
-            """Injected class new method ensuring singletons are only created."""
+            """Singleton type."""
             nonlocal instance
             if not instance:
                 instance = object.__new__(cls)
@@ -78,7 +78,7 @@ Native = typing.TypeVar('Native')
 
 
 class Any(metaclass=Meta):
-    """Type base class."""
+    """Base class of all types."""
 
     @property
     @abc.abstractmethod
@@ -204,7 +204,7 @@ class Timestamp(Date):
     __cardinality__ = 1
 
 
-class Compound(Any, tuple):
+class Compound(Any, tuple, metaclass=abc.ABCMeta):
     """Complex data type class."""
 
     @property
@@ -230,6 +230,10 @@ class Array(Compound):
     __type__ = typing.Sequence
 
     def __new__(cls, element: 'dsl.Any'):
+        """
+        Args:
+            element: Array element kind.
+        """
         return tuple.__new__(cls, [element])
 
 
@@ -241,6 +245,11 @@ class Map(Compound):
     __type__ = typing.Mapping
 
     def __new__(cls, key: 'dsl.Any', value: 'dsl.Any'):
+        """
+        Args:
+            key: Map keys kind.
+            value: Map values kind.
+        """
         return tuple.__new__(cls, [key, value])
 
 
@@ -259,6 +268,10 @@ class Struct(Compound):
     __type__ = object
 
     def __new__(cls, **element: 'dsl.Any'):
+        """
+        Args:
+            element: Mapping of attribute name strings and their kinds.
+        """
         return tuple.__new__(cls, [cls.Element(n, k) for n, k in element.items()])
 
 

@@ -60,11 +60,11 @@ class Field(typing.NamedTuple):
 
 
 class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
-    """DSL base class for table (schema) definitions.
+    """DSL frontend for table (schema) definitions.
 
     A Schema is a logical representation of a particular dataset. Together with the
-    :class:`dsl.Field <forml.io.dsl.Field>`, this class provides the *schema definition* API
-    which can be used in two operational modes:
+    :class:`dsl.Field <forml.io.dsl.Field>`, this class provides the *schema definition* frontend
+    API which can be used in two operational modes:
 
     Declarative Mode
         The primary approach for schema definition is based on the *class inheritance* syntax with
@@ -84,7 +84,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
             To transparently provide the *query statement* interface on top of the defined schemas,
             the internal class handler magically turns all children inheritted from ``dsl.Schema``
             to *instances* of :class:`dsl.Table <forml.io.dsl.Table>` (which itself has a
-            :attr:`.schema <forml.io.dsl.Table.schema>` attribute derived from this class) instead
+            :attr:`.schema <forml.io.dsl.Source.schema>` attribute derived from this class) instead
             of the intuitively expected *subclass* of the ``dsl.Schema`` parent.
 
     Functional Mode

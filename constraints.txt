@@ -73,7 +73,7 @@ entrypoints==0.4
     #   jupyter-client
     #   mlflow
     #   nbconvert
-fastjsonschema==2.15.3
+fastjsonschema==2.16.1
     # via nbformat
 filelock==3.7.1
     # via virtualenv
@@ -112,7 +112,7 @@ gunicorn==20.1.0
     # via mlflow
 h11==0.13.0
     # via uvicorn
-identify==2.5.1
+identify==2.5.2
     # via pre-commit
 idna==3.3
     # via
@@ -249,13 +249,13 @@ prometheus-client==0.14.1
     # via prometheus-flask-exporter
 prometheus-flask-exporter==0.20.2
     # via mlflow
-protobuf==4.21.2
+protobuf==4.21.3
     # via mlflow
 py==1.11.0
     # via pytest
 pyarrow==8.0.0
     # via openlake
-pycln==2.0.2
+pycln==2.0.4
     # via forml (setup.py)
 pycodestyle==2.8.0
     # via flake8
@@ -273,7 +273,7 @@ pyhive==0.6.5
     #   forml (setup.py)
 pyjwt==2.4.0
     # via databricks-cli
-pylint==2.14.4
+pylint==2.14.5
     # via forml (setup.py)
 pyparsing==3.0.9
     # via packaging
@@ -411,7 +411,7 @@ traitlets==5.3.0
     #   nbconvert
     #   nbformat
     #   nbsphinx
-typer==0.5.0
+typer==0.6.1
     # via pycln
 typing-extensions==4.3.0
     # via

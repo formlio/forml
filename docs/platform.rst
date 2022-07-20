@@ -13,12 +13,14 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _platform:
+
 Runtime Platform
 ================
 
-ForML platform is an environment configured to allow performing particular :doc:`lifecycle
-actions <lifecycle>` on a general ForML :doc:`project <project>`. Thanks to the plugable
-:doc:`provider architecture <provider>`, a ForML platform can be built up using a number of
+ForML platform is an environment configured to allow performing particular :ref:`lifecycle
+actions <lifecycle>` on a general ForML :ref:`project <project>`. Thanks to the plugable
+:ref:`provider architecture <provider>`, a ForML platform can be built up using a number of
 different technologies optimized for specific use-cases while keeping the same interface
 and thus guaranteeing portability of the implemented projects.
 
@@ -26,7 +28,7 @@ and thus guaranteeing portability of the implemented projects.
 Setup
 -----
 
-Make sure to :doc:`install<install>` all the necessary ForML components before proceeding to the
+Make sure to :ref:`install <install>` all the necessary ForML components before proceeding to the
 next sections.
 
 .. _platform-config:
@@ -65,7 +67,7 @@ Following is the default content of the ForML platform configuration file:
 Providers Settings
 """"""""""""""""""
 
-The majority of the configuration file deals with setting up all the different :doc:`providers
+The majority of the configuration file deals with setting up all the different :ref:`providers
 <provider>`. The file can contain multiple instances of preconfigured providers ready to be
 selected for a particular execution.
 
@@ -86,12 +88,12 @@ The meaning of the different placeholders and keywords is:
 ``<PROVIDER TYPE>``:
     One of the six types of provider abstractions used by ForML in *uppercase*:
 
-    * ``REGISTRY`` - for :doc:`Model registry <registry>` providers
-    * ``RUNNER`` - for :doc:`Pipeline runner <runner>` providers
-    * ``FEED`` - for :doc:`Source feed <feed>` providers
-    * ``SINK`` - for :doc:`Output sink <sink>` providers
-    * ``INVENTORY`` - for :doc:`Application inventory <inventory>` providers
-    * ``GATEWAY`` - for :doc:`Serving gateway <serving>` providers
+    * ``REGISTRY`` - for :ref:`Model registry <registry>` providers
+    * ``RUNNER`` - for :ref:`Pipeline runner <runner>` providers
+    * ``FEED`` - for :ref:`Source feed <feed>` providers
+    * ``SINK`` - for :ref:`Output sink <sink>` providers
+    * ``INVENTORY`` - for :ref:`Application inventory <inventory>` providers
+    * ``GATEWAY`` - for :ref:`Serving gateway <serving>` providers
 
     Each of the provider type root section nominates one of its instances using the ``default``
     keyword to pre-select a configuration instance for situations when no explicit choice is
@@ -107,7 +109,7 @@ The meaning of the different placeholders and keywords is:
     triggering an execution (ie using the ``-R`` :ref:`CLI <platform-cli>` argument).
 
 ``<provider reference>``:
-    Each configuration instance must point to its :doc:`provider implementation <provider>` using
+    Each configuration instance must point to its :ref:`provider implementation <provider>` using
     the ``provider`` keyword. The reference can have one of two potential forms:
 
     * the canonical *fully qualified class name* specified as ``<full.module.path>:<class.name>`` -
@@ -140,14 +142,14 @@ top-level ``logcfg`` option in the main :ref:`config.toml <platform-config>`.
 Execution Mechanisms
 --------------------
 
-ForML is using the pluggable :doc:`pipeline runners <runner>` to perform all the
-possible :doc:`lifecycle actions <lifecycle>`. There are three different mechanisms to carry out
+ForML is using the pluggable :ref:`pipeline runners <runner>` to perform all the
+possible :ref:`lifecycle actions <lifecycle>`. There are three different mechanisms to carry out
 the execution:
 
 * The :ref:`command-line driven <platform-cli>` batch processing.
-* Execution in the :doc:`interactive mode <interactive>` using the :class:`Virtual launcher
+* Execution in the :ref:`interactive mode <interactive>` using the :class:`Virtual launcher
   <forml.runtime.Virtual>`.
-* Spinning up the :doc:`serving engine <serving>` using a particular application gateway provider.
+* Spinning up the :ref:`serving engine <serving>` using a particular application gateway provider.
 
 
 .. _platform-cli:
@@ -155,7 +157,7 @@ the execution:
 Command-line Interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :doc:`lifecycle <lifecycle>` management can be fully operated in batch mode using the
+The :ref:`lifecycle <lifecycle>` management can be fully operated in batch mode using the
 command-line interface - see the integrated help for more details:
 
 .. code-block:: console

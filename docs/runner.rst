@@ -13,17 +13,19 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _runner:
+
 Pipeline Runner
 ===============
 
-To perform particular :doc:`lifecycle action <lifecycle>` of any given :doc:`project <project>`,
-ForML delegates the :doc:`workflow topology <workflow/topology>` compiled into a :ref:`portable set
+To perform particular :ref:`lifecycle action <lifecycle>` of any given :ref:`project <project>`,
+ForML delegates the :ref:`workflow topology <topology>` compiled into a :ref:`portable set
 of instructions <topology-compiler>` to a selected :ref:`runner provider <runner-providers>` for
 its execution.
 
-The runner is the foremost elementary component of the :doc:`runtime platform <platform>` carrying
-out the compute function on top of the entire IO layer (represented by the :doc:`feed <feed>`,
-:doc:`sink <sink>` and the :doc:`registry <registry>` providers).
+The runner is the foremost elementary component of the :ref:`runtime platform <platform>` carrying
+out the compute function on top of the entire IO layer (represented by the :ref:`feed <feed>`,
+:ref:`sink <sink>` and the :ref:`registry <registry>` providers).
 
 The pluggable provider model of the runner concept conveniently allows to mix and match different
 processing technologies for different workloads as these typically come with varying

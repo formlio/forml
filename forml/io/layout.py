@@ -35,6 +35,7 @@ Array = typing.Sequence[typing.Any]
 ColumnMajor = Array
 #: Sequence of rows of any type (row-wise semantic).
 RowMajor = Array
+#: Generic type variable representing arbitrary native type.
 Native = typing.TypeVar('Native')
 
 if typing.TYPE_CHECKING:

@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _provider:
+
 Providers Library
 =================
 
@@ -42,7 +44,7 @@ For this purpose, the standard :ref:`config directories <platform-config>` are v
 for hosting python modules with bespoke provider implementations available to the particular runtime
 platform.
 
-Following is an example of a custom :doc:`Feed <feed>` setup (even though this one could well be
+Following is an example of a custom :ref:`Feed <feed>` setup (even though this one could well be
 solved using the existing generic :class:`Alchemy Feed <forml.provider.feed.alchemy.Feed>` or -
 given the particular dataset - even more easily using the :doc:`Openlake Feed <openlake:index>`):
 
@@ -83,7 +85,7 @@ This custom ``foobar:Baz`` feed provider can now be added to the :ref:`platform 
 Model Registries
 ----------------
 
-ForML delegates responsibility for :doc:`model persistence <registry>` to model registry providers
+ForML delegates responsibility for :ref:`model persistence <registry>` to model registry providers
 implementing the abstract :class:`forml.io.asset.Registry` base class.
 
 .. autosummary::
@@ -99,8 +101,8 @@ implementing the abstract :class:`forml.io.asset.Registry` base class.
 Runners
 -------
 
-Actual execution of the :doc:`ForML workflows <workflow/index>` is performed by the
-:doc:`pipeline runner <runner>` providers implementing the :class:`forml.runtime.Runner` base class.
+Actual execution of the :ref:`ForML workflows <workflow>` is performed by the
+:ref:`pipeline runner <runner>` providers implementing the :class:`forml.runtime.Runner` base class.
 
 .. autosummary::
    :template: provider.rst
@@ -115,9 +117,9 @@ Actual execution of the :doc:`ForML workflows <workflow/index>` is performed by 
 Feeds
 -----
 
-To decouple projects from any physical data sources, ForML is using a generic :doc:`query DSL <dsl>`
+To decouple projects from any physical data sources, ForML is using a generic :ref:`query DSL <dsl>`
 working with logical schemas that only at runtime get resolved to actual data provided by the
-platform-configured :doc:`set of feeds <feed>` implementing the :class:`forml.io.Feed` base class.
+platform-configured :ref:`set of feeds <feed>` implementing the :class:`forml.io.Feed` base class.
 
 .. autosummary::
    :template: provider.rst
@@ -132,8 +134,8 @@ platform-configured :doc:`set of feeds <feed>` implementing the :class:`forml.io
 Sinks
 -----
 
-Reciprocally to the Feeds_ system, ForML is using :doc:`sink <sink>` providers for submitting the
-:doc:`workflow <workflow/index>` results according to the particular implementation of the
+Reciprocally to the Feeds_ system, ForML is using :ref:`sink <sink>` providers for submitting the
+:ref:`workflow <workflow>` results according to the particular implementation of the
 :class:`forml.io.Sink` base class.
 
 .. autosummary::
@@ -147,8 +149,8 @@ Reciprocally to the Feeds_ system, ForML is using :doc:`sink <sink>` providers f
 Application Inventories
 -----------------------
 
-For managing the high-level :doc:`application descriptors <application>` driving the :doc:`serving
-<serving>` layer, ForML defers to the :doc:`inventory <inventory>` providers implementing the
+For managing the high-level :ref:`application descriptors <application>` driving the :ref:`serving
+<serving>` layer, ForML defers to the :ref:`inventory <inventory>` providers implementing the
 :class:`forml.io.asset.Inventory` base class.
 
 .. autosummary::
@@ -162,7 +164,7 @@ For managing the high-level :doc:`application descriptors <application>` driving
 Gateways
 --------
 
-The :doc:`serving layer <serving>` representing one of the possible :ref:`execution mechanisms
+The :ref:`serving layer <serving>` representing one of the possible :ref:`execution mechanisms
 <platform-execution>` is using the gateway providers implementing the :class:`forml.runtime.Gateway`
 base class.
 

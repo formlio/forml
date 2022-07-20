@@ -13,12 +13,14 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _tutorials:
+
 Tutorials
 =========
 
 The easiest way to get started with ForML is to go through its practical tutorials presented in
-this chapter. Assuming you've already installed ForML as per the :doc:`installation instructions
-<../install>` and ideally also familiarized yourself with the :doc:`ForML concepts <../concept>`,
+this chapter. Assuming you've already installed ForML as per the :ref:`installation instructions
+<install>` and ideally also familiarized yourself with the :ref:`ForML concepts <concept>`,
 you can now go straight through the following list of step-by-step examples demonstrating the
 ForML capabilities.
 
@@ -27,15 +29,15 @@ ForML capabilities.
 
 The tutorials depend on the following initial environment configuration:
 
-Assuming you have no existing :doc:`feeds <../feed>` configured in your system yet, let's install
-the :doc:`Openlake feed<openlake:install>`:
+Assuming you have no existing :ref:`feeds <feed>` configured in your system yet, let's install
+the :doc:`Openlake feed <openlake:install>`:
 
 .. code-block:: console
 
     $ pip install --constraints https://raw.githubusercontent.com/formlio/openlake/main/constraints.txt 'openlake[kaggle]'
 
 
-Let's now configure the local ForML :doc:`platform <../platform>` by adding the following content to
+Let's now configure the local ForML :ref:`platform <platform>` by adding the following content to
 your :file:`~/.forml/config.toml`:
 
 .. literalinclude:: ../../tutorials/config.toml
@@ -51,9 +53,9 @@ tutorials.
 
 The list of the available tutorials is:
 
-* :doc:`Pipeline demos <demos>` is a set of small *snippets* demonstrating the pipeline
+* :ref:`Pipeline demos <demos>` is a set of small *snippets* demonstrating the pipeline
   composition fundamentals.
-* :doc:`Titanic challenge <titanic/index>` is a *complete* end-to-end ML project implemented using
+* :ref:`Titanic challenge <titanic>` is a *complete* end-to-end ML project implemented using
   ForML.
 
 

@@ -13,17 +13,19 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _registry:
+
 Model Persistence
 =================
 
-During their :doc:`lifecycles <lifecycle>`, ForML :doc:`projects <project>` produce certain
+During their :ref:`lifecycles <lifecycle>`, ForML :ref:`projects <project>` produce certain
 *artifacts* as their runtime deliverables. To store these artifacts, ForML uses
 :ref:`model registry providers <registry-providers>` as the persistence layer managing the models
 at rest.
 
 .. note::
    We use the term *model* more loosely including not just the involved *estimators* but
-   essentially any :doc:`stateful actor <workflow/actor>` in the entire pipeline.
+   essentially any :ref:`stateful actor <actor>` in the entire pipeline.
 
 .. _registry-artifacts:
 
@@ -34,7 +36,7 @@ The two types of artifacts requiring persistence are *code* in form of the :ref:
 <registry-package>` and *states* stored as :ref:`model generation assets <registry-assets>`.
 
 The following diagram illustrates the logical hierarchy of the persistence layer based on a
-particular instance of the ``posix`` registry provider holding a single :doc:`project <project>`
+particular instance of the ``posix`` registry provider holding a single :ref:`project <project>`
 ``forml-titanic-example`` with two :ref:`releases <lifecycle-release>` ``0.1.dev0`` and
 ``1.3.dev12`` - the first one having two :ref:`generations <lifecycle-generation>` with two
 *model assets* each and the later just one generation with three model assets:
@@ -99,7 +101,7 @@ Package Staging
 """""""""""""""
 
 Registry providers might internally persist packages in arbitrary format. In order to launch their
-code using a :doc:`runner <runner>`, however, they need to be
+code using a :ref:`runner <runner>`, however, they need to be
 :meth:`mounted <forml.io.asset.Registry.mount>` and exposed using a posix filesystem path known as
 the *staging path* reachable from all runner nodes (for distributed deployment this implies shared
 network posix filesystem).
@@ -109,7 +111,7 @@ network posix filesystem).
 Model Generation Assets
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-All :ref:`stateful actors <actor-type>` involved in a :doc:`project lifecycle <lifecycle>`
+All :ref:`stateful actors <actor-type>` involved in a :ref:`project lifecycle <lifecycle>`
 require their internal state acquired during :ref:`training <workflow-mode>` to be persisted
 using the model registry. States produced from the same training process represent the *model
 generation assets* and every single follow up training is leading to a new :ref:`generation
@@ -146,7 +148,7 @@ The low-level persistence interface is used mainly by the :ref:`registry provide
 High-level
 ^^^^^^^^^^
 
-The following is the high-level persistence interface as used by the :doc:`runners <runner>`.
+The following is the high-level persistence interface as used by the :ref:`runners <runner>`.
 
 .. autoclass:: forml.io.asset.State
 
@@ -158,9 +160,9 @@ The following is the high-level persistence interface as used by the :doc:`runne
 Registry Providers
 ------------------
 
-ForML comes with a number of :doc:`providers <provider>` implementing the
+ForML comes with a number of :ref:`providers <provider>` implementing the
 :class:`io.asset.Registry <forml.io.asset.Registry>` interface. To make them available
-for the ForML runtime, selected providers need to be configured within the common :doc:`platform
+for the ForML runtime, selected providers need to be configured within the common :ref:`platform
 setup <platform>` using the ``[REGISTRY.*]`` sections.
 
 The official registry providers are:

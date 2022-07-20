@@ -13,9 +13,29 @@
     specific language governing permissions and limitations
     under the License.
 
-.. _license:
+.. _query-functions:
 
-License
-=======
+Functions and Operators
+=======================
 
-.. literalinclude:: ../LICENSE
+The DSL offers number of built-in operators and functions allowing to implement complex
+expressions executed on the physical data-sources by the particular :ref:`feed <feed>` providers.
+
+.. attention::
+   The actual set of the available functions is at this point rather limited focusing merely on
+   the concept demonstration.
+
+
+
+
+.. autosummary::
+   :template: function.rst
+   :nosignatures:
+   :toctree: ../../_auto
+
+   forml.io.dsl.function._aggregate
+   forml.io.dsl.function._comparison
+   forml.io.dsl.function._conversion
+   forml.io.dsl.function._datetime
+   forml.io.dsl.function._logical
+   forml.io.dsl.function._math

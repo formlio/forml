@@ -13,13 +13,15 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _operator:
+
 Operator Architecture
 =====================
 
 Operators are the high-level workflow entities used for implementing the actual ML pipeline
 expressions. They can be seen as dynamic macro-instructions expanding the particular task graph
 based on their composition logic. This is a very powerful concept as it completely abstracts away
-the internal wiring complexity of the low-level :doc:`task graph assembly <topology>` providing a
+the internal wiring complexity of the low-level :ref:`task graph assembly <topology>` providing a
 simple interface for the pipeline expressions.
 
 If parametrized (rather than hard-coded) with the particular actor implementations, operators can
@@ -32,7 +34,7 @@ for both of the *train* and *predict* modes together. That's how ForML enforces 
 integrity at every step of the workflow.
 
 The operator layer also happens to be the ideal stage for carrying out unit testing. For this
-purpose, ForML provides a complete :doc:`operator unit testing framework <../testing>`.
+purpose, ForML provides a complete :ref:`operator unit testing framework <testing>`.
 
 
 Generic Implementation

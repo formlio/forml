@@ -157,8 +157,8 @@ class Launcher:
         """
         raise NotImplementedError()
 
-    def __call__(self, query: dsl.Query, sink: typing.Optional[io.Sink] = None) -> _agent.Runner:
-        return ensure_instance(self._runner, _agent.Runner, self._assets, self._feeds.match(query), sink)
+    def __call__(self, statement: dsl.Statement, sink: typing.Optional[io.Sink] = None) -> _agent.Runner:
+        return ensure_instance(self._runner, _agent.Runner, self._assets, self._feeds.match(statement), sink)
 
 
 class Service:

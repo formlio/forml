@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _io:
+
 IO Concept
 ==========
 
@@ -25,23 +27,23 @@ actual provider (if available).
 
 .. important::
     Within the ForML architecture, all runtime system dependencies - including the pipeline I/O -
-    are handled by the :doc:`platform <platform>` (using the plugable :doc:`provider concept
-    <provider>`) while :doc:`projects <project>` themselves are independent of any runtime
+    are handled by the :ref:`platform <platform>` (using the plugable :ref:`provider concept
+    <provider>`) while :ref:`projects <project>` themselves are independent of any runtime
     configuration to truly offer a conceptual solution to the given problem - not just to its
     particular instance within some specific environment.
 
 The concepts ForML uses to handle the data access are:
 
 * :ref:`Schema Catalogs <io-catalog>` are the logical dataset representations distributed in
-  catalogs available to both :doc:`projects <project>` and :doc:`platforms <platform>` as
+  catalogs available to both :ref:`projects <project>` and :ref:`platforms <platform>` as
   portable dataset references
-* :doc:`Query DSL <dsl>` is the internal expression language used by projects to define high-level
+* :ref:`Query DSL <dsl>` is the internal expression language used by projects to define high-level
   ETL operations on top of the *schema catalogs*
-* :doc:`Source Feeds <feed>` are the platform data providers capable of resolving the
+* :ref:`Source Feeds <feed>` are the platform data providers capable of resolving the
   project-defined DSL query using a particular data storage technology
-* :doc:`Output Sinks <sink>` are the *feeds* counterparts responsible for handling the
+* :ref:`Output Sinks <sink>` are the *feeds* counterparts responsible for handling the
   produced pipeline results
-* :doc:`Model Registries <registry>` stand aside of the previous concepts as they deal with
+* :ref:`Model Registries <registry>` stand aside of the previous concepts as they deal with
   metadata rather than the data itself providing the pipeline state persistence
 
 
@@ -52,13 +54,13 @@ Schema Catalogs
 
 To achieve the data access abstraction, ForML integrates the concept of *schema catalogs*.
 Instead of implementing direct operations on specific data-source instances, projects use the
-:doc:`DSL expression <dsl>` to define the input data ETL referring only to abstract data
-:ref:`schemas <dsl-schema>`. It is then the responsibility of the platform :doc:`feeds <feed>` to
+:ref:`DSL expression <dsl>` to define the input data ETL referring only to abstract data
+:ref:`schemas <schema>`. It is then the responsibility of the platform :ref:`feeds <feed>` to
 resolve the requested schemas (and the whole ETL queries specified on top) mapping them to the
 actual data-sources hosted in the particular runtime environment.
 
-A *schema catalog* is a logical collection of :ref:`schemas <dsl-schema>` which both -
-:doc:`projects <project>` and :doc:`platforms <platform>` - can use as a mutual data reference. It
+A *schema catalog* is a logical collection of :ref:`schemas <schema>` which both -
+:ref:`projects <project>` and :ref:`platforms <platform>` - can use as a mutual data reference. It
 is neither a service nor a system, rather a passive set of namespaced descriptors implemented
 simply as a *python package* that must be available to both the project expecting the particular
 data and the platform supposed to serve that project.
@@ -69,7 +71,7 @@ Content Resolving
 ^^^^^^^^^^^^^^^^^
 
 When a project workflow is submitted to any given platform, it attempts to resolve the schemas
-referred in the :ref:`source query <io-source>` using the configured :doc:`feed providers
+referred in the :ref:`source query <io-source>` using the configured :ref:`feed providers
 <feed>`, and only when all of these schema dependencies can be satisfied with the available data
 sources, the platform is able to launch that workflow.
 
@@ -119,9 +121,9 @@ It tells the following story:
 
 #. A *project* defines its data requirements using a :ref:`source query <io-source>` specified in
    its :ref:`source.py component <project-source>` referring to particular data-source
-   :ref:`schema(s) <dsl-schema>` from within certain *catalogs* - here *Schema 1* from *Catalog 1*
+   :ref:`schema(s) <schema>` from within certain *catalogs* - here *Schema 1* from *Catalog 1*
    and *Schema 2* from *Catalog 2*.
-#. This platform happens to be configured with three different :doc:`feed providers <feed>` capable
+#. This platform happens to be configured with three different :ref:`feed providers <feed>` capable
    of supplying (using its physical storage layer) four data-sources represented by the given
    *schema catalog* so that:
 
@@ -150,7 +152,7 @@ would just maintain a package with schemas of their data sources. For public dat
 relies on some community-maintained schema catalogs like the :doc:`Openschema catalog
 <openschema:index>`.
 
-Continue to the :ref:`schema DSL <dsl-schema>` for more details regarding the actual implementation
+Continue to the :ref:`schema DSL <schema>` for more details regarding the actual implementation
 and use-cases. Also refer to the mentioned :doc:`Openschema catalog <openschema:index>` for a real
 instance of a ForML schema catalog.
 
@@ -159,9 +161,9 @@ instance of a ForML schema catalog.
 Source Descriptor
 -----------------
 
-ForML projects specify their input data requirements - the :doc:`ETL query <dsl>` optionally
-:ref:`composed <operator-composition>` with other transforming :doc:`operators
-<workflow/operator>` - in form of a *source descriptor* (declared within the :ref:`source.py
+ForML projects specify their input data requirements - the :ref:`ETL query <dsl>` optionally
+:ref:`composed <operator-composition>` with other transforming :ref:`operators
+<operator>` - in form of a *source descriptor* (declared within the :ref:`source.py
 <project-source>` project component).
 
 This descriptor is created using the ``project.Source.query()`` class method:
@@ -192,33 +194,34 @@ involved core payload types:
 | Origin data at rest    | Feed :class:`Reader    | Each *feed* acts as an adapter designed        |
 |                        | <forml.io.Feed.Reader>`| specifically for the given origin format.      |
 +------------------------+------------------------+------------------------------------------------+
-| Feed :class:`Reader    | :doc:`Feed <feed>`     | Defined using the :class:`io.layout.Tabular    |
+| Feed :class:`Reader    | :ref:`Feed <feed>`     | Defined using the :class:`io.layout.Tabular    |
 | <forml.io.Feed.Reader>`| Slicer                 | <forml.io.layout.Tabular>` interface.          |
 +------------------------+------------------------+------------------------------------------------+
-| :doc:`Feed <feed>`     | Project :doc:`Pipeline | Defined using the :class:`io.layout.RowMajor   |
-| Slicer                 | <workflow/topology>`   | <forml.io.layout.RowMajor>` interface.         |
+| :ref:`Feed <feed>`     | Project :ref:`Pipeline | Defined using the :class:`io.layout.RowMajor   |
+| Slicer                 | <topology>`            | <forml.io.layout.RowMajor>` interface.         |
 +------------------------+------------------------+------------------------------------------------+
-| :doc:`Actor            | :doc:`Actor            | No specific format required, choice of         |
-| <workflow/actor>`      | <workflow/actor>`      | mutually compatible actors is responsibility   |
-| Payload Output Port    | Payload Input Port     | of the implementor, ForML only facilitates the |
+| :ref:`Actor <actor>`   | :ref:`Actor <actor>`   | No specific format required, choice of         |
+| Payload Output Port    | Payload Input Port     | mutually compatible actors is responsibility   |
+|                        |                        | of the implementor, ForML only facilitates the |
 |                        |                        | exchange (possibly subject to serializability).|
 +------------------------+------------------------+------------------------------------------------+
-| Project :doc:`Pipeline | Platform :doc:`Sink    | Defined using the :class:`io.layout.RowMajor   |
-| <workflow/topology>`   | Writer <sink>`         | <forml.io.layout.RowMajor>` interface.         |
+| Project :ref:`Pipeline | Platform :ref:`Sink    | Defined using the :class:`io.layout.RowMajor   |
+| <topology>`            | Writer <sink>`         | <forml.io.layout.RowMajor>` interface.         |
 +------------------------+------------------------+------------------------------------------------+
-| :doc:`Actor            | :doc:`Model Registry   | Handled in form of a                           |
-| <workflow/actor>`      | <registry>`            | :class:`bytestring <python:bytes>`             |
-| State Output Port      |                        | as implemented by the :meth:`.get_state()      |
+| :ref:`Actor <actor>`   | :ref:`Model Registry   | Handled in form of a                           |
+| State Output Port      | <registry>`            | :class:`bytestring <python:bytes>`             |
+|                        |                        | as implemented by the :meth:`.get_state()      |
 |                        |                        | <forml.flow.Actor.get_state>` method.          |
 +------------------------+------------------------+------------------------------------------------+
-| :doc:`Model Registry   | :doc:`Actor            | Handled in form of a                           |
-| <registry>`            | <workflow/actor>`      | :class:`bytestring <python:bytes>`             |
-|                        | State Input Port       | as implemented by the :meth:`.set_state()      |
+| :ref:`Model Registry   | :ref:`Actor <actor>`   | Handled in form of a                           |
+| <registry>`            | State Input Port       | :class:`bytestring <python:bytes>`             |
+|                        |                        | as implemented by the :meth:`.set_state()      |
 |                        |                        | <forml.flow.Actor.set_state>` method.          |
 +------------------------+------------------------+------------------------------------------------+
 
-.. autodata:: forml.io.layout.ColumnMajor
 
+.. autodata:: forml.io.layout.Native
+.. autodata:: forml.io.layout.ColumnMajor
 .. autodata:: forml.io.layout.RowMajor
 
 .. autoclass:: forml.io.layout.Tabular
@@ -228,32 +231,32 @@ involved core payload types:
 Serving Payload Exchange
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In addition to the core payloads, the :doc:`serving <serving>` layer involves few more data
+In addition to the core payloads, the :ref:`serving <serving>` layer involves few more data
 exchanges using the following structures:
 
 +------------------------+------------------------+------------------------------------------------+
 | Producer Side          | Consumer Side          | Exchange Protocol                              |
 +========================+========================+================================================+
-| Application Client     | Serving :doc:`Gateway  | Each *gateway* acts as an adapter designed     |
+| Application Client     | Serving :ref:`Gateway  | Each *gateway* acts as an adapter designed     |
 |                        | <serving>`             | specifically for the given application protocol|
 |                        |                        | handling the payload as a :class:`bytestring   |
 |                        |                        | <python:bytes>` with an explicit               |
 |                        |                        | :class:`Encoding <forml.io.layout.Encoding>`.  |
 +------------------------+------------------------+------------------------------------------------+
-| Serving :doc:`Gateway  | Serving :doc:`Engine   | Using the :class:`io.layout.Request            |
+| Serving :ref:`Gateway  | Serving :ref:`Engine   | Using the :class:`io.layout.Request            |
 | <serving>`             | <serving>`             | <forml.io.layout.Request>` structure.          |
 +------------------------+------------------------+------------------------------------------------+
-| Serving :doc:`Engine   | Feed :class:`Reader    | Passing the decoded :class:`io.layout.Entry    |
+| Serving :ref:`Engine   | Feed :class:`Reader    | Passing the decoded :class:`io.layout.Entry    |
 | <serving>`             | <forml.io.Feed.Reader>`| <forml.io.layout.Entry>` to the given feed     |
 |                        |                        | for potential augmentation.                    |
 +------------------------+------------------------+------------------------------------------------+
-| :doc:`Sink <sink>`     | Serving :doc:`Engine   | Using the :class:`io.layout.Outcome            |
+| :ref:`Sink <sink>`     | Serving :ref:`Engine   | Using the :class:`io.layout.Outcome            |
 | Writer                 | <serving>`             | <forml.io.layout.Outcome>` structure.          |
 +------------------------+------------------------+------------------------------------------------+
-| Serving :doc:`Engine   | Serving :doc:`Gateway  | Using the encoded :class:`io.layout.Response   |
+| Serving :ref:`Engine   | Serving :ref:`Gateway  | Using the encoded :class:`io.layout.Response   |
 | <serving>`             | <serving>`             | <forml.io.layout.Response>` structure.         |
 +------------------------+------------------------+------------------------------------------------+
-| Serving :doc:`Gateway  | Application Client     | Handling the payload as a                      |
+| Serving :ref:`Gateway  | Application Client     | Handling the payload as a                      |
 | <serving>`             |                        | :class:`bytestring <python:bytes>` with an     |
 |                        |                        | explicit :class:`Encoding                      |
 |                        |                        | <forml.io.layout.Encoding>` wrapped to the     |

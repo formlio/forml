@@ -40,9 +40,9 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
     """Generic reader base class matching the *Feed producer* interface.
 
     It is a low-level input component responsible for parsing a generic data request in form
-    a :class:`DSL query <forml.io.dsl.Query>` (the :meth:`parser` method) and based on it retrieving
-    the actual data from its supported storage technology and its specific data format (the
-    :meth:`read` method).
+    a :class:`DSL query <forml.io.dsl.Statement>` (the :meth:`parser` method) and based on it
+    retrieving the actual data from its supported storage technology and its specific data format
+    (the :meth:`read` method).
 
     Reader can operate in two possible modes depending on the input parameters:
 
@@ -69,11 +69,11 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, query: 'dsl.Query', entry: typing.Optional['layout.Entry'] = None) -> 'layout.Tabular':
+    def __call__(self, statement: 'dsl.Statement', entry: typing.Optional['layout.Entry'] = None) -> 'layout.Tabular':
         """Reader entrypoint.
 
         Args:
-            query: The query DSL specifying the extracted data.
+            statement: The query DSL specifying the extracted data.
             entry: Optional - potentially incomplete - labelled literal columns to be augmented
                    according to the query.
 
@@ -81,7 +81,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
             Data extracted according to the query.
         """
         if entry:
-            complete, indices = self._match_entry(query.schema, entry.schema)
+            complete, indices = self._match_entry(statement.schema, entry.schema)
             if not complete:
                 # here we would go into augmentation mode - when implemented
                 raise forml.InvalidError('Augmentation not yet supported')
@@ -89,14 +89,14 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
 
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._features) as visitor:
-            query.accept(visitor)
+            statement.accept(visitor)
             result = visitor.fetch()
         LOGGER.debug('Starting ETL read using: %s', result)
-        return self.format(query.schema, self.read(result, **self._kwargs))
+        return self.format(statement.schema, self.read(result, **self._kwargs))
 
     @functools.lru_cache
     def _match_entry(
-        self, query: 'dsl.Source.Schema', entry: 'dsl.Source.Schema'
+        self, statement: 'dsl.Source.Schema', entry: 'dsl.Source.Schema'
     ) -> tuple[bool, typing.Optional[typing.Sequence[int]]]:
         """Match the entry schema against the query.
 
@@ -104,7 +104,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
         query) in which case also return the indices matching the ordering of the query.
 
         Args:
-            query: Schema of the master ETL query.
+            statement: Schema of the master ETL query.
             entry: Schema of the explicitly provided (partial) input data.
 
         Returns:
@@ -116,7 +116,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
             """Extract the schema field names."""
             return (f.name for f in schema)
 
-        query_names = tuple(names(query))
+        query_names = tuple(names(statement))
         source = {}
         identical = True
         for index, (demand, supply) in enumerate(itertools.zip_longest(query_names, names(entry))):

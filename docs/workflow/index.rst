@@ -13,6 +13,7 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _workflow:
 
 Workflow Fundamentals
 =====================
@@ -28,15 +29,15 @@ execution and runtime portability.
     At its core, the workflow internals explained in the following chapters are built around the
     Graph theory and SW+ML engineering principles, which might feel way too involved from a
     general data-science perspective. Fortunately, this level of detail is not required for the
-    usual day-to-day work with the existing high-level ForML :doc:`operators <operator>`.
+    usual day-to-day work with the existing high-level ForML :ref:`operators <operator>`.
 
 ForML is providing a convenient API for defining complex workflows using simple notation based on
 the following concepts:
 
-* :doc:`Operators <operator>` are high-level pipeline macro-instructions that can be composed
+* :ref:`Operators <operator>` are high-level pipeline macro-instructions that can be composed
   together and eventually expand into the task graph
-* :doc:`Actors <actor>` are the low-level task primitives representing the graph vertices
-* :doc:`Topology <topology>` is the particular interconnection of the individual actors
+* :ref:`Actors <actor>` are the low-level task primitives representing the graph vertices
+* :ref:`Topology <topology>` is the particular interconnection of the individual actors
   determining their dependencies.
 
 .. _workflow-mode:
@@ -99,8 +100,8 @@ follows:
             ctt -. state .-> caa
         end
 
-The meaning of :doc:`operators <operator>` and how they are defined using :doc:`actors <actor>`
-and their :doc:`interconnections <topology>` is described in details in the following chapters:
+The meaning of :ref:`operators <operator>` and how they are defined using :ref:`actors <actor>`
+and their :ref:`interconnections <topology>` is described in details in the following chapters:
 
 .. toctree::
     :maxdepth: 2

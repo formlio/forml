@@ -198,7 +198,7 @@ class Feed(io.Feed[str, str]):
     def sources(self) -> typing.Mapping[dsl.Source, parsmod.Source]:
         """Abstract method implementation."""
         return {
-            Student.join(Person, Student.surname == Person.surname).source: 'pupil',
+            Student.join(Person, Student.surname == Person.surname): 'pupil',
             Person: 'person',
             Student: 'student',
             School: 'school',

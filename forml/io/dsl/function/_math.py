@@ -16,7 +16,22 @@
 # under the License.
 
 """
-Mathematical functions.
+Mathematical functions and operators.
+
+Mathematical Operators
+----------------------
+
+The following native arithmetic operators are available directly on the field instances:
+
+============ =================
+  Operator     Description
+============ =================
+  ``+``       Addition
+  ``-``       Subtraction
+  ``*``       Multiplication
+  ``/``       Division
+  ``%``       Modulus
+============ =================
 """
 
 from .._struct import kind as kindmod

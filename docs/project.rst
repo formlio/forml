@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _project:
+
 Project Organization
 ====================
 
@@ -23,7 +25,7 @@ development leading to delivering (i.e. *releasing* a version of) a solution in 
 
 While developing, ForML allows to execute the project source-code working copy by triggering its
 :ref:`development lifecycle actions <lifecycle-development>` or when visited in the
-:doc:`interactive mode <interactive>`.
+:ref:`interactive mode <interactive>`.
 
 .. attention::
    Although not in scope of this documentation, all the general source-code management best
@@ -31,7 +33,7 @@ While developing, ForML allows to execute the project source-code working copy b
    projects and should be integrated into the development process.
 
 To discover the structure of some real ForML project, it is worth exploring the available
-:doc:`tutorials <tutorials/index>`.
+:ref:`tutorials <tutorials>`.
 
 .. _project-init:
 
@@ -52,7 +54,7 @@ Component Structure
 
 ForML projects are essentially standard :doc:`Setuptools <setuptools:setuptools>` based python
 packages organized in a way to allow ForML to identify its *principal components* and to operate its
-:doc:`lifecycle <lifecycle>`.
+:ref:`lifecycle <lifecycle>`.
 
 The framework adopts the `Convention over Configuration
 <https://en.wikipedia.org/wiki/Convention_over_configuration>`_ approach for
@@ -182,7 +184,7 @@ Dataset Definition
 
 The ``source`` component provides the project with a definite while portable dataset description. It
 is specified using the :meth:`project.Source.query <forml.project.Source.query>` as a
-:ref:`DSL expression <dsl-query>` against some particular :ref:`schema catalog <io-catalog>`.
+:ref:`DSL expression <query>` against some particular :ref:`schema catalog <io-catalog>`.
 
 .. code-block:: python
    :caption: source.py or source/__init__.py
@@ -215,8 +217,8 @@ is specified using the :meth:`project.Source.query <forml.project.Source.query>`
 Evaluation Strategy
 """""""""""""""""""
 
-Definition of the :doc:`model evaluation strategy <evaluation>` for both the development and
-production :doc:`lifecycles <lifecycle>` provided as the
+Definition of the :ref:`model evaluation strategy <evaluation>` for both the development and
+production :ref:`lifecycles <lifecycle>` provided as the
 :class:`project.Evaluation <forml.project.Evaluation>` descriptor.
 
 .. code-block:: python
@@ -237,5 +239,5 @@ Tests
 ^^^^^
 
 ForML has a rich operator unit testing facility which can be integrated into the usual
-:file:`tests/` project structure. This topic is extensively covered in a separate :doc:`testing`
+:file:`tests/` project structure. This topic is extensively covered in the separate :ref:`testing`
 chapter.

@@ -90,18 +90,18 @@ class Feature(metaclass=abc.ABCMeta):
         """Test the feature kind."""
         assert isinstance(feature.kind, kind.Any)
 
+    def test_alias(self, feature: series.Feature):
+        """Feature aliasing test."""
+        aliased = feature.alias('foo')
+        assert aliased.name == 'foo'
+        assert aliased.kind == feature.kind
+
 
 class Operable(Feature, metaclass=abc.ABCMeta):
     """Base class for element features."""
 
     def test_operable(self, feature: series.Operable):
         assert feature.operable == feature
-
-    def test_alias(self, feature: series.Operable):
-        """Feature aliasing test."""
-        aliased = feature.alias('foo')
-        assert aliased.name == 'foo'
-        assert aliased.kind == feature.kind
 
 
 class TestAliased(Feature):

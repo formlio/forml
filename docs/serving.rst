@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _serving:
+
 Serving Engine
 ==============
 
@@ -34,7 +36,7 @@ a programmatically reachable event-outcome feedback loop defined as an external 
 a knowledge of the true outcome for every event the system is predicting for.
 
 Implementation of this feedback loop (the reconciliation logic) is in scope of the particular business application and
-its data architecture to which ForML simply plugs into using its :doc:`feed system<feed>`.
+its data architecture to which ForML simply plugs into using its :ref:`feed system <feed>`.
 
 The key attribute of this feedback loop is its *latency* which determines the turnaround time for all the serving
 functionality like performance monitoring, incremental training etc.
@@ -45,8 +47,8 @@ functionality like performance monitoring, incremental training etc.
 Components
 ----------
 
-The serving capabilities are provided through a number of additional :doc:`platform components <platform>` as explained
-in the following sections.
+The serving capabilities are provided through a number of additional :ref:`platform components
+<platform>` as explained in the following sections.
 
 .. image:: _static/images/serving-components.png
 
@@ -59,7 +61,7 @@ agent bootstrapping or periodical cache refreshing while others are synchronous 
 
 1. Fetching the serving manifest from the *project roster*.
 2. Selecting a particular model generation using the dynamic *rollout strategy* as defined in the serving manifest.
-3. Loading the selected model generation from the :doc:`model registry<registry>`.
+3. Loading the selected model generation from the :ref:`model registry <registry>`.
 4. Fetching all missing input features for augmenting the particular request according to the project
    :ref:`input DSL <concept-dsl>`.
 5. Running the prediction pipeline and responding with the result.
@@ -123,7 +125,8 @@ Offline Agent
 
 Offline agent is the backend service responsible for doing all the heavy processing of:
 
-* (incremental) *training* and *tuning* of new model generations (pushed to the :doc:`model registry<registry>`)
+* (incremental) *training* and *tuning* of new model generations (pushed to the :ref:`model
+  registry <registry>`)
 * *evaluating* project performance (pushed to the `PerfDB`_)
 
 

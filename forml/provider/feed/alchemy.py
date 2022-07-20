@@ -26,8 +26,11 @@ from sqlalchemy import sql
 
 import forml
 from forml import io
-from forml.io import dsl
+from forml.io import dsl as dslmod
 from forml.provider.feed.reader.sql import alchemy
+
+if typing.TYPE_CHECKING:
+    from forml.io import dsl  # pylint: disable=reimported
 
 
 class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
@@ -65,7 +68,7 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
 
     def __init__(
         self,
-        sources: typing.Mapping[typing.Union[dsl.Source, str], str],
+        sources: typing.Mapping[typing.Union['dsl.Source', str], str],
         **readerkw,
     ):
         """
@@ -75,9 +78,9 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
                       <pandas:pandas.read_sql>`.
         """
 
-        def ensure_source(src: typing.Union[dsl.Source, str]) -> dsl.Source:
+        def ensure_source(src: typing.Union['dsl.Source', str]) -> 'dsl.Source':
             if isinstance(src, str):
-                src = dsl.Schema.from_path(src)
+                src = dslmod.Schema.from_path(src)
             return src
 
         def table(name: str) -> sqlalchemy.table:
@@ -86,11 +89,11 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
             schema, name = match.groups()
             return sqlalchemy.table(name, schema=schema)
 
-        self._sources: typing.Mapping[dsl.Source, sql.Selectable] = {
+        self._sources: typing.Mapping['dsl.Source', sql.Selectable] = {
             ensure_source(s): table(t) for s, t in sources.items()
         }
         super().__init__(**readerkw)
 
     @property
-    def sources(self) -> typing.Mapping[dsl.Source, sql.Selectable]:
+    def sources(self) -> typing.Mapping['dsl.Source', sql.Selectable]:
         return types.MappingProxyType(self._sources)

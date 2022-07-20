@@ -30,6 +30,7 @@ http://www.sphinx-doc.org/en/master/config
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
 import typing
 
@@ -41,6 +42,7 @@ sys.path.insert(0, os.path.abspath('..'))
 import forml  # pylint: disable=wrong-import-position; # noqa: E402
 from forml import provider  # pylint: disable=wrong-import-position; # noqa: E402
 from forml.io import dsl  # pylint: disable=wrong-import-position; # noqa: E402
+from forml.io.dsl import function  # pylint: disable=wrong-import-position; # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
@@ -140,7 +142,7 @@ html_theme_options = {
     'edit_uri': 'blob/main/docs',
     'google_analytics': ['G-GGNVJ2N8MF', 'auto'],
     'features': [
-        # "navigation.expand",
+        'navigation.expand',
         # "navigation.tabs",
         # "toc.integrate",
         'navigation.sections',
@@ -203,6 +205,7 @@ todo_include_todos = True
 # python_transform_type_annotations_pep604 = False
 object_description_options = [
     ('py:.*parameter', dict(include_in_toc=False)),
+    ('py:.*attribute', dict(include_in_toc=False)),
     # ('py:.*function', dict(include_in_toc=False)),
     # ('py:.*property', dict(include_in_toc=False)),
     # ('py:.*method', dict(include_in_toc=False)),
@@ -251,15 +254,21 @@ class MethodDocumenter(autodoc.MethodDocumenter):
 
 
 class Autosummary(autosummary.Autosummary):
-    """Patched Autosummary with custom formatting for ForML providers."""
+    """Patched Autosummary with custom formatting for certain ForML types."""
 
-    @staticmethod
-    def __format_name(display_name, sig, summary, real_name):
+    RE_PROVIDER = re.compile(rf'(?={provider.__name__})(?:\w+\.)+(\w+)\.\w+$')
+    RE_DSL = re.compile(rf'(?={dsl.__name__})(?:\w+\.)+(\w+\.\w+)$')
+    RE_FUNCTION = re.compile(rf'(?={function.__name__})(?:\w+\.)+_(\w+)$')
+
+    @classmethod
+    def __format_name(cls, display_name, sig, summary, real_name):
         """Custom name formatting."""
-        if display_name.startswith(provider.__name__):
-            display_name = display_name.rsplit('.', 2)[-2].title()
-        elif display_name.startswith(dsl.__name__):
-            display_name = display_name.rsplit('.', 1)[-1]
+        if match := cls.RE_PROVIDER.match(display_name):
+            display_name = match.group(1).title()
+        elif match := cls.RE_FUNCTION.match(display_name):
+            display_name = match.group(1).title()
+        elif match := cls.RE_DSL.match(display_name):
+            display_name = match.group(1)
         return display_name, sig, summary, real_name
 
     def get_items(self, names):
@@ -268,6 +277,6 @@ class Autosummary(autosummary.Autosummary):
 
 def setup(app: application.Sphinx):
     """Sphinx setup hook."""
-    app.add_autodocumenter(ClassDocumenter)
-    app.add_autodocumenter(MethodDocumenter)
+    app.add_autodocumenter(ClassDocumenter, override=True)
+    app.add_autodocumenter(MethodDocumenter, override=True)
     app.add_directive('autosummary', Autosummary)

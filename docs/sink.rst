@@ -13,28 +13,30 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _sink:
+
 Output Sink
 ===========
 
-Sink is a :doc:`runtime platform <platform>` component responsible for processing the output
+Sink is a :ref:`runtime platform <platform>` component responsible for processing the output
 produced upon executing one of the :ref:`lifecycle actions<lifecycle-actions>` of the particular
 :ref:`project pipeline <project-pipeline>`.
 
-It is a (much simpler) logical counterpart to the :doc:`feed concept <feed>`.
+It is a (much simpler) logical counterpart to the :ref:`feed concept <feed>`.
 
 Individual sink providers are mostly relevant to :ref:`batch mode <platform-execution>`. The concept
-is still used also in the :doc:`serving mode <serving>`, but the component is embedded in the engine
+is still used also in the :ref:`serving mode <serving>`, but the component is embedded in the engine
 which transparently deals with the output.
 
 Architecture
 ------------
 
-From the high-level perspective, Sink mirrors the :doc:`feed design <feed>` with flow inversion.
+From the high-level perspective, Sink mirrors the :ref:`feed design <feed>` with flow inversion.
 It relies on a particular :class:`Writer <forml.io.Writer>` implementation acting as an adapter
 between the pipeline output and the external media layer.
 
-When launching the pipeline, ForML :doc:`runner <runner>` expands the Sink into a closing
-task within the assembled :doc:`workflow <workflow/index>` making it a native part of the final
+When launching the pipeline, ForML :ref:`runner <runner>` expands the Sink into a closing
+task within the assembled :ref:`workflow <workflow>` making it a native part of the final
 DAG to be executed.
 
 The core Sink API looks as follows:

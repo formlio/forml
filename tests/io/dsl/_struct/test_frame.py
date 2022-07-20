@@ -67,21 +67,25 @@ class Source(metaclass=abc.ABCMeta):
         """Test the reported schema."""
         assert issubclass(source.schema, _struct.Schema)
 
-
-class Queryable(Source, metaclass=abc.ABCMeta):
-    """Base class for queryable tests."""
-
-    def test_query(self, source: frame.Queryable):
+    def test_query(self, source: frame.Source):
         """Test query conversion."""
         assert isinstance(source.query, frame.Query)
 
-    def test_instance(self, source: frame.Source, student_table: frame.Table):
-        """Test the queryable instance."""
-        assert source.instance.query == student_table.query
+    def test_statement(self, source: frame.Source):
+        """Test statement conversion."""
+        assert isinstance(source.statement, frame.Statement)
 
-    def test_reference(self, source: frame.Queryable):
+    def test_reference(self, source: frame.Source):
         """Test the queryable reference."""
         assert isinstance(source.reference(), frame.Reference)
+
+    def test_instance(self, source: frame.Source, student_table: frame.Table):
+        """Test the source instance."""
+        assert source.instance.query == student_table.query
+
+
+class Queryable(Source, metaclass=abc.ABCMeta):
+    """Base class for queryable tests."""
 
     def test_select(self, source: frame.Queryable):
         """Select test."""
@@ -141,17 +145,6 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         self._subcondition(source, lambda s, e: s.having(e), lambda q: q.postfilter)
         assert source.having(function.Count(source.score) > 2)  # aggregation filtering is valid for having
 
-    def test_join(self, source: frame.Queryable, school_table: frame.Table):
-        """Join test."""
-        joined = source.join(school_table, school_table.sid == source.school)
-        assert isinstance(joined.source, frame.Join)
-        assert joined.source.kind == frame.Join.Kind.INNER
-        assert joined.source.right == school_table
-        assert joined.source.condition == function.Equal(school_table.sid, source.school)
-        self._condition(source, lambda s, e: s.join(school_table, e), lambda q: q.source.condition)
-        with pytest.raises(dsl.GrammarError):
-            source.join(school_table, function.Count(source.score) > 2)  # aggregation filter
-
     def test_groupby(self, source: frame.Queryable):
         """Groupby test."""
         assert source.select(source.score.alias('foo')).groupby(source.score).grouping[0] == source.score
@@ -186,13 +179,24 @@ class Queryable(Source, metaclass=abc.ABCMeta):
         assert source.limit(1, 1).rows == (1, 1)
 
 
-class Tangible(Queryable, metaclass=abc.ABCMeta):
-    """Base class for tangible frames."""
+class Origin(Queryable, metaclass=abc.ABCMeta):
+    """Base class for origin frames."""
 
     def test_features(self, source: frame.Origin, student_table: frame.Table):
         assert all(isinstance(c, series.Element) for c in source.features)
         assert student_table.dob.name == 'birthday'
         assert student_table.score.name == 'score'
+
+    def test_join(self, source: frame.Queryable, school_table: frame.Table):
+        """Join test."""
+        joined = source.join(school_table, school_table.sid == source.school)
+        assert isinstance(joined, frame.Join)
+        assert joined.kind == frame.Join.Kind.INNER
+        assert joined.right == school_table
+        assert joined.condition == function.Equal(school_table.sid, source.school)
+        self._condition(source, lambda s, e: s.join(school_table, e), lambda q: q.condition)
+        with pytest.raises(dsl.GrammarError):
+            source.join(school_table, function.Count(source.score) > 2)  # aggregation filter
 
 
 class TestSchema:
@@ -275,7 +279,7 @@ class TestSchema:
         assert pickle.loads(pickle.dumps(schema)) == schema
 
 
-class TestReference(Tangible):
+class TestReference(Origin):
     """Table unit tests."""
 
     @staticmethod
@@ -284,7 +288,7 @@ class TestReference(Tangible):
         return student_table.reference()
 
 
-class TestTable(Tangible):
+class TestTable(Origin):
     """Table unit tests."""
 
     @staticmethod
@@ -294,7 +298,7 @@ class TestTable(Tangible):
 
     def test_features(self, source: frame.Origin, student_table: dsl.Table):
         Queryable.test_features(self, source, student_table)
-        Tangible.test_features(self, source, student_table)
+        Origin.test_features(self, source, student_table)
 
 
 class TestQuery(Queryable):

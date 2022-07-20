@@ -17,7 +17,7 @@
 Workflow Case Study
 ===================
 
-The following sections demonstrate all the individual :doc:`workflow features <index>` engaged
+The following sections demonstrate all the individual :ref:`workflow features <workflow>` engaged
 together to implement a practical pipeline. Even though the data actors could be implemented to work
 with :ref:`arbitrary data types <actor-compatibility>`, we choose for simplicity the
 :class:`pandas:pandas.DataFrame` as our case study payload plus we assume it is all numeric values.

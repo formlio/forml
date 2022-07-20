@@ -13,6 +13,8 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _topology:
+
 Flow Topology
 =============
 
@@ -21,7 +23,7 @@ the API for its assembly during the construction phase.
 
 .. note::
     Thanks to this runtime-agnostic internal representation of the task graph, ForML can support
-    number of different third-party :doc:`runners <../runner>` simply by converting the DAG on
+    number of different third-party :ref:`runners <runner>` simply by converting the DAG on
     demand from its internal structure to the particular representation of the target runtime.
 
 
@@ -29,7 +31,7 @@ Task Graph Primitives
 ---------------------
 
 While the actual unit of work - the vertex in the runtime DAG - is a *task* provided as the
-:doc:`Actor <actor>` implementation, its logical representation used by ForML internally is the
+:ref:`Actor <actor>` implementation, its logical representation used by ForML internally is the
 abstract ``flow.Node`` structure and its subtype ``flow.Worker`` in particular.
 
 Creating a Worker
@@ -183,7 +185,7 @@ Future Nodes
 In addition to the *Worker* nodes, there is a special node implementation called ``flow.Future``
 representing a future worker placeholder. *Future* can be used during topology construction when
 the real connected worker-to-be is not know yet (e.g. when implementing an
-:doc:`operator <operator>` which doesn't know what up/down stream workers will it be eventually
+:ref:`operator <operator>` which doesn't know what up/down stream workers will it be eventually
 composed with). When connected to a real worker, the Future node will automatically collapse and
 disappear from the topology.
 
@@ -234,7 +236,7 @@ after subscribing the ``future2`` node to the ``future1`` output, you can see ho
 Logical Structures
 ------------------
 
-When implementing more complex topologies (typically in scope of :doc:`operators development
+When implementing more complex topologies (typically in scope of :ref:`operators development
 <operator>`), the significant parts of the task graph become its *entry* and *exit* nodes (as
 that's where new connections are being added), while the inner nodes (already fully connected)
 fade away from the perspective of the ongoing construction.
@@ -266,13 +268,13 @@ Flow Compiler
 -------------
 
 While representing the task graph using linked structures is practical for implementing the
-user-level API, more efficient structure for its actual :doc:`runtime execution <../runner>`
+user-level API, more efficient structure for its actual :ref:`runtime execution <runner>`
 is the (actor) *adjacency matrix* produced by the internal flow compiler.
 
 ForML uses its compiler to:
 
 #. Augment the task graph by adding any necessary system-level nodes (e.g. to automatically
-   manage persistence of any :doc:`stateful actors <actor>`).
+   manage persistence of any :ref:`stateful actors <actor>`).
 #. Optimizing the task graph by removing any irrelevant or redundant parts.
 #. Generating a portable set of instructions suitable for runtime execution.
 
