@@ -156,26 +156,37 @@ The following class diagram outlines the API model:
             +Any value
         }
 
-
-Notable Abstractions
-^^^^^^^^^^^^^^^^^^^^
+Base Abstractions
+^^^^^^^^^^^^^^^^^
 
 The hierarchy starts with the following two abstractions:
 
 .. autoclass:: forml.io.dsl.Source
    :members: Schema, schema, features, reference, union, intersection, difference
 
-.. autoclass:: forml.io.dsl.Queryable
-   :members: select, where, having, groupby, orderby, limit
-
-.. autoclass:: forml.io.dsl.Origin
-   :members: join
-
-
 .. autoclass:: forml.io.dsl.Feature
    :members: kind, alias
 
+
+Notable Interfaces
+^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: forml.io.dsl.Queryable
+   :members: select, where, having, groupby, orderby, limit
+   :show-inheritance:
+
+.. autoclass:: forml.io.dsl.Origin
+   :members: join
+   :show-inheritance:
+
+.. autoclass:: forml.io.dsl.Statement
+   :show-inheritance:
+
 .. autoclass:: forml.io.dsl.Operable
+   :show-inheritance:
+
+.. autoclass:: forml.io.dsl.Element
+   :show-inheritance:
 
 .. autoclass:: forml.io.dsl.Predicate
 
@@ -183,14 +194,38 @@ The hierarchy starts with the following two abstractions:
 Notable Final Types
 ^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: forml.io.dsl.Set
+.. autoclass:: forml.io.dsl.Table
+   :show-inheritance:
+
 .. autoclass:: forml.io.dsl.Query
+   :show-inheritance:
+
+.. autoclass:: forml.io.dsl.Set
+   :members: Kind
+   :show-inheritance:
+
 .. autoclass:: forml.io.dsl.Join
    :members: Kind
-.. autoclass:: forml.io.dsl.Reference
-.. autoclass:: forml.io.dsl.Table
-.. autoclass:: forml.io.dsl.Aliased
+   :show-inheritance:
 
+.. autoclass:: forml.io.dsl.Rows
+
+.. autoclass:: forml.io.dsl.Reference
+   :show-inheritance:
+
+.. autoclass:: forml.io.dsl.Column
+   :show-inheritance:
+
+.. autoclass:: forml.io.dsl.Aliased
+   :show-inheritance:
+
+.. autoclass:: forml.io.dsl.Ordering
+   :members: Term, Direction, make
+
+Exceptions
+^^^^^^^^^^
+
+.. autoexception:: forml.io.dsl.GrammarError
 
 
 .. _query-parser:
@@ -198,13 +233,31 @@ Notable Final Types
 Parser
 ------
 
+Since the constructed :ref:`DSL query statement <query>` is a generic descriptor with no means
+of direct execution, the ETL process depends on a particular :class:`io.Feed.Reader
+<forml.io.Feed.Reader>` implementation to *parse* that query into a set of instructions
+corresponding to the selected :ref:`feed <feed>` and its target storage layer.
+
+
+Generic Interface
+^^^^^^^^^^^^^^^^^
+
 .. autodata:: forml.io.dsl.parser.Source
 .. autodata:: forml.io.dsl.parser.Feature
 .. autoclass:: forml.io.dsl.parser.Visitor
 
 
+Exceptions
+^^^^^^^^^^
 
-For reference, several existing Parser implementations can be found under the
+.. autoexception:: forml.io.dsl.UnprovisionedError
+.. autoexception:: forml.io.dsl.UnsupportedError
+
+
+References
+^^^^^^^^^^
+
+For reference, several existing ``Parser`` implementations can be found under the
 ``forml.provider.feed.reader`` package:
 
 .. autosummary::
@@ -212,7 +265,3 @@ For reference, several existing Parser implementations can be found under the
 
    forml.provider.feed.reader.sql.alchemy.Parser
    forml.provider.feed.reader.sql.dbapi.Parser
-
-
-Exceptions
-^^^^^^^^^^

@@ -122,9 +122,11 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
 
         This schema can be used to formulate a query statement as shown:
 
-        >>> ETL = Student\\
-        ... .select(Student.surname.alias('name'), Student.dob)\\
-        ... .where(Student.score > 80)
+        >>> ETL = (
+        ...     Student
+        ...     .select(Student.surname.alias('name'), Student.dob)
+        ...     .where(Student.score > 80)
+        ... )
     """
 
     @staticmethod
@@ -140,8 +142,8 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
 
         Examples:
             >>> SCHEMA = dsl.Schema.from_fields(
-            ... dsl.Field(dsl.Integer(), name='A'),
-            ... dsl.Field(dsl.String(), name='B'),
+            ...     dsl.Field(dsl.Integer(), name='A'),
+            ...     dsl.Field(dsl.String(), name='B'),
             ... )
         """
         return frame.Source.Schema(title or 'Schema', tuple(), {f'_{i}': f for i, f in enumerate(fields)})
@@ -163,7 +165,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
 
         Examples:
             >>> SCHEMA = dsl.Schema.from_record(
-            ... ['foobar', 37], 'name', 'age', title='Person'
+            ...     ['foobar', 37], 'name', 'age', title='Person'
             ... )
         """
         if not hasattr(record, '__len__') or isinstance(record, (str, bytes)):  # wrap if scalar

@@ -99,15 +99,16 @@ nitpicky = True
 _target_blacklist = {
     'py:class': (
         '_Actor',
-        '^conf.Feed',
-        r'.+\[.*dsl.Ordering.Direction.*\].*',
+        r'^conf\.Feed',
+        r'^dsl\.Operable',
+        r'^dsl\.Ordering\.(?:Direction|Term)',
         r'^io\.(?:Consumer|Producer)',
         r'^layout\.(?:ColumnMajor|RowMajor|Native)',
         'pandas.core.generic.NDFrame',
         r'^parser\.(?:Source|Feature|Visitor)',
         'sqlalchemy.engine.interfaces.Connectable',
     ),
-    'py:.*': (r'(?:forml|asset|dsl|flow|project)\..*',),
+    'py:.*': (r'(?:forml|asset|flow|project)\..*',),
 }
 nitpick_ignore_regex = [(k, v) for k, t in _target_blacklist.items() for v in t]
 

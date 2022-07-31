@@ -33,16 +33,19 @@ if typing.TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
+#: Generic storage-native representation of :class:`dsl.Source <forml.io.dsl.Source>`.
 Source = typing.TypeVar('Source')
+#: Generic storage-native representation of :class:`dsl.Feature <forml.io.dsl.Feature>`.
 Feature = typing.TypeVar('Feature')
+#: Generic storage-native representation of any instruction.
 Symbol = typing.TypeVar('Symbol')
 
 
 class Container(typing.Generic[Symbol]):
     """Base parser structure.
 
-    When used as a context manager the internal structure is exclusive to given context and is checked for total
-    depletion on exit.
+    When used as a context manager the internal structure is exclusive to given context and is
+    checked for total depletion on exit.
     """
 
     class Context:
@@ -79,7 +82,9 @@ class Container(typing.Generic[Symbol]):
             """Container for segments of all tables."""
 
             class Segment(collections.namedtuple('Segment', 'fields, factors')):
-                """Frame segment specification as a list of features (vertical) and row predicates (horizontal)."""
+                """Frame segment specification as a list of features (vertical) and row predicates
+                (horizontal).
+                """
 
                 def __new__(cls):
                     return super().__new__(cls, set(), set())
@@ -110,7 +115,8 @@ class Container(typing.Generic[Symbol]):
                 return self._segments[table]
 
             def select(self, *feature: 'dsl.Feature') -> None:
-                """Extract fields from given list of features and register them into segments of their relevant tables.
+                """Extract fields from given list of features and register them into segments of
+                their relevant tables.
 
                 Args:
                     *feature: Features to be to extracted and registered.
@@ -119,8 +125,8 @@ class Container(typing.Generic[Symbol]):
                     self[field.origin].fields.add(field)
 
             def filter(self, expression: 'dsl.Predicate') -> None:
-                """Extract predicate factors from given expression and register them into segments of their relevant
-                tables. Also register the whole expression using .select().
+                """Extract predicate factors from given expression and register them into segments
+                of their relevant tables. Also register the whole expression using :attr:`select`.
 
                 Args:
                     expression: Expression to be extracted and registered.
@@ -167,7 +173,9 @@ class Container(typing.Generic[Symbol]):
         self._context = self._stack.pop()
 
     def fetch(self) -> Symbol:
-        """Storage retrieval. Must be called exactly once and at the point where there is exactly one symbol pending
+        """Storage retrieval.
+
+        Must be called exactly once and at the point where there is exactly one symbol pending
         in the context. Successful fetch will kill the context.
 
         Returns:
@@ -181,12 +189,12 @@ class Container(typing.Generic[Symbol]):
 
 
 def bypass(override: typing.Callable[[Container, typing.Any], 'parser.Source']) -> typing.Callable:
-    """Bypass the (result of) the particular visit_* implementation if the supplied override resolver provides an
-    alternative value.
+    """Bypass the (result of) the particular visit_* implementation if the supplied override
+    resolver provides an alternative value.
 
     Args:
-        override: Callable resolver that returns an explicit value for given subject or raises KeyError for unknown
-        mapping.
+        override: Callable resolver that returns an explicit value for given subject or raises
+                  ``KeyError`` for unknown mapping.
 
     Returns:
         Visitor method decorator.
@@ -232,13 +240,38 @@ class Visitor(
     dsl.Feature.Visitor,
     metaclass=abc.ABCMeta,
 ):
-    """Frame source parser."""
+    """Abstract base class for DSL query statement parser implementations.
+
+    In this context, *parsing* essentially means a conversion between the generic DSL based
+    instance of the particular query and its native representation matching a selected target
+    storage layer.
+
+    Conceptually, the parser is implemented as combination of a *visitor* traversing the query
+    statement structure and a *push-down automaton* assembling the generated instructions in their
+    storage-native representation.
+
+    The parser assumes resolving the native representation of all the leaves of the query statement
+    tree (the :class:`dsl.Table <forml.io.dsl.Table>` and :class:`dsl.Column <forml.io.dsl.Column>`
+    instances) or possibly entire branches can be accomplished via the provided initial mappings
+    from which the parser builds the complete query up.
+
+    Upon failing to resolve any particular *source*/*feature* using the initial mappings, the parser
+    raises the :exc:`dsl.UnprovisionedError <forml.io.dsl.UnprovisionedError>` indicating
+    unavailability of the given data-source.
+    """
 
     def __init__(
         self,
         sources: typing.Mapping['dsl.Source', 'parser.Source'],
         features: typing.Mapping['dsl.Feature', 'parser.Feature'],
     ):
+        """
+        Args:
+            sources: Explicit mapping of generic DSL *sources* (typically :class:`dsl.Table
+                     <forml.io.dsl.Table>`) to their native representations.
+            features: Explicit mapping of generic DSL *features* (typically :class:`dsl.Column
+                      <forml.io.dsl.Column>`) to their native representations.
+        """
         super().__init__()
         self._sources: typing.Mapping['dsl.Source', 'parser.Source'] = types.MappingProxyType(sources)
         self._features: typing.Mapping['dsl.Feature', 'parser.Feature'] = types.MappingProxyType(features)

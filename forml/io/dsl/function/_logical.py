@@ -21,13 +21,21 @@ Logical operators.
 Logical operators
 -----------------
 
-The following native logical operators are available directly on the field instances:
+The following native logical operators are available directly on any of the
+:class:`dsl.Operable <forml.io.dsl.Operable>` instances:
 
-============ ============================
+============ =================
   Operator     Description
-============ ============================
+============ =================
   ``&``        Logical *AND*
   ``|``        Logical *OR*
   ``~``        Logical *NOT*
-============ ============================
+============ =================
+
+Examples:
+    >>> ETL = (
+    ...     Student
+    ...     .select(Student.surname)
+    ...     .where(Student.level == 5 & Student.score < 2)
+    ... )
 """

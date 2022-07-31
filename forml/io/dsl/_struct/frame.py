@@ -41,10 +41,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Rows(typing.NamedTuple):
-    """Row limit spec."""
+    """Row limit spec container.
+
+    Instances are expected to be created internally via :meth:`dsl.Queryable.limit
+    <forml.io.dsl.Queryable.limit>`.
+    """
 
     count: int
+    """Number of rows to return."""
     offset: int = 0
+    """Skip the given number of rows."""
 
     def __repr__(self):
         return f'{self.offset}:{self.count}'
@@ -271,25 +277,35 @@ class Source(tuple, metaclass=abc.ABCMeta):
         """
         return self.query
 
+    @property
+    def instance(self) -> 'dsl.Source':
+        """Return the source instance.
+
+        Apart from the ``Reference`` type is the source itself.
+
+        Returns:
+            Source instance.
+        """
+        return self
+
     def reference(self, name: typing.Optional[str] = None) -> 'dsl.Reference':
-        """Get an independent reference to this Source (ie for self-join conditions).
+        """Get an independent reference to this Source (e.g. for self-join conditions).
 
         Args:
             name: Optional alias to be used for this reference (random by default).
 
         Returns:
             New reference to this source.
+
+        Examples:
+            >>> manager = staff.Employee.reference('manager')
+            >>> subs = (
+            ...     manager.join(staff.Employee, staff.Employee.manager == manager.id)
+            ...     .select(manager.name, function.Count(staff.Employee.id).alias('subs'))
+            ...     .groupby(manager.id)
+            ... )
         """
         return Reference(self, name)
-
-    @property
-    def instance(self) -> 'dsl.Source':
-        """Return the source instance - which apart from the Reference type is the source itself.
-
-        Returns:
-            Source instance.
-        """
-        return self
 
     def union(self, other: 'dsl.Source') -> 'dsl.Set':
         """Create new source as a set union of this and the other source.
@@ -299,6 +315,12 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
         Returns:
             Set instance.
+
+        Examples:
+            >>> barbaz = (
+            ...     foo.Bar.select(foo.Bar.X, foo.Bar.Y)
+            ...     .union(foo.Baz.select(foo.Baz.X, foo.Baz.Y))
+            ... )
         """
         return Set(self, other, Set.Kind.UNION)
 
@@ -310,6 +332,12 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
         Returns:
             Set instance.
+
+        Examples:
+            >>> barbaz = (
+            ...     foo.Bar.select(foo.Bar.X, foo.Bar.Y)
+            ...     .intersection(foo.Baz.select(foo.Baz.X, foo.Baz.Y))
+            ... )
         """
         return Set(self, other, Set.Kind.INTERSECTION)
 
@@ -321,6 +349,12 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
         Returns:
             Set instance.
+
+        Examples:
+            >>> barbaz = (
+            ...     foo.Bar.select(foo.Bar.X, foo.Bar.Y)
+            ...     .difference(foo.Baz.select(foo.Baz.X, foo.Baz.Y))
+            ... )
         """
         return Set(self, other, Set.Kind.DIFFERENCE)
 
@@ -328,26 +362,41 @@ class Source(tuple, metaclass=abc.ABCMeta):
 class Statement(Source, metaclass=abc.ABCMeta):
     """Base class for complete statements.
 
-    Complete statements are :class:`forml.io.dsl.Query` and :class:`forml.io.dsl.Set`.
+    Complete statements are:
+
+    * :class:`forml.io.dsl.Query`
+    * :class:`forml.io.dsl.Set`.
     """
 
 
 class Set(Statement):
-    """Source made of two set-combined sub-statements."""
+    """Source made of two set-combined sub-statements with the same schema."""
 
     @enum.unique
     class Kind(enum.Enum):
-        """Set type."""
+        """Set type enum."""
 
         UNION = 'union'
+        """Union set operation type."""
         INTERSECTION = 'intersection'
+        """Intersection set operation type."""
         DIFFERENCE = 'difference'
+        """Difference set operation type."""
 
     left: 'dsl.Statement' = property(operator.itemgetter(0))
+    """Left side of the set operation."""
     right: 'dsl.Statement' = property(operator.itemgetter(1))
+    """Right side of the set operation."""
     kind: 'dsl.Set.Kind' = property(operator.itemgetter(2))
+    """Set operation enum type."""
 
     def __new__(cls, left: 'dsl.Source', right: 'dsl.Source', kind: 'dsl.Set.Kind'):
+        """Instances are expected to be created internally via:
+
+        * :meth:`dsl.Source.union() <forml.io.dsl.Source.union>`
+        * :meth:`dsl.Source.intersection() <forml.io.dsl.Source.intersection>`
+        * :meth:`dsl.Source.difference() <forml.io.dsl.Source.difference>`
+        """
         if left.schema != right.schema:
             raise _exception.GrammarError('Incompatible sources')
         return super().__new__(cls, left.statement, right.statement, kind)
@@ -368,16 +417,21 @@ class Set(Statement):
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
-    """Base class for queryable sources."""
+    """Base class for any *source* that can be queried directly."""
 
     def select(self, *features: 'dsl.Feature') -> 'dsl.Query':
         """Specify the output features to be provided (projection).
 
+        Repeated calls to ``.select`` replace the earlier selection.
+
         Args:
-            features: Sequence of feature expressions.
+            features: Sequence of features.
 
         Returns:
             Query instance.
+
+        Examples:
+            >>> barxy = foo.Bar.select(foo.Bar.X, foo.Bar.Y)
         """
         return self.query.select(*features)
 
@@ -391,6 +445,9 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 
         Returns:
             Query instance.
+
+        Examples:
+            >>> barx10 = foo.Bar.where(foo.Bar.X == 10)
         """
         return self.query.where(condition)
 
@@ -404,40 +461,59 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 
         Returns:
             Query instance.
+
+        Examples:
+            >>> bargy10 = foo.Bar.groupby(foo.Bar.X).having(function.Count(foo.Bar.Y) == 10)
         """
         return self.query.having(condition)
 
     def groupby(self, *features: 'dsl.Operable') -> 'dsl.Query':
-        """Aggregation specifiers.
+        """Aggregation grouping specifiers.
+
+        Repeated calls to ``.groupby`` replace the earlier grouping.
 
         Args:
-            features: Sequence of feature expressions.
+            features: Sequence of aggregation features.
 
         Returns:
             Query instance.
+
+        Examples:
+            >>> bargbx = foo.Bar.groupby(foo.Bar.X).select(foo.Bar.X, function.Count(foo.Bar.Y))
         """
         return self.query.groupby(*features)
 
-    def orderby(
-        self,
-        *features: typing.Union[
-            'dsl.Operable',
-            typing.Union['dsl.Ordering.Direction', str],
-            tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
-        ],
-    ) -> 'dsl.Query':
+    def orderby(self, *terms: 'dsl.Ordering.Term') -> 'dsl.Query':
         """Ordering specifiers.
 
+        Default direction is *ascending*.
+
+        Repeated calls to ``.orderby`` replace the earlier ordering.
+
         Args:
-            features: Sequence of feature expressions and direction tuples.
+            terms: Sequence of feature and direction tuples.
 
         Returns:
             Query instance.
+
+        Examples:
+            >>> barbyx = foo.Bar.orderby(foo.Bar.X)
+            >>> barbyxd = foo.Bar.orderby(foo.Bar.X, 'desc')
+            >>> barbxy = foo.Bar.orderby(foo.Bar.X, foo.Bar.Y)
+            >>> barbxdy = foo.Bar.orderby(
+            ...     foo.Bar.X, dsl.Ordering.Direction.DESCENDING, foo.Bar.Y, 'asc'
+            ... )
+            >>> barbydxd = foo.Bar.orderby(
+            ...     (foo.Bar.X, 'desc'),
+            ...     (foo.Bar.Y, dsl.Ordering.Direction.DESCENDING),
+            ... )
         """
-        return self.query.orderby(*features)
+        return self.query.orderby(*terms)
 
     def limit(self, count: int, offset: int = 0) -> 'dsl.Query':
-        """Restrict the result rows by its max count with an optional offset.
+        """Restrict the result rows by its max *count* with an optional *offset*.
+
+        Repeated calls to ``.limit`` replace the earlier restriction.
 
         Args:
             count: Number of rows to return.
@@ -445,24 +521,26 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 
         Returns:
             Query instance.
+
+        Examples:
+            >>> bar10 = foo.Bar.limit(10)
         """
         return self.query.limit(count, offset)
 
 
 class Origin(Queryable, metaclass=abc.ABCMeta):
-    """Origin is a queryable that can be referenced by some handle (rather than just a statement
-    itself) - effectively a ``Table`` or a subquery within a ``Reference``.
+    """Origin is a queryable source with some handle.
 
-    Its features are represented using :class:`forml.io.dsl.Element <dsl.Element>`.
+    Its features are represented using :class:`dsl.Element <forml.io.dsl.Element>`.
     """
 
     @property
     @abc.abstractmethod
     def features(self) -> typing.Sequence['dsl.Element']:
-        """Tangible features are instances of series.Element.
+        """Origin features are instances of ``dsl.Element``.
 
         Returns:
-            Sequence of dsl.Field instances.
+            Sequence of ``dsl.Element`` instances.
         """
 
     def join(
@@ -485,14 +563,14 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
 
 
 class Join(Origin):
-    """Source made of two join-combined subsources."""
+    """Source made of two join-combined sub-sources."""
 
     @enum.unique
     class Kind(enum.Enum):
-        """Join type."""
+        """Join type enum."""
 
         INNER = 'inner'
-        """Inner join type."""
+        """Inner join type (default if *condition* is provided)."""
         LEFT = 'left'
         """Left outer join type."""
         RIGHT = 'right'
@@ -500,15 +578,19 @@ class Join(Origin):
         FULL = 'full'
         """Full join type."""
         CROSS = 'cross'
-        """Cross join type."""
+        """Cross join type (default if *condition* is not provided)."""
 
         def __repr__(self):
             return f'<{self.value}-join>'
 
     left: 'dsl.Origin' = property(operator.itemgetter(0))
+    """Left side of the join operation."""
     right: 'dsl.Origin' = property(operator.itemgetter(1))
+    """Right side of the join operation."""
     condition: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
+    """Join condition (invalid for *CROSS*-join)."""
     kind: 'dsl.Join.Kind' = property(operator.itemgetter(3))
+    """Join type (defaults to *CROSS* if *condition* is not provided or *INNER* otherwise)."""
 
     def __new__(
         cls,
@@ -517,6 +599,9 @@ class Join(Origin):
         condition: typing.Optional['dsl.Predicate'] = None,
         kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
     ):
+        """Instances are expected to be created internally via :meth:`dsl.Origin.join
+        <forml.io.dsl.Origin.join>`.
+        """
         kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
         if condition is not None:
             if kind is cls.Kind.CROSS:
@@ -540,13 +625,18 @@ class Join(Origin):
 
 
 class Reference(Origin):
-    """Reference is a wrapper around a source that associates it with a (possibly random) name."""
+    """Wrapper around any *source* associating it with a (possibly random) name."""
 
     _NAMELEN: int = 8
     instance: 'dsl.Source' = property(operator.itemgetter(0))
+    """Wrapped *source* instance."""
     name: str = property(operator.itemgetter(1))
+    """Reference name."""
 
     def __new__(cls, instance: 'dsl.Source', name: typing.Optional[str] = None):
+        """Instances are expected to be created internally via :meth:`dsl.Source.reference
+        <forml.io.dsl.Source.reference>`.
+        """
         if not name:
             name = ''.join(random.choice(string.ascii_lowercase) for _ in range(cls._NAMELEN))
         return super().__new__(cls, instance.instance, name)
@@ -572,17 +662,36 @@ class Reference(Origin):
 
 
 class Table(Origin):
-    """Table based source.
+    """Table based *source* with an explicit *schema*.
 
-    This type can be used either as metaclass or as a base class to inherit from.
+    The primary way of creating ``Table`` instances is by inheriting the :class:`dsl.Schema
+    <forml.io.dsl.Schema>` which is using this type as a meta-class.
     """
 
+    @typing.overload
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
-        schema: typing.Union[str, 'dsl.Source.Schema'],
-        bases: typing.Optional[tuple[type]] = None,
-        namespace: typing.Optional[dict[str, typing.Any]] = None,
+        name: str,
+        bases: tuple[type],
+        namespace: dict[str, typing.Any],
     ):
+        """Meta-class mode constructor.
+
+        Args:
+            name: Table class name.
+            bases: Table base classes.
+            namespace: Class namespace container.
+        """
+
+    @typing.overload
+    def __new__(cls, schema: 'dsl.Source.Schema'):
+        """Standard class mode constructor.
+
+        Args:
+            schema: Table *schema* type.
+        """
+
+    def __new__(mcs, schema, bases=None, namespace=None):  # pylint: disable=bad-classmethod-argument
         if isinstance(schema, str):  # used as metaclass
             if bases:
                 bases = tuple(b.schema for b in bases if isinstance(b, Table))
@@ -612,15 +721,26 @@ class Table(Origin):
 
 
 class Query(Queryable, Statement):
-    """Generic source descriptor."""
+    """Query based *source*.
+
+    Container for holding all the parameters supplied via the :class:`dsl.Queryable
+    <forml.io.dsl.Queryable>` interface.
+    """
 
     source: 'dsl.Source' = property(operator.itemgetter(0))
+    """Base *source* to query *FROM*."""
     selection: tuple['dsl.Feature'] = property(operator.itemgetter(1))
+    """Result projection features."""
     prefilter: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
+    """Row-filtering condition to be applied before potential aggregations."""
     grouping: tuple['dsl.Operable'] = property(operator.itemgetter(3))
+    """Aggregation grouping specifiers."""
     postfilter: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(4))
+    """Row-filtering condition to be applied after aggregations."""
     ordering: tuple['dsl.Ordering'] = property(operator.itemgetter(5))
+    """Ordering specifiers."""
     rows: typing.Optional['dsl.Rows'] = property(operator.itemgetter(6))
+    """Row restriction limit."""
 
     def __new__(
         cls,
@@ -629,17 +749,13 @@ class Query(Queryable, Statement):
         prefilter: typing.Optional['dsl.Predicate'] = None,
         grouping: typing.Optional[typing.Iterable['dsl.Operable']] = None,
         postfilter: typing.Optional['dsl.Predicate'] = None,
-        ordering: typing.Optional[
-            typing.Sequence[
-                typing.Union[
-                    'dsl.Operable',
-                    typing.Union['dsl.Ordering.Direction', str],
-                    tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
-                ]
-            ]
-        ] = None,
+        ordering: typing.Optional[typing.Sequence['dsl.Ordering.Term']] = None,
         rows: typing.Optional['dsl.Rows'] = None,
     ):
+        """Instances are expected to be created internally via the ``dsl.Queryable`` interface
+        methods.
+        """
+
         def ensure_subset(*features: 'dsl.Feature') -> typing.Sequence['dsl.Feature']:
             """Ensure the provided features is a valid subset of the available source features.
 
@@ -667,7 +783,7 @@ class Query(Queryable, Statement):
             postfilter = series.Window.ensure_notin(
                 series.Predicate.ensure_is(*ensure_subset(series.Operable.ensure_is(postfilter)))
             )
-        ordering = tuple(series.Ordering.make(ordering or []))
+        ordering = tuple(series.Ordering.make(*(ordering or [])))
         ensure_subset(*(o.feature for o in ordering))
         return super().__new__(cls, source, selection, prefilter, tuple(grouping or []), postfilter, ordering, rows)
 
@@ -719,15 +835,8 @@ class Query(Queryable, Statement):
     def groupby(self, *features: 'dsl.Operable') -> 'dsl.Query':
         return Query(self.source, self.selection, self.prefilter, features, self.postfilter, self.ordering, self.rows)
 
-    def orderby(
-        self,
-        *features: typing.Union[
-            'dsl.Operable',
-            typing.Union['dsl.Ordering.Direction', str],
-            tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
-        ],
-    ) -> 'dsl.Query':
-        return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, features, self.rows)
+    def orderby(self, *terms: 'dsl.Ordering.Term') -> 'dsl.Query':
+        return Query(self.source, self.selection, self.prefilter, self.grouping, self.postfilter, terms, self.rows)
 
     def limit(self, count: int, offset: int = 0) -> 'dsl.Query':
         return Query(

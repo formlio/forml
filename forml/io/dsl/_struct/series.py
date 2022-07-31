@@ -57,7 +57,7 @@ def cast(value: typing.Any) -> 'dsl.Feature':
 class Feature(tuple, metaclass=abc.ABCMeta):
     """Base class of the individual *columnar* data series features.
 
-    Feature is anything that can be used as a handle to a single columnar data. It is a
+    Feature is anything that can be used as a handle to an independent columnar data. It is a
     homogenous series of data with the same :attr:`kind`.
     """
 
@@ -273,6 +273,23 @@ def featurize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 class Operable(Feature, metaclass=abc.ABCMeta):
     """Base class for features that can be used in expressions, conditions, grouping and/or
     ordering definitions.
+
+    In principle, any non-aliased future is *Operable*.
+
+    Operable feature instances are overloading the following native Python :doc:`operator API
+    <python:library/operator>` to provide convenient DSL semantic:
+
+    ================  ================================================
+      Type              Syntax
+    ================  ================================================
+      Comparison        ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``
+      Logical           ``&``, ``|``, ``~``
+      Arithmetical      ``+``, ``-``, ``*``, ``/``, ``%``
+    ================  ================================================
+
+    See Also:
+        Additional details are available under the :ref:`DSL functions and operators
+        <query-functions>`.
     """
 
     @property
@@ -281,7 +298,7 @@ class Operable(Feature, metaclass=abc.ABCMeta):
 
     @classmethod
     def ensure_is(cls, feature: 'dsl.Feature') -> 'dsl.Operable':
-        """Ensure given given feature is an Operable."""
+        """Ensure the given feature is an ``Operable``."""
         return super().ensure_is(feature).operable
 
     __hash__ = Feature.__hash__  # otherwise gets overwritten to None due to redefined __eq__
@@ -371,17 +388,28 @@ class Operable(Feature, metaclass=abc.ABCMeta):
 
 
 class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
-    """OrderBy spec."""
+    """Container for holding the ordering specification."""
 
     feature: 'dsl.Operable'
+    """Ordering feature."""
     direction: 'dsl.Ordering.Direction'
+    """Ordering direction."""
+
+    Term = typing.Union[
+        'dsl.Operable',
+        typing.Union['dsl.Ordering.Direction', str],
+        tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
+    ]
+    """Type alias for accepted ordering specifiers."""
 
     @enum.unique
     class Direction(enum.Enum):
-        """Ordering direction."""
+        """Ordering direction enum."""
 
         ASCENDING = 'ascending'
+        """Ascending direction."""
         DESCENDING = 'descending'
+        """Descending direction."""
 
         @classmethod
         def _missing_(cls, value):
@@ -404,6 +432,9 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
     def __new__(
         cls, feature: 'dsl.Operable', direction: typing.Optional[typing.Union['dsl.Ordering.Direction', str]] = None
     ):
+        """Instances are expected to be created internally by :meth:`dsl.Queryable.orderby
+        <forml.io.dsl.Queryable.orderby>`.
+        """
         return super().__new__(
             cls, Operable.ensure_is(feature), cls.Direction(direction) if direction else cls.Direction.ASCENDING
         )
@@ -412,30 +443,21 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
         return f'{repr(self.feature)}{repr(self.direction)}'
 
     @classmethod
-    def make(
-        cls,
-        specs: typing.Sequence[
-            typing.Union[
-                'dsl.Operable',
-                typing.Union['dsl.Ordering.Direction', str],
-                tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
-            ]
-        ],
-    ) -> typing.Iterable['dsl.Ordering']:
-        """Helper to generate orderings from given features and directions.
+    def make(cls, *terms: 'dsl.Ordering.Term') -> typing.Iterable['dsl.Ordering']:
+        """Helper to generate orderings from the given terms.
 
         Args:
-            specs: One or many features or actual ordering instances.
+            terms: One or many features or actual ordering instances.
 
         Returns:
-            Sequence of ordering terms.
+            Iterator of ordering instances.
         """
-        specs = itertools.zip_longest(specs, specs[1:])
-        for feature, direction in specs:
+        terms = itertools.zip_longest(terms, terms[1:])
+        for feature, direction in terms:
             if isinstance(feature, Feature):
                 if isinstance(direction, (Ordering.Direction, str)):
                     yield Ordering.Direction(direction)(feature)
-                    next(specs)  # pylint: disable=stop-iteration-return
+                    next(terms)  # pylint: disable=stop-iteration-return
                 else:
                     yield Ordering(feature)
             elif isinstance(feature, typing.Sequence) and len(feature) == 2:
@@ -446,12 +468,15 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
 
 
 class Aliased(Feature):
-    """Aliased feature representation."""
+    """Representation of a *feature* with an explicit name alias."""
 
     operable: 'dsl.Operable' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
 
     def __new__(cls, feature: 'dsl.Feature', alias: str):
+        """Instances are expected to be created internally via :meth:`dsl.Feature.alias
+        <forml.io.dsl.Feature.alias>`.
+        """
         return super().__new__(cls, feature.operable, alias)
 
     def __repr__(self):
@@ -500,7 +525,7 @@ class Literal(Operable):
 
 
 class Element(Operable):
-    """Named feature of particular origin (table or a reference)."""
+    """Name-referenced *feature* of a particular *origin* (``dsl.Table`` or ``dsl.Reference``)."""
 
     origin: 'dsl.Origin' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
@@ -527,7 +552,7 @@ class Element(Operable):
 
 
 class Column(Element):
-    """Special type of element is the table column type."""
+    """Special type of *element* is the *table* column type."""
 
     origin: 'dsl.Table' = property(opermod.itemgetter(0))
 
@@ -603,7 +628,11 @@ class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
 
 
 class Predicate(metaclass=abc.ABCMeta):
-    """Base class for Logical and Comparison operators."""
+    """Mixin for features representing *logical* or *comparison* operations.
+
+    Specific predicate instances are produced from the native :class:`dsl.Operable
+    <forml.io.dsl.Operable>` operators.
+    """
 
     class Factors(typing.Mapping['dsl.Table', 'dsl.Factors']):
         """Mapping (read-only) of predicate factors to their tables. Factor is a predicate which is
@@ -666,22 +695,23 @@ class Predicate(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def factors(self) -> 'dsl.Predicate.Factors':
-        """Mapping of primitive source predicates - involving just a single Table.
+        """Mapping of primitive source predicates - involving just a single ``Table``.
 
         Returns:
-            Break down of factors involved in this predicate.
+            Break down of factors constituting this predicate.
         """
 
     @classmethod
     def ensure_is(cls: type['dsl.Operable'], feature: 'dsl.Operable') -> 'dsl.Operable':
-        """Ensure given feature is a predicate. Since this mixin class is supposed to be used as
-        a first base class of its feature implementors, this will mask the Feature.ensure_is API.
-        Here we add special implementation depending on whether it is used directly on the
-        ``Predicate`` class or its bare mixin subclasses or the actual Feature implementation
-        using this mixin.
+        """Ensure the given feature is a predicate.
+
+        Since this mixin class is supposed to be used as a first base class of its feature
+        implementors, this will mask the Feature.ensure_is API. Here we add special implementation
+        depending on whether it is used directly on the ``Predicate`` class or its bare mixin
+        subclasses or the actual Feature implementation using this mixin.
 
         Args:
-            feature: 'dsl.Feature' instance to be checked for its compliance.
+            feature: Instance to be checked for its predicate compatibility.
 
         Returns:
             Feature instance.
@@ -819,13 +849,16 @@ class Equal(Comparison, Infix):
     symbol = '=='
 
     def __bool__(self):
-        """Since this instance is also returned when python internally compares two Feature
+        """Evaluate the boolean value as of the Python context.
+
+        Since this instance is also returned when python internally compares two ``Feature``
         instances for equality (i.e. when the instance is stored within a hash-based container), we
         want to evaluate the boolean value for python perspective of the objects (rather than just
         the ETL perspective of the data).
 
-        Note this doesn't reflect mathematical commutativity - order of potential sub-expression
-        operands matters.
+        Note:
+            This doesn't reflect mathematical commutativity - order of potential sub-expression
+            operands matters.
         """
         return hash(self.left) == hash(self.right)
 

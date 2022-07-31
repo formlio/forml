@@ -21,7 +21,8 @@ Comparison functions and operators.
 Comparison Operators
 --------------------
 
-The following native comparison operators are available directly on the field instances:
+The following native comparison operators are available directly on any of the
+:class:`dsl.Operable <forml.io.dsl.Operable>` instances:
 
 ============ ============================
   Operator     Description
@@ -33,4 +34,11 @@ The following native comparison operators are available directly on the field in
   ``>``        Greater than
   ``>=``       Greater than or equal to
 ============ ============================
+
+Examples:
+    >>> ETL = (
+    ...     Student
+    ...     .select(Student.surname)
+    ...     .where(Student.level == 5 & Student.score < 2)
+    ... )
 """

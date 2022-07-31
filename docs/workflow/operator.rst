@@ -210,7 +210,6 @@ Custom actors can be turned into operators easily by wrapping within the provide
 ``wrap.Operator.*`` decorators:
 
 .. autoclass:: forml.pipeline.wrap.Operator
-   :members: apply, train, label, mapper
 
 
 .. _operator-autowrap:
