@@ -98,8 +98,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def _expression(
         cls,
         source: frame.Queryable,
-        handler: typing.Callable[[frame.Queryable, series.Expression], frame.Query],
-        target: typing.Callable[[frame.Query], series.Expression],
+        handler: typing.Callable[[frame.Queryable, series.Expression], frame.Queryable],
+        target: typing.Callable[[frame.Queryable], series.Expression],
     ):
         """Common element testing routine."""
         score = source.query.source.score
@@ -111,8 +111,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def _condition(
         cls,
         source: frame.Queryable,
-        handler: typing.Callable[[frame.Queryable, series.Expression], frame.Query],
-        target: typing.Callable[[frame.Query], series.Expression],
+        handler: typing.Callable[[frame.Queryable, series.Expression], frame.Queryable],
+        target: typing.Callable[[frame.Queryable], series.Expression],
     ):
         """Common condition testing routine."""
         cls._expression(source, handler, target)
@@ -125,8 +125,8 @@ class Queryable(Source, metaclass=abc.ABCMeta):
     def _subcondition(
         cls,
         source: frame.Queryable,
-        handler: typing.Callable[[frame.Queryable, series.Expression], frame.Query],
-        target: typing.Callable[[frame.Query], series.Expression],
+        handler: typing.Callable[[frame.Queryable, series.Expression], frame.Queryable],
+        target: typing.Callable[[frame.Queryable], series.Expression],
     ):
         """Common subcondition (cumulative condition) testing routine (for where/having)."""
         cls._condition(source, handler, target)
@@ -187,16 +187,48 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
         assert student_table.dob.name == 'birthday'
         assert student_table.score.name == 'score'
 
-    def test_join(self, source: frame.Queryable, school_table: frame.Table):
-        """Join test."""
-        joined = source.join(school_table, school_table.sid == source.school)
+    def _conditional_join(
+        self,
+        source: frame.Origin,
+        school_table: frame.Table,
+        method: typing.Callable[[frame.Origin, frame.Table, dsl.Predicate], frame.Join],
+        expect_kind: frame.Join.Kind,
+    ):
+        """Common join tests."""
+        joined = method(source, school_table, school_table.sid == source.school)
         assert isinstance(joined, frame.Join)
-        assert joined.kind == frame.Join.Kind.INNER
+        assert joined.kind == expect_kind
         assert joined.right == school_table
         assert joined.condition == function.Equal(school_table.sid, source.school)
-        self._condition(source, lambda s, e: s.join(school_table, e), lambda q: q.condition)
-        with pytest.raises(dsl.GrammarError):
-            source.join(school_table, function.Count(source.score) > 2)  # aggregation filter
+        self._condition(source, lambda s, e: method(s, school_table, e), lambda q: q.condition)
+        with pytest.raises(dsl.GrammarError, match=r'instance\(s\) found in'):
+            method(source, school_table, function.Count(source.score) > 2)  # aggregation filter
+        with pytest.raises(dsl.GrammarError, match='condition and join type'):
+            method(source, school_table, None)  # missing condition
+
+    def test_inner_join(self, source: frame.Queryable, school_table: frame.Table):
+        """Inner join test."""
+        self._conditional_join(source, school_table, frame.Origin.inner_join, frame.Join.Kind.INNER)
+
+    def test_left_join(self, source: frame.Queryable, school_table: frame.Table):
+        """Left join test."""
+        self._conditional_join(source, school_table, frame.Origin.left_join, frame.Join.Kind.LEFT)
+
+    def test_right_join(self, source: frame.Queryable, school_table: frame.Table):
+        """Right join test."""
+        self._conditional_join(source, school_table, frame.Origin.right_join, frame.Join.Kind.RIGHT)
+
+    def test_full_join(self, source: frame.Queryable, school_table: frame.Table):
+        """Full join test."""
+        self._conditional_join(source, school_table, frame.Origin.full_join, frame.Join.Kind.FULL)
+
+    def test_cross_join(self, source: frame.Origin, school_table: frame.Table):
+        """Cross join test."""
+        joined = source.cross_join(school_table)
+        assert isinstance(joined, frame.Join)
+        assert joined.kind == frame.Join.Kind.CROSS
+        assert joined.right == school_table
+        assert joined.condition is None
 
 
 class TestSchema:

@@ -18,14 +18,13 @@
 Functions and Operators
 =======================
 
-The DSL offers number of built-in operators and functions allowing to implement complex
-expressions executed on the physical data-sources by the particular :ref:`feed <feed>` providers.
+The DSL offers number of built-in operators and functions to be used within the :ref:`query
+expressions <query-syntax>` allowing to define a complex ETL process to be executed on the physical
+data-sources by the particular :ref:`feed <feed>` providers.
 
 .. attention::
    The actual set of the available functions is at this point rather limited focusing merely on
    the concept demonstration.
-
-
 
 
 .. autosummary::
@@ -39,3 +38,4 @@ expressions executed on the physical data-sources by the particular :ref:`feed <
    forml.io.dsl.function._datetime
    forml.io.dsl.function._logical
    forml.io.dsl.function._math
+   forml.io.dsl.function._window

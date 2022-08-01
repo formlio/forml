@@ -67,7 +67,11 @@ The following class diagram outlines the API model:
 
         class Origin {
             <<abstract>>
-            +join() Join
+            +inner_join() Join
+            +left_join() Join
+            +right_join() Join
+            +full_join() Join
+            +cross_join() Join
         }
 
         class Join {
@@ -105,6 +109,7 @@ The following class diagram outlines the API model:
         Element <|-- Column
         Operable <|-- Expression
         Expression <|-- Predicate
+        Expression <|-- Window
 
         class Feature {
             <<abstract>>
@@ -156,6 +161,10 @@ The following class diagram outlines the API model:
             +Any value
         }
 
+        class Window {
+            +Operable partition
+        }
+
 Base Abstractions
 ^^^^^^^^^^^^^^^^^
 
@@ -176,7 +185,7 @@ Notable Interfaces
    :show-inheritance:
 
 .. autoclass:: forml.io.dsl.Origin
-   :members: join
+   :members: inner_join, left_join, right_join, full_join, cross_join
    :show-inheritance:
 
 .. autoclass:: forml.io.dsl.Statement
@@ -221,6 +230,9 @@ Notable Final Types
 
 .. autoclass:: forml.io.dsl.Ordering
    :members: Term, Direction, make
+
+.. autoclass:: forml.io.dsl.Window
+   :members: Function
 
 Exceptions
 ^^^^^^^^^^

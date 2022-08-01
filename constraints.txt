@@ -12,7 +12,7 @@ anyio==3.6.1
     # via starlette
 astroid==2.11.7
     # via pylint
-attrs==21.4.0
+attrs==22.1.0
     # via
     #   flake8-bugbear
     #   jsonschema
@@ -52,7 +52,7 @@ cloudpickle==2.1.0
     #   mlflow
 coverage==6.4.2
     # via pytest-cov
-dask==2022.7.0
+dask==2022.7.1
     # via forml (setup.py)
 databricks-cli==0.17.0
     # via mlflow
@@ -64,7 +64,7 @@ distlib==0.3.5
     # via virtualenv
 docker==5.0.3
     # via mlflow
-docutils==0.18.1
+docutils==0.19
     # via
     #   nbsphinx
     #   sphinx
@@ -77,7 +77,7 @@ fastjsonschema==2.16.1
     # via nbformat
 filelock==3.7.1
     # via virtualenv
-flake8==4.0.1
+flake8==5.0.2
     # via
     #   flake8-bugbear
     #   flake8-colors
@@ -86,7 +86,7 @@ flake8-bugbear==22.7.1
     # via forml (setup.py)
 flake8-colors==0.1.9
     # via forml (setup.py)
-flake8-typing-imports==1.12.0
+flake8-typing-imports==1.13.0
     # via forml (setup.py)
 flask==2.1.3
     # via
@@ -96,7 +96,7 @@ forml==0.5.dev1
     # via
     #   openlake
     #   openschema
-fsspec==2022.5.0
+fsspec==2022.7.1
     # via dask
 future==0.18.2
     # via pyhive
@@ -104,7 +104,7 @@ gitdb==4.0.9
     # via gitpython
 gitpython==3.1.27
     # via mlflow
-graphviz==0.20
+graphviz==0.20.1
     # via forml (setup.py)
 greenlet==1.1.2
     # via sqlalchemy
@@ -138,7 +138,7 @@ jinja2==3.1.2
     #   sphinx
 joblib==1.1.0
     # via scikit-learn
-jsonschema==4.7.2
+jsonschema==4.9.0
     # via nbformat
 jupyter-client==7.3.4
     # via nbclient
@@ -163,7 +163,8 @@ markupsafe==2.1.1
     #   mako
     #   nbconvert
     #   sphinx-immaterial
-mccabe==0.6.1
+    #   werkzeug
+mccabe==0.7.0
     # via
     #   flake8
     #   pylint
@@ -230,7 +231,7 @@ pathspec==0.9.0
     # via
     #   black
     #   pycln
-pep517==0.12.0
+pep517==0.13.0
     # via build
 pip-tools==6.8.0
     # via forml (setup.py)
@@ -249,19 +250,19 @@ prometheus-client==0.14.1
     # via prometheus-flask-exporter
 prometheus-flask-exporter==0.20.2
     # via mlflow
-protobuf==4.21.3
+protobuf==4.21.4
     # via mlflow
 py==1.11.0
     # via pytest
 pyarrow==8.0.0
     # via openlake
-pycln==2.0.4
+pycln==2.1.1
     # via forml (setup.py)
-pycodestyle==2.8.0
+pycodestyle==2.9.0
     # via flake8
 pydantic==1.9.1
     # via sphinx-immaterial
-pyflakes==2.4.0
+pyflakes==2.5.0
     # via flake8
 pygments==2.12.0
     # via
@@ -316,7 +317,7 @@ requests==2.28.1
     #   sphinx
 scikit-learn==1.1.1
     # via forml (setup.py)
-scipy==1.8.1
+scipy==1.9.0
     # via
     #   mlflow
     #   scikit-learn
@@ -328,7 +329,6 @@ six==1.16.0
     #   python-dateutil
     #   querystring-parser
     #   sphinxcontrib-napoleon
-    #   virtualenv
 smmap==5.0.0
     # via gitdb
 sniffio==1.2.0
@@ -337,7 +337,7 @@ snowballstemmer==2.2.0
     # via sphinx
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-sphinx==5.0.2
+sphinx==5.1.1
     # via
     #   forml (setup.py)
     #   nbsphinx
@@ -346,7 +346,7 @@ sphinx==5.0.2
     #   sphinxcontrib-details-directive
 sphinx-copybutton==0.5.0
     # via forml (setup.py)
-sphinx-immaterial==0.8.0
+sphinx-immaterial==0.8.1
     # via forml (setup.py)
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
@@ -385,7 +385,6 @@ toml==0.10.2
     # via
     #   forml
     #   pre-commit
-    #   pycln
 tomli==2.0.1
     # via
     #   black
@@ -396,7 +395,9 @@ tomli==2.0.1
     #   pylint
     #   pytest
 tomlkit==0.11.1
-    # via pylint
+    # via
+    #   pycln
+    #   pylint
 toolz==0.12.0
     # via
     #   dask
@@ -421,11 +422,11 @@ typing-extensions==4.3.0
     #   typing-inspect
 typing-inspect==0.7.1
     # via libcst
-urllib3==1.26.10
+urllib3==1.26.11
     # via requests
 uvicorn==0.18.2
     # via forml (setup.py)
-virtualenv==20.15.1
+virtualenv==20.16.2
     # via pre-commit
 webencodings==0.5.1
     # via
@@ -433,7 +434,7 @@ webencodings==0.5.1
     #   tinycss2
 websocket-client==1.3.3
     # via docker
-werkzeug==2.1.2
+werkzeug==2.2.1
     # via flask
 wheel==0.37.1
     # via pip-tools

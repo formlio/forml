@@ -543,23 +543,79 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
             Sequence of ``dsl.Element`` instances.
         """
 
-    def join(
-        self,
-        other: 'dsl.Origin',
-        condition: typing.Optional['dsl.Predicate'] = None,
-        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
-    ) -> 'dsl.Join':
-        """Join with another datasource.
+    def inner_join(self, other: 'dsl.Origin', condition: 'dsl.Predicate') -> 'dsl.Join':
+        """Construct an *inner* join with the other *origin* using the provided *condition*.
 
         Args:
             other: Source to join with.
             condition: Feature expression as the join condition.
-            kind: Type of the join operation (``INNER``, ``LEFT``, ``RIGHT``, ``FULL``, ``CROSS``).
 
         Returns:
             Join instance.
+
+        Examples:
+            >>> barbaz = foo.Bar.inner_join(foo.Baz, foo.Bar.baz == foo.Baz.id)
         """
-        return Join(self, other, condition, kind)
+        return Join(self, other, Join.Kind.INNER, condition)
+
+    def left_join(self, other: 'dsl.Origin', condition: 'dsl.Predicate') -> 'dsl.Join':
+        """Construct a *left* join with the other *origin* using the provided *condition*.
+
+        Args:
+            other: Source to join with.
+            condition: Feature expression as the join condition.
+
+        Returns:
+            Join instance.
+
+        Examples:
+            >>> barbaz = foo.Bar.left_join(foo.Baz, foo.Bar.baz == foo.Baz.id)
+        """
+        return Join(self, other, Join.Kind.LEFT, condition)
+
+    def right_join(self, other: 'dsl.Origin', condition: 'dsl.Predicate') -> 'dsl.Join':
+        """Construct a *right* join with the other *origin* using the provided *condition*.
+
+        Args:
+            other: Source to join with.
+            condition: Feature expression as the join condition.
+
+        Returns:
+            Join instance.
+
+        Examples:
+            >>> barbaz = foo.Bar.right_join(foo.Baz, foo.Bar.baz == foo.Baz.id)
+        """
+        return Join(self, other, Join.Kind.RIGHT, condition)
+
+    def full_join(self, other: 'dsl.Origin', condition: 'dsl.Predicate') -> 'dsl.Join':
+        """Construct a *full* join with the other *origin* using the provided *condition*.
+
+        Args:
+            other: Source to join with.
+            condition: Feature expression as the join condition.
+
+        Returns:
+            Join instance.
+
+        Examples:
+            >>> barbaz = foo.Bar.full_join(foo.Baz, foo.Bar.baz == foo.Baz.id)
+        """
+        return Join(self, other, Join.Kind.FULL, condition)
+
+    def cross_join(self, other: 'dsl.Origin') -> 'dsl.Join':
+        """Construct a *cross* join with the other *origin*.
+
+        Args:
+            other: Source to join with.
+
+        Returns:
+            Join instance.
+
+        Examples:
+            >>> barbaz = foo.Bar.cross_join(foo.Baz)
+        """
+        return Join(self, other, kind=Join.Kind.CROSS)
 
 
 class Join(Origin):
@@ -587,31 +643,35 @@ class Join(Origin):
     """Left side of the join operation."""
     right: 'dsl.Origin' = property(operator.itemgetter(1))
     """Right side of the join operation."""
-    condition: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
+    kind: 'dsl.Join.Kind' = property(operator.itemgetter(2))
+    """Join type."""
+    condition: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(3))
     """Join condition (invalid for *CROSS*-join)."""
-    kind: 'dsl.Join.Kind' = property(operator.itemgetter(3))
-    """Join type (defaults to *CROSS* if *condition* is not provided or *INNER* otherwise)."""
 
     def __new__(
         cls,
         left: 'dsl.Origin',
         right: 'dsl.Origin',
+        kind: typing.Union['dsl.Join.Kind', str],
         condition: typing.Optional['dsl.Predicate'] = None,
-        kind: typing.Optional[typing.Union['dsl.Join.Kind', str]] = None,
     ):
-        """Instances are expected to be created internally via :meth:`dsl.Origin.join
-        <forml.io.dsl.Origin.join>`.
+        """Instances are expected to be created internally via:
+
+        * :meth:`dsl.Origin.inner_join() <forml.io.dsl.Origin.inner_join>`
+        * :meth:`dsl.Origin.left_join() <forml.io.dsl.Origin.left_join>`
+        * :meth:`dsl.Origin.right_join() <forml.io.dsl.Origin.right_join>`
+        * :meth:`dsl.Origin.full_join() <forml.io.dsl.Origin.full_join>`
+        * :meth:`dsl.Origin.cross_join() <forml.io.dsl.Origin.cross_join>`
         """
-        kind = cls.Kind(kind) if kind else cls.Kind.INNER if condition is not None else cls.Kind.CROSS
+        if (kind is cls.Kind.CROSS) ^ (condition is None):
+            raise _exception.GrammarError('Illegal use of condition and join type')
         if condition is not None:
-            if kind is cls.Kind.CROSS:
-                raise _exception.GrammarError('Illegal use of condition for cross-join')
             condition = series.Cumulative.ensure_notin(series.Predicate.ensure_is(condition))
             if not series.Element.dissect(condition).issubset(series.Element.dissect(*left.features, *right.features)):
                 raise _exception.GrammarError(
                     f'({condition}) not a subset of source features ({left.features}, {right.features})'
                 )
-        return super().__new__(cls, left, right, condition, kind)
+        return super().__new__(cls, left, right, kind, condition)
 
     def __repr__(self):
         return f'{repr(self.left)}{repr(self.kind)}{repr(self.right)}'

@@ -106,7 +106,7 @@ class TestParser:
         """Sources mapping fixture."""
         return types.MappingProxyType(
             {
-                dsl.Join(student_table, person_table, student_table.surname == person_table.surname): tuple(['foo']),
+                student_table.inner_join(person_table, student_table.surname == person_table.surname): tuple(['foo']),
                 person_table: tuple([person_table]),
                 student_table: tuple([student_table]),
                 school_table: tuple([school_table]),

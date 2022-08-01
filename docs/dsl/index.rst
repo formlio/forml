@@ -41,7 +41,7 @@ specifying the data profiles using the following two main constructs:
 The DSL agenda is divided into the following chapters:
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     schema
     query/index

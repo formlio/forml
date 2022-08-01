@@ -33,10 +33,10 @@ The Feed concept is based on two main principles:
    :ref:`schema catalogs <io-catalog>` to the hosted data-sources effectively matching the logical
    schemas with actual data.
 
-Content resolving takes places in scope of the :class:`DSL parsing <forml.io.dsl.parser.Visitor>`
-as part of the Reader routine simply by replacing the matched DSL :class:`Sources
-<forml.io.dsl.Source>`/:class:`Features <forml.io.dsl.Feature>` with the mapped terms declared
-already using the parser-target semantic.
+Content resolving takes places in scope of the :ref:`DSL parsing <query-parser>`
+as part of the Reader routine simply by :class:`visiting <forml.io.dsl.parser.Visitor>` and
+replacing the matched DSL :class:`Sources <forml.io.dsl.Source>`/:class:`Features
+<forml.io.dsl.Feature>` with the mapped terms declared already using the parser-target semantic.
 
 When launching the pipeline, ForML :ref:`runner <runner>` expands the Feed into one or more initial
 tasks within the assembled :ref:`workflow <workflow>` making it a native part of the final

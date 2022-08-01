@@ -28,6 +28,10 @@ Once declared, schemas can be used to formulate complex :ref:`query statements <
 most notably as formal descriptions of the :ref:`project data-source <project-source>`
 requirements.
 
+
+Schema API
+----------
+
 The schema definition API is based on the following structures:
 
 .. autoclass:: forml.io.dsl.Schema

@@ -18,37 +18,165 @@
 Syntax Reference
 ================
 
-TODO: explain SQL resemblance
+Being implemented as a *python-internal* DSL, its high-level syntax is consequently a subset of the
+native Python syntax embedding the actual :ref:`DSL API <query-design>`.
+
+Even though it is not coupled via any inherent dependency, the DSL is designed to loosely resemble
+the SQL ``SELECT`` statement syntax for its proven modelling effectiveness and its universal
+recognition as the de-facto ETL standard. The abstract descriptive role of the DSL with the
+separate runtime-specific :ref:`parsing stage <query-parser>` responsible for converting the
+generic query into arbitrary native representation still allows to integrate any :ref:`data access
+mechanisms <feed>` including non-sql based sources.
 
 
-The DSL allows to specify a rich ETL procedure of retrieving the data in any required shape or form. This can be
-achieved through the *query* API that's available on top of any :class:`dsl.Schema
-<forml.io.dsl.Schema>` object. Important feature of the query syntax is also the support for
-column `expressions`_.
+Grammar Notation
+----------------
+
+Bellow is the DSL syntax described using the BNF notation. For readability, it is not strictly
+formal - leaving some of the terminal symbols out with just a conceptual description (e.g.
+``<count>``, ``<identifier>``, ``<literal>``, etc.) or a reference to its :ref:`API class
+<query-design>` representations (e.g. ``<table>``, ``function.*``).
+
+Substantial part of the DSL is the syntax for *expression* notation which is based on an extensive
+collection of supported :ref:`functions and operators <query-functions>`.
+
+The central component of any query is some existing  :class:`dsl.Table <forml.io.dsl.Table>`
+instance defined using the :ref:`schema API <schema>` within its :ref:`schema catalog
+<io-catalog>`.
+
+The full DSL syntax is:
+
+.. code-block:: BNF
+
+    <source> ::= <origin> | <set> | <query>
+
+    <origin> ::= <table> | <reference> | <join>
+
+    <set> ::=
+        <source>.union(<source>)
+        | <source>.intersection(<source>)
+        | <source>.difference(<source>)
+
+    <query> ::=
+        <queryable>.select(<feature_list>)
+        | <queryable>.where(<predicate>)
+        | <queryable>.having(<predicate>)
+        | <queryable>.groupby(<operable_list>)
+        | <queryable>.orderby(<ordering_list>)
+        | <queryable>.limit(<count> [, <count>])
+
+    <table> ::= schema instances defined using dsl.Schema
+
+    <reference> ::= <source>.reference([<identifier>])
+
+    <join> ::=
+        <origin>.inner_join(<origin>, <predicate>)
+        | <origin>.left_join(<origin>, <predicate>)
+        | <origin>.right_join(<origin>, <predicate>)
+        | <origin>.full_join(<origin>, <predicate>)
+        | <origin>.cross_join(<origin>)
+
+    <queryable> ::= <query> | <origin>
+
+    <feature_list> ::= <feature> [, <feature_list> ]
+
+    <predicate> ::= <comparison> | <logical>
+
+    <operable_list> ::= <operable> [, <operable_list> ]
+
+    <ordering_list> ::= <ordering> [, <ordering_list> ]
+
+    <count> ::= natural number
+
+    <identifier> ::= string of letters, digits and underscores starting with a letter
+
+    <feature> ::= <operable> | <aliased>
+
+    <operable> ::= <element> | <literal> | <expression>
+
+    <ordering> ::= <operable> [, <direction>]
+
+    <aliased> ::= <feature>.alias(<identifier>)
+
+    <element> ::= <origin>.<identifier>
+
+    <literal> ::= any Python literal value
+
+    <expression> ::=
+        <aggregate>
+        | <comparison>
+        | <conversion>
+        | <datetime>
+        | <logical>
+        | <math>
+        | <window_spec>
+
+    <direction> ::= "asc" | "ascending" | "desc" | "descending"
+
+    <comparison> ::=
+        <operable> == <operable>
+        | <operable> != <operable>
+        | <operable> < <operable>
+        | <operable> <= <operable>
+        | <operable> > <operable>
+        | <operable> >= <operable>
+
+    <logical> ::=
+        <operable> & <operable>
+        | <operable> | <operable>
+        | ~ <operable>
+
+    <conversion> ::= function.Cast | ...
+
+    <datetime> ::= function.Year | ...
+
+    <math> :: =
+        <arithmetic>
+        | function.Abs
+        | function.Ceil
+        | function.Floor
+        | ...
+
+    <arithmetic> ::=
+        <operable> + <operable>
+        | <operable> - <operable>
+        | <operable> * <operable>
+        | <operable> / <operable>
+        | <operable> % <operable>
+
+    <window_spec> ::= <window>.over(<operable_list> [, <ordering_list>])
+
+    <aggregate> ::=
+        function.Count
+        | function.Avg
+        | function.Min
+        | function.Max
+        | function.Sum
+        | ...
+
+    <window> ::= <aggregate> | <ranking>
+
+    <ranking> ::= function.RowNumber | ...
 
 
-Following is the list of the query API methods:
 
-Example query might look like::
+Examples
+--------
 
-    ETL = student.join(person, student.surname == person.surname)
-            .join(school_ref, student.school == school_ref.sid)
-            .select(student.surname.alias('student'), school_ref['name'], function.Cast(student.score, kind.String()))
-            .where(student.score < 2)
-            .orderby(student.level, student.score)
-            .limit(10)
+.. code-block:: python
 
-Expressions
------------
+    from foobar.edu import schema  # our schema catalog
 
-Any schema field representing a data column can be involved in a *column expression*. All the schema field objects
-implement number native of operators, that can be used to directly form an expression. Furthermore, there are separate
-function modules that can be imported to build more complex expressions.
-
-The native operators available directly on the field instances are:
-
-+--------------+-----------------------------------------------------------+
-| Type         | Syntax                                                    |
-+==============+===========================================================+
-| Alias        | .. automethod:: forml.io.dsl.Operable.alias               |
-+--------------+-----------------------------------------------------------+
+    school_ref = schema.School.reference('bar')
+    QUERY = (
+        schema.Student.inner_join(schema.Person, schema.Student.surname == schema.Person.surname)
+        .inner_join(school_ref, schema.Student.school == school_ref.sid)
+        .select(
+            schema.Student.surname,
+            school_ref['name'].alias('school'),
+            function.Cast(schema.Student.score, dsl.Integer()).alias('score'),
+        )
+        .where(schema.Student.score > 0)
+        .orderby(schema.Student.updated, schema.Student['surname'])
+        .limit(10)
+    )

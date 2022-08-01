@@ -43,13 +43,13 @@ repos:
     name: Black
     args: [--config=pyproject.toml]
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.37.1
+  rev: v2.37.3
   hooks:
     - id: pyupgrade
       name: Python syntax upgrade
       args: [--py39-plus]
 - repo: https://github.com/hadialqattan/pycln
-  rev: v2.0.2
+  rev: v2.1.1
   hooks:
   - id: pycln
     name: Remove unused import statements
@@ -70,7 +70,7 @@ repos:
     types: [python]
     args: [--rcfile=.pylintrc]
 - repo: https://github.com/PyCQA/flake8
-  rev: 4.0.1
+  rev: 5.0.2
   hooks:
   - id: flake8
     name: Flake8

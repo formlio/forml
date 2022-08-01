@@ -27,8 +27,8 @@ from tests import helloworld as schema
 
 school_ref = schema.School.reference('bar')
 QUERY = (
-    schema.Student.join(schema.Person, schema.Student.surname == schema.Person.surname)
-    .join(school_ref, schema.Student.school == school_ref.sid)
+    schema.Student.inner_join(schema.Person, schema.Student.surname == schema.Person.surname)
+    .inner_join(school_ref, schema.Student.school == school_ref.sid)
     .select(
         schema.Student.surname,  # pylint: disable=no-member
         school_ref['name'].alias('school'),

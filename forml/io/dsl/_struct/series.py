@@ -937,7 +937,16 @@ class Cumulative(Expression, metaclass=abc.ABCMeta):
 
 
 class Window(Cumulative):
-    """Window type feature representation."""
+    """Window function wrapper feature representation.
+
+    See Also:
+        Supported window functions are available in the :ref:`window module
+        <query-functions-window>`.
+
+    Todo:
+        Support for window expressions is experimental and unlikely to be supported by the existing
+        parsers.
+    """
 
     function: 'dsl.Window.Function' = property(opermod.itemgetter(0))
     partition: tuple['dsl.Operable'] = property(opermod.itemgetter(1))
@@ -955,21 +964,22 @@ class Window(Cumulative):
             GROUPS = 'groups'
             RANGE = 'range'
 
-    class Function:
-        """Window function representation."""
+    class Function(abc.ABC):
+        """Window function representation mixin."""
+
+        @property
+        @abc.abstractmethod
+        def kind(self) -> 'dsl.Any':
+            """Function return type.
+
+            Returns:
+                Type.
+            """
 
         def over(
             self,
             partition: typing.Sequence['dsl.Operable'],
-            ordering: typing.Optional[
-                typing.Sequence[
-                    typing.Union[
-                        Operable,
-                        typing.Union['Ordering.Direction', str],
-                        tuple['dsl.Operable', typing.Union['Ordering.Direction', str]],
-                    ]
-                ]
-            ] = None,
+            ordering: typing.Optional[typing.Sequence['dsl.Ordering.Term']] = None,
             frame: typing.Optional = None,
         ) -> 'dsl.Window':
             """Create a window using this function.
@@ -988,18 +998,13 @@ class Window(Cumulative):
         cls,
         function: 'dsl.Window.Function',
         partition: typing.Sequence['dsl.Feature'],
-        ordering: typing.Optional[
-            typing.Sequence[
-                typing.Union[
-                    'dsl.Operable',
-                    typing.Union['dsl.Ordering.Direction', str],
-                    tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
-                ]
-            ]
-        ] = None,
+        ordering: typing.Optional[typing.Sequence['dsl.Ordering.Term']] = None,
         frame: typing.Optional = None,
     ):
-        return super().__new__(cls, function, tuple(partition), Ordering.make(ordering or []), frame)
+        """Instances are expected to be created internally via :meth:`dsl.Window.Function.over()
+        <forml.io.dsl.Window.Function.over>`.
+        """
+        return super().__new__(cls, function, tuple(partition), Ordering.make(*(ordering or [])), frame)
 
     @property
     def kind(self) -> 'dsl.Any':

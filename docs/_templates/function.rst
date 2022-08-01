@@ -14,6 +14,8 @@
     under the License.
 
 {% set category = name.strip('_') %}
+.. _query-functions-{{category}}:
+
 {{ category | title | escape | underline}}
 
 .. automodule:: {{ fullname }}
