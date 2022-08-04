@@ -78,6 +78,11 @@ class Node(metaclass=abc.ABCMeta):
     """Abstract primitive task graph node."""
 
     def __init__(self, szin: int, szout: int):
+        """
+        Args:
+            szin: Number of input *Apply* ports.
+            szout: Number of output *Apply* ports.
+        """
         if min(szin, szout) < 0 or szin == szout == 0:
             raise ValueError('Invalid node shape')
         self.szin: int = szin
@@ -191,6 +196,10 @@ class Worker(Node):
         """Container for holding all forked workers."""
 
         def __init__(self, builder: 'flow.Builder'):
+            """
+            Args:
+                builder: Actor builder instance.
+            """
             super().__init__()
             self.builder: 'flow.Builder' = builder
             self.uid: uuid.UUID = uuid.uuid4()
@@ -199,14 +208,33 @@ class Worker(Node):
             return f'{self.builder}[uid={self.uid}]'
 
     @typing.overload
-    def __init__(self, group_or_builder: 'flow.Builder', /, szin: int, szout: int):
-        """Constructor for a new independent worker."""
+    def __init__(self, builder: 'flow.Builder', /, szin: int, szout: int):
+        """Constructor for a new independent worker.
+
+        Args:
+            builder: Actor builder instance.
+            szin: Number of input *Apply* ports.
+            szout: Number of output *Apply* ports.
+        """
 
     @typing.overload
-    def __init__(self, group_or_builder: Group, /, szin: int, szout: int):
-        """Constructor for a new worker belonging to the given group."""
+    def __init__(self, group: 'flow.Worker.Group', /, szin: int, szout: int):
+        """Constructor for a new worker belonging to the same group (sharing their state).
+
+        Args:
+            group: Worker group container.
+            szin: Number of input *Apply* ports.
+            szout: Number of output *Apply* ports.
+        """
 
     def __init__(self, group_or_builder, /, szin, szout):
+        """
+        Args:
+            builder: Actor builder instance.
+            group: Worker group container.
+            szin: Number of input *Apply* ports.
+            szout: Number of output *Apply* ports.
+        """
         super().__init__(szin, szout)
         self._group: Worker.Group = (
             group_or_builder if isinstance(group_or_builder, Worker.Group) else self.Group(group_or_builder)
@@ -345,8 +373,8 @@ class Worker(Node):
 
 
 class Future(Node):
-    """Fake transparent apply port node that can be used as a lazy publisher/subscriber that disappears
-    from the chain once it gets connected to another apply node(s).
+    """Fake transparent *Apply* port node that can be used as a lazy publisher/subscriber that
+    disappears from the chain once it gets connected to another apply node(s).
     """
 
     class PubSub(port.PubSub):

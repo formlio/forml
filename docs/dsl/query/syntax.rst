@@ -33,14 +33,14 @@ Grammar Notation
 ----------------
 
 Bellow is the DSL syntax described using the BNF notation. For readability, it is not strictly
-formal - leaving some of the terminal symbols out with just a conceptual description (e.g.
-``<count>``, ``<identifier>``, ``<literal>``, etc.) or a reference to its :ref:`API class
+formal - leaving some of the terminal symbols out with just their conceptual descriptions (e.g.
+``<count>``, ``<identifier>``, ``<literal>``, etc.) or references to their :ref:`API class
 <query-design>` representations (e.g. ``<table>``, ``function.*``).
 
 Substantial part of the DSL is the syntax for *expression* notation which is based on an extensive
 collection of supported :ref:`functions and operators <query-functions>`.
 
-The central component of any query is some existing  :class:`dsl.Table <forml.io.dsl.Table>`
+The central component of any query is an existing  :class:`dsl.Table <forml.io.dsl.Table>`
 instance defined using the :ref:`schema API <schema>` within its :ref:`schema catalog
 <io-catalog>`.
 
@@ -169,7 +169,8 @@ Examples
 
     school_ref = schema.School.reference('bar')
     QUERY = (
-        schema.Student.inner_join(schema.Person, schema.Student.surname == schema.Person.surname)
+        schema.Student
+        .inner_join(schema.Person, schema.Student.surname == schema.Person.surname)
         .inner_join(school_ref, schema.Student.school == school_ref.sid)
         .select(
             schema.Student.surname,

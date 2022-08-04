@@ -102,13 +102,14 @@ _target_blacklist = {
         r'^conf\.Feed',
         r'^dsl\.Operable',
         r'^dsl\.Ordering\.(?:Direction|Term)',
+        r'flow\.(?:Features|Labels|Result)',
         r'^io\.(?:Consumer|Producer)',
         r'^layout\.(?:ColumnMajor|RowMajor|Native)',
         'pandas.core.generic.NDFrame',
         r'^parser\.(?:Source|Feature|Visitor)',
         'sqlalchemy.engine.interfaces.Connectable',
     ),
-    'py:.*': (r'(?:forml|asset|flow|project)\..*',),
+    'py:.*': (r'(?:forml|asset|project)\..*',),
 }
 nitpick_ignore_regex = [(k, v) for k, t in _target_blacklist.items() for v in t]
 

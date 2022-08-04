@@ -30,11 +30,10 @@ import typing
 
 from sklearn import base as sklbase
 
-from forml import flow
-
 from . import _actor, _operator
 
 if typing.TYPE_CHECKING:
+    from forml import flow
     from forml.pipeline import wrap
 
 LOGGER = logging.getLogger(__name__)
@@ -47,7 +46,7 @@ Class = typing.TypeVar('Class', bound=type)
 class Auto(typing.Generic[Entity], abc.ABC):
     """Generic auto-wrapper base class."""
 
-    def __call__(self, entity: Entity) -> typing.Callable[..., flow.Operator]:
+    def __call__(self, entity: Entity) -> typing.Callable[..., 'flow.Operator']:
         if not self.match(entity):
             raise TypeError(f'Incompatible wrapping: {entity}')
         return self.apply(entity)
@@ -67,7 +66,7 @@ class Auto(typing.Generic[Entity], abc.ABC):
         """
 
     @abc.abstractmethod
-    def apply(self, entity: Entity) -> typing.Callable[..., flow.Operator]:
+    def apply(self, entity: Entity) -> typing.Callable[..., 'flow.Operator']:
         """Actual wrapping implementation.
 
         Args:
@@ -83,7 +82,7 @@ class AutoClass(collections.namedtuple('AutoClass', 'base, apply'), typing.Gener
     """Class-specific wrapper."""
 
     base: Class
-    apply: typing.Callable[[Class], typing.Callable[..., flow.Operator]]
+    apply: typing.Callable[[Class], typing.Callable[..., 'flow.Operator']]
 
     def __repr__(self):
         return Auto.__repr__(self)

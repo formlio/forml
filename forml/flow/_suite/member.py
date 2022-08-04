@@ -30,7 +30,7 @@ if typing.TYPE_CHECKING:
 
 
 class Composable(metaclass=abc.ABCMeta):
-    """Common base for operators and expressions."""
+    """Common interface for operators and expressions."""
 
     def __rshift__(self, right: 'flow.Composable') -> 'Compound':
         """Semantical composition construct."""
@@ -41,7 +41,8 @@ class Composable(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def compose(self, scope: 'flow.Composable') -> 'flow.Trunk':
-        """Implementation of the internal task graph and its composition with the preceding part of the expression.
+        """Implementation of the internal task graph and its composition with the preceding part of
+        the expression.
 
         Args:
             scope: Preceding part of the expression that this operator is supposed to compose with.
@@ -52,10 +53,12 @@ class Composable(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def expand(self) -> 'flow.Trunk':
-        """Compose this instance and the entire preceding part of the expression and return the resulting trunk.
+        """Compose this instance and the entire preceding part of the expression and return the
+        resulting trunk.
 
-        This is typically called by a downstream operator (*right* side of the expression) within its ``.compose()``
-        method where this is passed as part of the *left* side of the expression.
+        This is typically called by a downstream operator (*right* side of the expression) within
+        its :meth:`compose` method where this is passed as part of the *left* side of the
+        expression.
 
         Returns:
             Trunk instance representing the composed task graph.

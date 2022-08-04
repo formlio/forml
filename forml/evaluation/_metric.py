@@ -31,49 +31,68 @@ if typing.TYPE_CHECKING:
 
 
 class Function(_api.Metric):
-    """Basic metric wrapping a plain scoring function."""
+    """Basic metric implementation wrapping a plain scoring function.
+
+    Caution:
+        As with any ForML task, the implementor is responsible for engaging function that is
+        compatible with the particular :ref:`payload <io-payload>`.
+
+    Examples:
+        >>> LOG_LOSS = evaluation.Function(sklearn.metrics.log_loss)
+        >>> ACCURACY = evaluation.Function(
+        ...     lambda t, p: sklearn.metrics.accuracy_score(t, numpy.round(p))
+        ... )
+    """
 
     def __init__(
         self,
         metric: typing.Callable[[typing.Any, typing.Any], float],
         reducer: typing.Callable[..., float] = lambda *m: statistics.mean(m),  # noqa: B008
     ):
+        """__init__(metric: Callable[[typing.Any, typing.Any], float], reducer: Callable[..., float] = mean)
+
+        Args:
+            metric: Actual metric function implementation.
+            reducer: Callable to reduce individual metric *partitions* into a single final value.
+                     It must accept as many positional arguments as many outcome partitions there
+                     are. The default reducer is the :func:`python:statistics.mean`.
+        """
         self._metric: flow.Builder = payload.Apply.builder(function=metric)
         self._reducer: flow.Builder = payload.Apply.builder(function=reducer)
 
     def score(self, *outcomes: 'evaluation.Outcome') -> flow.Worker:
-        def apply(fold: 'evaluation.Outcome') -> flow.Worker:
-            """Score the given outcome fold.
+        def apply(partition: 'evaluation.Outcome') -> flow.Worker:
+            """Score the given outcome partition.
 
             Args:
-                fold: Outcome to be scored.
+                partition: Outcome to be scored.
 
             Returns:
-                Worker node implementing the scoring for this fold.
+                Worker node implementing the scoring for this partition.
             """
             worker = flow.Worker(self._metric, 2, 1)
-            worker[0].subscribe(fold.true)
-            worker[1].subscribe(fold.pred)
+            worker[0].subscribe(partition.true)
+            worker[1].subscribe(partition.pred)
             return worker
 
-        def merge(reducer: flow.Worker, fold: flow.Worker, index: int) -> flow.Worker:
-            """Merge the given fold using the provided reducer under the given fold index.
+        def merge(reducer: flow.Worker, partition: flow.Worker, index: int) -> flow.Worker:
+            """Merge the given partition using the provided reducer under the given partition index.
 
             Args:
                 reducer: Reducer worker flow.
-                fold: Fold worker flow.
-                index: Fold index.
+                partition: Partition worker flow.
+                index: Partition index.
 
             Returns:
                 Reducer worker flow.
             """
-            reducer[index].subscribe(fold[0])
+            reducer[index].subscribe(partition[0])
             return reducer
 
         assert outcomes, 'Expecting outcomes.'
         result = apply(outcomes[0])
-        if (fold_count := len(outcomes)) > 1:
-            result = merge(flow.Worker(self._reducer, fold_count, 1), result, 0)
+        if (partition_count := len(outcomes)) > 1:
+            result = merge(flow.Worker(self._reducer, partition_count, 1), result, 0)
             for idx, out in enumerate(outcomes[1:], start=1):
                 merge(result, apply(out), idx)
         return result

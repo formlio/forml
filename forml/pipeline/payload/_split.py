@@ -29,8 +29,10 @@ from forml import flow
 
 from . import _convert
 
-LOGGER = logging.getLogger(__name__)
+if typing.TYPE_CHECKING:
+    from forml.pipeline import payload
 
+LOGGER = logging.getLogger(__name__)
 
 Column = typing.TypeVar('Column')
 
@@ -91,14 +93,15 @@ class CVFoldable(
 
     The splits are provided in a range of output ports where a given fold with index i is delivered
     via ports:
-      * [2 * i]: trainset
-      * [2 * i + 1]: testset
+
+    * [2 * i]: trainset
+    * [2 * i + 1]: testset
     """
 
     def __init__(
         self,
-        crossvalidator: CrossValidable[flow.Features, flow.Labels, Column],
-        groups_extractor: typing.Optional[typing.Callable[[flow.Features], Column]] = None,
+        crossvalidator: 'payload.CrossValidable[flow.Features, flow.Labels, Column]',
+        groups_extractor: typing.Optional[typing.Callable[['flow.Features'], Column]] = None,
     ):
         self._crossvalidator: CrossValidable[flow.Features, flow.Labels, Column] = crossvalidator
         self._groups_extractor: typing.Optional[typing.Callable[[flow.Features], Column]] = groups_extractor

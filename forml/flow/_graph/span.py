@@ -60,8 +60,8 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
     def subscribers(
         self, *extras: 'flow.Node', mask: typing.Optional[typing.Callable[['flow.Node'], bool]] = None
     ) -> typing.Iterator['Traversal']:
-        """Utility for retrieving set of node subscribers with optional mask and list of potential Futures (that are not
-        subscribed directly).
+        """Utility for retrieving set of node subscribers with optional mask and list of potential
+        Futures (that are not subscribed directly).
 
         Args:
             *extras: Future nodes that might be subscribed to this publisher.
@@ -93,7 +93,8 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
         return self.subscribers(*extras, mask=lambda n: not isinstance(n, atomic.Worker) or not n.trained)
 
     def tail(self, expected: typing.Optional['flow.Node'] = None) -> 'Traversal':
-        """Recursive traversing all mapper subscription segments down to the tail mapper checking there is just one.
+        """Recursive traversing all mapper subscription segments down to the tail mapper checking
+        there is just one.
 
         Args:
             expected: Optional indication of the expected tail - it's an error if not found.
@@ -173,8 +174,9 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
     def copy(self, tail: 'flow.Node') -> typing.Mapping['flow.Node', 'flow.Node']:
         """Make a copy of the *apply-mode* topology.
 
-        Any trained nodes as well as nodes outside the segment are ignored (only the direct branch is copied ignoring
-        all sink branches). Copied nodes remain members of the same worker groups.
+        Any trained nodes as well as nodes outside the segment are ignored (only the direct branch
+        is copied ignoring all sink branches). Copied nodes remain members of the same worker
+        groups.
 
         Args:
             tail: Last node to copy.
@@ -213,10 +215,11 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
 class Segment(tuple):
     """Representing acyclic (sub)graph between two apply-mode nodes.
 
-    Each of the two boundary nodes must be externally facing with just *single port* (``.head`` node having single
-    input port and ``.tail`` node having single output port).
+    Each of the two boundary nodes must be externally facing with just *single port* (``.head``
+    node having single input port and ``.tail`` node having single output port).
 
-    The ``tail`` node (if provided) must be reachable from the ``head`` node via the existing connections.
+    The ``tail`` node (if provided) must be reachable from the ``head`` node via the existing
+    connections.
     """
 
     _head: 'flow.Node' = property(operator.itemgetter(0))
@@ -259,11 +262,12 @@ class Segment(tuple):
         right: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
         tail: typing.Optional['flow.Node'] = None,
     ) -> 'flow.Segment':
-        """Create new segment by appending right head to our tail or retracing this segment up to its physical or
-        explicit tail.
+        """Create new segment by appending right head to our tail or retracing this segment up to
+        its physical or explicit tail.
 
         Args:
-            right: Optional segment to extend with (retracing to the physical or explicit tail if not provided).
+            right: Optional segment to extend with (retracing to the physical or explicit tail if
+                   not provided).
             tail: Optional tail as a segment exit node.
 
         Returns:
@@ -281,7 +285,8 @@ class Segment(tuple):
         return Segment(self._head, tail)
 
     def copy(self) -> 'flow.Segment':
-        """Make a copy of the *apply-mode* topology within this segment (all trained nodes are ignored).
+        """Make a copy of the *apply-mode* topology within this segment (all trained nodes are
+        ignored).
 
         Copied nodes remain members of the same worker groups.
 
@@ -326,7 +331,8 @@ class Segment(tuple):
         All segments must be related.
 
         Args:
-            first: Segment to start with (syntax to enforce passing at least one segment as an argument).
+            first: Segment to start with (syntax to enforce passing at least one segment as an
+                   argument).
             others: Remaining args of segments from which the root should be selected.
         Returns:
             Root segment that all the others follow from.

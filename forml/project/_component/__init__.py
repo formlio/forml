@@ -30,14 +30,14 @@ import types
 import typing
 
 import forml
-from forml import evaluation, flow
+from forml import flow
 from forml.io import dsl, layout
 
 from .. import _body, _importer
 from .._component import virtual
 
 if typing.TYPE_CHECKING:
-    from forml import project
+    from forml import evaluation, project
 
 LOGGER = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class Source(typing.NamedTuple):
     workflow.
 
     Attention:
-        Instances are supposed to be created using the ``.query()`` method rather than calling the
+        Instances are supposed to be created using the :meth:`query` method rather than calling the
         constructor directly.
     """
 
@@ -73,7 +73,7 @@ class Source(typing.NamedTuple):
     """A DSL query to be performed by the eventual platform Feed representing the *extraction*
     part of the ETL process. The value is assembled directly from the parameters of the ``.query()``
     method."""
-    transform: typing.Optional[flow.Composable] = None
+    transform: typing.Optional['flow.Composable'] = None
     """A workflow to be expanded into a regular task graph representing the optional
     *transformation* part of the ETL process. The value is accrued from (potentially repeated)
     chaining of the Source instance with workflow *operators* using the ``>>`` composition-like
@@ -153,10 +153,10 @@ class Source(typing.NamedTuple):
         """
         return cls(cls.Extract(features, apply or features, labels, ordinal))  # pylint: disable=no-member
 
-    def __rshift__(self, transform: flow.Composable) -> 'project.Source':
+    def __rshift__(self, transform: 'flow.Composable') -> 'project.Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)
 
-    def bind(self, pipeline: typing.Union[str, flow.Composable], **modules: typing.Any) -> 'project.Artifact':
+    def bind(self, pipeline: typing.Union[str, 'flow.Composable'], **modules: typing.Any) -> 'project.Artifact':
         """Create a virtual *project handle* from this *Source* and the given *pipeline* component.
 
         The typical use-case is :doc:`interactive <interactive>` execution.
@@ -179,13 +179,25 @@ class Source(typing.NamedTuple):
 
 
 class Evaluation(typing.NamedTuple):
-    """Evaluation component."""
+    """Evaluation component descriptor representing the evaluation configuration.
 
-    metric: evaluation.Metric
-    """Loss/Score function."""
+    Args:
+        metric: Loss/Score function to be used to quantify the prediction quality.
+        method: Strategy for generating data for the development train-test evaluation (e.g.
+                *holdout* or *cross-validation*, etc).
 
-    method: evaluation.Method
-    """Strategy for generation validation data - ie holdout, cross-validation etc."""
+    Examples:
+        >>> EVALUATION = project.Evaluation(
+        ...     evaluation.Function(sklearn.metrics.log_loss),
+        ...     evaluation.HoldOut(test_size=0.2, stratify=True, random_state=42),
+        ... )
+    """
+
+    metric: 'evaluation.Metric'
+    """Loss/Score function to be used to quantify the prediction quality."""
+
+    method: 'evaluation.Method'
+    """Strategy for generating data for the development train-test evaluation. """
 
 
 class Virtual:

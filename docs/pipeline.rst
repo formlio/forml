@@ -25,3 +25,7 @@ Pipeline Library
     forml.pipeline.ensemble
     forml.pipeline.payload
     forml.pipeline.wrap
+
+
+.. autoclass:: forml.pipeline.payload.CrossValidable
+.. autoclass:: forml.pipeline.payload.CVFoldable

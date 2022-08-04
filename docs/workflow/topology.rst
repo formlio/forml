@@ -32,13 +32,18 @@ Task Graph Primitives
 
 While the actual unit of work - the vertex in the runtime DAG - is a *task* provided as the
 :ref:`Actor <actor>` implementation, its logical representation used by ForML internally is the
-abstract ``flow.Node`` structure and its subtype ``flow.Worker`` in particular.
+abstract ``flow.Node`` structure and its subtype ``flow.Worker`` in particular:
+
+.. autoclass:: forml.flow.Node
+.. autoclass:: forml.flow.Worker
+
 
 Creating a Worker
 ^^^^^^^^^^^^^^^^^
 
 Worker node gets created simply by providing a :class:`flow.Builder <forml.flow.Builder>` and the
 required number of the input and output (apply) ports:
+
 
 .. code-block:: python
     :linenos:
@@ -105,9 +110,9 @@ object.
     Any input port can be subscribed to at most one upstream output port but any output port can
     be publishing to multiple subscribed input ports. Actor cannot subscribe to itself.
 
-The key method of the ``flow.PubSub`` is the ``.subscribe()``:
-
-.. automethod:: forml.flow.PubSub.subscribe
+.. autoclass:: forml.flow.PubSub
+   :members: subscribe
+.. autoclass:: forml.flow.Publishable
 
 
 Now, with that connections between our nodes, the topology looks shown:
@@ -137,6 +142,8 @@ Training and applying even the same worker are two distinct tasks, hence they ne
 represented using two related but separate worker nodes. ForML transparently manages these
 related workers using a ``flow.Worker.Group`` instance. All workers in the same *group* have the
 same shape and share the same :class:`actor builder <forml.flow.Builder>` instance.
+
+.. autoclass:: forml.flow.Worker.Group
 
 Based on the group membership (and the general context), ForML automatically handles the runtime
 state management between the different modes of the same actor (the :ref:`State ports
@@ -188,6 +195,9 @@ the real connected worker-to-be is not know yet (e.g. when implementing an
 :ref:`operator <operator>` which doesn't know what up/down stream workers will it be eventually
 composed with). When connected to a real worker, the Future node will automatically collapse and
 disappear from the topology.
+
+.. autoclass:: forml.flow.Future
+
 
 The following example demonstrates the effect when using the *Future* nodes:
 

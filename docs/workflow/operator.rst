@@ -29,9 +29,9 @@ be independent of the actual data types and formats as they deal purely with the
 Therefore, many operators can be shared as library components turning advanced techniques into
 reusable commodity-like modules (see the ensembler).
 
-Built upon the *pipeline mode duality principle*, operators always deliver the related task graphs
-for both of the *train* and *predict* modes together. That's how ForML enforces the train-predict
-integrity at every step of the workflow.
+Built upon the :ref:`pipeline mode duality principle <workflow-mode>`, operators always deliver
+the related task graphs for both of the *train* and *predict* modes together. That's how ForML
+enforces the train-predict integrity at every step of the workflow.
 
 The operator layer also happens to be the ideal stage for carrying out unit testing. For this
 purpose, ForML provides a complete :ref:`operator unit testing framework <testing>`.
@@ -44,28 +44,31 @@ Operators can implement whatever complex functionality based on any number of ac
 using the :ref:`logical topology structures <topology-logical>` to define the internal task
 graph and its composition with the preceding operators.
 
-The base abstract class for implementing operators is the ``flow.Operator``:
+The base abstraction for implementing operators is the ``flow.Composable`` interface and the
+main ``flow.Operator`` base class:
 
-.. autoclass:: forml.flow.Operator
+.. autoclass:: forml.flow.Composable
    :members: compose, expand
 
+.. autoclass:: forml.flow.Operator
+   :show-inheritance:
 
 Let's explain the operator development process by implementing a typical *Stateful Mapper*
 operator. Conceptually, this operator works as follows:
 
 #. in train-mode:
 
-   #. it first gets *trained* (*Task 1* - ``.train()``) using the train features (via *Train*
-      port) and labels (via *Label* port)
-   #. then, using the state acquired during the training task, it *maps* (*Task 2* - ``.apply()``)
-      the *train features* (via *Apply input* port) producing the transformed output (via
-      *Apply output* port)
+   #. it first gets *trained* (*Task 1* - :meth:`.train() <forml.flow.Actor.train>`) using the
+      train features (via *Train* port) and labels (via *Label* port)
+   #. then, using the state acquired during the training task, it *maps* (*Task 2* -
+      :meth:`.apply() <forml.flow.Actor.apply>`) the *train features* (via *Apply input* port)
+      producing the transformed output (via *Apply output* port)
 
 #. in apply-mode:
 
-   #. again, using the state acquired during the training task, it *maps* (*Task 3* - ``.apply()``)
-      this time the *apply features* (via *Apply input* port) producing the transformed output
-      (via *Apply output* port)
+   #. again, using the state acquired during the training task, it *maps* (*Task 3* -
+      :meth:`.apply() <forml.flow.Actor.apply>`) this time the *apply features* (via *Apply
+      input* port) producing the transformed output (via *Apply output* port)
 
 The following diagram outlines the flows:
 
@@ -93,8 +96,9 @@ The following diagram outlines the flows:
 The segment between the ``A`` head/tail nodes represents the apply-mode task graph, while the
 segment between the ``T`` (+ ``L``) nodes represents the train-mode task graph.
 
-Proceeding to the actual implementation, we simply extend the ``flow.Operator`` class and provide
-the ``.compose()`` method:
+Proceeding to the actual implementation, we simply extend the :class:`flow.Operator
+<forml.flow.Operator>` class and provide the :meth:`.compose() <forml.flow.Composable.compose>`
+method:
 
 .. code-block:: python
     :linenos:
@@ -210,7 +214,6 @@ Custom actors can be turned into operators easily by wrapping within the provide
 ``wrap.Operator.*`` decorators:
 
 .. autoclass:: forml.pipeline.wrap.Operator
-
 
 .. _operator-autowrap:
 

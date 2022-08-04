@@ -28,13 +28,13 @@ if typing.TYPE_CHECKING:
     from forml import evaluation
 
 
-class ApplyScore(flow.Operator):
-    """Production performance evaluation result value operator.
+class PerfTrackScore(flow.Operator):
+    """Production performance tracking evaluation result value operator.
 
     This assumes pre-existing state of the pipeline trained previously.
 
-    Only the train segment of the composed trunk is expected to be used (apply segment still needs to present all
-    persistent nodes so that the states can be loaded).
+    Only the train segment of the composed trunk is expected to be used (apply segment still needs
+    to present all persistent nodes so that the states can be loaded).
     """
 
     def __init__(self, metric: 'evaluation.Metric'):
@@ -49,7 +49,7 @@ class ApplyScore(flow.Operator):
         return head.use(train=head.train.extend(tail=value))
 
 
-class TrainScore(flow.Operator):
+class TrainTestScore(flow.Operator):
     """Development out-of-sample evaluation (backtesting) result value operator.
 
     This assumes no pre-existing state - pipeline is trained in scope of the evaluation.

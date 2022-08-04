@@ -90,24 +90,28 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         """
         raise forml.MissingError('Not yet supported')
 
-    def train_eval(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
-        """Run the development mode (backtesting) evaluation (based on training model from scratch).
+    def eval_traintest(
+        self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
+    ) -> None:
+        """Run the development mode (backtesting) evaluation (training the model from scratch).
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._eval(lower, upper, lambda s: evaluation.TrainScore(s.metric, s.method))
+        composition = self._eval(lower, upper, lambda s: evaluation.TrainTestScore(s.metric, s.method))
         self._exec(composition.train)
 
-    def apply_eval(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
-        """Run the production mode evaluation (predictions of already trained model).
+    def eval_perftrack(
+        self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
+    ) -> None:
+        """Run the production performance tracking evaluation (predictions of an existing model).
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._eval(lower, upper, lambda s: evaluation.ApplyScore(s.metric))
+        composition = self._eval(lower, upper, lambda s: evaluation.PerfTrackScore(s.metric))
         self._exec(composition.train, self._instance.state(composition.persistent))
 
     def _eval(

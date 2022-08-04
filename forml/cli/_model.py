@@ -179,7 +179,7 @@ def evaluate(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Evaluate predictions of the given (or default) generation."""
-    scope.launcher(project, release, generation).apply_eval(lower, upper)
+    scope.launcher(project, release, generation).eval_perftrack(lower, upper)
 
 
 @group.command(name='list')

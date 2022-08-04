@@ -131,22 +131,22 @@ class Launcher:
         return self(self._assets.project.source.extract.apply, self._sink.apply).apply
 
     @property
-    def train_eval(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def eval_traintest(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
         """Return the eval handler.
 
         Returns:
             Eval runner.
         """
-        return self(self._assets.project.source.extract.train, self._sink.eval).train_eval
+        return self(self._assets.project.source.extract.train, self._sink.eval).eval_traintest
 
     @property
-    def apply_eval(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def eval_perftrack(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
         """Return the eval handler.
 
         Returns:
             Eval runner.
         """
-        return self(self._assets.project.source.extract.train, self._sink.eval).apply_eval
+        return self(self._assets.project.source.extract.train, self._sink.eval).eval_perftrack
 
     @property
     def tune(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:

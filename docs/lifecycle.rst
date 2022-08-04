@@ -33,7 +33,7 @@ Iteration Accomplishment
 
 The ultimate milestone of each of the lifecycles is the point of producing (a new instance of)
 the particular :ref:`runtime artifacts <registry-artifacts>`. This concludes the given iteration
-and the process can start over and/or transit between the two lifecycles back and forth.
+and the process can start over and/or transition between the two lifecycles back and forth.
 
 .. _lifecycle-generation:
 
@@ -235,7 +235,7 @@ Example:
 Evaluate
 """"""""
 
-Perform the :ref:`production performance evaluation <evaluation-prod>` based on the
+Perform the :ref:`production performance evaluation <evaluation-perftrack>` based on the
 :ref:`evaluation.py component <project-evaluation>` and report the metrics.
 
 Example:

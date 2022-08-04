@@ -102,7 +102,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
     def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:
         """The *train* mode entry point.
 
-        Optional method engaging the *Train* (``features``) and *Label* (``label``) ports of
+        Optional method engaging the *Train* (``features``) and *Label* (``labels``) ports of
         stateful actors.
 
         Unlike with the multiple apply-mode feature ports, there can only be a single train-mode
@@ -120,7 +120,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         The *State* output port representation.
 
         The particular bytes-encoding of the returned value can be arbitrary as long as it is
-        acceptable by the companion ``.set_state()`` method.
+        acceptable by the companion :meth:`set_state` method.
 
         The default implementation is using :doc:`Python Pickle <python:library/pickle>` for
         serializing the entire actor object.
@@ -159,7 +159,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         The *Params* output port representation.
 
         All the values returned by this method must be acceptable by the companion
-        ``.set_params()``.
+        :meth:`set_params`.
 
         The default implementation return empty mapping.
 

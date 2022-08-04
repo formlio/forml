@@ -122,7 +122,7 @@ class Virtual:
 
         train = property(lambda self: self().train)
         apply = property(lambda self: self.Return(self, _pad.Launcher.apply.fget))
-        eval = property(lambda self: self.Return(self, _pad.Launcher.train_eval.fget))
+        eval = property(lambda self: self.Return(self, _pad.Launcher.eval_traintest.fget))
         tune = property(lambda self: self().tune)
 
         def __init__(
