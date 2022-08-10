@@ -147,6 +147,15 @@ class Feed(lazy.Feed, alias='monolite'):
     * *Inline* data provided as a row-oriented array.
     * *CSV files* parsed using the :func:`pandas:pandas.read_csv`.
 
+    Args:
+        inline: Schema mapping of datasets provided inline as native row-oriented arrays.
+        csv: Schema mapping of datasets accessible using a CSV reader. Values can either be
+             direct filesystem paths or a mapping with two keys:
+
+             * ``path`` pointing to the CSV file
+             * ``kwargs`` containing additional options to be passed to the underlying
+               :func:`pandas:pandas.read_csv`
+
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
@@ -184,16 +193,6 @@ class Feed(lazy.Feed, alias='monolite'):
             ]
         ] = None,
     ):
-        """
-        Args:
-            inline: Schema mapping of datasets provided inline as native row-oriented arrays.
-            csv: Schema mapping of datasets accessible using a CSV reader. Values can either be
-                 direct filesystem paths or a mapping with two keys:
-
-                 * ``path`` pointing to the CSV file
-                 * ``kwargs`` containing additional options to be passed to the underlying
-                   :func:`pandas:pandas.read_csv`
-        """
         origins = []
         if inline:
             origins.extend(Inline.create(inline))

@@ -43,8 +43,9 @@ LOGGER = logging.getLogger(__name__)
 class Rows(typing.NamedTuple):
     """Row limit spec container.
 
-    Instances are expected to be created internally via :meth:`dsl.Queryable.limit
-    <forml.io.dsl.Queryable.limit>`.
+    Attention:
+        Instances are expected to be created internally via :meth:`dsl.Queryable.limit
+        <forml.io.dsl.Queryable.limit>`.
     """
 
     count: int
@@ -69,9 +70,9 @@ class Source(tuple, metaclass=abc.ABCMeta):
         It guarantees consistent hashing and comparability for equality of the produced schema
         classes.
 
-        .. seealso::
-            This meta-class is used internally, see the :class:`dsl.Schema <forml.io.dsl.Schema>`
-            for schema frontend API.
+        Attention:
+            This meta-class is used internally, for schema frontend API see the :class:`dsl.Schema
+            <forml.io.dsl.Schema>`.
         """
 
         def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
@@ -370,7 +371,15 @@ class Statement(Source, metaclass=abc.ABCMeta):
 
 
 class Set(Statement):
-    """Source made of two set-combined sub-statements with the same schema."""
+    """Source made of two set-combined sub-statements with the same schema.
+
+    Attention:
+        Instances are expected to be created internally via:
+
+        * :meth:`dsl.Source.union() <forml.io.dsl.Source.union>`
+        * :meth:`dsl.Source.intersection() <forml.io.dsl.Source.intersection>`
+        * :meth:`dsl.Source.difference() <forml.io.dsl.Source.difference>`
+    """
 
     @enum.unique
     class Kind(enum.Enum):
@@ -391,12 +400,6 @@ class Set(Statement):
     """Set operation enum type."""
 
     def __new__(cls, left: 'dsl.Source', right: 'dsl.Source', kind: 'dsl.Set.Kind'):
-        """Instances are expected to be created internally via:
-
-        * :meth:`dsl.Source.union() <forml.io.dsl.Source.union>`
-        * :meth:`dsl.Source.intersection() <forml.io.dsl.Source.intersection>`
-        * :meth:`dsl.Source.difference() <forml.io.dsl.Source.difference>`
-        """
         if left.schema != right.schema:
             raise _exception.GrammarError('Incompatible sources')
         return super().__new__(cls, left.statement, right.statement, kind)
@@ -619,7 +622,17 @@ class Origin(Queryable, metaclass=abc.ABCMeta):
 
 
 class Join(Origin):
-    """Source made of two join-combined sub-sources."""
+    """Source made of two join-combined sub-sources.
+
+    Attention:
+        Instances are expected to be created internally via:
+
+        * :meth:`dsl.Origin.inner_join() <forml.io.dsl.Origin.inner_join>`
+        * :meth:`dsl.Origin.left_join() <forml.io.dsl.Origin.left_join>`
+        * :meth:`dsl.Origin.right_join() <forml.io.dsl.Origin.right_join>`
+        * :meth:`dsl.Origin.full_join() <forml.io.dsl.Origin.full_join>`
+        * :meth:`dsl.Origin.cross_join() <forml.io.dsl.Origin.cross_join>`
+    """
 
     @enum.unique
     class Kind(enum.Enum):
@@ -655,14 +668,6 @@ class Join(Origin):
         kind: typing.Union['dsl.Join.Kind', str],
         condition: typing.Optional['dsl.Predicate'] = None,
     ):
-        """Instances are expected to be created internally via:
-
-        * :meth:`dsl.Origin.inner_join() <forml.io.dsl.Origin.inner_join>`
-        * :meth:`dsl.Origin.left_join() <forml.io.dsl.Origin.left_join>`
-        * :meth:`dsl.Origin.right_join() <forml.io.dsl.Origin.right_join>`
-        * :meth:`dsl.Origin.full_join() <forml.io.dsl.Origin.full_join>`
-        * :meth:`dsl.Origin.cross_join() <forml.io.dsl.Origin.cross_join>`
-        """
         if (kind is cls.Kind.CROSS) ^ (condition is None):
             raise _exception.GrammarError('Illegal use of condition and join type')
         if condition is not None:
@@ -685,7 +690,12 @@ class Join(Origin):
 
 
 class Reference(Origin):
-    """Wrapper around any *source* associating it with a (possibly random) name."""
+    """Wrapper around any *source* associating it with a (possibly random) name.
+
+    Attention:
+        Instances are expected to be created internally via :meth:`dsl.Source.reference
+        <forml.io.dsl.Source.reference>`.
+    """
 
     _NAMELEN: int = 8
     instance: 'dsl.Source' = property(operator.itemgetter(0))
@@ -694,9 +704,6 @@ class Reference(Origin):
     """Reference name."""
 
     def __new__(cls, instance: 'dsl.Source', name: typing.Optional[str] = None):
-        """Instances are expected to be created internally via :meth:`dsl.Source.reference
-        <forml.io.dsl.Source.reference>`.
-        """
         if not name:
             name = ''.join(random.choice(string.ascii_lowercase) for _ in range(cls._NAMELEN))
         return super().__new__(cls, instance.instance, name)
@@ -724,8 +731,9 @@ class Reference(Origin):
 class Table(Origin):
     """Table based *source* with an explicit *schema*.
 
-    The primary way of creating ``Table`` instances is by inheriting the :class:`dsl.Schema
-    <forml.io.dsl.Schema>` which is using this type as a meta-class.
+    Attention:
+        The primary way of creating ``Table`` instances is by inheriting the :class:`dsl.Schema
+        <forml.io.dsl.Schema>` which is using this type as a meta-class.
     """
 
     @typing.overload
@@ -785,6 +793,9 @@ class Query(Queryable, Statement):
 
     Container for holding all the parameters supplied via the :class:`dsl.Queryable
     <forml.io.dsl.Queryable>` interface.
+
+    Attention:
+        Instances are expected to be created internally via the ``dsl.Queryable`` interface methods.
     """
 
     source: 'dsl.Source' = property(operator.itemgetter(0))
@@ -812,10 +823,6 @@ class Query(Queryable, Statement):
         ordering: typing.Optional[typing.Sequence['dsl.Ordering.Term']] = None,
         rows: typing.Optional['dsl.Rows'] = None,
     ):
-        """Instances are expected to be created internally via the ``dsl.Queryable`` interface
-        methods.
-        """
-
         def ensure_subset(*features: 'dsl.Feature') -> typing.Sequence['dsl.Feature']:
             """Ensure the provided features is a valid subset of the available source features.
 

@@ -27,6 +27,12 @@ from .._struct import series
 class Year(series.Univariate):
     """Extract the year from given date/time instance.
 
+    Args:
+        value: Date/time feature to extract the *year* value from.
+
+    Raises:
+         dsl.GrammarError: If ``value`` is not a valid date/time.
+
     Examples:
         >>> ETL = Student.select(function.Year(Student.birthday))
     """
@@ -35,12 +41,5 @@ class Year(series.Univariate):
     kind: kindmod.Any = kindmod.Integer()
 
     def __new__(cls, value: series.Operable):
-        """
-        Args:
-            value: Date/time feature to extract the *year* value from.
-
-        Raises:
-             dsl.GrammarError: If ``value`` is not a valid date/time.
-        """
         kindmod.Date.ensure(series.Operable.ensure_is(value).kind)
         return super().__new__(cls, value)

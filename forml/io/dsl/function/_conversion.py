@@ -31,6 +31,10 @@ if typing.TYPE_CHECKING:
 class Cast(series.Expression):
     """Explicitly cast value as the given :ref:`kind <dsl-kinds>`.
 
+    Args:
+        value: Value to be cast to the given type.
+        kind: Type to cast to.
+
     Examples:
         >>> ETL = Student.select(function.Cast(Student.score, dsl.Integer()))
     """
@@ -39,9 +43,4 @@ class Cast(series.Expression):
     kind: kindmod.Any = property(operator.itemgetter(1))
 
     def __new__(cls, value: 'dsl.Operable', kind: 'dsl.Any'):
-        """
-        Args:
-            value: Value to be cast to the given type.
-            kind: Type to cast to.
-        """
         return super().__new__(cls, value, kind)

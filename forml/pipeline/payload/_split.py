@@ -38,10 +38,35 @@ Column = typing.TypeVar('Column')
 
 
 class CrossValidable(typing.Protocol[flow.Features, flow.Labels, Column]):
-    """Protocol for the cross-validator implementation.
+    """Protocol for implementing the :ref:`cross-validation <sklearn:cross_validation>` splitters.
 
-    This matches for example all the SKLearn `sklearn.model_selection.BaseCrossValidator`
-    implementations.
+    This matches for example all the particular :mod:`SKLearn Splitter Classes
+    <sklearn:sklearn.model_selection>`.
+
+    Methods:
+        split(features, labels=None, groups=None, /):
+
+            Generate indices to split data into training and test set.
+
+            Args:
+               features: Train features data.
+               labels: Target data.
+               groups: Group membership vector indicating which group each record belongs to.
+
+            Returns:
+               Iterable of tuples of train/test indexes.
+
+        get_n_splits(features, labels=None, groups=None, /):
+
+            Get the number of splitting iterations in the cross-validator.
+
+            Args:
+               features: Train features data.
+               labels: Target data.
+               groups: Group membership vector indicating which group each record belongs to.
+
+            Returns:
+               Number of folds.
     """
 
     def split(
@@ -56,7 +81,7 @@ class CrossValidable(typing.Protocol[flow.Features, flow.Labels, Column]):
         Args:
             features: Train features data.
             labels: Target data.
-            groups: Group labels.
+            groups: Group membership vector indicating which group each record belongs to.
 
         Returns:
             Iterable of tuples of train/test indexes.
@@ -69,12 +94,12 @@ class CrossValidable(typing.Protocol[flow.Features, flow.Labels, Column]):
         groups: typing.Optional[Column] = None,
         /,
     ) -> int:
-        """Returns the number of splitting iterations in the cross-validator.
+        """Get the number of splitting iterations in the cross-validator.
 
         Args:
             features: Train features data.
             labels: Target data.
-            groups: Group labels.
+            groups: Group membership vector indicating which group each record belongs to.
 
         Returns:
             Number of folds.
@@ -86,16 +111,35 @@ class CVFoldable(
     flow.Actor[flow.Features, flow.Labels, typing.Sequence[flow.Features]],
     metaclass=abc.ABCMeta,
 ):
-    """Abstract n-folds splitter of train-test folds based on the provided cross-validator.
+    """Abstract actor splitting the flow in an N-fold train-test branches based on the provided
+    cross-validator.
 
     The actor keeps all the generated indices as its internal state so that it can be used
-    repeatedly for example to split data and labels independently.
+    repeatedly for example to split data and labels separately while in sync.
 
-    The splits are provided in a range of output ports where a given fold with index i is delivered
-    via ports:
+    It represents a topology of *1:2N* input/output ports. The splits are provided as a range of
+    output ports where a given fold with index ``i`` is delivered via ports:
 
-    * [2 * i]: trainset
-    * [2 * i + 1]: testset
+    * ``[2 * i]`` - *trainset*
+    * ``[2 * i + 1]`` - *testset*
+
+    Args:
+        crossvalidator: Particular generator of the cross-validation indexes to be used for the
+                        splitting.
+        groups_extractor: Optional callable to be applied to the data to extract the group
+                          membership vector.
+
+    Following is the abstract method that needs to be defined in the implementing classes:
+
+    Methods:
+        split(features, indices): Splitting implementation.
+
+            Args:
+                features: Source features to split.
+                indices: Sequence of fold indices to split by.
+
+            Returns:
+                Sequence of repeated train, test, train, test, ... sets of split fold indexes.
     """
 
     def __init__(
@@ -109,6 +153,7 @@ class CVFoldable(
 
     def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
         """Train the splitter on the provided data.
+
         Args:
             features: X table.
             labels: Y series.
@@ -165,15 +210,10 @@ class CVFoldable(
 
 
 class PandasCVFolds(CVFoldable[pandas.DataFrame, pdtype.NDFrame, pandas.Series]):
-    """Abstract n-folds splitter of train-test folds based on the provided cross-validator.
+    """Cross-validation splitter of train-test folds working with Pandas payloads.
 
-    The actor keeps all the generated indices as its internal state so that it can be used
-    repeatedly for example to split data and labels independently.
-
-    The splits are provided in a range of output ports where a given fold with index i is delivered
-    via ports:
-      * [2 * i]: trainset
-      * [2 * i + 1]: testset
+    See the :class:`payload.CVFoldable <forml.pipeline.payload.CVFoldable>` base class for more
+    details and the synopsis.
     """
 
     @_convert.pandas_params

@@ -388,7 +388,12 @@ class Operable(Feature, metaclass=abc.ABCMeta):
 
 
 class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
-    """Container for holding the ordering specification."""
+    """Container for holding the ordering specification.
+
+    Attention:
+        Instances are expected to be created internally by :meth:`dsl.Queryable.orderby
+        <forml.io.dsl.Queryable.orderby>`.
+    """
 
     feature: 'dsl.Operable'
     """Ordering feature."""
@@ -432,9 +437,6 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
     def __new__(
         cls, feature: 'dsl.Operable', direction: typing.Optional[typing.Union['dsl.Ordering.Direction', str]] = None
     ):
-        """Instances are expected to be created internally by :meth:`dsl.Queryable.orderby
-        <forml.io.dsl.Queryable.orderby>`.
-        """
         return super().__new__(
             cls, Operable.ensure_is(feature), cls.Direction(direction) if direction else cls.Direction.ASCENDING
         )
@@ -468,15 +470,17 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
 
 
 class Aliased(Feature):
-    """Representation of a *feature* with an explicit name alias."""
+    """Representation of a *feature* with an explicit name alias.
+
+    Attention:
+        Instances are expected to be created internally via :meth:`dsl.Feature.alias
+        <forml.io.dsl.Feature.alias>`.
+    """
 
     operable: 'dsl.Operable' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
 
     def __new__(cls, feature: 'dsl.Feature', alias: str):
-        """Instances are expected to be created internally via :meth:`dsl.Feature.alias
-        <forml.io.dsl.Feature.alias>`.
-        """
         return super().__new__(cls, feature.operable, alias)
 
     def __repr__(self):
@@ -939,6 +943,10 @@ class Cumulative(Expression, metaclass=abc.ABCMeta):
 class Window(Cumulative):
     """Window function wrapper feature representation.
 
+    Attention:
+        Instances are expected to be created internally via :meth:`dsl.Window.Function.over()
+        <forml.io.dsl.Window.Function.over>`.
+
     See Also:
         Supported window functions are available in the :ref:`window module
         <query-functions-window>`.
@@ -1001,9 +1009,6 @@ class Window(Cumulative):
         ordering: typing.Optional[typing.Sequence['dsl.Ordering.Term']] = None,
         frame: typing.Optional = None,
     ):
-        """Instances are expected to be created internally via :meth:`dsl.Window.Function.over()
-        <forml.io.dsl.Window.Function.over>`.
-        """
         return super().__new__(cls, function, tuple(partition), Ordering.make(*(ordering or [])), frame)
 
     @property

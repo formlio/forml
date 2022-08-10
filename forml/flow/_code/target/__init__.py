@@ -68,6 +68,11 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
 
     It represents the executable instruction and its dependency on other instructions in the task
     graph.
+
+    Args:
+        instruction: The executable instruction.
+        arguments: Sequence of instructions whose output constitutes parameters to this symbol's
+                   instruction.
     """
 
     instruction: 'flow.Instruction'
@@ -76,12 +81,6 @@ class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
     def __new__(
         cls, instruction: 'flow.Instruction', arguments: typing.Optional[typing.Sequence['flow.Instruction']] = None
     ):
-        """
-        Args:
-            instruction: The executable instruction.
-            arguments: Sequence of instructions whose output constitutes parameters to this symbol's
-                       instruction.
-        """
         if arguments is None:
             arguments = []
         if not all(arguments):

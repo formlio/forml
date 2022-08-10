@@ -16,20 +16,32 @@
 # under the License.
 
 """
-Dag composition utilities frontend API module.
+Decorators for creating operators and actors by wrapping generic (non-ForML) implementations.
+
+Instead of creating ForML :ref:`actors <actor-decorated>` and/or :ref:`operators <operator-wrapped>`
+by fully implementing their relevant base classes, they can (in special cases) be conveniently
+defined using the wrappers provided within this module.
 """
 
 from ._actor import Actor
 from ._auto import AUTO, Auto, AutoSklearnClassifier, AutoSklearnRegressor, AutoSklearnTransformer, importer
 from ._operator import Operator
+from ._proxy import Type
+
+#: Default list of :class:`auto-wrapper <forml.pipeline.wrap.Auto>` implementations
+#: to be used by the :func:`wrap.importer <forml.pipeline.wrap.importer>` context manager.
+AUTO = AUTO  # pylint: disable=self-assigning-variable
+# hack to make AUTO visible to autodoc (otherwise ignores module attributes without docstrings)
+
 
 __all__ = [
-    'importer',
-    'AUTO',
-    'Auto',
     'Actor',
-    'Operator',
+    'Auto',
+    'AUTO',
     'AutoSklearnTransformer',
     'AutoSklearnClassifier',
     'AutoSklearnRegressor',
+    'importer',
+    'Operator',
+    'Type',
 ]

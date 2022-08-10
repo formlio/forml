@@ -27,7 +27,6 @@ import queue as quemod
 import string
 import typing
 
-import pandas
 from pandas.core import generic as pdtype
 
 from forml import flow
@@ -44,7 +43,34 @@ LOGGER = logging.getLogger(__name__)
 class Dumpable(
     flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=abc.ABCMeta
 ):  # pylint: disable=abstract-method
-    """Pass-through abstract transformer that dumps the input datasets to CSV files."""
+    """Transparent actor interface that dumps the input dataset (typically to a file).
+
+    Args:
+        path: Target path to be used for dumping the content.
+        kwargs: Optional keyword arguments to be passed to the :meth:`apply_dump` and/or
+                  :meth:`train_dump` methods.
+
+    Following are the methods that can be overloaded with the actual dump action (no-op otherwise).
+
+    Methods:
+
+        apply_dump(features, path, **kwargs):
+            Dump the features when in the *apply-mode*.
+
+            Args:
+                features: Input data.
+                path: Target dump location.
+                kwargs: Additional keyword arguments supplied via constructor.
+
+        train_dump(features, labels, path, **kwargs):
+            Dump the features and labels when in the *train-mode*.
+
+            Args:
+                features: Input features.
+                labels: Input labels.
+                path: Target dump location.
+                kwargs: Additional keyword arguments supplied via constructor.
+    """
 
     def __init__(self, path: typing.Union[str, pathlib.Path], **kwargs):
         self._path: pathlib.Path = pathlib.Path(path)
@@ -71,6 +97,7 @@ class Dumpable(
         Args:
             features: Input data.
             path: Target dump location.
+            kwargs: Additional keyword arguments supplied via constructor.
         """
         return None
 
@@ -78,8 +105,8 @@ class Dumpable(
         """Standard actor train method calling the dump.
 
         Args:
-            features: X table.
-            labels: Y series.
+            features: Input features.
+            labels: Input labels.
         """
         self.train_dump(features, labels, self._path, **self._kwargs)
 
@@ -95,9 +122,10 @@ class Dumpable(
         """Dump the features along with labels.
 
         Args:
-            features: X table.
-            labels: Y series.
+            features: Input features.
+            labels: Input labels.
             path: Target dump location.
+            kwargs: Additional keyword arguments supplied via constructor.
         """
         return None
 
@@ -107,10 +135,12 @@ class Dumpable(
 
     @typing.final
     def get_state(self) -> None:
-        """We aren't really stateful even though `.is_stateful()` can be true so that `.train()` get engaged.
+        """We aren't really stateful even though `.is_stateful()` can be true so that `.train()`
+        get engaged.
 
         Return: Empty state.
         """
+        return None
 
     def get_params(self) -> dict[str, typing.Any]:
         """Standard param getter.
@@ -131,58 +161,119 @@ class Dumpable(
         self._kwargs.update(kwargs)
 
 
-class PandasCSVDumper(Dumpable[pandas.DataFrame, pandas.Series, pandas.DataFrame]):
-    """Pass-through transformer that dumps the input datasets to CSV files."""
+class PandasCSVDumper(Dumpable[typing.Any, typing.Any, typing.Any]):
+    """PandasCSVDumper(path: typing.Union[str, pathlib.Path], label_header: str = 'Label', converter: typing.Callable[[typing.Any, typing.Optional[typing.Sequence[str]]], pandas.core.generic.NDFrame] = pandas_read, **kwargs)
 
-    def __init__(self, path: typing.Union[str, pathlib.Path], label_header: str = 'Label'):
-        super().__init__(path, label_header=label_header)
+    Pass-through transformer that dumps the input datasets to CSV files.
 
-    @_convert.pandas_params
-    def apply(self, features: pdtype.NDFrame) -> pdtype.NDFrame:
-        return super().apply(features)
+    The write operation including the CSV encoding is implemented using the
+    :meth:`pandas:pandas.DataFrame.to_csv` method.
 
-    @_convert.pandas_params
-    def train(self, features: pandas.DataFrame, labels: pandas.Series, /) -> None:
-        super().train(features, labels)
+    The input payload is automatically converted to Pandas using the provided converter
+    implementation (defaults to internal logic).
+
+    Args:
+        path: Target path to be used for dumping the content.
+        label_header: Column name to be used for the train labels.
+        converter: Optional callback to be used for converting the payload to Pandas.
+        kwargs: Optional keyword arguments to be passed to the
+                :meth:`pandas:pandas.DataFrame.to_csv` method.
+    """  # pylint: disable=line-too-long  # noqa: E501
+
+    CSV_DEFAULTS = {'index': False}
+
+    def __init__(
+        self,
+        path: typing.Union[str, pathlib.Path],
+        label_header: str = 'Label',
+        converter: typing.Callable[
+            [typing.Any, typing.Optional[typing.Sequence[str]]], pdtype.NDFrame
+        ] = _convert.pandas_read,
+        **kwargs,
+    ):
+        super().__init__(path, label_header=label_header, converter=converter, **kwargs)
 
     @classmethod
-    def apply_dump(cls, features: pdtype.NDFrame, path: pathlib.Path, **kwargs) -> None:
+    def apply_dump(
+        cls,
+        features: typing.Any,
+        path: pathlib.Path,
+        label_header: str,  # pylint: disable=unused-argument
+        converter: typing.Callable[[typing.Any, typing.Optional[typing.Sequence[str]]], pdtype.NDFrame],
+        **kwargs,
+    ) -> None:
         """Dump the features.
 
         Args:
             features: Input frames.
             path: Target dump location.
+            label_header: Column name to be used for the train labels.
+            converter: Pandas converter implementation.
+            kwargs: Additional keyword arguments supplied via constructor.
 
         Returns:
             Original unchanged frames.
         """
         path.parent.mkdir(parents=True, exist_ok=True)
-        features.to_csv(path, index=False)
+        converter(features).to_csv(path, **(cls.CSV_DEFAULTS | kwargs))
 
     @classmethod
-    def train_dump(cls, features: pandas.DataFrame, labels: pandas.Series, path: pathlib.Path, **kwargs) -> None:
+    def train_dump(
+        cls,
+        features: typing.Any,
+        labels: typing.Any,
+        path: pathlib.Path,
+        label_header: str,
+        converter: typing.Callable[[typing.Any, typing.Optional[typing.Sequence[str]]], pdtype.NDFrame],
+        **kwargs,
+    ) -> None:
         """Dump the features along with labels.
 
         Args:
             features: X table.
             labels: Y series.
             path: Target dump location.
+            label_header: Column name to be used for the train labels.
+            converter: Pandas converter implementation.
+            kwargs: Additional keyword arguments supplied via constructor.
         """
         path.parent.mkdir(parents=True, exist_ok=True)
-        features.set_index(labels.rename(kwargs['label_header'])).reset_index().to_csv(path, index=False)
+        converter(features).set_index(converter(labels).rename(label_header)).reset_index().to_csv(
+            path, **(cls.CSV_DEFAULTS | kwargs)
+        )
 
 
 class Dump(flow.Operator):
-    """Transparent transformer that dumps the input datasets to CSV files.
+    """Transparent operator that dumps the input dataset externally (typically to a file) before
+    passing it downstream.
 
-    The operator supports interpolation of potential placeholders in the output path if supplied as template. The
-    supported placeholders are:
+    If supplied as a template, the operator supports interpolation of potential placeholders in
+    the dump path (e.g. file name). The supported placeholders are:
 
-        * `$seq` - a sequence ID which gets incremented for each particular Actor instance
-        * `$mode` - a label of the mode in which the dumping occurs (`train` or `apply`)
+    * ``$seq`` - a sequence ID which gets incremented for each particular Actor instance
+    * ``$mode`` - a label of the mode in which the dumping occurs (``train`` or ``apply``)
 
-    The path (or path template) must be provided either within the raw builder parameters or as the standalone `path`
-    parameter which is used as a fallback option.
+    The path (or path template) must be provided either within the raw builder parameters or as the
+    standalone ``path`` parameter which is used as a fallback option.
+
+    Args:
+        apply: Dumpable builder for instantiating a Dumper operator to be used in *apply-mode*.
+        train: Optional dumpable builder for instantiating a Dumper operator to be used in
+               *train-mode* (otherwise using the same one as for the *apply-mode*).
+        path: Optional path template.
+
+    Raises:
+        TypeError: If *path* is provided neither in the ``apply``/``train`` builders nor as
+                   the explicit parameter.
+
+    Examples:
+        >>> PIPELINE = (
+        ...     preprocessing.Action1()
+        ...     >> payload.Dump(path='/tmp/foobar/post_action1-$mode-$seq.csv')
+        ...     >> preprocessing.Action2()
+        ...     >> payload.Dump(path='/tmp/foobar/post_action2-$mode-$seq.csv')
+        ...     >> model.SomeModel()
+        ... )
     """
 
     CSV_SUFFIX = '.csv'
@@ -207,19 +298,23 @@ class Dump(flow.Operator):
         path: typing.Optional[typing.Union[str, pathlib.Path]],
         mode: str,
     ) -> typing.Callable[[int], flow.Builder['payload.Dumpable']]:
-        """Get a function for creating a Builder instance parametrized using a sequence id and a mode string which can
-        be used to interpolate potential placeholders in the path template.
+        """Get a function for creating a Builder instance parametrized using a sequence id and
+        a mode string which can be used to interpolate potential placeholders in the path template.
 
         Args:
-            builder: Raw builder to be enhanced. Optional path parameter can have template placeholders.
+            builder: Raw builder to be enhanced. Optional path parameter can have template
+                     placeholders.
             path: Optional path with potential template placeholders.
 
         Returns:
-            Factory function for creating a builder instance with the potential path template placeholders interpolated.
+            Factory function for creating a builder instance with the potential path template
+            placeholders interpolated.
         """
 
         def wrapper(seq: int) -> flow.Builder['payload.Dumpable']:
-            """The factory function for creating a builder instance with path template interpolation."""
+            """The factory function for creating a builder instance with path template
+            interpolation.
+            """
 
             interpolated = string.Template(str(pathlib.Path(path))).safe_substitute(seq=seq, mode=mode)
             return builder.actor.builder(*binding.args, path=interpolated, **binding.kwargs)
@@ -249,7 +344,20 @@ class Dump(flow.Operator):
 
 
 class Sniff(flow.Operator):
-    """Operator for sniffing the inputs and exposing it using a Future provided when used as a context manager."""
+    """Debugging operator for capturing the passing payload and exposing it using the
+    ``Sniff.Future`` instance provided when used as a context manager.
+
+    Without the context, the operator acts as a transparent identitity pass-through operator.
+
+    The typical use-case is in combination with the :class:`runtime.virtual <forml.runtime.Virtual>`
+    launcher and the interactive mode.
+
+    Examples:
+        >>> SNIFFER = payload.Sniff()
+        >>> with SNIFFER as future:
+        ...     SOURCE.bind(PIPELINE >> SNIFFER >> ANOTHER).launcher.train()
+        >>> future.result()[0]
+    """
 
     class Actor(flow.Actor[flow.Features, flow.Labels, flow.Result]):
         """Actor for sniffing all inputs and passing it to the queue."""

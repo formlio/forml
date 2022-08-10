@@ -46,7 +46,11 @@ LOGGER = logging.getLogger(__name__)
 
 class Package(collections.namedtuple('Package', 'path, manifest')):
     """ForML artifact representing a complete project code together with all of its dependencies
-    packaged for distribution."""
+    packaged for distribution.
+
+    Args:
+        path: Filesystem path pointing to the package file.
+    """
 
     path: pathlib.Path
     manifest: 'project.Manifest'
@@ -56,10 +60,6 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
     PYSFX = re.compile(r'\.py[co]?$')
 
     def __new__(cls, path: typing.Union[str, pathlib.Path]):
-        """
-        Args:
-            path: Filesystem path pointing to the package file.
-        """
         path = pathlib.Path(path)
         return super().__new__(cls, path.resolve(), Manifest.read(path))
 
@@ -175,7 +175,14 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 
 
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
-    """ForML distribution package metadata manifest."""
+    """ForML distribution package metadata manifest.
+
+    Args:
+        name: Project name.
+        version: Project release version.
+        package: Full python package name containing the project principal components.
+        modules: Individual project components mapping (if non-conventional).
+    """
 
     name: asset.Project.Key
     version: asset.Release.Key
@@ -201,13 +208,6 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         package: str,
         **modules: str,
     ):
-        """
-        Args:
-            name: Project name.
-            version: Project release version.
-            package: Full python package name containing the project principal components.
-            modules: Individual project components mapping (if non-conventional).
-        """
         return super().__new__(
             cls, asset.Project.Key(name), asset.Release.Key(version), package, types.MappingProxyType(modules)
         )

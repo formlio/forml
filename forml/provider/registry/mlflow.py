@@ -178,6 +178,16 @@ class Registry(asset.Registry, alias='mlflow'):
     Multiple ForML model registries can be hosted on single MLflow server in parallel using the
     *virtual* repositories distinguished by the ``repoid`` parameter.
 
+    Args:
+        tracking_uri: Address of local or remote tracking server. See the :ref:`MLflow docs
+                      <mlflow:where_runs_are_recorded>` for more info.
+        registry_uri: Address of local or remote model registry server. Defaults to the
+                      ``tracking_uri``.
+        repoid: Optional virtual repository ID.
+        staging: Filesystem location reachable from all runner nodes to be used for
+                 :ref:`package staging <registry-staging>` (defaults to a local temporal
+                 directory (invalid for distributed runners)).
+
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
@@ -253,17 +263,6 @@ class Registry(asset.Registry, alias='mlflow'):
         repoid: str = DEFAULT_REPOID,
         staging: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
-        """
-        Args:
-            tracking_uri: Address of local or remote tracking server. See the :ref:`MLflow docs
-                          <mlflow:where_runs_are_recorded>` for more info.
-            registry_uri: Address of local or remote model registry server. Defaults to the
-                          ``tracking_uri``.
-            repoid: Optional virtual repository ID.
-            staging: Filesystem location reachable from all runner nodes to be used for
-                     :ref:`package staging <registry-staging>` (defaults to a local temporal
-                     directory (invalid for distributed runners)).
-        """
         super().__init__(staging)
         self._client = Client(tracking_uri, registry_uri, common_tags={self.TAG_REPOID: repoid})
         self._repoid: str = repoid

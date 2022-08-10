@@ -46,7 +46,6 @@ class Registry(posix.Registry, alias='volatile'):
     """
 
     def __init__(self):
-        """No parameters accepted."""  # to avoid inheriting the parent docstring for autodoc
         self._storage: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
             prefix='registry-volatile-', dir=asset.TMPDIR
         )

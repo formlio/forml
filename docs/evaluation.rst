@@ -41,7 +41,9 @@ gets triggered.
 .. attention::
     All the evaluation primitives described in this chapter deal with :ref:`flow topology
     <topology>` rather than any direct data values. Their purpose is not to do any calculation
-    themselves but to construct the workflow that does the evaluation when launched.
+    themselves but to construct the workflow that performs the evaluation when launched.
+    For curiosity's sake, the :class:`Graphviz runner <forml.provider.runner.graphviz.Runner>` can
+    be used to explore the particular DAGs composed in scope of an evaluation.
 
 The evaluation process is in principle based on comparing *predicted* and *true* outcomes using
 some :ref:`metric function <evaluation-metric>`. The evaluation API is using the

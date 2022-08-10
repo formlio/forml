@@ -29,15 +29,16 @@ import cloudpickle
 
 from forml import flow
 
+from . import _proxy
+
 LOGGER = logging.getLogger(__name__)
-Origin = typing.TypeVar('Origin')
 
 
-class Proxy(typing.Generic[Origin], metaclass=abc.ABCMeta):
-    """Base class for Actor wrappers."""
+class Alike(typing.Generic[_proxy.Origin], metaclass=abc.ABCMeta):
+    """Base class for Actor-like wrappers."""
 
-    def __init__(self, origin: Origin):
-        self._origin: Origin = origin
+    def __init__(self, origin: _proxy.Origin):
+        self._origin: _proxy.Origin = origin
 
     def __hash__(self):
         return hash(self._origin)
@@ -57,12 +58,12 @@ class Proxy(typing.Generic[Origin], metaclass=abc.ABCMeta):
         """
 
 
-class Mapping(Proxy[Origin]):
-    """Base class for actor wrapping."""
+class Mapping(Alike[_proxy.Origin]):
+    """Base class for mapped actor wrapping."""
 
     Target = typing.Union[str, typing.Callable[..., typing.Any]]
 
-    def __init__(self, origin: Origin, mapping: typing.Mapping[str, Target]):
+    def __init__(self, origin: _proxy.Origin, mapping: typing.Mapping[str, Target]):
         super().__init__(origin)
         self._mapping: typing.Mapping[str, Mapping.Target] = dict(mapping)
 
@@ -82,12 +83,14 @@ class Mapping(Proxy[Origin]):
         return callable(attr) or hasattr(self._origin, attr)
 
 
-class Type(Proxy[Origin], metaclass=abc.ABCMeta):
+class Type(
+    typing.Generic[_proxy.Origin], Alike[_proxy.Origin], _proxy.Type[_proxy.Origin, flow.Builder], metaclass=abc.ABCMeta
+):
     """Fake Actor type that produces Actor instance in constructor-like fashion."""
 
-    @abc.abstractmethod
-    def __call__(self, *args, **kwargs) -> flow.Actor:
-        """Actor constructor-like proxy."""
+    def __init__(self, origin: _proxy.Origin):
+        Alike.__init__(self, origin)
+        _proxy.Type.__init__(self, origin)
 
     def builder(self, *args, **kwargs) -> flow.Builder:
         """Shortcut for creating a builder of this actor builder.
@@ -103,7 +106,7 @@ class Type(Proxy[Origin], metaclass=abc.ABCMeta):
 
 
 class Class(Mapping[type], Type[type]):
-    """Wrapped class based actor type-like proxy."""
+    """Wrapped class based actor :class:`type-like <forml.pipeline.wrap.Type>` proxy."""
 
     class Actor(Mapping[object], flow.Actor):  # pylint: disable=abstract-method
         """Wrapper around user class implementing the Actor interface."""
@@ -172,7 +175,7 @@ class Parametric(flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=
 
 
 class Stateless(Type[typing.Callable[..., flow.Result]]):
-    """Stateless function based actor type-like proxy."""
+    """Stateless function based actor :class:`type-like <forml.pipeline.wrap.Type>` proxy."""
 
     class Actor(Parametric[flow.Features, None, flow.Result]):
         """Stateless actor based on the given function."""
@@ -208,7 +211,7 @@ State = typing.TypeVar('State')
 
 
 class Stateful(Type[tuple[typing.Callable[..., State], typing.Callable[..., flow.Result]]]):
-    """Stateful function based actor type-like proxy."""
+    """Stateful function based actor :class:`type-like <forml.pipeline.wrap.Type>` proxy."""
 
     class Actor(
         typing.Generic[State, flow.Features, flow.Labels, flow.Result],
@@ -266,7 +269,132 @@ class Stateful(Type[tuple[typing.Callable[..., State], typing.Callable[..., flow
 
 
 class Actor:
-    """Actor wrappers."""
+    """Central class providing decorators/wrappers for creating ForML *Actors* using a number of
+    convenient ways not requiring to fully implement the :class:`flow.Actor <forml.flow.Actor>` base
+    class from scratch.
+
+    .. rubric:: Decorator Methods
+
+    Methods:
+        apply(origin):
+            Decorator for turning a given plain function into a *stateless* Actor.
+
+            Args:
+                origin: Decorated function.
+
+                    The function must have one of the following signatures::
+
+                        def foo(*features: flow.Features) -> flow.Result:
+                        def foo(features: flow.Features) -> flow.Result:
+                        def foo(*features: flow.Features, opt1, optN=None) -> flow.Result:
+                        def foo(features: flow.Features, *, opt1, optN=None) -> flow.Result:
+                        def foo(*features: flow.Features, opt1, **kwargs) -> flow.Result:
+                        def foo(features: flow.Features, /, *, opt1, **kwargs) -> flow.Result:
+
+                    Attention:
+                        The optional arguments ``opt1``, ``opt2`` and ``**kwargs`` must all be
+                        *keyword-only* arguments.
+
+            Returns:
+                :class:`Actor-type-like object <forml.pipeline.wrap.Type>` that can be instantiated
+                into a *stateless* Actor with the given *apply* logic.
+
+            Examples:
+                Simple stateless imputation actor using the provided value to fill the NaNs::
+
+                    @wrap.Actor.apply
+                    def StaticImpute(
+                        df: pandas.DataFrame,
+                        *,
+                        column: str,
+                        value: float,
+                    ) -> pandas.DataFrame:
+                        df[column] = df[column].fillna(value)
+                        return df
+
+        train(origin):
+            Decorator for turning a given plain function into a follow-up apply function decorator.
+
+            Stateful actors need to have distinct implementations for their :ref:`train vs apply
+            modes <workflow-mode>`. This wrapping faciality achieves that by decorating two
+            companion functions each implementing the relevant mode.
+
+            Args:
+                origin: Decorated train function.
+
+                    The decorated *train* function must have one of the following signatures::
+
+                        def foo(state: typing.Optional[State], features: flow.Features, labels: flow.Labels) -> State:
+                        def foo(state: typing.Optional[State], features: flow.Features, labels: flow.Labels, opt1, optN=None) -> State:
+                        def foo(state: typing.Optional[State], features: flow.Features, labels: flow.Labels, /, opt1,**kwargs) -> State:
+
+                    The function will receive the *previous state* as the first parameter and is
+                    expected to provide the *new state* instance as its return value.
+
+            Returns:
+                Follow-up *decorator* to be used for wrapping the companion *apply* function which
+                eventually returns an :class:`actor-type-like object <forml.pipeline.wrap.Type>`
+                that can be instantiated into a *stateful* Actor with the given *train-apply* logic.
+
+                The decorated *apply* function must have one of the following signatures::
+
+                    def foo(state: State, features: flow.Features) -> flow.Result:
+                    def foo(state: State, features: flow.Features, opt1, optN=None) -> flow.Result:
+                    def foo(state: State, features: flow.Features, /, opt1, **kwargs) -> flow.Result:
+
+                The function will receive the *current state* as the first parameter and is
+                expected to provide the *apply-mode* transformation result.
+
+            Examples:
+                Simple stateful imputation actor using the trained mean value to fill the NaNs::
+
+                    @wrap.Actor.train  # starting with wrapping the train-mode function
+                    def MeanImpute(
+                        state: typing.Optional[float],  # receving the previous state (not used)
+                        features: pandas.DataFrame,
+                        labels: pandas.Series,
+                        *,
+                        column: str,
+                    ) -> float:
+                        return features[column].mean()  # returning the new state
+
+                    @MeanImpute.apply  # continue with the follow-up apply-mode function decorator
+                    def MeanImpute(
+                        state: float,  # receiving current state
+                        features: pandas.DataFrame,
+                        *,
+                        column: str
+                    ) -> pandas.DataFrame:
+                        features[column] = features[column].fillna(state)
+                        return features  # apply-mode result
+
+        type(origin=None, /, *, apply=None, train=None, get_params=None, set_params=None):
+            Wrapper for turning an external user class to a valid Actor.
+
+            This can be used either as parameterless decorator or optionally with mapping of Actor
+            methods to decorated user class implementation.
+
+            Args:
+                origin: Decorated class.
+                apply: Target method name or decorator function implementing the actor
+                       :meth:`apply <forml.flow.Actor.apply>` logic.
+                train: Target method name or decorator function implementing the actor
+                       :meth:`train <forml.flow.Actor.train>` logic.
+                get_params: Target method name or decorator function implementing the actor
+                            :meth:`get_params <forml.flow.Actor.get_params>` logic.
+                set_params: Target method name or decorator function implementing the actor
+                            :meth:`set_params <forml.flow.Actor.set_params>` logic.
+
+            Returns:
+                Actor class.
+
+            Examples:
+                >>> RfcActor = wrap.Actor.type(
+                ...     sklearn.ensemble.RandomForestClassifier,
+                ...     train='fit',
+                ...     apply=lambda c, *a, **kw: c.predict_proba(*a, **kw).transpose()[-1],
+                ... )
+    """  # pylint: disable=line-too-long  # noqa: E501
 
     class Train:
         """Follow-up train function decorator."""
@@ -275,19 +403,10 @@ class Actor:
             self._origin: typing.Callable[..., State] = origin
 
         def apply(self, origin: typing.Callable[..., flow.Result], /) -> type[flow.Actor]:
-            """Apply function decorator (following-up from a train function decorator) turning it into a stateful Actor.
+            """Apply function decorator (following-up from a train function decorator) turning it
+            into a stateful Actor.
 
-            The decorated function should have one of the following signatures:
-
-            def foo(state: State, features: flow.Features) -> flow.Result:
-            def foo(state: State, features: flow.Features, opt1, optN=None) -> flow.Result:
-            def foo(state: State, features: flow.Features, /, opt1, **kwargs) -> flow.Result:
-
-            Args:
-                origin: Decorated apply function.
-
-            Returns:
-                Actor type-like object that can be instantiated into a stateful Actor with the given train-apply logic.
+            See Also: Full description in the class docstring.
             """
             return Stateful(self._origin, origin)
 
@@ -295,22 +414,7 @@ class Actor:
     def apply(cls, origin: typing.Callable[..., flow.Result], /) -> type[flow.Actor]:
         """Function decorator turning it into a stateless Actor.
 
-        The decorated function should have one of the following signatures:
-
-        def foo(*features: flow.Features) -> flow.Result:
-        def foo(features: flow.Features) -> flow.Result:
-        def foo(*features: flow.Features, opt1, optN=None) -> flow.Result:
-        def foo(features: flow.Features, *, opt1, optN=None) -> flow.Result:
-        def foo(*features: flow.Features, opt1, **kwargs) -> flow.Result:
-        def foo(features: flow.Features, /, *, opt1, **kwargs) -> flow.Result:
-
-        The optional arguments opt1, opt2, **kwargs must all be keyword-only arguments.
-
-        Args:
-            origin: Decorated apply function.
-
-        Returns:
-            Actor type-like object that can be instantiated into a stateless Actor with the given apply logic.
+        See Also: Full description in the class docstring.
         """
         return Stateless(origin)
 
@@ -318,34 +422,15 @@ class Actor:
     def train(cls, origin: typing.Callable[..., State], /) -> 'Actor.Train':
         """Train function decorator turning it into a follow-up apply function decorator.
 
-        The decorated function should have one of the following signatures:
-
-        def foo(state: typing.Optional[State], features: flow.Features, labels: flow.Labels) -> State:
-        def foo(state: typing.Optional[State], features: flow.Features, labels: flow.Labels, opt1, optN=None) -> State:
-        def foo(state: typing.Optional[State], features: flow.Features, labels: flow.Labels, /, opt1,**kwargs) -> State:
-
-        Args:
-            origin: Decorated train function.
-
-        Returns:
-            Follow-up apply function decorator.
+        See Also: Full description in the class docstring.
         """
         return cls.Train(origin)
 
     @classmethod
     def type(cls, origin: typing.Optional[type] = None, /, **mapping: Mapping.Target) -> type[flow.Actor]:
-        """Decorator for turning a user class to a valid actor. This can be used either as parameterless decorator or
-        optionally with mapping of Actor methods to decorated user class implementation.
+        """Decorator for turning an external user class to a valid actor.
 
-        Args:
-            origin: Decorated class.
-            apply: Method name or decorator function implementing the actor apply.
-            train: Method name or decorator function implementing the actor train.
-            get_params: Method name or decorator function implementing the actor get_params.
-            set_params: Method name or decorator function implementing the actor set_params.
-
-        Returns:
-            Actor class.
+        See Also: Full description in the class docstring.
         """
 
         def decorator(origin: type) -> type[flow.Actor]:
@@ -355,3 +440,6 @@ class Actor:
         if origin:
             decorator = decorator(origin)
         return decorator
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError(f'Illegal attempt instantiating {cls.__name__}.')

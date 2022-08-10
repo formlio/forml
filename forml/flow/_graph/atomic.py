@@ -75,14 +75,14 @@ class Port(typing.Iterable[port.Subscription]):
 
 
 class Node(metaclass=abc.ABCMeta):
-    """Abstract primitive task graph node."""
+    """Abstract primitive task graph node.
+
+    Args:
+        szin: Number of input *Apply* ports.
+        szout: Number of output *Apply* ports.
+    """
 
     def __init__(self, szin: int, szout: int):
-        """
-        Args:
-            szin: Number of input *Apply* ports.
-            szout: Number of output *Apply* ports.
-        """
         if min(szin, szout) < 0 or szin == szout == 0:
             raise ValueError('Invalid node shape')
         self.szin: int = szin
@@ -190,16 +190,23 @@ class Node(metaclass=abc.ABCMeta):
 
 
 class Worker(Node):
-    """Main primitive node type."""
+    """Main primitive node type.
+
+    Args:
+        builder: Actor builder instance.
+        group: Worker group container.
+        szin: Number of input *Apply* ports.
+        szout: Number of output *Apply* ports.
+    """
 
     class Group(set):
-        """Container for holding all forked workers."""
+        """Container for holding all forked workers.
+
+        Args:
+            builder: Actor builder instance.
+        """
 
         def __init__(self, builder: 'flow.Builder'):
-            """
-            Args:
-                builder: Actor builder instance.
-            """
             super().__init__()
             self.builder: 'flow.Builder' = builder
             self.uid: uuid.UUID = uuid.uuid4()
@@ -228,13 +235,6 @@ class Worker(Node):
         """
 
     def __init__(self, group_or_builder, /, szin, szout):
-        """
-        Args:
-            builder: Actor builder instance.
-            group: Worker group container.
-            szin: Number of input *Apply* ports.
-            szout: Number of output *Apply* ports.
-        """
         super().__init__(szin, szout)
         self._group: Worker.Group = (
             group_or_builder if isinstance(group_or_builder, Worker.Group) else self.Group(group_or_builder)

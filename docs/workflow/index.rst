@@ -61,10 +61,10 @@ either in *train-mode* or *apply-mode*.
     their discrete *train* process produce *model(s)* that get separately deployed for serving
     the *predict* phase), ForML, in contrast, is rather *workflow-centric* - ensuring all the
     steps (i.e. workflow) applied during the *apply-mode* consistently reflect the original
-    *train* process. That's achieved by an inseparable integration of both the *train* as well as
-    the *apply* (predict) representations of the specific ML scenario into a single ForML
-    expression. Essentially every single ForML workflow expands into one of the two related task
-    graphs depending on its particular mode.
+    *train* process. That's achieved by an :ref:`inseparable integration <topology-coherence>`
+    of both the *train* as well as the *apply* (predict) representations of the specific ML
+    scenario into a single ForML expression. Essentially every single ForML workflow expands into
+    one of the two related task graphs depending on its particular mode.
 
 
 .. _workflow-expression:
@@ -101,7 +101,8 @@ follows:
         end
 
 The meaning of :ref:`operators <operator>` and how they are defined using :ref:`actors <actor>`
-and their :ref:`interconnections <topology>` is described in details in the following chapters:
+and their :ref:`interconnections <topology>` is described in great detail within the following
+chapters:
 
 .. toctree::
     :maxdepth: 2

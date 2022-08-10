@@ -224,37 +224,41 @@ class Compound(Any, tuple, metaclass=abc.ABCMeta):
 
 
 class Array(Compound):
-    """Array data type class."""
+    """Array data type class.
+
+    Args:
+        element: Array element kind.
+    """
 
     element: 'dsl.Any' = property(operator.itemgetter(0))
     __type__ = typing.Sequence
 
     def __new__(cls, element: 'dsl.Any'):
-        """
-        Args:
-            element: Array element kind.
-        """
         return tuple.__new__(cls, [element])
 
 
 class Map(Compound):
-    """Map data type class."""
+    """Map data type class.
+
+    Args:
+        key: Map keys kind.
+        value: Map values kind.
+    """
 
     key: 'dsl.Any' = property(operator.itemgetter(0))
     value: 'dsl.Any' = property(operator.itemgetter(1))
     __type__ = typing.Mapping
 
     def __new__(cls, key: 'dsl.Any', value: 'dsl.Any'):
-        """
-        Args:
-            key: Map keys kind.
-            value: Map values kind.
-        """
         return tuple.__new__(cls, [key, value])
 
 
 class Struct(Compound):
-    """Struct data type class."""
+    """Struct data type class.
+
+    Args:
+        element: Mapping of attribute name strings and their kinds.
+    """
 
     class Element(collections.namedtuple('Element', 'name, kind')):
         """Struct element type."""
@@ -268,10 +272,6 @@ class Struct(Compound):
     __type__ = object
 
     def __new__(cls, **element: 'dsl.Any'):
-        """
-        Args:
-            element: Mapping of attribute name strings and their kinds.
-        """
         return tuple.__new__(cls, [cls.Element(n, k) for n, k in element.items()])
 
 

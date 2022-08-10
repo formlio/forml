@@ -230,6 +230,11 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 class Registry(asset.Registry, alias='posix'):
     """File based registry backed by a locally-accessible posix filesystem.
 
+    Args:
+        path: Registry root filesystem location.
+        staging: Filesystem location reachable from all runner nodes to be used for
+                 :ref:`package staging <registry-staging>` (defaults to :file:`<path>/.stage`).
+
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
@@ -245,12 +250,6 @@ class Registry(asset.Registry, alias='posix'):
         path: typing.Union[str, pathlib.Path] = conf.USRDIR / 'registry',
         staging: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
-        """
-        Args:
-            path: Registry root filesystem location.
-            staging: Filesystem location reachable from all runner nodes to be used for
-                     :ref:`package staging <registry-staging>` (defaults to :file:`<path>/.stage`).
-        """
         path = pathlib.Path(path).resolve()
         super().__init__(staging or path / Path.STAGEDIR)
         self._path: Path = Path(path)

@@ -36,7 +36,13 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
     The public API allows to perform all the standard actions of the :doc:`ForML lifecycles
     <lifecycle>`.
 
-    All that needs to be supplied by the provider is the abstract ``._run()`` method.
+    All that needs to be supplied by the provider is the abstract :meth:`_run` method.
+
+    Args:
+        instance: Particular instance of the persistent artifacts to be executed.
+        feed: Optional input feed instance to retrieve the data from (falls back to the default
+              configured feed).
+        sink: Output sink instance (no output is produced if omitted).
     """
 
     _METRIC_SCHEMA = dsl.Schema.from_fields(dsl.Field(dsl.Float(), name='Metric'))
@@ -48,13 +54,6 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         sink: typing.Optional[io.Sink] = None,
         **_,
     ):
-        """
-        Args:
-            instance: Particular instance of the persistent artifacts to be executed.
-            feed: Optional input feed instance to retrieve the data from (falls back to the default
-                  configured feed).
-            sink: Output sink instance (no output is produced if omitted).
-        """
         self._instance: asset.Instance = instance or asset.Instance()
         self._feed: io.Feed = feed or io.Feed()
         self._sink: typing.Optional[io.Sink] = sink

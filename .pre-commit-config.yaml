@@ -70,7 +70,7 @@ repos:
     types: [python]
     args: [--rcfile=.pylintrc]
 - repo: https://github.com/PyCQA/flake8
-  rev: 5.0.2
+  rev: 5.0.4
   hooks:
   - id: flake8
     name: Flake8

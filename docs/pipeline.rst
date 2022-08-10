@@ -18,14 +18,21 @@
 Pipeline Library
 ================
 
+ForML comes with a number of useful :ref:`operators <operator>`, :ref:`actors <actor>`, and general
+utility functions ready to be engaged in *pipeline implementations*.
+
+The library is not essential to any of the ForML base functionality and rather offers additional
+extensions on top of the core API. It is currently not particularly rich but some of the included
+high-level entities can already boost the typical pipeline development process or possibly serve
+as a point of reference demonstrating the power of the underlying ForML :ref:`workflow
+architecture <workflow>`.
+
+This pipeline library is organized into the following functionally related modules:
+
 .. autosummary::
-   :nosignatures:
+   :template: pipeline.rst
    :toctree: _auto
 
-    forml.pipeline.ensemble
-    forml.pipeline.payload
     forml.pipeline.wrap
-
-
-.. autoclass:: forml.pipeline.payload.CrossValidable
-.. autoclass:: forml.pipeline.payload.CVFoldable
+    forml.pipeline.payload
+    forml.pipeline.ensemble

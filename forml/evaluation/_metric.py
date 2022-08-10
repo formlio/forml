@@ -31,11 +31,19 @@ if typing.TYPE_CHECKING:
 
 
 class Function(_api.Metric):
-    """Basic metric implementation wrapping a plain scoring function.
+    """Function(metric: Callable[[typing.Any, typing.Any], float], reducer: Callable[..., float] = mean)
+
+    Basic metric implementation wrapping a plain scoring function.
 
     Caution:
         As with any ForML task, the implementor is responsible for engaging function that is
         compatible with the particular :ref:`payload <io-payload>`.
+
+    Args:
+        metric: Actual metric function implementation.
+        reducer: Callable to reduce individual metric *partitions* into a single final value.
+                 It must accept as many positional arguments as many outcome partitions there are.
+                 The default reducer is the :func:`python:statistics.mean`.
 
     Examples:
         >>> LOG_LOSS = evaluation.Function(sklearn.metrics.log_loss)
@@ -49,14 +57,6 @@ class Function(_api.Metric):
         metric: typing.Callable[[typing.Any, typing.Any], float],
         reducer: typing.Callable[..., float] = lambda *m: statistics.mean(m),  # noqa: B008
     ):
-        """__init__(metric: Callable[[typing.Any, typing.Any], float], reducer: Callable[..., float] = mean)
-
-        Args:
-            metric: Actual metric function implementation.
-            reducer: Callable to reduce individual metric *partitions* into a single final value.
-                     It must accept as many positional arguments as many outcome partitions there
-                     are. The default reducer is the :func:`python:statistics.mean`.
-        """
         self._metric: flow.Builder = payload.Apply.builder(function=metric)
         self._reducer: flow.Builder = payload.Apply.builder(function=reducer)
 

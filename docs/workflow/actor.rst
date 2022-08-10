@@ -212,9 +212,9 @@ Decorated Function Actors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Less verbose option for defining actors is based on wrapping user-defined functions using the
-``@wrap.Actor.train`` and/or ``@wrap.Actor.apply`` decorators from the
-:ref:`Pipeline Library <pipeline>` (the following examples match exactly the functionality as
-in the native implementations above):
+:meth:`@wrap.Actor.train <forml.pipeline.wrap.Actor.train>` and/or :meth:`@wrap.Actor.apply
+<forml.pipeline.wrap.Actor.apply>` decorators from the :ref:`Pipeline Library <pipeline>` (the
+following examples match exactly the functionality as in the native implementations above):
 
 .. md-tab-set::
 
@@ -279,8 +279,8 @@ Mapped Actors
 ^^^^^^^^^^^^^
 
 Third-party implementations that are logically compatible with the ForML actor concept can be
-easily mapped into a valid ForML actors using the ``@wrap.Actor.type`` wrapper from the
-:ref:`Pipeline Library <pipeline>`:
+easily mapped into a valid ForML actors using the :meth:`@wrap.Actor.type
+<forml.pipeline.wrap.Actor.type>` wrapper from the :ref:`Pipeline Library <pipeline>`:
 
 .. code-block:: python
     :linenos:

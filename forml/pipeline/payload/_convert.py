@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def pandas_read(data: typing.Any, columns: typing.Optional[typing.Sequence[str]] = None) -> pdtype.NDFrame:
-    """Attempt to convertor data to Pandas.
+    """Pandas converter implementation.
 
     Args:
         data: Argument to be converted.
@@ -63,24 +63,43 @@ def pandas_read(data: typing.Any, columns: typing.Optional[typing.Sequence[str]]
 
 
 def pandas_params(
-    wrapped: typing.Callable[[flow.Actor, pdtype.NDFrame], typing.Any]
+    method: typing.Callable[[flow.Actor, pdtype.NDFrame], typing.Any]
 ) -> typing.Callable[[flow.Actor, typing.Any], typing.Any]:
-    """Decorator for converting Actor's input parameters and return value to pandas.
+    """Decorator for converting the decorated *actor* method input parameters to Pandas format.
+
+    The parameters will be converted to :class:`pandas:pandas.DataFrame` or
+    :class:`pandas:pandas.Series` depending on the dimensionality.
 
     Args:
-        wrapped: Actor method to be decorated.
+        method: Actor method to be decorated expecting input to be in Pandas format.
 
     Returns:
-        Decorated method.
+        Decorated method converting its input payload to Pandas.
+
+    Warning:
+        The conversion is attempted using an internal logic - if unsuccessful, the payload is
+        passed through unchanged emitting a warning.
+
+    Examples::
+
+        class Concat(flow.Actor[pdtype.NDFrame, None, pandas.DataFrame]):
+
+            @payload.pandas_params
+            def apply(self, *features: pdtype.NDFrame) -> pandas.DataFrame:
+                return pandas.concat(features)
+
+    Todo:
+        Make the internal conversion logic customizable.
     """
 
-    @functools.wraps(wrapped)
+    @functools.wraps(method)
     def wrapper(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Decorating wrapper.
 
         Args:
-            *args: Input arguments to be converted - first one might be actor (self) in which case it is skipped.
-            **kwargs: Input key-word arguments.
+            *args: Input positional arguments to be converted - first one might be actor (self)
+                   in which case it is skipped.
+            **kwargs: Input keyword arguments.
 
         Returns:
             Original output.
@@ -88,7 +107,7 @@ def pandas_params(
         if args:
             idx = 1 if isinstance(args[0], flow.Actor) else 0
             args = itertools.chain(args[:idx], (pandas_read(a) for a in args[idx:]))
-        return wrapped(*args, **{k: pandas_read(v) for k, v in kwargs.items()})
+        return method(*args, **{k: pandas_read(v) for k, v in kwargs.items()})
 
     return wrapper
 
@@ -98,16 +117,32 @@ def pandas_params(
 @wrap.Operator.label
 @wrap.Actor.apply
 def ToPandas(  # pylint: disable=invalid-name
-    data: typing.Any, *, columns: typing.Optional[typing.Sequence[str]] = None
+    data: typing.Any,
+    *,
+    columns: typing.Optional[typing.Sequence[str]] = None,
+    converter: typing.Callable[[typing.Any, typing.Optional[typing.Sequence[str]]], pdtype.NDFrame] = pandas_read,
 ) -> pdtype.NDFrame:
-    """Simple 1:1 operator that attempts to convert the data on each of apply/train/label segments to pandas
-    dataframe/series.
+    """ToPandas(data: typing.Any, *, columns: typing.Optional[typing.Sequence[str]] = None, converter: typing.Callable[[typing.Any, typing.Optional[typing.Sequence[str]]], pandas.core.generic.NDFrame] = pandas_read)
+
+    Simple *1:1* operator that attempts to convert the data on each of apply/train/label segments to
+    Pandas dataframe/series.
 
     Args:
         data: Input data.
         columns: Optional column names.
+        converter: Optional function to be used for attempting the conversion.
+                   It will receive two parameters - the data and the column names (if provided).
+
+                   Warning:
+                       The default converter is using an internal logic - if unsuccessful, the
+                       payload is passed through unchanged emitting a warning.
 
     Returns:
         Pandas dataframe/series.
-    """
-    return pandas_read(data, columns=columns)
+
+    Examples:
+        >>> SOURCE >>= payload.ToPandas(
+        ...     columns=[f.name for f in SOURCE.extract.train.schema]
+        ... )
+    """  # pylint: disable=line-too-long  # noqa: E501
+    return converter(data, columns)

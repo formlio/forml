@@ -45,6 +45,9 @@ class Virtual:
     internal model registry implemented by the :class:`Volatile provider
     <forml.provider.registry.filesystem.volatile.Registry>`.
 
+    Args:
+        package: Project release package to be launched.
+
     The available launcher actions are exposed using the following common triggers:
 
     Methods:
@@ -141,10 +144,6 @@ class Virtual:
             return _pad.Platform(self._runner, self._registry, self._feeds, sink).launcher(self._project)
 
     def __init__(self, package: 'project.Package'):
-        """
-        Args:
-            package: Project release package to be launched.
-        """
         self._project: str = package.manifest.name
         self._registry: asset.Registry = volatile.Registry()
         asset.Directory(self._registry).get(self._project).put(package)

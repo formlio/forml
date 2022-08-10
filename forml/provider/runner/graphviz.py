@@ -49,6 +49,12 @@ class Runner(runtime.Runner, alias='graphviz'):
      Dotted edge    State transfer.
     ============= ===========================================
 
+    Args:
+        filepath: Target path for producing the DOT file.
+        view: If True, open the rendered result with the default application.
+        options: Any of the supported (and non-colliding) :class:`graphviz.Digraph` keyword
+                 arguments.
+
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
@@ -80,13 +86,6 @@ class Runner(runtime.Runner, alias='graphviz'):
         view: bool = True,
         **options: typing.Any,
     ):
-        """
-        Args:
-            filepath: Target path for producing the DOT file.
-            view: If True, open the rendered result with the default application.
-            options: Any of the supported (and non-colliding) :class:`graphviz.Digraph` keyword
-                     arguments.
-        """
         super().__init__(instance, feed, sink)
         self._filepath: pathlib.Path = pathlib.Path(filepath or self.FILEPATH)
         self._view: bool = view

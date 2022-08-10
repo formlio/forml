@@ -16,9 +16,15 @@
 # under the License.
 
 """
-Ensembling operators.
+Advanced operators for aggregating multiple models into an *ensemble*.
+
+Model ensembling is a powerful technique for improving the overall accuracy of multiple weak
+learners.
+
+Ensembling comes in a number of different flavours each with its strengths and tradeoffs. This
+module provides some of the major implementations.
 """
 
-from ._stacking import Ensembler, FullStack
+from ._stacking import FullStack
 
-__all__ = ['Ensembler', 'FullStack']
+__all__ = ['FullStack']

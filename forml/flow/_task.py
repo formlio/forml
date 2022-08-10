@@ -51,6 +51,7 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
 
     def extract(obj: typing.Any) -> str:
         """Extract the name of given object
+
         Args:
             obj: Object whose name to be extracted.
 
@@ -215,6 +216,11 @@ _Actor = typing.TypeVar('_Actor', bound=Actor)
 class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, args, kwargs')):
     """Actor builder holding all the required init configuration for instantiating the particular
     actor.
+
+    Args:
+        actor: Target actor class.
+        args: Actor positional arguments.
+        kwargs: Actor keyword arguments.
     """
 
     actor: type[_Actor]
@@ -222,12 +228,6 @@ class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, 
     kwargs: typing.Mapping[str, typing.Any]
 
     def __new__(cls, actor: type[_Actor], *args: typing.Any, **kwargs: typing.Any):
-        """
-        Args:
-            actor: Target actor class.
-            args: Actor positional arguments.
-            kwargs: Actor keyword arguments.
-        """
         inspect.signature(actor).bind_partial(*args, **kwargs)
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 

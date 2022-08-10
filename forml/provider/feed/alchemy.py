@@ -44,6 +44,11 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
     Attention:
         All the referenced :ref:`schema catalogs <io-catalog>` must be installed.
 
+    Args:
+        sources: The mapping of :ref:`schema catalogs <io-catalog>` to the DB tables.
+        readerkw: Optional keywords typically for the :func:`pandas.read_sql
+                  <pandas:pandas.read_sql>`.
+
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
@@ -71,13 +76,6 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
         sources: typing.Mapping[typing.Union['dsl.Source', str], str],
         **readerkw,
     ):
-        """
-        Args:
-            sources: The mapping of :ref:`schema catalogs <io-catalog>` to the DB tables.
-            readerkw: Optional keywords typically for the :func:`pandas.read_sql
-                      <pandas:pandas.read_sql>`.
-        """
-
         def ensure_source(src: typing.Union['dsl.Source', str]) -> 'dsl.Source':
             if isinstance(src, str):
                 src = dslmod.Schema.from_path(src)

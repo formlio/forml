@@ -29,7 +29,6 @@ data-sources by the particular :ref:`feed <feed>` providers.
 
 .. autosummary::
    :template: function.rst
-   :nosignatures:
    :toctree: ../../_auto
 
    forml.io.dsl.function._aggregate

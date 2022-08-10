@@ -82,7 +82,7 @@ class Source(typing.NamedTuple):
     Examples:
         >>> ETL = project.Source.query(
         ...     schema.FooBar.select(schema.FooBar.foo)
-        ... ) >> payload.ToPandas() >> payload.Apply(lambda df: df.dropna())
+        ... ) >> payload.ToPandas()
     """
 
     Labels = typing.Union[
@@ -169,7 +169,7 @@ class Source(typing.NamedTuple):
             Virtual project handle.
 
         Examples:
-            >>> PIPELINE = payload.Apply(lambda df: df.dropna())
+            >>> PIPELINE = payload.ToPandas()
             >>> SOURCE = project.Source.query(
             ...     schema.FooBar.select(schema.FooBar.foo)
             ... )

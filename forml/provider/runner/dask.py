@@ -35,6 +35,12 @@ class Runner(runtime.Runner, alias='dask'):
     """ForML runner implementation using the :doc:`Dask computing library <dask:index>` as the
     execution platform.
 
+    Args:
+        scheduler: Name of the chosen Dask scheduler. Supported options are:
+
+                   * ``threaded``
+                   * ``multiprocessing``
+
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
     .. code-block:: toml
@@ -109,13 +115,6 @@ class Runner(runtime.Runner, alias='dask'):
         sink: typing.Optional[io.Sink] = None,
         scheduler: typing.Optional[str] = None,
     ):
-        """
-        Args:
-            scheduler: Name of the chosen Dask scheduler. Supported options are:
-
-                       * ``threaded``
-                       * ``multiprocessing``
-        """
         super().__init__(instance, feed, sink)
         self._scheduler: str = scheduler or self.SCHEDULER
 

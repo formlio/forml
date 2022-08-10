@@ -29,27 +29,23 @@ http://www.sphinx-doc.org/en/master/config
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+
 import os
-import re
 import sys
-import typing
 
 from sphinx import application
-from sphinx.ext import autodoc, autosummary
 
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))
 
-import forml  # pylint: disable=wrong-import-position; # noqa: E402
-from forml import provider  # pylint: disable=wrong-import-position; # noqa: E402
-from forml.io import dsl  # pylint: disable=wrong-import-position; # noqa: E402
-from forml.io.dsl import function  # pylint: disable=wrong-import-position; # noqa: E402
+import _forml  # pylint: disable=wrong-import-position; # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
 project = 'ForML'
 
 # The full version, including alpha/beta/rc tags
-release = forml.__version__
+release = _forml.VERSION
 
 
 # -- General configuration ---------------------------------------------------
@@ -185,10 +181,11 @@ html_theme_options = {
 
 # -- Options for sphinx.ext.autodoc --------------------------------------------
 # See: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
-autoclass_content = 'both'
 autodoc_typehints = 'signature'
-autosummary_generate = True
 autodoc_member_order = 'bysource'
+autosummary_generate = True
+autosummary_ignore_module_all = False
+autosummary_imported_members = True
 
 
 # -- Options for sphinx.ext.napoleon -------------------------------------------
@@ -203,8 +200,6 @@ todo_include_todos = True
 
 # -- Options for sphinx_immaterial --------------------------------------
 # See: https://pypi.org/project/sphinx-immaterial/
-# python_transform_type_annotations_concise_literal = False
-# python_transform_type_annotations_pep604 = False
 object_description_options = [
     ('py:.*parameter', dict(include_in_toc=False)),
     ('py:.*attribute', dict(include_in_toc=False)),
@@ -220,65 +215,8 @@ object_description_options = [
 nbsphinx_requirejs_path = ''
 
 
-class ClassDocumenter(autodoc.ClassDocumenter):
-    """Custom class documenter with ForML specific workarounds."""
-
-    def import_object(self, raiseerror: bool = False) -> bool:
-        """The dsl.Schema is not rendered properly due to the fact it is an object rather than a
-        class.
-        """
-        ret = super().import_object(raiseerror)
-        if isinstance(self.object, dsl.Schema.__class__):
-            self.object = self.object.__class__
-            self.doc_as_attr = False
-        return ret
-
-    def get_attr(self, obj: typing.Any, name: str, *defargs: typing.Any) -> typing.Any:
-        """Autodoc is detecting ForML providers to have __call__ (due to their metaclass) and takes
-        the signature from there instead of __init__.
-        """
-        if obj is provider.Meta and name == '__call__':
-            return None
-        return super().get_attr(obj, name, *defargs)
-
-
-class MethodDocumenter(autodoc.MethodDocumenter):
-    """Custom method documenter with ForML specific workarounds."""
-
-    def import_object(self, raiseerror: bool = False) -> bool:
-        """The dsl.Schema methods are not rendered properly due to the fact it is an object rather
-        than a class.
-        """
-        ret = super().import_object(raiseerror)
-        if isinstance(self.parent, dsl.Schema.__class__):
-            self.parent = self.parent.__class__
-        return ret
-
-
-class Autosummary(autosummary.Autosummary):
-    """Patched Autosummary with custom formatting for certain ForML types."""
-
-    RE_PROVIDER = re.compile(rf'(?={provider.__name__})(?:\w+\.)+(\w+)\.\w+$')
-    RE_DSL = re.compile(rf'(?={dsl.__name__})(?:\w+\.)+(\w+\.\w+)$')
-    RE_FUNCTION = re.compile(rf'(?={function.__name__})(?:\w+\.)+_(\w+)$')
-
-    @classmethod
-    def __format_name(cls, display_name, sig, summary, real_name):
-        """Custom name formatting."""
-        if match := cls.RE_PROVIDER.match(display_name):
-            display_name = match.group(1).title()
-        elif match := cls.RE_FUNCTION.match(display_name):
-            display_name = match.group(1).title()
-        elif match := cls.RE_DSL.match(display_name):
-            display_name = match.group(1)
-        return display_name, sig, summary, real_name
-
-    def get_items(self, names):
-        return [self.__format_name(*i) for i in super().get_items(names)]
-
-
 def setup(app: application.Sphinx):
     """Sphinx setup hook."""
-    app.add_autodocumenter(ClassDocumenter, override=True)
-    app.add_autodocumenter(MethodDocumenter, override=True)
-    app.add_directive('autosummary', Autosummary)
+    app.add_autodocumenter(_forml.ClassDocumenter, override=True)
+    app.add_autodocumenter(_forml.MethodDocumenter, override=True)
+    app.add_directive('autosummary', _forml.Autosummary)

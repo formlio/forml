@@ -13,11 +13,39 @@
     specific language governing permissions and limitations
     under the License.
 
-{% set provider = module.rsplit('.', 1)[-1] %}
+.. module: {{fullname}}
 
-.. module:: {{ module }}
+{{ fullname | escape | underline}}
 
-{{ (provider + ' ' + name) | title | escape | underline}}
+.. automodule:: {{ fullname }}
 
-.. autoclass:: {{ objname }}
-   :show-inheritance:
+   {% block attributes %}
+   {% if attributes %}
+   .. rubric:: {{ _('Module Attributes') }}
+
+   {% for item in attributes %}
+   .. autodata:: {{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
+
+   {% block functions %}
+   {% if functions %}
+   .. rubric:: {{ _('Functions') }}
+
+   {% for item in functions %}
+   .. autofunction:: {{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
+
+   {% block classes %}
+   {% if classes %}
+   .. rubric:: {{ _('Classes') }}
+
+   {% for item in classes %}
+   .. autoclass:: {{ item }}
+      :show-inheritance:
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}

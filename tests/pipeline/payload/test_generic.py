@@ -21,7 +21,7 @@ Generic payload operators unit tests.
 import pandas
 
 from forml import testing
-from forml.pipeline import payload
+from forml.pipeline import payload, wrap
 
 
 class TestMapReduce(testing.operator(payload.MapReduce)):
@@ -35,3 +35,25 @@ class TestMapReduce(testing.operator(payload.MapReduce)):
         .apply(FEATURES)
         .returns(FEATURES, testing.pandas_equals)
     )
+
+
+class TestApply(testing.operator(wrap.Operator.mapper(payload.Apply))):
+    """Apply actor unit tests."""
+
+    apply = testing.Case(function=lambda i: i + 1).apply(10).returns(11)
+
+
+class TestPandasSelect(testing.operator(wrap.Operator.mapper(payload.PandasSelect))):
+    """PandasSelect operator unit tests."""
+
+    FEATURES = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
+
+    select = testing.Case(columns=['foo']).apply(FEATURES).returns(FEATURES[['foo']], testing.pandas_equals)
+
+
+class TestPandasDrop(testing.operator(wrap.Operator.mapper(payload.PandasDrop))):
+    """PandasDrop operator unit tests."""
+
+    FEATURES = pandas.DataFrame({'foo': [1.0, 2.0, 3.0], 'bar': ['a', 'b', 'b']})
+
+    drop = testing.Case(columns=['foo']).apply(FEATURES).returns(FEATURES.drop(columns=['foo']), testing.pandas_equals)

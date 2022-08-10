@@ -39,7 +39,13 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
-    """Generation metadata."""
+    """Generation metadata.
+
+    Args:
+        training: Generation training information.
+        tuning: Generation tuning information.
+        states: Sequence of state asset IDs.
+    """
 
     class Mode(types.SimpleNamespace):
         """Mode metadata."""
@@ -114,12 +120,6 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         tuning: typing.Optional[Tuning] = None,
         states: typing.Optional[typing.Sequence[uuid.UUID]] = None,
     ):
-        """
-        Args:
-            training: Generation training information.
-            tuning: Generation tuning information.
-            states: Sequence of state asset IDs.
-        """
         return super().__new__(cls, training or cls.Training(), tuning or cls.Tuning(), tuple(states or []))
 
     def __bool__(self):

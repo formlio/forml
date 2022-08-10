@@ -262,6 +262,9 @@ the task graph:
     Note the ``.head`` node must have *single input port* and the ``.tail`` node must have
     *single output port*.
 
+.. _topology-coherence:
+.. rubric:: Segment Coherence
+
 To carry one of the core ForML traits - the inseparability of the *train* and *apply* mode
 implementations - ForML uses the ``flow.Trunk`` structure as the integrated representation of the
 related *segments*. There are actually three segments that need to be bound together to cover all

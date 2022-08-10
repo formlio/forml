@@ -118,7 +118,7 @@ def actor_builder(
     actor_type: type[flow.Actor], hyperparams: typing.Mapping[str, int]
 ) -> flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]:
     """Task builder fixture."""
-    return flow.Builder(actor_type, **hyperparams)
+    return actor_type.builder(**hyperparams)
 
 
 @pytest.fixture(scope='session')

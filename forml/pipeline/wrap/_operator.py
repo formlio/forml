@@ -23,6 +23,8 @@ import typing
 
 from forml import flow as flowmod
 
+from . import _proxy
+
 if typing.TYPE_CHECKING:
     from forml import flow  # pylint: disable=reimported
     from forml.pipeline import wrap
@@ -31,7 +33,7 @@ if typing.TYPE_CHECKING:
 class Decorator:
     """Decorator facility for multi-level decoration."""
 
-    class Builder:
+    class Builder(_proxy.Type[type['flow.Actor'], 'wrap.Operator']):
         """Operator builder carrying the parameters during decorations."""
 
         class Decorator:
@@ -89,11 +91,12 @@ class Decorator:
         label = property(lambda self: self.Decorator(self, self._label))
 
         def __init__(self, actor: type['flow.Actor']):
+            super().__init__(actor)
             self._train: Decorator.Builder.Setter = self.Setter(actor)
             self._apply: Decorator.Builder.Setter = self.Setter(actor)
             self._label: Decorator.Builder.Setter = self.Setter(actor)
 
-        def __call__(self, *args, **kwargs) -> 'Operator':
+        def __call__(self, *args, **kwargs) -> 'wrap.Operator':
             return Operator(
                 self._apply.builder(*args, **kwargs),
                 self._train.builder(*args, **kwargs),
@@ -131,29 +134,40 @@ class Decorator:
 
 
 class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
-    """Generic wrapper for creating operators out of simple actors.
+    """Special operator created via decoration of particular actors.
 
-    Actor definitions for individual modes can be provided using the available decorator methods.
+    This represents a convenient way of implementing ForML *Operators* without requiring to fully
+    implement the :class:`flow.Operator <forml.flow.Operator>` base class from scratch.
 
-    The primitive decorators (:meth:`apply`, :meth:`train`, :meth:`label`) can be *chained* together
-    as well as applied in a *split* fashion onto separate actors for different modes::
+    Attention:
+        Instances are expected to be created via the decorator methods.
 
-        @wrap.Operator.train
-        @wrap.Operator.apply  # can be chained if same actor is also to be used in another mode
-        @wrap.Actor.apply
-        def MyOperator(df, *, myarg=None):
-            # stateless actor implementation used for train/apply segments
+    This approach is applicable only to a special case of *simple* operators implemented by at most
+    one actor per each of the coherent :ref:`appy/train/label segments <topology-coherence>`
+    corresponding to the relevant *primitive* decorators (:meth:`apply`, :meth:`train`,
+    :meth:`label`) supplying the particular actors.
 
-        @MyOperator.label  # decorated operator can itself be used as decorator in split fashion
-        @wrap.Actor.apply
-        def MyOperator(df, *, myarg=None):
-            # stateless actor implementation used for the label segment
+    In addition to the primitive decorators there is the combined :meth:`mapper` decorator filling
+    both the train/apply segments at once.
 
-    Keyword parameters passed to the created operators get delivered to the actor when invoked:
+    Hint:
+        The primitive decorators can be *chained* together as well as applied in a *split* fashion
+        onto separate actors for different modes::
 
-        >>> PIPELINE = MyOperator(myarg='foo') >> AnotherOperator()
+            @wrap.Operator.train
+            @wrap.Operator.apply  # can be chained if same actor is also to be used in another mode
+            @wrap.Actor.apply
+            def MyOperator(df, *, myarg=None):
+                ... # stateless actor implementation used for train/apply segments
+
+            @MyOperator.label  # decorated operator can itself be used as decorator in split fashion
+            @wrap.Actor.apply
+            def MyOperator(df, *, myarg=None):
+                ... # stateless actor implementation used for the label segment
 
     .. rubric:: Decorator Methods
+
+    Actor definitions for individual modes can be provided using the following decorator methods.
 
     Methods:
         train(actor):
@@ -164,6 +178,14 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             doesn't get applied to the *apply-mode* features unless also decorated with the
             :meth:`apply` decorator (this is rarely desired - see the :meth:`mapper` decorator for
             more typical use case)!
+
+            Parameters:
+                actor: Decorated actor.
+
+            Returns:
+                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                instantiated into the actual Operator as well as further chained as a follow-up
+                decorator.
 
             Examples:
                 Usage with a wrapped *stateless* actor::
@@ -184,6 +206,14 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             in the *apply-mode*. If *stateful*, the actor also gets normally trained in *train-mode*
             (but doesn't get applied to the train-mode features unless also decorated with the
             :meth:`train` decorator!).
+
+            Parameters:
+                actor: Decorated actor.
+
+            Returns:
+                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                instantiated into the actual Operator as well as further chained as a follow-up
+                decorator.
 
             Examples:
                 Usage with a wrapped *stateful* actor::
@@ -223,6 +253,14 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             normally trained first. The actor gets engaged prior to any other stateful actors
             potentially added to the same operator (using the ``@train`` or ``@apply`` decorators).
 
+            Parameters:
+                actor: Decorated actor.
+
+            Returns:
+                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                instantiated into the actual Operator as well as further chained as a follow-up
+                decorator.
+
             Examples:
                 Usage with a wrapped *stateless* actor::
 
@@ -238,12 +276,13 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
                         >> ApplyOnlyFillnaMean(column='bar')
                     )
 
-            Alternatively, it could as well be just added to the existing ``ApplyOnlyFillnaMean``::
+                Alternatively, it could as well be just added to the existing
+                ``ApplyOnlyFillnaMean``::
 
-                @ApplyOnlyFillnaMean.label
-                @wrap.Actor.apply
-                def ApplyFillnaMeanLabelFillZero(labels: pandas.Series) -> pandas.Series:
-                    return labels.fillna(0)
+                    @ApplyOnlyFillnaMean.label
+                    @wrap.Actor.apply
+                    def ApplyFillnaMeanLabelFillZero(labels: pandas.Series) -> pandas.Series:
+                        return labels.fillna(0)
 
         mapper(actor):
             Combined train-apply decorator.
@@ -252,8 +291,15 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             and :meth:`apply` decorators effectively engaging the actor in transforming the
             features in both the *train-mode* as well as the *apply-mode*.
 
-            This decorator can neither be chained nor applied in the split fashion as the
+            This decorator can neither be chained nor applied in the split fashion as the primitive
             :meth:`train`, :meth:`apply` or :meth:`label` decorators.
+
+            Parameters:
+                actor: Decorated actor.
+
+            Returns:
+                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                instantiated into the actual Operator.
     """
 
     def __init__(
@@ -283,7 +329,10 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
         /,
         **params: typing.Any,
     ) -> typing.Callable[..., 'wrap.Operator']:
-        """documented in class docstring"""
+        """Combined train-apply decorator.
+
+        See Also: Full description in the class docstring.
+        """
 
         def decorator(actor: type['flow.Actor']) -> typing.Callable[..., 'wrap.Operator']:
             """Decorating function."""

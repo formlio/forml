@@ -182,9 +182,10 @@ shape the entire task graph in a fully flexible manner.
 As shown, the pipeline composition expressions are using the ``>>`` syntax to compose two
 operators together. This can be chained further down engaging multiple operators.
 
-The ``.compose()`` method of each operator is receiving the composition *scope* - the upstream
-(left) side of the expression - in an *unexpanded* form allowing the ``.compose()`` implementation
-to expand it (by calling the ``scope.expand()``) itself as many times as needed.
+The :meth:`.compose() <forml.flow.Composable.compose>` method of each operator is receiving the
+composition *scope* - the upstream (left) side of the expression - in an *unexpanded* form
+allowing the ``.compose()`` implementation to expand it (by calling the :meth:`scope.expand()
+<forml.flow.Composable.compose>`) itself as many times as needed.
 
 The *expansion* process triggers the chained ``.compose()`` calls of the upstream operators all
 the way up to the *origin* of the given composition *scope*. Explicit scoping can be defined using
@@ -200,20 +201,34 @@ study <study>`.
 Wrapped Operators
 -----------------
 
-Instead of implementing the entire ``flow.Operator`` base class, operators can in special cases be
-defined using the wrappers provided within the ``forml.pipeline.wrap`` package.
+Instead of implementing the entire :class:`flow.Operator <forml.flow.Operator>` base class,
+operators can in special cases be defined using the wrappers provided within the
+:mod:`pipeline library <forml.pipeline.wrap>`.
 
 This approach is applicable to basic ML entities based on *individual actors* like *transformers*
 or *estimators*.
 
-
 Simple Decorated Operators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Custom actors can be turned into operators easily by wrapping within the provided
-``wrap.Operator.*`` decorators:
+Custom actors can be turned into operators easily by wrapping particular actors within the provided
+:class:`wrap.Operator.* <forml.pipeline.wrap.Operator>` decorators from the :mod:`pipeline library
+<forml.pipeline.wrap>`:
 
-.. autoclass:: forml.pipeline.wrap.Operator
+.. code-block:: python
+   :caption: Stateless mapper operator example
+
+    @wrap.Operator.mapper
+    @wrap.Actor.apply
+    def DropColumn(
+        features: pandas.DataFrame, *, column: str
+    ) -> pandas.DataFrame:
+        return df.drop(columns=column)
+
+    PIPELINE = AnotherOperator() >> DropColumn(column='foo')
+
+For complete reference of the decorated operators including further examples see the
+:class:`wrap.Operator <forml.pipeline.wrap.Operator>` class documentation.
 
 .. _operator-autowrap:
 
@@ -224,18 +239,19 @@ Another option for defining particular operators is reusing third-party implemen
 providing the desired functionality. We've already shown how these entities can be easily
 :ref:`mapped into ForML actors <actor-mapped>`. It can, however, be even easier to transparently
 *auto-wrap* them directly into ForML operators right upon importing. This can be achieved using
-the ``wrap.importer`` context manager:
+the :func:`wrap.importer <forml.pipeline.wrap.importer>` context manager:
 
-.. autofunction:: forml.pipeline.wrap.importer
+.. code-block:: python
+   :caption: Auto-wrapping imported 3rd party entities as ForML operators
 
+    with wrap.importer():
+        from sklearn.ensemble import GradientBoostingClassifier
 
-The default list of *auto-wrappers* is available as ``wrap.AUTO`` and contains the following
-instances:
+    # This is now actually ForML operator wrapping the Sklearn classifier
+    GBC = GradientBoostingClassifier(n_estimators=30, max_depth=10)
 
-.. autoattribute:: forml.pipeline.wrap.AUTO
-
-
-Custom auto-wrappers can be implemented by extending the ``wrap.Auto`` base class:
-
-.. autoclass:: forml.pipeline.wrap.Auto
-    :members: match, apply
+What and how gets actually wrapped upon importing is controlled by the set of
+special *auto-wrappers* instances passed to the :func:`wrap.importer <forml.pipeline.wrap.importer>`
+context manager, which defaults to a content of the :attr:`wrap.AUTO <forml.pipeline.wrap.AUTO>`
+list. Additional custom auto-wrappers can be implemented by extending the :class:`wrap.Auto
+<forml.pipeline.wrap.Auto>` base class.

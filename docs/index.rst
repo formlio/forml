@@ -83,9 +83,9 @@ Resources
     project
     workflow/index
     evaluation
-    pipeline
     testing
     application
+    pipeline
 
 
 .. toctree::

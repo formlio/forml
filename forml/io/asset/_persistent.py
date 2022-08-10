@@ -54,15 +54,15 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
 
 
 class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.Registry.path):
-    """Abstract base class of the ForML model registry concept."""
+    """Abstract base class of the ForML model registry concept.
+
+    Args:
+        staging: Filesystem location reachable from all runner nodes to be used for :ref:`package
+                 staging <registry-staging>` (defaults to a local temporal directory (invalid for
+                 distributed runners)).
+    """
 
     def __init__(self, staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):
-        """
-        Args:
-            staging: Filesystem location reachable from all runner nodes to be used for
-                     :ref:`package staging <registry-staging>` (defaults to a local temporal
-                     directory (invalid for distributed runners)).
-        """
         if not staging:
             LOGGER.warning('Using temporal non-distributed staging for %s', self)
             staging = mkdtemp(prefix=f'{self}-staging-')

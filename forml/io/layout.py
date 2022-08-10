@@ -171,6 +171,10 @@ _CSV = re.compile(r'\s*,\s*')
 class Encoding(collections.namedtuple('Encoding', 'kind, options')):
     """Content encoding representation to be used by the Serving gateways.
 
+    Args:
+        kind: Content type label
+        options: Encoding options.
+
     Examples:
         >>> ENC = layout.Encoding('application/json', charset='UTF-8')
         >>> ENC.header
@@ -185,11 +189,6 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
     """Encoding options."""
 
     def __new__(cls, kind: str, /, **options: str):
-        """
-        Args:
-            kind: Content type label
-            options: Encoding options.
-        """
         return super().__new__(cls, kind.strip().lower(), types.MappingProxyType(options))
 
     @functools.cached_property
@@ -254,7 +253,14 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
 
 
 class Request(collections.namedtuple('Request', 'payload, encoding, params, accept')):
-    """Serving gateway request object."""
+    """Serving gateway request object.
+
+    Args:
+        payload: Raw encoded payload.
+        encoding: Content type encoding instance.
+        params: Optional application-level parameters.
+        accept: Content types request for the eventual ``Response``.
+    """
 
     class Decoded(typing.NamedTuple):
         """Decoded request case class."""
@@ -284,13 +290,6 @@ class Request(collections.namedtuple('Request', 'payload, encoding, params, acce
         params: typing.Optional[typing.Mapping[str, typing.Any]] = None,
         accept: typing.Optional[typing.Sequence['layout.Encoding']] = None,
     ):
-        """
-        Args:
-            payload: Raw encoded payload.
-            encoding: Content type encoding instance.
-            params: Optional application-level parameters.
-            accept: Content types request for the eventual ``Response``.
-        """
         return super().__new__(
             cls, payload, encoding, types.MappingProxyType(dict(params or {})), tuple(accept or [encoding])
         )

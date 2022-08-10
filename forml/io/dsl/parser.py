@@ -119,7 +119,7 @@ class Container(typing.Generic[Symbol]):
                 their relevant tables.
 
                 Args:
-                    *feature: Features to be to extracted and registered.
+                    feature: Features to be to extracted and registered.
                 """
                 for field in dsl.Column.dissect(*feature):
                     self[field.origin].fields.add(field)
@@ -258,6 +258,12 @@ class Visitor(
     Upon failing to resolve any particular *source*/*feature* using the initial mappings, the parser
     raises the :exc:`dsl.UnprovisionedError <forml.io.dsl.UnprovisionedError>` indicating
     unavailability of the given data-source.
+
+    Args:
+        sources: Explicit mapping of generic DSL *sources* (typically :class:`dsl.Table
+                 <forml.io.dsl.Table>`) to their native representations.
+        features: Explicit mapping of generic DSL *features* (typically :class:`dsl.Column
+                  <forml.io.dsl.Column>`) to their native representations.
     """
 
     def __init__(
@@ -265,13 +271,6 @@ class Visitor(
         sources: typing.Mapping['dsl.Source', 'parser.Source'],
         features: typing.Mapping['dsl.Feature', 'parser.Feature'],
     ):
-        """
-        Args:
-            sources: Explicit mapping of generic DSL *sources* (typically :class:`dsl.Table
-                     <forml.io.dsl.Table>`) to their native representations.
-            features: Explicit mapping of generic DSL *features* (typically :class:`dsl.Column
-                      <forml.io.dsl.Column>`) to their native representations.
-        """
         super().__init__()
         self._sources: typing.Mapping['dsl.Source', 'parser.Source'] = types.MappingProxyType(sources)
         self._features: typing.Mapping['dsl.Feature', 'parser.Feature'] = types.MappingProxyType(features)

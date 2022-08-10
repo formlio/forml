@@ -44,7 +44,35 @@ Class = typing.TypeVar('Class', bound=type)
 
 
 class Auto(typing.Generic[Entity], abc.ABC):
-    """Generic auto-wrapper base class."""
+    """Generic base class for auto-wrapper implementations.
+
+    If supplied to the :func:`wrap.importer() <forml.pipeline.wrap.importer>` context manager
+    when capturing the imports, each discovered entity within the imported namespace is checked
+    against the auto-wrapper using its :meth:`match` method and if compatible it gets wrapped
+    in-place using its :meth:`apply` method.
+
+    Each auto-wrapper needs to implement the following methods:
+
+    Methods:
+        match(entity):
+            Check this wrapper is capable of wrapping the given entity into a ForML operator.
+
+            Args:
+                entity: Wrapping candidate subject.
+
+            Returns:
+                True if this wrapper is capable to wrap the entity.
+
+        apply(entity):
+            Actual wrapping implementation.
+
+            Args:
+                entity: Wrapping subject.
+
+            Returns:
+                ForML :class:`operator-type-like callable <forml.pipeline.wrap.Type>` compatible
+                with the signature of the wrapped entity.
+    """
 
     def __call__(self, entity: Entity) -> typing.Callable[..., 'flow.Operator']:
         if not self.match(entity):
@@ -58,23 +86,14 @@ class Auto(typing.Generic[Entity], abc.ABC):
     def match(self, entity: typing.Any) -> bool:
         """Check this wrapper is capable of wrapping the given entity into a ForML operator.
 
-        Args:
-            entity: Wrapping candidate subject.
-
-        Returns:
-            True if this wrapper is capable to wrap the entity.
+        See Also: Full description in the class docstring.
         """
 
     @abc.abstractmethod
     def apply(self, entity: Entity) -> typing.Callable[..., 'flow.Operator']:
         """Actual wrapping implementation.
 
-        Args:
-            entity: Wrapping subject.
-
-        Returns:
-            ForML operator constructor-like callable compatible with the signature of the wrapped
-            entity.
+        See Also: Full description in the class docstring.
         """
 
 
@@ -92,7 +111,19 @@ class AutoClass(collections.namedtuple('AutoClass', 'base, apply'), typing.Gener
 
 
 class AutoSklearnTransformer(AutoClass[type[sklbase.TransformerMixin]]):
-    """Wrapper for Scikit-learn transformers."""
+    """Auto-wrapper for turning Scikit-learn *transformers* into ForML operators.
+
+    Instances can be used with :func:`wrap.importer <forml.pipeline.wrap.importer>` to auto-wrap
+    Sklearn transformers upon importing.
+
+    Hint:
+        Supports not just the official Sklearn transformers but any
+        :class:`sklearn.base.TransformerMixin` subclasses including 3rd party implementations.
+
+    Args:
+        apply: Customizable :meth:`mapping <forml.pipeline.wrap.Actor.type>` for the *apply-mode*
+               target endpoint. Defaults to a ``transform`` literal.
+    """
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'transform'):
         def wrap(transformer: type[sklbase.TransformerMixin]):
@@ -102,10 +133,22 @@ class AutoSklearnTransformer(AutoClass[type[sklbase.TransformerMixin]]):
 
 
 class AutoSklearnClassifier(AutoClass[type[sklbase.ClassifierMixin]]):
-    """Wrapper for Scikit-learn classifiers.
+    """AutoSklearnClassifier(apply: typing.Union[str, typing.Callable[..., typing.Any]] = predict_proba[-1])
 
-    Apply mode (predict) mapper can be customized to choose between the typical `.predict_proba`
-    or the actual class prediction using the `.predict`.
+    Auto-wrapper for turning Scikit-learn *classifiers* into ForML operators.
+
+    Instances can be used with :func:`wrap.importer <forml.pipeline.wrap.importer>` to auto-wrap
+    Sklearn classifiers upon importing.
+
+    Hint:
+        Supports not just the official Sklearn classifiers but any
+        :class:`sklearn.base.ClassifierMixin` subclasses including 3rd party implementations.
+
+    Args:
+        apply: Customizable :meth:`mapping <forml.pipeline.wrap.Actor.type>` for the *apply-mode*
+               target endpoint. Defaults to a callback hitting the ``.predict_proba`` and returning
+               the last of its produced columns (conveniently the 1-class probability in case of
+               binary classification; for multiclass this needs tweaking).
     """
 
     def __new__(
@@ -121,7 +164,19 @@ class AutoSklearnClassifier(AutoClass[type[sklbase.ClassifierMixin]]):
 
 
 class AutoSklearnRegressor(AutoClass[type[sklbase.RegressorMixin]]):
-    """Wrapper for Scikit-learn regressors."""
+    """Auto-wrapper for turning Scikit-learn *regressors* into ForML operators.
+
+    Instances can be used with :func:`wrap.importer <forml.pipeline.wrap.importer>` to auto-wrap
+    Sklearn regressors upon importing.
+
+    Hint:
+        Supports not just the official Sklearn regressors but any
+        :class:`sklearn.base.RegressorMixin` subclasses including 3rd party implementations.
+
+    Args:
+        apply: Customizable :meth:`mapping <forml.pipeline.wrap.Actor.type>` for the *apply-mode*
+               target endpoint. Defaults to a ``predict`` literal.
+    """
 
     def __new__(cls, apply: typing.Union[str, typing.Callable[..., typing.Any]] = 'predict'):
         def wrap(regressor: type[sklbase.RegressorMixin]):
@@ -189,9 +244,10 @@ def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
     Signature of the wrapped object is compatible with the original entity.
 
     Args:
-        wrappers: Sequences of the ``wrap.Auto`` auto-wrapper implementations to be applied to the
-                  discovered wrapping candidates. If no explicit value is provided, the default
-                  ``wrap.AUTO`` list of auto-wrapper implementations is used.
+        wrappers: Sequences of the auto-wrapper implementations to be matched and potentially
+                  (if compatible) applied to the discovered wrapping candidates. If no explicit
+                  value is provided, the default :attr:`wrap.AUTO <AUTO>` list of auto-wrapper
+                  implementations is used.
 
     Returns:
         Context manager under which the direct imports become subject to auto-wrapping.
@@ -225,6 +281,7 @@ def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
             >>> RFC = RandomForestClassifier(n_estimators=30, max_depth=10)
             >>> isinstance(RFC, flow.Operator)
             True
+            >>> PIPELINE = preprocessing.Prepare() >> RFC
     """
 
     def wrapping(
