@@ -24,18 +24,24 @@ import pathlib
 import typing
 
 import forml
-
-from . import _component
+from forml.project import _component
 
 if typing.TYPE_CHECKING:
     from forml.io import asset, layout
 
 
 class Descriptor(abc.ABC):
-    """Application descriptor."""
+    """Application descriptor abstract base class.
+
+    The *serving layer* is using Application descriptors to drive the request processing.
+
+    Descriptors are managed through :class:`asset.Inventory <forml.io.asset.Inventory>`.
+    """
 
     class Handle(collections.namedtuple('Handle', 'path, descriptor')):
-        """Descriptor handle containing the descriptor instance and a filesystem path to a module containing it."""
+        """Descriptor handle containing the descriptor instance and a filesystem path to a module
+        containing it.
+        """
 
         path: pathlib.Path
         """Filesystem path to the module containing the descriptor."""
@@ -71,41 +77,27 @@ class Descriptor(abc.ABC):
     def name(self) -> str:
         """Name of the application represented by this descriptor.
 
-        Application name is expected to be globally unique.
+        Caution:
+            Application name is expected to be globally unique.
 
         Returns:
             Application name.
         """
 
     @abc.abstractmethod
-    def decode(self, request: 'layout.Request') -> 'layout.Request.Decoded':
-        """Decode the raw payload into a format accepted by the application.
+    def receive(self, request: 'layout.Request') -> 'layout.Request.Decoded':
+        """Receive the raw payload and turn it into a structure suitable for predicting.
+
+        This involves at least message decoding plus potentially also any adjustments to the data
+        necessary for prediction. Additionally, it might also produce custom metadata representing
+        an *application scope* to be passed down the chain all the way to :meth:`select` and
+        :meth:`encode`.
 
         Args:
             request: Native request format.
 
         Returns:
-            Decoded entry with optional custom (serializable!) metadata to be carried over into ``select`` and
-            ``encode``.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def encode(
-        self,
-        outcome: 'layout.Outcome',
-        encoding: typing.Sequence['layout.Encoding'],
-        scope: typing.Any,
-    ) -> 'layout.Response':
-        """Encode the application result into a native response to be passed back by the engine.
-
-        Args:
-            outcome: Output to be encoded.
-            encoding: Accepted encoding media types.
-            scope: Optional metadata carried over from decode.
-
-        Returns:
-            Encoded native response.
+            Decoded entry (adjusted for prediction) with optional custom (serializable!) metadata.
         """
         raise NotImplementedError()
 
@@ -120,10 +112,31 @@ class Descriptor(abc.ABC):
 
         Args:
             registry: Model registry to select the model from.
-            scope: Optional metadata carried over from decode.
+            scope: Optional metadata carried over from :meth:`receive`.
             stats: Application specific serving metrics.
 
         Returns:
             Model instance.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def respond(
+        self,
+        outcome: 'layout.Outcome',
+        encoding: typing.Sequence['layout.Encoding'],
+        scope: typing.Any,
+    ) -> 'layout.Response':
+        """Turn the application result into a native response to be passed back to the requestor.
+
+        This involves assembling the result structure and encoding it into a native format.
+
+        Args:
+            outcome: Output to be returned.
+            encoding: Accepted encoding media types.
+            scope: Optional metadata carried over from :meth:`receive`.
+
+        Returns:
+            Encoded native response.
         """
         raise NotImplementedError()

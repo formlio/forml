@@ -201,7 +201,7 @@ class Evaluation(typing.NamedTuple):
 
 
 class Virtual:
-    """Virtual component module based on real component instance."""
+    """Virtual component module based on a real component instance."""
 
     def __init__(self, component: typing.Any, package: typing.Optional[str] = None):
         def onexec(_: types.ModuleType) -> None:

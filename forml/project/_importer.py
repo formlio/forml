@@ -95,7 +95,8 @@ class Finder(abc.MetaPathFinder):
     def create(
         cls, module: types.ModuleType, onexec: typing.Optional[typing.Callable[[types.ModuleType], None]] = None
     ) -> typing.Iterable['Finder']:
-        """Return the chain of finders for given module creating fake intermediate modules for missing parents.
+        """Return the chain of finders for given module creating fake intermediate modules for
+        missing parents.
 
         Args:
             module: Module to create a finder for.
@@ -106,7 +107,8 @@ class Finder(abc.MetaPathFinder):
         """
 
         def virtualize(name: str) -> bool:
-            """Check the given package is a real one (can be imported) or create a virtual instance of it.
+            """Check the given package is a real one (can be imported) or create a virtual instance
+            of it.
 
             Args:
                 name: Package name.
@@ -143,12 +145,13 @@ def _parent(name: str) -> typing.Optional[str]:
 
 
 def _walkup(name: str, handler: typing.Callable[[str], bool]) -> None:
-    """Walk the module name parents and call the handler for each until it either returns False or the root is
-    reached.
+    """Walk the module name parents and call the handler for each until it either returns False or
+    the root is reached.
 
     Args:
         name: Qualified module name.
-        handler: Function to be called with each parent - returning False signalizes to stop the walk.
+        handler: Function to be called with each parent - returning False signalizes to stop the
+                 walk.
     """
     assert name
     if handler(name) and (name := _parent(name)):
@@ -172,11 +175,11 @@ def _unload(module: str) -> None:
 
 @contextlib.contextmanager
 def context(module: types.ModuleType) -> typing.Iterable[None]:
-    """Context manager that adds an importlib.MetaPathFinder to sys._meta_path while in the context faking imports
-    of forml.project.component to a virtual fabricated module.
+    """Context manager that adds an ``importlib.MetaPathFinder`` to ``sys._meta_path`` while in the
+    context faking imports of ``forml.project`` to a virtual fabricated module.
 
     Args:
-        module: Module to be returned upon import of forml.project.component.
+        module: Module to be returned upon import of ``forml.project``.
 
     Returns:
         Context manager.
@@ -191,7 +194,7 @@ def context(module: types.ModuleType) -> typing.Iterable[None]:
 
 
 def search(*paths: typing.Union[str, pathlib.Path]) -> None:
-    """Simply add the given paths to the front of sys.path removing all potential duplicates.
+    """Simply add the given paths to the front of ``sys.path`` removing all potential duplicates.
 
     Args:
         *paths: Paths to be inserted to sys.path.
@@ -205,7 +208,8 @@ def search(*paths: typing.Union[str, pathlib.Path]) -> None:
 
 @contextlib.contextmanager
 def searched(*paths: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
-    """Context manager for putting given paths on python module search path but only for the duration of the context.
+    """Context manager for putting given paths on python module search path but only for the
+    duration of the context.
 
     Args:
         *paths: Paths to be inserted to sys.path when in the context.

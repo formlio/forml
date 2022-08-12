@@ -419,5 +419,5 @@ def inventory(descriptor: prj.Descriptor) -> asset.Inventory:
 def testset_request(descriptor: prj.Descriptor, testset_entry: layout.Entry) -> layout.Request:
     """Request fixture."""
     as_outcome = layout.Outcome(testset_entry.schema, testset_entry.data.to_rows())
-    as_response = descriptor.encode(as_outcome, [layout.Encoding('*/*')], None)
+    as_response = descriptor.respond(as_outcome, [layout.Encoding('*/*')], None)
     return layout.Request(as_response.payload, as_response.encoding)

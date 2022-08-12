@@ -202,7 +202,7 @@ class Wrapper:
         Returns:
             Asset instance object and decoded version of the serving request.
         """
-        decoded = descriptor.decode(request)
+        decoded = descriptor.receive(request)
         return descriptor.select(registry, decoded.scope, stats), decoded
 
     async def extract(self, application: str, request: layout.Request, stats: layout.Stats) -> 'Wrapper.Query':
@@ -231,7 +231,7 @@ class Wrapper:
             Native encoded response.
         """
         return await self._processes(
-            query.descriptor.encode,
+            query.descriptor.respond,
             outcome,
             query.accept,
             query.decoded.scope,

@@ -181,8 +181,8 @@ In line with the overall architecture, ForML is designed to be as much data form
 possible. Conceptually, there are several scopes involving payload exchange requiring compatibility
 with the passing data.
 
-Core Payload Exchange
-^^^^^^^^^^^^^^^^^^^^^
+Internal Payload Exchange
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Payload-wise, the core ForML runtime is pretty generic, dealing only with few tiny interfaces to
 handle the necessary exchange with absolutely minimal footprint. Following is the list of the
@@ -228,8 +228,8 @@ involved core payload types:
    :members: to_columns, to_rows, take_columns, take_rows
 
 
-Serving Payload Exchange
-^^^^^^^^^^^^^^^^^^^^^^^^
+External Payload Exchange
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to the core payloads, the :ref:`serving <serving>` layer involves few more data
 exchanges using the following structures:
@@ -267,12 +267,32 @@ exchanges using the following structures:
 
 .. autoclass:: forml.io.layout.Outcome
 
-.. autoclass:: forml.io.layout.Encoding
-   :members: header, parse
-
 .. autoclass:: forml.io.layout.Request
+   :members: Decoded
 
 .. autoclass:: forml.io.layout.Response
+
+.. autoclass:: forml.io.layout.Stats
+
+
+.. _io-encoding:
+
+Payload Encoding
+^^^^^^^^^^^^^^^^
+
+ForML also depends on the following *encoding* features for the external payload exchange:
+
+.. autoclass:: forml.io.layout.Encoding
+   :members: header, parse, match
+
+.. autoclass:: forml.io.layout.Encoder
+   :members: encoding, dumps
+
+.. autoclass:: forml.io.layout.Decoder
+   :members: loads
+
+.. autofunction:: forml.io.layout.get_encoder
+.. autofunction:: forml.io.layout.get_decoder
 
 
 Payload Transformation Operators

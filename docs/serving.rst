@@ -18,6 +18,60 @@
 Serving Engine
 ==============
 
+.. md-mermaid::
+
+    sequenceDiagram
+        actor Client
+        Client ->> Engine: query(Application, Request)
+        opt if not in cache
+            Engine ->> Inventory: get_descriptor(Application)
+            Inventory --) Engine: Descriptor
+        end
+        Engine ->> Engine: Entry, Scope = Descriptor.receive(Request)
+        Engine ->> Engine: ModelHandle = Descriptor.select(Scope)
+        opt if needed for model selection
+            Engine ->> Registry: inspect()
+            Registry --) Engine: Metadata
+        end
+        Engine ->> Engine: Runner = get_or_spawn()
+        Engine ->> Runner: apply(ModelHandle, Entry)
+        opt if not loaded
+            Runner ->> Registry: load(ModelHandle)
+            Registry --) Runner: Model
+        end
+        opt if needs augmenting via Feature Store
+            Runner ->> Feed: get_features(Entry)
+            Feed --) Runner: Features
+        end
+        Runner ->> Runner: Outcome = Model.predict(Features)
+        Runner --) Engine: Outcome
+        Engine ->> Engine: Response = Descriptor.respond(Outcome)
+        Engine --) Client: Response
+
+
+a.k.a. inference
+
+:ref:`application`
+
+one of the :ref:`execution mechanisms <platform-execution>`
+
+apply action of the :ref:`production lifecycle <lifecycle-production>`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 In addition to the basic :ref:`CLI driven <platform-cli>` isolated batch mode, ML projects implemented on ForML can be
 embedded into a dynamic serving layer and operated in an autonomous *full-cycle* fashion. This layer continuously serves
 the following functions:

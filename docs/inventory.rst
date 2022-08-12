@@ -36,5 +36,7 @@ Providers
 ---------
 
 .. autosummary::
+   :template: provider.rst
+   :nosignatures:
 
-   forml.provider.inventory.posix
+   forml.provider.inventory.posix.Inventory

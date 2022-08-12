@@ -16,29 +16,135 @@
 # under the License.
 
 """
-ForML application encoding utils.
+Payload encoding utils.
 """
 import abc
+import cgi
 import collections
+import fnmatch
 import functools
 import io
 import json
 import logging
+import re
+import types
 import typing
 
 import pandas
 
 import forml
-from forml.io import dsl, layout
+from forml.io import dsl
+
+from . import _external, _internal
+
+if typing.TYPE_CHECKING:
+    from forml.io import layout
 
 LOGGER = logging.getLogger(__name__)
+
+
+_CSV = re.compile(r'\s*,\s*')
+
+
+class Encoding(collections.namedtuple('Encoding', 'kind, options')):
+    """Content encoding representation to be used by the Serving gateways.
+
+    Args:
+        kind: Content type label.
+        options: Encoding options.
+    """
+
+    kind: str
+    """Content type label."""
+    options: typing.Mapping[str, str]
+    """Encoding options."""
+
+    def __new__(cls, kind: str, /, **options: str):
+        return super().__new__(cls, kind.strip().lower(), types.MappingProxyType(options))
+
+    @functools.cached_property
+    def header(self) -> str:
+        """Get the header-formatted representation of this encoding.
+
+        Returns:
+            Header-formatted representation.
+
+        Examples:
+            >>> layout.Encoding('application/json', charset='UTF-8').header
+            'application/json; charset=UTF-8'
+        """
+        value = self.kind
+        if self.options:
+            value += '; ' + '; '.join(f'{k}={v}' for k, v in self.options.items())
+        return value
+
+    @classmethod
+    @functools.lru_cache
+    def parse(cls, value: str) -> typing.Sequence['layout.Encoding']:
+        """Parse the content type header value.
+
+        Args:
+            value: Comma separated list of content type values and their parameters.
+
+        Returns:
+            Sequence of the ``Encoding`` instances ordered according to the provided priority.
+
+        Examples:
+            >>> layout.Encoding.parse('image/GIF; q=0.6; a=x, text/html; q=1.0')
+            (
+                Encoding(kind='text/html', options={}),
+                Encoding(kind='image/gif', options={'a': 'x'})
+            )
+        """
+        return tuple(
+            cls(m, **{k: v for k, v in o.items() if k != 'q'})
+            for m, o in sorted(
+                (cgi.parse_header(h) for h in _CSV.split(value)),
+                key=lambda t: float(t[1].get('q', 1)),
+                reverse=True,
+            )
+        )
+
+    @functools.lru_cache
+    def match(self, other: 'layout.Encoding') -> bool:
+        """Return ture if the other encoding matches ours including glob wildcards.
+
+        Encoding matches if its kind fits our kind as a pattern (including potential glob wildcards)
+        while all of our options are subset of the other options.
+
+        Args:
+            other: Encoding to match against this. Must not contain wildcards!
+
+        Returns:
+            True if matches.
+
+        Examples:
+            >>> layout.Encoding('application/*').match(
+            ...     layout.Encoding('application/json')
+            ... )
+            True
+        """
+        return (
+            '*' not in other.kind
+            and fnmatch.fnmatch(other.kind, self.kind)
+            and all(other.options.get(k) == v for k, v in self.options.items())
+        )
+
+    def __hash__(self):
+        return hash(self.kind) ^ hash(tuple(sorted(self.options.items())))
+
+    def __str__(self):
+        return self.kind
+
+    def __getnewargs_ex__(self):
+        return (self.kind,), dict(self.options)
 
 
 class Decoder(abc.ABC):
     """Decoder base class."""
 
     @abc.abstractmethod
-    def loads(self, data: bytes) -> layout.Entry:
+    def loads(self, data: bytes) -> 'layout.Entry':
         """Decoder logic.
 
         Args:
@@ -53,7 +159,7 @@ class Encoder(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def encoding(self) -> layout.Encoding:
+    def encoding(self) -> 'layout.Encoding':
         """Get the encoding produced by this encoder.
 
         Returns:
@@ -61,7 +167,7 @@ class Encoder(abc.ABC):
         """
 
     @abc.abstractmethod
-    def dumps(self, outcome: layout.Outcome) -> bytes:
+    def dumps(self, outcome: 'layout.Outcome') -> bytes:
         """Encoder logic.
 
         Args:
@@ -106,20 +212,20 @@ class Pandas:
         def __init__(self, converter: typing.Callable[[str], pandas.DataFrame]):
             self._converter: typing.Callable[[str], pandas.DataFrame] = converter
 
-        def loads(self, data: bytes) -> layout.Entry:
+        def loads(self, data: bytes) -> 'layout.Entry':
             frame = self._converter(data.decode())
             schema = Pandas.Schema.from_frame(frame)
-            return layout.Entry(schema, layout.Dense.from_rows(frame.values))
+            return _external.Entry(schema, _internal.Dense.from_rows(frame.values))
 
     class Encoder(Encoder):
         """Pandas based encoder."""
 
-        def __init__(self, converter: typing.Callable[[pandas.DataFrame], str], encoding: layout.Encoding):
+        def __init__(self, converter: typing.Callable[[pandas.DataFrame], str], encoding: 'layout.Encoding'):
             self._converter: typing.Callable[[pandas.DataFrame], str] = converter
-            self._encoding: layout.Encoding = encoding
+            self._encoding: 'layout.Encoding' = encoding
 
         @property
-        def encoding(self) -> layout.Encoding:
+        def encoding(self) -> 'layout.Encoding':
             return self._encoding
 
         @classmethod
@@ -135,7 +241,7 @@ class Pandas:
             """
             return tuple(f.name for f in schema)
 
-        def dumps(self, outcome: layout.Outcome) -> bytes:
+        def dumps(self, outcome: 'layout.Outcome') -> bytes:
             return self._converter(pandas.DataFrame(outcome.data, columns=self._columns(outcome.schema))).encode()
 
 
@@ -164,16 +270,17 @@ class Json:
 
 
 _JSON = 'application/json'
-ENCODING_JSON_PANDAS_COLUMNS = layout.Encoding(_JSON, format='pandas-columns')
-ENCODING_JSON_PANDAS_INDEX = layout.Encoding(_JSON, format='pandas-index')
-ENCODING_JSON_PANDAS_RECORDS = layout.Encoding(_JSON, format='pandas-records')
-ENCODING_JSON_PANDAS_SPLIT = layout.Encoding(_JSON, format='pandas-split')
-ENCODING_JSON_PANDAS_TABLE = layout.Encoding(_JSON, format='pandas-table')
-ENCODING_JSON_PANDAS_VALUES = layout.Encoding(_JSON, format='pandas-values')
-ENCODING_JSON = layout.Encoding(_JSON)
-ENCODING_CSV = layout.Encoding('text/csv')
+ENCODING_JSON_PANDAS_COLUMNS = Encoding(_JSON, format='pandas-columns')
+ENCODING_JSON_PANDAS_INDEX = Encoding(_JSON, format='pandas-index')
+ENCODING_JSON_PANDAS_RECORDS = Encoding(_JSON, format='pandas-records')
+ENCODING_JSON_PANDAS_SPLIT = Encoding(_JSON, format='pandas-split')
+ENCODING_JSON_PANDAS_TABLE = Encoding(_JSON, format='pandas-table')
+ENCODING_JSON_PANDAS_VALUES = Encoding(_JSON, format='pandas-values')
+ENCODING_JSON = Encoding(_JSON)
+ENCODING_CSV = Encoding('text/csv')
 
 
+#: List of default encoders.
 ENCODERS: typing.Sequence[Encoder] = (
     Pandas.Encoder(functools.partial(pandas.DataFrame.to_json, orient='records'), ENCODING_JSON_PANDAS_RECORDS),
     Pandas.Encoder(functools.partial(pandas.DataFrame.to_json, orient='columns'), ENCODING_JSON_PANDAS_COLUMNS),
@@ -189,7 +296,8 @@ ENCODERS: typing.Sequence[Encoder] = (
 )
 
 
-DECODERS: typing.Sequence[tuple[Decoder, layout.Encoding]] = (
+#: List of default decoders.
+DECODERS: typing.Sequence[tuple[Decoder, 'layout.Encoding']] = (
     (Pandas.Decoder(functools.partial(pandas.read_json, orient='columns')), ENCODING_JSON_PANDAS_COLUMNS),
     (Pandas.Decoder(functools.partial(pandas.read_json, orient='index')), ENCODING_JSON_PANDAS_INDEX),
     (Pandas.Decoder(functools.partial(pandas.read_json, orient='records')), ENCODING_JSON_PANDAS_RECORDS),
@@ -202,14 +310,24 @@ DECODERS: typing.Sequence[tuple[Decoder, layout.Encoding]] = (
 
 
 @functools.lru_cache
-def get_decoder(source: layout.Encoding) -> Decoder:
+def get_decoder(source: 'layout.Encoding') -> 'layout.Decoder':
     """Get a decoder suitable for the given source encoding.
 
     Args:
-        source: Explicit encoding (no wildcards expected) to find a decoder for.
+        source: Explicit encoding (no wildcards expected!) to find a decoder for.
 
     Returns:
         Decoder for the given source encoding.
+
+    Raises:
+        forml.MissingError: No suitable encoder available.
+
+    Examples:
+        >>> layout.get_decoder(
+        ...     layout.Encoding('application/json', format='pandas-columns')
+        ... ).loads(b'{"A":{"0":1,"1":2},"B":{"0":"a","1":"b"}}').data.to_rows()
+        array([[1, 'a'],
+               [2, 'b']], dtype=object)
     """
     for codec, encoding in DECODERS:
         if encoding.match(source):
@@ -218,7 +336,7 @@ def get_decoder(source: layout.Encoding) -> Decoder:
 
 
 @functools.lru_cache
-def get_encoder(*targets: layout.Encoding) -> Encoder:
+def get_encoder(*targets: 'layout.Encoding') -> 'layout.Encoder':
     """Get an encoder capable of producing one of the given target encodings.
 
     Args:
@@ -226,6 +344,16 @@ def get_encoder(*targets: layout.Encoding) -> Encoder:
 
     Returns:
         Encoder for one of the given target encoding.
+
+    Raises:
+        forml.MissingError: No suitable encoder available.
+
+    Examples:
+        >>> layout.get_encoder(
+        ...     layout.Encoding('foo/bar'),
+        ...     layout.Encoding('application/*')
+        ... ).encoding.header
+        'application/json; format=pandas-records'
     """
     for pattern in targets:
         for codec in ENCODERS:

@@ -69,7 +69,7 @@ class TestWrapper:
     ) -> dispatch.Wrapper.Query:
         """Query fixture."""
         return dispatch.Wrapper.Query(
-            descriptor, valid_instance, testset_request.accept, descriptor.decode(testset_request)
+            descriptor, valid_instance, testset_request.accept, descriptor.receive(testset_request)
         )
 
     async def test_extract(

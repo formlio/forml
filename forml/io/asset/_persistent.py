@@ -242,7 +242,7 @@ class Inventory(provider.Service, default=provcfg.Inventory.default, path=provcf
     def get(self, application: str) -> 'project.Descriptor':
         """Retrieve the descriptor for the given application.
 
-        Only application returned by ``.list()`` can be requested.
+        Only application returned by :meth:`list` can be requested.
 
         Args:
             application: Unique application name.
