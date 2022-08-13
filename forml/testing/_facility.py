@@ -22,8 +22,7 @@ import logging
 import typing
 import uuid
 
-from forml import flow, io, project, runtime
-from forml.conf.parsed import provider as provcfg
+from forml import flow, io, project, runtime, setup
 from forml.io import dsl
 from forml.pipeline import payload
 from forml.testing import _spec
@@ -137,11 +136,11 @@ class Launcher:
                 self._gids.add(node.gid)
                 node.builder()
 
-    def __init__(self, params: _spec.Scenario.Params, scenario: _spec.Scenario.Input, runner: provcfg.Runner):
+    def __init__(self, params: _spec.Scenario.Params, scenario: _spec.Scenario.Input, runner: setup.Runner):
         self._params: _spec.Scenario.Params = params
         self._source: project.Source = project.Source.query(DataSet.select(DataSet.feature), DataSet.label)
         self._feed: Feed = Feed(scenario)
-        self._runner: provcfg.Runner = runner
+        self._runner: setup.Runner = runner
 
     def __call__(self, operator: type[flow.Operator]) -> 'Launcher.Action':
         instance = operator(*self._params.args, **self._params.kwargs)

@@ -22,7 +22,7 @@ import logging
 import pathlib
 import typing
 
-from forml import conf, project
+from forml import project, setup
 from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 class Inventory(asset.Inventory, alias='posix'):
     """Posix inventory implementation."""
 
-    def __init__(self, path: typing.Union[str, pathlib.Path] = conf.USRDIR / 'inventory'):
+    def __init__(self, path: typing.Union[str, pathlib.Path] = setup.USRDIR / 'inventory'):
         self._path: Path = Path(pathlib.Path(path).resolve())
 
     def list(self) -> typing.Iterable[str]:

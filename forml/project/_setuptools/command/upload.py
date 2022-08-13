@@ -23,8 +23,7 @@ import typing
 import setuptools
 
 import forml
-from forml import runtime
-from forml.conf.parsed import provider as provcfg
+from forml import runtime, setup
 
 from ... import _distribution
 from . import bdist
@@ -54,6 +53,6 @@ class Registry(setuptools.Command):
                 'Must create and upload files in one command ' f'(e.g. setup.py {bdist.Package.COMMAND} upload)'
             )
         project = self.distribution.get_name()
-        platform = runtime.Platform(registry=provcfg.Registry.resolve(self.registry))
+        platform = runtime.Platform(registry=setup.Registry.resolve(self.registry))
         for pkg in packages:
             platform.registry.publish(project, pkg)

@@ -20,20 +20,13 @@ ForML cli unit tests.
 """
 import pathlib
 
-import pytest
 from click import testing
 
-from forml import cli, conf
-
-
-@pytest.fixture(scope='session')
-def cfg_file() -> pathlib.Path:
-    """Fixture for the test config file."""
-    return pathlib.Path(__file__).parent / conf.APPCFG
+from forml.setup import _run
 
 
 def test_main(cfg_file: pathlib.Path):
     """Basic cli test."""
     runner = testing.CliRunner()
-    result = runner.invoke(cli.group, ['--config', str(cfg_file), 'project'])
+    result = runner.invoke(_run.group, ['--config', str(cfg_file), 'project'])
     assert result.exit_code == 0

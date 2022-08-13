@@ -26,7 +26,7 @@ import typing
 from collections import abc
 
 import forml
-from forml import conf, flow
+from forml import flow, setup
 from forml.io import asset
 
 from . import _component, _distribution, _importer
@@ -152,7 +152,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     ):
         if path:
             path = pathlib.Path(path).resolve()
-        prefix = package or conf.PRJNAME
+        prefix = package or setup.PRJNAME
         for key, value in modules.items():
             if not isinstance(value, str):  # component provided as true instance rather than module path
                 modules[key] = _component.Virtual(value, f'{prefix}.{key}').path
@@ -191,7 +191,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         class Manifest(types.ModuleType):
             """Fake manifest module."""
 
-            NAME = (self.package or conf.PRJNAME).replace('.', '-')
+            NAME = (self.package or setup.PRJNAME).replace('.', '-')
             VERSION = '0'
             PACKAGE = self.package
             MODULES = self.modules

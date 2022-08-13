@@ -28,15 +28,14 @@ import typing
 import uuid
 
 import forml
-from forml import conf, provider
-from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
+from forml import provider, setup
 
 if typing.TYPE_CHECKING:
     from forml import project
     from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
-TMPDIR = tempfile.mkdtemp(prefix=f'{conf.APPNAME}-persistent-', dir=conf.tmpdir)
+TMPDIR = tempfile.mkdtemp(prefix=f'{setup.APPNAME}-persistent-', dir=setup.tmpdir)
 atexit.register(lambda: shutil.rmtree(TMPDIR, ignore_errors=True))
 
 
@@ -53,7 +52,7 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
     return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR))
 
 
-class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.Registry.path):
+class Registry(provider.Service, default=setup.Registry.default, path=setup.Registry.path):
     """Abstract base class of the ForML model registry concept.
 
     Args:
@@ -226,7 +225,7 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
         raise NotImplementedError()
 
 
-class Inventory(provider.Service, default=provcfg.Inventory.default, path=provcfg.Inventory.path):
+class Inventory(provider.Service, default=setup.Inventory.default, path=setup.Inventory.path):
     """Application descriptor storage abstraction."""
 
     def __repr__(self):

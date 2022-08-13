@@ -24,22 +24,21 @@ import typing
 import click
 from click import core
 
-from forml import project, runtime
-from forml.conf.parsed import provider as provcfg
+from forml import project, runtime, setup
 from forml.io import asset
 
 if typing.TYPE_CHECKING:
-    from forml import cli
+    from .. import _run
 
 
 class Scope(collections.namedtuple('Scope', 'parent, inventory')):
     """Case class for holding the partial command config."""
 
-    parent: 'cli.Scope'
-    inventory: provcfg.Inventory
+    parent: '_run.Scope'
+    inventory: setup.Inventory
 
-    def __new__(cls, parent: 'cli.Scope', inventory: typing.Optional[str]):
-        return super().__new__(cls, parent, provcfg.Inventory.resolve(inventory))
+    def __new__(cls, parent: '_run.Scope', inventory: typing.Optional[str]):
+        return super().__new__(cls, parent, setup.Inventory.resolve(inventory))
 
     @property
     def descriptors(self) -> asset.Inventory:
@@ -81,10 +80,10 @@ def serve(
 ) -> None:
     """Launch the serving frontend."""
     runtime.Platform(
-        registry=provcfg.Registry.resolve(registry),
-        feeds=provcfg.Feed.resolve(feed),
+        registry=setup.Registry.resolve(registry),
+        feeds=setup.Feed.resolve(feed),
         inventory=scope.inventory,
-        gateway=provcfg.Gateway.resolve(gateway),
+        gateway=setup.Gateway.resolve(gateway),
     ).service.run()
 
 

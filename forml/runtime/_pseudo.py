@@ -23,8 +23,7 @@ import multiprocessing
 import queue as quemod
 import typing
 
-from forml import io
-from forml.conf.parsed import provider as provcfg
+from forml import io, setup
 from forml.io import asset, dsl, layout
 from forml.provider.registry.filesystem import volatile
 
@@ -130,14 +129,14 @@ class Virtual:
 
         def __init__(
             self,
-            runner: typing.Optional[provcfg.Runner],
+            runner: typing.Optional[setup.Runner],
             registry: asset.Registry,
-            feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]],
+            feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]],
             project: str,
         ):
-            self._runner: typing.Optional[provcfg.Runner] = runner
+            self._runner: typing.Optional[setup.Runner] = runner
             self._registry: asset.Registry = registry
-            self._feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = feeds
+            self._feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]] = feeds
             self._project: str = project
 
         def __call__(self, sink: typing.Optional[io.Sink] = None) -> 'runtime.Launcher':
@@ -150,12 +149,12 @@ class Virtual:
 
     def __call__(
         self,
-        runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
-        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
+        runner: typing.Optional[typing.Union[setup.Runner, str]] = None,
+        feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]] = None,
     ) -> 'runtime.Virtual.Handler':
         return self.Handler(runner, self._registry, feeds, self._project)
 
-    def __getitem__(self, runner: typing.Union[provcfg.Runner, str]) -> 'runtime.Virtual.Handler':
+    def __getitem__(self, runner: typing.Union[setup.Runner, str]) -> 'runtime.Virtual.Handler':
         """Convenient shortcut for selecting a specific runner using the `launcher[name]` syntax.
 
         Args:

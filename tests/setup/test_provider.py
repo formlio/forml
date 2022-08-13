@@ -23,7 +23,7 @@ import typing
 
 import pytest
 
-from forml.conf.parsed import provider as provcfg
+from forml import setup
 
 
 class Section(metaclass=abc.ABCMeta):
@@ -32,7 +32,7 @@ class Section(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def provider() -> type[provcfg.Section]:
+    def provider() -> type[setup.Provider]:
         """Provider type."""
 
     @staticmethod
@@ -41,11 +41,11 @@ class Section(metaclass=abc.ABCMeta):
     def default() -> str:
         """Default provider name fixture."""
 
-    def test_default(self, provider: type[provcfg.Section], default: str):
+    def test_default(self, provider: type[setup.Provider], default: str):
         """Default provider config test."""
         assert provider.default.reference == default
 
-    def test_path(self, provider: type[provcfg.Section]):
+    def test_path(self, provider: type):
         """Path getter test."""
         assert isinstance(provider.path, (tuple, list))
 
@@ -55,9 +55,9 @@ class TestRunner(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> type[provcfg.Runner]:
+    def provider() -> type[setup.Runner]:
         """Provider type."""
-        return provcfg.Runner
+        return setup.Runner
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -71,9 +71,9 @@ class TestRegistry(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> type[provcfg.Registry]:
+    def provider() -> type[setup.Registry]:
         """Provider type."""
-        return provcfg.Registry
+        return setup.Registry
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -87,9 +87,9 @@ class TestFeed(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> type[provcfg.Feed]:
+    def provider() -> type[setup.Feed]:
         """Provider type."""
-        return provcfg.Feed
+        return setup.Feed
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -97,7 +97,7 @@ class TestFeed(Section):
         """Provider type."""
         return 'bar'
 
-    def test_default(self, provider: type[provcfg.Section], default: str):
+    def test_default(self, provider: type[setup.Provider], default: str):
         """Default provider config test."""
         assert default in {p.reference for p in provider.default}
 
@@ -107,9 +107,9 @@ class TestSink(Section):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def provider() -> type[provcfg.Sink]:
+    def provider() -> type[setup.Sink]:
         """Provider type."""
-        return provcfg.Sink
+        return setup.Sink
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -123,13 +123,13 @@ class TestSinkMode:
 
     def test_default(self):
         """Default modes parsing."""
-        mode = provcfg.Sink.Mode.default
+        mode = setup.Sink.Mode.default
         assert mode.apply.reference == 'bar'
         assert mode.eval.reference == 'baz'
 
     def test_explicit(self):
         """Explicit modes parsing."""
-        mode = provcfg.Sink.Mode.resolve('foo')
+        mode = setup.Sink.Mode.resolve('foo')
         # pylint: disable=no-member
         assert mode.apply.reference == 'foo'
         assert mode.eval.reference == 'foo'

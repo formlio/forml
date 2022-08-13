@@ -24,8 +24,7 @@ import logging
 import typing
 
 import forml
-from forml import flow, provider
-from forml.conf.parsed import provider as conf
+from forml import flow, provider, setup
 from forml.io import dsl as dslmod
 from forml.io.dsl import parser as parsmod
 
@@ -42,7 +41,7 @@ LOGGER = logging.getLogger(__name__)
 class Feed(
     provider.Service,
     typing.Generic[parsmod.Source, parsmod.Feature],
-    path=conf.Feed.path,  # pylint: disable=no-member
+    path=setup.Feed.path,  # pylint: disable=no-member
 ):
     """Abstract base class for data-source feed providers.
 
@@ -200,11 +199,11 @@ class Importer:
         """Representation of a single feed provided either explicitly s an instance or lazily as
         a descriptor."""
 
-        def __init__(self, feed: typing.Union[conf.Feed, str, 'io.Feed']):
+        def __init__(self, feed: typing.Union[setup.Feed, str, 'io.Feed']):
             if isinstance(feed, str):
-                feed = conf.Feed.resolve(feed)
-            descriptor, instance = (feed, None) if isinstance(feed, conf.Feed) else (None, feed)
-            self._descriptor: typing.Optional[conf.Feed] = descriptor
+                feed = setup.Feed.resolve(feed)
+            descriptor, instance = (feed, None) if isinstance(feed, setup.Feed) else (None, feed)
+            self._descriptor: typing.Optional[setup.Feed] = descriptor
             self._instance: typing.Optional[Feed] = instance
 
         def __lt__(self, other: 'io.Importer.Slot'):
@@ -213,7 +212,7 @@ class Importer:
         @property
         def priority(self) -> float:
             """Slots defined explicitly have infinite priority, lazy ones have priority according
-            to their conf.
+            to their setup.
 
             Returns:
                 Priority value.
@@ -265,7 +264,7 @@ class Importer:
             if source not in self._sources:
                 self._matches = False
 
-    def __init__(self, *feeds: typing.Union['conf.Feed', str, 'io.Feed']):
+    def __init__(self, *feeds: typing.Union['setup.Feed', str, 'io.Feed']):
         self._feeds: tuple[Importer.Slot] = tuple(sorted((self.Slot(f) for f in feeds or Feed), reverse=True))
 
     def __iter__(self) -> typing.Iterable['io.Feed']:

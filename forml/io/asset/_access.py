@@ -22,7 +22,7 @@ import typing
 import uuid
 
 import forml
-from forml import conf
+from forml import setup
 
 from . import _persistent
 from ._directory import level
@@ -120,7 +120,7 @@ class Instance:
 
     def __init__(
         self,
-        project: typing.Union[str, 'asset.Project.Key'] = conf.PRJNAME,
+        project: typing.Union[str, 'asset.Project.Key'] = setup.PRJNAME,
         release: typing.Optional[typing.Union[str, 'asset.Release.Key']] = None,
         generation: typing.Optional[typing.Union[str, int, 'asset.Generation.Key']] = None,
         registry: typing.Optional['asset.Directory'] = None,

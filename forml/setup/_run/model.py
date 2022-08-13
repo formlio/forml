@@ -25,26 +25,25 @@ import click
 from click import core
 
 import forml
-from forml import runtime
-from forml.conf.parsed import provider as provcfg
+from forml import runtime, setup
 from forml.io import asset, dsl
 
 if typing.TYPE_CHECKING:
-    from forml import cli
+    from .. import _run
 
 
 class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, sink')):
     """Case class for holding the partial command config."""
 
-    parent: 'cli.Scope'
-    runner: provcfg.Runner
-    registry: provcfg.Registry
-    feeds: tuple[provcfg.Feed]
-    sink: provcfg.Sink
+    parent: '_run.Scope'
+    runner: setup.Runner
+    registry: setup.Registry
+    feeds: tuple[setup.Feed]
+    sink: setup.Sink
 
     def __new__(
         cls,
-        parent: 'cli.Scope',
+        parent: '_run.Scope',
         runner: typing.Optional[str],
         registry: typing.Optional[str],
         feed: typing.Optional[typing.Sequence[str]],
@@ -53,10 +52,10 @@ class Scope(collections.namedtuple('Scope', 'parent, runner, registry, feeds, si
         return super().__new__(
             cls,
             parent,
-            provcfg.Runner.resolve(runner),
-            provcfg.Registry.resolve(registry),
-            tuple(provcfg.Feed.resolve(feed)),
-            provcfg.Sink.Mode.resolve(sink),
+            setup.Runner.resolve(runner),
+            setup.Registry.resolve(registry),
+            tuple(setup.Feed.resolve(feed)),
+            setup.Sink.Mode.resolve(sink),
         )
 
     def launcher(

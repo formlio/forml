@@ -31,18 +31,18 @@ import forml
 from forml.io import dsl
 
 if typing.TYPE_CHECKING:
-    from forml import cli
+    from .. import _run
 
 
 class Scope(collections.namedtuple('Scope', 'parent, path')):
     """Case class for holding the partial command config."""
 
-    parent: 'cli.Scope'
+    parent: '_run.Scope'
     path: pathlib.Path
 
     SETUP_NAME = 'setup.py'
 
-    def __new__(cls, parent: 'cli.Scope', path: typing.Optional[str]):
+    def __new__(cls, parent: '_run.Scope', path: typing.Optional[str]):
         return super().__new__(cls, parent, pathlib.Path(path or '.').absolute())
 
     @functools.cached_property

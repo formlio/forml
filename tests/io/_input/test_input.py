@@ -22,16 +22,15 @@ Feed utils unit tests.
 import pytest
 
 import forml
-from forml import io
-from forml.conf.parsed import provider as conf
+from forml import io, setup
 from forml.io import dsl
 
 
 class TestImporter:
     """Feed pool unit tests."""
 
-    class Conf(conf.Feed):
-        """Fake override of the conf.Feed class to bypass parsing config file."""
+    class Conf(setup.Feed):
+        """Fake override of the setup.Feed class to bypass parsing config file."""
 
         def __new__(cls, reference: str, priority: float, identity: str):
             return tuple.__new__(cls, [reference, priority, {'identity': identity}])

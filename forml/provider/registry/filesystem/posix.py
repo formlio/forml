@@ -26,8 +26,8 @@ import shutil
 import typing
 import uuid
 
-from forml import conf
 from forml import project as prj
+from forml import setup
 from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -247,7 +247,7 @@ class Registry(asset.Registry, alias='posix'):
 
     def __init__(
         self,
-        path: typing.Union[str, pathlib.Path] = conf.USRDIR / 'registry',
+        path: typing.Union[str, pathlib.Path] = setup.USRDIR / 'registry',
         staging: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
         path = pathlib.Path(path).resolve()

@@ -26,8 +26,7 @@ import string
 import typing
 import unittest
 
-from forml import flow
-from forml.conf.parsed import provider as provcfg
+from forml import flow, setup
 from forml.testing import _facility, _spec
 
 if typing.TYPE_CHECKING:
@@ -246,7 +245,7 @@ class TestStateApplyRaises(RaisableTest, StateApplyTest):
 class Case:
     """Test case routine."""
 
-    def __init__(self, name: str, scenario: 'testing.Scenario', launcher: provcfg.Runner = provcfg.Runner.default):
+    def __init__(self, name: str, scenario: 'testing.Scenario', launcher: setup.Runner = setup.Runner.default):
         self._name: str = name
         launcher = _facility.Launcher(scenario.params, scenario.input, launcher)
         self._test: Test = self.select(scenario, launcher)

@@ -23,14 +23,13 @@ import logging
 import typing
 
 import forml
-from forml import evaluation, flow, io, project, provider
-from forml.conf.parsed import provider as provcfg
+from forml import evaluation, flow, io, project, provider, setup
 from forml.io import asset, dsl
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runner.path):
+class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.path):
     """Base class for implementing ForML runner providers.
 
     The public API allows to perform all the standard actions of the :doc:`ForML lifecycles

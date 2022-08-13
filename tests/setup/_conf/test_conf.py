@@ -25,7 +25,7 @@ import typing
 
 import pytest
 
-from forml import conf
+from forml.setup import _conf
 
 
 def test_exists(cfg_file: pathlib.Path):
@@ -35,15 +35,15 @@ def test_exists(cfg_file: pathlib.Path):
 
 def test_src(cfg_file: pathlib.Path):
     """Test the registry config field."""
-    assert cfg_file in conf.PARSER.sources
+    assert cfg_file in _conf.CONFIG.sources
 
 
 def test_get():
     """Test the get value matches the test config.toml"""
-    assert conf.foobar == 'baz'
+    assert _conf.CONFIG['foobar'] == 'baz'
 
 
-class TestParser:
+class TestConfig:
     """Parser unit tests."""
 
     @staticmethod
@@ -54,11 +54,11 @@ class TestParser:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def parser(defaults: typing.Mapping[str, typing.Any]) -> conf.Parser:
+    def parser(defaults: typing.Mapping[str, typing.Any]) -> _conf.Config:
         """Parser fixture."""
-        return conf.Parser(defaults)
+        return _conf.Config(defaults)
 
-    def test_update(self, parser: conf.Parser):
+    def test_update(self, parser: _conf.Config):
         """Parser update tests."""
         parser.update(baz={'another': 2})
         assert parser['baz']['scalar'] == 1
@@ -68,7 +68,7 @@ class TestParser:
         parser.update({'baz': {'seq': [3, 'qwe', 'asd']}})
         assert parser['baz']['seq'] == (3, 'qwe', 'asd', 10)
 
-    def test_read(self, parser: conf.Parser, cfg_file: pathlib.Path):
+    def test_read(self, parser: _conf.Config, cfg_file: pathlib.Path):
         """Test parser file reading."""
         parser.read(cfg_file)
         assert cfg_file in parser.sources

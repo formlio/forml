@@ -27,9 +27,9 @@ import click
 from click import core
 
 import forml
-from forml import conf
 
-from . import _application, _model, _project
+from .. import _conf
+from . import application, model, project
 
 
 class Scope(typing.NamedTuple):
@@ -70,16 +70,16 @@ def group(
 ):
     """Lifecycle Management for Datascience Projects."""
     if config:
-        conf.PARSER.read(config)
+        _conf.CONFIG.read(config)
     context.obj = Scope(config, loglevel)
 
 
-group.add_command(_model.group)
-group.add_command(_project.group)
-group.add_command(_application.group)
+group.add_command(model.group)
+group.add_command(project.group)
+group.add_command(application.group)
 
 
-def main() -> None:
+def cli() -> None:
     """Cli wrapper for handling ForML exceptions."""
     try:
         group()  # pylint: disable=no-value-for-parameter

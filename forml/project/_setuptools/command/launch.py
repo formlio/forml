@@ -24,7 +24,7 @@ import typing
 
 from setuptools.command import test
 
-from forml.conf.parsed import provider
+from forml import setup
 
 if typing.TYPE_CHECKING:
     from forml import runtime
@@ -57,9 +57,7 @@ class Mode(test.test, metaclass=abc.ABCMeta):
     def run_tests(self) -> None:
         """This is the original test command entry point - let's override it with our actions."""
         LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        launcher = self.distribution.artifact.launcher(
-            provider.Runner.resolve(self.runner), provider.Feed.resolve(self.feed)
-        )
+        launcher = self.distribution.artifact.launcher(setup.Runner.resolve(self.runner), setup.Feed.resolve(self.feed))
         result = self.launch(launcher, lower=self.lower, upper=self.upper)
         if result is not None:
             print(result)

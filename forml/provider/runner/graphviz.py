@@ -24,7 +24,7 @@ import typing
 
 import graphviz as grviz
 
-from forml import conf, flow, io, runtime
+from forml import flow, io, runtime, setup
 from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class Runner(runtime.Runner, alias='graphviz'):
         binary <https://www.graphviz.org/download/>`_ (OS specific procedure).
     """
 
-    FILEPATH = f'{conf.APPNAME}.dot'
+    FILEPATH = f'{setup.APPNAME}.dot'
     OPTIONS = {}
 
     def __init__(

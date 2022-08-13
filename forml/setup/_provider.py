@@ -21,11 +21,11 @@ ForML provider configs.
 import typing
 
 import forml
-from forml import conf
-from forml.conf import parsed as parsmod
+
+from . import _conf
 
 
-class Meta(parsmod.Meta):
+class Meta(_conf.Meta):
     """Customized metaclass for providing the `path` property."""
 
     @property
@@ -35,53 +35,53 @@ class Meta(parsmod.Meta):
         Returns:
             Sequence of search paths.
         """
-        return conf.PARSER.get(cls.GROUP, {}).get(conf.OPT_PATH, [])
+        return _conf.CONFIG.get(cls.GROUP, {}).get(_conf.OPT_PATH, [])
 
 
-class Section(parsmod.Section, metaclass=Meta):
+class Provider(_conf.Section, metaclass=Meta):
     """Special sections of forml providers config options."""
 
     FIELDS: tuple[str] = ('reference', 'params')
-    SELECTOR = conf.OPT_DEFAULT
+    SELECTOR = _conf.OPT_DEFAULT
 
     @classmethod
     def _extract(
         cls, reference: str, kwargs: typing.Mapping[str, typing.Any]
     ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
         kwargs = dict(kwargs)
-        provider = kwargs.pop(conf.OPT_PROVIDER, reference)
+        provider = kwargs.pop(_conf.OPT_PROVIDER, reference)
         _, kwargs = super()._extract(reference, kwargs)
         return [str(provider)], kwargs
 
     def __hash__(self):
         return hash(self.__class__) ^ hash(self.reference)  # pylint: disable=no-member
 
-    def __eq__(self, other: 'Section'):
+    def __eq__(self, other: 'Provider'):
         return isinstance(other, self.__class__) and other.reference == self.reference  # pylint: disable=no-member
 
-    def __lt__(self, other: 'Section') -> bool:
+    def __lt__(self, other: 'Provider') -> bool:
         return self.reference < other.reference  # pylint: disable=no-member
 
 
-class Runner(Section):
+class Runner(Provider):
     """Runner provider."""
 
-    INDEX: str = conf.SECTION_RUNNER
-    GROUP: str = conf.SECTION_RUNNER
+    INDEX: str = _conf.SECTION_RUNNER
+    GROUP: str = _conf.SECTION_RUNNER
 
 
-class Registry(Section):
+class Registry(Provider):
     """Registry provider."""
 
-    INDEX: str = conf.SECTION_REGISTRY
-    GROUP: str = conf.SECTION_REGISTRY
+    INDEX: str = _conf.SECTION_REGISTRY
+    GROUP: str = _conf.SECTION_REGISTRY
 
 
-class Feed(parsmod.Multi, Section):
+class Feed(_conf.Multi, Provider):
     """Feed providers."""
 
-    INDEX: str = conf.SECTION_FEED
-    GROUP: str = conf.SECTION_FEED
+    INDEX: str = _conf.SECTION_FEED
+    GROUP: str = _conf.SECTION_FEED
     FIELDS: tuple[str] = ('reference', 'priority', 'params')
 
     @classmethod
@@ -89,7 +89,7 @@ class Feed(parsmod.Multi, Section):
         cls, reference: str, kwargs: typing.Mapping[str, typing.Any]
     ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
         kwargs = dict(kwargs)
-        priority = kwargs.pop(conf.OPT_PRIORITY, 0)
+        priority = kwargs.pop(_conf.OPT_PRIORITY, 0)
         [reference], kwargs = super()._extract(reference, kwargs)
         return [reference, float(priority)], kwargs
 
@@ -98,11 +98,11 @@ class Feed(parsmod.Multi, Section):
         return super().__lt__(other) if self.priority == other.priority else self.priority < other.priority
 
 
-class Sink(Section):
+class Sink(Provider):
     """Registry provider."""
 
-    INDEX: str = conf.SECTION_SINK
-    GROUP: str = conf.SECTION_SINK
+    INDEX: str = _conf.SECTION_SINK
+    GROUP: str = _conf.SECTION_SINK
 
     class Mode(metaclass=Meta):
         """Sink mode is a tuple of potentially different sinks selected for specific pipeline modes. It allows the
@@ -115,8 +115,8 @@ class Sink(Section):
         """
 
         FIELDS: tuple[str] = ('apply', 'eval')
-        INDEX: str = conf.SECTION_SINK
-        GROUP: str = conf.SECTION_SINK
+        INDEX: str = _conf.SECTION_SINK
+        GROUP: str = _conf.SECTION_SINK
 
         @classmethod
         def resolve(cls, reference: typing.Optional[str] = None) -> 'Sink.Mode':
@@ -132,9 +132,9 @@ class Sink(Section):
                 apply = evaluate = reference
             else:
                 try:
-                    default = conf.PARSER[cls.INDEX].get(conf.OPT_DEFAULT)
-                    apply = conf.PARSER[cls.INDEX].get(conf.OPT_APPLY, default)
-                    evaluate = conf.PARSER[cls.INDEX].get(conf.OPT_EVAL, default)
+                    default = _conf.CONFIG[cls.INDEX].get(_conf.OPT_DEFAULT)
+                    apply = _conf.CONFIG[cls.INDEX].get(_conf.OPT_APPLY, default)
+                    evaluate = _conf.CONFIG[cls.INDEX].get(_conf.OPT_EVAL, default)
                 except KeyError as err:
                     raise forml.MissingError(f'Index section not found: [{cls.INDEX}]') from err
                 if not apply or not evaluate:
@@ -142,15 +142,15 @@ class Sink(Section):
             return cls([Sink.resolve(apply), Sink.resolve(evaluate)])
 
 
-class Inventory(Section):
+class Inventory(Provider):
     """Inventory provider."""
 
-    INDEX: str = conf.SECTION_INVENTORY
-    GROUP: str = conf.SECTION_INVENTORY
+    INDEX: str = _conf.SECTION_INVENTORY
+    GROUP: str = _conf.SECTION_INVENTORY
 
 
-class Gateway(Section):
+class Gateway(Provider):
     """Gateway provider."""
 
-    INDEX: str = conf.SECTION_GATEWAY
-    GROUP: str = conf.SECTION_GATEWAY
+    INDEX: str = _conf.SECTION_GATEWAY
+    GROUP: str = _conf.SECTION_GATEWAY

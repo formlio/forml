@@ -24,13 +24,13 @@ import typing
 import pytest
 
 import forml
-from forml.conf import parsed as parsmod
+from forml.setup import _conf
 
 
 class Resolved(metaclass=abc.ABCMeta):
     """Base class for parsed section tests using the test config from the config.toml."""
 
-    class Section(parsmod.Section):
+    class Section(_conf.Section):
         """Base class for parsed section fixtures."""
 
         FIELDS: tuple[str] = ('blah', 'params')
@@ -95,7 +95,7 @@ class TestSingle(Resolved):
 class TestMulti(Resolved):
     """SectionMeta unit tests."""
 
-    class Section(parsmod.Multi, Resolved.Section):
+    class Section(_conf.Multi, Resolved.Section):
         """Field list."""
 
         SELECTOR = 'multi'

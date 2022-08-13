@@ -16,19 +16,34 @@
 # under the License.
 
 """
-Common fixtures.
+ForML setup.
 """
-import pathlib
+import sys
 
-import pytest
+from ._conf import APPNAME, CONFIG, PRJNAME, SYSDIR, USRDIR, tmpdir
+from ._logging import logging
+from ._provider import Feed, Gateway, Inventory, Provider, Registry, Runner, Sink
+from ._run import cli
 
-from forml import conf
+__all__ = [
+    'APPNAME',
+    'cli',
+    'CONFIG',
+    'Feed',
+    'Gateway',
+    'Inventory',
+    'logging',
+    'PRJNAME',
+    'Provider',
+    'Registry',
+    'Runner',
+    'Sink',
+    'SYSDIR',
+    'tmpdir',
+    'USRDIR',
+]
 
-CFG_FILE = pathlib.Path(__file__).parent / conf.APPCFG
-conf.PARSER.read(CFG_FILE)
 
-
-@pytest.fixture(scope='session')
-def cfg_file() -> pathlib.Path:
-    """Fixture for the test config file."""
-    return CFG_FILE
+for _path in (USRDIR, SYSDIR):
+    if _path not in sys.path:
+        sys.path.append(str(_path))

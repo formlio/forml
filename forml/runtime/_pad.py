@@ -25,7 +25,7 @@ import typing
 from forml import io
 from forml import project as prj
 from forml import provider as provmod
-from forml.conf.parsed import provider as provcfg
+from forml import setup
 from forml.io import asset, dsl
 
 from . import _agent, _service
@@ -36,7 +36,7 @@ Provider = typing.TypeVar('Provider', bound=provmod.Service)
 
 
 def ensure_instance(
-    config_or_instance: typing.Union[provcfg.Section, provmod.Service],
+    config_or_instance: typing.Union[setup.Provider, provmod.Service],
     provider: type[Provider],
     *args,
     **kwargs,
@@ -50,7 +50,7 @@ def ensure_instance(
     Returns:
         Provider instance.
     """
-    if isinstance(config_or_instance, provcfg.Section):
+    if isinstance(config_or_instance, setup.Provider):
         config_or_instance = provider[config_or_instance.reference](*args, **(config_or_instance.params | kwargs))
     return config_or_instance
 
@@ -58,7 +58,7 @@ def ensure_instance(
 class Repo:
     """Registry util handle."""
 
-    def __init__(self, registry: typing.Union[provcfg.Registry, asset.Registry]):
+    def __init__(self, registry: typing.Union[setup.Registry, asset.Registry]):
         self._asset: asset.Directory = asset.Directory(ensure_instance(registry, asset.Registry))
 
     def assets(
@@ -106,8 +106,8 @@ class Repo:
 class Launcher:
     """Runner handle."""
 
-    def __init__(self, runner: provcfg.Runner, assets: asset.Instance, feeds: io.Importer, sink: io.Exporter):
-        self._runner: provcfg.Runner = runner
+    def __init__(self, runner: setup.Runner, assets: asset.Instance, feeds: io.Importer, sink: io.Exporter):
+        self._runner: setup.Runner = runner
         self._assets: asset.Instance = assets
         self._feeds: io.Importer = feeds
         self._sink: io.Exporter = sink
@@ -166,9 +166,9 @@ class Service:
 
     def __init__(
         self,
-        gateway: provcfg.Gateway,
-        inventory: typing.Union[provcfg.Inventory, asset.Inventory],
-        registry: typing.Union[provcfg.Registry, asset.Registry],
+        gateway: setup.Gateway,
+        inventory: typing.Union[setup.Inventory, asset.Inventory],
+        registry: typing.Union[setup.Registry, asset.Registry],
         feeds: io.Importer,
     ):
         inventory: asset.Inventory = ensure_instance(inventory, asset.Inventory)
@@ -185,21 +185,21 @@ class Platform:
 
     def __init__(
         self,
-        runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
-        registry: typing.Optional[typing.Union[provcfg.Registry, asset.Registry]] = None,
-        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
-        sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, io.Sink]] = None,
-        inventory: typing.Optional[typing.Union[provcfg.Inventory, asset.Inventory]] = None,
-        gateway: typing.Optional[provcfg.Gateway] = None,
+        runner: typing.Optional[typing.Union[setup.Runner, str]] = None,
+        registry: typing.Optional[typing.Union[setup.Registry, asset.Registry]] = None,
+        feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]] = None,
+        sink: typing.Optional[typing.Union[setup.Sink.Mode, str, io.Sink]] = None,
+        inventory: typing.Optional[typing.Union[setup.Inventory, asset.Inventory]] = None,
+        gateway: typing.Optional[setup.Gateway] = None,
     ):
         if isinstance(runner, str):
-            runner = provcfg.Runner.resolve(runner)
-        self._runner: provcfg.Runner = runner or provcfg.Runner.default
-        self._registry: typing.Union[provcfg.Registry, asset.Registry] = registry or provcfg.Registry.default
-        self._feeds: io.Importer = io.Importer(*(feeds or provcfg.Feed.default))
-        self._sink: io.Exporter = io.Exporter(sink or provcfg.Sink.Mode.default)
-        self._inventory: typing.Union[provcfg.Inventory, asset.Inventory] = inventory or provcfg.Inventory.default
-        self._gateway: provcfg.Gateway = gateway or provcfg.Gateway.default
+            runner = setup.Runner.resolve(runner)
+        self._runner: setup.Runner = runner or setup.Runner.default
+        self._registry: typing.Union[setup.Registry, asset.Registry] = registry or setup.Registry.default
+        self._feeds: io.Importer = io.Importer(*(feeds or setup.Feed.default))
+        self._sink: io.Exporter = io.Exporter(sink or setup.Sink.Mode.default)
+        self._inventory: typing.Union[setup.Inventory, asset.Inventory] = inventory or setup.Inventory.default
+        self._gateway: setup.Gateway = gateway or setup.Gateway.default
 
     def launcher(
         self,

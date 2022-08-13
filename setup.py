@@ -94,7 +94,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'forml = forml.cli:main',
+            'forml = forml.setup:cli',
         ]
     },
     python_requires='>=3.9',

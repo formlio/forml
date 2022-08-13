@@ -17,6 +17,8 @@
 
 """ForML configuration
 """
+import abc
+import operator
 import os
 import pathlib
 import re
@@ -27,10 +29,11 @@ import typing
 
 import tomli
 
+import forml
 from forml.provider import feed, gateway, inventory, registry, runner, sink
 
 
-class Parser(dict):
+class Config(dict):
     """Config parser implementation."""
 
     def __init__(self, defaults: typing.Mapping[str, typing.Any], *paths: pathlib.Path):
@@ -125,6 +128,142 @@ class Parser(dict):
             self._sources.append(path)
 
 
+class Meta(abc.ABCMeta):
+    """Metaclass for parsed config options tht adds the itemgetter properties to the class."""
+
+    def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
+        if 'FIELDS' in namespace:
+            for index, field in enumerate(namespace.pop('FIELDS')):
+                namespace[field] = property(operator.itemgetter(index))
+        return super().__new__(mcs, name, (*bases, tuple), namespace)
+
+    @property
+    def default(cls) -> 'Section':
+        """Default parsing.
+
+        Returns:
+            Default resolved config.
+        """
+        return cls.resolve()
+
+
+class Section(metaclass=Meta):
+    """Resolved config base class.
+
+    Implements parser for config referenced based on following concept:
+
+    [INDEX]
+    SELECTOR = reference
+
+    [GROUP.reference]
+    <semantic_param> = <value>  # explicit params consumed by the config parser
+    <generic_param> = <value>   # generic params not known to the config parser (ie downstream library config)
+    params = { <generic_param> = <value> }  # alternative way of providing generic params to avoid collisions
+    """
+
+    # list of parsed config field names
+    FIELDS: tuple[str] = ('params',)
+    # master section containing the references to the particular GROUP sections
+    INDEX: str = abc.abstractmethod
+    # name of option in INDEX section containing reference(s) to the particular GROUP section
+    SELECTOR: str = abc.abstractmethod
+    # common name (prefix) of sections referred by SELECTOR
+    GROUP: str = abc.abstractmethod
+
+    def __new__(cls, reference: str):
+        try:
+            kwargs = CONFIG[cls.GROUP][reference]  # pylint: disable=no-member
+        except KeyError as err:
+            raise forml.MissingError(f'Config section not found: [{cls.GROUP}.{reference}]') from err
+        args, kwargs = cls._extract(reference, kwargs)
+        return super().__new__(cls, [*args, types.MappingProxyType(dict(kwargs))])
+
+    @classmethod
+    def _extract(
+        cls, reference: str, kwargs: typing.Mapping[str, typing.Any]  # pylint: disable=unused-argument
+    ) -> tuple[typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]]:
+        """Extract the config values as a sequence of "known" semantic arguments and mapping of "generic" options.
+
+        Args:
+            reference: Config reference.
+            kwargs: Common mapping of values mixing the "known" and "generic".
+
+        Returns:
+            Tuple of known plus generic arguments.
+        """
+        kwargs = dict(kwargs)
+        kwargs.update(kwargs.pop(OPT_PARAMS, {}))
+        return [], kwargs
+
+    @classmethod
+    def _lookup(cls, reference: str) -> 'Section':
+        """Create the config instance based on given reference.
+
+        Args:
+            reference: Config reference.
+
+        Returns:
+            Config instance.
+        """
+        return cls(reference)
+
+    @classmethod
+    def resolve(cls, reference: typing.Optional[str] = None) -> 'Section':
+        """Get config list for pattern based non-repeated option tokens.
+
+        Args:
+            reference: Config reference.
+
+        Returns:
+            Config instance.
+        """
+        reference = reference or CONFIG.get(cls.INDEX, {}).get(cls.SELECTOR)
+        if not reference:
+            raise forml.MissingError(f'No default reference [{cls.INDEX}].{cls.SELECTOR}')
+        return cls._lookup(reference)
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(tuple(sorted(self.params)))  # pylint: disable=no-member
+
+    @abc.abstractmethod
+    def __lt__(self, other: 'Section') -> bool:
+        """Instances need to be comparable to allow for sorting.
+
+        Args:
+            other: Right side of the comparison.
+
+        Returns:
+            True if left is less than right.
+        """
+
+
+class Multi(Section):  # pylint: disable=abstract-method
+    """Resolved section supporting multiple instances.
+
+    [INDEX]
+    SELECTOR = [reference1, reference2]
+
+    [GROUP.reference1]
+    <params>
+    [GROUP.reference2]
+    <params>
+    """
+
+    @classmethod
+    def _lookup(cls, reference: typing.Iterable[str]) -> typing.Sequence[Section]:
+        """Create a sequence of config instances based on given references.
+
+        Args:
+            reference: Config references.
+
+        Returns:
+            Config instances.
+        """
+        if isinstance(reference, str):
+            reference = [reference]
+        return tuple(sorted(cls(r) for r in reference))
+
+
 SECTION_PLATFORM = 'PLATFORM'
 SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
@@ -166,15 +305,6 @@ PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
 APPCFG = 'config.toml'
 PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
 
-PARSER = Parser(DEFAULTS, *(p / APPCFG for p in PATH))
+CONFIG = Config(DEFAULTS, *(p / APPCFG for p in PATH))
 
-for _path in (USRDIR, SYSDIR):
-    if _path not in sys.path:
-        sys.path.append(str(_path))
-
-
-def __getattr__(key: str):
-    try:
-        return PARSER[key]
-    except KeyError as err:
-        raise AttributeError(err) from err
+tmpdir = CONFIG[OPT_TMPDIR]
