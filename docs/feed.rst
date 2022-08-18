@@ -94,7 +94,10 @@ For more details, see the :ref:`custom provider <provider-custom>` setup instruc
 Feed Providers
 --------------
 
-The available Feed implementations are:
+Feed :ref:`providers <provider>` can be configured within the runtime :ref:`platform setup
+<platform>` using the ``[FEED.*]`` sections.
+
+The available implementations are:
 
 .. autosummary::
    :template: provider.rst

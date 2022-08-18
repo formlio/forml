@@ -15,24 +15,28 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Generic assets directory.
+"""
+Generic assets directory.
 """
 import logging
 import typing
 
-from ... import _directory, _persistent
+from ... import _directory
 from . import case as prjmod
+
+if typing.TYPE_CHECKING:
+    from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=unsubscriptable-object; https://github.com/PyCQA/pylint/issues/2822
 class Directory(_directory.Level):
-    """Sequence of projects."""
+    """Logical representation of a hierarchy of projects, their releases and generations."""
 
-    def __init__(self, registry: '_persistent.Registry'):  # pylint: disable=useless-super-delegation
+    def __init__(self, registry: 'asset.Registry'):  # pylint: disable=useless-super-delegation
         super().__init__()
-        self._registry: _persistent.Registry = registry
+        self._registry: 'asset.Registry' = registry
 
     def __hash__(self):
         return hash(self.registry)
@@ -44,7 +48,7 @@ class Directory(_directory.Level):
         return repr(self._registry)
 
     @property
-    def registry(self) -> '_persistent.Registry':
+    def registry(self) -> 'asset.Registry':
         """Registry instance.
 
         Returns:

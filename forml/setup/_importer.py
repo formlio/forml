@@ -20,14 +20,19 @@ Project importer machinery.
 """
 import contextlib
 import importlib
+import inspect
 import itertools
 import logging
+import os
 import pathlib
 import re
 import sys
 import types
 import typing
+import warnings
 from importlib import abc, machinery
+
+import forml
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +61,7 @@ class Finder(abc.MetaPathFinder):
             return self._module
 
         def exec_module(self, module: types.ModuleType) -> None:
-            """Here we cal the optional onexec handler.
+            """Here we call the optional onexec handler.
 
             Args:
                 module: to be loaded
@@ -158,46 +163,31 @@ def _walkup(name: str, handler: typing.Callable[[str], bool]) -> None:
         _walkup(name, handler)
 
 
-def _unload(module: str) -> None:
+@contextlib.contextmanager
+def _unloaded(name: str) -> typing.Iterable[None]:
     """Unload the current module instance and all of its parent modules.
 
     Args:
-        module: to be unloaded.
+        name: Module to be unloaded.
     """
 
     def rmmod(level: str) -> bool:
         if level in sys.modules:
+            original[level] = sys.modules[level]
             del sys.modules[level]
         return True
 
-    _walkup(module, rmmod)
-
-
-@contextlib.contextmanager
-def context(module: types.ModuleType) -> typing.Iterable[None]:
-    """Context manager that adds an ``importlib.MetaPathFinder`` to ``sys._meta_path`` while in the
-    context faking imports of ``forml.project`` to a virtual fabricated module.
-
-    Args:
-        module: Module to be returned upon import of ``forml.project``.
-
-    Returns:
-        Context manager.
-    """
-    sys.meta_path[:0] = finders = Finder.create(module)
-    name = module.__name__
-    _unload(name)
+    original = {}
+    _walkup(name, rmmod)
     yield
-    finders = set(finders)
-    sys.meta_path = [f for f in sys.meta_path if f not in finders]
-    _unload(name)
+    sys.modules.update(original)
 
 
 def search(*paths: typing.Union[str, pathlib.Path]) -> None:
     """Simply add the given paths to the front of ``sys.path`` removing all potential duplicates.
 
     Args:
-        *paths: Paths to be inserted to sys.path.
+        *paths: Paths to be inserted to ``sys.path``.
     """
     new = []
     for item in itertools.chain((str(pathlib.Path(p).resolve()) for p in paths), sys.path):
@@ -207,12 +197,12 @@ def search(*paths: typing.Union[str, pathlib.Path]) -> None:
 
 
 @contextlib.contextmanager
-def searched(*paths: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
+def _searched(*paths: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
     """Context manager for putting given paths on python module search path but only for the
     duration of the context.
 
     Args:
-        *paths: Paths to be inserted to sys.path when in the context.
+        *paths: Paths to be inserted to ``sys.path`` when in the context.
 
     Returns:
         Context manager.
@@ -223,22 +213,102 @@ def searched(*paths: typing.Union[str, pathlib.Path]) -> typing.Iterable[None]:
     sys.path = original
 
 
-def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> types.ModuleType:
+def isolated(name: str, path: typing.Optional[typing.Union[str, pathlib.Path]]) -> types.ModuleType:
     """Import module of given name either under path from isolated environment or virtual.
 
     Args:
         name: Name of module to be loaded.
-        path: Optional path to search indicate path based search.
+        path: Path to search indicate path based search.
 
     Returns:
         Imported module.
     """
-    with searched(*([path] if path else [])):
-        _unload(name)
+    with _unloaded(name), _searched(*([path] if path else [])):
         importlib.invalidate_caches()
         module = importlib.import_module(name)
-    if not isinstance(module.__loader__, Finder.Loader):
+    if path and not isinstance(module.__loader__, Finder.Loader):
         source = getattr(module, '__file__', None)
-        if bool(path) ^ bool(source) or (path and not source.startswith(str(pathlib.Path(path).resolve()))):
+        if not source or not source.startswith(str(pathlib.Path(path).resolve())):
             raise ModuleNotFoundError(f'No module named {name}', name=name)
     return module
+
+
+@contextlib.contextmanager
+def context(module: types.ModuleType) -> typing.Iterable[None]:
+    """Context manager that adds an ``importlib.MetaPathFinder`` to ``sys._meta_path`` while in the
+    context forcing imports of the given module to return the provided instance.
+
+    Args:
+        module: Module to be statically returned upon its import attempt.
+
+    Returns:
+        Context manager.
+    """
+    sys.meta_path[:0] = finders = Finder.create(module)
+    with _unloaded(module.__name__):
+        yield
+        finders = set(finders)
+        sys.meta_path = [f for f in sys.meta_path if f not in finders]
+        if module.__name__ in sys.modules:
+            del sys.modules[module.__name__]
+
+
+def load(
+    name: str, entrypoint: typing.Callable[..., None], path: typing.Optional[typing.Union[str, pathlib.Path]] = None
+) -> typing.Any:
+    """Component loader.
+
+    Args:
+        name: Python module containing the component to be loaded.
+        entrypoint: Expected callback to be used within the module that we will mimic and capture.
+        path: Path to import from.
+
+    Returns:
+        Component instance.
+    """
+
+    def is_expected(actual: str) -> bool:
+        """Test the actually loaded module is the one that's been requested.
+
+        Args:
+            actual: Name of the actually loaded module.
+
+        Returns:
+            True if the actually loaded module is the one expected.
+        """
+        actual = actual.replace('.', os.path.sep)
+        expected = name.replace('.', os.path.sep)
+        if path:
+            expected = os.path.join(path, expected)
+        return expected.endswith(actual)
+
+    def patched(component: typing.Any) -> None:
+        """Patched entrypoint handler.
+
+        Args:
+            component: Component instance to be registered.
+        """
+        nonlocal called, result
+        if called:
+            raise forml.UnexpectedError('Repeated call to component setup')
+        called = True
+        caller_module = inspect.currentframe().f_back.f_locals['__name__']
+        if not is_expected(caller_module):
+            warnings.warn(f'Ignoring setup from unexpected component of {caller_module}')
+            return
+        LOGGER.debug('Component setup using %s', component)
+        result = component
+
+    entrypoint_original = importlib.import_module(entrypoint.__module__)
+    entrypoint_patched = types.ModuleType(entrypoint.__module__)
+    for item in dir(entrypoint_original):
+        setattr(entrypoint_patched, item, getattr(entrypoint_original, item))
+    setattr(entrypoint_patched, entrypoint.__name__, patched)
+    called = False
+    result = None
+    with context(entrypoint_patched):
+        LOGGER.debug('Importing project component from %s', name)
+        isolated(name, path)
+    if not called:
+        raise forml.InvalidError(f'Component setup incomplete: {name}')
+    return result

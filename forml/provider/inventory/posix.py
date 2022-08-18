@@ -22,7 +22,8 @@ import logging
 import pathlib
 import typing
 
-from forml import project, setup
+from forml import application as appmod
+from forml import setup
 from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -44,7 +45,21 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
 
 class Inventory(asset.Inventory, alias='posix'):
-    """Posix inventory implementation."""
+    """Posix inventory implementation.
+
+    Args:
+        path: Filesystem location of the inventory root directory.
+              Defaults to :file:`$FORML_HOME/inventory`.
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [INVENTORY.devapps]
+        provider = "posix"
+        path = "/mnt/forml/dev/apps/"
+    """
 
     def __init__(self, path: typing.Union[str, pathlib.Path] = setup.USRDIR / 'inventory'):
         self._path: Path = Path(pathlib.Path(path).resolve())
@@ -54,12 +69,12 @@ class Inventory(asset.Inventory, alias='posix'):
             return ()
         return tuple(p.stem for p in self._path.iterdir() if self._path.is_descriptor(p))
 
-    def get(self, application: str) -> project.Descriptor:
+    def get(self, application: str) -> appmod.Descriptor:
         path = self._path.descriptor(application)
         LOGGER.debug('Getting descriptor %s from %s', application, path)
-        return project.Descriptor.Handle(path).descriptor
+        return appmod.Descriptor.Handle(path).descriptor
 
-    def put(self, descriptor: project.Descriptor.Handle) -> None:
+    def put(self, descriptor: appmod.Descriptor.Handle) -> None:
         path = self._path.descriptor(descriptor.descriptor.name)
         LOGGER.debug('Putting descriptor %s to %s', descriptor.path, path)
         path.parent.mkdir(parents=True, exist_ok=True)

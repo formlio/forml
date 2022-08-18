@@ -61,6 +61,8 @@ class Apply(routing.Route):
         payload = await request.body()
         try:
             result = await self.__handler(application, layout.Request(payload, encoding, request.query_params, accept))
+        except layout.Encoding.Unsupported as err:
+            raise exceptions.HTTPException(status_code=415, detail=str(err))
         except forml.MissingError as err:
             raise exceptions.HTTPException(status_code=404, detail=str(err))
         return respmod.Response(result.payload, media_type=result.encoding.header)
@@ -71,9 +73,9 @@ class Stats(routing.Route):
 
     PATH = '/stats'
 
-    def __init__(self, handler: typing.Callable[[], typing.Awaitable[layout.Stats]]):
+    def __init__(self, handler: typing.Callable[[], typing.Awaitable[runtime.Stats]]):
         super().__init__(self.PATH, self.__endpoint, methods=['GET'])
-        self.__handler: typing.Callable[[], typing.Awaitable[layout.Stats]] = handler
+        self.__handler: typing.Callable[[], typing.Awaitable[runtime.Stats]] = handler
 
     async def __endpoint(self, _: reqmod.Request) -> respmod.Response:
         """Route endpoint implementation.
@@ -86,7 +88,10 @@ class Stats(routing.Route):
 
 
 class Gateway(runtime.Gateway, alias='rest'):
-    """Rest frontend."""
+    """Rest frontend.
+
+    TODO: URL format doc (/application/...), HTTP methods...
+    """
 
     DEFAULTS = {'headers': [('server', f'ForML {forml.__version__}')]}
 
@@ -107,7 +112,7 @@ class Gateway(runtime.Gateway, alias='rest'):
     def run(
         self,
         apply: typing.Callable[[str, layout.Request], typing.Awaitable[layout.Response]],
-        stats: typing.Callable[[], typing.Awaitable[layout.Stats]],
+        stats: typing.Callable[[], typing.Awaitable[runtime.Stats]],
     ) -> None:
         routes = [Apply(apply), Stats(stats)]
         app = applications.Starlette(routes=routes, debug=True)

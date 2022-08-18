@@ -66,7 +66,7 @@ class Level(metaclass=abc.ABCMeta):
             """Get the last (most recent) item from the listing.
 
             Returns:
-                Id of the last item.
+                Key of the last item.
             """
             try:
                 return self[-1]

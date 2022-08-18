@@ -23,7 +23,8 @@ import pickle
 import pytest
 
 import forml
-from forml import io, project
+from forml import application as appmod
+from forml import io
 from forml.io import asset, layout
 from forml.runtime._service import dispatch
 
@@ -65,7 +66,7 @@ class TestWrapper:
     @staticmethod
     @pytest.fixture(scope='function')
     def query(
-        descriptor: project.Descriptor, valid_instance: asset.Instance, testset_request: layout.Request
+        descriptor: appmod.Descriptor, valid_instance: asset.Instance, testset_request: layout.Request
     ) -> dispatch.Wrapper.Query:
         """Query fixture."""
         return dispatch.Wrapper.Query(

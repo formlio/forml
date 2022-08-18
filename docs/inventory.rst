@@ -18,22 +18,50 @@
 Application Inventory
 =====================
 
-At :ref:`runtime <platform>`, the :ref:`production lifecycle <lifecycle-production>` uses the
-model registry for storing
-:ref:`artifacts <concept-persistence>` of project *releases* as well as the models of its *generations*.
+To expose :ref:`applications <application>` for serving, ForML uses the application inventory as
+a lightweight storage service used for application deployment. At runtime, the :ref:`serving
+engine <serving>` looks up the requested :ref:`descriptors <application-implementation>` of
+published applications to facilitate their serving.
 
-ForML can use multiple registries built upon different technologies. The available registry implementations are:
+In order to provide the inventory service, particular inventory :ref:`provider <provider>`
+instance(s) need to be configured within the :ref:`runtime platform setup <platform>`.
+
+
+.. _inventory-management:
+
+Content Management
+------------------
+
+Content of the inventory is populated through :ref:`application publishing <application-publishing>`
+and can be managed using the :ref:`CLI <platform-cli>` as follows (see the integrated help for
+full synopsis):
+
+==========================  ============================
+Use case                    Command
+==========================  ============================
+Application (re)publishing  ``$ forml application put``
+Inventory content listing   ``$ forml application list``
+==========================  ============================
 
 
 API
 ---
 
+The inventory concept is based on the following simple API:
+
 .. autoclass:: forml.io.asset.Inventory
-    :members:
+    :members: list, get, put
+
+.. autoclass:: forml.application.Descriptor.Handle
 
 
-Providers
----------
+Inventory Providers
+-------------------
+
+Inventory :ref:`providers <provider>` can be configured within the runtime :ref:`platform setup
+<platform>` using the ``[INVENTORY.*]`` sections.
+
+The available implementations are:
 
 .. autosummary::
    :template: provider.rst

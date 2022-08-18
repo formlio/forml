@@ -33,9 +33,10 @@ import typing
 import zipfile
 
 import forml
+from forml import setup
 from forml.io import asset
 
-from . import _body, _importer
+from . import _body
 
 if typing.TYPE_CHECKING:
     from forml import project
@@ -170,7 +171,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                     else:
                         LOGGER.debug('Extracting non zip-safe package %s to %s', self.path, path)
                         package.extractall(path)
-        _importer.search(path)
+        setup.search(path)
         return _body.Artifact(path, self.manifest.package, **self.manifest.modules)
 
 
@@ -246,7 +247,7 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
             forml.InvalidError: Corrupt ForML package manifest.
         """
         try:
-            module = _importer.isolated(cls.MODULE, path)
+            module = setup.isolated(cls.MODULE, path)
             manifest = cls(module.NAME, module.VERSION, module.PACKAGE, **module.MODULES)
         except ModuleNotFoundError as err:
             raise forml.MissingError(f'Unknown manifest ({err})')

@@ -238,6 +238,7 @@ Exceptions
 ^^^^^^^^^^
 
 .. autoexception:: forml.io.dsl.GrammarError
+   :show-inheritance:
 
 
 .. _query-parser:
@@ -263,7 +264,9 @@ Exceptions
 ^^^^^^^^^^
 
 .. autoexception:: forml.io.dsl.UnprovisionedError
+   :show-inheritance:
 .. autoexception:: forml.io.dsl.UnsupportedError
+   :show-inheritance:
 
 
 References

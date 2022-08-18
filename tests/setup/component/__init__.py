@@ -14,21 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-"""
-Project importer tests.
-"""
-import os
-
-import pytest
-
-from forml import project
-from forml.project import _importer
-
-
-def test_isolated(project_package: project.Package):
-    """Isolated importer unit test."""
-    with pytest.raises(ModuleNotFoundError):
-        _importer.isolated(project_package.manifest.package)
-    _importer.isolated(project_package.manifest.package, project_package.path)
-    _importer.isolated(project_package.manifest.package, os.path.relpath(project_package.path, os.getcwd()))

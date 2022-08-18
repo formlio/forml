@@ -47,12 +47,15 @@ _CSV = re.compile(r'\s*,\s*')
 
 
 class Encoding(collections.namedtuple('Encoding', 'kind, options')):
-    """Content encoding representation to be used by the Serving gateways.
+    """Content type/encoding representation to be used by the Serving gateways.
 
     Args:
         kind: Content type label.
         options: Encoding options.
     """
+
+    class Unsupported(forml.MissingError):
+        """Indication of an unsupported content type/encoding."""
 
     kind: str
     """Content type label."""
@@ -150,7 +153,8 @@ class Decoder(abc.ABC):
         Args:
             data: Bytes to decode.
 
-        Returns: Decoded entry.
+        Returns:
+            Decoded entry.
         """
 
 
@@ -173,7 +177,8 @@ class Encoder(abc.ABC):
         Args:
             outcome: Outcome to encode.
 
-        Returns: Encoded entry.
+        Returns:
+            Encoded entry.
         """
 
 
@@ -320,7 +325,7 @@ def get_decoder(source: 'layout.Encoding') -> 'layout.Decoder':
         Decoder for the given source encoding.
 
     Raises:
-        forml.MissingError: No suitable encoder available.
+        layout.Encoding.Unsupported: If no suitable encoder available.
 
     Examples:
         >>> layout.get_decoder(
@@ -332,7 +337,7 @@ def get_decoder(source: 'layout.Encoding') -> 'layout.Decoder':
     for codec, encoding in DECODERS:
         if encoding.match(source):
             return codec
-    raise forml.MissingError(f'No decoder for {source}')
+    raise Encoding.Unsupported(f'No decoder for {source}')
 
 
 @functools.lru_cache
@@ -346,7 +351,7 @@ def get_encoder(*targets: 'layout.Encoding') -> 'layout.Encoder':
         Encoder for one of the given target encoding.
 
     Raises:
-        forml.MissingError: No suitable encoder available.
+        layout.Encoding.Unsupported: If no suitable encoder available.
 
     Examples:
         >>> layout.get_encoder(
@@ -359,4 +364,4 @@ def get_encoder(*targets: 'layout.Encoding') -> 'layout.Encoder':
         for codec in ENCODERS:
             if pattern.match(codec.encoding):
                 return codec
-    raise forml.MissingError(f'No encoder for any of {targets}')
+    raise Encoding.Unsupported(f'No encoder for any of {targets}')

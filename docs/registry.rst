@@ -18,10 +18,9 @@
 Model Persistence
 =================
 
-During their :ref:`lifecycles <lifecycle>`, ForML :ref:`projects <project>` produce certain
-*artifacts* as their runtime deliverables. To store these artifacts, ForML uses
-:ref:`model registry providers <registry-providers>` as the persistence layer managing the models
-at rest.
+During their :ref:`lifecycles <lifecycle>`, ForML :ref:`projects <project>` produce specific
+*artifacts* as their runtime deliverables. To store these artifacts, ForML uses :ref:`model
+registry providers <registry-providers>` as the persistence layer managing the models at rest.
 
 .. note::
    We use the term *model* more loosely including not just the involved *estimators* but
@@ -103,8 +102,8 @@ Package Staging
 Registry providers might internally persist packages in arbitrary format. In order to launch their
 code using a :ref:`runner <runner>`, however, they need to be
 :meth:`mounted <forml.io.asset.Registry.mount>` and exposed using a posix filesystem path known as
-the *staging path* reachable from all runner nodes (for distributed deployment this implies shared
-network posix filesystem).
+the *staging path* that is reachable from all runner nodes (for distributed deployment this implies
+shared network posix filesystem).
 
 .. _registry-assets:
 
@@ -126,6 +125,24 @@ a transparent structure.
 
 The metadata associated with each generation is provided in form of a :class:`io.asset.Tag
 <forml.io.asset.Tag>`.
+
+
+.. _registry-management:
+
+Content Management
+------------------
+
+Content of the registry can be managed using the :ref:`CLI <platform-cli>` as follows (see the
+integrated help for full synopsis):
+
+=========================  ===========================
+Use case                   Command
+=========================  ===========================
+New release publishing     ``$ forml project release``
+New generation publishing  ``$ forml model train``
+Registry content listing   ``$ forml model list``
+=========================  ===========================
+
 
 Persistence API
 ---------------
@@ -154,6 +171,11 @@ The following is the high-level persistence interface as used by the :ref:`runne
 
 .. autoclass:: forml.io.asset.Instance
 
+.. autoclass:: forml.io.asset.Directory
+
+.. autoclass:: forml.io.asset.Project.Key
+.. autoclass:: forml.io.asset.Release.Key
+.. autoclass:: forml.io.asset.Generation.Key
 
 .. _registry-providers:
 

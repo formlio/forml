@@ -37,4 +37,4 @@ class UnexpectedError(InvalidError):
 
 
 class FailedError(AnyError):
-    """Exception indicating an unsuccessful result of an operation."""
+    """Exception indicating an unsuccessful operation result."""

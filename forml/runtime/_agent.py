@@ -23,8 +23,16 @@ import logging
 import typing
 
 import forml
-from forml import evaluation, flow, io, project, provider, setup
-from forml.io import asset, dsl
+from forml import evaluation
+from forml import flow as flowmod
+from forml import io as iomod
+from forml import project, provider, setup
+from forml.io import asset as assetmod
+from forml.io import dsl
+
+if typing.TYPE_CHECKING:
+    from forml import flow, io  # pylint: disable=reimported
+    from forml.io import asset  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,14 +56,14 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
 
     def __init__(
         self,
-        instance: typing.Optional[asset.Instance] = None,
-        feed: typing.Optional[io.Feed] = None,
-        sink: typing.Optional[io.Sink] = None,
+        instance: typing.Optional['asset.Instance'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Sink'] = None,
         **_,
     ):
-        self._instance: asset.Instance = instance or asset.Instance()
-        self._feed: io.Feed = feed or io.Feed()
-        self._sink: typing.Optional[io.Sink] = sink
+        self._instance: 'asset.Instance' = instance or assetmod.Instance()
+        self._feed: 'io.Feed' = feed or iomod.Feed()
+        self._sink: typing.Optional['io.Sink'] = sink
 
     def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         """Run the training code.
@@ -116,8 +124,8 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         self,
         lower: typing.Optional[dsl.Native],
         upper: typing.Optional[dsl.Native],
-        evaluator: typing.Callable[[project.Evaluation], flow.Operator],
-    ) -> flow.Composition:
+        evaluator: typing.Callable[[project.Evaluation], 'flow.Operator'],
+    ) -> 'flow.Composition':
         """Helper for setting up the evaluation composition.
 
         Args:
@@ -143,9 +151,9 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         self,
         lower: typing.Optional[dsl.Native],
         upper: typing.Optional[dsl.Native],
-        *blocks: flow.Composable,
+        *blocks: 'flow.Composable',
         output: typing.Optional[dsl.Source.Schema] = None,
-    ) -> flow.Composition:
+    ) -> 'flow.Composition':
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
         Args:
@@ -161,9 +169,9 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         segments.extend(b.expand() for b in blocks)
         if self._sink:
             segments.append(self._sink.save(output))
-        return flow.Composition(*segments)
+        return flowmod.Composition(*segments)
 
-    def _exec(self, segment: flow.Segment, assets: typing.Optional[asset.State] = None) -> None:
+    def _exec(self, segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None) -> None:
         """Execute the given segment and assets.
 
         Args:
@@ -173,10 +181,10 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         Returns:
             Optional return value.
         """
-        return self._run(flow.compile(segment, assets))
+        return self._run(flowmod.compile(segment, assets))
 
     @abc.abstractmethod
-    def _run(self, symbols: typing.Collection[flow.Symbol]) -> None:
+    def _run(self, symbols: typing.Collection['flow.Symbol']) -> None:
         """Actual run action implementation using the specific provider execution technology.
 
         Args:

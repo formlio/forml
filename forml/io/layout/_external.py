@@ -60,9 +60,9 @@ class Request(collections.namedtuple('Request', 'payload, encoding, params, acce
         entry: 'layout.Entry'
         """Input data points to be applied for prediction."""
 
-        scope: typing.Any = None
-        """Custom (serializable!) metadata produced by (user-defined) decoder and carried
-        as an application scope throughout the system."""
+        context: typing.Any = None
+        """Custom (serializable!) metadata produced within the (user-defined) application scope
+        and carried throughout the request processing flow."""
 
     payload: bytes
     """Encoded payload."""

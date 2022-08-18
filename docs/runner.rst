@@ -48,7 +48,10 @@ Runner API
 Runner Providers
 ----------------
 
-The available runner implementations are:
+Runner :ref:`providers <provider>` can be configured within the runtime :ref:`platform setup
+<platform>` using the ``[RUNNER.*]`` sections.
+
+The available implementations are:
 
 .. autosummary::
    :template: provider.rst

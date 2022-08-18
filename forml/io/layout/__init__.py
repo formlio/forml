@@ -51,11 +51,3 @@ __all__ = [
     'RowMajor',
     'Tabular',
 ]
-
-
-class Stats(typing.NamedTuple):
-    """Application specific serving metrics.
-
-    Todo:
-        Complete the Stats concept.
-    """

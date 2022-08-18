@@ -24,10 +24,13 @@ import typing
 from forml import io, provider, setup
 from forml.io import asset, layout
 
+from .. import _perf
 from . import dispatch
 
 if typing.TYPE_CHECKING:
     import asyncio
+
+    from forml import runtime
 
 
 LOGGER = logging.getLogger(__name__)
@@ -52,7 +55,7 @@ class Engine:
         self._wrapper.shutdown()
         self._dealer.shutdown()
 
-    async def stats(self) -> layout.Stats:
+    async def stats(self) -> 'runtime.Stats':
         """Get the collected stats report."""
 
     async def apply(self, application: str, request: layout.Request) -> layout.Response:
@@ -65,7 +68,7 @@ class Engine:
         Returns:
             Serving result response.
         """
-        query = await self._wrapper.extract(application, request, layout.Stats())
+        query = await self._wrapper.extract(application, request, _perf.Stats())
         outcome = await self._dealer(query.instance, query.decoded.entry)
         return await self._wrapper.respond(query, outcome)
 
@@ -101,7 +104,7 @@ class Gateway(provider.Service, default=setup.Gateway.default, path=setup.Gatewa
     def run(
         self,
         apply: typing.Callable[[str, layout.Request], typing.Awaitable[layout.Response]],
-        stats: typing.Callable[[], typing.Awaitable[layout.Stats]],
+        stats: typing.Callable[[], typing.Awaitable['runtime.Stats']],
     ) -> None:
         """Serving loop."""
 

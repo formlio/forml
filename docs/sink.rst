@@ -32,7 +32,7 @@ Architecture
 ------------
 
 From the high-level perspective, Sink mirrors the :ref:`feed design <feed>` with flow inversion.
-It relies on a particular :class:`Writer <forml.io.Writer>` implementation acting as an adapter
+It relies on a particular :class:`Writer <forml.io.Sink.Writer>` implementation acting as an adapter
 between the pipeline output and the external media layer.
 
 When launching the pipeline, ForML :ref:`runner <runner>` expands the Sink into a closing
@@ -53,7 +53,10 @@ The core Sink API looks as follows:
 Sink Providers
 --------------
 
-The available Sink implementations are:
+Sink :ref:`providers <provider>` can be configured within the runtime :ref:`platform setup
+<platform>` using the ``[SINK.*]`` sections.
+
+The available implementations are:
 
 .. autosummary::
    :template: provider.rst

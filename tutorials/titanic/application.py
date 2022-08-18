@@ -17,6 +17,6 @@
 
 """Titanic application descriptor."""
 
-from forml import application, project
+from forml import application
 
-project.setup(application.Generic('forml-example-titanic'))
+application.setup(application.Generic('forml-example-titanic'))

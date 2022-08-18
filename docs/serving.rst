@@ -22,6 +22,7 @@ Serving Engine
 
     sequenceDiagram
         actor Client
+        participant Engine as Engine/Gateway
         Client ->> Engine: query(Application, Request)
         opt if not in cache
             Engine ->> Inventory: get_descriptor(Application)
@@ -39,7 +40,7 @@ Serving Engine
             Runner ->> Registry: load(ModelHandle)
             Registry --) Runner: Model
         end
-        opt if needs augmenting via Feature Store
+        opt if needs augmenting
             Runner ->> Feed: get_features(Entry)
             Feed --) Runner: Features
         end
@@ -51,16 +52,47 @@ Serving Engine
 
 a.k.a. inference
 
-:ref:`application`
+can serve multiple :ref:`application` as long as they are published into the :ref:`inventory
+<inventory>`.
 
 one of the :ref:`execution mechanisms <platform-execution>`
 
 apply action of the :ref:`production lifecycle <lifecycle-production>`
 
+CLI ``forml application serve``
+
+Project = generic ML solution (how to solve - returns prediction outcomes (e.g. probabilities))
+Application = Model (project/generation) selection, data adaptation (how to deliver - returns
+a domain response (e.g. recommended products))
+Gateway = Transport Protocol (how to integrate)
 
 
+.. autoclass:: forml.runtime.Stats
 
 
+.. _serving-gateway:
+
+Frontend Gateway
+----------------
+
+Protocol
+
+.. autoclass:: forml.runtime.Gateway
+
+
+Gateway Providers
+-----------------
+
+Gateway :ref:`providers <provider>` can be configured within the runtime :ref:`platform setup
+<platform>` using the ``[GATEWAY.*]`` sections.
+
+The available implementations are:
+
+.. autosummary::
+   :template: provider.rst
+   :nosignatures:
+
+   forml.provider.gateway.rest.Gateway
 
 
 
@@ -182,19 +214,3 @@ Offline agent is the backend service responsible for doing all the heavy process
 * (incremental) *training* and *tuning* of new model generations (pushed to the :ref:`model
   registry <registry>`)
 * *evaluating* project performance (pushed to the `PerfDB`_)
-
-
-Gateway API
------------
-
-.. autoclass:: forml.runtime.Gateway
-
-
-Gateway Providers
------------------
-
-.. autosummary::
-   :template: provider.rst
-   :nosignatures:
-
-   forml.provider.gateway.rest.Gateway

@@ -57,7 +57,7 @@ will try to locate and merge the :file:`config.toml` file instances in the follo
 
 Following is the default content of the ForML platform configuration file:
 
-.. literalinclude:: ../forml/conf/config.toml
+.. literalinclude:: ../forml/setup/_conf/config.toml
    :caption: config.toml (default)
    :linenos:
    :language: toml
@@ -177,3 +177,35 @@ command-line interface - see the integrated help for more details:
       application  Application command group.
       model        Model command group (production lifecycle).
       project      Project command group (development lifecycle).
+
+
+Further details on the individual command groups can also be found in the following related
+chapters:
+
+=======================  ===============================================================
+Command Group            Related Chapters
+=======================  ===============================================================
+``$ forml application``  :ref:`Application Management <inventory-management>`
+
+                         :ref:`Application Publishing <application-publishing>`
+``$ forml model``        :ref:`Model Management <registry-management>`
+
+                         :ref:`Production Lifecycle Management <lifecycle-production>`
+``$ forml project``      :ref:`Development Lifecycle Management <lifecycle-development>`
+=======================  ===============================================================
+
+
+Core Exceptions
+---------------
+
+Following is the list of core ForML exceptions emitted at runtime:
+
+.. autoclass:: forml.AnyError
+.. autoclass:: forml.InvalidError
+   :show-inheritance:
+.. autoclass:: forml.MissingError
+   :show-inheritance:
+.. autoclass:: forml.UnexpectedError
+   :show-inheritance:
+.. autoclass:: forml.FailedError
+   :show-inheritance:

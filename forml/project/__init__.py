@@ -21,7 +21,6 @@ Project management mechanics.
 import pathlib
 import typing
 
-from ._application import Descriptor
 from ._body import Artifact, Components
 from ._component import Evaluation, Source, setup
 from ._distribution import Manifest, Package
@@ -37,7 +36,6 @@ __all__ = [
     'Distribution',
     'Manifest',
     'Package',
-    'Descriptor',
 ]
 
 

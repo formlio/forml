@@ -20,10 +20,7 @@ Project component management.
 """
 import collections
 import importlib
-import inspect
 import logging
-import os
-import pathlib
 import secrets
 import sys
 import types
@@ -31,10 +28,11 @@ import typing
 
 import forml
 from forml import flow
+from forml import setup as setupmod
 from forml.io import dsl, layout
 
-from .. import _body, _importer
-from .._component import virtual
+from .. import _body
+from . import virtual
 
 if typing.TYPE_CHECKING:
     from forml import evaluation, project
@@ -42,7 +40,7 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
+def setup(component: typing.Any) -> None:  # pylint: disable=unused-argument
     """Interface for registering principal component instances.
 
     This function is expected to be called exactly once from within every component module passing
@@ -52,9 +50,9 @@ def setup(instance: typing.Any) -> None:  # pylint: disable=unused-argument
     loader context* (outside the context this is effectively no-op).
 
     Args:
-        instance: Principal component instance to be registered.
+        component: Principal component instance to be registered.
     """
-    LOGGER.debug('Principal component setup attempted outside of a loader context: %s', instance)
+    LOGGER.debug('Principal component setup attempted outside of a loader context: %s', component)
 
 
 class Source(typing.NamedTuple):
@@ -203,19 +201,25 @@ class Evaluation(typing.NamedTuple):
 class Virtual:
     """Virtual component module based on a real component instance."""
 
-    def __init__(self, component: typing.Any, package: typing.Optional[str] = None):
+    def __init__(
+        self,
+        component: typing.Any,
+        package: typing.Optional[str] = None,
+        entrypoint: typing.Callable[..., None] = setup,
+    ):
         def onexec(_: types.ModuleType) -> None:
-            """Module onexec handler that fakes the component registration using the setup()
+            """Module onexec handler that fakes the component registration using the ``entrypoint``
             method.
             """
             LOGGER.debug('Accessing virtual component module')
-            getattr(importlib.import_module(__name__), setup.__name__)(component)
+            locals()['__name__'] = self._path  # for setup.load() validator
+            getattr(importlib.import_module(entrypoint.__module__), entrypoint.__name__)(component)
 
         if not package:
             package = secrets.token_urlsafe(16)
         self._path = f'{virtual.__name__}.{package}'
         LOGGER.debug('Registering virtual component [%s]: %s', component, self._path)
-        sys.meta_path[:0] = _importer.Finder.create(types.ModuleType(self._path), onexec)
+        sys.meta_path[:0] = setupmod.Finder.create(types.ModuleType(self._path), onexec)
 
     @property
     def path(self) -> str:
@@ -225,67 +229,3 @@ class Virtual:
             Virtual component module path.
         """
         return self._path
-
-
-def load(module: str, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> typing.Any:
-    """Component loader.
-
-    Args:
-        module: Python module containing the component to be loaded.
-        path: Path to import from.
-
-    Returns:
-        Component instance.
-    """
-
-    def is_expected(actual: str) -> bool:
-        """Test the actually loaded module is the one that's been requested.
-
-        Args:
-            actual: Name of the actually loaded module.
-
-        Returns:
-            True if the actually loaded module is the one expected.
-        """
-        actual = actual.replace('.', os.path.sep)
-        expected = module.replace('.', os.path.sep)
-        if path:
-            expected = os.path.join(path, expected)
-        return expected.endswith(actual)
-
-    class Component(types.ModuleType):
-        """Fake component module."""
-
-        Source = Source
-        Evaluation = Evaluation
-
-        __path__ = globals()['__path__']
-
-        def __init__(self):
-            super().__init__(__name__)
-
-        @staticmethod
-        def setup(component: typing.Any) -> None:
-            """Component module setup handler.
-
-            Args:
-                component: Component instance to be registered.
-            """
-            caller_frame = inspect.currentframe().f_back
-            if inspect.getframeinfo(caller_frame).filename != __file__:  # ignore Virtual module setup
-                caller_module = inspect.getmodule(caller_frame)
-                if caller_module and not is_expected(caller_module.__name__):
-                    LOGGER.warning('Ignoring setup from unexpected component of %s', caller_module.__name__)
-                    return
-            LOGGER.debug('Component setup using %s', component)
-            nonlocal result
-            if result:
-                raise forml.UnexpectedError('Repeated call to component setup')
-            result = component
-
-    result = None
-    with _importer.context(Component()):
-        LOGGER.debug('Importing project component from %s', module)
-        _importer.isolated(module, path)
-
-    return result

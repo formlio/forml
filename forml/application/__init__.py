@@ -18,49 +18,15 @@
 """
 ForML application utils.
 """
-import typing
 
-from forml import project
-from forml.io import layout
-
+from ._descriptor import Descriptor, Generic, setup
 from ._strategy import Explicit, Latest, Selector
 
-if typing.TYPE_CHECKING:
-    from forml import application  # pylint: disable=import-self
-    from forml.io import asset
-
 __all__ = [
+    'Descriptor',
     'Explicit',
     'Generic',
     'Latest',
     'Selector',
+    'setup',
 ]
-
-
-class Generic(project.Descriptor):
-    """Generic application descriptor."""
-
-    def __init__(self, name: str, selector: typing.Optional['application.Selector'] = None):
-        self._name: str = name
-        self._strategy: Selector = selector or Latest(project=name)
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    def receive(self, request: layout.Request) -> layout.Request.Decoded:
-        """Decode using the internal bank of supported decoders."""
-        return layout.Request.Decoded(
-            layout.get_decoder(request.encoding).loads(request.payload), {'params': dict(request.params)}
-        )
-
-    def respond(
-        self, outcome: layout.Outcome, encoding: typing.Sequence[layout.Encoding], scope: typing.Any
-    ) -> layout.Response:
-        """Encode using the internal bank of supported encoders."""
-        encoder = layout.get_encoder(*encoding)
-        return layout.Response(encoder.dumps(outcome), encoder.encoding)
-
-    def select(self, registry: 'asset.Directory', scope: typing.Any, stats: layout.Stats) -> 'asset.Instance':
-        """Select using the provided selector."""
-        return self._strategy.select(registry, scope, stats)

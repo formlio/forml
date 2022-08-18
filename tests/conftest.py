@@ -28,8 +28,9 @@ import uuid
 import cloudpickle
 import pytest
 
+from forml import application as appmod
 from forml import flow, io
-from forml import project as prj
+from forml import project as prjmod
 from forml.io import asset, dsl, layout
 from forml.pipeline import wrap
 
@@ -170,43 +171,43 @@ def actor_prediction(
 
 
 @pytest.fixture(scope='session')
-def project_package() -> prj.Package:
+def project_package() -> prjmod.Package:
     """Test project package fixture."""
     return helloworld.PACKAGE
 
 
 @pytest.fixture(scope='session')
-def project_path(project_package: prj.Package) -> pathlib.Path:
+def project_path(project_package: prjmod.Package) -> pathlib.Path:
     """Test project path."""
     return project_package.path
 
 
 @pytest.fixture(scope='session')
-def project_manifest(project_package: prj.Package) -> prj.Manifest:
+def project_manifest(project_package: prjmod.Package) -> prjmod.Manifest:
     """Test project manifest fixture."""
     return project_package.manifest
 
 
 @pytest.fixture(scope='session')
-def project_artifact(project_package: prj.Package, project_path: str) -> prj.Artifact:
+def project_artifact(project_package: prjmod.Package, project_path: str) -> prjmod.Artifact:
     """Test project artifact fixture."""
     return project_package.install(project_path)
 
 
 @pytest.fixture(scope='session')
-def project_components(project_artifact: prj.Artifact) -> prj.Components:
+def project_components(project_artifact: prjmod.Artifact) -> prjmod.Components:
     """Test project components fixture."""
     return project_artifact.components
 
 
 @pytest.fixture(scope='session')
-def project_name(project_manifest: prj.Manifest) -> asset.Project.Key:
+def project_name(project_manifest: prjmod.Manifest) -> asset.Project.Key:
     """Test project name fixture."""
     return project_manifest.name
 
 
 @pytest.fixture(scope='session')
-def project_release(project_manifest: prj.Manifest) -> asset.Release.Key:
+def project_release(project_manifest: prjmod.Manifest) -> asset.Release.Key:
     """Test project release fixture."""
     return project_manifest.version
 
@@ -253,7 +254,7 @@ def registry(
     valid_generation: asset.Generation.Key,
     generation_tag: asset.Tag,
     generation_states: typing.Mapping[uuid.UUID, bytes],
-    project_package: prj.Package,
+    project_package: prjmod.Package,
 ) -> asset.Registry:
     """Registry fixture (multiprocess/thread safe)."""
     with multiprocessing.Manager() as manager:
@@ -291,7 +292,7 @@ def valid_instance(
 
 
 @pytest.fixture(scope='session')
-def source_query(project_components: prj.Components) -> dsl.Query:
+def source_query(project_components: prjmod.Components) -> dsl.Query:
     """Query fixture."""
     return project_components.source.extract.train
 
@@ -392,31 +393,31 @@ def sink_instance(sink_type: type[io.Sink], sink_output: multiprocessing.Queue) 
 
 
 @pytest.fixture(scope='session')
-def descriptor_handle() -> prj.Descriptor.Handle:
+def descriptor_handle() -> appmod.Descriptor.Handle:
     """Application descriptor handle fixture."""
-    return prj.Descriptor.Handle(helloworld_descriptor.__file__)
+    return appmod.Descriptor.Handle(helloworld_descriptor.__file__)
 
 
 @pytest.fixture(scope='session')
-def descriptor(descriptor_handle: prj.Descriptor.Handle) -> prj.Descriptor:
+def descriptor(descriptor_handle: appmod.Descriptor.Handle) -> appmod.Descriptor:
     """Application descriptor fixture."""
     return descriptor_handle.descriptor
 
 
 @pytest.fixture(scope='session')
-def application(descriptor: prj.Descriptor) -> str:
+def application(descriptor: appmod.Descriptor) -> str:
     """Application name fixture."""
     return descriptor.name
 
 
 @pytest.fixture(scope='function')
-def inventory(descriptor: prj.Descriptor) -> asset.Inventory:
+def inventory(descriptor: appmod.Descriptor) -> asset.Inventory:
     """Inventory fixture."""
     return helloworld.Inventory([descriptor])
 
 
 @pytest.fixture(scope='session')
-def testset_request(descriptor: prj.Descriptor, testset_entry: layout.Entry) -> layout.Request:
+def testset_request(descriptor: appmod.Descriptor, testset_entry: layout.Entry) -> layout.Request:
     """Request fixture."""
     as_outcome = layout.Outcome(testset_entry.schema, testset_entry.data.to_rows())
     as_response = descriptor.respond(as_outcome, [layout.Encoding('*/*')], None)

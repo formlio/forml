@@ -24,19 +24,26 @@ import typing
 from forml.io import asset as assetmod
 
 if typing.TYPE_CHECKING:
-    from forml.io import asset, layout  # pylint: disable=reimported
+    from forml import runtime
+    from forml.io import asset  # pylint: disable=reimported
 
 
 class Selector(abc.ABC):
-    """Model selection strategy abstract base class."""
+    """Abstract base class for the model selection strategy to be used by the
+    :class:`application.Generic <forml.application.Generic>` descriptors.
+    """
 
     @abc.abstractmethod
-    def select(self, registry: 'asset.Directory', scope: typing.Any, stats: 'layout.Stats') -> 'asset.Instance':
+    def select(self, registry: 'asset.Directory', context: typing.Any, stats: 'runtime.Stats') -> 'asset.Instance':
         """Select the model instance to be used for serving the request.
+
+        See Also:
+            This serves the same purpose as the :meth:`application.Descriptor.select
+            <forml.application.Descriptor.select>` method only extracted as a separate object.
 
         Args:
             registry: Model registry to select the model from.
-            scope: Optional metadata carried over from decode.
+            context: Optional metadata carried over from decode.
             stats: Application specific serving metrics.
 
         Returns:
@@ -45,7 +52,13 @@ class Selector(abc.ABC):
 
 
 class Explicit(Selector):
-    """Select an explicit generation."""
+    """Model selection strategy always choosing an explicit model generation.
+
+    Args:
+        project: Project reference of the selected model.
+        release: Project release reference of the selected model.
+        generation: Project generation reference of the selected model.
+    """
 
     def __init__(
         self,
@@ -58,7 +71,7 @@ class Explicit(Selector):
         self._generation: typing.Union[str, int, 'asset.Generation.Key'] = generation
         self._instance: typing.Optional['asset.Instance'] = None
 
-    def select(self, registry: 'asset.Directory', scope: typing.Any, stats: 'layout.Stats') -> 'asset.Instance':
+    def select(self, registry: 'asset.Directory', context: typing.Any, stats: 'runtime.Stats') -> 'asset.Instance':
         if not self._instance:
             self._instance = assetmod.Instance(
                 registry=registry,
@@ -70,10 +83,15 @@ class Explicit(Selector):
 
 
 class Latest(Selector):
-    """Select an instance of the most recent model release/generation.
+    """Model selection strategy choosing an instance of the most recent model release/generation.
 
-    Currently, the instance is cached indefinitely and so updates to the registry are not
-    dynamically reflected.
+    Attention:
+        Currently, the instance is cached indefinitely and so updates to the registry are not
+        dynamically reflected.
+
+    Args:
+        project: Project reference to choose the most recent generation from.
+        release: Optional release to choose the most recent generation from.
     """
 
     def __init__(
@@ -85,7 +103,7 @@ class Latest(Selector):
         self._release: typing.Optional[typing.Union[str, 'asset.Release.Key']] = release
         self._instance: typing.Optional['asset.Instance'] = None
 
-    def select(self, registry: 'asset.Directory', scope: typing.Any, stats: 'layout.Stats') -> 'asset.Instance':
+    def select(self, registry: 'asset.Directory', context: typing.Any, stats: 'runtime.Stats') -> 'asset.Instance':
         if not self._instance:
             release = self._release
             generation = None

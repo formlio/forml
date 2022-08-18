@@ -25,10 +25,15 @@ from concurrent import futures
 
 import forml
 from forml import io
-from forml import project as prjmod
-from forml.io import asset, layout
+from forml.io import asset
 
 from . import prediction
+
+if typing.TYPE_CHECKING:
+    from forml import application as appmod
+    from forml import project as prjmod
+    from forml import runtime
+    from forml.io import layout
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,7 +52,7 @@ class Dealer:
         self._loop: typing.Optional[asyncio.AbstractEventLoop] = loop
         self._cache: dict[asset.Instance, prediction.Executor] = {}
 
-    def __call__(self, instance: asset.Instance, entry: layout.Entry) -> asyncio.Future[layout.Outcome]:
+    def __call__(self, instance: asset.Instance, entry: 'layout.Entry') -> asyncio.Future['layout.Outcome']:
         if instance not in self._cache:
             LOGGER.info('Spawning new prediction executor')
             executor = prediction.Executor(
@@ -83,7 +88,7 @@ class Wrapper:
         def __eq__(self, other):
             return other._registry == self._registry if isinstance(other, self.__class__) else other == self._registry
 
-        def mount(self, project: asset.Project.Key, release: asset.Release.Key) -> prjmod.Artifact:
+        def mount(self, project: asset.Project.Key, release: asset.Release.Key) -> 'prjmod.Artifact':
             return self._registry.mount(project, release)
 
         def projects(self) -> typing.Iterable[typing.Union[str, asset.Project.Key]]:
@@ -97,10 +102,10 @@ class Wrapper:
         ) -> typing.Iterable[typing.Union[str, int, asset.Generation.Key]]:
             return self._registry.generations(project, release)
 
-        def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prjmod.Package:
+        def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> 'prjmod.Package':
             return self._registry.pull(project, release)
 
-        def push(self, package: prjmod.Package) -> None:
+        def push(self, package: 'prjmod.Package') -> None:
             raise self.ERROR
 
         def read(
@@ -132,10 +137,10 @@ class Wrapper:
     class Query(typing.NamedTuple):
         """Case class for holding query attributes."""
 
-        descriptor: prjmod.Descriptor
+        descriptor: 'appmod.Descriptor'
         instance: asset.Instance
-        accept: tuple[layout.Encoding]
-        decoded: layout.Request.Decoded
+        accept: tuple['layout.Encoding']
+        decoded: 'layout.Request.Decoded'
 
     class Executor:
         """Helper for pool executor with lazy loop access."""
@@ -164,9 +169,9 @@ class Wrapper:
         self._registry: asset.Directory = asset.Directory(self.Frozen(registry))
         self._processes: Wrapper.Executor = self.Executor(futures.ProcessPoolExecutor(max_workers), loop)
         self._threads: Wrapper.Executor = self.Executor(futures.ThreadPoolExecutor(max_workers), loop)
-        self._descriptors: dict[str, typing.Optional[type[prjmod.Descriptor]]] = {}
+        self._descriptors: dict[str, typing.Optional['appmod.Descriptor']] = {}
 
-    def _get_descriptor(self, application: str) -> type[prjmod.Descriptor]:
+    def _get_descriptor(self, application: str) -> 'appmod.Descriptor':
         """Get the application descriptor.
 
         Args:
@@ -186,11 +191,11 @@ class Wrapper:
 
     @staticmethod
     def _dispatch(
-        descriptor: prjmod.Descriptor,
-        registry: asset.Directory,
-        request: layout.Request,
-        stats: layout.Stats,
-    ) -> tuple[asset.Instance, layout.Request.Decoded]:
+        descriptor: 'appmod.Descriptor',
+        registry: 'asset.Directory',
+        request: 'layout.Request',
+        stats: 'runtime.Stats',
+    ) -> tuple['asset.Instance', 'layout.Request.Decoded']:
         """Helper for request decoding and model selection.
 
         Args:
@@ -203,9 +208,9 @@ class Wrapper:
             Asset instance object and decoded version of the serving request.
         """
         decoded = descriptor.receive(request)
-        return descriptor.select(registry, decoded.scope, stats), decoded
+        return descriptor.select(registry, decoded.context, stats), decoded
 
-    async def extract(self, application: str, request: layout.Request, stats: layout.Stats) -> 'Wrapper.Query':
+    async def extract(self, application: str, request: 'layout.Request', stats: 'runtime.Stats') -> 'Wrapper.Query':
         """Extract the query parameters from the given request object belonging to the particular application.
 
         Args:
@@ -220,7 +225,7 @@ class Wrapper:
         instance, decoded = await self._processes(self._dispatch, descriptor, self._registry, request, stats)
         return self.Query(descriptor, instance, request.accept, decoded)
 
-    async def respond(self, query: 'Wrapper.Query', outcome: layout.Outcome) -> layout.Response:
+    async def respond(self, query: 'Wrapper.Query', outcome: 'layout.Outcome') -> 'layout.Response':
         """Encode the given outcome into a native response.
 
         Args:
@@ -234,7 +239,7 @@ class Wrapper:
             query.descriptor.respond,
             outcome,
             query.accept,
-            query.decoded.scope,
+            query.decoded.context,
         )
 
     def shutdown(self) -> None:

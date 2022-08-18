@@ -18,43 +18,19 @@
 """
 Project component tests.
 """
-import importlib
-import pathlib
-import types
 import typing
 
 import pytest
 
 import forml
-from forml import flow, project
+from forml import flow, project, setup
 from forml.io import dsl, layout
-from forml.project import _component, _importer
+from forml.project import _component
 
 
 def test_setup():
     """Test the direct setup access."""
     project.setup(object())
-
-
-class TestContext:
-    """Context unit tests."""
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def name() -> str:
-        """Module name fixture."""
-        return 'foo'
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def module(name: str) -> types.ModuleType:
-        """Module fixture."""
-        return types.ModuleType(name)
-
-    def test_context(self, name: str, module: types.ModuleType):
-        """Testing the context manager."""
-        with _importer.context(module):
-            assert importlib.import_module(name) == module
 
 
 class TestVirtual:
@@ -74,15 +50,7 @@ class TestVirtual:
 
     def test_load(self, component: typing.Any, package: str):
         """Test loading of the virtual component."""
-        assert _component.load(_component.Virtual(component, package=package).path) == component
-
-
-def test_load():
-    """Testing the top level component.load() function."""
-    provided = _component.load('component', pathlib.Path(__file__).parent)
-    import component  # pylint: disable=import-outside-toplevel
-
-    assert provided is component.INSTANCE
+        assert setup.load(_component.Virtual(component, package=package).path, project.setup) == component
 
 
 class TestSource:

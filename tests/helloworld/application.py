@@ -17,6 +17,6 @@
 
 """Hello World application descriptor."""
 
-from forml import application, project
+from forml import application
 
-project.setup(application.Generic('helloworld'))
+application.setup(application.Generic('helloworld'))

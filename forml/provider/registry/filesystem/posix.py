@@ -232,6 +232,7 @@ class Registry(asset.Registry, alias='posix'):
 
     Args:
         path: Registry root filesystem location.
+              Defaults to :file:`$FORML_HOME/registry`.
         staging: Filesystem location reachable from all runner nodes to be used for
                  :ref:`package staging <registry-staging>` (defaults to :file:`<path>/.stage`).
 
@@ -242,7 +243,7 @@ class Registry(asset.Registry, alias='posix'):
 
         [REGISTRY.devrepo]
         provider = "posix"
-        path = "/mnt/forml/dev"
+        path = "/mnt/forml/dev/repo/"
     """
 
     def __init__(

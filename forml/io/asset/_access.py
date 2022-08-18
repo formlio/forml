@@ -114,8 +114,11 @@ class State:
 
 
 class Instance:
-    """The top-level instance of a particular project/release/generation used by the runner to
+    """The top-level instance of a particular project/release/generation used by a Runner to
     access the runtime artifacts (both the *release package* and the *model generation assets*).
+
+    This is just a lazy reference not physically containing the actual assets - only fetching them
+    upon the eventual access.
     """
 
     def __init__(

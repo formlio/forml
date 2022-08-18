@@ -14,42 +14,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 """
-ForML setup.
+Runtime performance reporting.
 """
-import sys
-
-from ._conf import APPNAME, CONFIG, PRJNAME, SYSDIR, USRDIR, tmpdir
-from ._importer import Finder, context, isolated, load, search
-from ._logging import logging
-from ._provider import Feed, Gateway, Inventory, Provider, Registry, Runner, Sink
-from ._run import cli
-
-__all__ = [
-    'APPNAME',
-    'cli',
-    'CONFIG',
-    'context',
-    'Feed',
-    'Finder',
-    'Gateway',
-    'Inventory',
-    'isolated',
-    'load',
-    'logging',
-    'PRJNAME',
-    'Provider',
-    'Registry',
-    'Runner',
-    'search',
-    'Sink',
-    'SYSDIR',
-    'tmpdir',
-    'USRDIR',
-]
+import typing
 
 
-for _path in (USRDIR, SYSDIR):
-    if _path not in sys.path:
-        sys.path.append(str(_path))
+class Stats(typing.NamedTuple):
+    """Runtime performance metrics.
+
+    Todo:
+        Complete the Stats concept.
+    """

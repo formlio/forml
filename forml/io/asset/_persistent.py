@@ -31,7 +31,7 @@ import forml
 from forml import provider, setup
 
 if typing.TYPE_CHECKING:
-    from forml import project
+    from forml import application, project
     from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -226,7 +226,12 @@ class Registry(provider.Service, default=setup.Registry.default, path=setup.Regi
 
 
 class Inventory(provider.Service, default=setup.Inventory.default, path=setup.Inventory.path):
-    """Application descriptor storage abstraction."""
+    """Abstract base class for application descriptor storage providers.
+
+    Important:
+        There is no concept of versioning - individual descriptors are held in a flat namespace
+        requiring uniqueness of each application :meth:`name <forml.application.Descriptor.name>`.
+    """
 
     def __repr__(self):
         name = self.__class__.__module__.rsplit('.', 1)[-1].capitalize()
@@ -234,30 +239,40 @@ class Inventory(provider.Service, default=setup.Inventory.default, path=setup.In
 
     @abc.abstractmethod
     def list(self) -> typing.Iterable[str]:
-        """List the unique application names."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get(self, application: str) -> 'project.Descriptor':
-        """Retrieve the descriptor for the given application.
-
-        Only application returned by :meth:`list` can be requested.
-
-        Args:
-            application: Unique application name.
+        """List all the application names contained within the inventory.
 
         Returns:
-            Application descriptor.
+            List of application names.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def put(self, descriptor: 'project.Descriptor.Handle') -> None:
-        """Store the application descriptor into the inventory.
+    def get(self, application: str) -> 'application.Descriptor':
+        """Retrieve the descriptor for the given application name.
 
-        Existing application with the same name gets overwritten.
+        Attention:
+            Only application returned by :meth:`list` can be requested.
 
         Args:
-            descriptor: Application descriptor handle.
+            application: Application :meth:`name <forml.application.Descriptor.name>`.
+
+        Returns:
+            Application descriptor.
+
+        Raises:
+            forml.MissingError: If the application doesn't exist.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def put(self, descriptor: 'application.Descriptor.Handle') -> None:
+        """Store the application descriptor into the inventory.
+
+        Caution:
+            Existing application with the same :meth:`name <forml.application.Descriptor.name>`
+            gets overwritten.
+
+        Args:
+            descriptor: Handle of the application descriptor to be stored.
         """
         raise NotImplementedError()

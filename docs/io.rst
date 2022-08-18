@@ -272,8 +272,6 @@ exchanges using the following structures:
 
 .. autoclass:: forml.io.layout.Response
 
-.. autoclass:: forml.io.layout.Stats
-
 
 .. _io-encoding:
 
@@ -291,8 +289,53 @@ ForML also depends on the following *encoding* features for the external payload
 .. autoclass:: forml.io.layout.Decoder
    :members: loads
 
+The two encoder/decoder matching functions bellow currently support the following
+encodings/flavours:
+
++-------------------------+----------------------------+------------------------------------------+
+| Encoding                | Example                    |        Implementation                    |
++=========================+============================+==========================================+
+| ``application/json;     | ``[{column -> value},      |                                          |
+| format=pandas-records`` | ... , {column -> value}]`` |                                          |
++-------------------------+----------------------------+ Using :func:`pandas:pandas.read_json`    |
+| ``application/json;     | ``{column ->               | for decoding and                         |
+| format=pandas-columns`` | {index -> value}}``        | :meth:`pandas:pandas.DataFrame.to_json`  |
++-------------------------+----------------------------+ for encoding. The particular ``format``  |
+| ``application/json;     | ``{index ->                | refers to the value of the ``orient=``   |
+| format=pandas-index``   | {column -> value}}``       | parameter of each of the functions.      |
++-------------------------+----------------------------+                                          |
+| ``application/json;     | ``{"index": [index],       |                                          |
+| format=pandas-split``   | "columns": [columns],      |                                          |
+|                         | "data": [values]}``        |                                          |
++-------------------------+----------------------------+                                          |
+| ``application/json;     | ``{"schema": {schema},     |                                          |
+| format=pandas-table``   | "data": {data}}``          |                                          |
++-------------------------+----------------------------+                                          |
+| ``application/json;     | ``[[value, ..., value],    |                                          |
+| format=pandas-values``  | [...]]``                   |                                          |
++-------------------------+----------------------------+------------------------------------------+
+| ``application/json``    |                            | Decoder attempts to interpret the data   |
+|                         |                            | as:                                      |
+|                         |                            |                                          |
+|                         |                            | #. a list of row dicts                   |
+|                         |                            | #. TF serving's *instances* format       |
+|                         |                            | #. TF serving's *inputs* format          |
+|                         |                            | #. a dict of column lists                |
+|                         |                            |                                          |
+|                         |                            | Encoder defaults to the                  |
+|                         |                            | ``pandas-records`` format.               |
++-------------------------+----------------------------+------------------------------------------+
+| ``text/csv``            | ``A,B\n1,a\n2,b\n3,c\n``   | Using :func:`pandas:pandas.read_csv`     |
+|                         |                            | for decoding and                         |
+|                         |                            | :meth:`pandas:pandas.DataFrame.to_csv`   |
+|                         |                            | for encoding.                            |
++-------------------------+----------------------------+------------------------------------------+
+
+
 .. autofunction:: forml.io.layout.get_encoder
 .. autofunction:: forml.io.layout.get_decoder
+
+.. autoclass:: forml.io.layout.Encoding.Unsupported
 
 
 Payload Transformation Operators

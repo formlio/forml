@@ -24,7 +24,8 @@ import typing
 import click
 from click import core
 
-from forml import project, runtime, setup
+from forml import application as appmod
+from forml import runtime, setup
 from forml.io import asset
 
 if typing.TYPE_CHECKING:
@@ -66,7 +67,7 @@ def group(
 @click.pass_obj
 def put(scope: Scope, descriptor: str) -> None:
     """Store the application descriptor into the inventory."""
-    handle = project.Descriptor.Handle(descriptor)
+    handle = appmod.Descriptor.Handle(descriptor)
     scope.descriptors.put(handle)
 
 

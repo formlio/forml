@@ -29,7 +29,7 @@ import forml
 from forml import flow, setup
 from forml.io import asset
 
-from . import _component, _distribution, _importer
+from . import _component, _distribution
 
 if typing.TYPE_CHECKING:
     from forml import project, runtime
@@ -122,13 +122,13 @@ class Components(collections.namedtuple('Components', 'source, pipeline, evaluat
             raise forml.UnexpectedError('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, setter in builder:
-            mod = modules.get(component) or component
-            if '.' not in mod:
-                mod = package + mod
+            name = modules.get(component) or component
+            if '.' not in name:
+                name = package + name
             try:
-                setter(_component.load(mod, path))
+                setter(setup.load(name, _component.setup, path))
             except ModuleNotFoundError as err:
-                if not mod.startswith(err.name):
+                if not name.startswith(err.name):
                     raise err
                 LOGGER.debug('Component %s not found', component)
         return builder.build()
@@ -201,6 +201,6 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
         from forml import runtime  # pylint: disable=import-outside-toplevel
 
-        with _importer.context(Manifest()):
+        with setup.context(Manifest()):
             # dummy package forced to load our fake manifest
             return runtime.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))

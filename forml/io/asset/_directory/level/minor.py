@@ -214,7 +214,10 @@ class Generation(_directory.Level):
     """Snapshot of project states in its particular training iteration."""
 
     class Key(_directory.Level.Key, int):
-        """Generation key."""
+        """Project model generation key - i.e. generation *sequence number*.
+
+        This must be a natural integer starting from 1.
+        """
 
         MIN = 1
 

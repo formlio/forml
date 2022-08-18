@@ -21,8 +21,9 @@ import pathlib
 import typing
 import uuid
 
+from forml import application as appmod
 from forml import io
-from forml import project as prj
+from forml import project as prjmod
 from forml.io import asset, dsl, layout
 from forml.io.dsl import parser as parsmod
 
@@ -50,7 +51,7 @@ class School(dsl.Schema):
     name = dsl.Field(dsl.String())
 
 
-PACKAGE = prj.Package(pathlib.Path(__file__).parent / 'package.4ml')
+PACKAGE = prjmod.Package(pathlib.Path(__file__).parent / 'package.4ml')
 TRAINSET = (
     ('smith', 'oxford', 1, 1),
     ('black', 'cambridge', 2, 1),
@@ -69,7 +70,7 @@ class Registry(asset.Registry):
         asset.Project.Key,
         dict[
             asset.Release.Key,
-            tuple[prj.Package, dict[asset.Generation.Key, tuple[asset.Tag, tuple[bytes]]]],
+            tuple[prjmod.Package, dict[asset.Generation.Key, tuple[asset.Tag, tuple[bytes]]]],
         ],
     ]
 
@@ -96,11 +97,11 @@ class Registry(asset.Registry):
         except KeyError as err:
             raise asset.Level.Invalid(f'Invalid release ({release})') from err
 
-    def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prj.Package:
+    def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prjmod.Package:
         with self._lock:
             return self._content[project][release][0]
 
-    def push(self, package: prj.Package) -> None:
+    def push(self, package: prjmod.Package) -> None:
         raise NotImplementedError()
 
     def read(
@@ -208,14 +209,14 @@ class Feed(io.Feed[str, str]):
 class Inventory(asset.Inventory):
     """Fixture inventory implementation."""
 
-    def __init__(self, descriptors: typing.Iterable[prj.Descriptor]):
-        self._content: dict[str, prj.Descriptor] = {d.name: d for d in descriptors}
+    def __init__(self, descriptors: typing.Iterable[appmod.Descriptor]):
+        self._content: dict[str, appmod.Descriptor] = {d.name: d for d in descriptors}
 
     def list(self) -> typing.Iterable[str]:
         return self._content.keys()
 
-    def get(self, application: str) -> prj.Descriptor:
+    def get(self, application: str) -> appmod.Descriptor:
         return self._content[application.lower()]
 
-    def put(self, descriptor: prj.Descriptor.Handle) -> None:
+    def put(self, descriptor: appmod.Descriptor.Handle) -> None:
         self._content[descriptor.descriptor.name] = descriptor.descriptor

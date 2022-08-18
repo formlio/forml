@@ -38,7 +38,11 @@ class Project(_directory.Level):
     """Sequence of releases based on same project."""
 
     class Key(_directory.Level.Key, str):  # pylint: disable=abstract-method
-        """Project level key."""
+        """Project level key - i.e. the project *name*.
+
+        This can be any identifier valid as a Python package distribution name (i.e. lowercase with
+        hyphens).
+        """
 
     def __init__(self, root: 'rootmod.Directory', key: typing.Union[str, 'Project.Key']):
         super().__init__(key, parent=root)

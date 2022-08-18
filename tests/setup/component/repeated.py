@@ -16,40 +16,10 @@
 # under the License.
 
 """
-ForML setup.
+Mockup of a repeatedly called project component setup.
 """
-import sys
 
-from ._conf import APPNAME, CONFIG, PRJNAME, SYSDIR, USRDIR, tmpdir
-from ._importer import Finder, context, isolated, load, search
-from ._logging import logging
-from ._provider import Feed, Gateway, Inventory, Provider, Registry, Runner, Sink
-from ._run import cli
+from forml import project
 
-__all__ = [
-    'APPNAME',
-    'cli',
-    'CONFIG',
-    'context',
-    'Feed',
-    'Finder',
-    'Gateway',
-    'Inventory',
-    'isolated',
-    'load',
-    'logging',
-    'PRJNAME',
-    'Provider',
-    'Registry',
-    'Runner',
-    'search',
-    'Sink',
-    'SYSDIR',
-    'tmpdir',
-    'USRDIR',
-]
-
-
-for _path in (USRDIR, SYSDIR):
-    if _path not in sys.path:
-        sys.path.append(str(_path))
+project.setup(None)
+project.setup(None)

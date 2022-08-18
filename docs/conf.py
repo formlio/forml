@@ -95,17 +95,25 @@ nitpicky = True
 _target_blacklist = {
     'py:class': (
         '_Actor',
-        r'^conf\.Feed',
+        r'asset\.Generation',
         r'^dsl\.Operable',
         r'^dsl\.Ordering\.(?:Direction|Term)',
-        r'flow\.(?:Features|Labels|Result)',
+        r'^flow\.(?:Features|Labels|Result)',
+        r'^forml\.io\.asset\._directory\.level\.minor\.Tag\.(?:Training|Tuning)',
+        r'forml\.pipeline\.ensemble\._stacking\.Ensembler',
+        r'^forml\.pipeline\.payload\._split\.Column',
+        r'^forml\.pipeline\.wrap\.(?:_auto\.AutoClass|_proxy\.Origin)',
+        r'^forml\.provider\.feed\.lazy\.Feed',
         r'^io\.(?:Consumer|Producer)',
         r'^layout\.(?:ColumnMajor|RowMajor|Native)',
-        'pandas.core.generic.NDFrame',
+        r'pandas\.core\.generic\.NDFrame',
         r'^parser\.(?:Source|Feature|Visitor)',
+        r'^project\.Components',
+        r'^project\.Source\.(?:Extract|Labels)',
+        r'^setup\.Feed',
         'sqlalchemy.engine.interfaces.Connectable',
     ),
-    'py:.*': (r'(?:forml|asset|project)\..*',),
+    'py:obj': (r'^forml\..*',),
 }
 nitpick_ignore_regex = [(k, v) for k, t in _target_blacklist.items() for v in t]
 

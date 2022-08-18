@@ -25,17 +25,17 @@ import tempfile
 import pytest
 
 import forml
-from forml import project
+from forml import application as appmod
 
 
 class TestDescriptor:
     """Application descriptor unit tests."""
 
-    def test_application(self, descriptor: project.Descriptor, application: str):
+    def test_application(self, descriptor: appmod.Descriptor, application: str):
         """Test the retrieval of the descriptor application name."""
         assert descriptor.name == application
 
-    def test_serializable(self, descriptor: project.Descriptor):
+    def test_serializable(self, descriptor: appmod.Descriptor):
         """Descriptor serializability test."""
         assert pickle.loads(pickle.dumps(descriptor)) == descriptor
 
@@ -45,13 +45,11 @@ class TestDescriptorHandle:
 
     def test_invalid(self, tmp_path: pathlib.Path):
         """Test invalid handle setup."""
+        with pytest.raises(forml.MissingError, match='not found'):
+            appmod.Descriptor.Handle(tmp_path / 'foobar')  # doesn't exist
         with pytest.raises(forml.InvalidError, match='file expected'):
-            project.Descriptor.Handle(tmp_path)  # not a file
+            appmod.Descriptor.Handle(tmp_path)  # not a file
         with tempfile.NamedTemporaryFile(dir=tmp_path, suffix='.foo') as path, pytest.raises(
             forml.InvalidError, match='not a module'
         ):
-            project.Descriptor.Handle(path.name)  # not a python module
-        with tempfile.NamedTemporaryFile(dir=tmp_path, suffix='.py') as path, pytest.raises(
-            forml.InvalidError, match='no setup'
-        ):
-            project.Descriptor.Handle(path.name)  # not calling component.setup
+            appmod.Descriptor.Handle(path.name)  # not a python module

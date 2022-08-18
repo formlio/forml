@@ -15,12 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Mockup of a project component (ie pipeline.py).
+"""
+Mockup of an unexpected call of project component setup.
 """
 
-from forml import project
+from . import valid
 
-INSTANCE = 'foobar'
-
-
-project.setup(INSTANCE)
+_ = valid.INSTANCE
