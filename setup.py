@@ -46,7 +46,6 @@ EXTRAS_DOCS = {
     'sphinxcontrib-details-directive',
     'sphinxcontrib-napoleon',
     'nbsphinx',  # also needs pandoc binary
-    'openlake',
 }
 
 EXTRAS_GRAPHVIZ = {'graphviz'}

@@ -105,4 +105,9 @@ The available implementations are:
 
    forml.provider.feed.alchemy.Feed
    forml.provider.feed.monolite.Feed
-   openlake.Local
+
+.. rubric:: External Providers
+
++----------------------------------+-------------------------------------------------------------+
+| :class:`openlake:openlake.Local` | ForML feed providing access to a number of public datasets. |
++----------------------------------+-------------------------------------------------------------+
