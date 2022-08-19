@@ -62,17 +62,19 @@ serving - e.g. *Project B*), on the other hand an application can possibly span 
         end
 
 It makes sense to manage an application (descriptor) in the scope of some particular project if
-they constitute a 1:1 relationship (perhaps the most typical scenario). More complex applications
-might need to be maintained separately though.
+they form a 1:1 relationship (perhaps the most typical scenario). More complex applications might
+need to be maintained separately though.
 
-ForML :ref:`platform <platform>` maintains :ref:`published applications <application-publishing>`
+ForML :ref:`platform <platform>` persists :ref:`published applications <application-publishing>`
 within a special :ref:`application inventory <inventory>` where they are picked from at runtime
 by the :ref:`serving engine <serving>`.
 
-Process Control
----------------
+.. _application-dispatch:
 
-Applications play a key role in the :ref:`serving process <serving>` taking control over the
+Request Dispatching
+-------------------
+
+Applications play a key role in the :ref:`serving process <serving-process>` taking control over the
 following steps:
 
 .. md-mermaid::

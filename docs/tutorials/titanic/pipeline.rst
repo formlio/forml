@@ -119,5 +119,5 @@ framework.
   :start-at: import
 
 
-:ref:`Component-wise <project-structure>`, this makes are project complete, allowing us to
+:ref:`Component-wise <project-structure>`, this makes our project complete, allowing us to
 further :doc:`progress its lifecycle <lifecycle>`.

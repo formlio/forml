@@ -74,13 +74,21 @@ class Engine:
 
 
 class Gateway(provider.Service, default=setup.Gateway.default, path=setup.Gateway.path):
-    """Top-level serving gateway abstraction."""
+    """Top-level serving gateway abstraction.
+
+    Args:
+        inventory: Inventory of applications to be served.
+        registry: Model registry of project artifacts to be served.
+        feeds: Feeds to be used for potential feature augmentation.
+        processes: Process pool size for each model sandbox.
+        loop: Explicit even loop instance.
+    """
 
     def __init__(
         self,
-        inventory: typing.Optional[asset.Inventory] = None,
-        registry: typing.Optional[asset.Registry] = None,
-        feeds: typing.Optional[io.Importer] = None,
+        inventory: typing.Optional['asset.Inventory'] = None,
+        registry: typing.Optional['asset.Registry'] = None,
+        feeds: typing.Optional['io.Importer'] = None,
         processes: typing.Optional[int] = None,
         loop: typing.Optional['asyncio.AbstractEventLoop'] = None,
         **_,
@@ -103,10 +111,17 @@ class Gateway(provider.Service, default=setup.Gateway.default, path=setup.Gatewa
     @abc.abstractmethod
     def run(
         self,
-        apply: typing.Callable[[str, layout.Request], typing.Awaitable[layout.Response]],
+        apply: typing.Callable[[str, 'layout.Request'], typing.Awaitable['layout.Response']],
         stats: typing.Callable[[], typing.Awaitable['runtime.Stats']],
     ) -> None:
-        """Serving loop."""
+        """Serving loop implementation.
+
+        Args:
+            apply: Prediction request handler provided by the engine.
+                   The handler expects two parameters - the target *application name* and the
+                   *prediction request*.
+            stats: Stats producer callback provided by the engine.
+        """
 
     def main(self) -> None:
         """Frontend main method."""

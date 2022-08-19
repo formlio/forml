@@ -188,6 +188,8 @@ Command Group            Related Chapters
 ``$ forml application``  :ref:`Application Management <inventory-management>`
 
                          :ref:`Application Publishing <application-publishing>`
+
+                         :ref:`Serving Control <serving-gateway>`
 ``$ forml model``        :ref:`Model Management <registry-management>`
 
                          :ref:`Production Lifecycle Management <lifecycle-production>`
@@ -195,8 +197,11 @@ Command Group            Related Chapters
 =======================  ===============================================================
 
 
+Common Runtime Features
+-----------------------
+
 Core Exceptions
----------------
+^^^^^^^^^^^^^^^
 
 Following is the list of core ForML exceptions emitted at runtime:
 
@@ -209,3 +214,9 @@ Following is the list of core ForML exceptions emitted at runtime:
    :show-inheritance:
 .. autoclass:: forml.FailedError
    :show-inheritance:
+
+
+Runtime Performance Metric
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: forml.runtime.Stats
