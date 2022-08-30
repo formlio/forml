@@ -135,3 +135,8 @@ free to change the directory to another location before executing the commands.
 
    .. image:: ../../_static/images/titanic-apply.png
       :target: ../../_static/images/titanic-apply.png
+
+Now, after exploring two of the :ref:`execution mechanisms <platform-execution>` (namely the
+:ref:`interactive <interactive>` mode demonstrated during the :doc:`exploratory
+analysis <exploration>` and the :ref:`command-line driven <platform-cli>` batch processing shown
+in this chapter), we can proceed to the final :doc:`deployment and serving <serving>`.

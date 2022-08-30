@@ -84,7 +84,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
             complete, indices = self._match_entry(statement.schema, entry.schema)
             if not complete:
                 # here we would go into augmentation mode - when implemented
-                raise forml.InvalidError('Augmentation not yet supported')
+                raise forml.MissingError('Augmentation not supported - please provide all features')
             return entry.data.take_columns(indices) if indices else entry.data
 
         LOGGER.debug('Parsing ETL query')

@@ -57,7 +57,7 @@ will try to locate and merge the :file:`config.toml` file instances in the follo
 
 Following is the default content of the ForML platform configuration file:
 
-.. literalinclude:: ../forml/setup/_conf/config.toml
+.. literalinclude:: ../forml/setup/config.toml
    :caption: config.toml (default)
    :linenos:
    :language: toml
@@ -168,9 +168,10 @@ command-line interface - see the integrated help for more details:
       Lifecycle Management for Datascience Projects.
 
     Options:
-      -C, --config PATH               Additional config file.
+      -C, --config FILE               Additional config file.
       -L, --loglevel [debug|info|warning|error]
                                       Global loglevel to use.
+      --logfile FILE                  Logfile path.
       --help                          Show this message and exit.
 
     Commands:

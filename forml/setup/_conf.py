@@ -26,6 +26,7 @@ import sys
 import tempfile
 import types
 import typing
+from logging import handlers
 
 import tomli
 
@@ -264,6 +265,7 @@ class Multi(Section):  # pylint: disable=abstract-method
         return tuple(sorted(cls(r) for r in reference))
 
 
+SECTION_LOGGING = 'LOGGING'
 SECTION_PLATFORM = 'PLATFORM'
 SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
@@ -272,7 +274,8 @@ SECTION_RUNNER = 'RUNNER'
 SECTION_INVENTORY = 'INVENTORY'
 SECTION_GATEWAY = 'GATEWAY'
 SECTION_TESTING = 'TESTING'
-OPT_LOGCFG = 'logcfg'
+OPT_CONFIG = 'config'
+OPT_FACILITY = 'facility'
 OPT_TMPDIR = 'tmpdir'
 OPT_PROVIDER = 'provider'
 OPT_PRIORITY = 'priority'
@@ -287,9 +290,21 @@ OPT_TRAIN = 'train'
 OPT_APPLY = 'apply'
 OPT_EVAL = 'eval'
 
+APPNAME = 'forml'
+SYSDIR = pathlib.Path('/etc') / APPNAME
+USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() / f'.{APPNAME}'))
+PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
+APPCFG = 'config.toml'
+PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
+
 DEFAULTS = {
     # all static defaults should go rather to the ./config.toml (in this package)
     OPT_TMPDIR: tempfile.gettempdir(),
+    SECTION_LOGGING: {
+        OPT_CONFIG: 'logging.ini',
+        OPT_FACILITY: handlers.SysLogHandler.LOG_USER,
+        OPT_PATH: f'./{PRJNAME}.log',
+    },
     SECTION_REGISTRY: {OPT_PATH: [registry.__name__]},
     SECTION_RUNNER: {OPT_PATH: [runner.__name__]},
     SECTION_FEED: {OPT_PATH: [feed.__name__]},
@@ -297,13 +312,6 @@ DEFAULTS = {
     SECTION_INVENTORY: {OPT_PATH: [inventory.__name__]},
     SECTION_GATEWAY: {OPT_PATH: [gateway.__name__]},
 }
-
-APPNAME = 'forml'
-SYSDIR = pathlib.Path('/etc') / APPNAME
-USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() / f'.{APPNAME}'))
-PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
-APPCFG = 'config.toml'
-PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
 
 CONFIG = Config(DEFAULTS, *(p / APPCFG for p in PATH))
 

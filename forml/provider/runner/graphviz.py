@@ -38,16 +38,16 @@ class Runner(runtime.Runner, alias='graphviz'):
 
     For better readability, the runner is using the following shapes to plot the different objects:
 
-    ============= ===========================================
-        Shape       Meaning
-    ============= ===========================================
-     Square box     Actor in train mode.
-     Round box      Actor in apply mode.
-     Ellipse        System actor for output port selection.
-     Cylinder       System actor for state persistence.
-     Solid edge     Data transfer.
-     Dotted edge    State transfer.
-    ============= ===========================================
+    ===========  =======================================
+    Shape        Meaning
+    ===========  =======================================
+    Square box   Actor in train mode.
+    Round box    Actor in apply mode.
+    Ellipse      System actor for output port selection.
+    Cylinder     System actor for state persistence.
+    Solid edge   Data transfer.
+    Dotted edge  State transfer.
+    ===========  =======================================
 
     Args:
         filepath: Target path for producing the DOT file.
@@ -86,13 +86,11 @@ class Runner(runtime.Runner, alias='graphviz'):
         view: bool = True,
         **options: typing.Any,
     ):
-        super().__init__(instance, feed, sink)
-        self._filepath: pathlib.Path = pathlib.Path(filepath or self.FILEPATH)
-        self._view: bool = view
-        self._options: typing.Mapping[str, typing.Any] = self.OPTIONS | options
+        super().__init__(instance, feed, sink, filepath=filepath, view=view, options=options)
 
-    def _run(self, symbols: typing.Collection[flow.Symbol]) -> None:
-        dot: grviz.Digraph = grviz.Digraph(**self._options)
+    @classmethod
+    def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
+        dot: grviz.Digraph = grviz.Digraph(**(cls.OPTIONS | kwargs['options']))
         for sym in symbols:
             nodekw = dict(shape='ellipse')
             outkw = dict(style='solid')
@@ -111,4 +109,4 @@ class Runner(runtime.Runner, alias='graphviz'):
                 ):
                     inkw.update(style='dotted')
                 dot.edge(repr(id(arg)), repr(id(sym.instruction)), label=repr(idx), **inkw)
-        dot.render(self._filepath, view=self._view)
+        dot.render(pathlib.Path(kwargs['filepath'] or cls.FILEPATH), view=kwargs['view'])

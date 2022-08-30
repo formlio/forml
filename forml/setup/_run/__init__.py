@@ -37,6 +37,7 @@ class Scope(typing.NamedTuple):
 
     config: typing.Optional[str]
     loglevel: typing.Optional[str]
+    logfile: typing.Optional[str]
 
     @staticmethod
     def print(listing: typing.Iterable[typing.Any]) -> None:
@@ -55,23 +56,29 @@ class Scope(typing.NamedTuple):
 
 
 @click.group(name='forml')
-@click.option('--config', '-C', type=click.Path(exists=True, file_okay=True), help='Additional config file.')
+@click.option(
+    '--config', '-C', type=click.Path(exists=True, file_okay=True, dir_okay=False), help='Additional config file.'
+)
 @click.option(
     '--loglevel',
     '-L',
     type=click.Choice(['debug', 'info', 'warning', 'error'], case_sensitive=False),
     help='Global loglevel to use.',
 )
+@click.option('--logfile', type=click.Path(file_okay=True, dir_okay=False, writable=True), help='Logfile path.')
 @click.pass_context
 def group(
     context: core.Context,
     config: typing.Optional[str],
     loglevel: typing.Optional[str],  # pylint: disable=unused-argument
+    logfile: typing.Optional[str],
 ):
     """Lifecycle Management for Datascience Projects."""
     if config:
         _conf.CONFIG.read(config)
-    context.obj = Scope(config, loglevel)
+    if logfile:
+        _conf.CONFIG.update({_conf.SECTION_LOGGING: {_conf.OPT_PATH: logfile}})
+    context.obj = Scope(config, loglevel, logfile)
 
 
 group.add_command(model.group)

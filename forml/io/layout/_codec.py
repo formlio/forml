@@ -84,13 +84,13 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
     @classmethod
     @functools.lru_cache
     def parse(cls, value: str) -> typing.Sequence['layout.Encoding']:
-        """Parse the content type header value.
+        """Caching parser of the content type header values.
 
         Args:
             value: Comma separated list of content type values and their parameters.
 
         Returns:
-            Sequence of the ``Encoding`` instances ordered according to the provided priority.
+            Sequence of the :class:`Encoding` instances ordered according to the provided priority.
 
         Examples:
             >>> layout.Encoding.parse('image/GIF; q=0.6; a=x, text/html; q=1.0')

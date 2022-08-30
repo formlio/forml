@@ -27,20 +27,50 @@ import types
 import typing
 
 import forml
-from forml import flow
+from forml import flow as flowmod
 from forml import setup as setupmod
-from forml.io import dsl, layout
+from forml.io import dsl as dslmod
+from forml.io import layout
 
 from .. import _body
 from . import virtual
 
 if typing.TYPE_CHECKING:
-    from forml import evaluation, project
+    from forml import evaluation, flow, project  # pylint: disable=reimported
+    from forml.io import dsl  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
 
-def setup(component: typing.Any) -> None:  # pylint: disable=unused-argument
+@typing.overload
+def setup(source: 'project.Source') -> None:
+    """Source component setup entrypoint.
+
+    Args:
+        source: Source descriptor.
+    """
+
+
+@typing.overload
+def setup(pipeline: 'flow.Composable', schema: 'typing.Optional[dsl.Source.Schema]' = None) -> None:
+    """Pipeline component setup entrypoint.
+
+    Args:
+        pipeline: Workflow expression.
+        schema: Optional schema of the pipeline output.
+    """
+
+
+@typing.overload
+def setup(evaluation: 'project.Evaluation') -> None:
+    """Evaluation component setup entrypoint.
+
+    Args:
+        evaluation: Evaluation descriptor.
+    """
+
+
+def setup(component) -> None:  # pylint: disable=unused-argument
     """Interface for registering principal component instances.
 
     This function is expected to be called exactly once from within every component module passing
@@ -50,7 +80,10 @@ def setup(component: typing.Any) -> None:  # pylint: disable=unused-argument
     loader context* (outside the context this is effectively no-op).
 
     Args:
-        component: Principal component instance to be registered.
+        source: Source descriptor.
+        pipeline: Workflow expression.
+        schema: Optional schema of the pipeline output.
+        evaluation: Evaluation descriptor.
     """
     LOGGER.debug('Principal component setup attempted outside of a loader context: %s', component)
 
@@ -84,33 +117,33 @@ class Source(typing.NamedTuple):
     """
 
     Labels = typing.Union[
-        dsl.Feature,
-        typing.Sequence[dsl.Feature],
-        flow.Builder[flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
+        dslmod.Feature,
+        typing.Sequence[dslmod.Feature],
+        flowmod.Builder[flowmod.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
     ]
     """Label type - either a single column, multiple columns or a generic label extracting actor
-    (with two output ports).
+    (with two output ports) builder.
     """
 
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
 
-        train: dsl.Statement
-        apply: dsl.Statement
+        train: 'dsl.Statement'
+        apply: 'dsl.Statement'
         labels: typing.Optional['project.Source.Labels']
-        ordinal: typing.Optional[dsl.Operable]
+        ordinal: typing.Optional['dsl.Operable']
 
         def __new__(
             cls,
-            train: dsl.Source,
-            apply: dsl.Source,
+            train: 'dsl.Source',
+            apply: 'dsl.Source',
             labels: typing.Optional['project.Source.Labels'],
-            ordinal: typing.Optional[dsl.Operable],
+            ordinal: typing.Optional['dsl.Operable'],
         ):
             train = train.statement
             apply = apply.statement
-            if labels is not None and not isinstance(labels, flow.Builder):
-                if isinstance(labels, dsl.Feature):
+            if labels is not None and not isinstance(labels, flowmod.Builder):
+                if isinstance(labels, dslmod.Feature):
                     lseq = [labels]
                 else:
                     lseq = labels = tuple(labels)
@@ -119,16 +152,16 @@ class Source(typing.NamedTuple):
             if train.schema != apply.schema:
                 raise forml.InvalidError('Train-apply schema mismatch')
             if ordinal:
-                ordinal = dsl.Operable.ensure_is(ordinal)
+                ordinal = dslmod.Operable.ensure_is(ordinal)
             return super().__new__(cls, train, apply, labels, ordinal)
 
     @classmethod
     def query(
         cls,
-        features: dsl.Source,
+        features: 'dsl.Source',
         labels: typing.Optional['project.Source.Labels'] = None,
-        apply: typing.Optional[dsl.Source] = None,
-        ordinal: typing.Optional[dsl.Operable] = None,
+        apply: typing.Optional['dsl.Source'] = None,
+        ordinal: typing.Optional['dsl.Operable'] = None,
     ) -> 'project.Source':
         """Factory method for creating a new Source descriptor instance with the given *extraction*
         parameters.

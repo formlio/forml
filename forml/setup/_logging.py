@@ -23,21 +23,23 @@ import itertools
 import logging as logmod
 import pathlib
 import typing
-from logging import config, handlers
+from logging import config
 
 from . import _conf
 
 LOGGER = logmod.getLogger(__name__)
-DEFAULTS = dict(prj_name=_conf.PRJNAME, log_facility=handlers.SysLogHandler.LOG_USER, log_path=f'./{_conf.PRJNAME}.log')
 
 
 def logging(*path: pathlib.Path, **defaults: typing.Any):
     """Setup logger according to the params."""
-    parser = configparser.ConfigParser(DEFAULTS | defaults)
+    parser = configparser.ConfigParser(_conf.CONFIG[_conf.SECTION_LOGGING] | defaults)
     tried = set()
     used = parser.read(
         p
-        for p in ((b / _conf.CONFIG[_conf.OPT_LOGCFG]).resolve() for b in itertools.chain(_conf.PATH, path))
+        for p in (
+            (b / _conf.CONFIG[_conf.SECTION_LOGGING][_conf.OPT_CONFIG]).resolve()
+            for b in itertools.chain(_conf.PATH, path)
+        )
         if not (p in tried or tried.add(p))
     )
     config.fileConfig(parser, disable_existing_loggers=True)

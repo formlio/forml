@@ -115,10 +115,11 @@ class Runner(runtime.Runner, alias='dask'):
         sink: typing.Optional[io.Sink] = None,
         scheduler: typing.Optional[str] = None,
     ):
-        super().__init__(instance, feed, sink)
-        self._scheduler: str = scheduler or self.SCHEDULER
+        super().__init__(instance, feed, sink, scheduler=scheduler)
 
-    def _run(self, symbols: typing.Collection[flow.Symbol]) -> None:
-        dag = self.Dag(symbols)
+    @classmethod
+    def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
+        dag = cls.Dag(symbols)
         LOGGER.debug('Dask DAG: %s', dag)
-        importlib.import_module(f'{dask.__name__}.{self._scheduler}').get(dag, dag.output)
+        scheduler = kwargs.get('scheduler') or cls.SCHEDULER
+        importlib.import_module(f'{dask.__name__}.{scheduler}').get(dag, dag.output)

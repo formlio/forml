@@ -283,7 +283,8 @@ class Runner(runtime.Runner, alias='pyfunc'):
     def tune(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         raise forml.InvalidError('Invalid runner mode')
 
-    def _run(self, symbols: typing.Collection[flow.Symbol]) -> None:
+    @classmethod
+    def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
         Expression(symbols)(None)
 
     def call(self, entry: layout.Entry) -> layout.Outcome:

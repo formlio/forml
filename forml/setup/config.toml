@@ -15,7 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-logcfg = "logging.ini"
+[LOGGING]
+config = "logging.ini"
 
 [RUNNER]
 default = "dask"

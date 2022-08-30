@@ -88,12 +88,53 @@ class Stats(routing.Route):
 
 
 class Gateway(runtime.Gateway, alias='rest'):
-    """Rest frontend.
+    """Gateway(inventory: typing.Optional[asset.Inventory] = None, registry: typing.Optional[asset.Registry] = None, feeds: typing.Optional[io.Importer] = None, processes: typing.Optional[int] = None, loop: typing.Optional[asyncio.AbstractEventLoop] = None, server: typing.Callable[[applications.Starlette, ...], None] = uvicorn.run, **options)
 
-    TODO: URL format doc (/application/...), HTTP methods...
-    """
+    Serving gateway implemented as a RESTful API.
 
-    DEFAULTS = {'headers': [('server', f'ForML {forml.__version__}')]}
+    The frontend provides the following HTTP endpoints:
+
+    ==================  ======  ==================================================================
+    Path                Method  Description
+    ==================  ======  ==================================================================
+    ``/stats``          GET     Retrieve the Engine-provided performance :class:`metrics report
+                                <forml.runtime.Stats>`.
+    ``/<application>``  POST    Prediction request for the given :ref:`application <application>`.
+                                The entire request *body* is passed to the :ref:`Engine <serving>`
+                                as the :class:`layout.Request.payload <forml.io.layout.Request>`
+                                with the declared ``content-type`` indicated via the ``.encoding``
+                                and any potential query parameters bundled within the ``.params``.
+    ==================  ======  ==================================================================
+
+    Args:
+        inventory: Inventory of applications to be served (default as per platform config).
+        registry: Model registry of project artifacts to be served (default as per platform config).
+        feeds: Feeds to be used for potential feature augmentation (default as per platform config).
+        processes: Process pool size for each model sandbox.
+        loop: Explicit event loop instance.
+        server: Serving loop main function accepting the provided `application instance
+                <https://www.starlette.io/applications/>`_ (defaults to `uvicorn.run
+                <https://www.uvicorn.org/deployment/#running-programmatically>`_).
+        options: Additional serving loop keyword arguments (i.e. `Uvicorn settings
+                 <https://www.uvicorn.org/settings/>`_).
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [GATEWAY.http]
+        provider = "rest"
+        port = 8080
+        processes = 3
+
+    Important:
+        Select the ``rest`` :ref:`extras to install <install-extras>` ForML together with the
+        Starlette/Uvicorn support.
+    """  # pylint: disable=line-too-long  # noqa: E501
+
+    OPTIONS = {'headers': [('server', f'ForML {forml.__version__}')]}
+    """Default server loop options."""
 
     def __init__(
         self,
@@ -103,17 +144,17 @@ class Gateway(runtime.Gateway, alias='rest'):
         processes: typing.Optional[int] = None,
         loop: typing.Optional[asyncio.AbstractEventLoop] = None,
         server: typing.Callable[[applications.Starlette, ...], None] = uvicorn.run,
-        **kwargs,
+        **options,
     ):
-        super().__init__(inventory, registry, feeds, processes=processes, loop=loop)
-        self._server: typing.Callable[[applications.Starlette, ...], None] = server
-        self._kwargs = self.DEFAULTS | kwargs
+        super().__init__(inventory, registry, feeds, processes=processes, loop=loop, server=server, options=options)
 
+    @classmethod
     def run(
-        self,
+        cls,
         apply: typing.Callable[[str, layout.Request], typing.Awaitable[layout.Response]],
         stats: typing.Callable[[], typing.Awaitable[runtime.Stats]],
+        **kwargs,
     ) -> None:
         routes = [Apply(apply), Stats(stats)]
-        app = applications.Starlette(routes=routes, debug=True)
-        self._server(app, **self._kwargs)
+        app = applications.Starlette(routes=routes, debug=False)
+        kwargs['server'](app, **(cls.OPTIONS | kwargs['options']))

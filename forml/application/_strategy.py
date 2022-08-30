@@ -43,7 +43,8 @@ class Selector(abc.ABC):
 
         Args:
             registry: Model registry to select the model from.
-            context: Optional metadata carried over from decode.
+            context: Optional metadata carried over from the :meth:`application.Descriptor.receive
+                     <forml.application.Descriptor.receive>`.
             stats: Application specific serving metrics.
 
         Returns:

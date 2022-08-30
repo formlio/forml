@@ -77,7 +77,7 @@ class TestRegistry(Registry):
             uri = f'http://{cls.MLFLOW_HOST}:{cls.MLFLOW_PORT}'
             while server.poll() is None:  # wait for successful startup
                 try:
-                    if requests.head(uri).headers.get('server') == cls.GUNISRV_HEADER:
+                    if requests.head(uri, timeout=5).headers.get('server') == cls.GUNISRV_HEADER:
                         break
                 except exceptions.RequestException:
                     pass

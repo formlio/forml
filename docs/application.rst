@@ -31,6 +31,14 @@ ML problem, *applications*  aim to expose it (by means of :ref:`gateway provider
 <serving-gateway>`) in a domain-specific form suitable for integration with the *actual* decision
 making process.
 
+ForML :ref:`platform <platform>` persists :ref:`published applications <application-publishing>`
+within a special :ref:`application inventory <inventory>` where they are picked from at runtime
+by the :ref:`serving engine <serving>`.
+
+
+.. _application-prjrelation:
+.. rubric:: Project-Application Relationship
+
 As shown in the diagram below, relationships between projects and applications can have any
 possible cardinality. Projects might not be associated with any application (not exposed for
 serving - e.g. *Project B*), on the other hand an application can possibly span multiple projects
@@ -64,10 +72,6 @@ serving - e.g. *Project B*), on the other hand an application can possibly span 
 It makes sense to manage an application (descriptor) in the scope of some particular project if
 they form a 1:1 relationship (perhaps the most typical scenario). More complex applications might
 need to be maintained separately though.
-
-ForML :ref:`platform <platform>` persists :ref:`published applications <application-publishing>`
-within a special :ref:`application inventory <inventory>` where they are picked from at runtime
-by the :ref:`serving engine <serving>`.
 
 .. _application-dispatch:
 
@@ -130,10 +134,10 @@ Another powerful way an application exerts control over the serving process is a
 :meth:`selection <forml.application.Descriptor.select>` of the specific :ref:`model generation
 <registry-assets>` to be used for serving each particular request.
 
-Applications can base the selection logic on the following available details:
+Applications can base the selection logic on the following available facts:
 
-* actual content of the :ref:`model registry <registry>` (all existing model generations
-  to choose from)
+* actual content of the :ref:`model registry <registry>` (any existing model generation to choose
+  from)
 * custom metadata stored in the application *context* (e.g. as part of the query :meth:`receiving
   <forml.application.Descriptor.receive>`)
 * various serving :class:`metrics <forml.runtime.Stats>` provided by the system

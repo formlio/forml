@@ -40,7 +40,7 @@ Runner API
 ----------
 
 .. autoclass:: forml.runtime.Runner
-    :members: _run
+    :members: run
 
 
 .. _runner-providers:

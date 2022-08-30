@@ -293,7 +293,7 @@ The two encoder/decoder matching functions bellow currently support the followin
 encodings/flavours:
 
 +-------------------------+----------------------------+------------------------------------------+
-| Encoding                | Example                    |        Implementation                    |
+| Content-type            | Example                    |        Implementation                    |
 +=========================+============================+==========================================+
 | ``application/json;     | ``[{column -> value},      |                                          |
 | format=pandas-records`` | ... , {column -> value}]`` |                                          |

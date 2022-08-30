@@ -194,15 +194,17 @@ class Descriptor(abc.ABC):
 class Generic(Descriptor):
     """Generic application descriptor for basic serving scenarios.
 
-    It simply runs the directly decoded request payload through the model/generation selected using
+    It simply runs the directly decoded (using the :func:`available decoders
+    <forml.io.layout.get_decoder>`) request payload through the model/generation selected using
     the provided :class:`application.Selector <forml.application.Selector>` and returns the directly
-    encoded outcomes as the response.
+    encoded (using the :func:`available encoders <forml.io.layout.get_encoder>`) outcomes as the
+    response.
 
     Args:
         name: The (unique) name for this application registration/lookup.
         selector: Implementation of a particular model-selection strategy (defaults to
                   :class:`application.Latest <forml.application.Latest>` selector expecting the
-                  project name to be matching the application name).
+                  project name to be *matching* the application name).
 
     Examples:
         >>> APP = application.Generic('forml-example-titanic')

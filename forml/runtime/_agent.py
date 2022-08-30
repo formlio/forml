@@ -43,13 +43,14 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
     The public API allows to perform all the standard actions of the :doc:`ForML lifecycles
     <lifecycle>`.
 
-    All that needs to be supplied by the provider is the abstract :meth:`_run` method.
+    All that needs to be supplied by the provider is the abstract :meth:`run` method.
 
     Args:
         instance: Particular instance of the persistent artifacts to be executed.
         feed: Optional input feed instance to retrieve the data from (falls back to the default
               configured feed).
         sink: Output sink instance (no output is produced if omitted).
+        kwargs: Additional keyword arguments for the :meth:`run` method.
     """
 
     _METRIC_SCHEMA = dsl.Schema.from_fields(dsl.Field(dsl.Float(), name='Metric'))
@@ -59,11 +60,12 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         instance: typing.Optional['asset.Instance'] = None,
         feed: typing.Optional['io.Feed'] = None,
         sink: typing.Optional['io.Sink'] = None,
-        **_,
+        **kwargs,
     ):
         self._instance: 'asset.Instance' = instance or assetmod.Instance()
         self._feed: 'io.Feed' = feed or iomod.Feed()
         self._sink: typing.Optional['io.Sink'] = sink
+        self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         """Run the training code.
@@ -181,14 +183,17 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         Returns:
             Optional return value.
         """
-        return self._run(flowmod.compile(segment, assets))
+        return self.run(flowmod.compile(segment, assets), **self._kwargs)
 
+    @classmethod
     @abc.abstractmethod
-    def _run(self, symbols: typing.Collection['flow.Symbol']) -> None:
+    def run(cls, symbols: typing.Collection['flow.Symbol'], **kwargs) -> None:
         """Actual run action implementation using the specific provider execution technology.
 
         Args:
             symbols: Collection of portable symbols representing the workflow task graph to be
                      executed as produced by the :func:`flow.compile() <forml.flow.compile>`
                      function.
+            kwargs: Custom keyword arguments provided via the constructor.
         """
+        raise NotImplementedError()

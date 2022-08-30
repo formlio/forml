@@ -68,7 +68,7 @@ setuptools.setup(
     maintainer_email='forml-dev@googlegroups.com',
     license='Apache License 2.0',
     packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
-    package_data={'forml.conf': ['config.toml', 'logging.ini']},
+    package_data={'forml.setup': ['config.toml', 'logging.ini']},
     setup_requires=['setuptools', 'wheel', 'tomli'],
     install_requires=[
         'click',
@@ -98,7 +98,7 @@ setuptools.setup(
     },
     python_requires='>=3.9',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',

@@ -79,7 +79,7 @@ class Wrapper:
         ERROR = TypeError('Frozen registry is immutable')
 
         def __init__(self, registry: asset.Registry):
-            super().__init__()
+            super().__init__(staging=asset.TMPDIR)  # staging is irrelevant - only to avoid warning
             self._registry: asset.Registry = registry
 
         def __hash__(self):

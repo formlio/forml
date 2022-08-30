@@ -95,6 +95,7 @@ nitpicky = True
 _target_blacklist = {
     'py:class': (
         '_Actor',
+        'applications.Starlette',
         r'asset\.Generation',
         r'^dsl\.Operable',
         r'^dsl\.Ordering\.(?:Direction|Term)',

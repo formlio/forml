@@ -51,3 +51,11 @@ default = "tutorial"
 [INVENTORY.tutorial]
 provider = "posix"
 path = "/tmp/forml-tutorial/inventory"
+
+[GATEWAY]
+default = "http"
+
+[GATEWAY.http]
+provider = "rest"
+port = 8080
+processes = 2

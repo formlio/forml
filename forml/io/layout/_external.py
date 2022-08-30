@@ -28,14 +28,14 @@ if typing.TYPE_CHECKING:
 
 
 class Entry(typing.NamedTuple):
-    """Internal representation of the decoded ``Request`` payload."""
+    """Internal representation of the decoded :class:`Request` payload."""
 
     schema: 'dsl.Source.Schema'
     data: 'layout.Tabular'
 
 
 class Outcome(typing.NamedTuple):
-    """Internal result payload representation to be encoded as ``Response``."""
+    """Internal result payload representation to be encoded as :class:`Response`."""
 
     schema: 'dsl.Source.Schema'
     data: 'layout.RowMajor'
@@ -51,7 +51,7 @@ class Request(collections.namedtuple('Request', 'payload, encoding, params, acce
         payload: Raw encoded payload.
         encoding: Content type encoding instance.
         params: Optional application-level parameters.
-        accept: Content types request for the eventual ``Response``.
+        accept: Content types request for the eventual :class:`Response`.
     """
 
     class Decoded(typing.NamedTuple):

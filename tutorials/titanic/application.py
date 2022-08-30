@@ -14,8 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+"""
+Titanic application descriptor.
 
-"""Titanic application descriptor."""
+Using the basic ready-to-use application.Generic descriptor provides
+the following features:
+
+* loading the *latest* model generation of the project *matching*
+  the application name
+* attempting to decode the payload using any of the available decoders
+  based on the *declared content-type*
+* returning the predictions encoded using any of the available encoders
+  based on the *requested content-type*
+"""
 
 from forml import application
 

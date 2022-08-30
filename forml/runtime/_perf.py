@@ -21,7 +21,7 @@ import typing
 
 
 class Stats(typing.NamedTuple):
-    """Runtime performance metrics.
+    """Runtime performance metrics report.
 
     Todo:
         Complete the Stats concept.

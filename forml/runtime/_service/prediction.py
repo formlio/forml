@@ -26,6 +26,7 @@ import typing
 from concurrent import futures
 from multiprocessing import context
 
+import forml
 from forml import io
 from forml.io import asset, dsl, layout
 from forml.provider.runner import pyfunc
@@ -129,6 +130,8 @@ class Pool(context.SpawnProcess):
                     continue
                 try:
                     self._results.put_nowait(task.success(self._runner.call(task.entry)))
+                except forml.AnyError as err:
+                    self._results.put_nowait(task.failure(err))
                 except Exception as err:
                     self._results.put_nowait(task.failure(err))
                     self._stopped.set()

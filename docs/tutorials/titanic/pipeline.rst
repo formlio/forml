@@ -51,8 +51,8 @@ Custom Preprocessing Operators
 
 In addition to the ``Imputer`` operator we've created in scope of our :doc:`exploration
 <exploration>`, let's improve our preprocessing with a couple more operators. We stick to the
-simple ``@wrap`` technique for implementing :ref:`actors <actor-decorated>` and eventually
-:ref:`operators <operator-wrapped>`.
+simple ``@wrap`` technique for implementing :ref:`actors <actor-decorated>` and :ref:`operators
+<operator-wrapped>` eventually.
 
 ParseTitle
 ^^^^^^^^^^
