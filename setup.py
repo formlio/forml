@@ -68,11 +68,12 @@ setuptools.setup(
     maintainer_email='forml-dev@googlegroups.com',
     license='Apache License 2.0',
     packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
-    package_data={'forml.setup': ['config.toml', 'logging.ini']},
+    package_data={'forml.setup': ['config.toml', 'logging.ini', 'templates/**']},
     setup_requires=['setuptools', 'wheel', 'tomli'],
     install_requires=[
         'click',
         'cloudpickle',
+        'jinja2',
         'numpy',
         'packaging>=20.0',
         'pandas',

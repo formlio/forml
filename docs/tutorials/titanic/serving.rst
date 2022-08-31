@@ -63,7 +63,7 @@ the means of publishing into a :ref:`platform-configured <platform-config>` appl
 
     $ forml application put application.py
     $ forml application list
-    forml-example-titanic
+    forml-tutorial-titanic
 
 
 Serving
@@ -100,14 +100,14 @@ Let's explore the capabilities using manual ``curl`` queries:
 
    .. code-block:: console
 
-       $ curl -X POST -H 'Content-Type: application/json' -d '[{"Pclass":1, "Name":"Foo", "Sex": "male", "Age": 34, "SibSp": 3, "Parch": 2, "Ticket": "13", "Fare": 10.1, "Cabin": "123", "Embarked": "S"}]' http://127.0.0.1:8080/forml-example-titanic
+       $ curl -X POST -H 'Content-Type: application/json' -d '[{"Pclass":1, "Name":"Foo", "Sex": "male", "Age": 34, "SibSp": 3, "Parch": 2, "Ticket": "13", "Fare": 10.1, "Cabin": "123", "Embarked": "S"}]' http://127.0.0.1:8080/forml-tutorial-titanic
        [{"c0":0.3459976655}]
 
 #. Making the same query but requesting the result to be encoded as CSV:
 
    .. code-block:: console
 
-       $ curl -X POST -H 'Content-Type: application/json' -H 'Accept: text/csv' -d '[{"Pclass":1,"Name":"Foo", "Sex": "male", "Age": 34, "SibSp": 3, "Parch": 2, "Ticket": "13", "Fare": 10.1, "Cabin": "123", "Embarked": "S"}]' http://127.0.0.1:8080/forml-example-titanic
+       $ curl -X POST -H 'Content-Type: application/json' -H 'Accept: text/csv' -d '[{"Pclass":1,"Name":"Foo", "Sex": "male", "Age": 34, "SibSp": 3, "Parch": 2, "Ticket": "13", "Fare": 10.1, "Cabin": "123", "Embarked": "S"}]' http://127.0.0.1:8080/forml-tutorial-titanic
        c0
        0.34599766550668526
 
@@ -116,7 +116,7 @@ Let's explore the capabilities using manual ``curl`` queries:
 
    .. code-block:: console
 
-       $ curl -X POST -H 'Content-Type: application/json; format=pandas-split' -H 'Accept: application/json; format=pandas-values' -d '{"columns": ["Pclass", "Name", "Sex", "Age", "SibSp", "Parch", "Ticket", "Fare", "Cabin", "Embarked"], "data": [[1, "Foo", "male", 34, 3, 2, 13, 10.1, "123", "S"]]}' http://127.0.0.1:8080/forml-example-titanic
+       $ curl -X POST -H 'Content-Type: application/json; format=pandas-split' -H 'Accept: application/json; format=pandas-values' -d '{"columns": ["Pclass", "Name", "Sex", "Age", "SibSp", "Parch", "Ticket", "Fare", "Cabin", "Embarked"], "data": [[1, "Foo", "male", 34, 3, 2, 13, 10.1, "123", "S"]]}' http://127.0.0.1:8080/forml-tutorial-titanic
        [[0.3459976655]]
 
 That concludes this Titanic Challenge tutorial, from here you can continue to the other

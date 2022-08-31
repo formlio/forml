@@ -70,7 +70,7 @@ class Scope(typing.NamedTuple):
 def group(
     context: core.Context,
     config: typing.Optional[str],
-    loglevel: typing.Optional[str],  # pylint: disable=unused-argument
+    loglevel: typing.Optional[str],
     logfile: typing.Optional[str],
 ):
     """Lifecycle Management for Datascience Projects."""

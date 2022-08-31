@@ -200,7 +200,7 @@ Example:
 
 .. code-block:: console
 
-    $ forml model train forml-example-titanic
+    $ forml model train forml-tutorial-titanic
 
 Tune
 """"
@@ -212,7 +212,7 @@ Example:
 
 .. code-block:: console
 
-    $ forml model tune forml-example-titanic
+    $ forml model tune forml-tutorial-titanic
 
 Apply
 """""
@@ -225,7 +225,7 @@ Example:
 
 .. code-block:: console
 
-    $ forml model apply forml-example-titanic
+    $ forml model apply forml-tutorial-titanic
 
 .. seealso::
    In addition to this commandline based batch mechanism, the :ref:`serving engine <serving>`
@@ -242,4 +242,4 @@ Example:
 
 .. code-block:: console
 
-    $ forml model eval forml-example-titanic
+    $ forml model eval forml-tutorial-titanic

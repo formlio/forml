@@ -232,7 +232,7 @@ depending on uniqueness of each application :meth:`name <forml.application.Descr
 
     $ forml application put titanic.py
     $ forml application list
-    forml-example-titanic
+    forml-tutorial-titanic
 
 
 .. note::

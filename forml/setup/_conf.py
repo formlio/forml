@@ -266,6 +266,7 @@ class Multi(Section):  # pylint: disable=abstract-method
 
 
 SECTION_LOGGING = 'LOGGING'
+SECTION_TEMPLATING = 'TEMPLATING'
 SECTION_PLATFORM = 'PLATFORM'
 SECTION_REGISTRY = 'REGISTRY'
 SECTION_FEED = 'FEED'
@@ -291,17 +292,20 @@ OPT_APPLY = 'apply'
 OPT_EVAL = 'eval'
 
 APPNAME = 'forml'
-SYSDIR = pathlib.Path('/etc') / APPNAME
-USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() / f'.{APPNAME}'))
-PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
-APPCFG = 'config.toml'
 PRJNAME = re.sub(r'\.[^.]*$', '', pathlib.Path(sys.argv[0]).name)
+#: System-level setup directory
+SYSDIR = pathlib.Path('/etc') / APPNAME
+#: User-level setup directory
+USRDIR = pathlib.Path(os.getenv(f'{APPNAME.upper()}_HOME', pathlib.Path.home() / f'.{APPNAME}'))
+#: Sequence of setup directories in ascending priority order
+PATH = pathlib.Path(__file__).parent, SYSDIR, USRDIR
+#: Main config file name
+APPCFG = 'config.toml'
 
 DEFAULTS = {
     # all static defaults should go rather to the ./config.toml (in this package)
     OPT_TMPDIR: tempfile.gettempdir(),
     SECTION_LOGGING: {
-        OPT_CONFIG: 'logging.ini',
         OPT_FACILITY: handlers.SysLogHandler.LOG_USER,
         OPT_PATH: f'./{PRJNAME}.log',
     },

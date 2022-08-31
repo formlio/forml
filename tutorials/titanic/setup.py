@@ -25,7 +25,7 @@ import setuptools
 from forml import project
 
 setuptools.setup(
-    name='forml-example-titanic',
+    name='forml-tutorial-titanic',
     version='0.1.dev0',
     packages=setuptools.find_packages(include=['titanic*'], where=os.path.dirname(__file__)),
     setup_requires=['forml'],

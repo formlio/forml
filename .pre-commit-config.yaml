@@ -80,17 +80,8 @@ repos:
   hooks:
   - id: forbid-tabs
   - id: insert-license
-    name: Add license for all python files
-    exclude: ^\.github/.*$
-    types: [python]
-    args:
-    - --comment-style
-    - "|#|"
-    - --license-filepath
-    - licenses/templates/LICENSE.txt
-    - --fuzzy-match-generates-todo
-  - id: insert-license
     name: Add license for all rst files
+    types: [rst]
     exclude: ^\.github/.*$
     args:
     - --comment-style
@@ -98,21 +89,9 @@ repos:
     - --license-filepath
     - licenses/templates/LICENSE.rst
     - --fuzzy-match-generates-todo
-    files: \.rst$
-  - id: insert-license
-    name: Add license for all yaml files
-    exclude: ^\.github/.*$
-    types: [yaml]
-    files: \.yml$|\.yaml$
-    args:
-    - --comment-style
-    - "|#|"
-    - --license-filepath
-    - licenses/templates/LICENSE.txt
-    - --fuzzy-match-generates-todo
   - id: insert-license
     name: Add license for all md files
-    files: \.md$
+    types: [markdown]
     exclude: ^\.github/.*$
     args:
     - --comment-style
@@ -121,7 +100,18 @@ repos:
     - licenses/templates/LICENSE.txt
     - --fuzzy-match-generates-todo
   - id: insert-license
+    name: Add license for all jinja files
+    types: [jinja]
+    exclude: ^\.github/.*$
+    args:
+    - --comment-style
+    - "{#||-#}"
+    - --license-filepath
+    - licenses/templates/LICENSE.txt
+    - --fuzzy-match-generates-todo
+  - id: insert-license
     name: Add license for all other files
+    types_or: [toml, ini, yaml, python]
     exclude: ^\.github/.*$
     args:
     - --comment-style
@@ -129,5 +119,3 @@ repos:
     - --license-filepath
     - licenses/templates/LICENSE.txt
     - --fuzzy-match-generates-todo
-    files: >
-      \.toml$|\.ini$|\.readthedocs$

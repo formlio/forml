@@ -28,7 +28,7 @@ Run the following shell command to create the initial :ref:`project structure <p
 
 .. code-block:: console
 
-    $ forml project init --requirements=openschema,pandas,scikit-learn,numpy forml-tutorial-titanic
+    $ forml project init --requirements=openschema,pandas,scikit-learn,numpy --package titanic forml-tutorial-titanic
 
 You should see a directory structure like this:
 

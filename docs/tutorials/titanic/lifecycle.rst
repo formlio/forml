@@ -94,10 +94,10 @@ free to change the directory to another location before executing the commands.
    .. code-block:: console
 
        $ forml model list
-       forml-example-titanic
-       $ forml model list forml-example-titanic
+       forml-tutorial-titanic
+       $ forml model list forml-tutorial-titanic
        0.1.dev0
-       $ forml model list forml-example-titanic 0.1.dev0
+       $ forml model list forml-tutorial-titanic 0.1.dev0
 
    The output shows the project artifact is available in the registry as a release ``0.1.dev0``
    not having any generation yet (the last command not producing any output).
@@ -108,8 +108,8 @@ free to change the directory to another location before executing the commands.
 
    .. code-block:: console
 
-       $ forml model train forml-example-titanic
-       $ forml model list forml-example-titanic 0.1.dev0
+       $ forml model train forml-tutorial-titanic
+       $ forml model list forml-tutorial-titanic 0.1.dev0
        1
 
    Now we have our first :ref:`generation <registry-assets>` of the titanic models available in the
@@ -119,7 +119,7 @@ free to change the directory to another location before executing the commands.
 
    .. code-block:: console
 
-       $ forml model apply forml-example-titanic
+       $ forml model apply forml-tutorial-titanic
        [0.38717846 0.37779938 0.38008973 0.37771585 0.3873835  0.38832168
        0.38671783 0.38736506 0.38115396 0.37622997 0.37642134 0.37965842
        ...
@@ -131,7 +131,7 @@ free to change the directory to another location before executing the commands.
 
    .. code-block:: console
 
-       $ forml model -R visual apply forml-example-titanic
+       $ forml model -R visual apply forml-tutorial-titanic
 
    .. image:: ../../_static/images/titanic-apply.png
       :target: ../../_static/images/titanic-apply.png

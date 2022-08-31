@@ -16,15 +16,71 @@
 # under the License.
 
 """
-ForML section config unit tests.
+ForML config unit tests.
 """
 import abc
+import pathlib
+import types
 import typing
 
 import pytest
 
 import forml
 from forml.setup import _conf
+
+
+def test_exists(cfg_file: pathlib.Path):
+    """Test the config file exists."""
+    assert cfg_file.is_file()
+
+
+def test_src(cfg_file: pathlib.Path):
+    """Test the registry config field."""
+    assert cfg_file in _conf.CONFIG.sources
+
+
+def test_get():
+    """Test the get value matches the test config.toml"""
+    assert _conf.CONFIG['foobar'] == 'baz'
+
+
+def test_defaults():
+    """Test the static defaults."""
+    assert _conf.CONFIG[_conf.SECTION_LOGGING][_conf.OPT_CONFIG] == 'logging.ini'
+    assert _conf.CONFIG[_conf.SECTION_TEMPLATING][_conf.OPT_PATH] == 'templates'
+    assert _conf.CONFIG[_conf.SECTION_TEMPLATING][_conf.OPT_DEFAULT] == 'default'
+    assert _conf.CONFIG[_conf.OPT_TMPDIR]
+
+
+class TestConfig:
+    """Parser unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def defaults() -> typing.Mapping[str, typing.Any]:
+        """Default values fixtures."""
+        return types.MappingProxyType({'foo': 'bar', 'baz': {'scalar': 1, 'seq': [10, 3, 'asd']}})
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def parser(defaults: typing.Mapping[str, typing.Any]) -> _conf.Config:
+        """Parser fixture."""
+        return _conf.Config(defaults)
+
+    def test_update(self, parser: _conf.Config):
+        """Parser update tests."""
+        parser.update(baz={'another': 2})
+        assert parser['baz']['scalar'] == 1
+        parser.update({'baz': {'scalar': 3}})
+        assert parser['baz']['scalar'] == 3
+        assert parser['baz']['another'] == 2
+        parser.update({'baz': {'seq': [3, 'qwe', 'asd']}})
+        assert parser['baz']['seq'] == (3, 'qwe', 'asd', 10)
+
+    def test_read(self, parser: _conf.Config, cfg_file: pathlib.Path):
+        """Test parser file reading."""
+        parser.read(cfg_file)
+        assert cfg_file in parser.sources
 
 
 class Resolved(metaclass=abc.ABCMeta):

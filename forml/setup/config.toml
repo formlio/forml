@@ -16,7 +16,16 @@
 # under the License.
 
 [LOGGING]
+# name (will be searched within the config locations) or absolute path
+# of the logger config file
 config = "logging.ini"
+
+[TEMPLATING]
+# name (will be searched within the config locations) or absolute path
+# of the project templates directory
+path = "templates"
+# name of the default template
+default = "default"
 
 [RUNNER]
 default = "dask"

@@ -30,6 +30,8 @@ from click import core
 import forml
 from forml.io import dsl
 
+from .. import _templating
+
 if typing.TYPE_CHECKING:
     from .. import _run
 
@@ -50,7 +52,7 @@ class Scope(collections.namedtuple('Scope', 'parent, path')):
         """Get the absolute setup.py path."""
         return self.path / self.SETUP_NAME
 
-    def run_setup(self, *argv: str, **options):
+    def run_setup(self, *argv: str, **options) -> None:
         """Interim hack to call the setup.py"""
         sys.argv[:] = [str(self._setup_path), *argv, *(a for k, v in options.items() if v for a in (f'--{k}', v))]
         try:
@@ -60,9 +62,20 @@ class Scope(collections.namedtuple('Scope', 'parent, path')):
         except FileNotFoundError as err:
             raise forml.MissingError(f'Invalid ForML project: {err}') from err
 
+    def create_project(
+        self,
+        name: str,
+        template: typing.Optional[str],
+        package: typing.Optional[str],
+        version: typing.Optional[str],
+        requirements: typing.Sequence[str],
+    ) -> None:
+        """Helper for creating a new project structure."""
+        _templating.project(name, self.path, template, package, version, requirements)
+
 
 @click.group(name='project')
-@click.option('--path', type=click.Path(exists=True, dir_okay=True), help='Project root directory.')
+@click.option('--path', type=click.Path(exists=False, dir_okay=True, file_okay=False), help='Project root directory.')
 @click.pass_context
 def group(context: core.Context, path: typing.Optional[str]):
     """Project command group (development lifecycle)."""
@@ -71,14 +84,21 @@ def group(context: core.Context, path: typing.Optional[str]):
 
 @group.command()
 @click.argument('name', required=True)
+@click.option('--template', type=str, help='Name of existing project template.')
 @click.option('--package', type=str, help='Full python package path to be used.')
+@click.option('--version', type=str, help='Initial project version.')
 @click.option('-r', '--requirements', multiple=True, type=str, help='List of install requirements.')
 @click.pass_obj
 def init(
-    scope: Scope, name: str, package: typing.Optional[str], requirements: typing.Optional[typing.Sequence[str]]
+    scope: Scope,
+    name: str,
+    template: typing.Optional[str],
+    package: typing.Optional[str],
+    version: typing.Optional[str],
+    requirements: typing.Sequence[str],
 ) -> None:
     """Create skeleton for a new project."""
-    raise forml.MissingError(f'Creating project {name}... not implemented')
+    scope.create_project(name, template, package, version, [r.strip() for t in requirements for r in t.split(',')])
 
 
 @group.command()
