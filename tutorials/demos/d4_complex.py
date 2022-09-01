@@ -14,22 +14,32 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+"""
+ForML demo 1 - Complex.
+"""
+# pylint: disable=ungrouped-imports
 import demos
 from sklearn import model_selection
 
-from forml.pipeline import ensemble
+from forml.pipeline import ensemble, wrap
 
-FH_RFC = demos.FeatureHasher(n_features=128) >> demos.RFC(n_estimators=20, n_jobs=4, max_depth=3)
-BIN_BAYES = demos.Binarizer(threshold=0.63) >> demos.Bayes(alpha=1.1)
+with wrap.importer():
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.feature_extraction import FeatureHasher
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.naive_bayes import BernoulliNB
+    from sklearn.preprocessing import Binarizer, OneHotEncoder
+
+
+FH_RFC = FeatureHasher(n_features=128) >> RandomForestClassifier(n_estimators=20, n_jobs=4, max_depth=3)
+BIN_BAYES = Binarizer(threshold=0.63) >> BernoulliNB(alpha=1.1)
 
 STACK = ensemble.FullStack(FH_RFC, BIN_BAYES, crossvalidator=model_selection.StratifiedKFold(n_splits=2))
 
-PIPELINE = (
-    demos.SimpleImputer(strategy='mean') >> demos.OneHotEncoder() >> STACK >> demos.LR(max_iter=3, solver='lbfgs')
-)
+PIPELINE = SimpleImputer(strategy='mean') >> OneHotEncoder() >> STACK >> LogisticRegression(max_iter=3, solver='lbfgs')
 
-PROJECT = demos.SOURCE.bind(PIPELINE)
+LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    PROJECT.launcher('graphviz', [demos.FEED]).train()
+    LAUNCHER.apply()

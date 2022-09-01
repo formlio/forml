@@ -24,8 +24,11 @@ import logging
 import typing
 
 import forml
-from forml import flow, io, runtime
-from forml.io import asset, dsl, layout
+from forml import flow, runtime
+
+if typing.TYPE_CHECKING:
+    from forml import io
+    from forml.io import asset, dsl, layout
 
 LOGGER = logging.getLogger(__name__)
 
@@ -269,25 +272,25 @@ class Runner(runtime.Runner, alias='pyfunc'):
 
     def __init__(
         self,
-        instance: typing.Optional[asset.Instance] = None,
-        feed: typing.Optional[io.Feed] = None,
-        sink: typing.Optional[io.Sink] = None,
+        instance: typing.Optional['asset.Instance'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Sink'] = None,
     ):
         super().__init__(instance, feed, sink)
         composition = self._build(None, None, self._instance.project.pipeline)
         self._expression = Expression(flow.compile(composition.apply, self._instance.state(composition.persistent)))
 
-    def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
+    def train(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         raise forml.InvalidError('Invalid runner mode')
 
-    def tune(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
+    def tune(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         raise forml.InvalidError('Invalid runner mode')
 
     @classmethod
     def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
         Expression(symbols)(None)
 
-    def call(self, entry: layout.Entry) -> layout.Outcome:
+    def call(self, entry: 'layout.Entry') -> 'layout.Outcome':
         """Special function exec entrypoint used by the serving engine.
 
         Args:

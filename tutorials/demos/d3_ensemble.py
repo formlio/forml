@@ -14,9 +14,29 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 """
-Sink implementations.
+ForML demo 1 - Ensemble.
 """
+# pylint: disable=ungrouped-imports
+import demos
+from sklearn import model_selection
 
-__all__ = ['null', 'stdout']
+from forml.pipeline import ensemble, wrap
+
+with wrap.importer():
+    from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+
+STACK = ensemble.FullStack(
+    RandomForestClassifier(max_depth=3),
+    GradientBoostingClassifier(max_depth=3),
+    crossvalidator=model_selection.StratifiedKFold(n_splits=2),
+)
+
+PIPELINE = SimpleImputer(strategy='mean') >> STACK >> LogisticRegression(max_iter=3, solver='lbfgs')
+
+LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
+
+if __name__ == '__main__':
+    LAUNCHER.apply()

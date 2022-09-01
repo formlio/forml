@@ -25,8 +25,11 @@ import typing
 
 import dask
 
-from forml import flow, io, runtime
-from forml.io import asset
+from forml import flow, runtime
+
+if typing.TYPE_CHECKING:
+    from forml import io
+    from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
@@ -110,9 +113,9 @@ class Runner(runtime.Runner, alias='dask'):
 
     def __init__(
         self,
-        instance: typing.Optional[asset.Instance] = None,
-        feed: typing.Optional[io.Feed] = None,
-        sink: typing.Optional[io.Sink] = None,
+        instance: typing.Optional['asset.Instance'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Sink'] = None,
         scheduler: typing.Optional[str] = None,
     ):
         super().__init__(instance, feed, sink, scheduler=scheduler)

@@ -14,7 +14,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+"""
+ForML demo 1 - Custom.
+"""
+# pylint: disable=invalid-name, no-value-for-parameter, disable=unused-argument
 import typing
 
 import demos
@@ -23,23 +26,24 @@ import pandas as pd
 
 from forml.pipeline import wrap
 
+with wrap.importer():
+    from sklearn.linear_model import LogisticRegression
+
 
 @wrap.Actor.train
-def impute_age(
-    state: typing.Optional[dict[str, typing.Any]],  # pylint: disable=unused-argument
+def ImputeAge(
+    state: typing.Optional[dict[str, typing.Any]],
     X: pd.DataFrame,
-    y: pd.Series,  # pylint: disable=unused-argument
-    random_state: typing.Optional[int] = None,  # pylint: disable=unused-argument
+    y: pd.Series,
+    random_state: typing.Optional[int] = None,
 ) -> dict[str, typing.Any]:
     """Train part of a stateful transformer for missing age imputation."""
     return {'age_mean': X['Age'].mean(), 'age_std': X['Age'].std()}
 
 
-@wrap.Mapper.operator
-@impute_age.apply
-def impute_age(
-    state: dict[str, typing.Any], X: pd.DataFrame, random_state: typing.Optional[int] = None
-) -> pd.DataFrame:
+@wrap.Operator.mapper
+@ImputeAge.apply
+def ImputeAge(state: dict[str, typing.Any], X: pd.DataFrame, random_state: typing.Optional[int] = None) -> pd.DataFrame:
     """Apply part of a stateful transformer for missing age imputation."""
     na_slice = X['Age'].isna()
     if na_slice.any():
@@ -50,11 +54,9 @@ def impute_age(
     return X
 
 
-PIPELINE = impute_age(random_state=42) >> demos.LR(
-    max_iter=3, solver='lbfgs'
-)  # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
+PIPELINE = ImputeAge(random_state=42) >> LogisticRegression(max_iter=3, solver='lbfgs')
 
-PROJECT = demos.SOURCE.bind(PIPELINE)
+LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    PROJECT.launcher('graphviz', [demos.FEED]).train()
+    LAUNCHER.apply()

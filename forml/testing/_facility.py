@@ -24,7 +24,6 @@ import uuid
 
 from forml import flow, io, project, runtime, setup
 from forml.io import dsl
-from forml.pipeline import payload
 from forml.testing import _spec
 
 LOGGER = logging.getLogger(__name__)
@@ -107,9 +106,8 @@ class Launcher:
     class Action:
         """Customized launcher actions exposed to testing routines."""
 
-        def __init__(self, handler: runtime.Virtual.Handler, sniffer: payload.Sniff):
+        def __init__(self, handler: runtime.Virtual.Handler):
             self._handler: runtime.Virtual.Handler = handler
-            self._sniffer: payload.Sniff = sniffer
 
         def apply(self) -> typing.Any:
             """Normal apply mode."""
@@ -121,9 +119,8 @@ class Launcher:
 
         def train_return(self) -> tuple[flow.Features, flow.Labels]:
             """Extended train mode that's capturing and returning the features+labels output."""
-            with self._sniffer as future:
-                self._handler.train()
-            return future.result()
+            result = self._handler.train()
+            return result.features, result.labels
 
     class Initializer(flow.Visitor):
         """Visitor that tries to instantiate each node in attempt to validate it."""
@@ -150,6 +147,4 @@ class Launcher:
         trunk.train.accept(initializer)
         trunk.label.accept(initializer)
 
-        sniffer = payload.Sniff()
-        handler = self._source.bind(instance >> sniffer).launcher(self._runner, [self._feed])
-        return self.Action(handler, sniffer)
+        return self.Action(self._source.bind(instance).launcher(self._runner, [self._feed]))

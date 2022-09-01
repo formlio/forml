@@ -14,12 +14,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+"""
+ForML demo 1 - Simple.
+"""
 import demos
 
-PIPELINE = demos.SimpleImputer(strategy='mean') >> demos.LR(max_iter=3, solver='lbfgs')
+from forml.pipeline import wrap
 
-PROJECT = demos.SOURCE.bind(PIPELINE)
+with wrap.importer():
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+
+PIPELINE = SimpleImputer(strategy='mean') >> LogisticRegression(max_iter=3, solver='lbfgs')
+
+LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    PROJECT.launcher('graphviz', [demos.FEED]).train()
+    LAUNCHER.apply()

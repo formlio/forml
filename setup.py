@@ -26,7 +26,7 @@ import setuptools
 EXTRAS_DASK = {'dask'}
 
 EXTRAS_DEV = {
-    'black',
+    'black[jupyter]',
     'flake8-colors',
     'flake8-bugbear',
     'flake8-typing-imports',
@@ -37,6 +37,7 @@ EXTRAS_DEV = {
     'pylint',
     'pytest-cov',
     'pytest-asyncio',
+    'pytest-xdist',
 }
 
 EXTRAS_DOCS = {

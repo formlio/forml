@@ -24,8 +24,11 @@ import typing
 
 import graphviz as grviz
 
-from forml import flow, io, runtime, setup
-from forml.io import asset
+from forml import flow, runtime, setup
+
+if typing.TYPE_CHECKING:
+    from forml import io
+    from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,9 +82,9 @@ class Runner(runtime.Runner, alias='graphviz'):
 
     def __init__(
         self,
-        instance: typing.Optional[asset.Instance] = None,
-        feed: typing.Optional[io.Feed] = None,
-        sink: typing.Optional[io.Sink] = None,
+        instance: typing.Optional['asset.Instance'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Sink'] = None,
         filepath: typing.Optional[typing.Union[str, pathlib.Path]] = None,
         view: bool = True,
         **options: typing.Any,

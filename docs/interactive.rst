@@ -59,3 +59,4 @@ the :ref:`testing framework <testing>`).
 
 
 .. autoclass:: forml.runtime.Virtual
+    :members: Trained

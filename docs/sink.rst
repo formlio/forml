@@ -62,4 +62,5 @@ The available implementations are:
    :template: provider.rst
    :nosignatures:
 
+   forml.provider.sink.null.Sink
    forml.provider.sink.stdout.Sink

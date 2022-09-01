@@ -58,7 +58,7 @@ class TestSource:
 
     @staticmethod
     @pytest.fixture(scope='session', params=('vector', 'table', 'actor', None))
-    def label(
+    def labels(
         request,
         student_table: dsl.Table,
         actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
@@ -79,9 +79,9 @@ class TestSource:
         with pytest.raises(forml.InvalidError, match='Train-apply schema mismatch'):
             project.Source.query(student_table, apply=school_table)
 
-    def test_query(self, source_query: dsl.Query, label: typing.Optional[project.Source.Labels]):
+    def test_query(self, source_query: dsl.Query, labels: typing.Optional[project.Source.Labels]):
         """Test the query setup."""
-        query = project.Source.query(source_query, label)
+        query = project.Source.query(source_query, labels)
         assert isinstance(query.extract.train, dsl.Query)
         assert query.extract.apply == query.extract.train == source_query
-        assert query.extract.labels == label
+        assert query.extract.labels == labels

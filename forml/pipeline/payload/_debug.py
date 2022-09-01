@@ -29,6 +29,7 @@ import typing
 
 from pandas.core import generic as pdtype
 
+import forml
 from forml import flow
 
 from . import _convert
@@ -359,7 +360,7 @@ class Sniff(flow.Operator):
         >>> future.result()[0]
     """
 
-    class Actor(flow.Actor[flow.Features, flow.Labels, flow.Result]):
+    class Captor(flow.Actor[flow.Features, flow.Labels, flow.Result]):
         """Actor for sniffing all inputs and passing it to the queue."""
 
         def __init__(self, queue: typing.Optional[multiprocessing.Queue]):
@@ -376,19 +377,29 @@ class Sniff(flow.Operator):
 
         def get_state(self) -> None:
             """Not really having any state."""
+            return None
 
     class Future:
         """Future object to eventually contain the sniffed value."""
 
         def __init__(self):
             self._value: typing.Any = None
+            self._empty: bool = False
+            self._done: bool = False
 
         def result(self) -> typing.Any:
             """Get the future result.
 
             Returns:
                 Future result.
+
+            Raises:
+                forml.MissingError: If the sniffer didn't capture anything.
             """
+            if not self._done:
+                raise RuntimeError('Future still pending')
+            if self._empty:
+                raise forml.MissingError('Sniffer queue empty')
             return self._value
 
         def set_result(self, value: typing.Any) -> None:
@@ -397,14 +408,24 @@ class Sniff(flow.Operator):
             Args:
                 value: Future result value.
             """
+            assert not self._done
             self._value = value
+            self._done = True
+
+        def set_empty(self) -> None:
+            """Set the result to indicate absence of any queue data."""
+            assert not self._done
+            self._empty = True
+            self._done = True
 
     def __init__(self):
-        self._manager: multiprocessing.Manager = multiprocessing.Manager()
+        self._manager: typing.Optional[multiprocessing.Manager] = None
         self._queue: typing.Optional[multiprocessing.Queue] = None
         self._result: typing.Optional[Sniff.Future] = None
 
-    def __enter__(self) -> 'Sniff.Future':
+    def __enter__(self) -> 'payload.Sniff.Future':
+        assert self._manager is None
+        self._manager = multiprocessing.Manager()
         self._manager.__enter__()
         self._queue = self._manager.Queue()
         self._result = self.Future()
@@ -414,13 +435,13 @@ class Sniff(flow.Operator):
         try:
             self._result.set_result(self._queue.get_nowait())
         except quemod.Empty:
-            LOGGER.warning('Sniffer queue empty')
+            self._result.set_empty()
         self._manager.__exit__(exc_type, exc_val, exc_tb)
-        self._queue = self._result = None
+        self._manager = self._queue = self._result = None
 
     def compose(self, scope: flow.Composable) -> flow.Trunk:
         left = scope.expand()
-        apply = flow.Worker(self.Actor.builder(self._queue), 1, 1)
-        train = flow.Worker(self.Actor.builder(self._queue), 1, 1)
+        apply = flow.Worker(self.Captor.builder(self._queue), 1, 1)
+        train = flow.Worker(self.Captor.builder(self._queue), 1, 1)
         train.train(left.train.publisher, left.label.publisher)
         return left.extend(apply=apply)

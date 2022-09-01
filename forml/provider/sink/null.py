@@ -15,11 +15,36 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import demos
+"""
+Null writer sink implementation.
+"""
+import typing
 
-PIPELINE = demos.RFC(max_depth=3)
+from forml import io
 
-PROJECT = demos.SOURCE.bind(PIPELINE)
+if typing.TYPE_CHECKING:
+    from forml.io import layout
 
-if __name__ == '__main__':
-    PROJECT.launcher('graphviz', [demos.FEED]).train()
+
+class Sink(io.Sink, alias='null'):
+    """Null sink with no real write action.
+
+    It still returns the :class:`layout.Outcome <forml.io.layout.Outcome>` combo of schema and
+    the payload.
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [SINK.blackhole]
+        provider = "null"
+    """
+
+    class Writer(io.Sink.Writer):
+        """Overridden writer."""
+
+        @classmethod
+        def write(cls, data: 'layout.Native', **kwargs: typing.Any) -> None:
+            """Write is no-op."""
+            return None

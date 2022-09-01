@@ -35,7 +35,7 @@ class TestParseTitle(testing.operator(preprocessing.ParseTitle)):
     EXPECTED = pandas.DataFrame({'Title': ['mr', 'ms', 'mrs', 'n/a']})
 
     # Test scenarios
-    invalid_params = testing.Case(foo='bar').raises(TypeError, 'missing a required argument:')
+    invalid_params = testing.Case(foo='bar').raises(TypeError, "got an unexpected keyword argument 'foo'")
     invalid_source = testing.Case(source='Foo', target='Bar').apply(INPUT).raises(KeyError, 'Foo')
     valid_parsing = testing.Case(source='Name', target='Title').apply(INPUT).returns(EXPECTED, testing.pandas_equals)
 

@@ -14,6 +14,8 @@ appdirs==1.4.4
     # via sphinx-immaterial
 astroid==2.12.5
     # via pylint
+asttokens==2.0.8
+    # via stack-data
 attrs==22.1.0
     # via
     #   flake8-bugbear
@@ -21,9 +23,11 @@ attrs==22.1.0
     #   pytest
 babel==2.10.3
     # via sphinx
+backcall==0.2.0
+    # via ipython
 beautifulsoup4==4.11.1
     # via nbconvert
-black==22.6.0
+black==22.8.0
     # via forml (setup.py)
 bleach==5.0.1
     # via nbconvert
@@ -56,6 +60,8 @@ dask==2022.8.1
     # via forml (setup.py)
 databricks-cli==0.17.3
     # via mlflow
+decorator==5.1.1
+    # via ipython
 defusedxml==0.7.1
     # via nbconvert
 dill==0.3.5.1
@@ -72,6 +78,10 @@ entrypoints==0.4
     # via
     #   jupyter-client
     #   mlflow
+execnet==1.9.0
+    # via pytest-xdist
+executing==1.0.0
+    # via stack-data
 fastjsonschema==2.16.1
     # via nbformat
 filelock==3.8.0
@@ -91,7 +101,7 @@ flask==2.2.2
     # via
     #   mlflow
     #   prometheus-flask-exporter
-fsspec==2022.8.0
+fsspec==2022.8.2
     # via dask
 future==0.18.2
     # via pyhive
@@ -119,12 +129,16 @@ importlib-metadata==4.12.0
     # via mlflow
 iniconfig==1.1.1
     # via pytest
+ipython==8.4.0
+    # via black
 isort==5.10.1
     # via
     #   forml (setup.py)
     #   pylint
 itsdangerous==2.1.2
     # via flask
+jedi==0.18.1
+    # via ipython
 jinja2==3.1.2
     # via
     #   flask
@@ -162,6 +176,8 @@ markupsafe==2.1.1
     #   nbconvert
     #   sphinx-immaterial
     #   werkzeug
+matplotlib-inline==0.1.6
+    # via ipython
 mccabe==0.7.0
     # via
     #   flake8
@@ -215,6 +231,8 @@ pandas==1.4.4
     #   mlflow
 pandocfilters==1.5.0
     # via nbconvert
+parso==0.8.3
+    # via jedi
 partd==1.3.0
     # via dask
 pathspec==0.9.0
@@ -223,6 +241,10 @@ pathspec==0.9.0
     #   pycln
 pep517==0.13.0
     # via build
+pexpect==4.8.0
+    # via ipython
+pickleshare==0.7.5
+    # via ipython
 pip-tools==6.8.0
     # via forml (setup.py)
 platformdirs==2.5.2
@@ -240,10 +262,18 @@ prometheus-client==0.14.1
     # via prometheus-flask-exporter
 prometheus-flask-exporter==0.20.3
     # via mlflow
+prompt-toolkit==3.0.31
+    # via ipython
 protobuf==4.21.5
     # via mlflow
+ptyprocess==0.7.0
+    # via pexpect
+pure-eval==0.2.2
+    # via stack-data
 py==1.11.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-forked
 pycln==2.1.1
     # via forml (setup.py)
 pycodestyle==2.9.1
@@ -254,6 +284,7 @@ pyflakes==2.5.0
     # via flake8
 pygments==2.13.0
     # via
+    #   ipython
     #   nbconvert
     #   sphinx
 pyhive==0.6.5
@@ -266,13 +297,19 @@ pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
-pytest==7.1.2
+pytest==7.1.3
     # via
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-forked
+    #   pytest-xdist
 pytest-asyncio==0.19.0
     # via forml (setup.py)
 pytest-cov==3.0.0
+    # via forml (setup.py)
+pytest-forked==1.4.0
+    # via pytest-xdist
+pytest-xdist==2.5.0
     # via forml (setup.py)
 python-dateutil==2.8.2
     # via
@@ -310,6 +347,7 @@ scipy==1.9.1
     #   scikit-learn
 six==1.16.0
     # via
+    #   asttokens
     #   bleach
     #   databricks-cli
     #   pockets
@@ -318,7 +356,7 @@ six==1.16.0
     #   sphinxcontrib-napoleon
 smmap==5.0.0
     # via gitdb
-sniffio==1.2.0
+sniffio==1.3.0
     # via anyio
 snowballstemmer==2.2.0
     # via sphinx
@@ -358,6 +396,8 @@ sqlalchemy==1.4.40
     #   mlflow
 sqlparse==0.4.2
     # via mlflow
+stack-data==0.5.0
+    # via ipython
 starlette==0.20.4
     # via forml (setup.py)
 tabulate==0.8.10
@@ -366,6 +406,8 @@ threadpoolctl==3.1.0
     # via scikit-learn
 tinycss2==1.1.1
     # via nbconvert
+tokenize-rt==4.2.1
+    # via black
 toml==0.10.2
     # via pre-commit
 tomli==2.0.1
@@ -389,8 +431,10 @@ tornado==6.2
     # via jupyter-client
 traitlets==5.3.0
     # via
+    #   ipython
     #   jupyter-client
     #   jupyter-core
+    #   matplotlib-inline
     #   nbclient
     #   nbconvert
     #   nbformat
@@ -411,6 +455,8 @@ uvicorn==0.18.3
     # via forml (setup.py)
 virtualenv==20.16.4
     # via pre-commit
+wcwidth==0.2.5
+    # via prompt-toolkit
 webencodings==0.5.1
     # via
     #   bleach

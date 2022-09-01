@@ -105,18 +105,18 @@ class CrossVal(_api.Method):
         splitter = flow.Worker(self._splitter, 1, 2 * self._nsplits)
         splitter.train(features, labels)
 
-        features_splits: flow.Worker = splitter.fork()
-        features_splits[0].subscribe(features)
-        label_splits: flow.Worker = splitter.fork()
-        label_splits[0].subscribe(labels)
+        features_splitter: flow.Worker = splitter.fork()
+        features_splitter[0].subscribe(features)
+        labels_splitter: flow.Worker = splitter.fork()
+        labels_splitter[0].subscribe(labels)
 
         outcomes = []
         for fid in range(self._nsplits):
             fold: flow.Trunk = pipeline.expand()
-            fold.train.subscribe(features_splits[2 * fid])
-            fold.label.subscribe(label_splits[2 * fid])
-            fold.apply.subscribe(features_splits[2 * fid + 1])
-            outcomes.append(_api.Outcome(label_splits[2 * fid + 1].publisher, fold.apply.publisher))
+            fold.train.subscribe(features_splitter[2 * fid])
+            fold.label.subscribe(labels_splitter[2 * fid])
+            fold.apply.subscribe(features_splitter[2 * fid + 1])
+            outcomes.append(_api.Outcome(labels_splitter[2 * fid + 1].publisher, fold.apply.publisher))
         return tuple(outcomes)
 
 

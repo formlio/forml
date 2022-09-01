@@ -148,6 +148,7 @@ Reciprocally to the Feeds_ system, ForML is using :ref:`sink <sink>` providers f
    :nosignatures:
    :toctree: _auto
 
+   forml.provider.sink.null.Sink
    forml.provider.sink.stdout.Sink
 
 

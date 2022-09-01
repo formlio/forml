@@ -19,24 +19,38 @@
 Special lightweight launcher for dummy execution.
 """
 import logging
-import multiprocessing
-import queue as quemod
+import types
 import typing
 
-from forml import io, setup
-from forml.io import asset, dsl, layout
+from forml import io
+from forml import project as prjmod
+from forml import setup
+from forml.io import asset
 from forml.provider.registry.filesystem import volatile
 
+from ..pipeline import payload
 from . import _pad
 
 if typing.TYPE_CHECKING:
-    from forml import project, runtime
+    from forml import flow, project, runtime  # pylint: disable=reimported
+    from forml.io import dsl, layout
 
 LOGGER = logging.getLogger(__name__)
 
 
+class Sink(io.Sink):
+    """Sniffer sink."""
+
+    def __init__(self, sniffer: payload.Sniff):
+        super().__init__()
+        self._sniffer: payload.Sniff = sniffer
+
+    def save(self, schema: typing.Optional['dsl.Source.Schema']) -> 'flow.Trunk':
+        return self._sniffer.expand()
+
+
 class Virtual:
-    """Custom launcher allowing to execute the provided release package using the default or an
+    """Custom launcher allowing to execute the provided artifact using the default or an
     explicit runner in combination with a special pipeline sink to capture and return any output
     produced by the given action.
 
@@ -45,15 +59,31 @@ class Virtual:
     <forml.provider.registry.filesystem.volatile.Registry>`.
 
     Args:
-        package: Project release package to be launched.
+        artifact: Project artifact to be launched.
 
     The available launcher actions are exposed using the following common triggers:
 
     Methods:
-        train(lower=None, upper=None) -> None: Trigger the *train* action.
-        tune(lower=None, upper=None) -> None: Trigger the *tune* action.
-        apply(lower=None, upper=None) -> typing.Any: Trigger the *apply* action.
-        eval(lower=None, upper=None) -> float: Trigger the (train-test) *eval* action.
+        train(lower=None, upper=None) -> runtime.Virtual.Trained:
+            Trigger the *train* action.
+
+            Returns:
+                Accessor of the train-mode features/outcomes outputs.
+
+        tune(lower=None, upper=None) -> None:
+            Trigger the *tune* action.
+
+        apply(lower=None, upper=None) -> flow.Features:
+            Trigger the *apply* action.
+
+            Returns:
+                The apply-mode output.
+
+        eval(lower=None, upper=None) -> float:
+            Trigger the (train-test) *eval* action.
+
+            Returns:
+                Evaluation metric value.
 
     Furthermore, these triggers can be accessed using three different approaches:
 
@@ -73,78 +103,96 @@ class Virtual:
        [0.31, 0.63, 0.16, 0.87]
     """
 
+    class Trained:
+        """Lazy accessor of the virtual train-mode features/outcomes segment outputs as returned by
+        the :meth:`runtime.Virtual.train <forml.runtime.Virtual.train>` method."""
+
+        def __init__(self, future: payload.Sniff.Future):
+            self._future: payload.Sniff.Future = future
+
+        @property
+        def features(self) -> 'flow.Features':
+            """Get the train-mode *features* segment values."""
+            return self._future.result()[0]
+
+        @property
+        def labels(self) -> 'flow.Labels':
+            """Get the train-mode *labels* segment values."""
+            return self._future.result()[1]
+
     class Handler:
         """Wrapper for selected launcher parameters."""
 
-        class Return:
-            """Advanced action calling the given mode with injected Sink instance that captures the
-            output using a multiprocessing queue and returns that output on exit."""
+        def __init__(self, launcher: _pad.Launcher, sniffer: payload.Sniff):
+            self._launcher: _pad.Launcher = launcher
+            self._sniffer: payload.Sniff = sniffer
 
-            class Sink(io.Sink):
-                """Special sink to forward the output to a multiprocessing.Queue."""
-
-                class Writer:
-                    """Sink writer.
-
-                    This should implement io.Consumer, but we don't really need it to return
-                    anything.
-                    """
-
-                    def __init__(self, _: typing.Optional[dsl.Source.Schema], queue: multiprocessing.Queue):
-                        self._queue: multiprocessing.Queue = queue
-
-                    def __call__(self, data: layout.RowMajor) -> None:
-                        self._queue.put(data, block=False)
-
-            def __init__(
-                self,
-                handler: typing.Callable[[typing.Optional[io.Sink]], 'runtime.Launcher'],
-                action: typing.Callable[
-                    ['runtime.Launcher'],
-                    typing.Callable[[typing.Optional[layout.Native], typing.Optional[layout.Native]], None],
-                ],
-            ):
-                self._handler: typing.Callable[[typing.Optional[io.Sink]], 'runtime.Launcher'] = handler
-                self._action: typing.Callable[
-                    ['runtime.Launcher'],
-                    typing.Callable[[typing.Optional[layout.Native], typing.Optional[layout.Native]], None],
-                ] = action
-
-            def __call__(
-                self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
-            ) -> typing.Any:
-                with multiprocessing.Manager() as manager:
-                    output = manager.Queue()
-                    self._action(self._handler(self.Sink(queue=output)))(lower, upper)
-                    try:
-                        return output.get_nowait()
-                    except quemod.Empty:
-                        LOGGER.warning('Runner finished but sink queue empty')
-                        return None
-
-        train = property(lambda self: self().train)
-        apply = property(lambda self: self.Return(self, _pad.Launcher.apply.fget))
-        eval = property(lambda self: self.Return(self, _pad.Launcher.eval_traintest.fget))
-        tune = property(lambda self: self().tune)
-
-        def __init__(
+        def _run(
             self,
-            runner: typing.Optional[setup.Runner],
-            registry: asset.Registry,
-            feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]],
-            project: str,
-        ):
-            self._runner: typing.Optional[setup.Runner] = runner
-            self._registry: asset.Registry = registry
-            self._feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]] = feeds
-            self._project: str = project
+            action: typing.Callable[
+                ['runtime.Launcher'],
+                typing.Callable[[typing.Optional['layout.Native'], typing.Optional['layout.Native']], None],
+            ],
+            lower: typing.Optional['dsl.Native'] = None,
+            upper: typing.Optional['dsl.Native'] = None,
+        ) -> payload.Sniff.Future:
+            with self._sniffer as future:
+                action(self._launcher)(lower, upper)
+            return future
 
-        def __call__(self, sink: typing.Optional[io.Sink] = None) -> 'runtime.Launcher':
-            return _pad.Platform(self._runner, self._registry, self._feeds, sink).launcher(self._project)
+        def apply(
+            self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
+        ) -> 'flow.Features':
+            """Trigger the *apply* action.
 
-    def __init__(self, package: 'project.Package'):
+            See Also: Full description in the Virtual class docstring.
+            """
+            return self._run(_pad.Launcher.apply.fget, lower, upper).result()
+
+        def train(
+            self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
+        ) -> 'runtime.Virtual.Trained':
+            """Trigger the *train* action.
+
+            See Also: Full description in the Virtual class docstring.
+            """
+            return Virtual.Trained(self._run(_pad.Launcher.train_return.fget, lower, upper))
+
+        def eval(
+            self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
+        ) -> float:
+            """Trigger the *eval* action.
+
+            See Also: Full description in the Virtual class docstring.
+            """
+            return self._run(_pad.Launcher.eval_traintest.fget, lower, upper).result()[0]
+
+        @property
+        def tune(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:
+            """Trigger the *tune* action.
+
+            See Also: Full description in the Virtual class docstring.
+            """
+            return self._launcher.tune
+
+    def __init__(self, artifact: 'project.Artifact'):
+        class Manifest(types.ModuleType):
+            """Fake manifest module."""
+
+            NAME = (artifact.package or setup.PRJNAME).replace('.', '-')
+            VERSION = '0'
+            PACKAGE = artifact.package
+            MODULES = artifact.modules
+
+            def __init__(self):
+                super().__init__(prjmod.Manifest.MODULE)
+
+        with setup.context(Manifest()):
+            package = prjmod.Package(artifact.path or asset.mkdtemp(prefix='virtual-'))
+
         self._project: str = package.manifest.name
         self._registry: asset.Registry = volatile.Registry()
+        self._sniffer: payload.Sniff = payload.Sniff()
         asset.Directory(self._registry).get(self._project).put(package)
 
     def __call__(
@@ -152,7 +200,8 @@ class Virtual:
         runner: typing.Optional[typing.Union[setup.Runner, str]] = None,
         feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]] = None,
     ) -> 'runtime.Virtual.Handler':
-        return self.Handler(runner, self._registry, feeds, self._project)
+        launcher = _pad.Platform(runner, self._registry, feeds, Sink(self._sniffer)).launcher(self._project)
+        return self.Handler(launcher, self._sniffer)
 
     def __getitem__(self, runner: typing.Union[setup.Runner, str]) -> 'runtime.Virtual.Handler':
         """Convenient shortcut for selecting a specific runner using the `launcher[name]` syntax.
@@ -167,7 +216,7 @@ class Virtual:
 
     def __getattr__(
         self, mode: str
-    ) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], typing.Any]:
+    ) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], typing.Any]:
         """Convenient shortcut for accessing the particular launcher mode using the
         ``launcher.train()`` syntax.
 

@@ -113,13 +113,22 @@ class Launcher:
         self._sink: io.Exporter = sink
 
     @property
-    def train(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def train_call(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
         """Return the train handler.
 
         Returns:
             Train runner.
         """
         return self(self._assets.project.source.extract.train).train
+
+    @property
+    def train_return(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+        """Return the train handler.
+
+        Returns:
+            Train runner.
+        """
+        return self(self._assets.project.source.extract.train, self._sink.apply).train
 
     @property
     def apply(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:

@@ -52,7 +52,7 @@ class TestSlicer:
         return layout.Dense.from_columns([*columns, columns[-1]])  # duplicating the last column
 
     @pytest.mark.parametrize(
-        'label_factory, label_width',
+        'labels_factory, labels_width',
         [
             (lambda l: l, 1),
             (lambda l: [l], 1),
@@ -61,16 +61,16 @@ class TestSlicer:
     )
     def test_slicer(
         self,
-        label_factory: typing.Callable[[dsl.Feature], typing.Union[dsl.Feature, typing.Sequence[dsl.Feature]]],
-        label_width: int,
+        labels_factory: typing.Callable[[dsl.Feature], typing.Union[dsl.Feature, typing.Sequence[dsl.Feature]]],
+        labels_width: int,
         features: typing.Sequence[dsl.Feature],
         labels: dsl.Feature,
         dataset: layout.Tabular,
     ):
         """Slicing test."""
-        labels_fields = label_factory(labels)
+        labels_fields = labels_factory(labels)
         all_fields, slicer = extract.Slicer.from_columns(features, labels_fields)
-        assert len(all_fields) == len(features) + label_width
+        assert len(all_fields) == len(features) + labels_width
         assert len(slicer.args[0]) == len(features)
         left, right = slicer().apply(dataset)
         columns = dataset.to_columns()
@@ -79,4 +79,4 @@ class TestSlicer:
         if isinstance(labels_fields, dsl.Feature):
             assert right[0] == columns[-1][0]
         else:
-            assert len(right[0]) == label_width
+            assert len(right[0]) == labels_width

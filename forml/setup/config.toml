@@ -61,6 +61,9 @@ eval = "stdout"
 [SINK.stdout]
 provider = "stdout"
 
+[SINK.null]
+provider = "null"
+
 
 [INVENTORY]
 default = "homedir"

@@ -287,7 +287,18 @@ is the (actor) *adjacency matrix* produced by the internal flow compiler.
 ForML uses its compiler to:
 
 #. Augment the task graph by adding any necessary system-level nodes (e.g. to automatically
-   manage persistence of any :ref:`stateful actors <actor>`).
+   manage persistence of any :ref:`stateful actors <actor-type>`) which might be any of the
+   following:
+
+   ===========  =================================================================================
+   System Node  Purpose
+   ===========  =================================================================================
+   Loader       Provides a previously persisted state.
+   Dumper       Persists a new state of the given actor.
+   Committer    Collates all the related states as a new :ref:`generation <registry-assets>`.
+   Getter       Physically extracts a specific output port out of a Python function return value.
+   ===========  =================================================================================
+
 #. Optimizing the task graph by removing any irrelevant or redundant parts.
 #. Generating a portable set of instructions suitable for runtime execution.
 

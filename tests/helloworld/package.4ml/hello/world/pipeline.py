@@ -74,15 +74,15 @@ class Branches(flow.Operator):
 
     def compose(self, scope: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
-        feature_splitter: flow.Worker = flow.Worker(split.builder(), 1, 2)
-        feature_splitter[0].subscribe(head.train.publisher)
-        label_splitter: flow.Worker = flow.Worker(split.builder(), 1, 2)
-        label_splitter[0].subscribe(head.label.publisher)
+        features_splitter: flow.Worker = flow.Worker(split.builder(), 1, 2)
+        features_splitter[0].subscribe(head.train.publisher)
+        labels_splitter: flow.Worker = flow.Worker(split.builder(), 1, 2)
+        labels_splitter[0].subscribe(head.label.publisher)
         merger: flow.Worker = flow.Worker(merge.builder(), 2, 1)
         for fid, pipeline_branch in enumerate((self._left.expand(), self._right.expand())):
             fold_train: flow.Trunk = scope.expand()
-            fold_train.train.subscribe(feature_splitter[fid])
-            fold_train.label.subscribe(label_splitter[fid])
+            fold_train.train.subscribe(features_splitter[fid])
+            fold_train.label.subscribe(labels_splitter[fid])
 
             fold_apply: flow.Segment = fold_train.apply.copy()
             fold_apply.subscribe(head.apply)

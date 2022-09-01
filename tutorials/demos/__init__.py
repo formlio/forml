@@ -14,48 +14,29 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+# pylint: disable=no-value-for-parameter
 """
-Forml demos.
+Forml demos - common setup.
 """
-
-
-import pandas as pd
 
 from forml import project
 from forml.io import dsl
-from forml.pipeline import payload, wrap
+from forml.pipeline import payload
 from forml.provider.feed import monolite
 
-with wrap.importer():  # automatically converting the particular SKLearn classes to ForML operators
-    from sklearn.ensemble import GradientBoostingClassifier as GBC
-    from sklearn.ensemble import RandomForestClassifier as RFC
-    from sklearn.feature_extraction import FeatureHasher
-    from sklearn.impute import SimpleImputer
-    from sklearn.linear_model import LogisticRegression as LR
-    from sklearn.naive_bayes import BernoulliNB as Bayes
-    from sklearn.preprocessing import Binarizer, OneHotEncoder
-
-
-__all__ = ['GBC', 'RFC', 'FeatureHasher', 'SimpleImputer', 'LR', 'Bayes', 'Binarizer', 'OneHotEncoder']
-
-
-@wrap.Operator.mapper
-@wrap.Actor.apply
-def cleaner(df: pd.DataFrame) -> pd.DataFrame:
-    """Simple stateless transformer create from a plain function."""
-    return df.dropna()
+#: Demo dataset.
+DATA = [[1, 10], [1, 11], [1, 12], [0, 13], [0, 14], [0, 15]]
 
 
 class Demo(dsl.Schema):
-    """Demo schema representation."""
+    """Demo dataset schema."""
 
     Label = dsl.Field(dsl.Integer())
     Age = dsl.Field(dsl.Integer())
 
 
-DATA = [[1, 1, 1, 0, 0, 0], [10, 11, 12, 13, 14, 15]]
-
-
+#: Demo Feed preloaded with the DATA represented by the Demo schema
 FEED = monolite.Feed(inline={Demo: DATA})
+
+#: Common Source component for all the demo pipelines
 SOURCE = project.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.ToPandas(columns=['Age'])

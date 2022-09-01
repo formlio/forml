@@ -79,6 +79,8 @@ def generate(target: pathlib.Path, template: pathlib.Path, context: typing.Mappi
                 dst /= sub
                 dst.mkdir(parents=False, exist_ok=True)
             dst /= dstname
+            if dst.suffix == '.jinja':
+                dst = dst.with_suffix('')
             if dst.exists():
                 raise forml.InvalidError(f'{dst} already exists.')
             dstmode = src.stat().st_mode
@@ -88,10 +90,8 @@ def generate(target: pathlib.Path, template: pathlib.Path, context: typing.Mappi
                 continue
             assert src.is_file(), f'Source {src} not a file.'
             LOGGER.debug('Rendering %s as %s', src, dst)
-            content = env.get_template(str(src.relative_to(template))).render(context)
-            if dst.suffix == '.jinja':
-                dst = dst.with_suffix('')
             dst.touch(mode=dstmode, exist_ok=False)
+            content = env.get_template(str(src.relative_to(template))).render(context)
             dst.write_text(content)
 
     target.mkdir(parents=True, exist_ok=True)

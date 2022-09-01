@@ -140,7 +140,7 @@ def train(
     upper: typing.Optional[dsl.Native],
 ) -> None:
     """Train new generation of the given (or default) project release."""
-    scope.launcher(project, release, generation).train(lower, upper)
+    scope.launcher(project, release, generation).train_call(lower, upper)
 
 
 @group.command()

@@ -26,13 +26,14 @@ import typing
 from collections import abc
 
 import forml
-from forml import flow, setup
-from forml.io import asset
+from forml import flow
+from forml import runtime as runmod
+from forml import setup
 
-from . import _component, _distribution
+from . import _component
 
 if typing.TYPE_CHECKING:
-    from forml import project, runtime
+    from forml import project, runtime  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
@@ -188,19 +189,4 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
             Virtual launcher instance.
         """
 
-        class Manifest(types.ModuleType):
-            """Fake manifest module."""
-
-            NAME = (self.package or setup.PRJNAME).replace('.', '-')
-            VERSION = '0'
-            PACKAGE = self.package
-            MODULES = self.modules
-
-            def __init__(self):
-                super().__init__(_distribution.Manifest.MODULE)
-
-        from forml import runtime  # pylint: disable=import-outside-toplevel
-
-        with setup.context(Manifest()):
-            # dummy package forced to load our fake manifest
-            return runtime.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))
+        return runmod.Virtual(self)

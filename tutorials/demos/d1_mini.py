@@ -14,19 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+"""
+ForML demo 1 - Mini.
+"""
 import demos
-from sklearn import model_selection
 
-from forml.pipeline import ensemble
+from forml.pipeline import wrap
 
-STACK = ensemble.FullStack(
-    demos.RFC(max_depth=3), demos.GBC(max_depth=3), crossvalidator=model_selection.StratifiedKFold(n_splits=2)
-)
+with wrap.importer():
+    from sklearn.ensemble import RandomForestClassifier
 
-PIPELINE = demos.SimpleImputer(strategy='mean') >> STACK >> demos.LR(max_iter=3, solver='lbfgs')
+PIPELINE = RandomForestClassifier(max_depth=3)
 
-PROJECT = demos.SOURCE.bind(PIPELINE)
+LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    PROJECT.launcher('graphviz', [demos.FEED]).train()
+    LAUNCHER.apply()
