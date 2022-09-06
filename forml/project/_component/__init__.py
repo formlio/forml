@@ -19,8 +19,11 @@
 Project component management.
 """
 import collections
+import enum
+import functools
 import importlib
 import logging
+import operator
 import secrets
 import sys
 import types
@@ -128,10 +131,80 @@ class Source(typing.NamedTuple):
     class Extract(collections.namedtuple('Extract', 'train, apply, labels, ordinal')):
         """Combo of select statements for the different modes."""
 
+        class Ordinal(collections.namedtuple('Ordinal', 'column, once')):
+            """Ordinal specs."""
+
+            @enum.unique
+            class Once(enum.Enum):
+                """Delivery guarantees semantic for the ordinal column in case of incremental
+                querying.
+                """
+
+                _ignore_ = 'Bounds'  # pylint: disable=invalid-name
+
+                class Bounds(collections.namedtuple('Bounds', 'lower, upper')):
+                    """Upper/lower bound operators."""
+
+                    lower: typing.Callable[['dsl.Operable', 'dsl.Native'], 'dsl.Predicate']
+                    upper: typing.Callable[['dsl.Operable', 'dsl.Native'], 'dsl.Predicate']
+
+                EXACTLY = Bounds(operator.ge, operator.lt)
+                """Include the lower bound but leave the upper bound out for the next batch."""
+                ATMOST = Bounds(operator.gt, operator.le)
+                """Leave out the lower bound and include the upper end."""
+                ATLEAST = Bounds(operator.ge, operator.le)
+                """Include both ends."""
+
+                def __repr__(self):
+                    return self.name.lower()
+
+                @classmethod
+                def _missing_(cls, value: typing.Any):
+                    if isinstance(value, str):
+                        value = value.lower()
+                        if value in {'most', 'atmost', 'at-most', 'atmostonce', 'at-most-once'}:
+                            return cls.ATMOST
+                        if value in {'least', 'atleast', 'at-least', 'atleastonce', 'at-least-once'}:
+                            return cls.ATLEAST
+                        if value in {'exact', 'exactlyonce', 'exactly-once'}:
+                            return cls.EXACTLY
+                    return super()._missing_(value)
+
+            column: 'dsl.Operable'
+            once: 'project.Source.Extract.Ordinal.Once'
+
+            def __new__(
+                cls,
+                column: 'dsl.Operable',
+                once: typing.Optional[typing.Union[str, 'project.Source.Extract.Ordinal.Once']],
+            ):
+                return super().__new__(
+                    cls, dslmod.Operable.ensure_is(column), cls.Once(once) if once else cls.Once.ATLEAST
+                )
+
+            def where(
+                self, lower: typing.Optional['dsl.Native'], upper: typing.Optional['dsl.Native']
+            ) -> typing.Optional['dsl.Predicate']:
+                """Construct a DSL predicate using this ordinal specs and the provided bounds.
+
+                Args:
+                    lower: Lower ordinal bound.
+                    upper: Upper ordinal bound.
+
+                Returns:
+                    DSL predicate if lower and/or upper are provided else None.
+                """
+                terms = []
+                if lower is not None:
+                    terms.append(self.once.value.lower(self.column, lower))
+                if upper is not None:
+                    terms.append(self.once.value.upper(self.column, upper))
+                return functools.reduce(operator.and_, terms) if terms else None
+
         train: 'dsl.Statement'
         apply: 'dsl.Statement'
         labels: typing.Optional['project.Source.Labels']
-        ordinal: typing.Optional['dsl.Operable']
+        ordinal: typing.Optional['project.Source.Extract.Ordinal']
 
         def __new__(
             cls,
@@ -139,6 +212,7 @@ class Source(typing.NamedTuple):
             apply: 'dsl.Source',
             labels: typing.Optional['project.Source.Labels'],
             ordinal: typing.Optional['dsl.Operable'],
+            once: typing.Optional[typing.Union[str, 'project.Source.Extract.Ordinal.Once']],
         ):
             train = train.statement
             apply = apply.statement
@@ -152,7 +226,9 @@ class Source(typing.NamedTuple):
             if train.schema != apply.schema:
                 raise forml.InvalidError('Train-apply schema mismatch')
             if ordinal:
-                ordinal = dslmod.Operable.ensure_is(ordinal)
+                ordinal = cls.Ordinal(ordinal, once)
+            elif once:
+                raise forml.InvalidError('Once without an Ordinal')
             return super().__new__(cls, train, apply, labels, ordinal)
 
     @classmethod
@@ -162,6 +238,7 @@ class Source(typing.NamedTuple):
         labels: typing.Optional['project.Source.Labels'] = None,
         apply: typing.Optional['dsl.Source'] = None,
         ordinal: typing.Optional['dsl.Operable'] = None,
+        once: typing.Optional[str] = None,
     ) -> 'project.Source':
         """Factory method for creating a new Source descriptor instance with the given *extraction*
         parameters.
@@ -178,11 +255,20 @@ class Source(typing.NamedTuple):
             ordinal: Optional specification of an *ordinal* column defining the relative ordering of
                      the data records. If provided, the workflow can be launched with optional
                      ``lower`` and/or ``upper`` parameters specifying the requested data range.
+            once: The ordinal delivery semantic for *incremental querying*.
+                  Possible values:
+
+                  * ``atleast``: Include both the lower and the upper ordinal bounds (leads to
+                                 duplicate processing).
+                  * ``atmost``: Leave out the lower bound and include the upper one (leads to data
+                                loss in case of continuous ordinals - safe for discrete values).
+                  * ``exactly``: Include the lower bound but leave the upper bound out for the next
+                                 batch (excludes processing of the tail records).
 
         Returns:
             Source component instance.
         """
-        return cls(cls.Extract(features, apply or features, labels, ordinal))  # pylint: disable=no-member
+        return cls(cls.Extract(features, apply or features, labels, ordinal, once))  # pylint: disable=no-member
 
     def __rshift__(self, transform: 'flow.Composable') -> 'project.Source':
         return self.__class__(self.extract, self.transform >> transform if self.transform else transform)

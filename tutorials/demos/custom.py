@@ -31,32 +31,36 @@ with wrap.importer():
 
 
 @wrap.Actor.train
-def ImputeAge(
+def ImputeNumeric(
     state: typing.Optional[dict[str, typing.Any]],
     X: pd.DataFrame,
     y: pd.Series,
+    column: str,
     random_state: typing.Optional[int] = None,
 ) -> dict[str, typing.Any]:
-    """Train part of a stateful transformer for missing age imputation."""
-    return {'age_mean': X['Age'].mean(), 'age_std': X['Age'].std()}
+    """Train part of a stateful transformer for missing numeric column values imputation."""
+    return {'mean': X[column].mean(), 'std': X[column].std()}
 
 
 @wrap.Operator.mapper
-@ImputeAge.apply
-def ImputeAge(state: dict[str, typing.Any], X: pd.DataFrame, random_state: typing.Optional[int] = None) -> pd.DataFrame:
-    """Apply part of a stateful transformer for missing age imputation."""
-    na_slice = X['Age'].isna()
+@ImputeNumeric.apply
+def ImputeNumeric(
+    state: dict[str, typing.Any], X: pd.DataFrame, column: str, random_state: typing.Optional[int] = None
+) -> pd.DataFrame:
+    """Apply part of a stateful transformer for missing numeric column values imputation."""
+    na_slice = X[column].isna()
     if na_slice.any():
         rand_age = np.random.default_rng(random_state).integers(
-            state['age_mean'] - state['age_std'], state['age_mean'] + state['age_std'], size=na_slice.sum()
+            state['mean'] - state['std'], state['mean'] + state['std'], size=na_slice.sum()
         )
-        X.loc[na_slice, 'Age'] = rand_age
+        X.loc[na_slice, column] = rand_age
     return X
 
 
-PIPELINE = ImputeAge(random_state=42) >> LogisticRegression(max_iter=3, solver='lbfgs')
+PIPELINE = ImputeNumeric(column='Feature', random_state=42) >> LogisticRegression(max_iter=50, solver='lbfgs')
 
 LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    LAUNCHER.apply()
+    LAUNCHER.train(3, 6)  # train on the records with the Ordinal between 3 and 6
+    # print(LAUNCHER.apply(7))  # predict for records with sequence ID 7 and above

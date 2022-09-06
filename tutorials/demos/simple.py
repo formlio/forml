@@ -15,28 +15,20 @@
 # specific language governing permissions and limitations
 # under the License.
 """
-ForML demo 1 - Ensemble.
+ForML demo 1 - Simple.
 """
-# pylint: disable=ungrouped-imports
 import demos
-from sklearn import model_selection
 
-from forml.pipeline import ensemble, wrap
+from forml.pipeline import wrap
 
 with wrap.importer():
-    from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
     from sklearn.impute import SimpleImputer
     from sklearn.linear_model import LogisticRegression
 
-STACK = ensemble.FullStack(
-    RandomForestClassifier(max_depth=3),
-    GradientBoostingClassifier(max_depth=3),
-    crossvalidator=model_selection.StratifiedKFold(n_splits=2),
-)
-
-PIPELINE = SimpleImputer(strategy='mean') >> STACK >> LogisticRegression(max_iter=3, solver='lbfgs')
+PIPELINE = SimpleImputer(strategy='mean') >> LogisticRegression(max_iter=50, solver='lbfgs')
 
 LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    LAUNCHER.apply()
+    LAUNCHER.train(3, 6)  # train on the records with the Ordinal between 3 and 6
+    # print(LAUNCHER.apply(7))  # predict for records with sequence ID 7 and above

@@ -220,6 +220,10 @@ class Segment(tuple):
 
     The ``tail`` node (if provided) must be reachable from the ``head`` node via the existing
     connections.
+
+    Args:
+        head: The first (input) node in this segment.
+        tail: The last (output) node in this segment (auto-traced if not provided).
     """
 
     _head: 'flow.Node' = property(operator.itemgetter(0))
@@ -252,7 +256,11 @@ class Segment(tuple):
         return self._tail[0].publisher
 
     def subscribe(self, publisher: typing.Union['flow.Publishable', 'flow.Segment']) -> None:
-        """Subscribe our head node to the given publisher."""
+        """Subscribe our head node to the given publisher.
+
+        Args:
+            publisher: Another segment or a general publisher to subscribe to.
+        """
         if isinstance(publisher, Segment):
             publisher = publisher.publisher
         self._head[0].subscribe(publisher)

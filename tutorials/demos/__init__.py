@@ -24,19 +24,22 @@ from forml.io import dsl
 from forml.pipeline import payload
 from forml.provider.feed import monolite
 
-#: Demo dataset.
-DATA = [[1, 10], [1, 11], [1, 12], [0, 13], [0, 14], [0, 15]]
-
 
 class Demo(dsl.Schema):
     """Demo dataset schema."""
 
+    Ordinal = dsl.Field(dsl.Integer())
     Label = dsl.Field(dsl.Integer())
-    Age = dsl.Field(dsl.Integer())
+    Feature = dsl.Field(dsl.Integer())
 
+
+#: Demo dataset.
+DATA = [[3, 1, 10], [4, 0, 11], [5, 1, 12], [6, 0, 13], [7, 1, 14], [8, 0, 15]]
 
 #: Demo Feed preloaded with the DATA represented by the Demo schema
 FEED = monolite.Feed(inline={Demo: DATA})
 
 #: Common Source component for all the demo pipelines
-SOURCE = project.Source.query(Demo.select(Demo.Age), Demo.Label) >> payload.ToPandas(columns=['Age'])
+SOURCE = project.Source.query(Demo.select(Demo.Feature), Demo.Label, ordinal=Demo.Ordinal) >> payload.ToPandas(
+    columns=['Feature']
+)

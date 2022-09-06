@@ -25,21 +25,21 @@ from forml.pipeline import ensemble, wrap
 
 with wrap.importer():
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.feature_extraction import FeatureHasher
     from sklearn.impute import SimpleImputer
     from sklearn.linear_model import LogisticRegression
     from sklearn.naive_bayes import BernoulliNB
     from sklearn.preprocessing import Binarizer, OneHotEncoder
 
 
-FH_RFC = FeatureHasher(n_features=128) >> RandomForestClassifier(n_estimators=20, n_jobs=4, max_depth=3)
+FH_RFC = OneHotEncoder(handle_unknown='ignore') >> RandomForestClassifier(n_estimators=20, n_jobs=4, max_depth=3)
 BIN_BAYES = Binarizer(threshold=0.63) >> BernoulliNB(alpha=1.1)
 
 STACK = ensemble.FullStack(FH_RFC, BIN_BAYES, crossvalidator=model_selection.StratifiedKFold(n_splits=2))
 
-PIPELINE = SimpleImputer(strategy='mean') >> OneHotEncoder() >> STACK >> LogisticRegression(max_iter=3, solver='lbfgs')
+PIPELINE = SimpleImputer(strategy='mean') >> STACK >> LogisticRegression(max_iter=50, solver='lbfgs')
 
 LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    LAUNCHER.apply()
+    LAUNCHER.train(3, 6)  # train on the records with the Ordinal between 3 and 6
+    # print(LAUNCHER.apply(7))  # predict for records with sequence ID 7 and above

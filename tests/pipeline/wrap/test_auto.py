@@ -22,6 +22,7 @@ import abc
 import sys
 import typing
 
+import cloudpickle
 import pytest
 from sklearn import base as skbase
 from sklearn import ensemble, preprocessing
@@ -57,6 +58,10 @@ class Wrapper(typing.Generic[_auto.Entity], abc.ABC):
         assert not wrapper.match(mismatch)
         assert wrapper.match(entity)
         assert isinstance(wrapper(entity)(), flow.Operator)
+
+    def test_serializable(self, wrapper: _auto.Auto, entity: _auto.Entity):
+        """Serializability test."""
+        assert cloudpickle.loads(cloudpickle.dumps(wrapper(entity)))
 
 
 class TestAutoSklearnTransformer(Wrapper[type[skbase.TransformerMixin]]):

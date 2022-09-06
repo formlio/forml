@@ -15,19 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 """
-ForML demo 1 - Simple.
+ForML demo 1 - Mini.
 """
 import demos
 
 from forml.pipeline import wrap
 
 with wrap.importer():
-    from sklearn.impute import SimpleImputer
-    from sklearn.linear_model import LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier
 
-PIPELINE = SimpleImputer(strategy='mean') >> LogisticRegression(max_iter=3, solver='lbfgs')
+PIPELINE = RandomForestClassifier(max_depth=3)
 
 LAUNCHER = demos.SOURCE.bind(PIPELINE).launcher('visual', feeds=[demos.FEED])
 
 if __name__ == '__main__':
-    LAUNCHER.apply()
+    LAUNCHER.train(3, 6)  # train on the records with the Ordinal between 3 and 6
+    # print(LAUNCHER.apply(7))  # predict for records with sequence ID 7 and above

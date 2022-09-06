@@ -176,14 +176,17 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
 
     @functools.cached_property
     def launcher(self) -> 'runtime.Virtual':
-        """A runtime launcher configured with a volatile registry preloaded with this artifact.
+        """A runtime launcher configured with a
+        :class:`volatile registry <forml.provider.registry.filesystem.volatile.Registry>` preloaded
+        with this artifact.
 
         This can be used to interactively execute the particular actions of the project development
         lifecycle. The linked volatile registry is persistent only during the lifetime of this
         artifact instance.
 
-        See the :class:`runtime.Virtual <forml.runtime.Virtual>` pseudo runner for more details
-        regarding the launcher API.
+        See Also:
+            See the :class:`runtime.Virtual <forml.runtime.Virtual>` pseudo runner for more details
+            regarding the launcher API.
 
         Returns:
             Virtual launcher instance.

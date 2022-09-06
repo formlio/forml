@@ -147,7 +147,12 @@ class Virtual:
 
             See Also: Full description in the Virtual class docstring.
             """
-            return self._run(_pad.Launcher.apply.fget, lower, upper).result()
+            future = self._run(_pad.Launcher.apply.fget, lower, upper)
+            try:
+                return future.result()
+            except payload.Sniff.Lost as err:
+                LOGGER.warning(err)
+            return None
 
         def train(
             self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
@@ -165,7 +170,12 @@ class Virtual:
 
             See Also: Full description in the Virtual class docstring.
             """
-            return self._run(_pad.Launcher.eval_traintest.fget, lower, upper).result()[0]
+            future = self._run(_pad.Launcher.eval_traintest.fget, lower, upper)
+            try:
+                return future.result()[0]
+            except payload.Sniff.Lost as err:
+                LOGGER.warning(err)
+            return float('nan')
 
         @property
         def tune(self) -> typing.Callable[[typing.Optional['dsl.Native'], typing.Optional['dsl.Native']], None]:

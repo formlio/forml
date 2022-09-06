@@ -379,6 +379,9 @@ class Sniff(flow.Operator):
             """Not really having any state."""
             return None
 
+    class Lost(forml.MissingError):
+        """Custom error indicating absence of the result."""
+
     class Future:
         """Future object to eventually contain the sniffed value."""
 
@@ -394,12 +397,12 @@ class Sniff(flow.Operator):
                 Future result.
 
             Raises:
-                forml.MissingError: If the sniffer didn't capture anything.
+                payload.Sniff.Lost: If the sniffer didn't capture anything.
             """
             if not self._done:
                 raise RuntimeError('Future still pending')
             if self._empty:
-                raise forml.MissingError('Sniffer queue empty')
+                raise Sniff.Lost('Sniffer queue empty')
             return self._value
 
         def set_result(self, value: typing.Any) -> None:

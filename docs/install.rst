@@ -46,7 +46,7 @@ simply add the ``--constraint`` to (any of the mentioned) ``pip install`` comman
 Extra Features
 --------------
 
-ForML has several optional features with their own dependencies which can be pulled in during the
+ForML has several optional features with their own dependencies which can be pulled-in during the
 installation like this:
 
 .. code-block:: console

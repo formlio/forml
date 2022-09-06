@@ -238,8 +238,8 @@ def _unload(name: str, *subs: str) -> None:
 
 @contextlib.contextmanager
 def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
-    """Context manager capturing all direct imports and wrapping their matching entities using the
-    *explicit* or *default* list of *auto-wrappers*.
+    """Context manager capturing all direct imports and :ref:`wrapping <operator-autowrap>` their
+    matching entities using the *explicit* or *default* list of *auto-wrappers*.
 
     Signature of the wrapped object is compatible with the original entity.
 

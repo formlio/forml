@@ -16,33 +16,39 @@
 ForML Documentation
 ===================
 
-ForML is a high-level framework for researching, implementing and operating data science projects.
+ForML is a development framework for researching and implementing data science projects as well
+as an MLOps platform capable of managing their entire lifecycles.
 
-Use ForML to formally describe a data science problem as a composition of high-level operators. ForML expands your
-project into a task dependency graph specific to a given life-cycle phase and executes it using any of its supported
-runners.
+Use ForML to formally describe a data science problem as a composition of high-level operators.
+ForML expands your project into a task dependency graph specific to the given life-cycle phase and
+executes it using any of its supported technologies while taking care of all of its operational
+requirements.
 
-Solutions built on ForML are naturally easy to reuse, extend, reproduce, or share and collaborate on.
+Solutions built on ForML are naturally easy to reuse, extend, reproduce, or share and
+collaborate on.
 
 
 Not Just Another DAG
 --------------------
 
-Despite *DAG* (directed acyclic graph) being at the heart of ForML operations, it stands out amongst the many other task
-dependency processing systems due to:
+Despite *DAG* (directed acyclic graph) being at the heart of ForML operations, it stands out
+amongst the many other task dependency processing systems due to:
 
-1. Its specialization on machine learning problems, that is wired right into the flow topology.
-2. Concept of high-level operator composition which helps to wrap complex ML techniques into simple reusable units.
-3. An abstraction of runtime dependencies allowing to run the same project using different technologies.
+#. Its specialization on machine learning problems, that is wired right into the flow topology.
+#. Concept of high-level operator composition which helps to wrap complex ML techniques into simple
+   reusable units.
+#. An abstraction of runtime dependencies allowing to implement fully portable projects that can
+   be operated interchangeably using different technologies.
 
 
 History
 -------
 
-ForML started as an open-source project in response to ever painful transitions of datascience research into production.
-While there are other projects trying to solve this problem, they are typically either generic data processing systems
-too low-level to provide out-of-the-box ML lifecycle routines or special scientific frameworks that are on the other
-end too high-level to allow for robust operations.
+ForML started as a response addressing the notoriously painful process of transitioning any
+data science research into production. The framework was initially developed by a group of
+data scientists and ML engineers seeking to minimize the effort traditionally required to
+productionize any typical ML solution. Becoming increasingly useful to its original authors,
+ForML has been soon released as a community driven project.
 
 
 Resources
@@ -50,11 +56,7 @@ Resources
 
 * `Documentation <https://docs.forml.io/en/latest/>`_
 * `Source Code <https://github.com/formlio/forml/>`_
-* Mailing lists:
-
-  * Developers: forml-dev@googlegroups.com
-  * Users: forml-users@googlegroups.com
-
+* `Chat Room <https://gitter.im/formlio/community/>`_
 * `Issue Tracker <https://github.com/formlio/forml/issues/>`_
 * `PyPI Repository <https://pypi.org/project/forml/>`_
 

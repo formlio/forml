@@ -19,17 +19,20 @@ Operator wrapper unit tests.
 """
 import typing
 
-from forml import testing
-from forml.pipeline import wrap
+import cloudpickle
+import pytest
+
+from forml import flow, testing
+from forml.pipeline.wrap import _actor, _operator
 
 
-@wrap.Actor.apply
+@_actor.Actor.apply
 def stateless(features: str) -> str:
     """Stateless actor."""
     return features.upper()
 
 
-@wrap.Actor.train
+@_actor.Actor.train
 def stateful(state: typing.Optional[str], features: str, labels: str, arg='') -> str:  # pylint: disable=unused-argument
     """Stateful actor train mode."""
     return features.upper() + labels + arg
@@ -41,7 +44,34 @@ def stateful(state: str, features: str, arg='') -> str:
     return state + features.upper() + arg
 
 
-class TestOperator(testing.operator(wrap.Operator)):
+class TestDecorator:
+    """Decorator tests."""
+
+    @staticmethod
+    @pytest.fixture(
+        scope='session',
+        params=[
+            _operator.Decorator.Builder.apply,
+            _operator.Decorator.Builder.train,
+            _operator.Decorator.Builder.label,
+        ],
+    )
+    def decorator(request) -> _operator.Decorator:
+        """Decorator fixture."""
+        return _operator.Decorator(request.param)
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def builder(decorator: _operator.Decorator, actor_type: type[flow.Actor]) -> _operator.Decorator.Builder:
+        """Decorator builder fixture."""
+        return decorator(actor_type)
+
+    def test_serializable(self, builder: _operator.Decorator.Builder):
+        """Serializability test."""
+        assert cloudpickle.loads(cloudpickle.dumps(builder))
+
+
+class TestOperator(testing.operator(_operator.Operator)):
     """Operator unit tests."""
 
     # label
@@ -93,14 +123,14 @@ class TestOperator(testing.operator(wrap.Operator)):
     def test_noparams(self):
         """Test adapter setup using non-parametrized decorators."""
 
-        @wrap.Operator.train
-        @wrap.Actor.apply
+        @_operator.Operator.train
+        @_actor.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @wrap.Actor.apply
+        @_actor.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -112,14 +142,14 @@ class TestOperator(testing.operator(wrap.Operator)):
     def test_params(self):
         """Test adapter setup using parametrized decorators."""
 
-        @wrap.Operator.train(foo='foo', bar='foo')
-        @wrap.Actor.apply
+        @_operator.Operator.train(foo='foo', bar='foo')
+        @_actor.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'foo', kw
 
         @func.label
-        @wrap.Actor.apply
+        @_actor.Actor.apply
         def func(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -130,10 +160,10 @@ class TestOperator(testing.operator(wrap.Operator)):
     def test_multi(self):
         """Test adapter setup using multiple decorators."""
 
-        @wrap.Operator.train(foo='foo')
-        @wrap.Operator.apply(bar='foo')
-        @wrap.Operator.label
-        @wrap.Actor.apply
+        @_operator.Operator.train(foo='foo')
+        @_operator.Operator.apply(bar='foo')
+        @_operator.Operator.label
+        @_actor.Actor.apply
         def funcfoo(_, **kw):
             """Dummy actor."""
             return 'foo', kw
@@ -143,7 +173,7 @@ class TestOperator(testing.operator(wrap.Operator)):
         assert funcfoo._label.builder()().apply(None) == ('foo', {})
 
         @funcfoo.apply(bar='bar')
-        @wrap.Actor.apply
+        @_actor.Actor.apply
         def funcbar(_, **kw):
             """Dummy actor."""
             return 'bar', kw
@@ -155,10 +185,10 @@ class TestOperator(testing.operator(wrap.Operator)):
     def test_setup(self):
         """Test the operator instantiation."""
 
-        @wrap.Operator.train(foo='foo', bar='bar')
-        @wrap.Operator.apply(foo='foo', bar='bar')
-        @wrap.Operator.label(foo='foo', bar='bar')
-        @wrap.Actor.apply
+        @_operator.Operator.train(foo='foo', bar='bar')
+        @_operator.Operator.apply(foo='foo', bar='bar')
+        @_operator.Operator.label(foo='foo', bar='bar')
+        @_actor.Actor.apply
         def func(**kwargs):
             """Dummy actor."""
             return 'foo', kwargs

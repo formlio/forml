@@ -86,15 +86,19 @@ class Decorator:
                     return None
                 return self._actor.builder(*args, **self._params | kwargs)
 
-        train = property(lambda self: self.Decorator(self, self._train))
         apply = property(lambda self: self.Decorator(self, self._apply))
+        train = property(lambda self: self.Decorator(self, self._train))
         label = property(lambda self: self.Decorator(self, self._label))
 
         def __init__(self, actor: type['flow.Actor']):
             super().__init__(actor)
-            self._train: Decorator.Builder.Setter = self.Setter(actor)
             self._apply: Decorator.Builder.Setter = self.Setter(actor)
+            self._train: Decorator.Builder.Setter = self.Setter(actor)
             self._label: Decorator.Builder.Setter = self.Setter(actor)
+            self._actor = actor
+
+        def __reduce__(self):
+            return self.__class__, (self._actor,)
 
         def __call__(self, *args, **kwargs) -> 'wrap.Operator':
             return Operator(
@@ -318,8 +322,8 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             f'[apply={repr(self._apply)}, train={repr(self._train)}, label={repr(self._label)}]'
         )
 
-    train = staticmethod(Decorator(Decorator.Builder.train))  # documented in class docstring
     apply = staticmethod(Decorator(Decorator.Builder.apply))  # documented in class docstring
+    train = staticmethod(Decorator(Decorator.Builder.train))  # documented in class docstring
     label = staticmethod(Decorator(Decorator.Builder.label))  # documented in class docstring
 
     @classmethod

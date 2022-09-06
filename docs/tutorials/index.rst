@@ -62,5 +62,5 @@ The list of the available tutorials is:
 .. toctree::
     :hidden:
 
-    demos
     titanic/index
+    demos

@@ -78,6 +78,8 @@ class TestSource:
             project.Source.query(student_table, student_table.score)
         with pytest.raises(forml.InvalidError, match='Train-apply schema mismatch'):
             project.Source.query(student_table, apply=school_table)
+        with pytest.raises(forml.InvalidError, match='Once without an Ordinal'):
+            project.Source.query(student_table.select(student_table.school), student_table.score, once='exactly')
 
     def test_query(self, source_query: dsl.Query, labels: typing.Optional[project.Source.Labels]):
         """Test the query setup."""

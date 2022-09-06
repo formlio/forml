@@ -18,15 +18,31 @@
 """
 Wrapped actor unit tests.
 """
+import abc
 import typing
 
+import cloudpickle
 import pytest
 
 from forml import flow
 from forml.pipeline import wrap
 
 
-class TestClass:
+class Type(abc.ABC):
+    """Common actor type tests."""
+
+    @staticmethod
+    @abc.abstractmethod
+    @pytest.fixture(scope='session')
+    def actor() -> type[flow.Actor[str, str, typing.Optional[str]]]:
+        """Actor fixture."""
+
+    def test_serializable(self, actor: type[flow.Actor]):
+        """Serializability test."""
+        assert cloudpickle.loads(cloudpickle.dumps(actor))
+
+
+class TestClass(Type):
     """Wrapped class unit tests."""
 
     @staticmethod
@@ -87,7 +103,7 @@ class TestClass:
         assert actor.apply('blah') == 'N/A'
 
 
-class TestStateless:
+class TestStateless(Type):
     """Wrapped stateless function unit tests."""
 
     @staticmethod
@@ -119,7 +135,7 @@ class TestStateless:
         assert actor(old='baz', new='foo').apply('baz bar') == 'foo bar'
 
 
-class TestStateful:
+class TestStateful(Type):
     """Wrapped stateful function unit tests."""
 
     @staticmethod

@@ -259,8 +259,8 @@ the task graph:
    :members: publisher, subscribe, extend, copy
 
 .. caution::
-    Note the ``.head`` node must have *single input port* and the ``.tail`` node must have
-    *single output port*.
+    Note the ``.head`` node must have *exactly one input port* and the ``.tail`` node must have
+    *exactly one output port*.
 
 .. _topology-coherence:
 .. rubric:: Segment Coherence

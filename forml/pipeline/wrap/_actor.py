@@ -67,6 +67,9 @@ class Mapping(Alike[_proxy.Origin]):
         super().__init__(origin)
         self._mapping: typing.Mapping[str, Mapping.Target] = dict(mapping)
 
+    def __reduce__(self):
+        return self.__class__, (self._origin, self._mapping)
+
     def __hash__(self):
         return super().__hash__() ^ hash(tuple(sorted(self._mapping.items())))
 
@@ -121,14 +124,8 @@ class Class(Mapping[type], Type[type]):
             def __call__(self, *args, **kwargs):
                 return self._decorator(self._instance, *args, **kwargs)
 
-        def __new__(
-            cls, actor: object, mapping: typing.Mapping[str, Mapping.Target]
-        ):  # pylint: disable=unused-argument
-            cls.__abstractmethods__ = frozenset()
-            return super().__new__(cls)
-
-        def __getnewargs__(self):
-            return self._origin, self._mapping
+        def apply(self, *features: 'flow.Features') -> 'flow.Result':
+            return self._mapping['apply'](*features)
 
         def __getattribute__(self, item):
             if not item.startswith('_'):

@@ -28,6 +28,7 @@ from forml.io import dsl as dslmod
 from forml.io import layout as laymod
 
 if typing.TYPE_CHECKING:
+    from forml import project
     from forml.io import dsl, layout  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ LOGGER = logging.getLogger(__name__)
 class Statement(typing.NamedTuple):
     """Select statement defined as a query and definition of the ordinal expression."""
 
-    prepared: 'Prepared'
+    prepared: 'dsl.Statement.Prepared'
     lower: typing.Optional['dsl.Native']
     upper: typing.Optional['dsl.Native']
 
@@ -44,18 +45,16 @@ class Statement(typing.NamedTuple):
         """Statement bound with particular lower/upper parameters."""
 
         statement: 'dsl.Statement'
-        ordinal: typing.Optional['dsl.Operable']
+        ordinal: typing.Optional['project.Source.Extract.Ordinal']
 
         def __call__(
             self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
         ) -> 'dsl.Statement':
             statement = self.statement
-            if self.ordinal is not None:
-                statement = statement.query
-                if lower:
-                    statement = statement.where(self.ordinal >= lower)
-                if upper:
-                    statement = statement.where(self.ordinal < upper)
+            if self.ordinal:
+                where = self.ordinal.where(lower, upper)
+                if where is not None:
+                    statement = statement.query.where(where)
             elif lower or upper:
                 raise forml.UnexpectedError('Bounds provided but source not ordinal')
             return statement
@@ -64,7 +63,7 @@ class Statement(typing.NamedTuple):
     def prepare(
         cls,
         statement: 'dsl.Statement',
-        ordinal: typing.Optional['dsl.Operable'],
+        ordinal: typing.Optional['project.Source.Extract.Ordinal'],
         lower: typing.Optional['dsl.Native'] = None,
         upper: typing.Optional['dsl.Native'] = None,
     ) -> 'Statement':
