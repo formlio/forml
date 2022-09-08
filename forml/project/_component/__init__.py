@@ -256,14 +256,14 @@ class Source(typing.NamedTuple):
                      the data records. If provided, the workflow can be launched with optional
                      ``lower`` and/or ``upper`` parameters specifying the requested data range.
             once: The ordinal delivery semantic for *incremental querying*.
-                  Possible values:
+                  Possible values are:
 
                   * ``atleast``: Include both the lower and the upper ordinal bounds (leads to
-                                 duplicate processing).
+                    duplicate processing).
                   * ``atmost``: Leave out the lower bound and include the upper one (leads to data
-                                loss in case of continuous ordinals - safe for discrete values).
+                    loss in case of continuous ordinals - safe for discrete values).
                   * ``exactly``: Include the lower bound but leave the upper bound out for the next
-                                 batch (excludes processing of the tail records).
+                    batch (excludes processing of the tail records).
 
         Returns:
             Source component instance.

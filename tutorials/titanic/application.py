@@ -30,4 +30,4 @@ the following features:
 
 from forml import application
 
-application.setup(application.Generic('forml-example-titanic'))
+application.setup(application.Generic('forml-tutorial-titanic'))

@@ -18,7 +18,7 @@
 """
 ForML top level.
 """
-__version__ = '0.5.dev1'
+__version__ = '0.8'
 __author__ = 'ForML Authors'
 
 from ._exception import AnyError, FailedError, InvalidError, MissingError, UnexpectedError

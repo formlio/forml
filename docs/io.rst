@@ -53,11 +53,11 @@ Schema Catalogs
 ---------------
 
 To achieve the data access abstraction, ForML integrates the concept of *schema catalogs*.
-Instead of implementing direct operations on specific data-source instances, projects use the
+Instead of implementing direct operations on specific data source instances, projects use the
 :ref:`DSL expression <dsl>` to define the input data ETL referring only to abstract data
 :ref:`schemas <schema>`. It is then the responsibility of the platform :ref:`feeds <feed>` to
 resolve the requested schemas (and the whole ETL queries specified on top) mapping them to the
-actual data-sources hosted in the particular runtime environment.
+actual data sources hosted in the particular runtime environment.
 
 A *schema catalog* is a logical collection of :ref:`schemas <schema>` which both -
 :ref:`projects <project>` and :ref:`platforms <platform>` - can use as a mutual data reference. It
@@ -120,16 +120,16 @@ catalogs* and *platform feeds* - establishing the mechanism of the decoupled dat
 It tells the following story:
 
 #. A *project* defines its data requirements using a :ref:`source query <io-source>` specified in
-   its :ref:`source.py component <project-source>` referring to particular data-source
+   its :ref:`source.py component <project-source>` referring to particular data source
    :ref:`schema(s) <schema>` from within certain *catalogs* - here *Schema 1* from *Catalog 1*
    and *Schema 2* from *Catalog 2*.
 #. This platform happens to be configured with three different :ref:`feed providers <feed>` capable
-   of supplying (using its physical storage layer) four data-sources represented by the given
+   of supplying (using its physical storage layer) four data sources represented by the given
    *schema catalog* so that:
 
-   * the *DB Feed* can serve data-sources represented by *Schema 3* and *Schema 4* physically stored
+   * the *DB Feed* can serve data sources represented by *Schema 3* and *Schema 4* physically stored
      in the *Database*
-   * the *FS Feed* can also provide the data-source matching the *Schema 4* duplicating its
+   * the *FS Feed* can also provide the data source matching the *Schema 4* duplicating its
      physical copy stored on the *Filesystem*
    * finally the *Other Feed* knows how to supply data for schema *Schema 1* and *Schema 2*
 

@@ -59,7 +59,7 @@ system-dependant mechanism (i.e. using the OS package manager).
 +----------+---------------------------------------+----------------------------------------------------------------+
 | Feature  | Install Command                       | Description                                                    |
 +==========+=======================================+================================================================+
-| all      | ``pip install 'forml[all]'``          | All extra features                                             |
+| all      | ``pip install 'forml[all]'``          | All providers (all extras without ``dev`` and ``docs``).       |
 +----------+---------------------------------------+----------------------------------------------------------------+
 | dask     | ``pip install 'forml[dask]'``         | The :class:`Dask runner <forml.provider.runner.dask.Runner>`   |
 +----------+---------------------------------------+----------------------------------------------------------------+

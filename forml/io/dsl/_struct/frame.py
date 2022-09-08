@@ -106,7 +106,9 @@ class Source(tuple, metaclass=abc.ABCMeta):
             return functools.reduce(operator.xor, (hash(f) for f in cls), 0)
 
         def __eq__(cls, other: 'dsl.Source.Schema'):
-            return len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
+            return (
+                isinstance(other, cls.__class__) and len(cls) == len(other) and all(c == o for c, o in zip(cls, other))
+            )
 
         def __len__(cls):
             return sum(1 for _ in cls)  # pylint: disable=not-an-iterable

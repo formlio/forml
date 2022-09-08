@@ -243,6 +243,7 @@ class TestSchema:
     def test_identity(self, schema: dsl.Source.Schema, student_table: dsl.Table):
         """Schema identity tests."""
         other = student_table.query.schema
+        assert schema != None  # pylint: disable=singleton-comparison; # noqa: E711
         assert schema is not other
         assert len({schema, other}) == 1
 

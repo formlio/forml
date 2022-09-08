@@ -19,14 +19,14 @@ Query Statement
 ===============
 
 The query DSL is a robust API for describing the ETL process of deriving datasets specified by
-ForML :ref:`projects <project>` from origin data-sources represented by their logical :ref:`schemas
+ForML :ref:`projects <project>` from origin data sources represented by their logical :ref:`schemas
 <schema>`.
 
 While constructing the DSL query statements, the API internally builds up a generic model of the
 required ETL process. The query has purely descriptive character, there is no native
 mechanism of its direct execution. Instead, it is expected to be :ref:`parsed <query-parser>`
 at runtime into a set of instructions corresponding to the selected :ref:`feed <feed>` and its
-target storage layer hosting the physical data-sources :ref:`matching <io-resolving>` the requested
+target storage layer hosting the physical data sources :ref:`matching <io-resolving>` the requested
 schemas.
 
 Following is the list of the individual chapters covering this topic in detail:

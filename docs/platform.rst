@@ -165,7 +165,7 @@ command-line interface - see the integrated help for more details:
     $ forml --help
     Usage: forml [OPTIONS] COMMAND [ARGS]...
 
-      Lifecycle Management for Datascience Projects.
+      Lifecycle Management for Data Science Projects.
 
     Options:
       -C, --config FILE               Additional config file.

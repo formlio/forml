@@ -73,7 +73,7 @@ Resources
     :caption: Getting Started
 
     install
-    concept
+    principles
     tutorials/index
     faq
 

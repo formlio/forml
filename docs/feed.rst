@@ -30,7 +30,7 @@ The Feed concept is based on two main principles:
 #. A DSL-interpreting :class:`Reader <forml.io.Feed.Reader>` acting as an adapter between the
    storage layer and the pipeline.
 #. A :ref:`content resolver <io-resolving>` using an explicit mapping of the published
-   :ref:`schema catalogs <io-catalog>` to the hosted data-sources effectively matching the logical
+   :ref:`schema catalogs <io-catalog>` to the hosted data sources effectively matching the logical
    schemas with actual data.
 
 Content resolving takes places in scope of the :ref:`DSL parsing <query-parser>`
@@ -85,7 +85,7 @@ Custom Feed Setup
 Existing generic Feed implementations can be :ref:`configured <platform-config>` as any other
 :ref:`provider types <provider>`. The strong deployment-specific character of the
 :ref:`content resolver <io-resolving>` setup (explicit mapping of the published :ref:`schemas
-<io-catalog>` and the hosted data-sources) might, however, require to declare *bespoke
+<io-catalog>` and the hosted data sources) might, however, require to declare *bespoke
 Feed providers* using not just parametric configuration but rather directly as a non-generic code.
 
 For more details, see the :ref:`custom provider <provider-custom>` setup instructions.

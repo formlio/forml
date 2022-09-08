@@ -64,6 +64,7 @@ extensions = [
     'sphinx_immaterial',
     'sphinx_copybutton',
     'sphinxcontrib.details.directive',
+    'sphinxcontrib.spelling',
     'nbsphinx',
 ]
 
@@ -95,7 +96,7 @@ nitpicky = True
 _target_blacklist = {
     'py:class': (
         '_Actor',
-        'applications.Starlette',
+        r'applications\.Starlette',
         r'asset\.Generation',
         r'^dsl\.Operable',
         r'^dsl\.Ordering\.(?:Direction|Term)',
@@ -113,7 +114,7 @@ _target_blacklist = {
         r'^project\.Components',
         r'^project\.Source\.(?:Extract|Labels)',
         r'^setup\.Feed',
-        'sqlalchemy.engine.interfaces.Connectable',
+        r'sqlalchemy\.engine\.interfaces\.Connectable',
     ),
     'py:obj': (r'^forml\..*',),
 }
@@ -229,4 +230,4 @@ def setup(app: application.Sphinx):
     """Sphinx setup hook."""
     app.add_autodocumenter(_forml.ClassDocumenter, override=True)
     app.add_autodocumenter(_forml.MethodDocumenter, override=True)
-    app.add_directive('autosummary', _forml.Autosummary)
+    app.add_directive('autosummary', _forml.Autosummary, override=True)

@@ -28,7 +28,7 @@ execution and runtime portability.
 .. caution::
     At its core, the workflow internals explained in the following chapters are built around the
     Graph theory and SW+ML engineering principles, which might feel way too involved from a
-    general data-science perspective. Fortunately, this level of detail is not required for the
+    general data science perspective. Fortunately, this level of detail is not required for the
     usual day-to-day work with the existing high-level ForML :ref:`operators <operator>`.
 
 ForML is providing a convenient API for defining complex workflows using simple notation based on

@@ -82,7 +82,7 @@ class Autosummary(autosummary.Autosummary):
     RE_FUNCTION = re.compile(rf'(?={function.__name__})(?:\w+\.)+_(\w+)$')
 
     @classmethod
-    def __format_name(cls, display_name, sig, summary, real_name):
+    def __format_name(cls, display_name: str, sig: str, summary: str, real_name: str):
         """Custom name formatting."""
         if match := cls.RE_PROVIDER.match(display_name):
             display_name = match.group(1).title()

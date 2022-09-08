@@ -25,7 +25,7 @@ each other <io-resolving>` directly only at runtime using selected :ref:`feed pr
 To become available to both :ref:`projects <project>` and :ref:`platforms <platform>`, schemas
 need to be published in form of :ref:`schema catalogs <io-catalog>`.
 Once declared, schemas can be used to formulate complex :ref:`query statements <query>` -
-most notably as formal descriptions of the :ref:`project data-source <project-source>`
+most notably as formal descriptions of the :ref:`project data source <project-source>`
 requirements.
 
 

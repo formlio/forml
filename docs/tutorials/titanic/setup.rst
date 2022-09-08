@@ -47,7 +47,7 @@ You should see a directory structure like this:
 Source Definition
 -----------------
 
-Let's edit the :file:`source.py` component supplying the project :ref:`datasource descriptor
+Let's edit the :file:`source.py` component supplying the project :ref:`data source descriptor
 <project-source>` with a :ref:`DSL query <dsl>` against the particular :py:class:`Titanic
 schema from the Openschema catalog <openschema:openschema.kaggle.Titanic>`. Note the essential call
 to the :func:`project.setup() <forml.project.setup>` at the end registering the component within

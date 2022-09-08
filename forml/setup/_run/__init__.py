@@ -73,7 +73,7 @@ def group(
     loglevel: typing.Optional[str],
     logfile: typing.Optional[str],
 ):
-    """Lifecycle Management for Datascience Projects."""
+    """Lifecycle Management for Data Science Projects."""
     if config:
         _conf.CONFIG.read(config)
     if logfile:

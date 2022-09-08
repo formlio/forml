@@ -29,7 +29,7 @@ ForML
 [![License](https://img.shields.io/pypi/l/forml)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![Gitter](https://badges.gitter.im/formlio/community.svg)](https://gitter.im/formlio/community/)
 
-![Python Version](https://img.shields.io/pypi/pyversions/forml)
+![Python Versions](https://img.shields.io/pypi/pyversions/forml)
 [![PyPI Version](https://img.shields.io/pypi/v/forml)](https://pypi.org/project/forml/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/forml)](https://pypi.org/project/forml/)
 

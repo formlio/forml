@@ -46,7 +46,7 @@ Let's start with a common code shared among the individual demos:
 
 .. note::
     Only the last step (the :class:`Source descriptor <forml.project.Source>` declaration) would
-    normally be part of any :ref:`project implementation <project-source>`. All the data
+    normally be part of a :ref:`project implementation <project-source>`. All the data
     provisioning (the :ref:`feed setup <feed>`) would be delivered independently via the configured
     :ref:`platform <platform>`.
 
@@ -71,7 +71,7 @@ descriptor <forml.project.Source>` (declared previously in the :ref:`common sect
 directly exposes a :meth:`launcher instance <forml.project.Artifact.launcher>`. We select the
 :class:`Graphviz runner <forml.provider.runner.graphviz.Runner>` (called ``visual`` in our
 :ref:`setup <tutorial-setup>`) and explicitly provide our shared Demo :ref:`feed <feed>` (since
-it is not available within the :ref:`platform <platform>` scope).
+that is not a :ref:`platform-wide <platform>` configured feed).
 
 Bellow you can see the different task graphs produced for each of the *train* versus *apply*
 :ref:`modes <workflow-mode>` (note the *ordinal* lower/upper bounds specified when executing each

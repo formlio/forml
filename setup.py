@@ -46,6 +46,7 @@ EXTRAS_DOCS = {
     'sphinx-immaterial',
     'sphinxcontrib-details-directive',
     'sphinxcontrib-napoleon',
+    'sphinxcontrib-spelling',
     'nbsphinx',  # also needs pandoc binary
 }
 
@@ -57,7 +58,8 @@ EXTRAS_REST = {'starlette', 'uvicorn'}
 
 EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
-EXTRAS_ALL = EXTRAS_DASK | EXTRAS_DEV | EXTRAS_DOCS | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_REST | EXTRAS_SQL
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_REST | EXTRAS_SQL
+
 
 setuptools.setup(
     name='forml',
@@ -81,6 +83,7 @@ setuptools.setup(
         'pip',
         'scikit-learn',
         'setuptools',
+        'toml',
         'tomli',
     ],
     extras_require={

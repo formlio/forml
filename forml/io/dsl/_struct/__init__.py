@@ -34,18 +34,21 @@ class Field(typing.NamedTuple):
 
     When defined as class attributes on a particular :class:`dsl.Schema <forml.io.dsl.Schema>`
     object, these instances represent the individual fields of the logical data-source.
+
+    Args:
+        kind: Mandatory field data type.
+
+              The value must be one of the :class:`dsl.Any <forml.io.dsl.Any>` data type instances.
+        name: Explicit field name.
     """
 
     kind: 'dsl.Any'
-    """Mandatory field data type.
-
-    The value must be one of the :class:`dsl.Any <forml.io.dsl.Any>` data type instances.
-    """
+    """Field data type."""
     name: typing.Optional[str] = None
     """Optional explicit field name.
 
-     By default, the field name is derived from the class attribute name.
-     """
+    Implicitly defaults to the name of the schema class attribute holding this field.
+    """
 
     def renamed(self, name: typing.Optional[str]) -> 'dsl.Field':
         """Return copy of the field with the new name.

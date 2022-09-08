@@ -42,7 +42,7 @@ def logging(*path: pathlib.Path, **defaults: typing.Any):
         )
         if not (p in tried or tried.add(p))
     )
-    config.fileConfig(parser, disable_existing_loggers=True)
+    config.fileConfig(parser, disable_existing_loggers=False)
     logmod.captureWarnings(capture=True)
     LOGGER.debug('Logging configs: %s', ', '.join(used) or 'none')
     LOGGER.debug('Application configs: %s', ', '.join(str(s) for s in _conf.CONFIG.sources) or 'none')

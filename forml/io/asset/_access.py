@@ -71,9 +71,10 @@ class State:
         Returns:
             Offset of the given node.
         """
-        if gid not in self._nodes:
-            raise forml.UnexpectedError(f'Unknown node ({gid})')
-        return self._nodes.index(gid)
+        try:
+            return self._nodes.index(gid)
+        except ValueError as err:
+            raise forml.UnexpectedError(f'Unknown node ({gid})') from err
 
     def load(self, gid: uuid.UUID) -> bytes:
         """Load the state based on its state ID, ordering index or node group id.

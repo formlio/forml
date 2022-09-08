@@ -41,10 +41,10 @@ by the :ref:`serving engine <serving>`.
 
 As shown in the diagram below, relationships between projects and applications can have any
 possible cardinality. Projects might not be associated with any application (not exposed for
-serving - e.g. *Project B*), on the other hand an application can possibly span multiple projects
-(its :ref:`model selection strategy <application-select>` can involve multiple projects - e.g.
-*Application Y*) or a single project might be utilized by several different applications (e.g.
-*Project A*).
+serving - e.g. *Project B*), on the other hand an application can possibly span multiple
+(compatible) projects (its :ref:`model selection strategy <application-select>` can involve
+multiple projects - e.g. *Application Y*) or a single project might be utilized by several
+different applications (e.g. *Project A*).
 
 .. md-mermaid::
 

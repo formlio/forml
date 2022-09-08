@@ -120,11 +120,8 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
             if node.derived and node.gid not in self._gids:
                 self._gids.append(node.gid)
 
-    def __new__(cls, *segments: Trunk):
-        segments = iter(segments)
-        composed = next(segments)
-        for other in segments:
-            composed = composed.extend(*other)
+    def __new__(cls, *segments: 'flow.Trunk'):
+        composed = functools.reduce(lambda c, s: c.extend(*s), segments)
 
         apply = composed.apply.extend()
         # apply.accept(clean.Validator())
@@ -136,11 +133,12 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
 
     @functools.cached_property
     def persistent(self) -> typing.Sequence[uuid.UUID]:
-        """Get the set of nodes with state that needs to be carried over between the apply/train modes.
+        """Get the set of nodes with state that needs to be carried over between the apply/train
+        modes.
 
-        The states used within the apply segment are expected to be subset of the states used in the train segment
-        (since not all the stateful workers engaged during training are necessarily used during apply and hence don't
-        need persisting so we can ignore them).
+        The states used within the apply segment are expected to be subset of the states used in
+        the train segment (since not all the stateful workers engaged during training are
+        necessarily used during apply and hence don't need persisting so we can ignore them).
 
         Returns:
             Set of nodes sharing state between pipeline modes.
