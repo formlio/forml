@@ -23,7 +23,6 @@ import abc
 import pickle
 import typing
 
-import cloudpickle
 import pytest
 
 from forml.io import dsl
@@ -46,8 +45,10 @@ class Source(metaclass=abc.ABCMeta):
 
     def test_serilizable(self, source: frame.Source):
         """Test source serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(source)) == source
         assert pickle.loads(pickle.dumps(source.schema)) == source.schema
+        source_unpickled = pickle.loads(pickle.dumps(source))
+        assert source_unpickled == source
+        assert hash(source_unpickled) == hash(source)
 
     def test_features(self, source: frame.Source, student_table: frame.Table):
         """Test the reported feature."""

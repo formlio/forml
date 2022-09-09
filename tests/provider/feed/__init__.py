@@ -20,8 +20,8 @@ Common feed implementations tests.
 """
 
 import abc
+import pickle
 
-import cloudpickle
 import numpy
 import pytest
 
@@ -76,4 +76,4 @@ class Feed(abc.ABC):
 
     def test_serializable(self, feed: io.Feed):
         """Test feed serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(feed)).__class__ == feed.__class__
+        assert pickle.loads(pickle.dumps(feed)).__class__ == feed.__class__

@@ -21,9 +21,9 @@ ETL unit tests.
 import abc
 import datetime
 import decimal
+import pickle
 import typing
 
-import cloudpickle
 import pytest
 
 from forml.io import dsl
@@ -84,7 +84,7 @@ class Feature(metaclass=abc.ABCMeta):
 
     def test_serilizable(self, feature: series.Feature):
         """Test source serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(feature)) == feature
+        assert pickle.loads(pickle.dumps(feature)) == feature
 
     def test_kind(self, feature: series.Feature):
         """Test the feature kind."""

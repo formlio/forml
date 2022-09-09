@@ -109,5 +109,5 @@ The available implementations are:
 .. rubric:: External Providers
 
 +----------------------------------+-------------------------------------------------------------+
-| :class:`openlake:openlake.Local` | ForML feed providing access to a number of public datasets. |
+| :class:`openlake:openlake.Lite` | ForML feed providing access to a number of public datasets.  |
 +----------------------------------+-------------------------------------------------------------+

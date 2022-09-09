@@ -738,6 +738,17 @@ class Table(Origin):
         <forml.io.dsl.Schema>` which is using this type as a meta-class.
     """
 
+    class Meta(abc.ABCMeta):
+        """Metaclass for dynamic parent classes."""
+
+    copyreg.pickle(
+        Meta,
+        lambda c: (
+            Table.Meta,
+            (c.__name__, c.__bases__, {}),
+        ),
+    )
+
     @typing.overload
     def __new__(  # pylint: disable=bad-classmethod-argument
         mcs,
@@ -766,10 +777,10 @@ class Table(Origin):
             if bases:
                 bases = tuple(b.schema for b in bases if isinstance(b, Table))
                 # strip the parent base class and namespace
-                mcs = type(schema, mcs.__bases__, {})  # pylint: disable=self-cls-assignment
+                mcs = mcs.Meta(schema, mcs.__bases__, {})  # pylint: disable=self-cls-assignment
             elif not any(isinstance(a, _struct.Field) for a in namespace.values()):
                 # used as a base class definition - let's propagate the namespace
-                mcs = type(schema, (mcs,), namespace)  # pylint: disable=self-cls-assignment
+                mcs = mcs.Meta(schema, (mcs,), namespace)  # pylint: disable=self-cls-assignment
             schema = mcs.Schema(schema, bases, namespace)
         elif bases or namespace:
             raise TypeError('Unexpected use of schema table')

@@ -18,9 +18,9 @@
 """
 Struct tests.
 """
+import pickle
 import typing
 
-import cloudpickle
 import numpy
 import pytest
 
@@ -41,8 +41,8 @@ class TestSchema:
 
     def test_serilizable(self, student_table: dsl.Table):
         """Test schema serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(student_table.schema)) == student_table.schema
-        assert cloudpickle.loads(cloudpickle.dumps(student_table)) == student_table
+        assert pickle.loads(pickle.dumps(student_table.schema)) == student_table.schema
+        assert pickle.loads(pickle.dumps(student_table)) == student_table
 
     def test_from_fields(self, student_table: dsl.Table):
         """Test the programmatic schema assembly from fields."""

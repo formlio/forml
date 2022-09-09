@@ -37,7 +37,7 @@ path = "/tmp/forml-tutorial/registry"
 default = ["openlake"]
 
 [FEED.openlake]
-provider = "openlake:Local"
+provider = "openlake:Lite"
 
 [SINK]
 default = "print"

@@ -46,7 +46,7 @@ platform.
 
 Following is an example of a custom :ref:`Feed <feed>` setup (even though this one could well be
 solved using the existing generic :class:`Alchemy Feed <forml.provider.feed.alchemy.Feed>` or -
-given the particular dataset - even more easily using the :class:`openlake:openlake.Local` feed):
+given the particular dataset - even more easily using the :class:`openlake:openlake.Lite` feed):
 
 .. code-block:: python
    :caption: ~/.forml/foobar.py
@@ -132,7 +132,7 @@ platform-configured :ref:`set of feeds <feed>` implementing the :class:`forml.io
 .. rubric:: External Providers
 
 +----------------------------------+-------------------------------------------------------------+
-| :class:`openlake:openlake.Local` | ForML feed providing access to a number of public datasets. |
+| :class:`openlake:openlake.Lite` | ForML feed providing access to a number of public datasets.  |
 +----------------------------------+-------------------------------------------------------------+
 
 
