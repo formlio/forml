@@ -19,7 +19,7 @@ Output Sink
 ===========
 
 Sink is a :ref:`runtime platform <platform>` component responsible for processing the output
-produced upon executing one of the :ref:`lifecycle actions<lifecycle-actions>` of the particular
+produced upon executing one of the :ref:`life cycle actions <lifecycle-actions>` of the particular
 :ref:`project pipeline <project-pipeline>`.
 
 It is a (much simpler) logical counterpart to the :ref:`feed concept <feed>`.

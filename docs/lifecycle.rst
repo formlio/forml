@@ -15,25 +15,25 @@
 
 .. _lifecycle:
 
-Lifecycle Management
-====================
+Life Cycle Management
+=====================
 
 Machine learning projects are handled using a typical set of actions applied in a specific
-order. This pattern is what we call a *lifecycle*. ForML supports two distinct lifecycles
+order. This pattern is what we call a *life cycle*. ForML supports two distinct life cycles
 depending on the project stage.
 
 .. caution::
-   Do not confuse the lifecycles with the :ref:`execution mechanism <platform-execution>`. ForML
+   Do not confuse the life cycles with the :ref:`execution mechanism <platform-execution>`. ForML
    projects can be operated in a number of different ways each of which is still subject to a
-   particular lifecycle.
+   particular life cycle.
 
 
 Iteration Accomplishment
 ------------------------
 
-The ultimate milestone of each of the lifecycles is the point of producing (a new instance of)
+The ultimate milestone of each of the life cycles is the point of producing (a new instance of)
 the particular :ref:`runtime artifacts <registry-artifacts>`. This concludes the given iteration
-and the process can start over and/or transition between the two lifecycles back and forth.
+and the process can start over and/or transition between the two life cycles back and forth.
 
 .. _lifecycle-generation:
 
@@ -56,7 +56,7 @@ Generations get transparently persisted in model registry as the :ref:`model gen
 Release Roll-out
 ^^^^^^^^^^^^^^^^
 
-The milestone of the :ref:`development lifecycle <lifecycle-development>` is the roll-out of a new
+The milestone of the :ref:`development life cycle <lifecycle-development>` is the roll-out of a new
 *release*. It is essentially a new version of the project *code implementation* published for
 deployment.
 
@@ -69,24 +69,24 @@ model registry.
 
 .. _lifecycle-actions:
 
-Lifecycle Actions
------------------
+Life Cycle Actions
+------------------
 
-A simplified logical flow of the individual steps and transitions between the two lifecycles is
+A simplified logical flow of the individual steps and transitions between the two life cycles is
 illustrated by the following diagram:
 
 
 .. md-mermaid::
 
     flowchart TB
-        subgraph production [Production Lifecycle]
+        subgraph production [Production Life Cycle]
             train[Train / Tune] -- Generation Advancement --> apply([Apply / Serve])
             apply --> applyeval(Evaluate)
             applyeval -- Metrics --> renew{Renew?} -- No --> apply
             renew -- Yes --> how{How?} -- Refresh --> train
         end
 
-        subgraph development [Development Lifecycle]
+        subgraph development [Development Life Cycle]
             how -- Reimplement --> implement(Explore / Implement)
             implement --> traineval(Test + Evaluate)
             traineval --> ready{Ready?} -- No --> implement
@@ -96,25 +96,25 @@ illustrated by the following diagram:
 
 .. _lifecycle-development:
 
-Development Lifecycle
-^^^^^^^^^^^^^^^^^^^^^
+Development Life cycle
+^^^^^^^^^^^^^^^^^^^^^^
 
-As the name suggests, this lifecycle is exercised during the project development in scope of the
+As the name suggests, this life cycle is exercised during the project development in scope of the
 :ref:`project source-code <project>` working copy. It is typically managed using the ``forml
 project <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the
 :class:`runtime.Virtual <forml.runtime.Virtual>` launcher when visited in the :ref:`interactive
 mode <interactive>`.
 
-The expected behaviour of the particular action depends on the correct :ref:`project setup
+The expected behavior of the particular action depends on the correct :ref:`project setup
 <project>`.
 
 .. hint::
-   Any :ref:`model generations <lifecycle-generation>` produced within the development lifecycle
+   Any :ref:`model generations <lifecycle-generation>` produced within the development life cycle
    are stored using the :class:`Volatile registry
    <forml.provider.registry.filesystem.volatile.Registry>` which is not persistent across multiple
    python sessions.
 
-The development lifecycle actions are:
+The development life cycle actions are:
 
 Test
 """"
@@ -159,7 +159,7 @@ Release
 
 Build and publish the :ref:`release package <registry-package>` into the configured model
 registry. This effectively constitutes the :ref:`release roll-out <lifecycle-release>` and the
-process can transition from here into the :ref:`production lifecycle <lifecycle-production>`.
+process can transition from here into the :ref:`production life cycle <lifecycle-production>`.
 
 .. warning::
    Each :ref:`model registry <registry>` provider allows uploading only unique monotonically
@@ -175,19 +175,19 @@ Example:
 
 .. _lifecycle-production:
 
-Production Lifecycle
-^^^^^^^^^^^^^^^^^^^^
+Production Life cycle
+^^^^^^^^^^^^^^^^^^^^^
 
 After :ref:`rolling-out <lifecycle-release>` the new :ref:`release package <registry-package>`
-into a registry, it becomes available for the *production lifecycle*. In contrast to the
-development, the production lifecycle no longer needs the project source-code working copy as it
+into a registry, it becomes available for the *production life cycle*. In contrast to the
+development, the production life cycle no longer needs the project source-code working copy as it
 operates solely on that published release package (plus potentially the previously persisted
 :ref:`model generations <registry-assets>`).
 
-The production lifecycle is either managed in batch mode using the :ref:`CLI <platform-cli>` or
+The production life cycle is either managed in batch mode using the :ref:`CLI <platform-cli>` or
 embedded within a :ref:`serving engine <serving>`.
 
-The stages of the production lifecycle are:
+The stages of the production life cycle are:
 
 Train
 """""
@@ -228,9 +228,9 @@ Example:
     $ forml model apply forml-tutorial-titanic
 
 .. seealso::
-   In addition to this commandline based batch mechanism, the :ref:`serving engine <serving>`
+   In addition to this command-line based batch mechanism, the :ref:`serving engine <serving>`
    together with the :ref:`application concept <application>` is another way of performing the
-   apply action of the production lifecycle.
+   apply action of the production life cycle.
 
 Evaluate
 """"""""

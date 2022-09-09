@@ -42,7 +42,7 @@ Entity = typing.TypeVar('Entity')
 
 
 class Client:
-    """Mlflow tracking server wrapper."""
+    """MLflow tracking server wrapper."""
 
     class Pager(typing.Generic[Entity], typing.Iterable[Entity]):
         """Rest API paging iterator."""
@@ -184,7 +184,7 @@ class Registry(asset.Registry, alias='mlflow'):
         registry_uri: Address of local or remote model registry server. Defaults to the
                       ``tracking_uri``.
         repoid: Optional virtual repository ID.
-        staging: Filesystem location reachable from all runner nodes to be used for
+        staging: File system location reachable from all runner nodes to be used for
                  :ref:`package staging <registry-staging>` (defaults to a local temporal
                  directory (invalid for distributed runners)).
 
@@ -201,6 +201,8 @@ class Registry(asset.Registry, alias='mlflow'):
     Important:
         Select the ``mlflow`` :ref:`extras to install <install-extras>` ForML together with the
         MLflow support.
+
+    .. spelling:word-list:: Mlflow
     """
 
     class Root(collections.namedtuple('Root', 'project, repoid')):

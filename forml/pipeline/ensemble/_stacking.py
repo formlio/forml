@@ -118,13 +118,13 @@ class Ensembler(flowmod.Operator):
         splitter: 'type[payload.CVFoldable]' = paymod.PandasCVFolds,
         **kwargs,
     ):
-        """Simplified constructor based on splitter supplied in form of a crossvalidator and
+        """Simplified constructor based on splitter supplied in form of a cross-validator and
         a folding actor type.
 
         Args:
             *bases: Set of primary models to be ensembled.
             crossvalidator: Implementation of the split-selection logic.
-            splitter: Folding actor type that is expected to take ``crossvalidator`` as its
+            splitter: Folding actor type that is expected to take the *cross-validator* as its
                       parameter. Defaults to `payload.PandasCVFolds`.
         """
 
@@ -241,12 +241,12 @@ class FullStack(Ensembler):
     kept for serving.
 
     This operator actually only represents the first layer of the stacked ensembling topology -
-    providing a derived trainset as the stack of cross-validated predictions of the *base models*.
-    This dataset is simply passed down to the next composed operator which should be the actual
-    final stacking model constituting the second ensembling layer.
+    providing a derived training dataset as the stack of cross-validated predictions of the *base
+    models*. This dataset is simply passed down to the next composed operator which should be the
+    actual final stacking model constituting the second ensembling layer.
 
-    The crosvalidation splitter is prepended in front of the entire composition scope which is then
-    expanded separatly for every single fold creating N parallel branches cloned from the original
+    The cross-validation splitter is prepended in front of the entire composition scope which is then
+    expanded separately for every single fold creating N parallel branches cloned from the original
     segment.
 
     Instances of all stateful actors - including clones of the same logical entities within

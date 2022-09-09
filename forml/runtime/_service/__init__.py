@@ -86,9 +86,12 @@ class Gateway(provider.Service, default=setup.Gateway.default, path=setup.Gatewa
     """Top-level serving gateway abstraction.
 
     Args:
-        inventory: Inventory of applications to be served (default as per platform config).
-        registry: Model registry of project artifacts to be served (default as per platform config).
-        feeds: Feeds to be used for potential feature augmentation (default as per platform config).
+        inventory: Inventory of applications to be served
+                   (default as per the platform configuration).
+        registry: Model registry of project artifacts to be served
+                  (default as per the platform configuration).
+        feeds: Feeds to be used for potential feature augmentation
+               (default as per the platform configuration).
         processes: Process pool size for each model sandbox.
         loop: Explicit event loop instance.
         kwargs: Additional serving loop keyword arguments passed to the :meth:`run` method.

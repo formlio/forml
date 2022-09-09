@@ -265,7 +265,7 @@ class Runner(runtime.Runner, alias='pyfunc'):
     Upon initialization, the runner instantiates all actors and preloads their states (if stateful)
     to avoid unnecessary delays when (repeatedly) performing the actual execution.
 
-    This runner is internally used by the :doc:`serving engine<../serving>`. It doesn't support
+    This runner is internally used by the :doc:`serving engine<../serving>`. It does not support
     training/tuning actions. Defining it explicitly using the :ref:`platform configuration
     <platform-config>` for other runtime mechanisms is not usual.
     """

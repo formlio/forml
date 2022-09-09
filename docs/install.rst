@@ -21,7 +21,7 @@ Installation
 Getting ForML
 -------------
 
-To install the pre-packaged version of ForML simply use :doc:`pip <pip:cli/pip_install>`:
+To install the prepackaged version of ForML simply use :doc:`pip <pip:cli/pip_install>`:
 
 .. code-block:: console
 
@@ -54,7 +54,7 @@ installation like this:
     $ pip install 'forml[sql,dask]'
 
 Some of the features might have additional binary dependencies that need to be resolved using a
-system-dependant mechanism (i.e. using the OS package manager).
+system-dependent mechanism (i.e. using the OS package manager).
 
 +----------+---------------------------------------+----------------------------------------------------------------+
 | Feature  | Install Command                       | Description                                                    |

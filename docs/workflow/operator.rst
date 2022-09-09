@@ -24,7 +24,7 @@ based on their composition logic. This is a very powerful concept as it complete
 the internal wiring complexity of the low-level :ref:`task graph assembly <topology>` providing a
 simple interface for the pipeline expressions.
 
-If parametrized (rather than hard-coded) with the particular actor implementations, operators can
+If parameterized (rather than hard-coded) with the particular actor implementations, operators can
 be independent of the actual data types and formats as they deal purely with the topology.
 Therefore, many operators can be shared as library components turning advanced techniques into
 reusable commodity-like modules (see the ensembler).
@@ -236,7 +236,7 @@ Auto-Wrapped Operators
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Another option for defining particular operators is reusing third-party implementations that are
-providing the desired functionality. We've already shown how these entities can be easily
+providing the desired functionality. We have already shown how these entities can be easily
 :ref:`mapped into ForML actors <actor-mapped>`. It can, however, be even easier to transparently
 *auto-wrap* them directly into ForML operators right upon importing. This can be achieved using
 the :func:`wrap.importer <forml.pipeline.wrap.importer>` context manager:

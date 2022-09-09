@@ -55,7 +55,7 @@ class Decorator:
 
                 if actor:  # we are already a decorator
                     return decorator(actor)
-                # we are either parametrized decorator or just a builder setter
+                # we are either parameterized decorator or just a builder setter
                 self._setter(**params)  # in case we are just a setter
                 return decorator
 
@@ -117,7 +117,7 @@ class Decorator:
         **params: typing.Any,
     ) -> 'Decorator.Builder':
         """Actor decorator for creating curried operator that get instantiated upon another
-        (optionally parametrized) call.
+        (optionally parameterized) call.
 
         Args:
             actor: Decorated actor class.
@@ -179,7 +179,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
 
             When used as a decorator, this method creates an *operator* engaging the wrapped *actor*
             in the *train-mode*. If *stateful*, the actor also gets normally trained first. Note it
-            doesn't get applied to the *apply-mode* features unless also decorated with the
+            does not get applied to the *apply-mode* features unless also decorated with the
             :meth:`apply` decorator (this is rarely desired - see the :meth:`mapper` decorator for
             more typical use case)!
 
@@ -208,7 +208,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
 
             When used as a decorator, this method creates an *operator* engaging the wrapped *actor*
             in the *apply-mode*. If *stateful*, the actor also gets normally trained in *train-mode*
-            (but doesn't get applied to the train-mode features unless also decorated with the
+            (but does not get applied to the train-mode features unless also decorated with the
             :meth:`train` decorator!).
 
             Parameters:

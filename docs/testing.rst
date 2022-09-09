@@ -174,7 +174,7 @@ parameter to the assertion. The matcher needs to be a callable with the followin
 ``typing.Callable[[typing.Any, typing.Any], bool]``, where the first argument is *expected* and
 the second is the *actual* value.
 
-This can be useful for example for :class:`pandas:pandas.DataFrame`, which doesn't support simple
+This can be useful for example for :class:`pandas:pandas.DataFrame`, which does not support simple
 boolean equality check. Following example uses a custom matcher for asserting the values returned
 as :class:`pandas:pandas.DataFrame`:
 

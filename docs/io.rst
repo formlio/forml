@@ -27,7 +27,7 @@ actual provider (if available).
 
 .. important::
     Within the ForML architecture, all runtime system dependencies - including the pipeline I/O -
-    are handled by the :ref:`platform <platform>` (using the plugable :ref:`provider concept
+    are handled by the :ref:`platform <platform>` (using the pluggable :ref:`provider concept
     <provider>`) while :ref:`projects <project>` themselves are independent of any runtime
     configuration to truly offer a conceptual solution to the given problem - not just to its
     particular instance within some specific environment.
@@ -147,7 +147,7 @@ An obvious aspect of the schema catalogs is their *decentralization*. Since they
 implemented as python packages, they can be easily distributed using the standard means
 for python package publishing. Currently, there is no naming convention for the schema definition
 namespaces. Ideally, schemas should be published and held in namespaces of the original dataset
-producers. For private first-party datasets (ie. internal company data) this is easy - the owner
+producers. For private first-party datasets (i.e. internal company data) this is easy - the owner
 would just maintain a package with schemas of their data sources. For public datasets, this
 relies on some community-maintained schema catalogs like the :doc:`Openschema catalog
 <openschema:index>`.
@@ -202,7 +202,7 @@ involved core payload types:
 +------------------------+------------------------+------------------------------------------------+
 | :ref:`Actor <actor>`   | :ref:`Actor <actor>`   | No specific format required, choice of         |
 | Payload Output Port    | Payload Input Port     | mutually compatible actors is responsibility   |
-|                        |                        | of the implementor, ForML only facilitates the |
+|                        |                        | of the implementer, ForML only facilitates the |
 |                        |                        | exchange (possibly subject to serializability).|
 +------------------------+------------------------+------------------------------------------------+
 | Project :ref:`Pipeline | Platform :ref:`Sink    | Defined using the :class:`io.layout.RowMajor   |
@@ -290,7 +290,7 @@ ForML also depends on the following *encoding* features for the external payload
    :members: loads
 
 The two encoder/decoder matching functions bellow currently support the following
-encodings/flavours:
+encodings/flavors:
 
 +-------------------------+----------------------------+------------------------------------------+
 | Content-type            | Example                    |        Implementation                    |
@@ -317,10 +317,10 @@ encodings/flavours:
 | ``application/json``    |                            | Decoder attempts to interpret the data   |
 |                         |                            | as:                                      |
 |                         |                            |                                          |
-|                         |                            | #. a list of row dicts                   |
+|                         |                            | #. a list of row dictionaries            |
 |                         |                            | #. TF serving's *instances* format       |
 |                         |                            | #. TF serving's *inputs* format          |
-|                         |                            | #. a dict of column lists                |
+|                         |                            | #. a dictionary of column lists          |
 |                         |                            |                                          |
 |                         |                            | Encoder defaults to the                  |
 |                         |                            | ``pandas-records`` format.               |

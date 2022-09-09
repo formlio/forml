@@ -313,7 +313,7 @@ class Actor:
             Decorator for turning a given plain function into a follow-up apply function decorator.
 
             Stateful actors need to have distinct implementations for their :ref:`train vs apply
-            modes <workflow-mode>`. This wrapping faciality achieves that by decorating two
+            modes <workflow-mode>`. This wrapping facility achieves that by decorating two
             companion functions each implementing the relevant mode.
 
             Args:

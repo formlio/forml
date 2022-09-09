@@ -47,7 +47,7 @@ def open(  # pylint: disable=redefined-builtin
     """Getting a programmatic handle to a local ForML project.
 
     Args:
-        path: Filesystem path to the project source package root.
+        path: File system path to the project source package root.
         package: Project package name.
         modules: Project component module path mappings.
 

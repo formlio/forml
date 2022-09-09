@@ -18,7 +18,7 @@
 Model Persistence
 =================
 
-During their :ref:`lifecycles <lifecycle>`, ForML :ref:`projects <project>` produce specific
+During their :ref:`life cycles <lifecycle>`, ForML :ref:`projects <project>` produce specific
 *artifacts* as their runtime deliverables. To store these artifacts, ForML uses :ref:`model
 registry providers <registry-providers>` as the persistence layer managing the models at rest.
 
@@ -83,7 +83,7 @@ Release Package
 ^^^^^^^^^^^^^^^
 
 The deployable project *code arrangement* produced :ref:`upon releasing <lifecycle-release>` from
-within the :ref:`development lifecycle <lifecycle-development>` is the binary :class:`ForML
+within the :ref:`development life cycle <lifecycle-development>` is the binary :class:`ForML
 package <forml.project.Package>`. It is a :doc:`zipfile object <python:library/zipfile>`
 (typically a file with the ``.4ml`` suffix) containing all the project :ref:`principal components
 <project-principal>` bundled together with all of its *runtime code dependencies* (as declared in
@@ -101,16 +101,16 @@ Package Staging
 
 Registry providers might internally persist packages in arbitrary format. In order to launch their
 code using a :ref:`runner <runner>`, however, they need to be
-:meth:`mounted <forml.io.asset.Registry.mount>` and exposed using a posix filesystem path known as
+:meth:`mounted <forml.io.asset.Registry.mount>` and exposed using a posix file system path known as
 the *staging path* that is reachable from all runner nodes (for distributed deployment this implies
-shared network posix filesystem).
+shared network posix file system).
 
 .. _registry-assets:
 
 Model Generation Assets
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-All :ref:`stateful actors <actor-type>` involved in a :ref:`project lifecycle <lifecycle>`
+All :ref:`stateful actors <actor-type>` involved in a :ref:`project life cycle <lifecycle>`
 require their internal state acquired during :ref:`training <workflow-mode>` to be persisted
 using the model registry. States produced from the same training process represent the *model
 generation assets* and every single follow up training is leading to a new :ref:`generation

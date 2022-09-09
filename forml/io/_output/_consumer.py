@@ -78,5 +78,5 @@ class Writer(typing.Generic[laymod.Native], metaclass=abc.ABCMeta):
 
         Args:
             data: Output data in the media-native format.
-            kwargs: Optional writer keyword args (as given to the constructor).
+            kwargs: Optional writer keyword arguments (as given to the constructor).
         """

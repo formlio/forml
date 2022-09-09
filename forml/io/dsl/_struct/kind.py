@@ -254,7 +254,7 @@ class Map(Compound):
 
 
 class Struct(Compound):
-    """Struct data type class.
+    """Structure data type class.
 
     Args:
         element: Mapping of attribute name strings and their kinds.

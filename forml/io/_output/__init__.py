@@ -63,7 +63,7 @@ class Sink(provider.Service, default=setup.Sink.default, path=setup.Sink.path):
 
         Note:
             For compatibility with the :doc:`serving mode <serving>`, the callable ``Consumer`` is
-            (contraintuitively) expected to provide a return value.
+            (contra-intuitively) expected to provide a return value.
 
         Args:
             schema: Result schema.

@@ -81,11 +81,11 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
         * schemas can be hierarchically extended further down
         * extended fields can override same-name fields from parents
         * field ordering is based on the in-class definition order, fields from parent classes
-          come before fields of child classes; overriding a field doesn't change its position
+          come before fields of child classes; overriding a field does not change its position
 
         .. attention::
             To transparently provide the *query statement* interface on top of the defined schemas,
-            the internal class handler magically turns all children inheritted from ``dsl.Schema``
+            the internal class handler magically turns all children inherited from ``dsl.Schema``
             to *instances* of :class:`dsl.Table <forml.io.dsl.Table>` (which itself has a
             :attr:`.schema <forml.io.dsl.Source.schema>` attribute derived from this class) instead
             of the intuitively expected *subclass* of the ``dsl.Schema`` parent.

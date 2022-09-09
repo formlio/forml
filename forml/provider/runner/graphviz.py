@@ -37,7 +37,7 @@ class Runner(runtime.Runner, alias='graphviz'):
     """(Pseudo)runner using the :doc:`Graphviz drawing software <graphviz:index>` for rendering
     graphical visualization of the workflow task graph.
 
-    The workflow obviously doesn't get really executed!
+    The workflow obviously does not get really executed!
 
     For better readability, the runner is using the following shapes to plot the different objects:
 

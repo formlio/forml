@@ -41,8 +41,8 @@ class Type(typing.Generic[Origin, Instance], metaclass=abc.ABCMeta):
             Constructor-like proxy method of the embedded origin entity.
 
             Args:
-                args: Wrapped entity init positional arguments.
-                kwargs: Wrapped entity init keyword arguments.
+                args: Wrapped entity initial positional arguments.
+                kwargs: Wrapped entity initial keyword arguments.
 
             Returns:
                 Instance of the origin entity.

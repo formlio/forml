@@ -31,7 +31,7 @@ class Tabular:
     """Dataset interface providing both *row* and *column* oriented representation of the underlying
     data.
 
-    This is a minimalistic interface to be used internally for data payload as returned by Feed
+    This is a lightweight interface to be used internally for data payload as returned by the Feed
     ``Reader`` only to be immediately turned to ``RowMajor`` representation once leaving the Feed
     ``Slicer``.
     """

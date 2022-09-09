@@ -18,8 +18,8 @@
 Runtime Platform
 ================
 
-ForML platform is an environment configured to allow performing particular :ref:`lifecycle
-actions <lifecycle>` on a general ForML :ref:`project <project>`. Thanks to the plugable
+ForML platform is an environment configured to allow performing particular :ref:`life cycle
+actions <lifecycle>` on a general ForML :ref:`project <project>`. Thanks to the pluggable
 :ref:`provider architecture <provider>`, a ForML platform can be built up using a number of
 different technologies optimized for specific use-cases while keeping the same interface
 and thus guaranteeing portability of the implemented projects.
@@ -40,20 +40,21 @@ ForML platform uses the `TOML <https://toml.io/>`_ file format for its configura
 will try to locate and merge the :file:`config.toml` file instances in the following directories
 (in order of parsing/merging - later overrides previous):
 
-+-----------------+-------------------------------------------------------------------------------+
-| Location        | Meaning                                                                       |
-+=================+===============================================================================+
-| ``/etc/forml/`` | *System*-wide global configuration directory                                  |
-+-----------------+-------------------------------------------------------------------------------+
-| ``~/.forml/``   | *User* homedir configuration (unless overridden by the ``$FORML_HOME`` )      |
-+-----------------+-------------------------------------------------------------------------------+
-| ``$FORML_HOME`` | Environment variable driven location of the *user* configuration directory    |
-+-----------------+-------------------------------------------------------------------------------+
++-----------------+---------------------------------------------------------------------------------+
+| Location        | Meaning                                                                         |
++=================+=================================================================================+
+| ``/etc/forml/`` | *System*-wide global configuration directory                                    |
++-----------------+---------------------------------------------------------------------------------+
+| ``~/.forml/``   | *User* home directory configuration (unless overridden by the ``$FORML_HOME`` ) |
++-----------------+---------------------------------------------------------------------------------+
+| ``$FORML_HOME`` | Environment variable driven location of the *user* configuration directory      |
++-----------------+---------------------------------------------------------------------------------+
 
 .. note::
-   Both the *system* and the *user* config locations are also appended to the runtime
-   :data:`python:sys.path` so any python modules stored into the config directories are potentially
-   importable. This can be useful for :ref:`custom provider <provider-custom>` implementations.
+   Both the *system* and the *user* configuration locations are also appended to the runtime
+   :data:`python:sys.path` so any python modules stored into the configuration directories are
+   potentially importable. This can be useful for :ref:`custom provider <provider-custom>`
+   implementations.
 
 Following is the default content of the ForML platform configuration file:
 
@@ -96,7 +97,7 @@ The meaning of the different placeholders and keywords is:
     * ``GATEWAY`` - for :ref:`Serving gateway <serving>` providers
 
     Each of the provider type root section nominates one of its instances using the ``default``
-    keyword to pre-select a configuration instance for situations when no explicit choice is
+    keyword to preselect a configuration instance for situations when no explicit choice is
     specified during some particular execution.
 
     .. attention::
@@ -104,9 +105,10 @@ The meaning of the different placeholders and keywords is:
        (contextual :ref:`feed selection <feed-selection>` is then performed at runtime).
 
 ``<instance alias>``:
-    Each of the individual provider config instances is identified using its arbitrary *alias*.
-    This alias can also be used later to explicitly choose some particular config instance when
-    triggering an execution (ie using the ``-R`` :ref:`CLI <platform-cli>` argument).
+    Each of the individual provider configuration instances is identified using its arbitrary
+    *alias*. This alias can also be used later to explicitly choose some particular configuration
+    instance when triggering an execution (i.e. using the ``-R`` :ref:`CLI <platform-cli>`
+    argument).
 
 ``<provider reference>``:
     Each configuration instance must point to its :ref:`provider implementation <provider>` using
@@ -114,7 +116,7 @@ The meaning of the different placeholders and keywords is:
 
     * the canonical *fully qualified class name* specified as ``<full.module.path>:<class.name>`` -
       for example the :class:`forml.provider.runner.dask:Runner <forml.provider.runner.dask.Runner>`
-    * the convenient *shortcut* (if defined by its implementor) - ie ``dask``
+    * the convenient *shortcut* (if defined by its implementer) - i.e. ``dask``
 
     .. caution::
        Shortcut references can only be used for auto-discovered provider implementations (typically
@@ -123,8 +125,8 @@ The meaning of the different placeholders and keywords is:
        that it can be imported).
 
 ``<provider option X>``:
-    Any other options specified within the provider config instance section are considered to be
-    arbitrary arguments specific to given provider implementation and will be passed to its
+    Any other options specified within the provider configuration instance section are considered
+    to be arbitrary arguments specific to given provider implementation and will be passed to its
     constructor.
 
 
@@ -132,9 +134,9 @@ Logging
 ^^^^^^^
 
 The :doc:`python logger <python:library/logging>` is used throughout the framework to emit
-various logging messages. The :doc:`logging config <python:library/logging.config>` can be
-customized using a :ref:`special config file <python:logging-config-fileformat>` referenced in the
-top-level ``logcfg`` option in the main :ref:`config.toml <platform-config>`.
+various logging messages. The :doc:`logging configuration <python:library/logging.config>` can be
+customized using a :ref:`special configuration file <python:logging-config-fileformat>`
+referenced in the top-level ``logcfg`` option in the main :ref:`config.toml <platform-config>`.
 
 
 .. _platform-execution:
@@ -143,7 +145,7 @@ Execution Mechanisms
 --------------------
 
 ForML is using the pluggable :ref:`pipeline runners <runner>` to perform all the
-possible :ref:`lifecycle actions <lifecycle>`. There are three different mechanisms to carry out
+possible :ref:`life cycle actions <lifecycle>`. There are three different mechanisms to carry out
 the execution:
 
 * The :ref:`command-line driven <platform-cli>` batch processing.
@@ -157,7 +159,7 @@ the execution:
 Command-line Interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :ref:`lifecycle <lifecycle>` management can be fully operated in batch mode using the
+The :ref:`life cycle <lifecycle>` management can be fully operated in batch mode using the
 command-line interface - see the integrated help for more details:
 
 .. code-block:: console
@@ -165,10 +167,10 @@ command-line interface - see the integrated help for more details:
     $ forml --help
     Usage: forml [OPTIONS] COMMAND [ARGS]...
 
-      Lifecycle Management for Data Science Projects.
+      Life Cycle Management for Data Science Projects.
 
     Options:
-      -C, --config FILE               Additional config file.
+      -C, --config FILE               Additional configuration file.
       -L, --loglevel [debug|info|warning|error]
                                       Global loglevel to use.
       --logfile FILE                  Logfile path.
@@ -176,8 +178,8 @@ command-line interface - see the integrated help for more details:
 
     Commands:
       application  Application command group.
-      model        Model command group (production lifecycle).
-      project      Project command group (development lifecycle).
+      model        Model command group (production life cycle).
+      project      Project command group (development life cycle).
 
 
 Further details on the individual command groups can also be found in the following related

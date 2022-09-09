@@ -22,11 +22,11 @@ Being implemented as a *python-internal* DSL, its high-level syntax is consequen
 native Python syntax embedding the actual :ref:`DSL API <query-design>`.
 
 Even though it is not coupled via any inherent dependency, the DSL is designed to loosely resemble
-the SQL ``SELECT`` statement syntax for its proven modelling effectiveness and its universal
-recognition as the de-facto ETL standard. The abstract descriptive role of the DSL with the
-separate runtime-specific :ref:`parsing stage <query-parser>` responsible for converting the
-generic query into arbitrary native representation still allows to integrate any :ref:`data access
-mechanisms <feed>` including non-sql based sources.
+the SQL ``SELECT`` statement syntax for its proven modeling effectiveness and its universal
+recognition as the :spelling:word:`de facto` ETL standard. The abstract descriptive role of the
+DSL with the separate runtime-specific :ref:`parsing stage <query-parser>` responsible for
+converting the generic query into arbitrary native representation still allows to integrate any
+:ref:`data access mechanisms <feed>` including non-sql based sources.
 
 
 Grammar Notation

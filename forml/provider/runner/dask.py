@@ -62,8 +62,8 @@ class Runner(runtime.Runner, alias='dask'):
         """Dask DAG builder."""
 
         class Output(flow.Instruction):
-            """Utility instruction for collecting multiple DAG leaves of which at most one is expected to return
-            non-null value and passing that value through.
+            """Utility instruction for collecting multiple DAG leaves of which at most one is
+            expected to return non-null value and passing that value through.
             """
 
             def execute(self, *leaves: typing.Any) -> typing.Any:

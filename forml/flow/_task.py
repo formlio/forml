@@ -97,7 +97,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
             features: Input feature-set(s).
 
         Returns:
-            Transformation result (ie predictions).
+            Transformation result (i.e. predictions).
         """
 
     def train(self, features: 'flow.Features', labels: 'flow.Labels', /) -> None:
@@ -178,7 +178,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         arguments if some of them are not expected to be changed during the lifetime.
 
         Args:
-            params: New hyper-parameters as kwargs.
+            params: New hyper-parameters as keyword arguments.
         """
         if params:
             raise NotImplementedError(f'Params setter for {params} not implemented on {self}')
@@ -188,8 +188,8 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         """Creating a builder instance for this actor.
 
         Args:
-            args: Positional params.
-            kwargs: Keyword params.
+            args: Positional arguments.
+            kwargs: Keyword arguments.
 
         Returns:
             Actor builder instance.
@@ -214,8 +214,8 @@ _Actor = typing.TypeVar('_Actor', bound=Actor)
 
 @typing.final
 class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, args, kwargs')):
-    """Actor builder holding all the required init configuration for instantiating the particular
-    actor.
+    """Actor builder holding all the required initialization configuration for instantiating the
+    particular actor.
 
     Args:
         actor: Target actor class.

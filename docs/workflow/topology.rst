@@ -83,9 +83,9 @@ This gives us the following disconnected workers:
 
 .. note::
     All the actors we chose in this example work with Pandas payload - by no means this is some
-    official format required by ForML. ForML doesn't care about the :ref:`particular payload
+    official format required by ForML. ForML does not care about the :ref:`particular payload
     <io-payload>` and the choice of *mutually compatible* actors is an exclusive responsibility of
-    the implementor.
+    the implementer.
 
 Connecting Nodes
 ^^^^^^^^^^^^^^^^
@@ -131,7 +131,7 @@ Now, with that connections between our nodes, the topology looks shown:
 Dealing with Worker State
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Sofar we've discussed only the *apply-mode* connections. For *stateful* nodes (i.e. nodes
+So far we have discussed only the *apply-mode* connections. For *stateful* nodes (i.e. nodes
 representing :ref:`stateful actors <actor-type>`), we also need to take care of the *train-mode*
 connections to their *Train* and *Label* ports. This is achieved simply by using the ``.train()``
 method on the worker object:
@@ -192,7 +192,7 @@ Future Nodes
 In addition to the *Worker* nodes, there is a special node implementation called ``flow.Future``
 representing a future worker placeholder. *Future* can be used during topology construction when
 the real connected worker-to-be is not know yet (e.g. when implementing an
-:ref:`operator <operator>` which doesn't know what up/down stream workers will it be eventually
+:ref:`operator <operator>` which does not know what up/down stream workers will it be eventually
 composed with). When connected to a real worker, the Future node will automatically collapse and
 disappear from the topology.
 

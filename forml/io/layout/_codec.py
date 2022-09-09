@@ -110,7 +110,7 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
 
     @functools.lru_cache
     def match(self, other: 'layout.Encoding') -> bool:
-        """Return ture if the other encoding matches ours including glob wildcards.
+        """Return true if the other encoding matches ours including glob wildcards.
 
         Encoding matches if its kind fits our kind as a pattern (including potential glob wildcards)
         while all of our options are subset of the other options.

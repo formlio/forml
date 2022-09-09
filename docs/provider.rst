@@ -38,7 +38,7 @@ Providers become available for runtime operations after being :ref:`properly con
 
 In addition to the existing providers, users might find themselves requiring to implement their
 bespoke instances. To avoid having to always release and deploy these providers as true code
-artifacts, ForML allows to alternatively treat them in rather more config-like manner.
+artifacts, ForML allows to alternatively treat them in rather more configuration-like manner.
 
 For this purpose, the standard :ref:`config directories <platform-config>` are valid locations
 for hosting python modules with bespoke provider implementations available to the particular runtime

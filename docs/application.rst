@@ -21,10 +21,10 @@ Application
 ForML applications represent a high-level concept built on top of ForML :ref:`projects <project>`
 as deliverables for the :ref:`serving layer <serving>`.
 
-The term *application* in this context doesn't hold the common meaning as a general computer program
-covering a wide range of potential functions. ForML applications obviously focus just on the *ML
-inference* (providing predictions in response to the presented data points) representing the *apply*
-stage of the :ref:`production lifecycle <lifecycle-production>`.
+The term *application* in this context does not hold the common meaning as a general computer
+program covering a wide range of potential functions. ForML applications obviously focus just on
+the *ML inference* (providing predictions in response to the presented data points) representing
+the *apply* stage of the :ref:`production life cycle <lifecycle-production>`.
 
 While the purpose of :ref:`projects <project>` is to implement a *portable solution* to the given
 ML problem, *applications*  aim to expose it (by means of :ref:`gateway providers
@@ -188,7 +188,7 @@ scenarios.
 This implements the :ref:`data interpretation <application-interpret>` simply using the
 available :func:`layout.get_decoder <forml.io.layout.get_decoder>` and :func:`layout.get_encoder
 <forml.io.layout.get_encoder>` codecs and for the :ref:`model selection <application-select>`
-it introduces a concept of plugable :class:`application.Selector <forml.application.Selector>`
+it introduces a concept of pluggable :class:`application.Selector <forml.application.Selector>`
 strategies.
 
 .. autoclass:: forml.application.Generic

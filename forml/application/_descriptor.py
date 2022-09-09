@@ -75,15 +75,15 @@ class Descriptor(abc.ABC):
         instance.
 
         Args:
-            path: Filesystem path to the descriptor module file location.
+            path: File system path to the descriptor module file location.
 
         Raises:
-            forml.MissingError: If the path doesn't exist.
-            forml.InvalidError: If the path doesn't refer to a valid application descriptor.
+            forml.MissingError: If the path does not exist.
+            forml.InvalidError: If the path does not refer to a valid application descriptor.
         """
 
         path: pathlib.Path
-        """Filesystem path to the module containing the descriptor."""
+        """File system path to the module containing the descriptor."""
         descriptor: 'application.Descriptor'
         """Actual descriptor."""
 
@@ -173,7 +173,7 @@ class Descriptor(abc.ABC):
         encoding: typing.Sequence['layout.Encoding'],
         context: typing.Any,
     ) -> 'layout.Response':
-        """Turn the application result into a native response to be passed back to the requestor.
+        """Turn the application result into a native response to be passed back to the requester.
 
         This involves assembling the result structure and encoding it into a native format.
 

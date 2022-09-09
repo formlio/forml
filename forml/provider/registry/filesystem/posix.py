@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Filesystem registry is a plain hierarchical file based locally-accessible structure.
+File system registry is a plain hierarchical file based locally-accessible structure.
 """
 import abc
 import functools
@@ -228,12 +228,12 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
 
 class Registry(asset.Registry, alias='posix'):
-    """File based registry backed by a locally-accessible posix filesystem.
+    """File based registry backed by a locally-accessible posix file system.
 
     Args:
-        path: Registry root filesystem location.
+        path: Registry root file system location.
               Defaults to :file:`$FORML_HOME/registry`.
-        staging: Filesystem location reachable from all runner nodes to be used for
+        staging: File system location reachable from all runner nodes to be used for
                  :ref:`package staging <registry-staging>` (defaults to :file:`<path>/.stage`).
 
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:

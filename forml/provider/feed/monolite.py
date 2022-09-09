@@ -41,7 +41,7 @@ class Origin(lazy.Origin[None], metaclass=abc.ABCMeta):
 
     @classmethod
     def parse_config(cls, config: typing.Any) -> typing.Mapping[str, typing.Any]:  # pylint: disable=unused-argument
-        """Parse the config options into the init ``**kwargs``.
+        """Parse the configuration options into the init ``**kwargs``.
 
         Args:
             config: Raw config options.
@@ -50,7 +50,7 @@ class Origin(lazy.Origin[None], metaclass=abc.ABCMeta):
             Init ``**kwargs``.
 
         Raises:
-            forml.InvalidError: In case of invalid config options.
+            forml.InvalidError: In case of invalid configuration options.
         """
         return {}
 
@@ -136,8 +136,8 @@ class Feed(lazy.Feed, alias='monolite'):
 
     All the origins need to be declared using a proper :ref:`content resolver <io-resolving>`
     mapping with keys representing the fully qualified schema name formatted as
-    ``<full.module.path>:<qualified.Class.Name>`` and the values should be origin-specific config
-    options.
+    ``<full.module.path>:<qualified.Class.Name>`` and the values should be origin-specific
+    configuration options.
 
     Attention:
         All the referenced :ref:`schema catalogs <io-catalog>` must be installed.
@@ -150,7 +150,7 @@ class Feed(lazy.Feed, alias='monolite'):
     Args:
         inline: Schema mapping of datasets provided inline as native row-oriented arrays.
         csv: Schema mapping of datasets accessible using a CSV reader. Values can either be
-             direct filesystem paths or a mapping with two keys:
+             direct file system paths or a mapping with two keys:
 
              * ``path`` pointing to the CSV file
              * ``kwargs`` containing additional options to be passed to the underlying

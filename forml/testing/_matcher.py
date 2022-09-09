@@ -27,7 +27,7 @@ def pandas_equals(expected: pdtype.NDFrame, actual: pdtype.NDFrame) -> bool:
 
     Args:
         expected: Instance of the expected data representation.
-        actual: Testcase produced data.
+        actual: Test case produced data.
 
     Returns:
         True if the data is equal.

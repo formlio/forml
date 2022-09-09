@@ -13,16 +13,16 @@
     specific language governing permissions and limitations
     under the License.
 
-Lifecycle Actions
-=================
+Life Cycle Actions
+==================
 
 After completing :doc:`the first version of our pipeline <pipeline>` component, the project is
-ready to iterate through its :ref:`lifecycle <lifecycle-actions>`. Let's perform the standard
+ready to iterate through its :ref:`life cycle <lifecycle-actions>`. Let's perform the standard
 actions using the :ref:`CLI <platform-cli>` as the :ref:`execution mechanism <platform-execution>`.
 
 
-Development Lifecycle
----------------------
+Development Life Cycle
+----------------------
 
 1. Change directory to the root of the :file:`forml-tutorial-titanic` project working copy.
 2. Let's first run all the :ref:`defined operator unit tests <titanic-pipeline-tests>` to confirm
@@ -68,25 +68,25 @@ Development Lifecycle
        $ forml project eval
        0.8379888268156425
 
-   ...great, we've managed to improve from our :doc:`baseline workflow <exploration>`!
+   ...great, we have managed to improve from our :doc:`baseline workflow <exploration>`!
 
 5. Create the project package artifact and upload it to the (default as per our :ref:`config
-   <tutorial-setup>`) filesystem :ref:`registry <registry>` (assuming the same release doesn't
+   <tutorial-setup>`) file system :ref:`registry <registry>` (assuming the same release does not
    already exist - otherwise increment the project version in the :ref:`setup.py <project-setup>`):
 
    .. code-block:: console
 
        $ forml project release
 
-   This should publish the project into your local filesystem :ref:`model registry <registry>`
-   making it available for the production lifecycle. It becomes the first published :ref:`release
+   This should publish the project into your local file system :ref:`model registry <registry>`
+   making it available for the production life cycle. It becomes the first published :ref:`release
    <registry-package>` of this project versioned as ``0.1.dev0`` (according to the version from
    :ref:`setup.py <project-setup>`).
 
-Production Lifecycle
---------------------
+Production Life Cycle
+---------------------
 
-:ref:`Production lifecycle <lifecycle-production>` doesn't need the project working copy, so feel
+:ref:`Production life cycle <lifecycle-production>` does not need the project working copy, so feel
 free to change the directory to another location before executing the commands.
 
 1. List the local registry confirming the project has been published as its first release:
@@ -115,7 +115,7 @@ free to change the directory to another location before executing the commands.
    Now we have our first :ref:`generation <registry-assets>` of the titanic models available in the
    registry.
 
-3. Apply the trained generation to the testset to get the predictions:
+3. Apply the trained generation to the test dataset to get the predictions:
 
    .. code-block:: console
 

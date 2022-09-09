@@ -57,7 +57,10 @@ class Scope(typing.NamedTuple):
 
 @click.group(name='forml')
 @click.option(
-    '--config', '-C', type=click.Path(exists=True, file_okay=True, dir_okay=False), help='Additional config file.'
+    '--config',
+    '-C',
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help='Additional configuration file.',
 )
 @click.option(
     '--loglevel',
@@ -73,7 +76,7 @@ def group(
     loglevel: typing.Optional[str],
     logfile: typing.Optional[str],
 ):
-    """Lifecycle Management for Data Science Projects."""
+    """Life Cycle Management for Data Science Projects."""
     if config:
         _conf.CONFIG.read(config)
     if logfile:

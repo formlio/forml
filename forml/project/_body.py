@@ -181,7 +181,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         with this artifact.
 
         This can be used to interactively execute the particular actions of the project development
-        lifecycle. The linked volatile registry is persistent only during the lifetime of this
+        life cycle. The linked volatile registry is persistent only during the lifetime of this
         artifact instance.
 
         See Also:

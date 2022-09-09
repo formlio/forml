@@ -24,11 +24,11 @@ transformation of the passing data.
 .. _actor-compatibility:
 
 .. important::
-    ForML doesn't care neither about the particular internal processing functionality of any
+    ForML does not care neither about the particular internal processing functionality of any
     actors nor the actual types and formats of the :ref:`data passed between them <io-payload>`.
     All that ForML deals with is the actor interconnection within the overall :ref:`flow topology
     <topology>` - responsibility for their logical and functional compatibility is solely in
-    hands of the implementor.
+    hands of the implementer.
 
 .. _actor-type:
 .. rubric:: Actor Types
@@ -67,21 +67,21 @@ engaged when in each of the particular actor modes:
             TI[/Train/] --> T
             LI[/Labels/] --> T
             SI[(State)] -. set .-> A & T
-            PI>Params] -. set .-> A & T
+            PI>Parameters] -. set .-> A & T
         end
         subgraph Output Ports
             A --> AO1[\Apply 1/]
             A --> AO2[\Apply .../]
             A --> AON[\Apply N/]
             T -. get .-> SO[(State)]
-            A & T -. get .-> PO>Params]
+            A & T -. get .-> PO>Parameters]
         end
 
 
 There is a couple of different ways the ports can be logically grouped together:
 
 **Level** - how are the ports configured:
-    * *user* level ports (full lines in diagram) are explicitly connected by the implementor
+    * *user* level ports (full lines in diagram) are explicitly connected by the implementer
     * *system* level ports (dotted lines in diagram) are internally managed exclusively by ForML
 
 **Mode** - when do the ports get engaged:
@@ -95,15 +95,15 @@ There is a couple of different ways the ports can be logically grouped together:
 
 With this perspective, we can now describe each of the different ports as follows:
 
-======  ======  =====  ========  =========  ========================================================
- Name   Level   Mode   # Inputs  # Outputs  Description
-======  ======  =====  ========  =========  ========================================================
-Apply    user   apply      M         N      The features ports(s) to/from the apply-transformation.
-Train    user   train      1         0      Features port to be trained on.
-Label    user   train      1         0      Labels port to be trained on.
-State   system  both       1         1      State getter/setter ports.
-Params  system  both       1         1      Hyper-parameter getter/setter ports.
-======  ======  =====  ========  =========  ========================================================
+==========  ======  =====  ========  =========  =======================================================
+Name        Level   Mode   # Inputs  # Outputs  Description
+==========  ======  =====  ========  =========  =======================================================
+Apply        user   apply      M         N      The features ports(s) to/from the apply-transformation.
+Train        user   train      1         0      Features port to be trained on.
+Label        user   train      1         0      Labels port to be trained on.
+State       system  both       1         1      State getter/setter ports.
+Parameters  system  both       1         1      Hyper-parameter getter/setter ports.
+==========  ======  =====  ========  =========  =======================================================
 
 .. seealso::
 

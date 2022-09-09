@@ -258,8 +258,8 @@ class Dump(flow.Operator):
     standalone ``path`` parameter which is used as a fallback option.
 
     Args:
-        apply: Dumpable builder for instantiating a Dumper operator to be used in *apply-mode*.
-        train: Optional dumpable builder for instantiating a Dumper operator to be used in
+        apply: ``Dumpable`` builder for instantiating a Dumper operator to be used in *apply-mode*.
+        train: Optional ``Dumpable`` builder for instantiating a Dumper operator to be used in
                *train-mode* (otherwise using the same one as for the *apply-mode*).
         path: Optional path template.
 
@@ -299,7 +299,7 @@ class Dump(flow.Operator):
         path: typing.Optional[typing.Union[str, pathlib.Path]],
         mode: str,
     ) -> typing.Callable[[int], flow.Builder['payload.Dumpable']]:
-        """Get a function for creating a Builder instance parametrized using a sequence id and
+        """Get a function for creating a Builder instance parameterized using a sequence id and
         a mode string which can be used to interpolate potential placeholders in the path template.
 
         Args:
@@ -348,7 +348,7 @@ class Sniff(flow.Operator):
     """Debugging operator for capturing the passing payload and exposing it using the
     ``Sniff.Future`` instance provided when used as a context manager.
 
-    Without the context, the operator acts as a transparent identitity pass-through operator.
+    Without the context, the operator acts as a transparent identity pass-through operator.
 
     The typical use-case is in combination with the :class:`runtime.virtual <forml.runtime.Virtual>`
     launcher and the interactive mode.

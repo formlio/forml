@@ -29,7 +29,7 @@ Project Formalization
 
 Formalization is the prime concept ForML is built upon. Having a common *component structure* for
 ML projects, an *expression API* for their workflows and a generic *data source DSL* describing the
-required data inputs allows to programmatically handle the entire *project lifecycle*. Moreover,
+required data inputs allows to programmatically handle the entire *project life cycle*. Moreover,
 it leads to a cleaner implementation that is easier to maintain, extend or exchange between
 different environments.
 
@@ -59,16 +59,16 @@ ForML provides an elegant API for describing project workflows as expressions of
 compositions*. Workflow expressions transparently expand into a low-level acyclic task
 dependency graph (DAG) of primitive *actors*. Based on the internal implementation of each of
 the operators composed in the given expression, ForML is able to derive different task graphs
-depending on the actual *lifecycle phase*. This leaves the workflow definition very clean - with
+depending on the actual *life cycle phase*. This leaves the workflow definition very clean - with
 all the main complexity carried out in lower layers.
 
 More on the *Operator* and *Actor* concepts is discussed in the :ref:`workflow` chapters.
 
-Lifecycle Handle
-^^^^^^^^^^^^^^^^
+Life Cycle Handle
+^^^^^^^^^^^^^^^^^
 
 Thanks to the formal project setup, ForML is inherently able to handle all of the defined project
-*lifecycle* actions right out of the box.
+*life cycle* actions right out of the box.
 
 For more details, please see the :ref:`lifecycle` chapter.
 
@@ -101,7 +101,7 @@ See the :ref:`io` chapter for more information about the related concepts.
 Persistence
 ^^^^^^^^^^^
 
-Lifecycle iterations of ForML projects depend on external persistence of their two
+Life cycle iterations of ForML projects depend on external persistence of their two
 main *artifact* types - the particular version of the project *code* and the collection of its
 internal *states* acquired during training/tuning. ForML platform automatically handles this
 persistence via its supported *registry* providers.

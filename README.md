@@ -41,7 +41,7 @@ ForML
 [![Last Commit](https://img.shields.io/github/last-commit/formlio/forml)](https://github.com/formlio/forml/commits/main)
 
 ForML is a development framework for researching and implementing data science projects as well
-as an MLOps platform capable of managing their entire lifecycles.
+as an MLOps platform capable of managing their entire life cycles.
 
 Use ForML to formally describe a data science problem as a composition of high-level operators.
 ForML expands your project into a task dependency graph specific to the given life-cycle phase and
@@ -56,7 +56,7 @@ Not Just Another DAG
 --------------------
 
 Despite *DAG* (directed acyclic graph) being at the heart of ForML operations, it stands out
-amongst the many other task dependency processing systems due to:
+among the many other task dependency processing systems due to:
 
 1. Its specialization on machine learning problems, that is wired right into the flow topology.
 2. Concept of high-level operator composition which helps to wrap complex ML techniques into

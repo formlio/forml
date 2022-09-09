@@ -403,7 +403,7 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
     Term = typing.Union[
         'dsl.Operable',
         typing.Union['dsl.Ordering.Direction', str],
-        tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
+        'tuple[dsl.Operable, typing.Union[dsl.Ordering.Direction, str]]',
     ]
     """Type alias for accepted ordering specifiers."""
 

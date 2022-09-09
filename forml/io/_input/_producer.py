@@ -179,7 +179,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
 
         Args:
             statement: Read instructions in the storage-native syntax.
-            kwargs: Optional reader keyword args (as given to the constructor).
+            kwargs: Optional reader keyword arguments (as given to the constructor).
 
         Returns:
             Raw data provided by the reader.

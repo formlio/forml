@@ -114,10 +114,10 @@ class AutoSklearnTransformer(AutoClass[type[sklbase.TransformerMixin]]):
     """Auto-wrapper for turning Scikit-learn *transformers* into ForML operators.
 
     Instances can be used with :func:`wrap.importer <forml.pipeline.wrap.importer>` to auto-wrap
-    Sklearn transformers upon importing.
+    Scikit-learn transformers upon importing.
 
     Hint:
-        Supports not just the official Sklearn transformers but any
+        Supports not just the official Scikit-learn transformers but any
         :class:`sklearn.base.TransformerMixin` subclasses including 3rd party implementations.
 
     Args:
@@ -138,10 +138,10 @@ class AutoSklearnClassifier(AutoClass[type[sklbase.ClassifierMixin]]):
     Auto-wrapper for turning Scikit-learn *classifiers* into ForML operators.
 
     Instances can be used with :func:`wrap.importer <forml.pipeline.wrap.importer>` to auto-wrap
-    Sklearn classifiers upon importing.
+    Scikit-learn classifiers upon importing.
 
     Hint:
-        Supports not just the official Sklearn classifiers but any
+        Supports not just the official Scikit-learn classifiers but any
         :class:`sklearn.base.ClassifierMixin` subclasses including 3rd party implementations.
 
     Args:
@@ -167,10 +167,10 @@ class AutoSklearnRegressor(AutoClass[type[sklbase.RegressorMixin]]):
     """Auto-wrapper for turning Scikit-learn *regressors* into ForML operators.
 
     Instances can be used with :func:`wrap.importer <forml.pipeline.wrap.importer>` to auto-wrap
-    Sklearn regressors upon importing.
+    Scikit-learn regressors upon importing.
 
     Hint:
-        Supports not just the official Sklearn regressors but any
+        Supports not just the official Scikit-learn regressors but any
         :class:`sklearn.base.RegressorMixin` subclasses including 3rd party implementations.
 
     Args:

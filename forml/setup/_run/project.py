@@ -78,7 +78,7 @@ class Scope(collections.namedtuple('Scope', 'parent, path')):
 @click.option('--path', type=click.Path(exists=False, dir_okay=True, file_okay=False), help='Project root directory.')
 @click.pass_context
 def group(context: core.Context, path: typing.Optional[str]):
-    """Project command group (development lifecycle)."""
+    """Project command group (development life cycle)."""
     context.obj = Scope(context.obj, path)
 
 

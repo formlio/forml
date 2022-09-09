@@ -21,9 +21,9 @@ FAQs
 What data format is used in the pipeline between the actors?
 ------------------------------------------------------------
 
-ForML actually doesn't care. It is only responsible for wiring up the actors in the desired graph
+ForML actually does not care. It is only responsible for wiring up the actors in the desired graph
 but is fairly agnostic about the actual payload exchanged between them. It is the responsibility
-of the project implementor to engage actors that understand each other.
+of the project implementer to engage actors that understand each other.
 
 For convenience, the :ref:`pipeline` shipped with ForML contains certain actors/operators
 implementations that expect the data to be `Pandas <https://pandas.pydata.org/>`_ dataframes.

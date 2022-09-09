@@ -18,7 +18,7 @@
 Pipeline Runner
 ===============
 
-To perform particular :ref:`lifecycle action <lifecycle>` of any given :ref:`project <project>`,
+To perform particular :ref:`life cycle action <lifecycle>` of any given :ref:`project <project>`,
 ForML delegates the :ref:`workflow topology <topology>` compiled into a :ref:`portable set
 of instructions <topology-compiler>` to a selected :ref:`runner provider <runner-providers>` for
 its execution.

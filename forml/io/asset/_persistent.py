@@ -56,7 +56,7 @@ class Registry(provider.Service, default=setup.Registry.default, path=setup.Regi
     """Abstract base class of the ForML model registry concept.
 
     Args:
-        staging: Filesystem location reachable from all runner nodes to be used for :ref:`package
+        staging: File system location reachable from all runner nodes to be used for :ref:`package
                  staging <registry-staging>` (defaults to a local temporal directory (invalid for
                  distributed runners)).
     """
@@ -114,7 +114,7 @@ class Registry(provider.Service, default=setup.Registry.default, path=setup.Regi
         raise NotImplementedError()
 
     def mount(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'project.Artifact':
-        """Pull and install the given project/release package using the *staging* filesystem
+        """Pull and install the given project/release package using the *staging* file system
         location available to all runner nodes.
 
         Args:
@@ -125,7 +125,7 @@ class Registry(provider.Service, default=setup.Registry.default, path=setup.Regi
             Product artifact.
 
         Raises:
-            forml.MissingError: The given artifact couldn't be found.
+            forml.MissingError: The given artifact could not be found.
         """
         package = self.pull(project, release)
         try:
@@ -260,7 +260,7 @@ class Inventory(provider.Service, default=setup.Inventory.default, path=setup.In
             Application descriptor.
 
         Raises:
-            forml.MissingError: If the application doesn't exist.
+            forml.MissingError: If the application does not exist.
         """
         raise NotImplementedError()
 

@@ -21,6 +21,7 @@ Sphinx customization.
 import re
 import typing
 
+from enchant import tokenize
 from sphinx.ext import autodoc, autosummary
 
 import forml
@@ -94,3 +95,13 @@ class Autosummary(autosummary.Autosummary):
 
     def get_items(self, names):
         return [self.__format_name(*i) for i in super().get_items(names)]
+
+
+class Filter(tokenize.Filter):
+    """Custom spell-checking filter."""
+
+    SUFFIXES = 'py', 'toml'
+    """File suffixes."""
+
+    def _skip(self, word):
+        return any(word.endswith(f'.{s}') for s in self.SUFFIXES)

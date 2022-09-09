@@ -107,9 +107,12 @@ class Gateway(runtime.Gateway, alias='rest'):
     ==================  ======  ==================================================================
 
     Args:
-        inventory: Inventory of applications to be served (default as per platform config).
-        registry: Model registry of project artifacts to be served (default as per platform config).
-        feeds: Feeds to be used for potential feature augmentation (default as per platform config).
+        inventory: Inventory of applications to be served (default as per the platform
+                   configuration).
+        registry: Model registry of project artifacts to be served (default as per the platform
+                  configuration).
+        feeds: Feeds to be used for potential feature augmentation (default as per the platform
+               configuration).
         processes: Process pool size for each model sandbox.
         loop: Explicit event loop instance.
         server: Serving loop main function accepting the provided `application instance

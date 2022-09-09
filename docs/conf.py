@@ -38,14 +38,14 @@ from sphinx import application
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('.'))
 
-import _forml  # pylint: disable=wrong-import-position; # noqa: E402
+import _doc  # pylint: disable=wrong-import-position; # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
 project = 'ForML'
 
 # The full version, including alpha/beta/rc tags
-release = _forml.VERSION
+release = _doc.VERSION
 
 
 # -- General configuration ---------------------------------------------------
@@ -96,8 +96,8 @@ nitpicky = True
 _target_blacklist = {
     'py:class': (
         '_Actor',
-        r'applications\.Starlette',
-        r'asset\.Generation',
+        r'^applications\.Starlette',
+        r'^asset\.Generation',
         r'^dsl\.Operable',
         r'^dsl\.Ordering\.(?:Direction|Term)',
         r'^flow\.(?:Features|Labels|Result)',
@@ -109,12 +109,13 @@ _target_blacklist = {
         r'^forml\.provider\.feed\.lazy\.Feed',
         r'^io\.(?:Consumer|Producer)',
         r'^layout\.(?:ColumnMajor|RowMajor|Native)',
-        r'pandas\.core\.generic\.NDFrame',
+        r'^pandas\.core\.generic\.NDFrame',
         r'^parser\.(?:Source|Feature|Visitor)',
         r'^project\.Components',
         r'^project\.Source\.(?:Extract|Labels)',
         r'^setup\.Feed',
-        r'sqlalchemy\.engine\.interfaces\.Connectable',
+        r'^sqlalchemy\.engine\.interfaces\.Connectable',
+        r'tuple\[dsl\.Operable, typing\.Union\[dsl\.Ordering\.Direction, str\]\]',
     ),
     'py:obj': (r'^forml\..*',),
 }
@@ -144,11 +145,15 @@ html_theme_options = {
     'icon': {
         'repo': 'fontawesome/brands/github',
     },
-    'site_url': 'https://forml.io/',
+    'site_url': 'http://forml.io/',
     'repo_url': 'https://github.com/formlio/forml/',
     'repo_name': 'formlio/forml',
     'repo_type': 'github',
     'edit_uri': 'blob/main/docs',
+    'toc_title': 'ForML',
+    # 'toc_title_is_page_title': True,
+    # 'globaltoc_collapse': False,
+    'version_dropdown': False,
     'google_analytics': ['G-GGNVJ2N8MF', 'auto'],
     'features': [
         'navigation.expand',
@@ -161,9 +166,8 @@ html_theme_options = {
         'navigation.tracking',
         'search.highlight',
         'search.share',
+        'toc.follow',
     ],
-    'toc_title_is_page_title': True,
-    # 'globaltoc_collapse': False,
     'palette': [
         {
             'media': '(prefers-color-scheme: light)',
@@ -226,8 +230,13 @@ object_description_options = [
 nbsphinx_requirejs_path = ''
 
 
+# -- Options for sphinxcontrib-spelling-------------------------
+# See: https://sphinxcontrib-spelling.readthedocs.io/en/latest/
+spelling_filters = ['_doc.Filter']
+
+
 def setup(app: application.Sphinx):
     """Sphinx setup hook."""
-    app.add_autodocumenter(_forml.ClassDocumenter, override=True)
-    app.add_autodocumenter(_forml.MethodDocumenter, override=True)
-    app.add_directive('autosummary', _forml.Autosummary, override=True)
+    app.add_autodocumenter(_doc.ClassDocumenter, override=True)
+    app.add_autodocumenter(_doc.MethodDocumenter, override=True)
+    app.add_directive('autosummary', _doc.Autosummary, override=True)

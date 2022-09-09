@@ -20,7 +20,7 @@ Titanic Challenge
 
 There is a complete ForML project available under ``tutorials/titanic/``. It is the famous
 `Titanic Challenge <https://www.kaggle.com/c/titanic>`_. We will use it here to demonstrate the
-typical ForML usecases.
+typical ForML use cases.
 
 
 .. toctree::

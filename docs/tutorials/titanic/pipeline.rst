@@ -49,7 +49,7 @@ The project structure now looks as follows:
 Custom Preprocessing Operators
 ------------------------------
 
-In addition to the ``Imputer`` operator we've created in scope of our :doc:`exploration
+In addition to the ``Imputer`` operator we have created in scope of our :doc:`exploration
 <exploration>`, let's improve our preprocessing with a couple more operators. We stick to the
 simple ``@wrap`` technique for implementing :ref:`actors <actor-decorated>` and :ref:`operators
 <operator-wrapped>` eventually.
@@ -71,7 +71,7 @@ Encode
 
 The :class:`OneHotEncoder <sklearn:sklearn.preprocessing.OneHotEncoder>` we used in our
 :doc:`baseline workflow <exploration>` was applied bluntly to all columns including those
-non-categorical ones. Let's improve it by creating a custom operator with parametrized selection of
+non-categorical ones. Let's improve it by creating a custom operator with parameterized selection of
 the encoded columns:
 
 .. literalinclude:: ../../../tutorials/titanic/titanic/pipeline/preprocessing.py

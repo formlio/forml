@@ -19,7 +19,7 @@ Tutorials
 =========
 
 The easiest way to get started with ForML is to go through its practical tutorials presented in
-this chapter. Assuming you've already installed ForML as per the :ref:`installation instructions
+this chapter. Assuming you have already installed ForML as per the :ref:`installation instructions
 <install>` and ideally also familiarized yourself with the :ref:`ForML principles <principles>`,
 you can now go straight through the following list of step-by-step examples demonstrating the
 ForML capabilities.

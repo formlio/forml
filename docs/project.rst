@@ -24,7 +24,7 @@ development leading to delivering (i.e. *releasing* a version of) a solution in 
 :ref:`artifacts <registry-artifacts>`.
 
 While developing, ForML allows to execute the project source-code working copy by triggering its
-:ref:`development lifecycle actions <lifecycle-development>` or when visited in the
+:ref:`development life cycle actions <lifecycle-development>` or when visited in the
 :ref:`interactive mode <interactive>`.
 
 .. attention::
@@ -54,7 +54,7 @@ Component Structure
 
 ForML projects are essentially standard :doc:`Setuptools <setuptools:setuptools>` based python
 packages organized in a way to allow ForML to identify its *principal components* and to operate its
-:ref:`lifecycle <lifecycle>`.
+:ref:`life cycle <lifecycle>`.
 
 The framework adopts the `Convention over Configuration
 <https://en.wikipedia.org/wiki/Convention_over_configuration>`_ approach for
@@ -86,7 +86,7 @@ The potential project structure matching the ForML convention might look as the 
       │    └── ...
       └── ...
 
-Clearly, the overall structure doesn't look any special - pretty standard :doc:`setuptools
+Clearly, the overall structure does not look any special - pretty standard :doc:`setuptools
 <setuptools:setuptools>` project (plus some additional content). What makes it a ForML
 project is the particular modules and/or packages within that structure. Let's focus on each of
 these components in the following sections.
@@ -97,7 +97,7 @@ these components in the following sections.
 Setup.py Module
 ^^^^^^^^^^^^^^^
 
-This is the standard :doc:`Setuptools <setuptools:setuptools>` boostrap module with a little tweak
+This is the standard :doc:`Setuptools <setuptools:setuptools>` bootstrap module with a little tweak
 to integrate the ForML principal component structure. It's placed directly in the project root
 directory.
 
@@ -118,7 +118,7 @@ as the custom setuptools ``disctlass`` . The rest is the usual ``setup.py`` cont
                      distclass=project.Distribution)  # the key to integrate ForML
 
 .. note::
-    Upon publishing (in scope of the :ref:`development lifecycle <lifecycle-development>`), the
+    Upon publishing (in scope of the :ref:`development life cycle <lifecycle-development>`), the
     specified ``version`` value will become the *release* identifier thus needs to be a valid
     :pep:`440` version.
 
@@ -145,7 +145,7 @@ These are the actual high-level blocks of the particular ForML solution provided
 *modules* (or *packages*) within the project package root.
 
 .. hint::
-    ForML doesn't care whether the principal component is defined as a module (a file with ``.py``
+    ForML does not care whether the principal component is defined as a module (a file with ``.py``
     suffix) or a package (a subdirectory with :file:`__init__.py` file in it) since both have the
     same import syntax.
 
@@ -218,7 +218,7 @@ Evaluation Strategy
 """""""""""""""""""
 
 Definition of the :ref:`model evaluation strategy <evaluation>` for both the development and
-production :ref:`lifecycles <lifecycle>` provided as the
+production :ref:`life cycles <lifecycle>` provided as the
 :class:`project.Evaluation <forml.project.Evaluation>` descriptor.
 
 .. code-block:: python

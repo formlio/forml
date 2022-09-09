@@ -17,6 +17,8 @@
 
 """
 Date and time manipulating functions.
+
+.. spelling:word-list:: Datetime
 """
 import operator
 

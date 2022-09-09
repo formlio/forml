@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Filesystem inventory is a plain hierarchical file based locally-accessible structure.
+File system inventory is a plain hierarchical file based locally-accessible structure.
 """
 import logging
 import pathlib
@@ -48,7 +48,7 @@ class Inventory(asset.Inventory, alias='posix'):
     """Posix inventory implementation.
 
     Args:
-        path: Filesystem location of the inventory root directory.
+        path: File system location of the inventory root directory.
               Defaults to :file:`$FORML_HOME/inventory`.
 
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:

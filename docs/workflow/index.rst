@@ -77,7 +77,7 @@ The high-level API for describing a workflow allows to :ref:`compose an operator
 
     flow = LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)
 
-The typically counterintuitive feature of any DAG-based frameworks is that execution of these
+The typically counter-intuitive feature of any DAG-based frameworks is that execution of these
 expressions *builds* a DAG rather than *performing* the actual processing functions (which
 happens separately in a completely different context).
 

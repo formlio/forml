@@ -21,7 +21,7 @@ Serving Engine
 In addition to the basic :ref:`CLI-driven <platform-cli>` project-level batch-mode :ref:`execution
 mechanism <platform-execution>`, ForML allows to operate the encompassing :ref:`applications
 <application>` within an interactive loop performing the *apply* action of the :ref:`production
-lifecycle <lifecycle-production>` - essentially providing *online predictions* a.k.a. *ML
+life cycle <lifecycle-production>` - essentially providing *online predictions* a.k.a. *ML
 inference* based on the underlying models.
 
 .. _serving-process:
@@ -112,7 +112,7 @@ layer providing some sort of a transport protocol.
 
 For this purpose, ForML comes with a concept of *serving frontend gateways*. They also follow the
 :ref:`provider pattern <provider>` allowing to deliver number of different interchangeable
-:ref:`implementations <serving-providers>` plugable at launch-time.
+:ref:`implementations <serving-providers>` pluggable at launch-time.
 
 Frontend gateways represent the outermost layer in the logical hierarchy of the ForML architecture:
 

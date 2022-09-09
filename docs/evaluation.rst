@@ -18,10 +18,10 @@
 Evaluation
 ==========
 
-As part of the :ref:`project lifecycle management <lifecycle>`, ForML allows to *evaluate* the model
-performance by quantifying the quality of its predictions using a number of different methods.
+As part of the :ref:`project life cycle management <lifecycle>`, ForML allows to *evaluate* the
+model performance by quantifying the quality of its predictions using a number of different methods.
 
-There are two different evaluation concepts each relating to one of the possible :ref:`lifecycles
+There are two different evaluation concepts each relating to one of the possible :ref:`life cycles
 <lifecycle-actions>`:
 
 * :ref:`Development train-test evaluation <evaluation-traintest>` used to benchmark the solution
@@ -35,7 +35,7 @@ All configuration specific to the evaluation setup is defined on the project lev
 .. autoclass:: forml.project.Evaluation
 
 With this information, ForML can assemble the particular evaluation :ref:`workflow <workflow>`
-around the main :ref:`pipeline component <project-pipeline>` once that given lifecycle action
+around the main :ref:`pipeline component <project-pipeline>` once that given life cycle action
 gets triggered.
 
 .. attention::
@@ -61,7 +61,7 @@ Metric Function
 
 The heart of the evaluation process is a specific *metric function* quantifying the quality of the
 *predicted* versus *true* outcomes. There are dozens of standard metrics each suitable to different
-scenarios (plus new ones can always be implemented ad-hoc).
+scenarios (plus new ones can always be implemented :spelling:word:`ad hoc`).
 
 The ForML evaluation API is using the following abstraction for its metric implementations:
 
@@ -113,7 +113,7 @@ Following are the available :class:`evaluation.Method <forml.evaluation.Method>`
 Production Performance Tracking
 -------------------------------
 
-After transitioning to the :ref:`production lifecycle <lifecycle-production>`, it becomes an
+After transitioning to the :ref:`production life cycle <lifecycle-production>`, it becomes an
 operational necessity to monitor the predictive performance of the deployed solution ensuring it
 maintains its expected quality.
 
@@ -129,9 +129,9 @@ objective success while making the actual production decisions.
 Process-wise, the performance tracking differs from the :ref:`development evaluation
 <evaluation-traintest>` use-case in two key aspects:
 
-#. It doesn't involve any *training* - the point is to evaluate predictions made by an existing
+#. It does not involve any *training* - the point is to evaluate predictions made by an existing
    :ref:`model generation <lifecycle-generation>` running in production. The concept of
-   the different :ref:`methods <evaluation-methods>` known from the development evaluation doesn't
+   the different :ref:`methods <evaluation-methods>` known from the development evaluation does not
    apply - the :ref:`metric function <evaluation-metric>` scores directly the genuinely served
    predictions against the eventual true outcomes.
 #. The *predictions* that are to be evaluated are in principle made before the *true* outcomes are
@@ -143,4 +143,4 @@ Process-wise, the performance tracking differs from the :ref:`development evalua
 
 
 ForML allows to report the serving evaluation metric based on the :ref:`project configuration
-<project-evaluation>` by performing the relevant :ref:`lifecycle action <lifecycle-production>`.
+<project-evaluation>` by performing the relevant :ref:`life cycle action <lifecycle-production>`.

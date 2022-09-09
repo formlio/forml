@@ -50,7 +50,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
     packaged for distribution.
 
     Args:
-        path: Filesystem path pointing to the package file.
+        path: File system path pointing to the package file.
     """
 
     path: pathlib.Path
@@ -77,9 +77,9 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
         """Create new package from the given source tree.
 
         Args:
-            source: Filesystem path to the root of directory tree to be packaged.
+            source: File system path to the root of directory tree to be packaged.
             manifest: Package manifest to be used.
-            path: Target package filesystem path.
+            path: Target package file system path.
 
         Returns:
             Package instance.

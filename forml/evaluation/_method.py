@@ -34,17 +34,17 @@ if typing.TYPE_CHECKING:
 
 class CrossVal(_api.Method):
     """Evaluation method based on a number of independent train-test trials using different parts of
-    the same trainset.
+    the same training dataset.
 
-    The trainset gets split into multiple (possibly overlaying) train-test pairs (folds) used to
-    train a vanilla instance of the pipeline and to pass down *predictions* along with *true*
-    outcomes independently for each fold.
+    The training dataset gets split into multiple (possibly overlaying) train-test pairs (folds)
+    used to train a vanilla instance of the pipeline and to pass down *predictions* along with
+    *true* outcomes independently for each fold.
 
     Args:
         crossvalidator: Implementation of the split-selection logic.
         splitter: Depending on the constructor version:
 
-                  1. Folding actor type that is expected to take ``crossvalidator`` as its
+                  1. Folding actor type that is expected to take the *cross-validator* as its
                      parameter. Defaults to :class:`payload.PandasCVFolds
                      <forml.pipeline.payload.PandasCVFolds>`.
                   2. Actor builder instance defining the folding splitter.
@@ -66,12 +66,12 @@ class CrossVal(_api.Method):
         crossvalidator: 'payload.CrossValidable',
         splitter: 'type[payload.CVFoldable]' = paymod.PandasCVFolds,
     ):
-        """Constructor based on a splitter supplied in form of a ``crossvalidator`` and a folding
+        """Constructor based on a splitter supplied in form of a cross-validator and a folding
         actor type.
 
         Args:
             crossvalidator: Implementation of the split-selection logic.
-            splitter: Folding actor type that is expected to take the ``crossvalidator`` is its
+            splitter: Folding actor type that is expected to take the *cross-validator* is its
                       parameter. Defaults to :class:`payload.PandasCVFolds
                       <forml.pipeline.payload.PandasCVFolds>`.
         """
@@ -121,7 +121,8 @@ class CrossVal(_api.Method):
 
 
 class HoldOut(CrossVal):
-    """Evaluation method based on part of a trainset being withheld for testing the predictions.
+    """Evaluation method based on part of a training dataset being withheld for testing the
+    predictions.
 
     The historical dataset available for evaluation is first split into two parts, one is used
     for training the pipeline and the second for making actual *predictions* which are then exposed
@@ -143,8 +144,8 @@ class HoldOut(CrossVal):
         crossvalidator: Implementation of the split-selection logic.
         splitter: Depending on the constructor version:
 
-                  1. Folding actor type that is expected to take crossvalidator is its parameter.
-                     Defaults to :class:`payload.PandasCVFolds
+                  1. Folding actor type that is expected to take the *cross-validator* is its
+                     parameter. Defaults to :class:`payload.PandasCVFolds
                      <forml.pipeline.payload.PandasCVFolds>`.
                   2. Actor builder instance defining the train-test splitter.
 
@@ -177,8 +178,8 @@ class HoldOut(CrossVal):
             stratify: Use :class:`StratifiedShuffleSplit
                       <sklearn:sklearn.model_selection.StratifiedShuffleSplit>` if True otherwise
                       use :class:`ShuffleSplit <sklearn.model_selection.ShuffleSplit>`.
-            splitter: Folding actor type that is expected to take a crossvalidator is its parameter.
-                      Defaults to :class:`payload.PandasCVFolds
+            splitter: Folding actor type that is expected to take a *cross-validator* is its
+                      parameter. Defaults to :class:`payload.PandasCVFolds
                       <forml.pipeline.payload.PandasCVFolds>`.
         """
 
@@ -189,12 +190,12 @@ class HoldOut(CrossVal):
         crossvalidator: 'payload.CrossValidable',
         splitter: 'type[payload.CVFoldable]' = paymod.PandasCVFolds,
     ):
-        """Constructor based on a splitter supplied in form of a ``crossvalidator`` and a folding
+        """Constructor based on a splitter supplied in form of a cross-validator and a folding
         actor type.
 
         Args:
             crossvalidator: Implementation of the split-selection logic.
-            splitter: Folding actor type that is expected to take the ``crossvalidator`` is its
+            splitter: Folding actor type that is expected to take the *cross-validator* is its
                       parameter. Defaults to :class:`payload.PandasCVFolds
                       <forml.pipeline.payload.PandasCVFolds>`.
         """
