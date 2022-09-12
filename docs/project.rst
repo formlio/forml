@@ -19,20 +19,20 @@ Project Organization
 ====================
 
 Projects built on ForML are in principle software source-code collections consisting of a set of
-defined components organized as a python package. Their ultimate purpose is to enable an effective
+defined components organized as a python package. Their ultimate purpose is to enable effective
 development leading to delivering (i.e. *releasing* a version of) a solution in form of a deployable
-:ref:`artifacts <registry-artifacts>`.
+:ref:`artifact <registry-artifacts>`.
 
-While developing, ForML allows to execute the project source-code working copy by triggering its
+While developing, ForML allows execution of the project source-code working copy by triggering its
 :ref:`development life cycle actions <lifecycle-development>` or when visited in the
 :ref:`interactive mode <interactive>`.
 
 .. attention::
-   Although not in scope of this documentation, all the general source-code management best
-   practices (version control, continuous integration/delivery etc.) are applicable to ForML
+   Although not in the scope of this documentation, all the general source-code management best
+   practices (version control, continuous integration/delivery, etc.) are applicable to ForML
    projects and should be integrated into the development process.
 
-To discover the structure of some real ForML project, it is worth exploring the available
+To discover the structure of some real ForML projects, it is worth exploring the available
 :ref:`tutorials <tutorials>`.
 
 .. _project-init:
@@ -41,7 +41,8 @@ Starting a New Project
 ----------------------
 
 ForML project can be initialized either manually by implementing the `component structure`_  from
-scratch or simply via the ``init`` subcommand of the ``forml`` :ref:`platform-cli`:
+scratch or simply via the ``init`` subcommand of the ``forml`` :ref:`command-line interface
+<platform-cli>`:
 
 .. code-block:: console
 
@@ -52,7 +53,7 @@ scratch or simply via the ``init`` subcommand of the ``forml`` :ref:`platform-cl
 Component Structure
 -------------------
 
-ForML projects are essentially standard :doc:`Setuptools <setuptools:setuptools>` based python
+ForML projects are essentially standard :doc:`Setuptools <setuptools:setuptools>`-based python
 packages organized in a way to allow ForML to identify its *principal components* and to operate its
 :ref:`life cycle <lifecycle>`.
 
@@ -101,7 +102,7 @@ This is the standard :doc:`Setuptools <setuptools:setuptools>` bootstrap module 
 to integrate the ForML principal component structure. It's placed directly in the project root
 directory.
 
-To hook with the framework, the ``setup.py`` just needs to use the ``forml.project.Distribution``
+To hook in with the framework, the ``setup.py`` just needs to use the ``forml.project.Distribution``
 as the custom setuptools ``disctlass`` . The rest is the usual ``setup.py`` content:
 
 .. code-block:: python
@@ -118,15 +119,15 @@ as the custom setuptools ``disctlass`` . The rest is the usual ``setup.py`` cont
                      distclass=project.Distribution)  # the key to integrate ForML
 
 .. note::
-    Upon publishing (in scope of the :ref:`development life cycle <lifecycle-development>`), the
-    specified ``version`` value will become the *release* identifier thus needs to be a valid
+    Upon publishing (in the scope of the :ref:`development life cycle <lifecycle-development>`), the
+    specified ``version`` value will become the *release* identifier and thus needs to be a valid
     :pep:`440` version.
 
 The project should carefully specify all of its dependencies using the ``install_requires``
 parameter as these will be included in the released :ref:`.4ml package artifact <registry-artifacts>`.
 
 One addition provided on top of the original ``setuptools`` functionality is the ability to
-customize the conventional ForML principal component layout. If, from some reason, the user wants to
+customize the conventional ForML principal component layout. If for some reason, the user wants to
 divert from the convention, the custom locations of its principal components can be specified using
 the ``component`` parameter as follows:
 
@@ -163,7 +164,7 @@ Pipeline Expression
 Pipeline definition is the heart of the entire solution. It is provided in form of the
 :ref:`workflow expression <workflow-expression>`.
 
-ForML expects this component to be provided as :file:`pipeline.py` module or :file:`pipeline`
+ForML expects this component to be provided as a :file:`pipeline.py` module or :file:`pipeline`
 package under the project package root.
 
 .. code-block:: python
@@ -182,9 +183,9 @@ package under the project package root.
 Dataset Definition
 """"""""""""""""""
 
-The ``source`` component provides the project with a definite while portable dataset description. It
-is specified using the :meth:`project.Source.query <forml.project.Source.query>` as a
-:ref:`DSL expression <query>` against some particular :ref:`schema catalog <io-catalog>`.
+The ``source`` component provides the project with a definite while still portable dataset
+description. It is specified using the :meth:`project.Source.query <forml.project.Source.query>`
+as a :ref:`DSL expression <query>` against some particular :ref:`schema catalog <io-catalog>`.
 
 .. code-block:: python
    :caption: source.py or source/__init__.py
@@ -238,6 +239,6 @@ production :ref:`life cycles <lifecycle>` provided as the
 Tests
 ^^^^^
 
-ForML has a rich operator unit testing facility which can be integrated into the usual
+ForML has a rich operator unit testing facility that can be integrated into the usual
 :file:`tests/` project structure. This topic is extensively covered in the separate :ref:`testing`
 chapter.

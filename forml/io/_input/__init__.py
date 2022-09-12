@@ -43,7 +43,7 @@ class Feed(
     typing.Generic[parsmod.Source, parsmod.Feature],
     path=setup.Feed.path,  # pylint: disable=no-member
 ):
-    """Abstract base class for data-source feed providers.
+    """Abstract base class for data source feed providers.
 
     It integrates the concept of a DSL-based ``Reader`` provided using the :meth:`producer` method
     or by overriding the inner ``.Reader`` class and a *content resolver* with its abstract parts
@@ -142,17 +142,18 @@ class Feed(
         """The main part of the *content resolver* providing the *Source* mappings.
 
         This way the Feed is advertising the available datasets represented using their
-        :ref:`published schemas <io-catalog>` logically mapped to the hosted data-sources specified
-        using the *parser-specific* semantic.
+        :ref:`published schemas <io-catalog>` logically mapped to the hosted data sources specified
+        using the *parser-specific* semantics.
 
         A :class:`Source <forml.io.dsl.Source>` is a DSL concept representing anything that can be
-        queried as a data-source.
+        queried as a data source.
 
         Returns:
             Sources mapping.
 
         Examples:
-            Using a parser with ``SQLAlchemy`` semantic, an example of the mapping might look like::
+            Using a parser with ``SQLAlchemy`` semantics, an example of the mapping might look like
+            this::
 
                 return {
                     schema.Titanic: sqlalchemy.table('titanic'),
@@ -182,7 +183,7 @@ class Importer:
     """Pool of (possibly) lazily instantiated feeds.
 
     The pool is used to select the most suitable feed instance capable of resolving the particular
-    DSL query (in terms of providing data-sources for all the involved schemas). Feed instances can
+    DSL query (in terms of providing data sources for all the involved schemas). Feed instances can
     have a static priority assigned in which case the first feed with the highest priority capable
     of providing the data is returned.
 

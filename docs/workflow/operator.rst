@@ -30,7 +30,7 @@ Therefore, many operators can be shared as library components turning advanced t
 reusable commodity-like modules (see the ensembler).
 
 Built upon the :ref:`pipeline mode duality principle <workflow-mode>`, operators always deliver
-the related task graphs for both of the *train* and *predict* modes together. That's how ForML
+the related task graphs for both the *train* and *apply* modes together. That's how ForML
 enforces the train-predict integrity at every step of the workflow.
 
 The operator layer also happens to be the ideal stage for carrying out unit testing. For this
@@ -40,7 +40,7 @@ purpose, ForML provides a complete :ref:`operator unit testing framework <testin
 Generic Implementation
 ----------------------
 
-Operators can implement whatever complex functionality based on any number of actors. They are
+Operators can implement arbitrarily complex functionality based on any number of actors. They are
 using the :ref:`logical topology structures <topology-logical>` to define the internal task
 graph and its composition with the preceding operators.
 
@@ -56,7 +56,7 @@ main ``flow.Operator`` base class:
 Let's explain the operator development process by implementing a typical *Stateful Mapper*
 operator. Conceptually, this operator works as follows:
 
-#. in train-mode:
+#. in the *train-mode*:
 
    #. it first gets *trained* (*Task 1* - :meth:`.train() <forml.flow.Actor.train>`) using the
       train features (via *Train* port) and labels (via *Label* port)
@@ -64,7 +64,7 @@ operator. Conceptually, this operator works as follows:
       :meth:`.apply() <forml.flow.Actor.apply>`) the *train features* (via *Apply input* port)
       producing the transformed output (via *Apply output* port)
 
-#. in apply-mode:
+#. in the *apply-mode*:
 
    #. again, using the state acquired during the training task, it *maps* (*Task 3* -
       :meth:`.apply() <forml.flow.Actor.apply>`) this time the *apply features* (via *Apply
@@ -93,8 +93,8 @@ The following diagram outlines the flows:
             aa --> ao((A))
         end
 
-The segment between the ``A`` head/tail nodes represents the apply-mode task graph, while the
-segment between the ``T`` (+ ``L``) nodes represents the train-mode task graph.
+The segment between the ``A`` head/tail nodes represents the *apply-mode* task graph, while the
+segment between the ``T`` (+ ``L``) nodes represents the *train-mode* task graph.
 
 Proceeding to the actual implementation, we simply extend the :class:`flow.Operator
 <forml.flow.Operator>` class and provide the :meth:`.compose() <forml.flow.Composable.compose>`
@@ -176,11 +176,11 @@ That would render the following task graphs:
 
 
 *Composition* is the operation described using the ML
-:ref:`workflow expressions <workflow-expression>` based on the individual operators, that allows to
-shape the entire task graph in a fully flexible manner.
+:ref:`workflow expressions <workflow-expression>` based on the individual operators, which allows
+for shaping the entire task graph in a fully flexible manner.
 
 As shown, the pipeline composition expressions are using the ``>>`` syntax to compose two
-operators together. This can be chained further down engaging multiple operators.
+operators together. This can be chained further down by engaging multiple operators.
 
 The :meth:`.compose() <forml.flow.Composable.compose>` method of each operator is receiving the
 composition *scope* - the upstream (left) side of the expression - in an *unexpanded* form
@@ -189,7 +189,7 @@ allowing the ``.compose()`` implementation to expand it (by calling the :meth:`s
 
 The *expansion* process triggers the chained ``.compose()`` calls of the upstream operators all
 the way up to the *origin* of the given composition *scope*. Explicit scoping can be defined using
-the intuitive parenthetical notation. That makes this operation non-associative - e.g. the
+intuitive parenthetical notation. That makes this operation non-associative - e.g. the
 expansion scope of operator ``C`` composition in expression ``A >> B >> C`` is the whole
 ``A >> B``, while in expression ``A >> (B >> C)`` it is just the ``B`` operator.
 
@@ -227,7 +227,7 @@ Custom actors can be turned into operators easily by wrapping particular actors 
 
     PIPELINE = AnotherOperator() >> DropColumn(column='foo')
 
-For complete reference of the decorated operators including further examples see the
+For a complete reference of the decorated operators including further examples see the
 :class:`wrap.Operator <forml.pipeline.wrap.Operator>` class documentation.
 
 .. _operator-autowrap:

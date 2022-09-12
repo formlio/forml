@@ -19,7 +19,7 @@ Providers Library
 =================
 
 ForML providers are *plugins* implementing particular functionality defined within the framework
-using an abstract interface to decouple itself from specific technologies allowing for a greater
+using an abstract interface to decouple itself from specific technologies allowing for greater
 operational flexibility.
 
 Providers become available for runtime operations after being :ref:`properly configured
@@ -27,8 +27,8 @@ Providers become available for runtime operations after being :ref:`properly con
 
 
 .. seealso::
-    This page is merely a summarizing list of all the official providers shipped with ForML. API
-    documentation as well as comprehensive description of their logical concepts is covered
+    This page is merely a summary list of all the official providers shipped with ForML. API
+    documentation as well as a comprehensive description of their logical concepts is covered
     in individual chapters dedicated to each of the provider types respectively (linked in
     subsections below).
 
@@ -38,7 +38,7 @@ Providers become available for runtime operations after being :ref:`properly con
 
 In addition to the existing providers, users might find themselves requiring to implement their
 bespoke instances. To avoid having to always release and deploy these providers as true code
-artifacts, ForML allows to alternatively treat them in rather more configuration-like manner.
+artifacts, ForML allows to alternatively treat them in a rather more configuration-like manner.
 
 For this purpose, the standard :ref:`config directories <platform-config>` are valid locations
 for hosting python modules with bespoke provider implementations available to the particular runtime
@@ -101,7 +101,7 @@ implementing the abstract :class:`forml.io.asset.Registry` base class.
 Runners
 -------
 
-Actual execution of the :ref:`ForML workflows <workflow>` is performed by the
+The actual execution of the :ref:`ForML workflows <workflow>` is performed by the
 :ref:`pipeline runner <runner>` providers implementing the :class:`forml.runtime.Runner` base class.
 
 .. autosummary::
@@ -132,7 +132,7 @@ platform-configured :ref:`set of feeds <feed>` implementing the :class:`forml.io
 .. rubric:: External Providers
 
 +----------------------------------+-------------------------------------------------------------+
-| :class:`openlake:openlake.Lite` | ForML feed providing access to a number of public datasets.  |
+| :class:`openlake:openlake.Lite`  | ForML feed providing access to a number of public datasets. |
 +----------------------------------+-------------------------------------------------------------+
 
 

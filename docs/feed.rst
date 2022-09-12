@@ -18,9 +18,9 @@
 Source Feed
 ===========
 
-Feed is a :ref:`runtime platform <platform>` component responsible for interpreting the
+A *Feed* is a :ref:`runtime platform <platform>` component responsible for interpreting the
 :ref:`ETL query <dsl>` defined as the :ref:`project source <project-source>` and :ref:`resolving
-<io-resolving>` the requested dataset using the linked storage system.
+<io-resolution>` the requested dataset using the linked storage system.
 
 Architecture
 ------------
@@ -29,11 +29,11 @@ The Feed concept is based on two main principles:
 
 #. A DSL-interpreting :class:`Reader <forml.io.Feed.Reader>` acting as an adapter between the
    storage layer and the pipeline.
-#. A :ref:`content resolver <io-resolving>` using an explicit mapping of the published
+#. A :ref:`content resolver <io-resolution>` using an explicit mapping of the published
    :ref:`schema catalogs <io-catalog>` to the hosted data sources effectively matching the logical
    schemas with actual data.
 
-Content resolving takes places in scope of the :ref:`DSL parsing <query-parser>`
+Content resolution takes place in the scope of the :ref:`DSL parsing <query-parser>`
 as part of the Reader routine simply by :class:`visiting <forml.io.dsl.parser.Visitor>` and
 replacing the matched DSL :class:`Sources <forml.io.dsl.Source>`/:class:`Features
 <forml.io.dsl.Feature>` with the mapped terms declared already using the parser-target semantic.
@@ -68,8 +68,8 @@ Contextual Feed Selection
 -------------------------
 
 Unlike the other :ref:`provider types <provider>` which explicitly nominate exactly one instance
-each before launching, feeds go through more dynamic process of selecting the most suitable
-candidate in context of the actual data query.
+each before launching, feeds go through a more dynamic process of selecting the most suitable
+candidate in the context of the actual data query.
 
 For this purpose, ForML uses the ``io.Importer`` class:
 
@@ -84,7 +84,7 @@ Custom Feed Setup
 
 Existing generic Feed implementations can be :ref:`configured <platform-config>` as any other
 :ref:`provider types <provider>`. The strong deployment-specific character of the
-:ref:`content resolver <io-resolving>` setup (explicit mapping of the published :ref:`schemas
+:ref:`content resolver <io-resolution>` setup (explicit mapping of the published :ref:`schemas
 <io-catalog>` and the hosted data sources) might, however, require to declare *bespoke
 Feed providers* using not just parametric configuration but rather directly as a non-generic code.
 
@@ -109,5 +109,5 @@ The available implementations are:
 .. rubric:: External Providers
 
 +----------------------------------+-------------------------------------------------------------+
-| :class:`openlake:openlake.Lite` | ForML feed providing access to a number of public datasets.  |
+| :class:`openlake:openlake.Lite`  | ForML feed providing access to a number of public datasets. |
 +----------------------------------+-------------------------------------------------------------+

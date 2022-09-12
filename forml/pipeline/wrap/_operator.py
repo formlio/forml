@@ -138,7 +138,7 @@ class Decorator:
 
 
 class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
-    """Special operator created via decoration of particular actors.
+    """Special operator created via a decoration of particular actors.
 
     This represents a convenient way of implementing ForML *Operators* without requiring to fully
     implement the :class:`flow.Operator <forml.flow.Operator>` base class from scratch.
@@ -151,7 +151,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
     corresponding to the relevant *primitive* decorators (:meth:`apply`, :meth:`train`,
     :meth:`label`) supplying the particular actors.
 
-    In addition to the primitive decorators there is the combined :meth:`mapper` decorator filling
+    In addition to the primitive decorators, there is the combined :meth:`mapper` decorator filling
     both the train/apply segments at once.
 
     Hint:
@@ -181,13 +181,13 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             in the *train-mode*. If *stateful*, the actor also gets normally trained first. Note it
             does not get applied to the *apply-mode* features unless also decorated with the
             :meth:`apply` decorator (this is rarely desired - see the :meth:`mapper` decorator for
-            more typical use case)!
+            a more typical use case)!
 
             Parameters:
                 actor: Decorated actor.
 
             Returns:
-                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                An :class:`operator-type-like object <forml.pipeline.wrap.Type>` that can be
                 instantiated into the actual Operator as well as further chained as a follow-up
                 decorator.
 
@@ -215,7 +215,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
                 actor: Decorated actor.
 
             Returns:
-                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                An :class:`operator-type-like object <forml.pipeline.wrap.Type>` that can be
                 instantiated into the actual Operator as well as further chained as a follow-up
                 decorator.
 
@@ -255,13 +255,14 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             When used as a decorator, this method creates an *operator* engaging the wrapped *actor*
             in the *train-mode* as the *label transformer*. If *stateful*, the actor also gets
             normally trained first. The actor gets engaged prior to any other stateful actors
-            potentially added to the same operator (using the ``@train`` or ``@apply`` decorators).
+            potentially added to the same operator (using the :meth:`train` or :meth:`apply`
+            decorators).
 
             Parameters:
                 actor: Decorated actor.
 
             Returns:
-                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                An :class:`operator-type-like object <forml.pipeline.wrap.Type>` that can be
                 instantiated into the actual Operator as well as further chained as a follow-up
                 decorator.
 
@@ -291,7 +292,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
         mapper(actor):
             Combined train-apply decorator.
 
-            Decorator representing wrapping of the same actor using both the :meth:`train`
+            Decorator representing the wrapping of the same actor using both the :meth:`train`
             and :meth:`apply` decorators effectively engaging the actor in transforming the
             features in both the *train-mode* as well as the *apply-mode*.
 
@@ -302,7 +303,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
                 actor: Decorated actor.
 
             Returns:
-                :class:`Operator-type-like object <forml.pipeline.wrap.Type>` that can be
+                An :class:`operator-type-like object <forml.pipeline.wrap.Type>` that can be
                 instantiated into the actual Operator.
     """
 

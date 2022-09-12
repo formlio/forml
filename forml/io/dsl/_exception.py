@@ -26,7 +26,7 @@ class UnprovisionedError(forml.MissingError):
 
     Raised by DSL parsers when the given *source* or *feature* (typically :class:`dsl.Table
     <forml.io.dsl.Table>` or :class:`dsl.Column <forml.io.dsl.Column>`) can't be resolved
-    using the available data-sources.
+    using the available data sources.
     """
 
 

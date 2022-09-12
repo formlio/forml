@@ -48,8 +48,8 @@ class CrossVal(_api.Method):
                      parameter. Defaults to :class:`payload.PandasCVFolds
                      <forml.pipeline.payload.PandasCVFolds>`.
                   2. Actor builder instance defining the folding splitter.
-        nsplits: Number of splits the splitter is going to generate (needs to be explicit as there
-                 is no generic way to infer it from the Builder).
+        nsplits: The number of splits the splitter is going to generate (needs to be explicit as
+                 there is no generic way to infer it from the Builder).
 
     Examples:
         >>> CROSSVAL = evaluation.CrossVal(
@@ -125,7 +125,7 @@ class HoldOut(CrossVal):
     predictions.
 
     The historical dataset available for evaluation is first split into two parts, one is used
-    for training the pipeline and the second for making actual *predictions* which are then exposed
+    for training the pipeline, and the second for making actual *predictions* which are then exposed
     together with the *true* outcomes for eventual scoring.
 
     Note:
@@ -139,12 +139,12 @@ class HoldOut(CrossVal):
                     (defaults to ``test_size`` complement).
         random_state: Controls the randomness of the training and testing indices produced.
         stratify: Use :class:`StratifiedShuffleSplit
-                  <sklearn:sklearn.model_selection.StratifiedShuffleSplit>` if True otherwise
+                  <sklearn:sklearn.model_selection.StratifiedShuffleSplit>` if ``True`` otherwise
                   use :class:`ShuffleSplit <sklearn.model_selection.ShuffleSplit>`.
         crossvalidator: Implementation of the split-selection logic.
         splitter: Depending on the constructor version:
 
-                  1. Folding actor type that is expected to take the *cross-validator* is its
+                  1. The folding actor type that is expected to take the *cross-validator* is its
                      parameter. Defaults to :class:`payload.PandasCVFolds
                      <forml.pipeline.payload.PandasCVFolds>`.
                   2. Actor builder instance defining the train-test splitter.

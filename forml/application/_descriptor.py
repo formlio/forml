@@ -41,7 +41,7 @@ LOGGER = logging.getLogger(__name__)
 def setup(descriptor: 'application.Descriptor') -> None:  # pylint: disable=unused-argument
     """Interface for registering application descriptor instances.
 
-    This function is expected to be called exactly once from within application descriptor file.
+    This function is expected to be called exactly once from within the application descriptor file.
 
     The true implementation of this function is only provided when imported within the *application
     loader context* (outside the context this is effectively no-op).
@@ -153,7 +153,7 @@ class Descriptor(abc.ABC):
     ) -> 'asset.Instance':
         """Select the model instance to be used for serving the request.
 
-        This can implement arbitrary model-selection strategy with the use of the provided
+        This can implement an arbitrary model-selection strategy with the use of the provided
         information.
 
         Args:
@@ -175,7 +175,7 @@ class Descriptor(abc.ABC):
     ) -> 'layout.Response':
         """Turn the application result into a native response to be passed back to the requester.
 
-        This involves assembling the result structure and encoding it into a native format.
+        This involves assembling the resulting structure and encoding it into a native format.
 
         Args:
             outcome: Result to be returned.

@@ -44,7 +44,7 @@ class Metric(abc.ABC):
     def score(self, *outcomes: 'evaluation.Outcome') -> 'flow.Node':
         """Compose the metric evaluation task on top of the given *outcomes* DAG ports.
 
-        Return the tail node of the new DAG that's expected to have single output apply port
+        Return the tail node of the new DAG that's expected to have a single output apply-port
         delivering the calculated metric.
 
         Args:
@@ -56,7 +56,7 @@ class Metric(abc.ABC):
                         cross-validation folds).
 
         Returns:
-            Single node with single apply output port providing the metric output.
+            Single node with single output apply-port providing the metric output.
         """
 
     def __repr__(self):
@@ -88,7 +88,7 @@ class Method(abc.ABC):
             labels: Source port producing the historical outcomes matching the features.
 
         Returns:
-            Sequence of true/predicted outcome port pairs.
+            A sequence of true/predicted outcome port pairs.
         """
 
     def __repr__(self):

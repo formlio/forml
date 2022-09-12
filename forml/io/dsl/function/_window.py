@@ -41,7 +41,7 @@ from .._struct import series
 
 
 class RowNumber(series.Window.Function):
-    """Unique, sequential number for each row starting from one according to the ordering of rows
+    """A unique sequential number for each row starting from one according to the ordering of rows
     within the window partition.
 
     Examples:

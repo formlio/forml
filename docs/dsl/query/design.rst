@@ -18,7 +18,7 @@
 Internal Design
 ===============
 
-The DSL uses comprehensive class hierarchy to implement the desired API. Although the internal
+The DSL uses a comprehensive class hierarchy to implement the desired API. Although the internal
 design is irrelevant from the practical usability standpoint, it is essential for implementing
 additional :ref:`parsers <query-parser>`.
 

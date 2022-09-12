@@ -26,19 +26,19 @@ with :ref:`arbitrary data types <actor-compatibility>`, we choose for simplicity
 Simple Workflow
 ---------------
 
-Starting with a basic use-case, we want to implement a simple workflow with the following logic:
+Starting with a basic use case, we want to implement a simple workflow with the following logic:
 
-#. when in *train-mode*:
+#. when in the *train-mode*:
 
    #. applying a custom *binarize* transformation to the input labels
    #. training and applying a custom mean-removal *scaler*
    #. training a :class:`Sklearn LogisticRegression
       <sklearn:sklearn.linear_model.LogisticRegression>` classifier
 
-#. when in *apply-mode*:
+#. when in the *apply-mode*:
 
    #. applying the trained *scaler* transformer
-   #. making prediction with the :class:`Sklearn LogisticRegression
+   #. making a prediction with the :class:`Sklearn LogisticRegression
       <sklearn:sklearn.linear_model.LogisticRegression>` classifier
 
 
@@ -93,12 +93,12 @@ This straightforward implementation produces a ``PIPELINE`` represented using a 
 .. md-mermaid::
 
     flowchart TD
-        subgraph Train-mode
+        subgraph Train Mode
             btl(["Binarizer.apply()"]) -- L --> stt["Scaler.train()"] & ltt["LogisticRegression.train()"]
             sta(["Scaler.apply()"]) --> ltt
             stt -. state .-> sta
         end
-        subgraph Apply-mode
+        subgraph Apply Mode
             saa(["Scaler.apply()"]) --> laa(["LogisticRegression.apply()"])
             stt -. state .-> saa
             ltt -. state .-> laa
@@ -125,17 +125,17 @@ implement a more complex operator - we can call it ``KFoldWrapper`` - with the f
    Actor
 #. clones the task graph in the composition scope N-times and with each of its train segments:
 
-   #. attach head to the matching *splitter* output port
-   #. attach tail to the matching *stacker* input port
+   #. attach the head to the matching *splitter* output port
+   #. attach the tail to the matching *stacker* input port
 
-#. finally sends the apply outputs from all of these N branches to N:1 *reducer* Actor
+#. finally sends the apply-mode outputs from all of these N branches to the N:1 *reducer* Actor
 
 The idea behind this operator is to *train+apply* the preceding scope in multiple parallel
-instances on range-split part of the data and stacking these partial results back together in
-*train-mode* using the *stacker*, while reducing them into single value using the *reducer* when in
-*apply-mode*.
+instances on the range-split part of the data and stacking these partial results back together in
+the *train-mode* using the *stacker* while reducing them into a single value using the *reducer*
+when in the *apply-mode*.
 
-Such operator can be implemented by extending the :class:`flow.Operator <forml.flow.Operator>` as
+Such an operator can be implemented by extending the :class:`flow.Operator <forml.flow.Operator>` as
 follows:
 
 .. code-block:: python
@@ -238,13 +238,13 @@ implementations of ``Splitter`` and ``Mean`` actors.
 
 We deliberately chose (by applying the parentheses) the :ref:`composition scope
 <operator-composition>` to include just the preceding ``Scaler`` operator without the ``Binarizer``.
-For readability of the following visualization, we set the ``nfolds`` (which results in the number
-of the branches) to just ``2``. That leads to the following diagram:
+For the readability of the following visualization, we set the ``nfolds`` (which results in the
+number of branches) to just ``2``. That leads to the following diagram:
 
 .. md-mermaid::
 
     flowchart TD
-        subgraph Train-mode
+        subgraph Train Mode
             btl(["Binarizer.apply()"]) -- L --> ftl(["Splitter[L].apply()"]) & ltt["LogisticRegression.train()"]
             fta(["Splitter[F].apply()"]) -- F1 --> s1tt["Scaler[1].train()"] & s1ta(["Scaler[1].apply()"])
             fta -- F2 --> s2tt["Scaler[2].train()"] & s2ta(["Scaler[2].apply()"])
@@ -255,7 +255,7 @@ of the branches) to just ``2``. That leads to the following diagram:
             s1tt -. state .-> s1ta
             s2tt -. state .-> s2ta
         end
-        subgraph Apply-mode
+        subgraph Apply Mode
             s1aa(["Scaler[1].apply()"]) & s2aa(["Scaler[2].apply()"]) --> raa(["Mean.apply()"])
             raa --> laa(["LogisticRegression.apply()"])
             ltt -. state .-> laa
@@ -273,7 +273,7 @@ of the branches) to just ``2``. That leads to the following diagram:
             laa --> ao((A))
         end
 
-As you can see, there remain to be a single instance of the ``Binarizer`` as well as the
-``LogisticRegression`` classifier, while the inner part of the task graph now forks in
-two branches and merges back together by ``Concat`` in *train-mode* (where each branch receives
-distinct train data) and ``Mean`` in *apply-mode* (where the branches receive the same data).
+As you can see, there remains to be a single instance of the ``Binarizer`` as well as the
+``LogisticRegression`` classifier, while the inner part of the task graph now forks into
+two branches and merges back together by ``Concat`` in the *train-mode* (where each branch receives
+distinct train data) and ``Mean`` in the *apply-mode* (where the branches receive the same data).

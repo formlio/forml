@@ -40,7 +40,7 @@ class Instruction(metaclass=abc.ABCMeta):
         """Actual instruction functionality.
 
         Args:
-            args: Sequence of input arguments.
+            args: A sequence of input arguments.
 
         Returns:
             Instruction result.
@@ -64,14 +64,14 @@ class Instruction(metaclass=abc.ABCMeta):
 
 
 class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
-    """Main unit of the compiled low-level runtime code.
+    """The main unit of the compiled low-level runtime code.
 
     It represents the executable instruction and its dependency on other instructions in the task
     graph.
 
     Args:
         instruction: The executable instruction.
-        arguments: Sequence of instructions whose output constitutes parameters to this symbol's
+        arguments: The sequence of instructions whose output constitutes parameters to this symbol's
                    instruction.
     """
 

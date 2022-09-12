@@ -48,7 +48,7 @@ implementation. Updating the models of the same release allows (if supported by 
 to carry the state over from previous generations to the next by incrementally training only on
 the new data obtained since the previous training.
 
-Generations get transparently persisted in model registry as the :ref:`model generation assets
+Generations get transparently persisted in the model registry as the :ref:`model generation assets
 <registry-assets>`.
 
 .. _lifecycle-release:
@@ -99,9 +99,9 @@ illustrated by the following diagram:
 Development Life cycle
 ^^^^^^^^^^^^^^^^^^^^^^
 
-As the name suggests, this life cycle is exercised during the project development in scope of the
-:ref:`project source-code <project>` working copy. It is typically managed using the ``forml
-project <action>`` :ref:`CLI interface <platform-cli>` as shown bellow or using the
+As the name suggests, this life cycle is exercised during the project development in the scope of
+the :ref:`project source-code <project>` working copy. It is typically managed using the ``forml
+project <action>`` :ref:`CLI interface <platform-cli>` as shown below or using the
 :class:`runtime.Virtual <forml.runtime.Virtual>` launcher when visited in the :ref:`interactive
 mode <interactive>`.
 
@@ -142,7 +142,7 @@ Example:
 Train
 """""
 
-Run the :ref:`project pipeline <project-pipeline>` in the standard :ref:`train mode
+Run the :ref:`project pipeline <project-pipeline>` in the standard :ref:`train-mode
 <workflow-mode>`. Even though this will produce a true generation of the defined models, it won't
 get persisted across the invocations making this mode useful merely for smoke-testing the
 training process (or displaying the task graph on the :class:`Graphviz runner
@@ -192,8 +192,8 @@ The stages of the production life cycle are:
 Train
 """""
 
-Run the :ref:`project pipeline <project-pipeline>` in the :ref:`train mode <workflow-mode>` to
-produce :ref:`new generation <lifecycle-generation>` and persist it in the :ref:`model registry
+Run the :ref:`project pipeline <project-pipeline>` in the :ref:`train-mode <workflow-mode>` to
+produce the :ref:`new generation <lifecycle-generation>` and persist it in the :ref:`model registry
 <registry>`.
 
 Example:
@@ -205,8 +205,8 @@ Example:
 Tune
 """"
 
-Run hyper-parameter tuning of the selected pipeline and produce new *generation* (not implemented
-yet).
+Run hyper-parameter tuning of the selected pipeline and produce the new *generation* (not
+implemented yet).
 
 Example:
 
@@ -214,11 +214,13 @@ Example:
 
     $ forml model tune forml-tutorial-titanic
 
+.. todo:: Tuning support is currently still pending.
+
 Apply
 """""
 
-Run the previously trained :ref:`project pipeline <project-pipeline>` in the :ref:`apply
-mode <workflow-mode>` using an existing :ref:`model generation <lifecycle-generation>` (explicit
+Run the previously trained :ref:`project pipeline <project-pipeline>` in the :ref:`apply-mode
+<workflow-mode>` using an existing :ref:`model generation <lifecycle-generation>` (explicit
 version or by default the latest) loaded from the :ref:`model registry <registry>`.
 
 Example:
@@ -228,9 +230,9 @@ Example:
     $ forml model apply forml-tutorial-titanic
 
 .. seealso::
-   In addition to this command-line based batch mechanism, the :ref:`serving engine <serving>`
+   In addition to this command-line-based batch mechanism, the :ref:`serving engine <serving>`
    together with the :ref:`application concept <application>` is another way of performing the
-   apply action of the production life cycle.
+   *apply* action of the production life cycle.
 
 Evaluate
 """"""""

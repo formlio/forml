@@ -40,10 +40,10 @@ gets triggered.
 
 .. attention::
     All the evaluation primitives described in this chapter deal with :ref:`flow topology
-    <topology>` rather than any direct data values. Their purpose is not to do any calculation
+    <topology>` rather than any direct data values. Their purpose is not to do any calculations
     themselves but to construct the workflow that performs the evaluation when launched.
     For curiosity's sake, the :class:`Graphviz runner <forml.provider.runner.graphviz.Runner>` can
-    be used to explore the particular DAGs composed in scope of an evaluation.
+    be used to explore the particular DAGs composed in the scope of an evaluation.
 
 The evaluation process is in principle based on comparing *predicted* and *true* outcomes using
 some :ref:`metric function <evaluation-metric>`. The evaluation API is using the
@@ -61,7 +61,7 @@ Metric Function
 
 The heart of the evaluation process is a specific *metric function* quantifying the quality of the
 *predicted* versus *true* outcomes. There are dozens of standard metrics each suitable to different
-scenarios (plus new ones can always be implemented :spelling:word:`ad hoc`).
+scenarios (plus bespoke new ones can easily be implemented for specific purposes).
 
 The ForML evaluation API is using the following abstraction for its metric implementations:
 
@@ -79,15 +79,15 @@ Notable implementation of this ``Metric`` interface is the following ``Function`
 Development Train-Test Evaluation
 ---------------------------------
 
-Continuous evaluation provides an essential feedback during the iterative :ref:`development process
-<lifecycle-development>` indicating relative change in the solution quality induced by the
+Continuous evaluation provides essential feedback during the iterative :ref:`development process
+<lifecycle-development>` indicating a relative change in the solution quality induced by the
 particular change in its implementation (code).
 
 This type of evaluation is also referred to as *backtesting* since it involves *training* and
-*testing* the solution on historical data with known outcomes. In another words, the *true* outcomes
-are already know when producing the evaluation *prediction* outcomes.
+*testing* the solution on historical data with known outcomes. In other words, the *true* outcomes
+are already known when producing the evaluation *prediction* outcomes.
 
-There are different possible *methods* how the historical data can be correctly used within the
+There are different possible *methods* of how the historical data can be correctly used within the
 evaluated solution to essentially make predictions about the past. To generalize this concept
 for the sake of the :ref:`workflow assembly <topology>`, ForML is using the following abstraction:
 
@@ -117,17 +117,17 @@ After transitioning to the :ref:`production life cycle <lifecycle-production>`, 
 operational necessity to monitor the predictive performance of the deployed solution ensuring it
 maintains its expected quality.
 
-Natural tendency every model is exhibiting over time is its *drift* - gradual or sharp decline
+The natural tendency every model is exhibiting over time is its *drift* - a gradual or sharp decline
 between its learned generalization and the observed phenomena. This can have a number of different
 reasons but the key measure is to detect it and to keep it under control by :ref:`refreshing
-<lifecycle-generation>` or :ref:`reimplementing <lifecycle-release>` the model.
+<lifecycle-generation>` or :ref:`re-implementing <lifecycle-release>` the model.
 
 Continuous monitoring of the evaluation metric is the best way to spot these anomalies. This
-process can also be referred to as the *serving evaluation* since its goal is to measure the
-objective success while making the actual production decisions.
+process can also be referred to as the *serving evaluation* since its goal is to measure
+objective success while making actual production decisions.
 
 Process-wise, the performance tracking differs from the :ref:`development evaluation
-<evaluation-traintest>` use-case in two key aspects:
+<evaluation-traintest>` use case in two key aspects:
 
 #. It does not involve any *training* - the point is to evaluate predictions made by an existing
    :ref:`model generation <lifecycle-generation>` running in production. The concept of
@@ -142,5 +142,5 @@ Process-wise, the performance tracking differs from the :ref:`development evalua
    measurement (ranging from seconds to possibly months or more depending on the application).
 
 
-ForML allows to report the serving evaluation metric based on the :ref:`project configuration
+ForML allows reporting the serving evaluation metric based on the :ref:`project configuration
 <project-evaluation>` by performing the relevant :ref:`life cycle action <lifecycle-production>`.

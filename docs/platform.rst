@@ -21,8 +21,8 @@ Runtime Platform
 ForML platform is an environment configured to allow performing particular :ref:`life cycle
 actions <lifecycle>` on a general ForML :ref:`project <project>`. Thanks to the pluggable
 :ref:`provider architecture <provider>`, a ForML platform can be built up using a number of
-different technologies optimized for specific use-cases while keeping the same interface
-and thus guaranteeing portability of the implemented projects.
+different technologies optimized for specific use cases while keeping the same interface
+and thus guaranteeing the portability of the implemented projects.
 
 
 Setup
@@ -43,7 +43,7 @@ will try to locate and merge the :file:`config.toml` file instances in the follo
 +-----------------+---------------------------------------------------------------------------------+
 | Location        | Meaning                                                                         |
 +=================+=================================================================================+
-| ``/etc/forml/`` | *System*-wide global configuration directory                                    |
+| ``/etc/forml/`` | The *system*-wide global configuration directory                                |
 +-----------------+---------------------------------------------------------------------------------+
 | ``~/.forml/``   | *User* home directory configuration (unless overridden by the ``$FORML_HOME`` ) |
 +-----------------+---------------------------------------------------------------------------------+
@@ -52,7 +52,7 @@ will try to locate and merge the :file:`config.toml` file instances in the follo
 
 .. note::
    Both the *system* and the *user* configuration locations are also appended to the runtime
-   :data:`python:sys.path` so any python modules stored into the configuration directories are
+   :data:`python:sys.path` so any python modules stored in the configuration directories are
    potentially importable. This can be useful for :ref:`custom provider <provider-custom>`
    implementations.
 
@@ -96,7 +96,7 @@ The meaning of the different placeholders and keywords is:
     * ``INVENTORY`` - for :ref:`Application inventory <inventory>` providers
     * ``GATEWAY`` - for :ref:`Serving gateway <serving>` providers
 
-    Each of the provider type root section nominates one of its instances using the ``default``
+    Each of the provider-type root sections nominates one of its instances using the ``default``
     keyword to preselect a configuration instance for situations when no explicit choice is
     specified during some particular execution.
 
@@ -126,8 +126,8 @@ The meaning of the different placeholders and keywords is:
 
 ``<provider option X>``:
     Any other options specified within the provider configuration instance section are considered
-    to be arbitrary arguments specific to given provider implementation and will be passed to its
-    constructor.
+    to be arbitrary arguments specific to the given provider implementation and will be passed to
+    its constructor.
 
 
 Logging

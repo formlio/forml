@@ -33,7 +33,7 @@ class Field(typing.NamedTuple):
     """Schema field class.
 
     When defined as class attributes on a particular :class:`dsl.Schema <forml.io.dsl.Schema>`
-    object, these instances represent the individual fields of the logical data-source.
+    object, these instances represent the individual fields of the logical data source.
 
     Args:
         kind: Mandatory field data type.
@@ -119,7 +119,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
                 level = dsl.Field(dsl.Integer())
                 score = dsl.Field(dsl.Float())
 
-        That's a declaration of two data-sources - a generic ``Person`` with a *string* field called
+        That's a declaration of two data sources - a generic ``Person`` with a *string* field called
         ``surname`` and a *date* field ``dob`` aliased as ``birthday`` plus its extended version
         ``Student`` with two more fields - *integer* ``level`` and *float* ``score``.
 
@@ -158,7 +158,7 @@ class Schema(metaclass=frame.Table):  # pylint: disable=invalid-metaclass
         """Utility for functional schema inference.
 
         Args:
-            record: Scalar or vector representing single record from which the schema should be
+            record: Scalar or vector representing a single record from which the schema should be
                     inferred.
             names: Optional field names.
             title: Optional schema name.

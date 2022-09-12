@@ -28,7 +28,7 @@ from ._auto import AUTO, Auto, AutoSklearnClassifier, AutoSklearnRegressor, Auto
 from ._operator import Operator
 from ._proxy import Type
 
-#: Default list of :class:`auto-wrapper <forml.pipeline.wrap.Auto>` implementations
+#: The default list of :class:`auto-wrapper <forml.pipeline.wrap.Auto>` implementations
 #: to be used by the :func:`wrap.importer <forml.pipeline.wrap.importer>` context manager.
 AUTO = AUTO  # pylint: disable=self-assigning-variable
 # hack to make AUTO visible to autodoc (otherwise ignores module attributes without docstrings)

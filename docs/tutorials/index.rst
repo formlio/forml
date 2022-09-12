@@ -44,6 +44,10 @@ your :file:`~/.forml/config.toml`:
   :language: toml
   :start-after: # under the License.
 
+.. important::
+    Make sure to configure your Kaggle API access token under the :file:`~/.kaggle/kaggle.json`
+    as described in the `Kaggle API Documentation <https://www.kaggle.com/docs/api>`_ to get
+    access to all of the datasets used in this tutorial.
 
 Your local environment is now ready to perform all the runtime actions demonstrated in these
 tutorials.
@@ -51,12 +55,12 @@ tutorials.
 
 .. rubric:: Tutorials List
 
-The list of the available tutorials is:
+The list of available tutorials is:
 
-* :ref:`Pipeline demos <demos>` is a set of small *snippets* demonstrating the pipeline
-  composition fundamentals.
-* :ref:`Titanic challenge <titanic>` is a *complete* end-to-end ML project implemented using
-  ForML.
+* The :ref:`Titanic challenge <titanic>` is a *complete* end-to-end ML :ref:`project <project>`
+  implemented using ForML.
+* :ref:`Pipeline demos <demos>` represent a set of small *snippets* demonstrating the :ref:`pipeline
+  composition <workflow>` fundamentals.
 
 
 .. toctree::

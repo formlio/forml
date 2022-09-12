@@ -200,7 +200,7 @@ class Worker(Node):
     """
 
     class Group(set):
-        """Container for holding all forked workers.
+        """A container for holding all forked workers.
 
         Args:
             builder: Actor builder instance.
@@ -346,8 +346,8 @@ class Worker(Node):
         return any(s.node is self for p in publisher.output for s in p)
 
     def fork(self) -> 'flow.Worker':
-        """Create new node belonging to the same group (having same shape and actor as self) but without any
-        subscriptions.
+        """Create new a node belonging to the same group (having the same shape and actor as self)
+        but without any subscriptions.
 
         Returns:
             Forked node.

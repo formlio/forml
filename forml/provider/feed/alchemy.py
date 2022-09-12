@@ -37,7 +37,7 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
     """Generic SQL feed based on :doc:`SQLAlchemy <sqlalchemy:index>`.
 
     All the hosted datasets need to be declared using a proper :ref:`content resolver
-    <io-resolving>` mapping specified using the ``sources`` option with keys representing the fully
+    <io-resolution>` mapping specified using the ``sources`` option with keys representing the fully
     qualified schema name formatted as ``<full.module.path>:<qualified.Class.Name>`` and the values
     should refer to the physical table names like ``<database>.<table>``.
 

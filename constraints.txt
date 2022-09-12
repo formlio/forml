@@ -91,7 +91,7 @@ flake8==5.0.4
     #   flake8-bugbear
     #   flake8-colors
     #   flake8-typing-imports
-flake8-bugbear==22.8.23
+flake8-bugbear==22.9.11
     # via forml (setup.py)
 flake8-colors==0.1.9
     # via forml (setup.py)
@@ -207,14 +207,14 @@ nest-asyncio==1.5.5
     #   nbclient
 nodeenv==1.7.0
     # via pre-commit
-numpy==1.23.2
+numpy==1.23.3
     # via
     #   forml (setup.py)
     #   mlflow
     #   pandas
     #   scikit-learn
     #   scipy
-oauthlib==3.2.0
+oauthlib==3.2.1
     # via databricks-cli
 packaging==21.3
     # via
@@ -436,7 +436,7 @@ toolz==0.12.0
     #   partd
 tornado==6.2
     # via jupyter-client
-traitlets==5.3.0
+traitlets==5.4.0
     # via
     #   ipython
     #   jupyter-client

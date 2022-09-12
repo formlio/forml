@@ -69,7 +69,7 @@ the means of publishing into a :ref:`platform-configured <platform-config>` appl
 Serving
 -------
 
-Easiest way to expose our model for serving is to spin up a particular :ref:`serving gateway
+The easiest way to expose our model for serving is to spin up a particular :ref:`serving gateway
 <serving-gateway>` provider linked through the :ref:`platform configuration <platform-config>` to
 the same :ref:`inventory <inventory>` and :ref:`registry <registry>` holding our application and
 models respectively.

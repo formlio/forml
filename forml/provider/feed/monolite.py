@@ -132,9 +132,9 @@ class Csv(Origin):
 class Feed(lazy.Feed, alias='monolite'):
     """Lightweight feed for pulling data from multiple simple origins.
 
-    The feed can resolve queries across all of its combined data-sources.
+    The feed can resolve queries across all of its combined data sources.
 
-    All the origins need to be declared using a proper :ref:`content resolver <io-resolving>`
+    All the origins need to be declared using a proper :ref:`content resolver <io-resolution>`
     mapping with keys representing the fully qualified schema name formatted as
     ``<full.module.path>:<qualified.Class.Name>`` and the values should be origin-specific
     configuration options.
@@ -150,7 +150,7 @@ class Feed(lazy.Feed, alias='monolite'):
     Args:
         inline: Schema mapping of datasets provided inline as native row-oriented arrays.
         csv: Schema mapping of datasets accessible using a CSV reader. Values can either be
-             direct file system paths or a mapping with two keys:
+             direct file system paths or mapping with two keys:
 
              * ``path`` pointing to the CSV file
              * ``kwargs`` containing additional options to be passed to the underlying
@@ -180,7 +180,7 @@ class Feed(lazy.Feed, alias='monolite'):
 
     Todo:
         * More file types (json, parquet)
-        * Multi-file data-sources (partitions)
+        * Multi-file data sources (partitions)
     """
 
     def __init__(

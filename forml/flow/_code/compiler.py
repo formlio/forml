@@ -271,7 +271,7 @@ def compile(  # pylint: disable=redefined-builtin
     segment augmented with all the necessary system instructions.
 
     Args:
-        segment: Flow typology segment to generate the symbol table for.
+        segment: Flow topology segment to generate the symbol table for.
         assets: Runtime state asset accessors for all the involved persistent workers.
 
     Returns:

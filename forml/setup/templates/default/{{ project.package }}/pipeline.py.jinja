@@ -24,9 +24,10 @@ Generated on {{ system.date }} by {{ system.user }} using ForML {{ forml.version
 """
 
 from forml import project
+from forml.pipeline import payload
 
 # The actual pipeline composition using our preprocessing and model operators:
-PIPELINE = ...
+PIPELINE = payload.Sniff()
 
 # Registering the pipeline
 project.setup(PIPELINE)

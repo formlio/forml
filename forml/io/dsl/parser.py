@@ -242,11 +242,11 @@ class Visitor(
 ):
     """Abstract base class for DSL query statement parser implementations.
 
-    In this context, *parsing* essentially means a conversion between the generic DSL based
+    In this context, *parsing* essentially means conversion between the generic DSL-based
     instance of the particular query and its native representation matching a selected target
     storage layer.
 
-    Conceptually, the parser is implemented as combination of a *visitor* traversing the query
+    Conceptually, the parser is implemented as a combination of a *visitor* traversing the query
     statement structure and a *push-down automaton* assembling the generated instructions in their
     storage-native representation.
 
@@ -257,7 +257,7 @@ class Visitor(
 
     Upon failing to resolve any particular *source*/*feature* using the initial mappings, the parser
     raises the :exc:`dsl.UnprovisionedError <forml.io.dsl.UnprovisionedError>` indicating
-    unavailability of the given data-source.
+    unavailability of the given data source.
 
     Args:
         sources: Explicit mapping of generic DSL *sources* (typically :class:`dsl.Table
@@ -402,8 +402,10 @@ class Visitor(
 
         Args:
             table: Table (already in target code based on the provided mapping) to be generated.
-            features: List of fields to be retrieved from the table (potentially subset of all available).
-            predicate: Row filter to be possibly pushed down when retrieving the data from given table.
+            features: List of fields to be retrieved from the table (potentially subset of all
+                      available).
+            predicate: Row filter to be possibly pushed down when retrieving the data from given
+                       table.
 
         Returns:
             Table target code potentially optimized based on field requirements.
@@ -430,7 +432,8 @@ class Visitor(
         condition: typing.Optional['parser.Feature'],
         kind: 'dsl.Join.Kind',
     ) -> 'parser.Source':
-        """Generate target code for a join operation using the left/right terms, given condition and a join type.
+        """Generate target code for a join operation using the left/right terms, given condition
+        and a join type.
 
         Args:
             left: Left side of the join pair.

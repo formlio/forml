@@ -24,7 +24,7 @@ actions using the :ref:`CLI <platform-cli>` as the :ref:`execution mechanism <pl
 Development Life Cycle
 ----------------------
 
-1. Change directory to the root of the :file:`forml-tutorial-titanic` project working copy.
+1. Change the directory to the root of the :file:`forml-tutorial-titanic` project working copy.
 2. Let's first run all the :ref:`defined operator unit tests <titanic-pipeline-tests>` to confirm
    the project is in a good shape:
 
@@ -80,14 +80,14 @@ Development Life Cycle
 
    This should publish the project into your local file system :ref:`model registry <registry>`
    making it available for the production life cycle. It becomes the first published :ref:`release
-   <registry-package>` of this project versioned as ``0.1.dev0`` (according to the version from
+   <registry-package>` of this project versioned as ``0.1.dev1`` (according to the version from
    :ref:`setup.py <project-setup>`).
 
 Production Life Cycle
 ---------------------
 
-:ref:`Production life cycle <lifecycle-production>` does not need the project working copy, so feel
-free to change the directory to another location before executing the commands.
+The :ref:`production life cycle <lifecycle-production>` does not need the project working copy, so
+feel free to change the directory to another location before executing the commands.
 
 1. List the local registry confirming the project has been published as its first release:
 
@@ -96,10 +96,10 @@ free to change the directory to another location before executing the commands.
        $ forml model list
        forml-tutorial-titanic
        $ forml model list forml-tutorial-titanic
-       0.1.dev0
-       $ forml model list forml-tutorial-titanic 0.1.dev0
+       0.1.dev1
+       $ forml model list forml-tutorial-titanic 0.1.dev1
 
-   The output shows the project artifact is available in the registry as a release ``0.1.dev0``
+   The output shows the project artifact is available in the registry as a release ``0.1.dev1``
    not having any generation yet (the last command not producing any output).
 
 3. Train the project (using the default runner as per our :ref:`config <tutorial-setup>`) to create
@@ -109,10 +109,10 @@ free to change the directory to another location before executing the commands.
    .. code-block:: console
 
        $ forml model train forml-tutorial-titanic
-       $ forml model list forml-tutorial-titanic 0.1.dev0
+       $ forml model list forml-tutorial-titanic 0.1.dev1
        1
 
-   Now we have our first :ref:`generation <registry-assets>` of the titanic models available in the
+   Now we have our first :ref:`generation <registry-assets>` of *Titanic models* available in the
    registry.
 
 3. Apply the trained generation to the test dataset to get the predictions:
@@ -120,11 +120,11 @@ free to change the directory to another location before executing the commands.
    .. code-block:: console
 
        $ forml model apply forml-tutorial-titanic
-       [0.38717846 0.37779938 0.38008973 0.37771585 0.3873835  0.38832168
-       0.38671783 0.38736506 0.38115396 0.37622997 0.37642134 0.37965842
+       [0.10563631 0.32648719 0.11243692 0.17620626 0.58286405 0.17833955
+        0.81009676 0.10064623 0.84965811 0.08915972 0.13542787 0.2049216
        ...
-       0.3824376  0.38695502 0.38891135 0.38688363 0.38726499 0.37714804
-       0.3860998  0.38041917 0.3885712 ]
+        0.89760968 0.7289824  0.79378986 0.91791833 0.55937149 0.09801463
+        0.93010752 0.09111896 0.21376298 0.84650916]
 
 4. Run the ``apply`` mode alternatively on the :class:`Graphviz
    <forml.provider.runner.graphviz.Runner>` runner to explore its task graph:
@@ -138,5 +138,5 @@ free to change the directory to another location before executing the commands.
 
 Now, after exploring two of the :ref:`execution mechanisms <platform-execution>` (namely the
 :ref:`interactive <interactive>` mode demonstrated during the :doc:`exploratory
-analysis <exploration>` and the :ref:`command-line driven <platform-cli>` batch processing shown
+analysis <exploration>` and the :ref:`command-line-driven <platform-cli>` batch processing shown
 in this chapter), we can proceed to the final :doc:`deployment and serving <serving>`.

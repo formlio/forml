@@ -135,7 +135,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         return cloudpickle.dumps(self.__dict__)
 
     def set_state(self, state: bytes) -> None:
-        """Set new internal state of the actor.
+        """Set the new internal state of the actor.
 
         The *State* input port representation.
 
@@ -143,7 +143,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         by :doc:`Python Pickle <python:library/pickle>`.
 
         Args:
-            state: bytes to be used as internal state.
+            state: Bytes to be used as internal state.
         """
         if not state:
             return
@@ -162,7 +162,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         All the values returned by this method must be acceptable by the companion
         :meth:`set_params`.
 
-        The default implementation return empty mapping.
+        The default implementation returns empty mapping.
 
         Returns:
             Dictionary of the name-value of the hyper-parameters.

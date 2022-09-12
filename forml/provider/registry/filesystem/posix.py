@@ -228,7 +228,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
 
 class Registry(asset.Registry, alias='posix'):
-    """File based registry backed by a locally-accessible posix file system.
+    """File-based registry backed by a locally-accessible posix file system.
 
     Args:
         path: Registry root file system location.

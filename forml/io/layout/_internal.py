@@ -28,7 +28,7 @@ if typing.TYPE_CHECKING:
 
 
 class Tabular:
-    """Dataset interface providing both *row* and *column* oriented representation of the underlying
+    """Dataset interface providing both *row* and *column*-oriented representation of the underlying
     data.
 
     This is a lightweight interface to be used internally for data payload as returned by the Feed
@@ -38,7 +38,7 @@ class Tabular:
 
     @abc.abstractmethod
     def to_columns(self) -> 'layout.ColumnMajor':
-        """Get the dataset in a column oriented structure.
+        """Get the dataset in a column-oriented structure.
 
         Returns:
             Column-wise dataset representation.
@@ -46,7 +46,7 @@ class Tabular:
 
     @abc.abstractmethod
     def to_rows(self) -> 'layout.RowMajor':
-        """Get the dataset in a row oriented structure.
+        """Get the dataset in a row-oriented structure.
 
         Returns:
             Row-wise dataset representation.
@@ -54,24 +54,24 @@ class Tabular:
 
     @abc.abstractmethod
     def take_rows(self, indices: typing.Sequence[int]) -> 'layout.Tabular':
-        """Slice the table returning new instance with just the selected rows.
+        """Slice the table returning a new instance with just the selected rows.
 
         Args:
             indices: Row indices to take.
 
         Returns:
-            New Tabular instance with just the given rows taken.
+            New instance with just the given rows taken.
         """
 
     @abc.abstractmethod
     def take_columns(self, indices: typing.Sequence[int]) -> 'layout.Tabular':
-        """Slice the table returning new instance with just the selected columns.
+        """Slice the table returning a new instance with just the selected columns.
 
         Args:
             indices: Column indices to take.
 
         Returns:
-            New Tabular instance with just the given columns taken.
+            New instance with just the given columns taken.
         """
 
 

@@ -259,8 +259,8 @@ class Runner(runtime.Runner, alias='pyfunc'):
     """Non-distributed low-latency runner turning the task graph into a single synchronous python
     function.
 
-    This runner is designed for repeated calls for low-volume predictions - the typical use-case
-    in online serving.
+    This runner is designed for repeated calls for low-volume predictions - the typical use case
+    in online :ref:`serving <serving>`.
 
     Upon initialization, the runner instantiates all actors and preloads their states (if stateful)
     to avoid unnecessary delays when (repeatedly) performing the actual execution.

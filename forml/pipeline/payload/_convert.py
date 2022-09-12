@@ -125,7 +125,7 @@ def ToPandas(  # pylint: disable=invalid-name
     """ToPandas(data: typing.Any, *, columns: typing.Optional[typing.Sequence[str]] = None, converter: typing.Callable[[typing.Any, typing.Optional[typing.Sequence[str]]], pandas.core.generic.NDFrame] = pandas_read)
 
     Simple *1:1* operator that attempts to convert the data on each of apply/train/label segments to
-    Pandas dataframe/series.
+    Pandas :class:`DataFrame <pandas:pandas.DataFrame>`/:class:`Series <pandas:pandas.Series>`.
 
     Args:
         data: Input data.
@@ -138,7 +138,7 @@ def ToPandas(  # pylint: disable=invalid-name
                        payload is passed through unchanged emitting a warning.
 
     Returns:
-        Pandas dataframe/series.
+        Pandas :class:`DataFrame <pandas:pandas.DataFrame>`/:class:`Series <pandas:pandas.Series>`.
 
     Examples:
         >>> SOURCE >>= payload.ToPandas(

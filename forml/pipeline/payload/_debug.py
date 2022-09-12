@@ -165,7 +165,7 @@ class Dumpable(
 class PandasCSVDumper(Dumpable[typing.Any, typing.Any, typing.Any]):
     """PandasCSVDumper(path: typing.Union[str, pathlib.Path], label_header: str = 'Label', converter: typing.Callable[[typing.Any, typing.Optional[typing.Sequence[str]]], pandas.core.generic.NDFrame] = pandas_read, **kwargs)
 
-    Pass-through transformer that dumps the input datasets to CSV files.
+    A pass-through transformer that dumps the input datasets to CSV files.
 
     The write operation including the CSV encoding is implemented using the
     :meth:`pandas:pandas.DataFrame.to_csv` method.
@@ -245,13 +245,13 @@ class PandasCSVDumper(Dumpable[typing.Any, typing.Any, typing.Any]):
 
 
 class Dump(flow.Operator):
-    """Transparent operator that dumps the input dataset externally (typically to a file) before
+    """A transparent operator that dumps the input dataset externally (typically to a file) before
     passing it downstream.
 
     If supplied as a template, the operator supports interpolation of potential placeholders in
     the dump path (e.g. file name). The supported placeholders are:
 
-    * ``$seq`` - a sequence ID which gets incremented for each particular Actor instance
+    * ``$seq`` - a sequence ID that gets incremented for each particular Actor instance
     * ``$mode`` - a label of the mode in which the dumping occurs (``train`` or ``apply``)
 
     The path (or path template) must be provided either within the raw builder parameters or as the
@@ -350,8 +350,8 @@ class Sniff(flow.Operator):
 
     Without the context, the operator acts as a transparent identity pass-through operator.
 
-    The typical use-case is in combination with the :class:`runtime.virtual <forml.runtime.Virtual>`
-    launcher and the interactive mode.
+    The typical use case is in combination with the :class:`runtime.virtual <forml.runtime.Virtual>`
+    launcher and the :ref:`interactive mode <interactive>`.
 
     Examples:
         >>> SNIFFER = payload.Sniff()

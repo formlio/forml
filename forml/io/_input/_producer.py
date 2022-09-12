@@ -39,8 +39,8 @@ LOGGER = logging.getLogger(__name__)
 class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], metaclass=abc.ABCMeta):
     """Generic reader base class matching the *Feed producer* interface.
 
-    It is a low-level input component responsible for parsing a generic data request in form
-    a :class:`DSL query <forml.io.dsl.Statement>` (the :meth:`parser` method) and based on it
+    It is a low-level input component responsible for parsing a generic data request in the form
+    of a :class:`DSL query <forml.io.dsl.Statement>` (the :meth:`parser` method) and based on it
     retrieving the actual data from its supported storage technology and its specific data format
     (the :meth:`read` method).
 
@@ -143,11 +143,11 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
     ) -> 'parser.Visitor':
         """Parser factory method.
 
-        The parser instance must be able to convert a DSL query into the storage-native
-        instructions compatible with the :meth:`read` method.
+        The parser instance must be able to convert a DSL query into storage-native instructions
+        compatible with the :meth:`read` method.
 
         During parsing, the provided ``sources``/``features`` mappings are supposed to be used for
-        :ref:`content resolution <io-resolving>`.
+        the :ref:`content resolution <io-resolution>`.
 
         Args:
             sources: Source mappings to be used by the parser.

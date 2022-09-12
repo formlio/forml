@@ -289,12 +289,12 @@ class Actor:
                         def foo(features: flow.Features, /, *, opt1, **kwargs) -> flow.Result:
 
                     Attention:
-                        The optional arguments ``opt1``, ``opt2`` and ``**kwargs`` must all be
+                        The optional arguments ``opt1``, ``opt2``, and ``**kwargs`` must all be
                         *keyword-only* arguments.
 
             Returns:
-                :class:`Actor-type-like object <forml.pipeline.wrap.Type>` that can be instantiated
-                into a *stateless* Actor with the given *apply* logic.
+                An :class:`actor-type-like object <forml.pipeline.wrap.Type>` that can be
+                instantiated into a *stateless* Actor with the given *apply* logic.
 
             Examples:
                 Simple stateless imputation actor using the provided value to fill the NaNs::
@@ -366,9 +366,9 @@ class Actor:
                         return features  # apply-mode result
 
         type(origin=None, /, *, apply=None, train=None, get_params=None, set_params=None):
-            Wrapper for turning an external user class to a valid Actor.
+            Wrapper for turning an external user class into a valid Actor.
 
-            This can be used either as parameterless decorator or optionally with mapping of Actor
+            This can be used either as a parameterless decorator or optionally with mapping of Actor
             methods to decorated user class implementation.
 
             Args:
@@ -425,7 +425,7 @@ class Actor:
 
     @classmethod
     def type(cls, origin: typing.Optional[type] = None, /, **mapping: Mapping.Target) -> type[flow.Actor]:
-        """Decorator for turning an external user class to a valid actor.
+        """Decorator for turning an external user class into a valid actor.
 
         See Also: Full description in the class docstring.
         """

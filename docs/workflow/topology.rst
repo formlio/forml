@@ -18,12 +18,12 @@
 Flow Topology
 =============
 
-ForML has custom primitives for logical representation of the *task graph*, which also provide
+ForML has custom primitives for the logical representation of the *task graph*, which also provide
 the API for its assembly during the construction phase.
 
 .. note::
     Thanks to this runtime-agnostic internal representation of the task graph, ForML can support
-    number of different third-party :ref:`runners <runner>` simply by converting the DAG on
+    a number of different third-party :ref:`runners <runner>` simply by converting the DAG on
     demand from its internal structure to the particular representation of the target runtime.
 
 
@@ -41,8 +41,8 @@ abstract ``flow.Node`` structure and its subtype ``flow.Worker`` in particular:
 Creating a Worker
 ^^^^^^^^^^^^^^^^^
 
-Worker node gets created simply by providing a :class:`flow.Builder <forml.flow.Builder>` and the
-required number of the input and output (apply) ports:
+The *Worker* node gets created simply by providing a :class:`flow.Builder <forml.flow.Builder>` and
+the required number of the input and output (apply) ports:
 
 
 .. code-block:: python
@@ -108,14 +108,14 @@ object.
 
 .. caution::
     Any input port can be subscribed to at most one upstream output port but any output port can
-    be publishing to multiple subscribed input ports. Actor cannot subscribe to itself.
+    be publishing to multiple subscribed input ports. Any actor cannot subscribe to itself.
 
 .. autoclass:: forml.flow.PubSub
    :members: subscribe
 .. autoclass:: forml.flow.Publishable
 
 
-Now, with that connections between our nodes, the topology looks shown:
+Now, with the connections between our nodes, the topology looks shown:
 
 .. md-mermaid::
 
@@ -147,7 +147,7 @@ same shape and share the same :class:`actor builder <forml.flow.Builder>` instan
 
 Based on the group membership (and the general context), ForML automatically handles the runtime
 state management between the different modes of the same actor (the :ref:`State ports
-<actor-ports>` are *system* level ports and cannot be connected from the user level API).
+<actor-ports>` are *system*-level ports and cannot be connected from the user-level API).
 
 Workers of the same group can be created using one of the two methods:
 
@@ -191,8 +191,8 @@ Future Nodes
 
 In addition to the *Worker* nodes, there is a special node implementation called ``flow.Future``
 representing a future worker placeholder. *Future* can be used during topology construction when
-the real connected worker-to-be is not know yet (e.g. when implementing an
-:ref:`operator <operator>` which does not know what up/down stream workers will it be eventually
+the real connected worker-to-be is not known yet (e.g. when implementing an
+:ref:`operator <operator>` which does not know what up/downstream workers will it eventually be
 composed with). When connected to a real worker, the Future node will automatically collapse and
 disappear from the topology.
 
@@ -222,7 +222,7 @@ The following example demonstrates the effect when using the *Future* nodes:
 
 
 As the diagram shows, we have ``worker1`` node connecting its first *apply* output port to the
-``future1`` *Future* node and another ``future2`` connected to input port of ``worker2``. Now,
+``future1`` *Future* node and another ``future2`` connected to the input port of ``worker2``. Now,
 after subscribing the ``future2`` node to the ``future1`` output, you can see how both the
 *Future* nodes disappear from the topology and the workers become connected directly:
 
@@ -246,7 +246,7 @@ after subscribing the ``future2`` node to the ``future1`` output, you can see ho
 Logical Structures
 ------------------
 
-When implementing more complex topologies (typically in scope of :ref:`operators development
+When implementing more complex topologies (typically in the scope of :ref:`operator development
 <operator>`), the significant parts of the task graph become its *entry* and *exit* nodes (as
 that's where new connections are being added), while the inner nodes (already fully connected)
 fade away from the perspective of the ongoing construction.
@@ -265,11 +265,11 @@ the task graph:
 .. _topology-coherence:
 .. rubric:: Segment Coherence
 
-To carry one of the core ForML traits - the inseparability of the *train* and *apply* mode
+To carry one of the core ForML traits - the inseparability of the *train* and *apply-mode*
 implementations - ForML uses the ``flow.Trunk`` structure as the integrated representation of the
 related *segments*. There are actually three segments that need to be bound together to cover all
-the matching tasks across the different modes. While the *apply* mode is represented by its
-single segment, the *train* mode needs in addition to its *train* segment also a dedicated
+the matching tasks across the different modes. While the *apply-mode* is represented by its
+single segment, the *train-mode* needs in addition to its *train* segment also a dedicated
 segment for its *label* task graph.
 
 .. autoclass:: forml.flow.Trunk
@@ -281,13 +281,13 @@ Flow Compiler
 -------------
 
 While representing the task graph using linked structures is practical for implementing the
-user-level API, more efficient structure for its actual :ref:`runtime execution <runner>`
+user-level API, a more efficient structure for its actual :ref:`runtime execution <runner>`
 is the (actor) *adjacency matrix* produced by the internal flow compiler.
 
 ForML uses its compiler to:
 
 #. Augment the task graph by adding any necessary system-level nodes (e.g. to automatically
-   manage persistence of any :ref:`stateful actors <actor-type>`) which might be any of the
+   manage the persistence of any :ref:`stateful actors <actor-type>`) which might be any of the
    following:
 
    ===========  =================================================================================

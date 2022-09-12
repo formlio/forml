@@ -57,7 +57,7 @@ INIT_RAISES
         mytest1 = testing.Case(arg1='foo').raises(ValueError, 'invalid value of arg1')
 
 PLAINAPPLY_RAISES
-    asserts an exception to be raised when executing the *apply* mode of an operator without any
+    asserts an exception to be raised when executing the *apply-mode* of an operator without any
     previous *train* execution.
 
     Synopsis:
@@ -67,8 +67,8 @@ PLAINAPPLY_RAISES
         mytest2 = testing.Case(arg1='bar').apply('foo').raises(RuntimeError, 'Not trained')
 
 PLAINAPPLY_RETURNS
-    is an assertion of an output value of successful outcome of the *apply* mode executed again
-    without previous *train* mode.
+    is an assertion of an output value of the successful outcome of the *apply-mode* executed again
+    without the previous *train-mode*.
 
     Synopsis:
 
@@ -77,7 +77,7 @@ PLAINAPPLY_RETURNS
         mytest3 = testing.Case(arg1='bar').apply('baz').returns('foo')
 
 STATETRAIN_RAISES
-    checks the *train* mode of given operator fails with the expected exception.
+    checks the *train-mode* of given operator fails with the expected exception.
 
     Synopsis:
 
@@ -86,7 +86,7 @@ STATETRAIN_RAISES
         mytest4 = testing.Case(arg1='bar').train('baz').raises(ValueError, 'wrong baz')
 
 STATETRAIN_RETURNS
-    compares the output value of the successfully completed *train* mode with the expected value.
+    compares the output value of the successfully completed *train-mode* with the expected value.
 
     Synopsis:
 
@@ -95,8 +95,8 @@ STATETRAIN_RETURNS
         mytest5 = testing.Case(arg1='bar').train('foo').returns('baz')
 
 STATEAPPLY_RAISES
-    asserts an exception to be raised from the *apply* mode when executed after previous
-    successful *train* mode.
+    asserts an exception to be raised from the *apply-mode* when executed after the previous
+    successful *train-mode*.
 
     Synopsis:
 
@@ -105,8 +105,8 @@ STATEAPPLY_RAISES
         mytest6 = testing.Case(arg1='bar').train('foo').apply('baz').raises(ValueError, 'wrong baz')
 
 STATEAPPLY_RETURNS
-    is a scenario, where the *apply* mode executed after previous successful *train* mode returns
-    the expected value.
+    is a scenario, where the *apply-mode* executed after the previous successful *train-mode*
+    returns the expected value.
 
     Synopsis:
 
@@ -137,7 +137,7 @@ outcome assertions) right into the body of your test suite class.
 Running Your Tests
 ------------------
 
-All the suites are transparently expanded into full-blown :class:`python:unittest.TestCase`
+All the suites are transparently expanded into a full-blown :class:`python:unittest.TestCase`
 definition so from here you would treat them as normal unit tests, which means you can simply run
 them using the usual:
 
@@ -169,14 +169,14 @@ Custom Value Matchers
 All the ``.returns()`` assertions are implemented using the
 :meth:`python:unittest.TestCase.assertEqual` which compares the expected and actual values
 checking for :meth:`python:object.__eq__` equality. If this is not a valid comparison for the
-particular data types used by the operator, you have to supply custom matcher as a second
-parameter to the assertion. The matcher needs to be a callable with the following signature of
+particular data types used by the operator, you have to supply a custom matcher as a second
+parameter to the assertion. The matcher needs to be a *callable* with the following signature of
 ``typing.Callable[[typing.Any, typing.Any], bool]``, where the first argument is *expected* and
 the second is the *actual* value.
 
 This can be useful for example for :class:`pandas:pandas.DataFrame`, which does not support simple
-boolean equality check. Following example uses a custom matcher for asserting the values returned
-as :class:`pandas:pandas.DataFrame`:
+boolean equality check. The following example uses a custom matcher for asserting the values
+returned as :class:`pandas:pandas.DataFrame`:
 
 .. code-block:: python
 
@@ -195,7 +195,7 @@ as :class:`pandas:pandas.DataFrame`:
         valid_parsing = testing.Case().apply(INPUT).returns(EXPECTED, size_equals)
 
 
-For convenience, there is a number of explicit matchers provided as part of the ``forml.testing``
+For convenience, there is a number of explicit *matchers* provided as part of the ``forml.testing``
 package:
 
 .. autofunction:: forml.testing.pandas_equals

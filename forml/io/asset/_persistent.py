@@ -230,7 +230,8 @@ class Inventory(provider.Service, default=setup.Inventory.default, path=setup.In
 
     Important:
         There is no concept of versioning - individual descriptors are held in a flat namespace
-        requiring uniqueness of each application :meth:`name <forml.application.Descriptor.name>`.
+        requiring the uniqueness of each application :meth:`name
+        <forml.application.Descriptor.name>`.
     """
 
     def __repr__(self):
@@ -251,7 +252,7 @@ class Inventory(provider.Service, default=setup.Inventory.default, path=setup.In
         """Retrieve the descriptor for the given application name.
 
         Attention:
-            Only application returned by :meth:`list` can be requested.
+            Only applications returned by :meth:`list` can be requested.
 
         Args:
             application: Application :meth:`name <forml.application.Descriptor.name>`.
@@ -266,7 +267,7 @@ class Inventory(provider.Service, default=setup.Inventory.default, path=setup.In
 
     @abc.abstractmethod
     def put(self, descriptor: 'application.Descriptor.Handle') -> None:
-        """Store the application descriptor into the inventory.
+        """Store the application descriptor in the inventory.
 
         Caution:
             Existing application with the same :meth:`name <forml.application.Descriptor.name>`

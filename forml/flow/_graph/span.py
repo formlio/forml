@@ -213,10 +213,10 @@ class Traversal(collections.namedtuple('Traversal', 'pivot, members')):
 
 
 class Segment(tuple):
-    """Representing acyclic (sub)graph between two apply-mode nodes.
+    """Representing an acyclic (sub)graph between two apply-mode nodes.
 
-    Each of the two boundary nodes must be externally facing with just *single port* (``.head``
-    node having single input port and ``.tail`` node having single output port).
+    Each of the two boundary nodes must be externally facing with just a *single port* (``.head``
+    node having a single input port and ``.tail`` node having a single output port).
 
     The ``tail`` node (if provided) must be reachable from the ``head`` node via the existing
     connections.
@@ -270,13 +270,13 @@ class Segment(tuple):
         right: typing.Optional[typing.Union['flow.Segment', 'flow.Node']] = None,
         tail: typing.Optional['flow.Node'] = None,
     ) -> 'flow.Segment':
-        """Create new segment by appending right head to our tail or retracing this segment up to
-        its physical or explicit tail.
+        """Create a new segment by appending the right head to our tail or retracing this segment up
+        to its physical or explicit tail.
 
         Args:
-            right: Optional segment to extend with (retracing to the physical or explicit tail if
+            right: An optional segment to extend with (retracing to the physical or explicit tail if
                    not provided).
-            tail: Optional tail as a segment exit node.
+            tail: An optional tail as a segment exit node.
 
         Returns:
             New extended segment.

@@ -39,11 +39,11 @@ def Apply(  # pylint: disable=invalid-name
 
     Generic stateless function-based transformer actor.
 
-    It can work with arbitrary number of M:N input/output ports depending on the topology
+    It can work with an arbitrary number of M:N input/output ports depending on the topology
     implemented by the owning operator.
 
     Args:
-        function: Callable transformer to be applied the data.
+        function: Callable transformer to be applied to the data.
 
     Returns:
         Result of the *function* applied to the input data.

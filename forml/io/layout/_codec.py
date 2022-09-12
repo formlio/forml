@@ -47,7 +47,7 @@ _CSV = re.compile(r'\s*,\s*')
 
 
 class Encoding(collections.namedtuple('Encoding', 'kind, options')):
-    """Content type/encoding representation to be used by the Serving gateways.
+    """Content type/encoding representation to be used by the :ref:`Serving <serving>` gateways.
 
     Args:
         kind: Content type label.
@@ -87,7 +87,7 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
         """Caching parser of the content type header values.
 
         Args:
-            value: Comma separated list of content type values and their parameters.
+            value: Comma-separated list of content type values and their parameters.
 
         Returns:
             Sequence of the :class:`Encoding` instances ordered according to the provided priority.
@@ -113,7 +113,7 @@ class Encoding(collections.namedtuple('Encoding', 'kind, options')):
         """Return true if the other encoding matches ours including glob wildcards.
 
         Encoding matches if its kind fits our kind as a pattern (including potential glob wildcards)
-        while all of our options are subset of the other options.
+        while all of our options are a subset of the other options.
 
         Args:
             other: Encoding to match against this. Must not contain wildcards!

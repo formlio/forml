@@ -108,7 +108,7 @@ Partition = typing.TypeVar('Partition')
 class Origin(typing.Generic[Partition], metaclass=abc.ABCMeta):
     """Origin base class.
 
-    It is an interface for fetching partitions of abstract data-sources.
+    It is an interface for fetching partitions of abstract data sources.
     """
 
     DTYPES: typing.Mapping[dsl.Any, type] = {

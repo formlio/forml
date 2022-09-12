@@ -23,21 +23,21 @@ native Python syntax embedding the actual :ref:`DSL API <query-design>`.
 
 Even though it is not coupled via any inherent dependency, the DSL is designed to loosely resemble
 the SQL ``SELECT`` statement syntax for its proven modeling effectiveness and its universal
-recognition as the :spelling:word:`de facto` ETL standard. The abstract descriptive role of the
-DSL with the separate runtime-specific :ref:`parsing stage <query-parser>` responsible for
-converting the generic query into arbitrary native representation still allows to integrate any
-:ref:`data access mechanisms <feed>` including non-sql based sources.
+recognition as the ETL standard. The abstract descriptive role of the DSL with the separate
+runtime-specific :ref:`parsing stage <query-parser>` responsible for converting the generic query
+into arbitrary native representation still allows the integration of any :ref:`data access
+mechanisms <feed>` including non-sql-based sources.
 
 
 Grammar Notation
 ----------------
 
-Bellow is the DSL syntax described using the BNF notation. For readability, it is not strictly
+Below is the DSL syntax described using the BNF notation. For readability, it is not strictly
 formal - leaving some of the terminal symbols out with just their conceptual descriptions (e.g.
 ``<count>``, ``<identifier>``, ``<literal>``, etc.) or references to their :ref:`API class
 <query-design>` representations (e.g. ``<table>``, ``function.*``).
 
-Substantial part of the DSL is the syntax for *expression* notation which is based on an extensive
+A substantial part of the DSL is the syntax for *expression* notation which is based on an extensive
 collection of supported :ref:`functions and operators <query-functions>`.
 
 The central component of any query is an existing  :class:`dsl.Table <forml.io.dsl.Table>`

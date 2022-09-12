@@ -36,7 +36,7 @@ class Function(_api.Metric):
     Basic metric implementation wrapping a plain scoring function.
 
     Caution:
-        As with any ForML task, the implementer is responsible for engaging function that is
+        As with any ForML task, the implementer is responsible for engaging a function that is
         compatible with the particular :ref:`payload <io-payload>`.
 
     Args:

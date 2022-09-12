@@ -21,13 +21,13 @@ General payload manipulation utilities.
 ForML is by design fairly :ref:`payload-format agnostic <io-payload>` leaving the choice of
 compatible operators/actors to the implementer.
 
-This module provides number of generic payload related operators to be parameterized with a
+This module provides a number of generic payload-related operators to be parameterized with
 particular actor implementations targeting different payload formats.
 
 Note:
     For convenience, there is also a couple of payload-specific actors designed to be engaged
     only with that particular payload format (typically :class:`pandas:pandas.DataFrame`). This
-    does not make that formats anymore preferable from the general ForML perspective as it still
+    does not make that format any more preferable from the general ForML perspective as it still
     maintains its payload format neutrality.
 """
 
@@ -38,17 +38,17 @@ from ._split import CrossValidable, CVFoldable, PandasCVFolds
 
 __all__ = [
     'Apply',
-    'pandas_params',
-    'ToPandas',
-    'PandasSelect',
-    'PandasDrop',
-    'PandasConcat',
-    'MapReduce',
     'CrossValidable',
     'CVFoldable',
-    'PandasCVFolds',
-    'Sniff',
-    'Dumpable',
-    'PandasCSVDumper',
     'Dump',
+    'Dumpable',
+    'MapReduce',
+    'PandasConcat',
+    'PandasCSVDumper',
+    'PandasCVFolds',
+    'PandasDrop',
+    'pandas_params',
+    'PandasSelect',
+    'Sniff',
+    'ToPandas',
 ]

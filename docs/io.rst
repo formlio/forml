@@ -20,7 +20,7 @@ IO Concept
 
 ForML comes with a unique approach to data access. For projects to be truly portable, they must
 not be coupled directly with any specific data storages or formats. Accessing an explicit
-instance of a dataset as well as interpretation of its particular structure can't be part of the
+instance of a dataset as well as interpreting its particular structure can't be part of the
 ML solution implemented as a ForML project. Instead, the solution has to work with an abstract
 representation of the relevant logical dataset, which only at runtime gets resolved using its
 actual provider (if available).
@@ -32,7 +32,7 @@ actual provider (if available).
     configuration to truly offer a conceptual solution to the given problem - not just to its
     particular instance within some specific environment.
 
-The concepts ForML uses to handle the data access are:
+The concepts ForML uses to handle data access are:
 
 * :ref:`Schema Catalogs <io-catalog>` are the logical dataset representations distributed in
   catalogs available to both :ref:`projects <project>` and :ref:`platforms <platform>` as
@@ -43,7 +43,7 @@ The concepts ForML uses to handle the data access are:
   project-defined DSL query using a particular data storage technology
 * :ref:`Output Sinks <sink>` are the *feeds* counterparts responsible for handling the
   produced pipeline results
-* :ref:`Model Registries <registry>` stand aside of the previous concepts as they deal with
+* :ref:`Model Registries <registry>` stand aside from the previous concepts as they deal with
   metadata rather than the data itself providing the pipeline state persistence
 
 
@@ -52,26 +52,26 @@ The concepts ForML uses to handle the data access are:
 Schema Catalogs
 ---------------
 
-To achieve the data access abstraction, ForML integrates the concept of *schema catalogs*.
+To achieve data access abstraction, ForML integrates the concept of *schema catalogs*.
 Instead of implementing direct operations on specific data source instances, projects use the
 :ref:`DSL expression <dsl>` to define the input data ETL referring only to abstract data
 :ref:`schemas <schema>`. It is then the responsibility of the platform :ref:`feeds <feed>` to
 resolve the requested schemas (and the whole ETL queries specified on top) mapping them to the
 actual data sources hosted in the particular runtime environment.
 
-A *schema catalog* is a logical collection of :ref:`schemas <schema>` which both -
+A *schema catalog* is a logical collection of :ref:`schemas <schema>` that both -
 :ref:`projects <project>` and :ref:`platforms <platform>` - can use as a mutual data reference. It
-is neither a service nor a system, rather a passive set of namespaced descriptors implemented
+is neither a service nor a system, but rather a passive set of namespaced descriptors implemented
 simply as a *python package* that must be available to both the project expecting the particular
 data and the platform supposed to serve that project.
 
-.. _io-resolving:
+.. _io-resolution:
 
-Content Resolving
-^^^^^^^^^^^^^^^^^
+Content Resolution
+^^^^^^^^^^^^^^^^^^
 
 When a project workflow is submitted to any given platform, it attempts to resolve the schemas
-referred in the :ref:`source query <io-source>` using the configured :ref:`feed providers
+referred from the :ref:`source query <io-source>` using the configured :ref:`feed providers
 <feed>`, and only when all of these schema dependencies can be satisfied with the available data
 sources, the platform is able to launch that workflow.
 
@@ -129,14 +129,14 @@ It tells the following story:
 
    * the *DB Feed* can serve data sources represented by *Schema 3* and *Schema 4* physically stored
      in the *Database*
-   * the *FS Feed* can also provide the data source matching the *Schema 4* duplicating its
-     physical copy stored on the *Filesystem*
-   * finally the *Other Feed* knows how to supply data for schema *Schema 1* and *Schema 2*
+   * the *FS Feed* can also provide the data source matching *Schema 4* duplicating its physical
+     copy stored on the *Filesystem*
+   * finally, the *Other Feed* knows how to supply data for *Schema 1* and *Schema 2*
 
 #. When the project gets :ref:`launched <platform-execution>` on the platform, its :ref:`source
    descriptor <io-source>` first goes through the :ref:`feed selection <feed-selection>` process to
-   find the most suitable feed provider for the given query, followed by actual execution of the
-   particular query by that selected feed, which results in :ref:`data payload <io-payload>`
+   find the most suitable feed provider for the given query, followed by the actual execution of the
+   particular query by that selected feed, which results in the :ref:`data payload <io-payload>`
    entering the project workflow.
 
 
@@ -153,7 +153,7 @@ relies on some community-maintained schema catalogs like the :doc:`Openschema ca
 <openschema:index>`.
 
 Continue to the :ref:`schema DSL <schema>` for more details regarding the actual implementation
-and use-cases. Also refer to the mentioned :doc:`Openschema catalog <openschema:index>` for a real
+and use cases. Also, refer to the mentioned :doc:`Openschema catalog <openschema:index>` for a real
 instance of a ForML schema catalog.
 
 .. _io-source:
@@ -177,15 +177,15 @@ This descriptor is created using the ``project.Source.query()`` class method:
 Data Payloads
 -------------
 
-In line with the overall architecture, ForML is designed to be as much data format agnostic as
-possible. Conceptually, there are several scopes involving payload exchange requiring compatibility
-with the passing data.
+In line with the overall architecture, ForML is designed to be as data format agnostic as possible.
+Conceptually, there are several scopes involving payload exchange requiring compatibility with
+the passing data.
 
 Internal Payload Exchange
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Payload-wise, the core ForML runtime is pretty generic, dealing only with few tiny interfaces to
-handle the necessary exchange with absolutely minimal footprint. Following is the list of the
+Payload-wise, the core ForML runtime is pretty generic, dealing only with a few tiny interfaces to
+handle the necessary exchange with an absolutely minimal footprint. Following is the list of the
 involved core payload types:
 
 +------------------------+------------------------+------------------------------------------------+
@@ -200,10 +200,11 @@ involved core payload types:
 | :ref:`Feed <feed>`     | Project :ref:`Pipeline | Defined using the :class:`io.layout.RowMajor   |
 | Slicer                 | <topology>`            | <forml.io.layout.RowMajor>` interface.         |
 +------------------------+------------------------+------------------------------------------------+
-| :ref:`Actor <actor>`   | :ref:`Actor <actor>`   | No specific format required, choice of         |
-| Payload Output Port    | Payload Input Port     | mutually compatible actors is responsibility   |
-|                        |                        | of the implementer, ForML only facilitates the |
-|                        |                        | exchange (possibly subject to serializability).|
+| :ref:`Actor <actor>`   | :ref:`Actor <actor>`   | No specific format required, the choice of     |
+| Payload Output Port    | Payload Input Port     | mutually compatible actors is the              |
+|                        |                        | responsibility of the implementer, ForML only  |
+|                        |                        | facilitates the exchange (possibly subject to  |
+|                        |                        | serializability).                              |
 +------------------------+------------------------+------------------------------------------------+
 | Project :ref:`Pipeline | Platform :ref:`Sink    | Defined using the :class:`io.layout.RowMajor   |
 | <topology>`            | Writer <sink>`         | <forml.io.layout.RowMajor>` interface.         |
@@ -231,7 +232,7 @@ involved core payload types:
 External Payload Exchange
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In addition to the core payloads, the :ref:`serving <serving>` layer involves few more data
+In addition to the core payloads, the :ref:`serving <serving>` layer involves a few more data
 exchanges using the following structures:
 
 +------------------------+------------------------+------------------------------------------------+
@@ -240,7 +241,7 @@ exchanges using the following structures:
 | Application Client     | Serving :ref:`Gateway  | Each *gateway* acts as an adapter designed     |
 |                        | <serving>`             | specifically for the given application protocol|
 |                        |                        | handling the payload as a :class:`bytestring   |
-|                        |                        | <python:bytes>` with an explicit               |
+|                        |                        | <python:bytes>` with explicit                  |
 |                        |                        | :class:`Encoding <forml.io.layout.Encoding>`.  |
 +------------------------+------------------------+------------------------------------------------+
 | Serving :ref:`Gateway  | Serving :ref:`Engine   | Using the :class:`io.layout.Request            |
@@ -289,7 +290,7 @@ ForML also depends on the following *encoding* features for the external payload
 .. autoclass:: forml.io.layout.Decoder
    :members: loads
 
-The two encoder/decoder matching functions bellow currently support the following
+The two encoder/decoder matching functions below currently support the following
 encodings/flavors:
 
 +-------------------------+----------------------------+------------------------------------------+
@@ -314,15 +315,15 @@ encodings/flavors:
 | ``application/json;     | ``[[value, ..., value],    |                                          |
 | format=pandas-values``  | [...]]``                   |                                          |
 +-------------------------+----------------------------+------------------------------------------+
-| ``application/json``    |                            | Decoder attempts to interpret the data   |
-|                         |                            | as:                                      |
+| ``application/json``    |                            | The ``Decoder`` attempts to interpret    |
+|                         |                            | the data as:                             |
 |                         |                            |                                          |
 |                         |                            | #. a list of row dictionaries            |
 |                         |                            | #. TF serving's *instances* format       |
 |                         |                            | #. TF serving's *inputs* format          |
 |                         |                            | #. a dictionary of column lists          |
 |                         |                            |                                          |
-|                         |                            | Encoder defaults to the                  |
+|                         |                            | The ``Encoder`` defaults to the          |
 |                         |                            | ``pandas-records`` format.               |
 +-------------------------+----------------------------+------------------------------------------+
 | ``text/csv``            | ``A,B\n1,a\n2,b\n3,c\n``   | Using :func:`pandas:pandas.read_csv`     |
@@ -341,5 +342,5 @@ encodings/flavors:
 Payload Transformation Operators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ForML also provides bunch of payload transformation operators as part of the :mod:`pipeline library
-<forml.pipeline.payload>`.
+ForML also provides a bunch of payload transformation operators as part of the :mod:`pipeline
+library <forml.pipeline.payload>`.

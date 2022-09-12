@@ -241,7 +241,7 @@ def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
     """Context manager capturing all direct imports and :ref:`wrapping <operator-autowrap>` their
     matching entities using the *explicit* or *default* list of *auto-wrappers*.
 
-    Signature of the wrapped object is compatible with the original entity.
+    The signature of the wrapped object is compatible with the original entity.
 
     Args:
         wrappers: Sequences of the auto-wrapper implementations to be matched and potentially
@@ -253,7 +253,7 @@ def importer(*wrappers: 'wrap.Auto') -> typing.Iterable[None]:
         Context manager under which the direct imports become subject to auto-wrapping.
 
     Examples:
-        All the three possible import syntax alternatives are supported, although only the first
+        All three possible import syntax alternatives are supported, although only the first
         one is recommended::
 
             with wrap.importer():

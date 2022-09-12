@@ -28,7 +28,7 @@ Project Formalization
 ---------------------
 
 Formalization is the prime concept ForML is built upon. Having a common *component structure* for
-ML projects, an *expression API* for their workflows and a generic *data source DSL* describing the
+ML projects, an *expression API* for their workflows, and a generic *data source DSL* describing the
 required data inputs allows to programmatically handle the entire *project life cycle*. Moreover,
 it leads to a cleaner implementation that is easier to maintain, extend or exchange between
 different environments.
@@ -40,17 +40,17 @@ ForML introduces its lightweight convention for organizing machine learning proj
 source code level. This is to lay down a structure that can be understood across projects and
 allows (not only) ForML itself to interpret it programmatically.
 
-Thorough description of the ForML project layout is described in the :ref:`project` chapter.
+A thorough description of the ForML project layout is described in the :ref:`project` chapter.
 
 Data Source DSL
 ^^^^^^^^^^^^^^^
 
 ForML comes with a robust DSL for specifying the data requirements of each project. This
 allows to decouple ForML projects from any explicit data source formats and storages and only
-refer to data using their abstract *schemas*. It is then job of the particular runtime
+refer to data using their abstract *schemas*. It is then the job of the particular runtime
 platform to feed the project pipeline with the actual data based on the given DSL query.
 
-Full guide and the DSL reference can be found in the :ref:`dsl` chapter.
+The full guide and the DSL reference can be found in the :ref:`dsl` chapter.
 
 Workflow Expression API
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -101,7 +101,7 @@ See the :ref:`io` chapter for more information about the related concepts.
 Persistence
 ^^^^^^^^^^^
 
-Life cycle iterations of ForML projects depend on external persistence of their two
+Life cycle iterations of ForML projects depend on the external persistence of their two
 main *artifact* types - the particular version of the project *code* and the collection of its
 internal *states* acquired during training/tuning. ForML platform automatically handles this
 persistence via its supported *registry* providers.
@@ -113,7 +113,7 @@ Execution
 ^^^^^^^^^
 
 At runtime, the native actor DAG produced through the operator composition gets transcoded to
-the specific representation of the selected third-party task dependency *runner* and the actual
+the specific representation of the selected third-party task dependency *runner*, and the actual
 execution is carried under its control.
 
 A list of the supported runner providers as well as further details on this topic can be
@@ -122,8 +122,8 @@ found in the :ref:`runner` chapter.
 Serving
 ^^^^^^^
 
-Specific high-level extension of the execution principle is the *serving layer* allowing to expose
-the published models for online inference. ForML defers to its *application gateway* providers to
+A specific high-level extension of the execution principle is the *serving layer* allowing exposure
+of the published models for online inference. ForML defers to its *application gateway* providers to
 implement different possible serving interfaces configured as part of the runtime platform.
 
 See the :ref:`serving` chapter for more details.

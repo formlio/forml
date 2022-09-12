@@ -18,15 +18,15 @@
 Task Actor
 ==========
 
-Actor is the lowest level entity - a node in the task graph - representing an atomic black-box
+An *Actor* is the lowest level entity - a node in the task graph - representing an atomic black-box
 transformation of the passing data.
 
 .. _actor-compatibility:
 
 .. important::
-    ForML does not care neither about the particular internal processing functionality of any
-    actors nor the actual types and formats of the :ref:`data passed between them <io-payload>`.
-    All that ForML deals with is the actor interconnection within the overall :ref:`flow topology
+    ForML cares neither about the particular internal processing functionality of any actors nor
+    the actual types and formats of the :ref:`data passed between them <io-payload>`. All that
+    ForML deals with are the actor interconnections within the overall :ref:`flow topology
     <topology>` - responsibility for their logical and functional compatibility is solely in
     hands of the implementer.
 
@@ -37,8 +37,8 @@ The two main actor types are:
 
 #. Plain *stateless* actors which define output as a function applied just to their input.
 #. More complex *stateful* actors produce output based on not just the input but also their inner
-   *state* which it acquires during separate phase called *train*. We then distinguish between the
-   :ref:`train-mode and apply-mode <workflow-mode>` in which the stateful actors operate.
+   *state* which it acquires during a separate phase called the *train*. We then distinguish between
+   the :ref:`train and apply modes <workflow-mode>` in which the stateful actors operate.
    The framework transparently manages the actor state using its :meth:`.get_state()
    <forml.flow.Actor.get_state>`/:meth:`.set_state() <forml.flow.Actor.get_state>` methods and the
    :ref:`model registry <registry>`.
@@ -49,7 +49,7 @@ The two main actor types are:
 Ports
 -----
 
-ForML actors have number of input and output *ports* for the mutual :ref:`interconnection
+ForML actors have a number of input and output *ports* for the mutual :ref:`interconnection
 <topology>` within the task graph. The following diagram shows how the different ports might get
 engaged when in each of the particular actor modes:
 
@@ -57,8 +57,8 @@ engaged when in each of the particular actor modes:
 
     flowchart LR
         subgraph Actor
-            A([apply-mode])
-            T[train-mode]
+            A([Apply Mode])
+            T[Train Mode]
         end
         subgraph Input Ports
             AI1[/Apply 1\] --> A
@@ -81,13 +81,13 @@ engaged when in each of the particular actor modes:
 There is a couple of different ways the ports can be logically grouped together:
 
 **Level** - how are the ports configured:
-    * *user* level ports (full lines in diagram) are explicitly connected by the implementer
-    * *system* level ports (dotted lines in diagram) are internally managed exclusively by ForML
+    * *user*-level ports (full lines in the diagram) are explicitly connected by the implementer
+    * *system*-level ports (dotted lines in the diagram) are internally managed exclusively by ForML
 
 **Mode** - when do the ports get engaged:
-    * *train* mode ports are engaged only during the train-mode
-    * *apply* mode ports are engaged only during the apply-mode
-    * *both* mode ports can be engaged in any mode
+    * *train-mode* ports are engaged only during the train-mode
+    * *apply-mode* ports are engaged only during the apply-mode
+    * *both-mode* ports can be engaged in any mode
 
 **Direction** - which way the data flows through the ports:
     * *input* ports are passing data into the Actor
@@ -211,7 +211,7 @@ Example of a user-defined native actor:
 Decorated Function Actors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Less verbose option for defining actors is based on wrapping user-defined functions using the
+The less verbose option for defining actors is based on wrapping user-defined functions using the
 :meth:`@wrap.Actor.train <forml.pipeline.wrap.Actor.train>` and/or :meth:`@wrap.Actor.apply
 <forml.pipeline.wrap.Actor.apply>` decorators from the :ref:`Pipeline Library <pipeline>` (the
 following examples match exactly the functionality as in the native implementations above):
@@ -269,7 +269,7 @@ following examples match exactly the functionality as in the native implementati
                 return df
 
 .. important::
-   To have consistent naming convention for all actors regardless their implementation (whether
+   To have a consistent naming convention for all actors regardless of their implementation (whether
    *native classes* or *decorated functions*) - it should stick with the class naming convention,
    i.e. the *CapitalizedWords*.
 
@@ -279,7 +279,7 @@ Mapped Actors
 ^^^^^^^^^^^^^
 
 Third-party implementations that are logically compatible with the ForML actor concept can be
-easily mapped into a valid ForML actors using the :meth:`@wrap.Actor.type
+easily mapped into valid ForML actors using the :meth:`@wrap.Actor.type
 <forml.pipeline.wrap.Actor.type>` wrapper from the :ref:`Pipeline Library <pipeline>`:
 
 .. code-block:: python
@@ -298,9 +298,9 @@ easily mapped into a valid ForML actors using the :meth:`@wrap.Actor.type
 
 
 .. attention::
-    Rather then to just *actors*, the third-party implementations are usually required to be
+    Rather than  just *actors*, third-party implementations are usually required to be
     converted all the way to ForML :ref:`operators <operator>` to be eventually composable within
-    the pipeline expressions. For this purpose, there is even easier method of turning those
+    the pipeline expressions. For this purpose, there is an even easier method of turning those
     implementations into operators with no effort using the
     :func:`@wrap.importer <forml.pipeline.wrap.importer>` context manager - see the
     :ref:`operator auto-wrapping <operator-autowrap>` section for more details.

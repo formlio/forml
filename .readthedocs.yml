@@ -28,3 +28,4 @@ python:
       path: .
       extra_requirements:
         - all
+        - docs

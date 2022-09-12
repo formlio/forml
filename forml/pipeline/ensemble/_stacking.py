@@ -141,7 +141,7 @@ class Ensembler(flowmod.Operator):
         Args:
             *bases: Set of primary models to be ensembled.
             splitter: Actor builder object defining the folding splitter.
-            nsplits: Number of splits the splitter is going to generate (needs to be explicit as
+            nsplits: The number of splits the splitter is going to generate (needs to be explicit as
                      there is no reliable way to extract it from the actor builder).
         """
 
@@ -264,8 +264,8 @@ class FullStack(Ensembler):
                      parameter. Defaults to :class:`payload.PandasCVFolds
                      <forml.pipeline.payload.PandasCVFolds>`.
                   2. Actor builder instance defining the folding splitter.
-        nsplits: Number of splits the splitter is going to generate (needs to be explicit as there
-                 is no generic way to extract it from the actor builder).
+        nsplits: The number of splits the splitter is going to generate (needs to be explicit as
+                 there is no generic way to extract it from the actor builder).
         appender: Horizontal column concatenator (combining base model predictions in *train-mode*)
                   provided either as a *function* or as an actor *builder*.
         stacker: Vertical column concatenator (combining folds predictions in *train-mode*)

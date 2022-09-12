@@ -92,10 +92,10 @@ def setup(component) -> None:  # pylint: disable=unused-argument
 
 
 class Source(typing.NamedTuple):
-    """ForML data-source descriptor representing the ETL operation to be carried out at runtime
+    """ForML data source descriptor representing the ETL operation to be carried out at runtime
     to deliver the required input payload to the project pipeline.
 
-    The descriptor is combination of an *extraction* DSL query and an optional *transformation*
+    The descriptor is a combination of an *extraction* DSL query and an optional *transformation*
     workflow.
 
     Attention:
@@ -124,7 +124,7 @@ class Source(typing.NamedTuple):
         typing.Sequence[dslmod.Feature],
         flowmod.Builder[flowmod.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]],
     ]
-    """Label type - either a single column, multiple columns or a generic label extracting actor
+    """Label type - either a single column, multiple columns, or a generic label extracting actor
     (with two output ports) builder.
     """
 
@@ -276,7 +276,7 @@ class Source(typing.NamedTuple):
     def bind(self, pipeline: typing.Union[str, 'flow.Composable'], **modules: typing.Any) -> 'project.Artifact':
         """Create a virtual *project handle* from this *Source* and the given *pipeline* component.
 
-        The typical use-case is :doc:`interactive <interactive>` execution.
+        The typical use case is the :doc:`interactive <interactive>` execution.
 
         Args:
             pipeline: Pipeline component to create the virtual project handle from.

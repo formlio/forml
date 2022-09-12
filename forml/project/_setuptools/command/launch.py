@@ -83,8 +83,8 @@ class Train(Mode):
     description = 'trigger the development train mode'
 
     @staticmethod
-    def launch(launcher: 'runtime.Virtual.Handler', *args, **kwargs) -> typing.Any:
-        return launcher.train(*args, **kwargs)
+    def launch(launcher: 'runtime.Virtual.Handler', *args, **kwargs) -> None:
+        launcher.train(*args, **kwargs)
 
 
 class Tune(Mode):
@@ -93,7 +93,7 @@ class Tune(Mode):
     description = 'trigger the development tune mode'
 
     @staticmethod
-    def launch(launcher: 'runtime.Virtual.Handler', *args, **kwargs) -> typing.Any:
+    def launch(launcher: 'runtime.Virtual.Handler', *args, **kwargs) -> None:
         raise NotImplementedError('Tune mode is not yet supported')
 
 

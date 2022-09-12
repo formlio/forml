@@ -32,7 +32,7 @@ removed from the ForML framework long term) while the ForML core is truly indepe
 formats being passed through.
 
 
-Can a Feed engage multiple reader types so that I can mix for example file based data sources with data in a DB?
+Can a Feed engage multiple reader types so that I can mix for example file-based data sources with data in a DB?
 ----------------------------------------------------------------------------------------------------------------
 
 No. It sounds like a cool idea to have a DSL interpreter that can just get raw data from any

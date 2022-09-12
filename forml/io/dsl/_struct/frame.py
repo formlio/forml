@@ -60,8 +60,9 @@ class Rows(typing.NamedTuple):
 class Source(tuple, metaclass=abc.ABCMeta):
     """Base class of the *tabular* data frame sources.
 
-    Source is anything that can be used to obtain tabular data *FROM*. It is a logical collection
-    of :class:`dsl.Feature <forml.io.dsl.Feature>` instances represented by its :attr:`schema`.
+    A *Source* is anything that can be used to obtain tabular data *FROM*. It is a logical
+    collection of :class:`dsl.Feature <forml.io.dsl.Feature>` instances represented by its
+    :attr:`schema`.
     """
 
     class Schema(type):
@@ -256,7 +257,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
     @functools.cached_property
     @abc.abstractmethod
     def features(self) -> typing.Sequence['dsl.Feature']:
-        """List of features logically contained in or potentially produced by this source.
+        """List of features logically contained in or potentially produced by this Source.
 
         Returns:
             Sequence of contained features.
@@ -264,7 +265,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
     @property
     def query(self) -> 'dsl.Query':
-        """Query equivalent of this source.
+        """Query equivalent of this Source.
 
         Returns:
             Query instance.
@@ -273,7 +274,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
 
     @property
     def statement(self) -> 'dsl.Statement':
-        """Statement equivalent of this source.
+        """Statement equivalent of this Source.
 
         Returns:
             Statement instance.
@@ -284,7 +285,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
     def instance(self) -> 'dsl.Source':
         """Return the source instance.
 
-        Apart from the ``Reference`` type is the source itself.
+        Apart from the ``Reference`` type is the Source itself.
 
         Returns:
             Source instance.
@@ -298,7 +299,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
             name: Optional alias to be used for this reference (random by default).
 
         Returns:
-            New reference to this source.
+            New reference to this Source.
 
         Examples:
             >>> manager = staff.Employee.reference('manager')
@@ -311,7 +312,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         return Reference(self, name)
 
     def union(self, other: 'dsl.Source') -> 'dsl.Set':
-        """Create new source as a set union of this and the other source.
+        """Create a new Source as a set union of this and the other Source.
 
         Args:
             other: Source to union with.
@@ -328,7 +329,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         return Set(self, other, Set.Kind.UNION)
 
     def intersection(self, other: 'dsl.Source') -> 'dsl.Set':
-        """Create new source as a set intersection of this and the other source.
+        """Create a new Source as a set intersection of this and the other Source.
 
         Args:
             other: Source to intersect with.
@@ -345,7 +346,7 @@ class Source(tuple, metaclass=abc.ABCMeta):
         return Set(self, other, Set.Kind.INTERSECTION)
 
     def difference(self, other: 'dsl.Source') -> 'dsl.Set':
-        """Create new source as a set difference of this and the other source.
+        """Create a new Source as a set difference of this and the other Source.
 
         Args:
             other: Source to difference with.
@@ -422,7 +423,7 @@ class Set(Statement):
 
 
 class Queryable(Source, metaclass=abc.ABCMeta):
-    """Base class for any *source* that can be queried directly."""
+    """Base class for any *Source* that can be queried directly."""
 
     def select(self, *features: 'dsl.Feature') -> 'dsl.Query':
         """Specify the output features to be provided (projection).
@@ -534,7 +535,7 @@ class Queryable(Source, metaclass=abc.ABCMeta):
 
 
 class Origin(Queryable, metaclass=abc.ABCMeta):
-    """Origin is a queryable source with some handle.
+    """Origin is a queryable Source with some handle.
 
     Its features are represented using :class:`dsl.Element <forml.io.dsl.Element>`.
     """
@@ -692,7 +693,7 @@ class Join(Origin):
 
 
 class Reference(Origin):
-    """Wrapper around any *source* associating it with a (possibly random) name.
+    """Wrapper around any *Source* associating it with a (possibly random) name.
 
     Attention:
         Instances are expected to be created internally via :meth:`dsl.Source.reference
@@ -701,7 +702,7 @@ class Reference(Origin):
 
     _NAMELEN: int = 8
     instance: 'dsl.Source' = property(operator.itemgetter(0))
-    """Wrapped *source* instance."""
+    """Wrapped *Source* instance."""
     name: str = property(operator.itemgetter(1))
     """Reference name."""
 
@@ -731,7 +732,7 @@ class Reference(Origin):
 
 
 class Table(Origin):
-    """Table based *source* with an explicit *schema*.
+    """Table based *Source* with an explicit *schema*.
 
     Attention:
         The primary way of creating ``Table`` instances is by inheriting the :class:`dsl.Schema
@@ -802,7 +803,7 @@ class Table(Origin):
 
 
 class Query(Queryable, Statement):
-    """Query based *source*.
+    """Query based *Source*.
 
     Container for holding all the parameters supplied via the :class:`dsl.Queryable
     <forml.io.dsl.Queryable>` interface.
@@ -812,7 +813,7 @@ class Query(Queryable, Statement):
     """
 
     source: 'dsl.Source' = property(operator.itemgetter(0))
-    """Base *source* to query *FROM*."""
+    """Base *Source* to query *FROM*."""
     selection: tuple['dsl.Feature'] = property(operator.itemgetter(1))
     """Result projection features."""
     prefilter: typing.Optional['dsl.Predicate'] = property(operator.itemgetter(2))
@@ -837,7 +838,7 @@ class Query(Queryable, Statement):
         rows: typing.Optional['dsl.Rows'] = None,
     ):
         def ensure_subset(*features: 'dsl.Feature') -> typing.Sequence['dsl.Feature']:
-            """Ensure the provided features is a valid subset of the available source features.
+            """Ensure the provided features is a valid subset of the available Source features.
 
             Args:
                 *features: List of features to validate.

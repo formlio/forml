@@ -19,11 +19,11 @@ Workflow Fundamentals
 =====================
 
 Workflow is the backbone of the ML solution responsible for consistently sticking all its pieces
-together. On the low level it is a *Task Dependency Graph* with edges representing data flows and
-vertices standing for the data transformations. This particular type of the graph is called
+together. On the low level, it is a *Task Dependency Graph* with edges representing data flows and
+vertices standing for the data transformations. This particular type of graph is called
 *Directed Acyclic Graph* (DAG) - meaning the flows are oriented and can't form any cycles.
 Representing workflows using task graphs is crucial for robust scheduling, scalable
-execution and runtime portability.
+execution, and runtime portability.
 
 .. caution::
     At its core, the workflow internals explained in the following chapters are built around the
@@ -46,9 +46,9 @@ the following concepts:
 ForML integrates the two-fold concept typical for supervised learning where the :ref:`stateful
 components <actor-type>` of the particular solution are operated in two distinct modes:
 
-#. The *train-mode* (aka *fit*) allowing the relevant components to acquire internal state
+#. The *Train-mode* (a.k.a. *fit*) allowing the relevant components to acquire an internal state
    generalizing the processed data.
-#. *Apply-mode* (aka *predict*) where the previously trained components are applied to unseen
+#. The *Apply-mode* (a.k.a. *predict*) where the previously trained components are applied to unseen
    data to predict the estimated outcome.
 
 ForML uniquely builds this duality straight into its workflow architecture, hence the modality
@@ -70,14 +70,14 @@ either in *train-mode* or *apply-mode*.
 .. _workflow-expression:
 .. rubric:: Workflow Expression
 
-The high-level API for describing a workflow allows to :ref:`compose an operator expressions
+The high-level API for describing a workflow allows to :ref:`compose operator expressions
 <operator-composition>` using the following syntax:
 
 .. code-block:: python
 
     flow = LabelExtractor(column='foo') >> NaNImputer() >> RFC(max_depth=3)
 
-The typically counter-intuitive feature of any DAG-based frameworks is that execution of these
+The typically counter-intuitive feature of any DAG-based frameworks is that the execution of these
 expressions *builds* a DAG rather than *performing* the actual processing functions (which
 happens separately in a completely different context).
 

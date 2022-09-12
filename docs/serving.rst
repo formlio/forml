@@ -19,7 +19,7 @@ Serving Engine
 ==============
 
 In addition to the basic :ref:`CLI-driven <platform-cli>` project-level batch-mode :ref:`execution
-mechanism <platform-execution>`, ForML allows to operate the encompassing :ref:`applications
+mechanism <platform-execution>`, ForML allows operating the encompassing :ref:`applications
 <application>` within an interactive loop performing the *apply* action of the :ref:`production
 life cycle <lifecycle-production>` - essentially providing *online predictions* a.k.a. *ML
 inference* based on the underlying models.
@@ -69,7 +69,7 @@ This diagram illustrates the following steps:
 
 #. Receiving a request containing the query payload and the target :ref:`application <application>`
    reference.
-#. Upon a very first request for any given application, the engine fetches the particular
+#. Upon the very first request for any given application, the engine fetches the particular
    :ref:`application descriptor <application-implementation>` from the configured :ref:`inventory
    <inventory>`. The descriptor remains cached for every follow-up request of that application.
 #. The engine uses the descriptor of the selected application to :ref:`dispatch the request
@@ -86,7 +86,7 @@ This diagram illustrates the following steps:
    colliding with (dependencies of) other models also served by the same engine.
 #. The runner might involve the configured :ref:`feed system <feed>` to augment the provided
    data points using a feature store.
-#. With the complete feature-set matching the project defined :ref:`schema <project-source>`,
+#. With the complete feature set matching the project-defined :ref:`schema <project-source>`,
    the runner executes the :ref:`pipeline <project-pipeline>` in the :ref:`apply-mode
    <workflow-mode>` obtaining the prediction outcomes.
 #. Finally, the engine again uses the application descriptor to :ref:`produce
@@ -107,12 +107,12 @@ Frontend Gateway
 
 While the engine is full-featured in terms of the end-to-end application serving, it can only be
 engaged using its raw Python API. That's suitable for products natively embedding the engine as
-an integrated component, but for a truly decoupled client-server architecture this needs an extra
+an integrated component, but for a truly decoupled client-server architecture, this needs an extra
 layer providing some sort of a transport protocol.
 
-For this purpose, ForML comes with a concept of *serving frontend gateways*. They also follow the
-:ref:`provider pattern <provider>` allowing to deliver number of different interchangeable
-:ref:`implementations <serving-providers>` pluggable at launch-time.
+For this purpose, ForML comes with the concept of *serving frontend gateways*. They also follow the
+:ref:`provider pattern <provider>` allowing to deliver a number of different interchangeable
+:ref:`implementations <serving-providers>` pluggable at launch time.
 
 Frontend gateways represent the outermost layer in the logical hierarchy of the ForML architecture:
 

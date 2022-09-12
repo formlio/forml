@@ -57,8 +57,8 @@ def cast(value: typing.Any) -> 'dsl.Feature':
 class Feature(tuple, metaclass=abc.ABCMeta):
     """Base class of the individual *columnar* data series features.
 
-    Feature is anything that can be used as a handle to an independent columnar data. It is a
-    homogenous series of data with the same :attr:`kind`.
+    A *Feature* is anything that can be used as a handle for independent columnar data. It is a
+    homogenous series of data of the same :attr:`kind`.
     """
 
     class Visitor:
@@ -271,7 +271,7 @@ def featurize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 
 
 class Operable(Feature, metaclass=abc.ABCMeta):
-    """Base class for features that can be used in expressions, conditions, grouping and/or
+    """Base class for features that can be used in expressions, conditions, grouping, and/or
     ordering definitions.
 
     In principle, any non-aliased future is *Operable*.

@@ -65,7 +65,7 @@ Evaluation Definition
 
 Finally, we fill-in the :ref:`evaluation descriptor <project-evaluation>` within the
 :file:`evaluation.py` which involves specifying the :ref:`evaluation strategy <evaluation>`
-including the particular metric. The file again ends with call to the :func:`project.setup()
+including the particular metric. The file again ends with a call to the :func:`project.setup()
 <forml.project.setup>` to register the component within the framework.
 
 .. literalinclude:: ../../../tutorials/titanic/titanic/evaluation.py

@@ -22,9 +22,9 @@ To allow :ref:`projects to declare <project-source>` their data requirements in 
 independently of any particular storage technology and data formats, ForML comes with its custom
 *Data Source DSL* (domain-specific language) which gets interpreted at :ref:`runtime
 <platform-execution>` by the :ref:`feeds subsystem <feed>` performing the :ref:`content resolution
-<io-resolving>` routine to deliver the requested datasets.
+<io-resolution>` routine to deliver the requested datasets.
 
-Conceptually, it is an *internal* DSL (i.e. within Python grammar) based on *declarative* style of
+Conceptually, it is an *internal* DSL (i.e. within Python grammar) based on a *declarative* style of
 specifying the data profiles using the following two main constructs:
 
 * :ref:`schema definition <schema>` syntax for logical representation of individual datasets
@@ -32,8 +32,8 @@ specifying the data profiles using the following two main constructs:
 
 .. important::
     Do not confuse the DSL with an ORM framework. The DSL entities are not used to manage any data
-    directly. Its sole purpose is to describe the data sources independently of data access
-    mechanism in the same way the :ref:`workflow expression <workflow-expression>` describe the
+    directly. Its sole purpose is to describe the data sources independently of the data access
+    mechanism in the same way the :ref:`workflow expression <workflow-expression>` describes the
     processing logic independently of the execution mechanism. In both cases, the abstract
     descriptions get *transcoded* to runtime-specific instructions when launched.
 

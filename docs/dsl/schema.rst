@@ -18,9 +18,9 @@
 Schema Definition
 =================
 
-The schema definition API is the core part of the DSL. A schema is the virtual intermediary
+The schema definition API is the core part of the DSL. A schema is a virtual intermediary
 allowing to decouple data solutions (ForML projects) from physical data instances, and :ref:`linking
-each other <io-resolving>` directly only at runtime using selected :ref:`feed providers <feed>`.
+each other <io-resolution>` directly only at runtime using selected :ref:`feed providers <feed>`.
 
 To become available to both :ref:`projects <project>` and :ref:`platforms <platform>`, schemas
 need to be published in form of :ref:`schema catalogs <io-catalog>`.

@@ -27,8 +27,8 @@ To visualize the composed workflow DAGs, we are going to execute the pipelines u
 :class:`runtime.Virtual <forml.runtime.Virtual>` launcher.
 
 .. caution::
-    Despite still perfectly executable, all the operators as well as the actual dataset have been
-    put together just to illustrate the topological principles without seeking true functional
+    Despite still being perfectly executable, all the operators as well as the actual dataset have
+    been put together just to illustrate the topological principles without seeking true functional
     suitability in the first place.
 
 .. _demos-common:
@@ -37,7 +37,7 @@ To visualize the composed workflow DAGs, we are going to execute the pipelines u
 Let's start with a common code shared among the individual demos:
 
 #. We define a dummy dataset schema with just three columns - a sequence ID of each record
-   (``Ordinal``), the independent data point (``Feature``) and a hypothetical outcome (``Label``).
+   (``Ordinal``), the independent data point (``Feature``), and a hypothetical outcome (``Label``).
 #. Using this dataset, we load it as inline data into the :class:`Monolite feed
    <forml.provider.feed.monolite.Feed>` that we will be explicitly engaging when launching each
    of the demos.
@@ -46,8 +46,8 @@ Let's start with a common code shared among the individual demos:
 
 .. note::
     Only the last step (the :class:`Source descriptor <forml.project.Source>` declaration) would
-    normally be part of a :ref:`project implementation <project-source>`. All the data
-    provisioning (the :ref:`feed setup <feed>`) would be delivered independently via the configured
+    normally be part of :ref:`project implementation <project-source>`. All the data provisioning
+    (the :ref:`feed setup <feed>`) would be delivered independently via the configured
     :ref:`platform <platform>`.
 
 .. literalinclude:: ../../tutorials/demos/__init__.py
@@ -59,7 +59,7 @@ Let's start with a common code shared among the individual demos:
 Mini
 ----
 
-Starting with a minimal use-case, this *mini*-pipeline contains just a single (:ref:`stateful
+Starting with a minimal use case, this *mini*-pipeline contains just a single (:ref:`stateful
 <actor-type>`) operator - the :class:`RandomForestClassifier
 <sklearn:sklearn.ensemble.RandomForestClassifier>` imported from the SKLearn library under the
 :ref:`operator auto-wrapping <operator-autowrap>` context which turns it transparently into a
@@ -73,12 +73,12 @@ directly exposes a :meth:`launcher instance <forml.project.Artifact.launcher>`. 
 :ref:`setup <tutorial-setup>`) and explicitly provide our shared Demo :ref:`feed <feed>` (since
 that is not a :ref:`platform-wide <platform>` configured feed).
 
-Bellow you can see the different task graphs produced for each of the *train* versus *apply*
+Below, you can see the different task graphs produced for each of the *train* versus *apply*
 :ref:`modes <workflow-mode>` (note the *ordinal* lower/upper bounds specified when executing each
 of the modes used as data filters with respect to the ``Data.Ordinal`` column). Apart from the
-expected ``RandomForestClassifier`` node, the topology contains number of additional tasks:
+expected ``RandomForestClassifier`` node, the topology contains a number of additional tasks:
 
-* :class:`Source <forml.project.Source>` related tasks (defined in our :ref:`common section
+* :class:`Source <forml.project.Source>`-related tasks (defined in our :ref:`common section
   <demos-common>`):
 
   * the :class:`feed reader <forml.io.Feed.Reader>`
@@ -191,7 +191,7 @@ Complex
 -------
 
 Going one step further, the following pipeline is again using the model ensembling technique, but
-this time it is defines distinct transformation chain for each of the model branches
+this time it defines a distinct transformation chain for each of the model branches
 (``OneHotEncoder`` for the ``RandomForestClassifier`` and ``Binarizer`` for ``BernoulliNB``).
 
 .. literalinclude:: ../../tutorials/demos/complex.py
@@ -225,10 +225,10 @@ this time it is defines distinct transformation chain for each of the model bran
 Custom
 ------
 
-In this pipeline we demonstrate the ability to define custom :ref:`actors <actor-decorated>` and
+In this pipeline, we demonstrate the ability to define custom :ref:`actors <actor-decorated>` and
 :ref:`operators <operator-wrapped>`. We implement a simple :ref:`stateful <actor-type>`
-mapper that at :ref:`train-mode <workflow-mode>` persists the *mean* and *standard
-deviation* of the observed column and at *apply-mode* generates random integers within the given
+mapper that at :ref:`train mode <workflow-mode>` persists the *mean* and *standard
+deviation* of the observed column and at *apply mode* generates random integers within the given
 ``mean±std`` range for any missing value.
 
 .. literalinclude:: ../../tutorials/demos/custom.py

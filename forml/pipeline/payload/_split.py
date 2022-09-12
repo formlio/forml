@@ -111,10 +111,10 @@ class CVFoldable(
     flow.Actor[flow.Features, flow.Labels, typing.Sequence[flow.Features]],
     metaclass=abc.ABCMeta,
 ):
-    """Abstract actor splitting the flow in an N-fold train-test branches based on the provided
+    """Abstract actor splitting the flow into N-fold train-test branches based on the provided
     cross-validator.
 
-    The actor keeps all the generated indices as its internal state so that it can be used
+    The actor keeps all the generated indices in its internal state so that it can be used
     repeatedly for example to split data and labels separately while in sync.
 
     It represents a topology of *1:2N* input/output ports. The splits are provided as a range of
@@ -124,9 +124,9 @@ class CVFoldable(
     * ``[2 * i + 1]`` - *testset*
 
     Args:
-        crossvalidator: Particular generator of the cross-validation indexes to be used for the
+        crossvalidator: Particular *generator* of the cross-validation indexes to be used for the
                         splitting.
-        groups_extractor: Optional callable to be applied to the data to extract the group
+        groups_extractor: Optional *callable* to be applied to the data to extract the group
                           membership vector.
 
     Following is the abstract method that needs to be defined in the implementing classes:
@@ -139,7 +139,8 @@ class CVFoldable(
                 indices: Sequence of fold indices to split by.
 
             Returns:
-                Sequence of repeated train, test, train, test, ... sets of split fold indexes.
+                Sequence of repeated *train*, *test*, *train*, *test*, ... sets of split fold
+                indexes.
     """
 
     def __init__(

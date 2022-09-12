@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Date and time manipulating functions.
+Date and time manipulation functions.
 
 .. spelling:word-list:: Datetime
 """

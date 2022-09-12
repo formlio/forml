@@ -82,7 +82,7 @@ particular instance of the ``posix`` registry provider holding a single :ref:`pr
 Release Package
 ^^^^^^^^^^^^^^^
 
-The deployable project *code arrangement* produced :ref:`upon releasing <lifecycle-release>` from
+The deployable project *code arrangement* produced :ref:`upon release <lifecycle-release>` from
 within the :ref:`development life cycle <lifecycle-development>` is the binary :class:`ForML
 package <forml.project.Package>`. It is a :doc:`zipfile object <python:library/zipfile>`
 (typically a file with the ``.4ml`` suffix) containing all the project :ref:`principal components
@@ -90,8 +90,8 @@ package <forml.project.Package>`. It is a :doc:`zipfile object <python:library/z
 the :ref:`project setup <project-setup>`) plus some additional *metadata* (:class:`ForML package
 manifest <forml.project.Manifest>`).
 
-Each ForML package is published with explicit version as specified in the :ref:`project setup
-<project-setup>` at the time of releasing. All registry providers require packages of the same
+Each ForML package is published with an explicit version as specified in the :ref:`project setup
+<project-setup>` at the time of release. All registry providers require packages of the same
 project to have unique monotonically increasing version numbers.
 
 .. _registry-staging:
@@ -99,8 +99,8 @@ project to have unique monotonically increasing version numbers.
 Package Staging
 """""""""""""""
 
-Registry providers might internally persist packages in arbitrary format. In order to launch their
-code using a :ref:`runner <runner>`, however, they need to be
+Registry providers might internally persist packages in an arbitrary format. In order to launch
+their code using a :ref:`runner <runner>`, however, they need to be
 :meth:`mounted <forml.io.asset.Registry.mount>` and exposed using a posix file system path known as
 the *staging path* that is reachable from all runner nodes (for distributed deployment this implies
 shared network posix file system).
@@ -113,7 +113,7 @@ Model Generation Assets
 All :ref:`stateful actors <actor-type>` involved in a :ref:`project life cycle <lifecycle>`
 require their internal state acquired during :ref:`training <workflow-mode>` to be persisted
 using the model registry. States produced from the same training process represent the *model
-generation assets* and every single follow up training is leading to a new :ref:`generation
+generation assets* and every single follow-up training is leading to a new :ref:`generation
 advancement <lifecycle-generation>`.
 
 Generations are implicitly versioned using an integer sequence number starting from ``1``
@@ -123,7 +123,7 @@ Since each actor can implement an arbitrary way of :meth:`representing its own s
 <forml.flow.Actor.get_state>`, the model assets are persisted as monolithic binary blobs with
 a transparent structure.
 
-The metadata associated with each generation is provided in form of a :class:`io.asset.Tag
+The metadata associated with each generation is provided in form of an :class:`asset.Tag
 <forml.io.asset.Tag>`.
 
 

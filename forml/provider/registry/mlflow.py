@@ -175,7 +175,7 @@ class Registry(asset.Registry, alias='mlflow'):
     """ForML model registry implementation using the :doc:`MLflow Tracking Server <mlflow:tracking>`
     as the artifact storage.
 
-    Multiple ForML model registries can be hosted on single MLflow server in parallel using the
+    Multiple ForML model registries can be hosted on a single MLflow server in parallel using the
     *virtual* repositories distinguished by the ``repoid`` parameter.
 
     Args:

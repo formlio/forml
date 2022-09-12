@@ -18,7 +18,7 @@
 Output Sink
 ===========
 
-Sink is a :ref:`runtime platform <platform>` component responsible for processing the output
+The *Sink* is a :ref:`runtime platform <platform>` component responsible for processing the output
 produced upon executing one of the :ref:`life cycle actions <lifecycle-actions>` of the particular
 :ref:`project pipeline <project-pipeline>`.
 
@@ -31,7 +31,7 @@ which transparently deals with the output.
 Architecture
 ------------
 
-From the high-level perspective, Sink mirrors the :ref:`feed design <feed>` with flow inversion.
+From a high-level perspective, Sink mirrors the :ref:`feed design <feed>` with flow inversion.
 It relies on a particular :class:`Writer <forml.io.Sink.Writer>` implementation acting as an adapter
 between the pipeline output and the external media layer.
 

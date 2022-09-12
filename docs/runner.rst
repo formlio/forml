@@ -18,18 +18,18 @@
 Pipeline Runner
 ===============
 
-To perform particular :ref:`life cycle action <lifecycle>` of any given :ref:`project <project>`,
+To perform particular :ref:`life cycle actions <lifecycle>` of any given :ref:`project <project>`,
 ForML delegates the :ref:`workflow topology <topology>` compiled into a :ref:`portable set
 of instructions <topology-compiler>` to a selected :ref:`runner provider <runner-providers>` for
 its execution.
 
 The runner is the foremost elementary component of the :ref:`runtime platform <platform>` carrying
 out the compute function on top of the entire IO layer (represented by the :ref:`feed <feed>`,
-:ref:`sink <sink>` and the :ref:`registry <registry>` providers).
+:ref:`sink <sink>`, and :ref:`registry <registry>` providers).
 
 The pluggable provider model of the runner concept conveniently allows to mix and match different
 processing technologies for different workloads as these typically come with varying
-performance criteria regarding the particular use-case (e.g. low latency for online serving vs
+performance criteria regarding the particular use case (e.g. low latency for online serving vs
 large throughput for offline training).
 
 There are three different :ref:`execution mechanisms <platform-execution>` each engaging the

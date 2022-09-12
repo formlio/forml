@@ -40,13 +40,13 @@ LOGGER = logging.getLogger(__name__)
 class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.path):
     """Base class for implementing ForML runner providers.
 
-    The public API allows to perform all the standard actions of the :doc:`ForML lifecycles
+    The public API allows performing all the standard actions of the :doc:`ForML lifecycles
     <lifecycle>`.
 
     All that needs to be supplied by the provider is the abstract :meth:`run` method.
 
     Args:
-        instance: Particular instance of the persistent artifacts to be executed.
+        instance: A particular instance of the persistent artifacts to be executed.
         feed: Optional input feed instance to retrieve the data from (falls back to the default
               configured feed).
         sink: Output sink instance (no output is produced if omitted).

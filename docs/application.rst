@@ -21,15 +21,15 @@ Application
 ForML applications represent a high-level concept built on top of ForML :ref:`projects <project>`
 as deliverables for the :ref:`serving layer <serving>`.
 
-The term *application* in this context does not hold the common meaning as a general computer
+The term *application* in this context does not hold the common meaning of a general computer
 program covering a wide range of potential functions. ForML applications obviously focus just on
 the *ML inference* (providing predictions in response to the presented data points) representing
 the *apply* stage of the :ref:`production life cycle <lifecycle-production>`.
 
 While the purpose of :ref:`projects <project>` is to implement a *portable solution* to the given
 ML problem, *applications*  aim to expose it (by means of :ref:`gateway providers
-<serving-gateway>`) in a domain-specific form suitable for integration with the *actual* decision
-making process.
+<serving-gateway>`) in a domain-specific form suitable for integration with the *actual*
+decision-making process.
 
 ForML :ref:`platform <platform>` persists :ref:`published applications <application-publishing>`
 within a special :ref:`application inventory <inventory>` where they are picked from at runtime
@@ -41,7 +41,7 @@ by the :ref:`serving engine <serving>`.
 
 As shown in the diagram below, relationships between projects and applications can have any
 possible cardinality. Projects might not be associated with any application (not exposed for
-serving - e.g. *Project B*), on the other hand an application can possibly span multiple
+serving - e.g. *Project B*), on the other hand, an application can possibly span multiple
 (compatible) projects (its :ref:`model selection strategy <application-select>` can involve
 multiple projects - e.g. *Application Y*) or a single project might be utilized by several
 different applications (e.g. *Project A*).
@@ -108,7 +108,7 @@ This is implemented within the following steps:
 #. Formally :meth:`receiving <forml.application.Descriptor.receive>` the query by:
 
    #. :ref:`Decoding <io-encoding>` its content according to the implemented payload semantic.
-      Applications might chose to support number of different encodings.
+      Applications might choose to support a number of different encodings.
    #. Optionally compile the query into prediction-relevant data points. This might possibly
       involve certain *domain mapping* (e.g. a recommender application receiving click-stream
       events would turn it at this point into a set of product features to be passed down
@@ -136,8 +136,8 @@ Another powerful way an application exerts control over the serving process is a
 
 Applications can base the selection logic on the following available facts:
 
-* actual content of the :ref:`model registry <registry>` (any existing model generation to choose
-  from)
+* the actual content of the :ref:`model registry <registry>` (any existing model generation to
+  choose from)
 * custom metadata stored in the application *context* (e.g. as part of the query :meth:`receiving
   <forml.application.Descriptor.receive>`)
 * various serving :class:`metrics <forml.runtime.Stats>` provided by the system
@@ -145,9 +145,9 @@ Applications can base the selection logic on the following available facts:
   actual :ref:`performance tracking <evaluation-perftrack>` results of each of the models,
   etc.)
 
-The model-selection mechanism allows to implement complex serving strategies including *A/B
+The model-selection mechanism allows implementations of complex serving strategies including *A/B
 testing*, *multi-armed bandits*, *cold-start*/*fallback* models, etc. It is due to this dynamic
-ability to select a particular model/generation on the fly why the project-application
+ability to select a particular model/generation on the fly that the project-application
 relationship can potentially have higher than just the ordinary 1:1 cardinality.
 
 .. _application-implementation:
@@ -224,8 +224,8 @@ Publishing
 Applications get deployed by publishing into an :ref:`application inventory <inventory>` used by
 the particular :ref:`serving engine <serving>`. Unlike the :ref:`project artifacts
 <registry-artifacts>`, applications are not versioned and are only held in a flat namespace
-depending on uniqueness of each application :meth:`name <forml.application.Descriptor.name>`.
-(Re)publishing an application with existing name overwrites the original instance.
+depending on the uniqueness of each application :meth:`name <forml.application.Descriptor.name>`.
+(Re)publishing an application with an existing name overwrites the original instance.
 
 
 .. code-block:: console
