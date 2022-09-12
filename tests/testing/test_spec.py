@@ -18,7 +18,7 @@
 """
 ForML testing spec unit tests.
 """
-# pylint: disable=protected-access,no-self-use
+# pylint: disable=protected-access
 
 import typing
 

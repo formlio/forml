@@ -19,43 +19,45 @@
 ForML flow logic.
 """
 
-from ._code.compiler import generate
+from ._code.compiler import compile  # pylint: disable=redefined-builtin
 from ._code.target import Instruction, Symbol
 from ._code.target.system import Committer, Dumper, Getter, Loader
 from ._code.target.user import Apply, Functor, Preset, Train
 from ._exception import TopologyError
-from ._graph.node import Atomic, Future, Worker
-from ._graph.port import Publishable, Subscriptable
-from ._graph.span import Path, Visitor
+from ._graph.atomic import Future, Node, Worker
+from ._graph.port import Publishable, PubSub, Subscriptable, Subscription
+from ._graph.span import Segment, Visitor
 from ._suite.assembly import Composition, Trunk
 from ._suite.member import Composable, Operator, Origin
-from ._task import Actor, Features, Labels, Result, Spec, name
+from ._task import Actor, Builder, Features, Labels, Result, name
 
 __all__ = [
     'Actor',
     'Apply',
-    'Atomic',
+    'Builder',
     'Committer',
+    'compile',
     'Composable',
     'Composition',
     'Dumper',
-    'Functor',
     'Features',
+    'Functor',
     'Future',
-    'generate',
     'Getter',
     'Instruction',
     'Labels',
     'Loader',
     'name',
+    'Node',
     'Operator',
     'Origin',
-    'Path',
     'Preset',
     'Publishable',
+    'PubSub',
     'Result',
-    'Spec',
+    'Segment',
     'Subscriptable',
+    'Subscription',
     'Symbol',
     'TopologyError',
     'Train',

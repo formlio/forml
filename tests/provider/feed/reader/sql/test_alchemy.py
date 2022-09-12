@@ -17,7 +17,6 @@
 """
 SQL alchemy parser tests.
 """
-# pylint: disable=no-self-use
 
 import types
 import typing
@@ -46,7 +45,7 @@ def sources(
         {
             student_table: sql_student,
             school_table: sql.table('school'),
-            dsl.Join(student_table, person_table, student_table.surname == person_table.surname): sql_student,
+            student_table.inner_join(person_table, student_table.surname == person_table.surname): sql_student,
             person_table: sql.table('person'),
         }
     )

@@ -16,7 +16,30 @@
 # under the License.
 
 """
-Mathematical functions.
+Mathematical functions and operators.
+
+Arithmetic Operators
+--------------------
+
+The following native arithmetic operators are available directly on any of the
+:class:`dsl.Operable <forml.io.dsl.Operable>` instances:
+
+============ =================
+  Operator     Description
+============ =================
+  ``+``       Addition
+  ``-``       Subtraction
+  ``*``       Multiplication
+  ``/``       Division
+  ``%``       Modulus
+============ =================
+
+Examples:
+    >>> ETL = Student.select(Student.surname, Student.score * Student.level * 0.32)
+
+
+Mathematical Functions
+----------------------
 """
 
 from .._struct import kind as kindmod
@@ -24,16 +47,28 @@ from .._struct import series
 
 
 class Abs(series.Arithmetic, series.Univariate):
-    """Absolute value."""
+    """Return the absolute value.
+
+    Examples:
+        >>> ETL = Student.select(Student.surname, function.Abs(Student.level - 5))
+    """
 
 
 class Ceil(series.Arithmetic, series.Univariate):
-    """Value rounded up to nearest integer."""
+    """Return the value rounded up to the nearest integer.
+
+    Examples:
+        >>> ETL = Student.select(Student.surname, function.Ceil(Student.score))
+    """
 
     kind: kindmod.Integer = kindmod.Integer()
 
 
 class Floor(series.Arithmetic, series.Univariate):
-    """Value rounded down to nearest integer."""
+    """Return the value rounded down to the nearest integer.
+
+    Examples:
+        >>> ETL = Student.select(Student.surname, function.Floor(Student.score))
+    """
 
     kind: kindmod.Integer = kindmod.Integer()

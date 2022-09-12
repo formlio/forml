@@ -18,11 +18,10 @@
 """
 ForML runtime instruction unit tests.
 """
-# pylint: disable=no-self-use
 import abc
-import pickle
 import typing
 
+import cloudpickle
 import pytest
 
 from forml import flow
@@ -34,14 +33,16 @@ class Functor(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def functor(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Functor:
+    def functor(
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ) -> flow.Functor:
         """Functor fixture."""
 
     def test_serializable(self, functor: flow.Functor, actor_state: bytes, args: typing.Sequence):
         """Test functor serializability."""
         functor = functor.preset_state()
         output = functor(actor_state, *args)
-        clone = pickle.loads(pickle.dumps(functor))
+        clone = cloudpickle.loads(cloudpickle.dumps(functor))
         assert isinstance(clone, flow.Functor)
         assert functor(actor_state, *args) == output
 
@@ -51,9 +52,11 @@ class TestApply(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Functor:
+    def functor(
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ) -> flow.Functor:
         """Functor fixture."""
-        return flow.Apply().functor(actor_spec)
+        return flow.Apply().functor(actor_builder)
 
     @staticmethod
     @pytest.fixture(scope='session')
@@ -70,11 +73,15 @@ class TestApply(Functor):
         actor_prediction: layout.RowMajor,
     ):
         """Test the functor call."""
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError, match='not trained'):
             functor(testset)
+        base_action = type(functor.action)
+        assert base_action in functor.action
         functor = functor.preset_state()
+        assert base_action in functor.action
         assert functor(actor_state, testset) == actor_prediction
         functor = functor.preset_params()
+        assert base_action in functor.action
         assert functor(hyperparams, actor_state, testset) == actor_prediction
 
 
@@ -83,9 +90,11 @@ class TestTrain(Functor):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def functor(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Functor:
+    def functor(
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ) -> flow.Functor:
         """Functor fixture."""
-        return flow.Train().functor(actor_spec)
+        return flow.Train().functor(actor_builder)
 
     @staticmethod
     @pytest.fixture(scope='session')

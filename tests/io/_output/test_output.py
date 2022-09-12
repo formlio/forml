@@ -18,19 +18,17 @@
 """
 Feed utils unit tests.
 """
-# pylint: disable=no-self-use
 
 import pytest
 
-from forml import io
-from forml.conf.parsed import provider as conf
+from forml import io, setup
 
 
 class TestExporter:
     """Sink handle unit tests."""
 
-    class Conf(conf.Sink):
-        """Fake override of the conf.Feed class to bypass parsing config file."""
+    class Conf(setup.Sink):
+        """Fake override of the setup.Feed class to bypass parsing config file."""
 
         def __new__(cls, reference: str, identity: str):
             return tuple.__new__(cls, [reference, {'identity': identity}])
@@ -40,7 +38,7 @@ class TestExporter:
         """Sink.Mode based handle fixture."""
         apply = self.Conf(sink_reference, 'apply')
         eval_ = self.Conf(sink_reference, 'eval')
-        return io.Exporter(conf.Sink.Mode([apply, eval_]))
+        return io.Exporter(setup.Sink.Mode([apply, eval_]))
 
     @pytest.fixture(scope='session')
     def instant(self, sink_type: type[io.Sink]) -> io.Exporter:

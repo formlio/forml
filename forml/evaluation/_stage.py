@@ -28,40 +28,40 @@ if typing.TYPE_CHECKING:
     from forml import evaluation
 
 
-class ApplyScore(flow.Operator):
-    """Production in-sample evaluation result value operator.
+class PerfTrackScore(flow.Operator):
+    """Production performance tracking evaluation result value operator.
 
     This assumes pre-existing state of the pipeline trained previously.
 
-    Only the train path of the composed trunk is expected to be used (apply path still needs to present all persistent
-    nodes so that the states can be loaded).
+    Only the train segment of the composed trunk is expected to be used (apply segment still needs
+    to present all persistent nodes so that the states can be loaded).
     """
 
     def __init__(self, metric: 'evaluation.Metric'):
         self._metric: 'evaluation.Metric' = metric
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
-        pipeline: flow.Trunk = left.expand()
-        pipeline.apply.copy().subscribe(head.apply)  # all persistent nodes must be reachable via the apply path
+        pipeline: flow.Trunk = scope.expand()
+        pipeline.apply.copy().subscribe(head.apply)  # all persistent nodes must be reachable via the apply segment
         pipeline.apply.subscribe(head.train)
         value = self._metric.score(_api.Outcome(head.label.publisher, pipeline.apply.publisher))
         return head.use(train=head.train.extend(tail=value))
 
 
-class TrainScore(flow.Operator):
+class TrainTestScore(flow.Operator):
     """Development out-of-sample evaluation (backtesting) result value operator.
 
     This assumes no pre-existing state - pipeline is trained in scope of the evaluation.
-    Only the train path of the composed trunk is expected to be used.
+    Only the train segment of the composed trunk is expected to be used.
     """
 
     def __init__(self, metric: 'evaluation.Metric', method: 'evaluation.Method'):
         self._metric: 'evaluation.Metric' = metric
         self._method: 'evaluation.Method' = method
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
         head: flow.Trunk = flow.Trunk()
-        outcomes = self._method.produce(left, head.train.publisher, head.label.publisher)
+        outcomes = self._method.produce(scope, head.train.publisher, head.label.publisher)
         value = self._metric.score(*outcomes)
         return head.use(train=head.train.extend(tail=value))

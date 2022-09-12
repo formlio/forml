@@ -18,7 +18,6 @@
 """
 Global ForML unit tests fixtures.
 """
-# pylint: disable=no-self-use
 import collections
 import datetime
 import multiprocessing
@@ -29,8 +28,9 @@ import uuid
 import cloudpickle
 import pytest
 
+from forml import application as appmod
 from forml import flow, io
-from forml import project as prj
+from forml import project as prjmod
 from forml.io import asset, dsl, layout
 from forml.pipeline import wrap
 
@@ -53,7 +53,7 @@ class WrappedActor:
     def predict(self, features: layout.RowMajor) -> layout.RowMajor:
         """Apply to-be handler."""
         if not self._model:
-            raise ValueError('Not Fitted')
+            raise RuntimeError('Actor not trained')
         model = hash(tuple(self._model)) ^ hash(tuple(sorted(self._params.items())))
         return tuple(hash(tuple(f)) ^ model for f in features)
 
@@ -74,6 +74,26 @@ class NativeActor(WrappedActor, flow.Actor[layout.RowMajor, None, layout.RowMajo
         return self.predict(features[0])
 
 
+@wrap.Actor.train
+def decorated_actor(
+    state: typing.Optional[typing.Sequence],
+    features: layout.RowMajor,
+    labels: layout.Array,
+    **params,  # pylint: disable=unused-argument
+) -> typing.Sequence:
+    """Train part of a stateful actor implemented as a decorated function."""
+    state = list(state or [])
+    state.append((tuple(tuple(r) for r in features), tuple(labels)))
+    return state
+
+
+@decorated_actor.apply
+def decorated_actor(state: typing.Sequence, features: layout.RowMajor, **params) -> layout.RowMajor:
+    """Apply part of a stateful actor implemented as a decorated function."""
+    model = hash(tuple(state)) ^ hash(tuple(sorted(params.items())))
+    return tuple(hash(tuple(f)) ^ model for f in features)
+
+
 def train_decorator(actor, *args, **kwargs):
     """Wrapping decorator for the train method."""
     return actor.train(*args, **kwargs)
@@ -81,7 +101,7 @@ def train_decorator(actor, *args, **kwargs):
 
 @pytest.fixture(
     scope='session',
-    params=(NativeActor, wrap.Actor.type(WrappedActor, apply='predict', train=train_decorator)),
+    params=(NativeActor, decorated_actor, wrap.Actor.type(WrappedActor, apply='predict', train=train_decorator)),
 )
 def actor_type(request) -> type[flow.Actor]:
     """Stateful actor fixture."""
@@ -95,11 +115,11 @@ def hyperparams() -> typing.Mapping[str, int]:
 
 
 @pytest.fixture(scope='session')
-def actor_spec(
+def actor_builder(
     actor_type: type[flow.Actor], hyperparams: typing.Mapping[str, int]
-) -> flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]:
-    """Task spec fixture."""
-    return flow.Spec(actor_type, **hyperparams)
+) -> flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]:
+    """Task builder fixture."""
+    return actor_type.builder(**hyperparams)
 
 
 @pytest.fixture(scope='session')
@@ -128,66 +148,66 @@ def testset() -> layout.RowMajor:
 
 @pytest.fixture(scope='session')
 def actor_state(
-    actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+    actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     trainset_features: layout.RowMajor,
     trainset_labels: layout.Array,
 ) -> bytes:
     """Actor state fixture."""
-    actor = actor_spec()
+    actor = actor_builder()
     actor.train(trainset_features, trainset_labels)
     return actor.get_state()
 
 
 @pytest.fixture(scope='session')
 def actor_prediction(
-    actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+    actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     actor_state: bytes,
     testset: layout.RowMajor,
 ) -> layout.RowMajor:
     """Prediction result fixture."""
-    actor = actor_spec()
+    actor = actor_builder()
     actor.set_state(actor_state)
     return actor.apply(testset)
 
 
 @pytest.fixture(scope='session')
-def project_package() -> prj.Package:
+def project_package() -> prjmod.Package:
     """Test project package fixture."""
     return helloworld.PACKAGE
 
 
 @pytest.fixture(scope='session')
-def project_path(project_package: prj.Package) -> pathlib.Path:
+def project_path(project_package: prjmod.Package) -> pathlib.Path:
     """Test project path."""
     return project_package.path
 
 
 @pytest.fixture(scope='session')
-def project_manifest(project_package: prj.Package) -> prj.Manifest:
+def project_manifest(project_package: prjmod.Package) -> prjmod.Manifest:
     """Test project manifest fixture."""
     return project_package.manifest
 
 
 @pytest.fixture(scope='session')
-def project_artifact(project_package: prj.Package, project_path: str) -> prj.Artifact:
+def project_artifact(project_package: prjmod.Package, project_path: str) -> prjmod.Artifact:
     """Test project artifact fixture."""
     return project_package.install(project_path)
 
 
 @pytest.fixture(scope='session')
-def project_components(project_artifact: prj.Artifact) -> prj.Components:
+def project_components(project_artifact: prjmod.Artifact) -> prjmod.Components:
     """Test project components fixture."""
     return project_artifact.components
 
 
 @pytest.fixture(scope='session')
-def project_name(project_manifest: prj.Manifest) -> asset.Project.Key:
+def project_name(project_manifest: prjmod.Manifest) -> asset.Project.Key:
     """Test project name fixture."""
     return project_manifest.name
 
 
 @pytest.fixture(scope='session')
-def project_release(project_manifest: prj.Manifest) -> asset.Release.Key:
+def project_release(project_manifest: prjmod.Manifest) -> asset.Release.Key:
     """Test project release fixture."""
     return project_manifest.version
 
@@ -234,7 +254,7 @@ def registry(
     valid_generation: asset.Generation.Key,
     generation_tag: asset.Tag,
     generation_states: typing.Mapping[uuid.UUID, bytes],
-    project_package: prj.Package,
+    project_package: prjmod.Package,
 ) -> asset.Registry:
     """Registry fixture (multiprocess/thread safe)."""
     with multiprocessing.Manager() as manager:
@@ -272,7 +292,7 @@ def valid_instance(
 
 
 @pytest.fixture(scope='session')
-def source_query(project_components) -> dsl.Query:
+def source_query(project_components: prjmod.Components) -> dsl.Query:
     """Query fixture."""
     return project_components.source.extract.train
 
@@ -373,32 +393,32 @@ def sink_instance(sink_type: type[io.Sink], sink_output: multiprocessing.Queue) 
 
 
 @pytest.fixture(scope='session')
-def descriptor_handle() -> prj.Descriptor.Handle:
+def descriptor_handle() -> appmod.Descriptor.Handle:
     """Application descriptor handle fixture."""
-    return prj.Descriptor.Handle(helloworld_descriptor.__file__)
+    return appmod.Descriptor.Handle(helloworld_descriptor.__file__)
 
 
 @pytest.fixture(scope='session')
-def descriptor(descriptor_handle: prj.Descriptor.Handle) -> prj.Descriptor:
+def descriptor(descriptor_handle: appmod.Descriptor.Handle) -> appmod.Descriptor:
     """Application descriptor fixture."""
     return descriptor_handle.descriptor
 
 
 @pytest.fixture(scope='session')
-def application(descriptor: prj.Descriptor) -> str:
+def application(descriptor: appmod.Descriptor) -> str:
     """Application name fixture."""
     return descriptor.name
 
 
 @pytest.fixture(scope='function')
-def inventory(descriptor: prj.Descriptor) -> asset.Inventory:
+def inventory(descriptor: appmod.Descriptor) -> asset.Inventory:
     """Inventory fixture."""
     return helloworld.Inventory([descriptor])
 
 
 @pytest.fixture(scope='session')
-def testset_request(descriptor: prj.Descriptor, testset_entry: layout.Entry) -> layout.Request:
+def testset_request(descriptor: appmod.Descriptor, testset_entry: layout.Entry) -> layout.Request:
     """Request fixture."""
     as_outcome = layout.Outcome(testset_entry.schema, testset_entry.data.to_rows())
-    as_response = descriptor.encode(as_outcome, [layout.Encoding('*/*')], None)
+    as_response = descriptor.respond(as_outcome, [layout.Encoding('*/*')], None)
     return layout.Request(as_response.payload, as_response.encoding)

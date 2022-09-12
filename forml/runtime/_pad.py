@@ -25,20 +25,22 @@ import typing
 from forml import io
 from forml import project as prj
 from forml import provider as provmod
-from forml.conf.parsed import provider as provcfg
+from forml import setup
 from forml.io import asset, dsl
 
 from . import _agent, _service
 
 LOGGER = logging.getLogger(__name__)
 
+Provider = typing.TypeVar('Provider', bound=provmod.Service)
+
 
 def ensure_instance(
-    config_or_instance: typing.Union[provcfg.Section, provmod.Service],
-    provider: type[provmod.Service],
+    config_or_instance: typing.Union[setup.Provider, provmod.Service],
+    provider: type[Provider],
     *args,
     **kwargs,
-) -> provmod.Service:
+) -> Provider:
     """Helper for returning a provider instance.
 
     Args:
@@ -48,7 +50,7 @@ def ensure_instance(
     Returns:
         Provider instance.
     """
-    if isinstance(config_or_instance, provcfg.Section):
+    if isinstance(config_or_instance, setup.Provider):
         config_or_instance = provider[config_or_instance.reference](*args, **(config_or_instance.params | kwargs))
     return config_or_instance
 
@@ -56,7 +58,7 @@ def ensure_instance(
 class Repo:
     """Registry util handle."""
 
-    def __init__(self, registry: typing.Union[provcfg.Registry, asset.Registry]):
+    def __init__(self, registry: typing.Union[setup.Registry, asset.Registry]):
         self._asset: asset.Directory = asset.Directory(ensure_instance(registry, asset.Registry))
 
     def assets(
@@ -104,20 +106,29 @@ class Repo:
 class Launcher:
     """Runner handle."""
 
-    def __init__(self, runner: provcfg.Runner, assets: asset.Instance, feeds: io.Importer, sink: io.Exporter):
-        self._runner: provcfg.Runner = runner
+    def __init__(self, runner: setup.Runner, assets: asset.Instance, feeds: io.Importer, sink: io.Exporter):
+        self._runner: setup.Runner = runner
         self._assets: asset.Instance = assets
         self._feeds: io.Importer = feeds
         self._sink: io.Exporter = sink
 
     @property
-    def train(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def train_call(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
         """Return the train handler.
 
         Returns:
             Train runner.
         """
         return self(self._assets.project.source.extract.train).train
+
+    @property
+    def train_return(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+        """Return the train handler.
+
+        Returns:
+            Train runner.
+        """
+        return self(self._assets.project.source.extract.train, self._sink.apply).train
 
     @property
     def apply(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
@@ -129,22 +140,22 @@ class Launcher:
         return self(self._assets.project.source.extract.apply, self._sink.apply).apply
 
     @property
-    def train_eval(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def eval_traintest(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
         """Return the eval handler.
 
         Returns:
             Eval runner.
         """
-        return self(self._assets.project.source.extract.train, self._sink.eval).train_eval
+        return self(self._assets.project.source.extract.train, self._sink.eval).eval_traintest
 
     @property
-    def apply_eval(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def eval_perftrack(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
         """Return the eval handler.
 
         Returns:
             Eval runner.
         """
-        return self(self._assets.project.source.extract.train, self._sink.eval).apply_eval
+        return self(self._assets.project.source.extract.train, self._sink.eval).eval_perftrack
 
     @property
     def tune(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
@@ -155,8 +166,8 @@ class Launcher:
         """
         raise NotImplementedError()
 
-    def __call__(self, query: dsl.Query, sink: typing.Optional[io.Sink] = None) -> _agent.Runner:
-        return ensure_instance(self._runner, _agent.Runner, self._assets, self._feeds.match(query), sink)
+    def __call__(self, statement: dsl.Statement, sink: typing.Optional[io.Sink] = None) -> _agent.Runner:
+        return ensure_instance(self._runner, _agent.Runner, self._assets, self._feeds.match(statement), sink)
 
 
 class Service:
@@ -164,9 +175,9 @@ class Service:
 
     def __init__(
         self,
-        gateway: provcfg.Gateway,
-        inventory: typing.Union[provcfg.Inventory, asset.Inventory],
-        registry: typing.Union[provcfg.Registry, asset.Registry],
+        gateway: setup.Gateway,
+        inventory: typing.Union[setup.Inventory, asset.Inventory],
+        registry: typing.Union[setup.Registry, asset.Registry],
         feeds: io.Importer,
     ):
         inventory: asset.Inventory = ensure_instance(inventory, asset.Inventory)
@@ -183,21 +194,21 @@ class Platform:
 
     def __init__(
         self,
-        runner: typing.Optional[typing.Union[provcfg.Runner, str]] = None,
-        registry: typing.Optional[typing.Union[provcfg.Registry, asset.Registry]] = None,
-        feeds: typing.Optional[typing.Iterable[typing.Union[provcfg.Feed, str, io.Feed]]] = None,
-        sink: typing.Optional[typing.Union[provcfg.Sink.Mode, str, io.Sink]] = None,
-        inventory: typing.Optional[typing.Union[provcfg.Inventory, asset.Inventory]] = None,
-        gateway: typing.Optional[provcfg.Gateway] = None,
+        runner: typing.Optional[typing.Union[setup.Runner, str]] = None,
+        registry: typing.Optional[typing.Union[setup.Registry, asset.Registry]] = None,
+        feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]] = None,
+        sink: typing.Optional[typing.Union[setup.Sink.Mode, str, io.Sink]] = None,
+        inventory: typing.Optional[typing.Union[setup.Inventory, asset.Inventory]] = None,
+        gateway: typing.Optional[setup.Gateway] = None,
     ):
         if isinstance(runner, str):
-            runner = provcfg.Runner.resolve(runner)
-        self._runner: provcfg.Runner = runner or provcfg.Runner.default
-        self._registry: typing.Union[provcfg.Registry, asset.Registry] = registry or provcfg.Registry.default
-        self._feeds: io.Importer = io.Importer(*(feeds or provcfg.Feed.default))
-        self._sink: io.Exporter = io.Exporter(sink or provcfg.Sink.Mode.default)
-        self._inventory: typing.Union[provcfg.Inventory, asset.Inventory] = inventory or provcfg.Inventory.default
-        self._gateway: provcfg.Gateway = gateway or provcfg.Gateway.default
+            runner = setup.Runner.resolve(runner)
+        self._runner: setup.Runner = runner or setup.Runner.default
+        self._registry: typing.Union[setup.Registry, asset.Registry] = registry or setup.Registry.default
+        self._feeds: io.Importer = io.Importer(*(feeds or setup.Feed.default))
+        self._sink: io.Exporter = io.Exporter(sink or setup.Sink.Mode.default)
+        self._inventory: typing.Union[setup.Inventory, asset.Inventory] = inventory or setup.Inventory.default
+        self._gateway: setup.Gateway = gateway or setup.Gateway.default
 
     def launcher(
         self,

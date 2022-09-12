@@ -22,10 +22,8 @@ import logging
 import typing
 import uuid
 
-from forml import flow, io, project, runtime
-from forml.conf.parsed import provider as provcfg
+from forml import flow, io, project, runtime, setup
 from forml.io import dsl
-from forml.pipeline import payload
 from forml.testing import _spec
 
 LOGGER = logging.getLogger(__name__)
@@ -67,14 +65,14 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
                 return self._features, self._labels
 
         def __init__(self, scenario: _spec.Scenario.Input):
-            self._testset: flow.Spec[Feed.Operator.Apply] = self.Apply.spec(scenario.apply)
-            self._trainset: flow.Spec[Feed.Operator.Train] = self.Train.spec(scenario.train, scenario.label)
+            self._testset: flow.Builder[Feed.Operator.Apply] = self.Apply.builder(scenario.apply)
+            self._trainset: flow.Builder[Feed.Operator.Train] = self.Train.builder(scenario.train, scenario.label)
 
-        def compose(self, left: flow.Composable) -> flow.Trunk:
-            """Compose the source segment track.
+        def compose(self, scope: flow.Composable) -> flow.Trunk:
+            """Compose the source segment trunk.
 
             Returns:
-                Source segment track.
+                Source segment trunk.
             """
             testset = flow.Worker(self._testset, 0, 1)
             trainset = flow.Worker(self._trainset, 0, 2)
@@ -82,7 +80,7 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
             train[0].subscribe(trainset[0])
             label = flow.Future()
             label[0].subscribe(trainset[1])
-            return flow.Trunk(testset, flow.Path(trainset, train), flow.Path(trainset, label))
+            return flow.Trunk(testset, flow.Segment(trainset, train), flow.Segment(trainset, label))
 
     def __init__(self, scenario: _spec.Scenario.Input, **kwargs):
         super().__init__(**kwargs)
@@ -108,9 +106,8 @@ class Launcher:
     class Action:
         """Customized launcher actions exposed to testing routines."""
 
-        def __init__(self, handler: runtime.Virtual, sniffer: payload.Sniff):
-            self._handler: runtime.Virtual = handler
-            self._sniffer: payload.Sniff = sniffer
+        def __init__(self, handler: runtime.Virtual.Handler):
+            self._handler: runtime.Virtual.Handler = handler
 
         def apply(self) -> typing.Any:
             """Normal apply mode."""
@@ -122,9 +119,8 @@ class Launcher:
 
         def train_return(self) -> tuple[flow.Features, flow.Labels]:
             """Extended train mode that's capturing and returning the features+labels output."""
-            with self._sniffer as future:
-                self._handler.train()
-            return future.result()
+            result = self._handler.train()
+            return result.features, result.labels
 
     class Initializer(flow.Visitor):
         """Visitor that tries to instantiate each node in attempt to validate it."""
@@ -135,13 +131,13 @@ class Launcher:
         def visit_node(self, node: flow.Worker) -> None:
             if isinstance(node, flow.Worker) and node.gid not in self._gids:
                 self._gids.add(node.gid)
-                node.spec()
+                node.builder()
 
-    def __init__(self, params: _spec.Scenario.Params, scenario: _spec.Scenario.Input, runner: provcfg.Runner):
+    def __init__(self, params: _spec.Scenario.Params, scenario: _spec.Scenario.Input, runner: setup.Runner):
         self._params: _spec.Scenario.Params = params
         self._source: project.Source = project.Source.query(DataSet.select(DataSet.feature), DataSet.label)
         self._feed: Feed = Feed(scenario)
-        self._runner: provcfg.Runner = runner
+        self._runner: setup.Runner = runner
 
     def __call__(self, operator: type[flow.Operator]) -> 'Launcher.Action':
         instance = operator(*self._params.args, **self._params.kwargs)
@@ -151,6 +147,4 @@ class Launcher:
         trunk.train.accept(initializer)
         trunk.label.accept(initializer)
 
-        sniffer = payload.Sniff()
-        handler = self._source.bind(instance >> sniffer).launcher(self._runner, [self._feed])
-        return self.Action(handler, sniffer)
+        return self.Action(self._source.bind(instance).launcher(self._runner, [self._feed]))

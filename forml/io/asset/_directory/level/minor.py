@@ -39,7 +39,13 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
-    """Generation metadata."""
+    """Generation metadata.
+
+    Args:
+        training: Generation training information.
+        tuning: Generation tuning information.
+        states: Sequence of state asset IDs.
+    """
 
     class Mode(types.SimpleNamespace):
         """Mode metadata."""
@@ -106,8 +112,6 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         def __init__(self, timestamp: typing.Optional[datetime.datetime] = None, score: typing.Optional[float] = None):
             super().__init__(timestamp, score=score)
 
-    _TSFMT = '%Y-%m-%dT%H:%M:%S.%f'
-
     def __new__(
         cls,
         training: typing.Optional[Training] = None,
@@ -126,7 +130,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         return attribute
 
     def replace(self, **kwargs) -> 'Tag':
-        """Replace give non-mode attributes.
+        """Replace the given non-mode attributes.
 
         Args:
             **kwargs: Non-mode attributes to be replaced.
@@ -137,34 +141,6 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
         if not {k for k, v in self._asdict().items() if not isinstance(v, Tag.Mode)}.issuperset(kwargs.keys()):
             raise ValueError('Invalid replacement')
         return self._replace(**kwargs)
-
-    @classmethod
-    def _strftime(cls, timestamp: typing.Optional[datetime.datetime]) -> typing.Optional[str]:
-        """Encode the timestamp into string representation.
-
-        Args:
-            timestamp: Timestamp to be encoded.
-
-        Returns:
-            Timestamp string representation.
-        """
-        if not timestamp:
-            return None
-        return timestamp.strftime(cls._TSFMT)
-
-    @classmethod
-    def _strptime(cls, raw: typing.Optional[str]) -> typing.Optional[datetime.datetime]:
-        """Decode the timestamp from string representation.
-
-        Args:
-            raw: Timestamp string representation.
-
-        Returns:
-            Timestamp instance.
-        """
-        if not raw:
-            return None
-        return datetime.datetime.strptime(raw, cls._TSFMT)
 
     def dumps(self) -> bytes:
         """Dump the tag into a string of bytes.
@@ -182,7 +158,7 @@ class Tag(collections.namedtuple('Tag', 'training, tuning, states')):
 
     @classmethod
     def loads(cls, raw: bytes) -> 'Tag':
-        """Loaded the dumped tag.
+        """Load the previously dumped tag.
 
         Args:
             raw: Serialized tag representation to be loaded.
@@ -208,7 +184,10 @@ class Generation(_directory.Level):
     """Snapshot of project states in its particular training iteration."""
 
     class Key(_directory.Level.Key, int):
-        """Generation key."""
+        """Project model generation key - i.e. generation *sequence number*.
+
+        This must be a natural integer starting from 1.
+        """
 
         MIN = 1
 
@@ -284,7 +263,7 @@ class Generation(_directory.Level):
             Serialized state.
         """
         if not self.tag.training:
-            return bytes()
+            return b''
         if isinstance(key, int):
             key = self.tag.states[key]
         if key not in self.tag.states:

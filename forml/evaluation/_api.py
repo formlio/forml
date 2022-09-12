@@ -21,31 +21,42 @@ Evaluation mode functionality.
 import abc
 import typing
 
-from forml import flow
+if typing.TYPE_CHECKING:
+    from forml import evaluation, flow
 
 
 class Outcome(typing.NamedTuple):
-    """Ytrue/Ypred outcome pair of output ports."""
+    """*True* and *predicted* outcome pair of output ports.
 
-    true: flow.Publishable
-    """True outcome port."""
-    pred: flow.Publishable
-    """Predicted outcome port."""
+    These two ports provide all the data required to calculate the evaluation metric.
+    """
+
+    true: 'flow.Publishable'
+    """True outcomes port."""
+    pred: 'flow.Publishable'
+    """Predicted outcomes port."""
 
 
 class Metric(abc.ABC):
     """Evaluation metric interface."""
 
     @abc.abstractmethod
-    def score(self, *outcomes: Outcome) -> flow.Atomic:
-        """Compose the metric evaluation on top of the dataset DAG and return the tail node of the new DAG that's
-        expected to have single output apply port delivering the calculated metric.
+    def score(self, *outcomes: 'evaluation.Outcome') -> 'flow.Node':
+        """Compose the metric evaluation task on top of the given *outcomes* DAG ports.
+
+        Return the tail node of the new DAG that's expected to have a single output apply-port
+        delivering the calculated metric.
 
         Args:
-            outcomes: Individual outcomes to be scored.
+            outcomes: Individual outcomes partitions to be scored.
+
+                      Note:
+                        The input is (potentially) a *sequence* of outcome partitions as the
+                        metrics might need to be calculated from separate chunks (e.g. individual
+                        cross-validation folds).
 
         Returns:
-            Single node with one apply output providing the metric output.
+            Single node with single output apply-port providing the metric output.
         """
 
     def __repr__(self):
@@ -53,26 +64,31 @@ class Metric(abc.ABC):
 
 
 class Method(abc.ABC):
-    """Interface for extending the pipeline DAG with the logic producing a dataset of Ytrue and Ypred columns that can
-    be passed to a Metric for evaluation.
+    """Interface for extending the pipeline DAG with the logic for producing *true* and *predicted*
+    outcome columns from historical data.
 
-    Implementations of this interface can deliver the different evaluation techniques using strategies like holdout
-    or cross-validation etc.
+    Attention:
+        The *method* is only producing the *true*/*prediction* outcome pairs - not an evaluation
+        result. The outcomes are expected to be passed to some :class:`evaluation.Metric
+        <forml.evaluation.Metric>` implementation for the actual scoring.
+
+    Implementations of this interface can deliver different evaluation techniques using strategies
+    like *holdout* or *cross-validation* etc.
     """
 
     @abc.abstractmethod
     def produce(
-        self, pipeline: flow.Composable, features: flow.Publishable, label: flow.Publishable
-    ) -> typing.Iterable[Outcome]:
-        """Compose the DAGs producing the ytrue/ypred outcomes.
+        self, pipeline: 'flow.Composable', features: 'flow.Publishable', labels: 'flow.Publishable'
+    ) -> typing.Iterable['evaluation.Outcome']:
+        """Compose the DAG producing the true/predicted outcomes according to the given method.
 
         Args:
-            pipeline: Evaluation processing subject.
-            features: Source port producing the input features.
-            label: Source port producing the input labels.
+            pipeline: Evaluation subject - the solution pipeline to be backtested.
+            features: Source port producing the historical features.
+            labels: Source port producing the historical outcomes matching the features.
 
         Returns:
-            Set of Ytrue/Ypred outcome pairs.
+            A sequence of true/predicted outcome port pairs.
         """
 
     def __repr__(self):

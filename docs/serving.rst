@@ -13,115 +13,153 @@
     specific language governing permissions and limitations
     under the License.
 
-Serving Mode
-============
+.. _serving:
 
-In addition to the basic :ref:`CLI driven <platform-cli>` isolated batch mode, ML projects implemented on ForML can be
-embedded into a dynamic serving layer and operated in an autonomous *full-cycle* fashion. This layer continuously serves
-the following functions:
+Serving Engine
+==============
 
-* incremental training
-* tuning
-* ongoing performance reporting
-* dynamic rollout strategies
+In addition to the basic :ref:`CLI-driven <platform-cli>` project-level batch-mode :ref:`execution
+mechanism <platform-execution>`, ForML allows operating the encompassing :ref:`applications
+<application>` within an interactive loop performing the *apply* action of the :ref:`production
+life cycle <lifecycle-production>` - essentially providing *online predictions* a.k.a. *ML
+inference* based on the underlying models.
+
+.. _serving-process:
+
+Process Control
+---------------
+
+The core component driving the serving loop is the *Engine*. To facilitate the end-to-end
+prediction serving, it interacts with all the different :ref:`platform <platform>` sub-systems as
+shown in the following sequence diagram:
+
+.. md-mermaid::
+
+    sequenceDiagram
+        actor Client
+        participant Engine as Engine/Gateway
+        Client ->> Engine: query(Application, Request)
+        opt if not in cache
+            Engine ->> Inventory: get_descriptor(Application)
+            Inventory --) Engine: Descriptor
+        end
+        Engine ->> Engine: Entry, Scope = Descriptor.receive(Request)
+        Engine ->> Engine: ModelHandle = Descriptor.select(Scope)
+        opt if needed for model selection
+            Engine ->> Registry: inspect()
+            Registry --) Engine: Metadata
+        end
+        Engine ->> Engine: Runner = get_or_spawn()
+        Engine ->> Runner: apply(ModelHandle, Entry)
+        opt if not loaded
+            Runner ->> Registry: load(ModelHandle)
+            Registry --) Runner: Model
+        end
+        opt if needs augmenting
+            Runner ->> Feed: get_features(Entry)
+            Feed --) Runner: Features
+        end
+        Runner ->> Runner: Outcome = Model.predict(Features)
+        Runner --) Engine: Outcome
+        Engine ->> Engine: Response = Descriptor.respond(Outcome)
+        Engine --) Client: Response
 
 
-Feedback Loop
--------------
+This diagram illustrates the following steps:
 
-In order to autonomously provide the full-cycle serving capabilities for a supervised ML project, there needs to be
-a programmatically reachable event-outcome feedback loop defined as an external reconciliation path providing
-a knowledge of the true outcome for every event the system is predicting for.
+#. Receiving a request containing the query payload and the target :ref:`application <application>`
+   reference.
+#. Upon the very first request for any given application, the engine fetches the particular
+   :ref:`application descriptor <application-implementation>` from the configured :ref:`inventory
+   <inventory>`. The descriptor remains cached for every follow-up request of that application.
+#. The engine uses the descriptor of the selected application to :ref:`dispatch the request
+   <application-dispatch>` by:
 
-Implementation of this feedback loop (the reconciliation logic) is in scope of the particular business application and
-its data architecture to which ForML simply plugs into using its :doc:`feed system<feed>`.
+   #. :ref:`Interpreting <application-interpret>` the query payload.
+   #. :ref:`Selecting <application-select>` a particular :ref:`model generation
+      <registry-assets>` to serve the given request (depending on the model-selection strategy
+      used by that application, this step might involve interaction with the :ref:`model registry
+      <registry>`).
 
-The key attribute of this feedback loop is its *latency* which determines the turnaround time for all the serving
-functionality like performance monitoring, incremental training etc.
+#. Unless already running, the engine spawns a dedicated :ref:`runner <runner>` which loads the
+   selected :ref:`model artifacts <registry-artifacts>` providing an isolated environment not
+   colliding with (dependencies of) other models also served by the same engine.
+#. The runner might involve the configured :ref:`feed system <feed>` to augment the provided
+   data points using a feature store.
+#. With the complete feature set matching the project-defined :ref:`schema <project-source>`,
+   the runner executes the :ref:`pipeline <project-pipeline>` in the :ref:`apply-mode
+   <workflow-mode>` obtaining the prediction outcomes.
+#. Finally, the engine again uses the application descriptor to :ref:`produce
+   the response <application-interpret>` which is then returned to the original caller.
+
+.. note::
+    An engine can serve any :ref:`application <application>` available in its linked
+    :ref:`inventory <inventory>` in a multiplexed fashion. Since the released :ref:`project
+    packages <registry-package>` contain all the :ref:`declared dependencies <project-setup>`,
+    the engine itself remains generic. To avoid collisions between dependencies of different
+    models, the engine separates each one in an isolated context.
 
 
-.. _serving-components:
+.. _serving-gateway:
 
-Components
-----------
+Frontend Gateway
+----------------
 
-The serving capabilities are provided through a number of additional :doc:`platform components <platform>` as explained
-in the following sections.
+While the engine is full-featured in terms of the end-to-end application serving, it can only be
+engaged using its raw Python API. That's suitable for products natively embedding the engine as
+an integrated component, but for a truly decoupled client-server architecture, this needs an extra
+layer providing some sort of a transport protocol.
 
-.. image:: _static/images/serving-components.png
+For this purpose, ForML comes with the concept of *serving frontend gateways*. They also follow the
+:ref:`provider pattern <provider>` allowing to deliver a number of different interchangeable
+:ref:`implementations <serving-providers>` pluggable at launch time.
 
-Online Agent
-''''''''''''
+Frontend gateways represent the outermost layer in the logical hierarchy of the ForML architecture:
 
-Online agent is the most apparent serving component responsible for answering the event queries with actual
-predictions. In scope of this process it needs to go through set of essential steps (some of them are part of
-agent bootstrapping or periodical cache refreshing while others are synchronous with each query):
+================================  =======================  =================  ====================
+Layer                             Objective/Task           Problem question   Product/Instance
+================================  =======================  =================  ====================
+:ref:`Project <project>`          ML solution              How to solve?      Prediction outcomes
+                                                                              (e.g. probabilities)
+:ref:`Application <application>`  Domain interpretation,   How to utilize?    Domain response
+                                  model selection                             (e.g. recommended
+                                                                              products)
+:ref:`Engine <serving>`           Serving control          How to operate?    Interactive
+                                                                              processing loop
+:ref:`Gateway <serving-gateway>`  Client-server transport  How to integrate?  ML service API
+================================  =======================  =================  ====================
 
-1. Fetching the serving manifest from the *project roster*.
-2. Selecting a particular model generation using the dynamic *rollout strategy* as defined in the serving manifest.
-3. Loading the selected model generation from the :doc:`model registry<registry/index>`.
-4. Fetching all missing input features for augmenting the particular request according to the project
-   :ref:`input DSL <concept-dsl>`.
-5. Running the prediction pipeline and responding with the result.
-6. Submitting query metadata to the *query logbus*.
+API
+^^^
 
-The rollout workflow employed by the agent is a powerful concept allowing to select particular model/generation
-dynamically based on the project-defined function of any available parameters (mainly the performance metrics). This
-allows to implement strategies like *canary deployment*, *multi-armed bandits*, *A/B testing*, *cold-start* or
-*fallback* models etc.
+.. autoclass:: forml.runtime.Gateway
+   :members: run
 
-The serving agent is expected to be embedded into a particular application layer (ie web/rest service) to provide the
-actual frontend facade.
+Service Management
+^^^^^^^^^^^^^^^^^^
 
-Project Roster
-''''''''''''''
+The gateway service can be managed using the :ref:`CLI <platform-cli>` as follows (see the
+integrated help for full synopsis):
 
-This is a tiny storage service used by the serving layer to pickup list of active projects and their serving
-manifests. It gets updated as part of project deployment promotion and continuously watched by the online/offline
-agents to determine things like the model generation selection.
+==========================  =============================
+Use case                    Command
+==========================  =============================
+Launch the gateway service  ``$ forml application serve``
+==========================  =============================
 
-Query LogBus
-''''''''''''
 
-Standard publisher-subscriber software bus for distributing the serving queries metadata to allow for further (offline)
-processing like the performance reporting or general debugging. The typical attributes sent to the query logbus per each
-event are:
+.. _serving-providers:
 
-* timestamp
-* query ID
-* project + version
-* query fields
-* obtained augmentation features
-* prediction result
-* latency
+Gateway Providers
+^^^^^^^^^^^^^^^^^
 
-PerfDB
-''''''
+Gateway :ref:`providers <provider>` can be configured within the runtime :ref:`platform setup
+<platform>` using the ``[GATEWAY.*]`` sections.
 
-Another storage service for aggregating the performance metric as time series derived from both the metadata pushed via
-*query logbus* as well as the main *feedback loop* and produced by the *offline agent* processing.
+The available implementations are:
 
-The PerfDB is a crucial source of information not only for any sorts of operational monitoring/reporting but
-especially for the dynamic model generation selection performed by the online agent according to the rollout strategy
-when serving the actual event queries.
+.. autosummary::
+   :template: provider.rst
+   :nosignatures:
 
-The typical available metrics are:
-
-* per project:
-
-  * per model generation:
-
-    * serving latency (gauge)
-    * number of requests (counter)
-    * loss function value
-    * auxiliary project-defined metrics
-
-  * loss function value
-
-Offline Agent
-'''''''''''''
-
-Offline agent is the backend service responsible for doing all the heavy processing of:
-
-* (incremental) *training* and *tuning* of new model generations (pushed to the :doc:`model registry<registry/index>`)
-* *evaluating* project performance (pushed to the `PerfDB`_)
+   forml.provider.gateway.rest.Gateway

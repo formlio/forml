@@ -28,20 +28,23 @@ import typing
 
 from .. import _exception
 
+if typing.TYPE_CHECKING:
+    from forml.io import dsl
+
 
 class Meta(abc.ABCMeta):
     """Meta class for all kinds."""
 
     @property
-    def __subkinds__(cls) -> typing.Iterable[type['Any']]:
-        """Return all non-abstract sub-classes of given kind class.
+    def __subkinds__(cls) -> typing.Iterable[type['dsl.Any']]:
+        """Return all non-abstract sub-classes of the given kind class.
 
         Returns:
             Iterable of all sub-kinds.
         """
 
-        def scan(subs: typing.Iterable[type['Any']]) -> typing.Iterable[type['Any']]:
-            """Scan the class subtree of given types.
+        def scan(subs: typing.Iterable[type['dsl.Any']]) -> typing.Iterable[type['dsl.Any']]:
+            """Scan the class subtree of the given types.
 
             Args:
                 subs: Iterable of classes to descend from.
@@ -60,8 +63,8 @@ class Singleton(Meta):
     def __new__(mcs, name: str, bases: tuple[type], namespace: dict[str, typing.Any]):
         instance = None
 
-        def new(cls: type['Any']) -> 'Any':
-            """Injected class new method ensuring singletons are only created."""
+        def new(cls: type['dsl.Any']) -> 'dsl.Any':
+            """Singleton type."""
             nonlocal instance
             if not instance:
                 instance = object.__new__(cls)
@@ -75,7 +78,7 @@ Native = typing.TypeVar('Native')
 
 
 class Any(metaclass=Meta):
-    """Type base class."""
+    """Base class of all types."""
 
     @property
     @abc.abstractmethod
@@ -89,7 +92,9 @@ class Any(metaclass=Meta):
     @property
     @abc.abstractmethod
     def __cardinality__(self) -> int:
-        """Cardinality (relative size) of given kind. Useful to for example distinguish largest subkind of given kind.
+        """Cardinality (relative size) of the given kind.
+
+        Useful to for example distinguish largest sub-kind of the given kind.
 
         Returns:
             Cardinality value.
@@ -110,8 +115,8 @@ class Any(metaclass=Meta):
         return self.__class__.__name__
 
     @classmethod
-    def match(cls, kind: 'Any') -> bool:
-        """Check given kind is of our type.
+    def match(cls, kind: 'dsl.Any') -> bool:
+        """Check the given kind is of our type.
 
         Args:
             kind: Kind to be verified.
@@ -122,8 +127,8 @@ class Any(metaclass=Meta):
         return isinstance(kind, cls)
 
     @classmethod
-    def ensure(cls, kind: 'Any') -> 'Any':
-        """Ensure given kind is of our type.
+    def ensure(cls, kind: 'dsl.Any') -> 'dsl.Any':
+        """Ensure the given kind is of our type.
 
         Args:
             kind: Kind to be verified.
@@ -199,7 +204,7 @@ class Timestamp(Date):
     __cardinality__ = 1
 
 
-class Compound(Any, tuple):
+class Compound(Any, tuple, metaclass=abc.ABCMeta):
     """Complex data type class."""
 
     @property
@@ -219,28 +224,41 @@ class Compound(Any, tuple):
 
 
 class Array(Compound):
-    """Array data type class."""
+    """Array data type class.
 
-    element: Any = property(operator.itemgetter(0))
+    Args:
+        element: Array element kind.
+    """
+
+    element: 'dsl.Any' = property(operator.itemgetter(0))
     __type__ = typing.Sequence
 
-    def __new__(cls, element: Any):
+    def __new__(cls, element: 'dsl.Any'):
         return tuple.__new__(cls, [element])
 
 
 class Map(Compound):
-    """Map data type class."""
+    """Map data type class.
 
-    key: Any = property(operator.itemgetter(0))
-    value: Any = property(operator.itemgetter(1))
+    Args:
+        key: Map keys kind.
+        value: Map values kind.
+    """
+
+    key: 'dsl.Any' = property(operator.itemgetter(0))
+    value: 'dsl.Any' = property(operator.itemgetter(1))
     __type__ = typing.Mapping
 
-    def __new__(cls, key: Any, value: Any):
+    def __new__(cls, key: 'dsl.Any', value: 'dsl.Any'):
         return tuple.__new__(cls, [key, value])
 
 
 class Struct(Compound):
-    """Struct data type class."""
+    """Structure data type class.
+
+    Args:
+        element: Mapping of attribute name strings and their kinds.
+    """
 
     class Element(collections.namedtuple('Element', 'name, kind')):
         """Struct element type."""
@@ -253,11 +271,11 @@ class Struct(Compound):
 
     __type__ = object
 
-    def __new__(cls, **element: Any):
+    def __new__(cls, **element: 'dsl.Any'):
         return tuple.__new__(cls, [cls.Element(n, k) for n, k in element.items()])
 
 
-def reflect(value: typing.Any) -> Any:
+def reflect(value: typing.Any) -> 'dsl.Any':
     """Get the type of the provided value.
 
     Args:
@@ -268,7 +286,7 @@ def reflect(value: typing.Any) -> Any:
     """
 
     def same(seq: typing.Iterable[typing.Any]) -> bool:
-        """Return true if all elements of a non-empty sequence have same type.
+        """Return true if all elements of a non-empty sequence have the same type.
 
         Args:
             seq: Sequence of elements to check.

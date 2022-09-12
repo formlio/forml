@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Registry integration based on MLFlow Tracking Server.
+Model registry implementation based on the MLFlow Tracking Server.
 """
 import collections
 import functools
@@ -42,7 +42,7 @@ Entity = typing.TypeVar('Entity')
 
 
 class Client:
-    """Mlflow tracking server wrapper."""
+    """MLflow tracking server wrapper."""
 
     class Pager(typing.Generic[Entity], typing.Iterable[Entity]):
         """Rest API paging iterator."""
@@ -126,7 +126,7 @@ class Client:
         run.data.tags[key] = value
         return run
 
-    @functools.cache
+    @functools.lru_cache
     def get_or_create_experiment(self, name: str) -> entities.Experiment:
         """Get an experiment instance by name if exists or create a new one.
 
@@ -143,7 +143,7 @@ class Client:
             self._mlflow.restore_experiment(entity.experiment_id)
         return entity
 
-    @functools.cache
+    @functools.lru_cache
     def get_or_create_run(self, experiment: str, **tags: str) -> tuple[entities.Experiment, entities.Run]:
         """Get a run instance matching the given tags if exists or create a new one.
 
@@ -172,12 +172,44 @@ class Client:
 
 
 class Registry(asset.Registry, alias='mlflow'):
-    """ForML registry implementation backed by MLFlow tracking server."""
+    """ForML model registry implementation using the :doc:`MLflow Tracking Server <mlflow:tracking>`
+    as the artifact storage.
+
+    Multiple ForML model registries can be hosted on a single MLflow server in parallel using the
+    *virtual* repositories distinguished by the ``repoid`` parameter.
+
+    Args:
+        tracking_uri: Address of local or remote tracking server. See the :ref:`MLflow docs
+                      <mlflow:where_runs_are_recorded>` for more info.
+        registry_uri: Address of local or remote model registry server. Defaults to the
+                      ``tracking_uri``.
+        repoid: Optional virtual repository ID.
+        staging: File system location reachable from all runner nodes to be used for
+                 :ref:`package staging <registry-staging>` (defaults to a local temporal
+                 directory (invalid for distributed runners)).
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [REGISTRY.mlflocal]
+        provider = "mlflow"
+        tracking_uri = "http://127.0.0.1:5000"
+        staging = "/mnt/forml/.stage"
+
+    Important:
+        Select the ``mlflow`` :ref:`extras to install <install-extras>` ForML together with the
+        MLflow support.
+
+    .. spelling:word-list:: Mlflow
+    """
 
     class Root(collections.namedtuple('Root', 'project, repoid')):
         """Helper container for representing the registry root level.
 
-        To support the concept of virtual registries, the experiment name is the project name suffixed by the repoid.
+        To support the concept of virtual registries, the experiment name is the project name
+        suffixed by the repoid.
         """
 
         project: asset.Project.Key
@@ -300,7 +332,7 @@ class Registry(asset.Registry, alias='mlflow'):
                 )
             except FileNotFoundError:
                 LOGGER.warning('No state %s under runid %s', sid, self._generations[project, release, generation])
-                return bytes()
+                return b''
             with artifact.open('rb') as statefile:
                 return statefile.read()
 
@@ -360,7 +392,8 @@ class Registry(asset.Registry, alias='mlflow'):
         return self._releases[project, release]
 
     def _get_unbound_generation(self, project: asset.Project.Key, release: asset.Release.Key) -> entities.Run:
-        """Get the run instance for unbounded generation under the given release if exists or create a new one.
+        """Get the run instance for unbounded generation under the given release if exists or create
+        a new one.
 
         Args:
             project: Project key.

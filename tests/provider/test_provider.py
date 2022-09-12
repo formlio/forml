@@ -18,7 +18,6 @@
 """
 Provider tests.
 """
-# pylint: disable=no-self-use
 import abc
 import typing
 

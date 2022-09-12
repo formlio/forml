@@ -18,13 +18,13 @@
 """
 ForML top level.
 """
-__version__ = '0.5.dev1'
+__version__ = '0.8'
 __author__ = 'ForML Authors'
-
-from forml.conf import logging
 
 from ._exception import AnyError, FailedError, InvalidError, MissingError, UnexpectedError
 
 __all__ = ['AnyError', 'InvalidError', 'MissingError', 'UnexpectedError', 'FailedError']
 
-logging.setup()
+from . import setup
+
+setup.logging()

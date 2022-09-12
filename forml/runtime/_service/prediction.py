@@ -26,9 +26,11 @@ import typing
 from concurrent import futures
 from multiprocessing import context
 
+import forml
 from forml import io
-from forml.io import asset, dsl, layout
+from forml.io import asset, layout
 from forml.provider.runner import pyfunc
+from forml.provider.sink import null
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,25 +84,6 @@ class Pool(context.SpawnProcess):
     forked workers share just one (read-only) copy of the memory.
     """
 
-    class Sink(io.Sink):
-        """Dummy sink that only returns combo of the schema and the payload."""
-
-        class Consumer:
-            """Primitive consumer just passing the data."""
-
-            def __init__(self, schema: typing.Optional[dsl.Source.Schema]):
-                self._schema: typing.Optional[dsl.Source.Schema] = schema
-
-            def __call__(self, data: layout.RowMajor) -> layout.Outcome:
-                if not self._schema:
-                    LOGGER.warning('Inferring unknown output schema')
-                    self._schema = dsl.Schema.from_record(data[0])
-                return layout.Outcome(self._schema, data)
-
-        @classmethod
-        def consumer(cls, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any) -> io.Consumer:
-            return cls.Consumer(schema)
-
     class Worker(context.ForkProcess):
         """Pool worker implementation."""
 
@@ -129,6 +112,8 @@ class Pool(context.SpawnProcess):
                     continue
                 try:
                     self._results.put_nowait(task.success(self._runner.call(task.entry)))
+                except forml.AnyError as err:
+                    self._results.put_nowait(task.failure(err))
                 except Exception as err:
                     self._results.put_nowait(task.failure(err))
                     self._stopped.set()
@@ -156,7 +141,7 @@ class Pool(context.SpawnProcess):
     def run(self) -> None:
         """Pool loop."""
         LOGGER.debug('Worker pool %s starting', self.name)
-        runner: pyfunc.Runner = pyfunc.Runner(self._instance, self._feed, self.Sink())
+        runner: pyfunc.Runner = pyfunc.Runner(self._instance, self._feed, null.Sink())
         pool: list[context.ForkProcess] = [
             self.Worker(runner, self._tasks, self._results, self._stopped, name=f'{self.name}:{i}')
             for i in range(self._processes)

@@ -16,27 +16,39 @@
 # under the License.
 
 """
-Payload transformation utilities.
+General payload manipulation utilities.
+
+ForML is by design fairly :ref:`payload-format agnostic <io-payload>` leaving the choice of
+compatible operators/actors to the implementer.
+
+This module provides a number of generic payload-related operators to be parameterized with
+particular actor implementations targeting different payload formats.
+
+Note:
+    For convenience, there is also a couple of payload-specific actors designed to be engaged
+    only with that particular payload format (typically :class:`pandas:pandas.DataFrame`). This
+    does not make that format any more preferable from the general ForML perspective as it still
+    maintains its payload format neutrality.
 """
 
 from ._convert import ToPandas, pandas_params
-from ._debug import Dump, Dumpable, Sniff
-from ._generic import Apply, Concatenable, MapReduce, PandasConcat, PandasDrop, PandasSelect
+from ._debug import Dump, Dumpable, PandasCSVDumper, Sniff
+from ._generic import Apply, MapReduce, PandasConcat, PandasDrop, PandasSelect
 from ._split import CrossValidable, CVFoldable, PandasCVFolds
 
 __all__ = [
-    'ToPandas',
-    'Concatenable',
+    'Apply',
     'CrossValidable',
     'CVFoldable',
-    'PandasDrop',
     'Dump',
     'Dumpable',
     'MapReduce',
-    'pandas_params',
     'PandasConcat',
-    'Apply',
+    'PandasCSVDumper',
     'PandasCVFolds',
+    'PandasDrop',
+    'pandas_params',
     'PandasSelect',
     'Sniff',
+    'ToPandas',
 ]

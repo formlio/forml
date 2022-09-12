@@ -23,28 +23,49 @@ import logging
 import typing
 
 import forml
-from forml import evaluation, flow, io, project, provider
-from forml.conf.parsed import provider as provcfg
-from forml.io import asset, dsl
+from forml import evaluation
+from forml import flow as flowmod
+from forml import io as iomod
+from forml import project, provider, setup
+from forml.io import asset as assetmod
+from forml.io import dsl
+
+if typing.TYPE_CHECKING:
+    from forml import flow, io  # pylint: disable=reimported
+    from forml.io import asset  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runner.path):
-    """Abstract base runner class to be extended by particular runner implementations."""
+class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.path):
+    """Base class for implementing ForML runner providers.
+
+    The public API allows performing all the standard actions of the :doc:`ForML lifecycles
+    <lifecycle>`.
+
+    All that needs to be supplied by the provider is the abstract :meth:`run` method.
+
+    Args:
+        instance: A particular instance of the persistent artifacts to be executed.
+        feed: Optional input feed instance to retrieve the data from (falls back to the default
+              configured feed).
+        sink: Output sink instance (no output is produced if omitted).
+        kwargs: Additional keyword arguments for the :meth:`run` method.
+    """
 
     _METRIC_SCHEMA = dsl.Schema.from_fields(dsl.Field(dsl.Float(), name='Metric'))
 
     def __init__(
         self,
-        instance: typing.Optional[asset.Instance] = None,
-        feed: typing.Optional[io.Feed] = None,
-        sink: typing.Optional[io.Sink] = None,
-        **_,
+        instance: typing.Optional['asset.Instance'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Sink'] = None,
+        **kwargs,
     ):
-        self._instance: asset.Instance = instance or asset.Instance()
-        self._feed: io.Feed = feed or io.Feed()
-        self._sink: typing.Optional[io.Sink] = sink
+        self._instance: 'asset.Instance' = instance or assetmod.Instance()
+        self._feed: 'io.Feed' = feed or iomod.Feed()
+        self._sink: typing.Optional['io.Sink'] = sink
+        self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         """Run the training code.
@@ -68,9 +89,7 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         composition = self._build(lower, upper, self._instance.project.pipeline, output=None)  # TO-DO: sink schema
         self._exec(composition.apply, self._instance.state(composition.persistent))
 
-    def tune(  # pylint: disable=no-self-use
-        self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
-    ) -> None:
+    def tune(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         """Run the tune mode.
 
         Args:
@@ -79,38 +98,42 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         """
         raise forml.MissingError('Not yet supported')
 
-    def train_eval(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
-        """Run the development mode (backtesting) evaluation (based on training model from scratch).
+    def eval_traintest(
+        self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
+    ) -> None:
+        """Run the development mode (backtesting) evaluation (training the model from scratch).
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._eval(lower, upper, lambda s: evaluation.TrainScore(s.metric, s.method))
+        composition = self._eval(lower, upper, lambda s: evaluation.TrainTestScore(s.metric, s.method))
         self._exec(composition.train)
 
-    def apply_eval(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
-        """Run the production mode evaluation (predictions of already trained model).
+    def eval_perftrack(
+        self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
+    ) -> None:
+        """Run the production performance tracking evaluation (predictions of an existing model).
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
         """
-        composition = self._eval(lower, upper, lambda s: evaluation.ApplyScore(s.metric))
+        composition = self._eval(lower, upper, lambda s: evaluation.PerfTrackScore(s.metric))
         self._exec(composition.train, self._instance.state(composition.persistent))
 
     def _eval(
         self,
         lower: typing.Optional[dsl.Native],
         upper: typing.Optional[dsl.Native],
-        evaluator: typing.Callable[[project.Evaluation], flow.Operator],
-    ) -> flow.Composition:
+        evaluator: typing.Callable[[project.Evaluation], 'flow.Operator'],
+    ) -> 'flow.Composition':
         """Helper for setting up the evaluation composition.
 
         Args:
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper: Ordinal value as the upper bound for the ETL cycle.
-            evaluator: Callback to provide an operator based on the give evaluation spec.
+            evaluator: Callback to provide an operator based on the given evaluation spec.
 
         Returns:
             Evaluation composition.
@@ -130,9 +153,9 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         self,
         lower: typing.Optional[dsl.Native],
         upper: typing.Optional[dsl.Native],
-        *blocks: flow.Composable,
+        *blocks: 'flow.Composable',
         output: typing.Optional[dsl.Source.Schema] = None,
-    ) -> flow.Composition:
+    ) -> 'flow.Composition':
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
         Args:
@@ -148,27 +171,29 @@ class Runner(provider.Service, default=provcfg.Runner.default, path=provcfg.Runn
         segments.extend(b.expand() for b in blocks)
         if self._sink:
             segments.append(self._sink.save(output))
-        return flow.Composition(*segments)
+        return flowmod.Composition(*segments)
 
-    def _exec(self, path: flow.Path, assets: typing.Optional[asset.State] = None) -> None:
-        """Execute the given path and assets.
+    def _exec(self, segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None) -> None:
+        """Execute the given segment and assets.
 
         Args:
-            path: Pipeline path.
+            segment: Pipeline segment.
             assets: Persistent assets to be used.
 
         Returns:
             Optional return value.
         """
-        return self._run(flow.generate(path, assets))
+        return self.run(flowmod.compile(segment, assets), **self._kwargs)
 
+    @classmethod
     @abc.abstractmethod
-    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
-        """Actual run action to be implemented according to the specific runtime.
+    def run(cls, symbols: typing.Collection['flow.Symbol'], **kwargs) -> None:
+        """Actual run action implementation using the specific provider execution technology.
 
         Args:
-            symbols: task graph to be executed.
-
-        Returns:
-            Optional pipeline return value.
+            symbols: Collection of portable symbols representing the workflow task graph to be
+                     executed as produced by the :func:`flow.compile() <forml.flow.compile>`
+                     function.
+            kwargs: Custom keyword arguments provided via the constructor.
         """
+        raise NotImplementedError()

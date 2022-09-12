@@ -28,18 +28,24 @@ import typing
 from forml.io import dsl
 from forml.io.dsl import function
 
+if typing.TYPE_CHECKING:
+    from forml.io.dsl import parser  # pylint: disable=import-self
+
 LOGGER = logging.getLogger(__name__)
 
+#: Generic storage-native representation of :class:`dsl.Source <forml.io.dsl.Source>`.
 Source = typing.TypeVar('Source')
+#: Generic storage-native representation of :class:`dsl.Feature <forml.io.dsl.Feature>`.
 Feature = typing.TypeVar('Feature')
+#: Generic storage-native representation of any instruction.
 Symbol = typing.TypeVar('Symbol')
 
 
 class Container(typing.Generic[Symbol]):
     """Base parser structure.
 
-    When used as a context manager the internal structure is exclusive to given context and is checked for total
-    depletion on exit.
+    When used as a context manager the internal structure is exclusive to given context and is
+    checked for total depletion on exit.
     """
 
     class Context:
@@ -76,13 +82,15 @@ class Container(typing.Generic[Symbol]):
             """Container for segments of all tables."""
 
             class Segment(collections.namedtuple('Segment', 'fields, factors')):
-                """Frame segment specification as a list of features (vertical) and row predicates (horizontal)."""
+                """Frame segment specification as a list of features (vertical) and row predicates
+                (horizontal).
+                """
 
                 def __new__(cls):
                     return super().__new__(cls, set(), set())
 
                 @property
-                def predicate(self) -> typing.Optional[dsl.Predicate]:
+                def predicate(self) -> typing.Optional['dsl.Predicate']:
                     """Combine the factors into single predicate.
 
                     Returns:
@@ -91,11 +99,11 @@ class Container(typing.Generic[Symbol]):
                     return functools.reduce(function.Or, sorted(self.factors)) if self.factors else None
 
             def __init__(self):
-                self._segments: dict[dsl.Table, Container.Context.Tables.Segment] = collections.defaultdict(
+                self._segments: dict['dsl.Table', Container.Context.Tables.Segment] = collections.defaultdict(
                     self.Segment
                 )
 
-            def items(self) -> typing.ItemsView[dsl.Table, 'Container.Context.Tables.Segment']:
+            def items(self) -> typing.ItemsView['dsl.Table', 'Container.Context.Tables.Segment']:
                 """Get the key-value pairs of this mapping.
 
                 Returns:
@@ -103,21 +111,22 @@ class Container(typing.Generic[Symbol]):
                 """
                 return self._segments.items()
 
-            def __getitem__(self, table: dsl.Table) -> 'Container.Context.Tables.Segment':
+            def __getitem__(self, table: 'dsl.Table') -> 'Container.Context.Tables.Segment':
                 return self._segments[table]
 
-            def select(self, *feature: dsl.Feature) -> None:
-                """Extract fields from given list of features and register them into segments of their relevant tables.
+            def select(self, *feature: 'dsl.Feature') -> None:
+                """Extract fields from given list of features and register them into segments of
+                their relevant tables.
 
                 Args:
-                    *feature: Features to be to extracted and registered.
+                    feature: Features to be to extracted and registered.
                 """
                 for field in dsl.Column.dissect(*feature):
                     self[field.origin].fields.add(field)
 
-            def filter(self, expression: dsl.Predicate) -> None:
-                """Extract predicate factors from given expression and register them into segments of their relevant
-                tables. Also register the whole expression using .select().
+            def filter(self, expression: 'dsl.Predicate') -> None:
+                """Extract predicate factors from given expression and register them into segments
+                of their relevant tables. Also register the whole expression using :attr:`select`.
 
                 Args:
                     expression: Expression to be extracted and registered.
@@ -129,7 +138,7 @@ class Container(typing.Generic[Symbol]):
         def __init__(self):
             self.symbols: Container.Context.Symbols = self.Symbols()
             self.tables: Container.Context.Tables = self.Tables()
-            self.origins: dict[dsl.Origin, Source] = {}
+            self.origins: dict['dsl.Origin', 'parser.Source'] = {}
 
         @property
         def dirty(self) -> bool:
@@ -164,7 +173,9 @@ class Container(typing.Generic[Symbol]):
         self._context = self._stack.pop()
 
     def fetch(self) -> Symbol:
-        """Storage retrieval. Must be called exactly once and at the point where there is exactly one symbol pending
+        """Storage retrieval.
+
+        Must be called exactly once and at the point where there is exactly one symbol pending
         in the context. Successful fetch will kill the context.
 
         Returns:
@@ -177,13 +188,13 @@ class Container(typing.Generic[Symbol]):
         return symbol
 
 
-def bypass(override: typing.Callable[[Container, typing.Any], Source]) -> typing.Callable:
-    """Bypass the (result of) the particular visit_* implementation if the supplied override resolver provides an
-    alternative value.
+def bypass(override: typing.Callable[[Container, typing.Any], 'parser.Source']) -> typing.Callable:
+    """Bypass the (result of) the particular visit_* implementation if the supplied override
+    resolver provides an alternative value.
 
     Args:
-        override: Callable resolver that returns an explicit value for given subject or raises KeyError for unknown
-        mapping.
+        override: Callable resolver that returns an explicit value for given subject or raises
+                  ``KeyError`` for unknown mapping.
 
     Returns:
         Visitor method decorator.
@@ -229,14 +240,42 @@ class Visitor(
     dsl.Feature.Visitor,
     metaclass=abc.ABCMeta,
 ):
-    """Frame source parser."""
+    """Abstract base class for DSL query statement parser implementations.
 
-    def __init__(self, sources: typing.Mapping[dsl.Source, Source], features: typing.Mapping[dsl.Feature, Feature]):
+    In this context, *parsing* essentially means conversion between the generic DSL-based
+    instance of the particular query and its native representation matching a selected target
+    storage layer.
+
+    Conceptually, the parser is implemented as a combination of a *visitor* traversing the query
+    statement structure and a *push-down automaton* assembling the generated instructions in their
+    storage-native representation.
+
+    The parser assumes resolving the native representation of all the leaves of the query statement
+    tree (the :class:`dsl.Table <forml.io.dsl.Table>` and :class:`dsl.Column <forml.io.dsl.Column>`
+    instances) or possibly entire branches can be accomplished via the provided initial mappings
+    from which the parser builds the complete query up.
+
+    Upon failing to resolve any particular *source*/*feature* using the initial mappings, the parser
+    raises the :exc:`dsl.UnprovisionedError <forml.io.dsl.UnprovisionedError>` indicating
+    unavailability of the given data source.
+
+    Args:
+        sources: Explicit mapping of generic DSL *sources* (typically :class:`dsl.Table
+                 <forml.io.dsl.Table>`) to their native representations.
+        features: Explicit mapping of generic DSL *features* (typically :class:`dsl.Column
+                  <forml.io.dsl.Column>`) to their native representations.
+    """
+
+    def __init__(
+        self,
+        sources: typing.Mapping['dsl.Source', 'parser.Source'],
+        features: typing.Mapping['dsl.Feature', 'parser.Feature'],
+    ):
         super().__init__()
-        self._sources: typing.Mapping[dsl.Source, Source] = types.MappingProxyType(sources)
-        self._features: typing.Mapping[dsl.Feature, Feature] = types.MappingProxyType(features)
+        self._sources: typing.Mapping['dsl.Source', 'parser.Source'] = types.MappingProxyType(sources)
+        self._features: typing.Mapping['dsl.Feature', 'parser.Feature'] = types.MappingProxyType(features)
 
-    def resolve_feature(self, feature: dsl.Feature) -> Feature:
+    def resolve_feature(self, feature: 'dsl.Feature') -> 'parser.Feature':
         """Get a custom target code for a feature value.
 
         Args:
@@ -250,8 +289,8 @@ class Visitor(
         except KeyError as err:
             raise dsl.UnprovisionedError(f'Unknown mapping for feature {feature}') from err
 
-    @functools.cache
-    def generate_feature(self, feature: dsl.Feature) -> Feature:
+    @functools.lru_cache
+    def generate_feature(self, feature: 'dsl.Feature') -> 'parser.Feature':
         """Generate target code for the generic feature type.
 
         Args:
@@ -264,7 +303,7 @@ class Visitor(
         return self.context.symbols.pop()
 
     @abc.abstractmethod
-    def generate_element(self, origin: Source, element: Feature) -> Feature:
+    def generate_element(self, origin: 'parser.Source', element: 'parser.Feature') -> 'parser.Feature':
         """Generate an element code.
 
         Args:
@@ -276,7 +315,7 @@ class Visitor(
         """
 
     @abc.abstractmethod
-    def generate_alias(self, feature: Feature, alias: str) -> Feature:
+    def generate_alias(self, feature: 'parser.Feature', alias: str) -> 'parser.Feature':
         """Generate feature alias code.
 
         Args:
@@ -288,7 +327,7 @@ class Visitor(
         """
 
     @abc.abstractmethod
-    def generate_literal(self, value: typing.Any, kind: dsl.Any) -> Feature:
+    def generate_literal(self, value: typing.Any, kind: 'dsl.Any') -> 'parser.Feature':
         """Generate target code for a literal value.
 
         Args:
@@ -300,7 +339,9 @@ class Visitor(
         """
 
     @abc.abstractmethod
-    def generate_expression(self, expression: type[dsl.Expression], arguments: typing.Sequence[typing.Any]) -> Feature:
+    def generate_expression(
+        self, expression: type['dsl.Expression'], arguments: typing.Sequence[typing.Any]
+    ) -> 'parser.Feature':
         """Generate target code for an expression of given arguments.
 
         Args:
@@ -311,22 +352,22 @@ class Visitor(
             Expression in target code representation.
         """
 
-    def visit_aliased(self, feature: dsl.Aliased) -> None:
+    def visit_aliased(self, feature: 'dsl.Aliased') -> None:
         super().visit_aliased(feature)
         self.context.symbols.push(self.generate_alias(self.context.symbols.pop(), feature.name))
 
-    def visit_literal(self, feature: dsl.Literal) -> None:
+    def visit_literal(self, feature: 'dsl.Literal') -> None:
         super().visit_literal(feature)
         self.context.symbols.push(self.generate_literal(feature.value, feature.kind))
 
-    def visit_element(self, feature: dsl.Element) -> None:
+    def visit_element(self, feature: 'dsl.Element') -> None:
         super().visit_element(feature)
         self.context.symbols.push(
             self.generate_element(self.context.origins[feature.origin], self.resolve_feature(feature))
         )
 
     @bypass(resolve_feature)
-    def visit_expression(self, feature: dsl.Expression) -> None:
+    def visit_expression(self, feature: 'dsl.Expression') -> None:
         super().visit_expression(feature)
         arguments = tuple(
             reversed([self.context.symbols.pop() if isinstance(c, dsl.Feature) else c for c in reversed(feature)])
@@ -334,10 +375,10 @@ class Visitor(
         self.context.symbols.push(self.generate_expression(feature.__class__, arguments))
 
     @bypass(resolve_feature)
-    def visit_window(self, feature: dsl.Window) -> typing.ContextManager[None]:
+    def visit_window(self, feature: 'dsl.Window') -> typing.ContextManager[None]:
         raise RuntimeError('Window functions not yet supported')
 
-    def resolve_source(self, source: dsl.Source) -> Source:
+    def resolve_source(self, source: 'dsl.Source') -> 'parser.Source':
         """Get a custom target code for a source type.
 
         Args:
@@ -351,18 +392,20 @@ class Visitor(
         except KeyError as err:
             raise dsl.UnprovisionedError(f'Unknown mapping for source {source}') from err
 
-    def generate_table(  # pylint: disable=no-self-use
+    def generate_table(
         self,
-        table: Source,
-        features: typing.Iterable[Feature],  # pylint: disable=unused-argument
-        predicate: typing.Optional[Feature],  # pylint: disable=unused-argument
-    ) -> Source:  # pylint: disable=unused-argument
+        table: 'parser.Source',
+        features: typing.Iterable['parser.Feature'],  # pylint: disable=unused-argument
+        predicate: typing.Optional['parser.Feature'],  # pylint: disable=unused-argument
+    ) -> 'parser.Source':  # pylint: disable=unused-argument
         """Generate a target code for a table instance given its actual field requirements.
 
         Args:
             table: Table (already in target code based on the provided mapping) to be generated.
-            features: List of fields to be retrieved from the table (potentially subset of all available).
-            predicate: Row filter to be possibly pushed down when retrieving the data from given table.
+            features: List of fields to be retrieved from the table (potentially subset of all
+                      available).
+            predicate: Row filter to be possibly pushed down when retrieving the data from given
+                       table.
 
         Returns:
             Table target code potentially optimized based on field requirements.
@@ -370,7 +413,7 @@ class Visitor(
         return table
 
     @abc.abstractmethod
-    def generate_reference(self, instance: Source, name: str) -> tuple[Source, Source]:
+    def generate_reference(self, instance: 'parser.Source', name: str) -> tuple['parser.Source', 'parser.Source']:
         """Generate reference code.
 
         Args:
@@ -383,9 +426,14 @@ class Visitor(
 
     @abc.abstractmethod
     def generate_join(
-        self, left: Source, right: Source, condition: typing.Optional[Feature], kind: dsl.Join.Kind
-    ) -> Source:
-        """Generate target code for a join operation using the left/right terms, given condition and a join type.
+        self,
+        left: 'parser.Source',
+        right: 'parser.Source',
+        condition: typing.Optional['parser.Feature'],
+        kind: 'dsl.Join.Kind',
+    ) -> 'parser.Source':
+        """Generate target code for a join operation using the left/right terms, given condition
+        and a join type.
 
         Args:
             left: Left side of the join pair.
@@ -398,7 +446,7 @@ class Visitor(
         """
 
     @abc.abstractmethod
-    def generate_set(self, left: Source, right: Source, kind: dsl.Set.Kind) -> Source:
+    def generate_set(self, left: 'parser.Source', right: 'parser.Source', kind: 'dsl.Set.Kind') -> 'parser.Source':
         """Generate target code for a set operation using the left/right terms, given a set type.
 
         Args:
@@ -413,14 +461,14 @@ class Visitor(
     @abc.abstractmethod
     def generate_query(
         self,
-        source: Source,
-        features: typing.Sequence[Feature],
-        where: typing.Optional[Feature],
-        groupby: typing.Sequence[Feature],
-        having: typing.Optional[Feature],
-        orderby: typing.Sequence[tuple[Feature, dsl.Ordering.Direction]],
-        rows: typing.Optional[dsl.Rows],
-    ) -> Source:
+        source: 'parser.Source',
+        features: typing.Sequence['parser.Feature'],
+        where: typing.Optional['parser.Feature'],
+        groupby: typing.Sequence['parser.Feature'],
+        having: typing.Optional['parser.Feature'],
+        orderby: typing.Sequence[tuple['parser.Feature', 'dsl.Ordering.Direction']],
+        rows: typing.Optional['dsl.Rows'],
+    ) -> 'parser.Source':
         """Generate query statement code.
 
         Args:
@@ -436,7 +484,7 @@ class Visitor(
             Query in target code.
         """
 
-    def visit_table(self, source: dsl.Table) -> None:
+    def visit_table(self, source: 'dsl.Table') -> None:
         self.context.origins[source] = origin = self.resolve_source(source)
         features = [self.generate_feature(f) for f in sorted(self.context.tables[source].fields)]
         predicate = self.context.tables[source].predicate
@@ -445,14 +493,14 @@ class Visitor(
         super().visit_table(source)
         self.context.symbols.push(self.generate_table(origin, features, predicate))
 
-    def visit_reference(self, source: dsl.Reference) -> None:
+    def visit_reference(self, source: 'dsl.Reference') -> None:
         super().visit_reference(source)
         origin, handle = self.generate_reference(self.context.symbols.pop(), source.name)
         self.context.origins[source] = handle
         self.context.symbols.push(origin)
 
     @bypass(resolve_source)
-    def visit_join(self, source: dsl.Join) -> None:
+    def visit_join(self, source: 'dsl.Join') -> None:
         if source.condition:
             self.context.tables.filter(source.condition)
         super().visit_join(source)
@@ -462,14 +510,14 @@ class Visitor(
         self.context.symbols.push(self.generate_join(left, right, expression, source.kind))
 
     @bypass(resolve_source)
-    def visit_set(self, source: dsl.Set) -> None:
+    def visit_set(self, source: 'dsl.Set') -> None:
         super().visit_set(source)
         right = self.context.symbols.pop()
         left = self.context.symbols.pop()
         self.context.symbols.push(self.generate_set(left, right, source.kind))
 
     @bypass(resolve_source)
-    def visit_query(self, source: dsl.Query) -> None:
+    def visit_query(self, source: 'dsl.Query') -> None:
         with self:
             self.context.tables.select(*source.features)
             if source.prefilter is not None:

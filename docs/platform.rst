@@ -13,139 +13,213 @@
     specific language governing permissions and limitations
     under the License.
 
-Platform Setup
-==============
+.. _platform:
 
-Platform is a configuration-driven selection of particular *providers* implementing a number of abstract concepts:
+Runtime Platform
+================
 
-* :doc:`runner/index`
-* :doc:`registry/index`
-* :doc:`feed`
-* :doc:`sink`
-* :ref:`Serving components <serving-components>`
+ForML platform is an environment configured to allow performing particular :ref:`life cycle
+actions <lifecycle>` on a general ForML :ref:`project <project>`. Thanks to the pluggable
+:ref:`provider architecture <provider>`, a ForML platform can be built up using a number of
+different technologies optimized for specific use cases while keeping the same interface
+and thus guaranteeing the portability of the implemented projects.
 
-ForML uses an internal *bank* of available provider implementations of the different possible types. Provider instances
-are registered in this bank using one of two possible *references*:
 
-* provider's *fully qualified class name* - for example, the ``forml.provider.runner.dask:Runner``
-* for convenience, each provider can also optionally have an *alias* defined by its author - ie ``dask``
+Setup
+-----
 
-.. note:: For any provider implementation to be placed into the ForML provider bank, it needs to get imported somehow.
-          When the bank is queried for any provider instance using its reference, it either is matched and returned or
-          ForML attempts to import it. If it is queried using the fully qualified class name, it is clear where to
-          import it from (assuming the module is on ``sys.path``). If it is however referenced by the alias, ForML only
-          considers providers from the :doc:`main library <lib>` shipped with ForML. This means external providers
-          cannot be referenced using their aliases as ForML has no chance knowing where to import them from.
+Make sure to :ref:`install <install>` all the necessary ForML components before proceeding to the
+next sections.
+
+.. _platform-config:
 
 Configuration File
-------------------
-ForML platform uses the `TOML <https://github.com/toml-lang/toml>`_ configuration file format. The system will try to
-locate and merge the ``config.toml`` in the following places (in order of parsing/merging - later overrides previous):
+^^^^^^^^^^^^^^^^^^
 
-+-----------------+--------------------------------------------------------------------+
-| Location        | Meaning                                                            |
-+=================+====================================================================+
-| ``/etc/forml``  | **System**-wide global configuration                               |
-+-----------------+--------------------------------------------------------------------+
-| ``~/.forml``    | **User** homedir configuration (unless ``$FORML_HOME`` is set)     |
-+-----------------+--------------------------------------------------------------------+
-| ``$FORML_HOME`` | Alternative **user** configuration to the *homedir* configuration  |
-+-----------------+--------------------------------------------------------------------+
+ForML platform uses the `TOML <https://toml.io/>`_ file format for its configuration. The system
+will try to locate and merge the :file:`config.toml` file instances in the following directories
+(in order of parsing/merging - later overrides previous):
 
-.. note:: Both the *system* and the *user* config locations are also appended to the runtime ``sys.path`` so any python
-          modules stored into the config directories are potentially importable. This can be useful for the custom
-          `Feed Providers`_ implementations.
++-----------------+---------------------------------------------------------------------------------+
+| Location        | Meaning                                                                         |
++=================+=================================================================================+
+| ``/etc/forml/`` | The *system*-wide global configuration directory                                |
++-----------------+---------------------------------------------------------------------------------+
+| ``~/.forml/``   | *User* home directory configuration (unless overridden by the ``$FORML_HOME`` ) |
++-----------------+---------------------------------------------------------------------------------+
+| ``$FORML_HOME`` | Environment variable driven location of the *user* configuration directory      |
++-----------------+---------------------------------------------------------------------------------+
 
-Example ForML platform configuration::
+.. note::
+   Both the *system* and the *user* configuration locations are also appended to the runtime
+   :data:`python:sys.path` so any python modules stored in the configuration directories are
+   potentially importable. This can be useful for :ref:`custom provider <provider-custom>`
+   implementations.
 
-    logcfg = "logging.ini"
+Following is the default content of the ForML platform configuration file:
 
-    [RUNNER]
-    default = "compute"
-
-    [RUNNER.compute]
-    provider = "dask"
-    scheduler = "multiprocessing"
-
-    [RUNNER.visual]
-    provider = "graphviz"
-    format = "png"
+.. literalinclude:: ../forml/setup/config.toml
+   :caption: config.toml (default)
+   :linenos:
+   :language: toml
+   :start-after: # under the License.
 
 
-    [REGISTRY]
-    default = "homedir"
+Providers Settings
+""""""""""""""""""
 
-    [REGISTRY.homedir]
-    provider = "posix"
-    #path = ~/.forml/registry
+The majority of the configuration file deals with setting up all the different :ref:`providers
+<provider>`. The file can contain multiple instances of preconfigured providers ready to be
+selected for a particular execution.
 
+The common structure for the provider configuration sections is:
 
-    [SINK]
-    default = "stdout"
+.. code-block:: ini
 
-    [SINK.stdout]
-    provider = "stdout"
+    [<PROVIDER TYPE>]
+    default = "<instance alias>"
 
+    [<PROVIDER TYPE>.<instance alias>]
+    provider = "<provider reference>"
+    <provider option X> = <value X>
+    ...
 
-    [INVENTORY]
-    default = "homedir"
+The meaning of the different placeholders and keywords is:
 
-    [INVENTORY.homedir]
-    provider = "posix"
-    #path = ~/.forml/inventory
+``<PROVIDER TYPE>``:
+    One of the six types of provider abstractions used by ForML in *uppercase*:
 
+    * ``REGISTRY`` - for :ref:`Model registry <registry>` providers
+    * ``RUNNER`` - for :ref:`Pipeline runner <runner>` providers
+    * ``FEED`` - for :ref:`Source feed <feed>` providers
+    * ``SINK`` - for :ref:`Output sink <sink>` providers
+    * ``INVENTORY`` - for :ref:`Application inventory <inventory>` providers
+    * ``GATEWAY`` - for :ref:`Serving gateway <serving>` providers
 
-The file can contain configurations of multiple different provider instances labelled with custom alias - here for
-example the ``[RUNNER.compute]`` and ``[RUNNER.visual]`` are two configurations of different runners. The actual runner
-instance used at runtime out of these two configured is either user-selected (ie the ``-R`` `CLI`_ argument) or
-taken from the ``default`` reference from the main ``[RUNNER]`` config section.
+    Each of the provider-type root sections nominates one of its instances using the ``default``
+    keyword to preselect a configuration instance for situations when no explicit choice is
+    specified during some particular execution.
 
-All of the provider configurations must contain the option ``provider`` referring to the provider key used by the
-internal ForML bank mentioned above. Any other options specified within the provider section are considered to be
-arbitrary configuration arguments specific to given provider implementation.
+    .. attention::
+       The ``FEED`` provider type can specify a list of *multiple* instances as *default*
+       (contextual :ref:`feed selection <feed-selection>` is then performed at runtime).
 
-Feed Providers
---------------
+``<instance alias>``:
+    Each of the individual provider configuration instances is identified using its arbitrary
+    *alias*. This alias can also be used later to explicitly choose some particular configuration
+    instance when triggering an execution (i.e. using the ``-R`` :ref:`CLI <platform-cli>`
+    argument).
 
-Among the different *provider* types, :doc:`Feeds <feed>` are unique as each instance usually needs to be special
-implementation specific to the given platform. Part of the feed functionality is to resolve the :ref:`catalogized
-schemas <io-catalogized-schemas>` to the physical datasets known to the platform. This might not be always possible via
-configuration and the whole feed needs to be implemented as code. For this purpose, the *system* and *user*
-configuration directories are also potentially searched by the provider importer so that the custom feeds can be placed
-there.
+``<provider reference>``:
+    Each configuration instance must point to its :ref:`provider implementation <provider>` using
+    the ``provider`` keyword. The reference can have one of two potential forms:
 
-For the special case of the public datasets described using the :doc:`Openschema catalog<openschema:index>`, there is a
-lightweight feed provided in form of the installable :doc:`Openlake package<openlake:install>`.
+    * the canonical *fully qualified class name* specified as ``<full.module.path>:<class.name>`` -
+      for example the :class:`forml.provider.runner.dask:Runner <forml.provider.runner.dask.Runner>`
+    * the convenient *shortcut* (if defined by its implementer) - i.e. ``dask``
+
+    .. caution::
+       Shortcut references can only be used for auto-discovered provider implementations (typically
+       those shipped with ForML). Any external implementations can only be referenced using the
+       canonical form (plus the referred provider module must be on :data:`python:sys.path` so
+       that it can be imported).
+
+``<provider option X>``:
+    Any other options specified within the provider configuration instance section are considered
+    to be arbitrary arguments specific to the given provider implementation and will be passed to
+    its constructor.
+
 
 Logging
--------
+^^^^^^^
 
-Python logger is used throughout the framework to emit various logging messages. The logging config can be customized
-using a config file specified in the top-level ``logcfg`` option in the main `configuration file`_.
+The :doc:`python logger <python:library/logging>` is used throughout the framework to emit
+various logging messages. The :doc:`logging configuration <python:library/logging.config>` can be
+customized using a :ref:`special configuration file <python:logging-config-fileformat>`
+referenced in the top-level ``logcfg`` option in the main :ref:`config.toml <platform-config>`.
+
+
+.. _platform-execution:
+
+Execution Mechanisms
+--------------------
+
+ForML is using the pluggable :ref:`pipeline runners <runner>` to perform all the
+possible :ref:`life cycle actions <lifecycle>`. There are three different mechanisms to carry out
+the execution:
+
+* The :ref:`command-line driven <platform-cli>` batch processing.
+* Execution in the :ref:`interactive mode <interactive>` using the :class:`Virtual launcher
+  <forml.runtime.Virtual>`.
+* Spinning up the :ref:`serving engine <serving>` using a particular application gateway provider.
+
 
 .. _platform-cli:
 
-CLI
----
+Command-line Interface
+^^^^^^^^^^^^^^^^^^^^^^
 
-The production :doc:`lifecycle <lifecycle>` management can be fully operated in a batch mode from command-line using
-the following syntax:
+The :ref:`life cycle <lifecycle>` management can be fully operated in batch mode using the
+command-line interface - see the integrated help for more details:
 
-.. code-block:: none
+.. code-block:: console
 
-    Usage: forml model [OPTIONS] COMMAND [ARGS]...
+    $ forml --help
+    Usage: forml [OPTIONS] COMMAND [ARGS]...
 
-      Model command group.
+      Life Cycle Management for Data Science Projects.
 
     Options:
-      -R, --runner TEXT    Runtime runner reference.
-      -P, --registry TEXT  Persistent registry reference.
-      -I, --feed TEXT      Input feed references.
-      -O, --sink TEXT      Output sink reference.
-      --help               Show this message and exit.
+      -C, --config FILE               Additional configuration file.
+      -L, --loglevel [debug|info|warning|error]
+                                      Global loglevel to use.
+      --logfile FILE                  Logfile path.
+      --help                          Show this message and exit.
 
     Commands:
-      apply  Apply the given (or default) generation.
-      eval   Evaluate predictions of the given (or default) generation.
-      train  Train new generation of the given (or default) project release.
-      tune   Tune new generation of the given (or default) project release.
+      application  Application command group.
+      model        Model command group (production life cycle).
+      project      Project command group (development life cycle).
+
+
+Further details on the individual command groups can also be found in the following related
+chapters:
+
+=======================  ===============================================================
+Command Group            Related Chapters
+=======================  ===============================================================
+``$ forml application``  :ref:`Application Management <inventory-management>`
+
+                         :ref:`Application Publishing <application-publishing>`
+
+                         :ref:`Serving Control <serving-gateway>`
+``$ forml model``        :ref:`Model Management <registry-management>`
+
+                         :ref:`Production Lifecycle Management <lifecycle-production>`
+``$ forml project``      :ref:`Development Lifecycle Management <lifecycle-development>`
+=======================  ===============================================================
+
+
+Common Runtime Features
+-----------------------
+
+Core Exceptions
+^^^^^^^^^^^^^^^
+
+Following is the list of core ForML exceptions emitted at runtime:
+
+.. autoclass:: forml.AnyError
+.. autoclass:: forml.InvalidError
+   :show-inheritance:
+.. autoclass:: forml.MissingError
+   :show-inheritance:
+.. autoclass:: forml.UnexpectedError
+   :show-inheritance:
+.. autoclass:: forml.FailedError
+   :show-inheritance:
+
+
+Runtime Performance Metric
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: forml.runtime.Stats

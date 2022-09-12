@@ -33,18 +33,28 @@ import typing
 import zipfile
 
 import forml
+from forml import setup
 from forml.io import asset
 
-from . import _body, _importer
+from . import _body
+
+if typing.TYPE_CHECKING:
+    from forml import project
+
 
 LOGGER = logging.getLogger(__name__)
 
 
 class Package(collections.namedtuple('Package', 'path, manifest')):
-    """Distribution package."""
+    """ForML artifact representing a complete project code together with all of its dependencies
+    packaged for distribution.
+
+    Args:
+        path: File system path pointing to the package file.
+    """
 
     path: pathlib.Path
-    manifest: 'Manifest'
+    manifest: 'project.Manifest'
 
     FORMAT = '4ml'
     COMPRESSION = zipfile.ZIP_DEFLATED
@@ -59,21 +69,24 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
 
     @classmethod
     def create(
-        cls, source: typing.Union[str, pathlib.Path], manifest: 'Manifest', path: typing.Union[str, pathlib.Path]
+        cls,
+        source: typing.Union[str, pathlib.Path],
+        manifest: 'project.Manifest',
+        path: typing.Union[str, pathlib.Path],
     ) -> 'Package':
-        """Create new package from given source tree.
+        """Create new package from the given source tree.
 
         Args:
-            source: Filesystem path to the root of directory tree to be packaged.
+            source: File system path to the root of directory tree to be packaged.
             manifest: Package manifest to be used.
-            path: Target package filesystem path.
+            path: Target package file system path.
 
         Returns:
             Package instance.
         """
 
         def writeall(level: pathlib.Path, archive: zipfile.ZipFile, root: typing.Optional[pathlib.Path] = None) -> None:
-            """Recursive helper for adding directory tree content to an zip archive.
+            """Recursive helper for adding directory tree content to a zip archive.
 
             Args:
                 level: Level to be added.
@@ -110,8 +123,8 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
             writeall(pathlib.Path(source), package)
         return cls(path)
 
-    def install(self, path: typing.Union[str, pathlib.Path]) -> '_body.Artifact':
-        """Return the project artifact based on this package mounted on given path.
+    def install(self, path: typing.Union[str, pathlib.Path]) -> 'project.Artifact':
+        """Return the project artifact based on this package mounted on the given path.
 
         Args:
             path: Target install path.
@@ -158,12 +171,19 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                     else:
                         LOGGER.debug('Extracting non zip-safe package %s to %s', self.path, path)
                         package.extractall(path)
-        _importer.search(path)
+        setup.search(path)
         return _body.Artifact(path, self.manifest.package, **self.manifest.modules)
 
 
 class Manifest(collections.namedtuple('Manifest', 'name, version, package, modules')):
-    """Distribution manifest implementation."""
+    """ForML distribution package metadata manifest.
+
+    Args:
+        name: Project name.
+        version: Project release version.
+        package: Full python package name containing the project principal components.
+        modules: Individual project components mapping (if non-conventional).
+    """
 
     name: asset.Project.Key
     version: asset.Release.Key
@@ -212,8 +232,34 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
         """
         return pathlib.Path(base) / f'{cls.MODULE}.py'
 
+    @classmethod
+    def read(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> 'project.Manifest':
+        """Load the manifest from the given path.
+
+        Args:
+            path: Path to read the manifest from (defaults to all of :data:`python:sys.path`).
+
+        Returns:
+            Manifest instance.
+
+        Raises:
+            forml.MissingError: Not a ForML package manifest.
+            forml.InvalidError: Corrupt ForML package manifest.
+        """
+        try:
+            module = setup.isolated(cls.MODULE, path)
+            manifest = cls(module.NAME, module.VERSION, module.PACKAGE, **module.MODULES)
+        except ModuleNotFoundError as err:
+            raise forml.MissingError(f'Unknown manifest ({err})')
+        except AttributeError as err:
+            raise forml.InvalidError(f'Invalid manifest ({err})')
+        finally:
+            if cls.MODULE in sys.modules:
+                del sys.modules[cls.MODULE]
+        return manifest
+
     def write(self, path: typing.Union[str, pathlib.Path]) -> None:
-        """Write the manifest to given path (directory).
+        """Write the manifest to the given path (directory).
 
         Args:
             path: Directory to write the manifest into.
@@ -226,25 +272,3 @@ class Manifest(collections.namedtuple('Manifest', 'name, version, package, modul
                     name=self.name, version=self.version, package=self.package, modules=json.dumps(dict(self.modules))
                 )
             )
-
-    @classmethod
-    def read(cls, path: typing.Optional[typing.Union[str, pathlib.Path]] = None) -> 'Manifest':
-        """Import the manifest content.
-
-        Args:
-            path: Path to import from.
-
-        Returns:
-            Manifest instance.
-        """
-        try:
-            module = _importer.isolated(cls.MODULE, path)
-            manifest = cls(module.NAME, module.VERSION, module.PACKAGE, **module.MODULES)
-        except ModuleNotFoundError as err:
-            raise forml.MissingError(f'Unknown manifest ({err})')
-        except AttributeError as err:
-            raise forml.InvalidError(f'Invalid manifest ({err})')
-        finally:
-            if cls.MODULE in sys.modules:
-                del sys.modules[cls.MODULE]
-        return manifest

@@ -16,7 +16,7 @@
 # under the License.
 
 """
-Filesystem registry is a plain hierarchical file based locally-accessible structure.
+File system registry is a plain hierarchical file based locally-accessible structure.
 """
 import abc
 import functools
@@ -26,8 +26,8 @@ import shutil
 import typing
 import uuid
 
-from forml import conf
 from forml import project as prj
+from forml import setup
 from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
@@ -133,7 +133,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
     TAGFILE = 'tag.toml'
     PKGFILE = f'package.{prj.Package.FORMAT}'
 
-    @functools.cache
+    @functools.lru_cache
     def project(self, project: asset.Project.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -145,7 +145,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self / project
 
-    @functools.cache
+    @functools.lru_cache
     def release(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
         """Get the project directory path.
 
@@ -158,7 +158,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.project(project) / str(release)
 
-    @functools.cache
+    @functools.lru_cache
     def generation(
         self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
@@ -174,7 +174,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.release(project, release) / str(generation)
 
-    @functools.cache
+    @functools.lru_cache
     def package(self, project: asset.Project.Key, release: asset.Release.Key) -> pathlib.Path:
         """Package file path of given project name/release.
 
@@ -187,7 +187,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
         """
         return self.release(project, release) / self.PKGFILE
 
-    @functools.cache
+    @functools.lru_cache
     def state(
         self,
         sid: uuid.UUID,
@@ -210,7 +210,7 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
             generation = self.STAGEDIR
         return self.generation(project, release, generation) / f'{sid}.{self.STATESFX}'
 
-    @functools.cache
+    @functools.lru_cache
     def tag(
         self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
     ) -> pathlib.Path:
@@ -228,11 +228,27 @@ class Path(type(pathlib.Path())):  # https://bugs.python.org/issue24132
 
 
 class Registry(asset.Registry, alias='posix'):
-    """Filesystem registry is a locally-accessible file based hierarchy."""
+    """File-based registry backed by a locally-accessible posix file system.
+
+    Args:
+        path: Registry root file system location.
+              Defaults to :file:`$FORML_HOME/registry`.
+        staging: File system location reachable from all runner nodes to be used for
+                 :ref:`package staging <registry-staging>` (defaults to :file:`<path>/.stage`).
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [REGISTRY.devrepo]
+        provider = "posix"
+        path = "/mnt/forml/dev/repo/"
+    """
 
     def __init__(
         self,
-        path: typing.Union[str, pathlib.Path] = conf.USRDIR / 'registry',
+        path: typing.Union[str, pathlib.Path] = setup.USRDIR / 'registry',
         staging: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
         path = pathlib.Path(path).resolve()
@@ -298,7 +314,7 @@ class Registry(asset.Registry, alias='posix'):
                 return statefile.read()
         except FileNotFoundError:
             LOGGER.warning('No state %s under %s', sid, path)
-            return bytes()
+            return b''
 
     def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
         path = self._path.state(sid, project, release)

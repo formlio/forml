@@ -26,19 +26,20 @@ import typing
 from collections import abc
 
 import forml
-from forml import conf, flow
-from forml.io import asset
+from forml import flow
+from forml import runtime as runmod
+from forml import setup
 
-from . import _component, _distribution, _importer
+from . import _component
 
 if typing.TYPE_CHECKING:
-    from forml import project, runtime
+    from forml import project, runtime  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
 
 class Components(collections.namedtuple('Components', 'source, pipeline, evaluation')):
-    """Top level ForML project components holding the implementations of individual project components."""
+    """Tuple of all the principal components constituting a ForML project."""
 
     source: 'project.Source'
     pipeline: flow.Composable
@@ -122,13 +123,13 @@ class Components(collections.namedtuple('Components', 'source, pipeline, evaluat
             raise forml.UnexpectedError('Unexpected project component')
         package = f'{package.rstrip(".")}.' if package else ''
         for component, setter in builder:
-            mod = modules.get(component) or component
-            if '.' not in mod:
-                mod = package + mod
+            name = modules.get(component) or component
+            if '.' not in name:
+                name = package + name
             try:
-                setter(_component.load(mod, path))
+                setter(setup.load(name, _component.setup, path))
             except ModuleNotFoundError as err:
-                if not mod.startswith(err.name):
+                if not name.startswith(err.name):
                     raise err
                 LOGGER.debug('Component %s not found', component)
         return builder.build()
@@ -136,6 +137,13 @@ class Components(collections.namedtuple('Components', 'source, pipeline, evaluat
 
 class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     """Project artifact handle."""
+
+    path: typing.Optional[pathlib.Path]
+    """Filesystem path to the project source package root."""
+    package: str
+    """Project package name."""
+    modules: typing.Mapping[str, str]
+    """Project component module path mappings."""
 
     def __new__(
         cls,
@@ -145,7 +153,7 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
     ):
         if path:
             path = pathlib.Path(path).resolve()
-        prefix = package or conf.PRJNAME
+        prefix = package or setup.PRJNAME
         for key, value in modules.items():
             if not isinstance(value, str):  # component provided as true instance rather than module path
                 modules[key] = _component.Virtual(value, f'{prefix}.{key}').path
@@ -158,35 +166,30 @@ class Artifact(collections.namedtuple('Artifact', 'path, package, modules')):
         return hash(self.path) ^ hash(self.package) ^ hash(tuple(sorted(self.modules.items())))
 
     @property
-    def components(self) -> Components:
-        """Extracting the project components from this artifact.
+    def components(self) -> 'project.Components':
+        """Tuple of all the individual principal components from this project artifact.
 
         Returns:
-            Project components.
+            Tuple of the project :ref:`principal components <project-principal>`.
         """
         return Components.load(self.package, self.path, **self.modules)
 
     @functools.cached_property
     def launcher(self) -> 'runtime.Virtual':
-        """Return the launcher configured with a virtual registry preloaded with this artifact.
+        """A runtime launcher configured with a
+        :class:`volatile registry <forml.provider.registry.filesystem.volatile.Registry>` preloaded
+        with this artifact.
+
+        This can be used to interactively execute the particular actions of the project development
+        life cycle. The linked volatile registry is persistent only during the lifetime of this
+        artifact instance.
+
+        See Also:
+            See the :class:`runtime.Virtual <forml.runtime.Virtual>` pseudo runner for more details
+            regarding the launcher API.
 
         Returns:
-            Launcher instance.
+            Virtual launcher instance.
         """
 
-        class Manifest(types.ModuleType):
-            """Fake manifest module."""
-
-            NAME = (self.package or conf.PRJNAME).replace('.', '-')
-            VERSION = '0'
-            PACKAGE = self.package
-            MODULES = self.modules
-
-            def __init__(self):
-                super().__init__(_distribution.Manifest.MODULE)
-
-        from forml import runtime  # pylint: disable=import-outside-toplevel
-
-        with _importer.context(Manifest()):
-            # dummy package forced to load our fake manifest
-            return runtime.Virtual(_distribution.Package(self.path or asset.mkdtemp(prefix='dummy-')))
+        return runmod.Virtual(self)

@@ -16,7 +16,9 @@
 # under the License.
 
 """
-Date and time manipulating functions.
+Date and time manipulation functions.
+
+.. spelling:word-list:: Datetime
 """
 import operator
 
@@ -25,7 +27,17 @@ from .._struct import series
 
 
 class Year(series.Univariate):
-    """Extract the year from given date/time."""
+    """Extract the year from given date/time instance.
+
+    Args:
+        value: Date/time feature to extract the *year* value from.
+
+    Raises:
+         dsl.GrammarError: If ``value`` is not a valid date/time.
+
+    Examples:
+        >>> ETL = Student.select(function.Year(Student.birthday))
+    """
 
     value: series.Operable = property(operator.itemgetter(0))
     kind: kindmod.Any = kindmod.Integer()

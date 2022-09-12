@@ -19,21 +19,28 @@
 Conversion functions.
 """
 import operator
+import typing
 
 from .._struct import kind as kindmod
 from .._struct import series
 
+if typing.TYPE_CHECKING:
+    from forml.io import dsl
+
 
 class Cast(series.Expression):
-    """Explicitly cast value as given kind.
+    """Explicitly cast value as the given :ref:`kind <dsl-kinds>`.
 
-    This can be used to cast a varchar to a numeric value type and vice versa.
+    Args:
+        value: Value to be cast to the given type.
+        kind: Type to cast to.
+
+    Examples:
+        >>> ETL = Student.select(function.Cast(Student.score, dsl.Integer()))
     """
 
     value: series.Operable = property(operator.itemgetter(0))
-    """Value to be cast to the given type."""
     kind: kindmod.Any = property(operator.itemgetter(1))
-    """Type to cast to."""
 
-    def __new__(cls, value: series.Operable, kind: kindmod.Any):
+    def __new__(cls, value: 'dsl.Operable', kind: 'dsl.Any'):
         return super().__new__(cls, value, kind)

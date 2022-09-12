@@ -16,5 +16,7 @@
 # under the License.
 
 """
-Sink library.
+Sink implementations.
 """
+
+__all__ = ['null', 'stdout']

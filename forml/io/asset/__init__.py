@@ -25,16 +25,16 @@ from ._directory.level import Directory, Generation, Project, Release, Tag
 from ._persistent import TMPDIR, Inventory, Registry, mkdtemp
 
 __all__ = [
-    'Level',
     'Directory',
-    'Project',
-    'Release',
     'Generation',
-    'Registry',
-    'State',
     'Instance',
+    'Inventory',
+    'Level',
+    'mkdtemp',
+    'Project',
+    'Registry',
+    'Release',
+    'State',
     'Tag',
     'TMPDIR',
-    'mkdtemp',
-    'Inventory',
 ]

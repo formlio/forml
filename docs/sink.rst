@@ -13,18 +13,54 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _sink:
+
 Output Sink
 ===========
 
-Sink is a :doc:`runtime platform <platform>` component responsible for consuming the produced output.
+The *Sink* is a :ref:`runtime platform <platform>` component responsible for processing the output
+produced upon executing one of the :ref:`life cycle actions <lifecycle-actions>` of the particular
+:ref:`project pipeline <project-pipeline>`.
 
-.. autosummary::
+It is a (much simpler) logical counterpart to the :ref:`feed concept <feed>`.
 
-   forml.provider.sink.stdout
+Individual sink providers are mostly relevant to :ref:`batch mode <platform-execution>`. The concept
+is still used also in the :ref:`serving mode <serving>`, but the component is embedded in the engine
+which transparently deals with the output.
 
+Architecture
+------------
 
-API
----
+From a high-level perspective, Sink mirrors the :ref:`feed design <feed>` with flow inversion.
+It relies on a particular :class:`Writer <forml.io.Sink.Writer>` implementation acting as an adapter
+between the pipeline output and the external media layer.
+
+When launching the pipeline, ForML :ref:`runner <runner>` expands the Sink into a closing
+task within the assembled :ref:`workflow <workflow>` making it a native part of the final
+DAG to be executed.
+
+The core Sink API looks as follows:
+
+.. autodata:: forml.io.Consumer
 
 .. autoclass:: forml.io.Sink
-    :members:
+    :members: consumer
+
+.. autoclass:: forml.io.Sink.Writer
+   :members: format, write
+
+
+Sink Providers
+--------------
+
+Sink :ref:`providers <provider>` can be configured within the runtime :ref:`platform setup
+<platform>` using the ``[SINK.*]`` sections.
+
+The available implementations are:
+
+.. autosummary::
+   :template: provider.rst
+   :nosignatures:
+
+   forml.provider.sink.null.Sink
+   forml.provider.sink.stdout.Sink

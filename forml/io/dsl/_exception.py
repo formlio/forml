@@ -22,15 +22,17 @@ import forml
 
 
 class UnprovisionedError(forml.MissingError):
-    """Source/Column mapping exception.
+    """Source or Feature resolving exception.
 
-    Expected to be raised by DSL parsers/feeds when unable to resolve the resource mapping for given feed.
+    Raised by DSL parsers when the given *source* or *feature* (typically :class:`dsl.Table
+    <forml.io.dsl.Table>` or :class:`dsl.Column <forml.io.dsl.Column>`) can't be resolved
+    using the available data sources.
     """
 
 
 class UnsupportedError(forml.MissingError):
-    """Indicating unsupported DSL feature by the given parser."""
+    """Indicating DSL operation unsupported by the given parser."""
 
 
 class GrammarError(forml.InvalidError):
-    """Indicating syntactical error."""
+    """Indicating syntactical error in the given DSL query statement."""

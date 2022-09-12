@@ -18,7 +18,6 @@
 """
 Common SQL parser tests.
 """
-# pylint: disable=no-self-use
 import abc
 import datetime
 import typing
@@ -81,7 +80,7 @@ class Parser(metaclass=abc.ABCMeta):
     @staticmethod
     @pytest.fixture(scope='session')
     def cleaner() -> typing.Callable[[str], str]:
-        """Fixture providing the processor for cleaning the statement20 text."""
+        """Fixture providing the processor for cleaning the statement text."""
 
         def strip(value: str) -> str:
             """Replace all whitespace with single space."""
@@ -168,7 +167,6 @@ class Parser(metaclass=abc.ABCMeta):
         @pytest.fixture(
             scope='session',
             params=(
-                None,
                 dsl.Join.Kind.LEFT,
                 dsl.Join.Kind.RIGHT,
                 dsl.Join.Kind.FULL,
@@ -177,8 +175,8 @@ class Parser(metaclass=abc.ABCMeta):
             ),
         )
         def case(cls, request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
-            dsl, sql = cls.condition(request.param, student_table, school_table)
-            query = student_table.join(school_table, dsl, kind=request.param).select(
+            condition, sql = cls.condition(request.param, student_table, school_table)
+            query = dsl.Join(student_table, school_table, request.param, condition).select(
                 student_table.surname, school_table.name
             )
             expected = f'SELECT "student"."surname", "school"."name" FROM {cls.join(request.param)}{sql}'
@@ -224,7 +222,7 @@ class Parser(metaclass=abc.ABCMeta):
         @pytest.fixture(scope='session')
         def case(student_table: dsl.Table, school_table: dsl.Table) -> Case:
             query = (
-                student_table.join(school_table, school_table.sid == student_table.school)
+                student_table.inner_join(school_table, school_table.sid == student_table.school)
                 .select(student_table.surname.alias('student'), function.Count(school_table.name).alias('num'))
                 .groupby(student_table.surname)
                 .having(function.Count(school_table.name) > 1)
@@ -249,7 +247,7 @@ class Parser(metaclass=abc.ABCMeta):
         def case(student_table: dsl.Table, school_table: dsl.Table) -> Case:
             student_table = student_table.reference('foo')
             subquery = (
-                student_table.join(school_table, school_table.sid == student_table.school)
+                student_table.inner_join(school_table, school_table.sid == student_table.school)
                 .select(student_table.surname.alias('student'), school_table.name.alias('school'))
                 .reference('bar')
             )

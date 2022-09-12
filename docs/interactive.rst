@@ -13,7 +13,50 @@
     specific language governing permissions and limitations
     under the License.
 
+.. _interactive:
+
 Interactive Mode
 ================
 
-ForML can also be used interactively. For now the best resource covering this topic is the :doc:`tutorial`.
+To enable practical *research and development* of ForML :ref:`projects <project>`, the framework
+allows as one of its :ref:`execution mechanisms <platform-execution>` to compose and operate its
+:ref:`workflows <workflow>` *interactively*. Generally, this can be utilized within REPL
+(*read-evaluate-print-loop*) based terminals or more typically using high-level frontend interfaces
+like the popular :doc:`Jupyter <jupyter:index>` notebooks.
+
+.. note::
+    ForML still remains grounded in the *code-first* principle of implementing the ML solution
+    as a software :ref:`project <project>` as opposed to some of the native
+    *notebook-first-oriented* methodologies. The interactive mode is designed primarily for
+    exploration rather than the implementation of the eventual solution.
+
+This chapter describes the individual tools allowing to use ForML interactively. Please refer to
+the :ref:`tutorials <tutorials>` for actual examples demonstrating this principle in action.
+
+Project Handle
+--------------
+
+To operate ForML projects interactively, the framework provides the following
+programmatic interface allowing one to access the :class:`project.Artifact <forml.project.Artifact>`
+handle using either the :func:`project.open() <forml.project.open>` function or interactively
+binding any :class:`project.Source <forml.project.Source>` instance with a custom pipeline using the
+:meth:`.bind() <forml.project.Source.bind>` method.
+
+
+.. autofunction:: forml.project.open
+
+.. autoclass:: forml.project.Artifact
+   :members: components, launcher
+
+
+Virtual Launcher
+----------------
+
+The Virtual launcher represents one of the possible :ref:`execution mechanisms
+<platform-execution>`. It is a wrapper around the low-level :ref:`runner <runner>` and :ref:`feed
+<feed>` concepts designed specifically for *interactive* operations (internally it is also used by
+the :ref:`testing framework <testing>`).
+
+
+.. autoclass:: forml.runtime.Virtual
+    :members: Trained

@@ -18,7 +18,6 @@
 """
 Evaluation stages unit tests.
 """
-# pylint: disable=no-self-use
 from sklearn import metrics, model_selection
 
 from forml import evaluation, testing
@@ -28,13 +27,13 @@ YTRUE = [0, 1, 2, 3]
 YPRED = [0, 2, 1, 3]
 
 
-class TestApplyScore(testing.operator(evaluation.ApplyScore)):
+class TestPerfTrackScore(testing.operator(evaluation.PerfTrackScore)):
     """Production evaluation stage operator unit test."""
 
     score = testing.Case(METRIC).train(YPRED, YTRUE).returns(0.5)
 
 
-class TestTrainScore(testing.operator(evaluation.TrainScore)):
+class TestTrainTestScore(testing.operator(evaluation.TrainTestScore)):
     """Development evaluation stage operator unit test."""
 
     METHOD = evaluation.CrossVal(crossvalidator=model_selection.PredefinedSplit([0, 0, 1, 1]))

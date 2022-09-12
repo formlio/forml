@@ -22,35 +22,40 @@ import typing
 import uuid
 
 import forml
-from forml import conf
+from forml import setup
 
 from . import _persistent
 from ._directory import level
 
 if typing.TYPE_CHECKING:
-    from forml import project as prj
+    from forml import project  # noqa: F401
+    from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
 
 class State:
-    """State persistence accessor."""
+    """A high-level actor state persistence accessor.
+
+    It allows the runner to *load* and *dump* the states of individual stateful actors within the
+    given generation.
+    """
 
     def __init__(
         self,
-        generation: 'level.Generation',
+        generation: 'asset.Generation',
         nodes: typing.Sequence[uuid.UUID],
-        tag: typing.Optional['level.Tag'] = None,
+        tag: typing.Optional['asset.Tag'] = None,
     ):
-        self._generation: 'level.Generation' = generation
+        self._generation: 'asset.Generation' = generation
         self._nodes: tuple[uuid.UUID] = tuple(nodes)
-        self._tag: typing.Optional['level.Tag'] = tag
+        self._tag: typing.Optional['asset.Tag'] = tag
 
     def __contains__(self, gid: uuid.UUID) -> bool:
-        """Check whether given node is persistent (on our state list).
+        """Check whether the given node is persistent (exists in our state list).
 
         Args:
-            gid: Node gid to be tested.
+            gid: The node group id to be tested.
 
         Returns:
             True if persistent.
@@ -58,23 +63,24 @@ class State:
         return gid in self._nodes
 
     def offset(self, gid: uuid.UUID) -> int:
-        """Get the offset of given node in the persistent node list.
+        """Get the offset of the given node in the persistent node list.
 
         Args:
-            gid: Id of node to be looked up for its offset.
+            gid: The node group id to be looked up for its offset.
 
         Returns:
-            Offset of given node.
+            Offset of the given node.
         """
-        if gid not in self._nodes:
-            raise forml.UnexpectedError(f'Unknown node ({gid})')
-        return self._nodes.index(gid)
+        try:
+            return self._nodes.index(gid)
+        except ValueError as err:
+            raise forml.UnexpectedError(f'Unknown node ({gid})') from err
 
     def load(self, gid: uuid.UUID) -> bytes:
-        """Load the state based on its state id, ordering index or node gid.
+        """Load the state based on its state ID, ordering index or node group id.
 
         Args:
-            gid: Node group id.
+            gid: The node group id.
 
         Returns:
             Serialized state.
@@ -83,8 +89,9 @@ class State:
         return self._generation.get(self.offset(gid))
 
     def dump(self, state: bytes) -> uuid.UUID:
-        """Dump an anonymous state to the repository returning its associated state ID. Caller is expected to send that
-        state ID under given offset to the commit.
+        """Dump an anonymous state to the repository returning its associated state ID.
+
+        The caller is expected to send that state ID under given offset to the ``.commit()`` method.
 
         Args:
             state: State to be dumped.
@@ -108,18 +115,23 @@ class State:
 
 
 class Instance:
-    """Persistent assets IO for loading and dumping models."""
+    """The top-level instance of a particular project/release/generation used by a Runner to
+    access the runtime artifacts (both the *release package* and the *model generation assets*).
+
+    This is just a lazy reference not physically containing the actual assets - only fetching them
+    upon the eventual access.
+    """
 
     def __init__(
         self,
-        project: typing.Union[str, 'level.Project.Key'] = conf.PRJNAME,
-        release: typing.Optional[typing.Union[str, 'level.Release.Key']] = None,
-        generation: typing.Optional[typing.Union[str, int, 'level.Generation.Key']] = None,
-        registry: typing.Optional['level.Directory'] = None,
+        project: typing.Union[str, 'asset.Project.Key'] = setup.PRJNAME,
+        release: typing.Optional[typing.Union[str, 'asset.Release.Key']] = None,
+        generation: typing.Optional[typing.Union[str, int, 'asset.Generation.Key']] = None,
+        registry: typing.Optional['asset.Directory'] = None,
     ):
         if not registry:
             registry = level.Directory(_persistent.Registry())
-        self._generation: 'level.Generation' = registry.get(project).get(release).get(generation)
+        self._generation: 'asset.Generation' = registry.get(project).get(release).get(generation)
 
     def __hash__(self):
         return hash(self._generation)
@@ -128,7 +140,7 @@ class Instance:
         return isinstance(other, self.__class__) and other._generation == self._generation
 
     @property
-    def project(self) -> 'prj.Components':
+    def project(self) -> 'project.Components':  # noqa: F811
         """Get the project components.
 
         Returns:
@@ -137,7 +149,7 @@ class Instance:
         return self._generation.release.artifact.components
 
     @property
-    def tag(self) -> 'level.Tag':
+    def tag(self) -> 'asset.Tag':
         """Get the generation tag.
 
         Returns:
@@ -145,7 +157,7 @@ class Instance:
         """
         return self._generation.tag
 
-    def state(self, nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['level.Tag'] = None) -> State:
+    def state(self, nodes: typing.Sequence[uuid.UUID], tag: typing.Optional['asset.Tag'] = None) -> 'asset.State':
         """Get the state persistence accessor.
 
         Args:

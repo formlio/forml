@@ -25,21 +25,45 @@ import typing
 
 import dask
 
-from forml import flow, io, runtime
-from forml.io import asset
+from forml import flow, runtime
+
+if typing.TYPE_CHECKING:
+    from forml import io
+    from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
 
 
 class Runner(runtime.Runner, alias='dask'):
-    """Dask based runner implementation."""
+    """ForML runner implementation using the :doc:`Dask computing library <dask:index>` as the
+    execution platform.
+
+    Args:
+        scheduler: Name of the chosen Dask scheduler. Supported options are:
+
+                   * ``threaded``
+                   * ``multiprocessing``
+
+    The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
+
+    .. code-block:: toml
+       :caption: config.toml
+
+        [RUNNER.compute]
+        provider = "dask"
+        scheduler = "threaded"
+
+    Important:
+        Select the ``dask`` :ref:`extras to install <install-extras>` ForML together with the Dask
+        support.
+    """
 
     class Dag(dict):
         """Dask DAG builder."""
 
         class Output(flow.Instruction):
-            """Utility instruction for collecting multiple DAG leaves of which at most one is expected to return
-            non-null value and passing that value through.
+            """Utility instruction for collecting multiple DAG leaves of which at most one is
+            expected to return non-null value and passing that value through.
             """
 
             def execute(self, *leaves: typing.Any) -> typing.Any:
@@ -66,14 +90,14 @@ class Runner(runtime.Runner, alias='dask'):
 
                 return functools.reduce(nonnull, leaves, None)
 
-        def __init__(self, symbols: typing.Sequence[flow.Symbol]):
+        def __init__(self, symbols: typing.Collection[flow.Symbol]):
             tasks: dict[int, tuple[flow.Instruction, int]] = {id(i): (i, *(id(p) for p in a)) for i, a in symbols}
             assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
             leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
             assert leaves, 'Not acyclic'
-            if len(leaves) > 1:
+            if (leaves_len := len(leaves)) > 1:
                 LOGGER.debug(
-                    'Dag output based on %d leaves: %s', len(leaves), ','.join(repr(tasks[n][0]) for n in leaves)
+                    'Dag output based on %d leaves: %s', leaves_len, ','.join(repr(tasks[n][0]) for n in leaves)
                 )
                 output = self.Output()
                 self.output = id(output)
@@ -89,20 +113,16 @@ class Runner(runtime.Runner, alias='dask'):
 
     def __init__(
         self,
-        instance: typing.Optional[asset.Instance] = None,
-        feed: typing.Optional[io.Feed] = None,
-        sink: typing.Optional[io.Sink] = None,
+        instance: typing.Optional['asset.Instance'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Sink'] = None,
         scheduler: typing.Optional[str] = None,
     ):
-        super().__init__(instance, feed, sink)
-        self._scheduler: str = scheduler or self.SCHEDULER
+        super().__init__(instance, feed, sink, scheduler=scheduler)
 
-    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
-        """Actual run action to be implemented according to the specific runtime.
-
-        Args:
-            symbols: task graph to be executed.
-        """
-        dag = self.Dag(symbols)
+    @classmethod
+    def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
+        dag = cls.Dag(symbols)
         LOGGER.debug('Dask DAG: %s', dag)
-        importlib.import_module(f'{dask.__name__}.{self._scheduler}').get(dag, dag.output)
+        scheduler = kwargs.get('scheduler') or cls.SCHEDULER
+        importlib.import_module(f'{dask.__name__}.{scheduler}').get(dag, dag.output)

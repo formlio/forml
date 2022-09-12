@@ -18,11 +18,10 @@
 """
 Project distribution tests.
 """
-# pylint: disable=no-self-use
 import os
 import pathlib
+import pickle
 
-import cloudpickle
 import pytest
 
 import forml
@@ -72,4 +71,4 @@ class TestPackage:
 
     def test_serilizable(self, project_package: project.Package):
         """Test package serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(project_package)) == project_package
+        assert pickle.loads(pickle.dumps(project_package)) == project_package

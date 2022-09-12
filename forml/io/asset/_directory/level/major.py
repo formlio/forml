@@ -40,7 +40,10 @@ class Release(_directory.Level):
     """Sequence of generations based on same project artifact."""
 
     class Key(_directory.Level.Key, vermod.Version):  # pylint: disable=abstract-method
-        """Release key."""
+        """Project release level key - i.e. the release *version*.
+
+        This needs to be a valid :pep:`440` version.
+        """
 
         MIN = '0'
 

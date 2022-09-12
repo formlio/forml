@@ -24,8 +24,11 @@ import logging
 import typing
 
 import forml
-from forml import flow, io, runtime
-from forml.io import asset, dsl, layout
+from forml import flow, runtime
+
+if typing.TYPE_CHECKING:
+    from forml import io
+    from forml.io import asset, dsl, layout
 
 LOGGER = logging.getLogger(__name__)
 
@@ -150,7 +153,7 @@ class Expression(Term):
         szout: int
         args: typing.Sequence[Term]
 
-    def __init__(self, symbols: typing.Sequence[flow.Symbol]):
+    def __init__(self, symbols: typing.Iterable[flow.Symbol]):
         dag = self._build(symbols)
         assert len(dag) > 0 and dag[-1].szout == 0 and not dag[0].args, 'Invalid DAG'
         providers: typing.Mapping[Term, typing.Deque[Term]] = {n.term: collections.deque([n.term]) for n in dag}
@@ -243,8 +246,8 @@ class Expression(Term):
                 term = Get(instruction.index)
             else:
                 assert isinstance(instruction, flow.Functor), f'Not a functor: {instruction}'
-                spec, action = instruction
-                actor = spec()
+                builder, action = instruction
+                actor = builder()
                 action, args = action.reduce(actor, *(evaluate(a) for a in upstream[instruction]))
                 term = Task(actor, action)
             dag.append((term, tuple(resolve(a) for a in args)))
@@ -253,29 +256,42 @@ class Expression(Term):
 
 
 class Runner(runtime.Runner, alias='pyfunc'):
-    """Python function based runner implementation."""
+    """Non-distributed low-latency runner turning the task graph into a single synchronous python
+    function.
+
+    This runner is designed for repeated calls for low-volume predictions - the typical use case
+    in online :ref:`serving <serving>`.
+
+    Upon initialization, the runner instantiates all actors and preloads their states (if stateful)
+    to avoid unnecessary delays when (repeatedly) performing the actual execution.
+
+    This runner is internally used by the :doc:`serving engine<../serving>`. It does not support
+    training/tuning actions. Defining it explicitly using the :ref:`platform configuration
+    <platform-config>` for other runtime mechanisms is not usual.
+    """
 
     def __init__(
         self,
-        instance: typing.Optional[asset.Instance] = None,
-        feed: typing.Optional[io.Feed] = None,
-        sink: typing.Optional[io.Sink] = None,
+        instance: typing.Optional['asset.Instance'] = None,
+        feed: typing.Optional['io.Feed'] = None,
+        sink: typing.Optional['io.Sink'] = None,
     ):
         super().__init__(instance, feed, sink)
         composition = self._build(None, None, self._instance.project.pipeline)
-        self._expression = Expression(flow.generate(composition.apply, self._instance.state(composition.persistent)))
+        self._expression = Expression(flow.compile(composition.apply, self._instance.state(composition.persistent)))
 
-    def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
+    def train(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         raise forml.InvalidError('Invalid runner mode')
 
-    def tune(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
+    def tune(self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None) -> None:
         raise forml.InvalidError('Invalid runner mode')
 
-    def _run(self, symbols: typing.Sequence[flow.Symbol]) -> None:
+    @classmethod
+    def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
         Expression(symbols)(None)
 
-    def call(self, entry: layout.Entry) -> layout.Outcome:
-        """Func exec entrypoint.
+    def call(self, entry: 'layout.Entry') -> 'layout.Outcome':
+        """Special function exec entrypoint used by the serving engine.
 
         Args:
             entry: Input to be sent to the pipeline.

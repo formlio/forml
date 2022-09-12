@@ -12,12 +12,14 @@ docs/_build
 .eggs
 htmlcov
 .idea
+*.iml
 .ipynb_checkpoints
 junit.xml
 *.log
 *.log.?
 *.pyc
 .pytest_cache
+.python-version
 .tox
 .venv
 .vscode

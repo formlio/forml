@@ -92,7 +92,7 @@ class Alias(str, Reference):
         return tuple(b / self for b in base or [])
 
 
-class Bank(collections.namedtuple('Registry', 'provider, paths')):
+class Bank(collections.namedtuple('Bank', 'provider, paths')):
     """Registry of providers of certain interface. It is a tuple of (not-yet-imported) search paths and already
     imported providers.
     """

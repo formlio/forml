@@ -24,50 +24,59 @@ import logging
 import typing
 
 from forml import flow
-from forml.io import dsl, layout
+from forml.io import dsl as dslmod
+from forml.io import layout as laymod
+
+if typing.TYPE_CHECKING:
+    from forml.io import dsl, layout  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Writer(typing.Generic[layout.Native], metaclass=abc.ABCMeta):
-    """Base class for writer implementation."""
+class Writer(typing.Generic[laymod.Native], metaclass=abc.ABCMeta):
+    """Generic writer base class matching the *Sink consumer* interface.
 
-    def __init__(self, schema: typing.Optional[dsl.Source.Schema], **kwargs: typing.Any):
-        self._schema: typing.Optional[dsl.Source.Schema] = schema
+    It is a low-level output component responsible for committing the actual pipeline output to the
+    supported external media layer using its specific data representation (the :meth:`write`
+    method).
+    """
+
+    def __init__(self, schema: typing.Optional['dsl.Source.Schema'], **kwargs: typing.Any):
+        self._schema: typing.Optional['dsl.Source.Schema'] = schema
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
     def __repr__(self):
         return flow.name(self.__class__, **self._kwargs)
 
-    def __call__(self, data: layout.RowMajor) -> layout.Outcome:
+    def __call__(self, data: 'layout.RowMajor') -> 'layout.Outcome':
         if not self._schema:
             LOGGER.warning('Inferring unknown output schema')
-            self._schema = dsl.Schema.from_record(data[0])
+            self._schema = dslmod.Schema.from_record(data[0])
         LOGGER.debug('Starting to publish')
         self.write(self.format(self._schema, data), **self._kwargs)
-        return layout.Outcome(self._schema, data)
+        return laymod.Outcome(self._schema, data)
 
     @classmethod
     def format(
-        cls, schema: dsl.Source.Schema, data: layout.RowMajor  # pylint: disable=unused-argument
-    ) -> layout.Native:
-        """Format the output data into the required payload.Native format.
+        cls, schema: 'dsl.Source.Schema', data: 'layout.RowMajor'  # pylint: disable=unused-argument
+    ) -> 'layout.Native':
+        """Convert the output data into the required media-native ``layout.Native`` format.
 
         Args:
-            schema: Product schema.
+            schema: Data schema.
             data: Output data.
 
         Returns:
-            Data formatted into layout.Native format.
+            Data formatted into the media-native ``layout.Native`` format.
         """
         return data
 
     @classmethod
     @abc.abstractmethod
-    def write(cls, data: layout.Native, **kwargs: typing.Any) -> None:
-        """Perform the write operation with the given data.
+    def write(cls, data: 'layout.Native', **kwargs: typing.Any) -> None:
+        """Perform the write operation with the given media-native data.
 
         Args:
-            data: Output data in the writer's native format.
-            kwargs: Optional writer keyword args.
+            data: Output data in the media-native format.
+            kwargs: Optional writer keyword arguments (as given to the constructor).
         """

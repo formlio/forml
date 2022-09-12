@@ -18,7 +18,6 @@
 """
 SQL parser tests.
 """
-# pylint: disable=no-self-use
 import types
 import typing
 

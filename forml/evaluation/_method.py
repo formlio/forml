@@ -16,87 +16,141 @@
 # under the License.
 
 """
-Data splitting functionality.
+Evaluation method implementations.
 """
 import typing
 
 from sklearn import model_selection
 
 from forml import flow
-from forml.pipeline import payload
+from forml.pipeline import payload as paymod
 
 from . import _api
 
 if typing.TYPE_CHECKING:
     from forml import evaluation
+    from forml.pipeline import payload  # pylint: disable=reimported
 
 
 class CrossVal(_api.Method):
-    """Cross validation ytrue/ypred dataset producer."""
+    """Evaluation method based on a number of independent train-test trials using different parts of
+    the same training dataset.
+
+    The training dataset gets split into multiple (possibly overlaying) train-test pairs (folds)
+    used to train a vanilla instance of the pipeline and to pass down *predictions* along with
+    *true* outcomes independently for each fold.
+
+    Args:
+        crossvalidator: Implementation of the split-selection logic.
+        splitter: Depending on the constructor version:
+
+                  1. Folding actor type that is expected to take the *cross-validator* as its
+                     parameter. Defaults to :class:`payload.PandasCVFolds
+                     <forml.pipeline.payload.PandasCVFolds>`.
+                  2. Actor builder instance defining the folding splitter.
+        nsplits: The number of splits the splitter is going to generate (needs to be explicit as
+                 there is no generic way to infer it from the Builder).
+
+    Examples:
+        >>> CROSSVAL = evaluation.CrossVal(
+        ...     crossvalidator=sklearn.model_selection.StratifiedKFold(
+        ...         n_splits=3, shuffle=True, random_state=42
+        ...     )
+        ... )
+    """
 
     @typing.overload
     def __init__(
         self,
         *,
-        crossvalidator: payload.CrossValidable,
-        splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
+        crossvalidator: 'payload.CrossValidable',
+        splitter: 'type[payload.CVFoldable]' = paymod.PandasCVFolds,
     ):
-        """Simplified constructor based on splitter supplied in form of a crossvalidator and a folding actor type.
+        """Constructor based on a splitter supplied in form of a cross-validator and a folding
+        actor type.
 
         Args:
-            crossvalidator: Implementation of the split selection logic.
-            splitter: Folding actor type that is expected to take crossvalidator is its parameter.
-                      Defaults to `payload.PandasCDFolds`.
+            crossvalidator: Implementation of the split-selection logic.
+            splitter: Folding actor type that is expected to take the *cross-validator* is its
+                      parameter. Defaults to :class:`payload.PandasCVFolds
+                      <forml.pipeline.payload.PandasCVFolds>`.
         """
 
     @typing.overload
-    def __init__(self, *, splitter: flow.Spec[payload.CVFoldable], nsplits: int):
-        """CrossVal constructor based on splitter supplied in form of a Spec object.
+    def __init__(self, *, splitter: 'flow.Builder[payload.CVFoldable]', nsplits: int):
+        """Constructor based on a ``splitter`` supplied in form of an actor *builder* instance.
 
         Args:
-            splitter: Spec object defining the folding splitter.
-            nsplits: Number of splits the splitter is going to generate (needs to be explicit as there is no reliable
-                     way to extract it from the Spec).
+            splitter: Actor builder instance defining the folding splitter.
+            nsplits: Number of splits the splitter is going to generate (needs to be explicit as
+                     there is no generic way to infer it from the Builder).
         """
 
-    def __init__(self, *, crossvalidator=None, splitter=payload.PandasCVFolds, nsplits=None):
+    def __init__(self, *, crossvalidator=None, splitter=paymod.PandasCVFolds, nsplits=None):
         if ((crossvalidator is None) ^ (nsplits is not None)) or (
-            (crossvalidator is None) ^ isinstance(splitter, flow.Spec)
+            (crossvalidator is None) ^ isinstance(splitter, flow.Builder)
         ):
             raise TypeError('Invalid combination of crossvalidator, splitter and nsplits')
-        if not isinstance(splitter, flow.Spec):
-            splitter = splitter.spec(crossvalidator=crossvalidator)
+        if not isinstance(splitter, flow.Builder):
+            splitter = splitter.builder(crossvalidator=crossvalidator)
             nsplits = crossvalidator.get_n_splits()
         if nsplits < 2:
             raise ValueError('At least 2 splits required')
         self._nsplits: int = nsplits
-        self._splitter: flow.Spec[payload.CVFoldable] = splitter
+        self._splitter: flow.Builder['payload.CVFoldable'] = splitter
 
     def produce(
-        self, pipeline: flow.Composable, features: flow.Publishable, label: flow.Publishable
+        self, pipeline: flow.Composable, features: flow.Publishable, labels: flow.Publishable
     ) -> typing.Iterable['evaluation.Outcome']:
         splitter = flow.Worker(self._splitter, 1, 2 * self._nsplits)
-        splitter.train(features, label)
+        splitter.train(features, labels)
 
-        features_splits: flow.Worker = splitter.fork()
-        features_splits[0].subscribe(features)
-        label_splits: flow.Worker = splitter.fork()
-        label_splits[0].subscribe(label)
+        features_splitter: flow.Worker = splitter.fork()
+        features_splitter[0].subscribe(features)
+        labels_splitter: flow.Worker = splitter.fork()
+        labels_splitter[0].subscribe(labels)
 
         outcomes = []
         for fid in range(self._nsplits):
             fold: flow.Trunk = pipeline.expand()
-            fold.train.subscribe(features_splits[2 * fid])
-            fold.label.subscribe(label_splits[2 * fid])
-            fold.apply.subscribe(features_splits[2 * fid + 1])
-            outcomes.append(_api.Outcome(label_splits[2 * fid + 1].publisher, fold.apply.publisher))
+            fold.train.subscribe(features_splitter[2 * fid])
+            fold.label.subscribe(labels_splitter[2 * fid])
+            fold.apply.subscribe(features_splitter[2 * fid + 1])
+            outcomes.append(_api.Outcome(labels_splitter[2 * fid + 1].publisher, fold.apply.publisher))
         return tuple(outcomes)
 
 
 class HoldOut(CrossVal):
-    """Evaluation method base on a hold-out portion of the trainset.
+    """Evaluation method based on part of a training dataset being withheld for testing the
+    predictions.
 
-    Implemented on top of the CrossVal method by simply forcing the number of folds to 1.
+    The historical dataset available for evaluation is first split into two parts, one is used
+    for training the pipeline, and the second for making actual *predictions* which are then exposed
+    together with the *true* outcomes for eventual scoring.
+
+    Note:
+        This is implemented on top of the :class:`evaluation.CrossVal <forml.evaluation.CrossVal>`
+        method simply by forcing the number of folds to 1.
+
+    Args:
+        test_size: Absolute (if ``int``) or relative (if ``float``) size of the test split
+                   (defaults to ``train_size`` complement or ``0.1``).
+        train_size: Absolute (if ``int``) or relative (if ``float``) size of the train split
+                    (defaults to ``test_size`` complement).
+        random_state: Controls the randomness of the training and testing indices produced.
+        stratify: Use :class:`StratifiedShuffleSplit
+                  <sklearn:sklearn.model_selection.StratifiedShuffleSplit>` if ``True`` otherwise
+                  use :class:`ShuffleSplit <sklearn.model_selection.ShuffleSplit>`.
+        crossvalidator: Implementation of the split-selection logic.
+        splitter: Depending on the constructor version:
+
+                  1. The folding actor type that is expected to take the *cross-validator* is its
+                     parameter. Defaults to :class:`payload.PandasCVFolds
+                     <forml.pipeline.payload.PandasCVFolds>`.
+                  2. Actor builder instance defining the train-test splitter.
+
+    Examples:
+        >>> HOLDOUT = evaluation.HoldOut(test_size=0.2, stratify=True, random_state=42)
     """
 
     @typing.overload
@@ -107,44 +161,51 @@ class HoldOut(CrossVal):
         train_size: typing.Optional[typing.Union[float, int]] = None,
         random_state: typing.Optional[int] = None,
         stratify: bool = False,
-        splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
+        splitter: 'type[payload.CVFoldable]' = paymod.PandasCVFolds,
     ):
-        """Simplified constructor based explicit test_size/train_size specifications that will be used to setup a
-        ``StratifiedShuffleSplit`` or ``ShuffleSplit`` crossvalidator (depending on the ``stratify`` flag) for
-        defining the splits.
+        """Constructor based explicit ``test_size``/``train_size`` specifications that will be used
+        to setup a :class:`StratifiedShuffleSplit
+        <sklearn:sklearn.model_selection.StratifiedShuffleSplit>` or :class:`ShuffleSplit
+        <sklearn.model_selection.ShuffleSplit>` cross-validator (depending on the ``stratify`` flag)
+        for defining the splits.
 
         Args:
-            test_size: Absolute (if int) or relative (if float) size of the test split (defaults to train_size
-                       complement or 0.1).
-            train_size: Absolute (if int) or relative (if float) size of the train split (defaults to train_size
-                        complement or 0.1).
+            test_size: Absolute (if ``int``) or relative (if ``float``) size of the test split
+                       (defaults to ``train_size`` complement or ``0.1``).
+            train_size: Absolute (if ``int``) or relative (if ``float``) size of the train split
+                        (defaults to ``test_size`` complement).
             random_state: Controls the randomness of the training and testing indices produced.
-            stratify: Use ``StratifiedShuffleSplit`` if True otherwise use ``ShuffleSplit``.
-            splitter: Folding actor type that is expected to take crossvalidator is its parameter.
-                      Defaults to `payload.PandasCDFolds`.
+            stratify: Use :class:`StratifiedShuffleSplit
+                      <sklearn:sklearn.model_selection.StratifiedShuffleSplit>` if True otherwise
+                      use :class:`ShuffleSplit <sklearn.model_selection.ShuffleSplit>`.
+            splitter: Folding actor type that is expected to take a *cross-validator* is its
+                      parameter. Defaults to :class:`payload.PandasCVFolds
+                      <forml.pipeline.payload.PandasCVFolds>`.
         """
 
     @typing.overload
     def __init__(
         self,
         *,
-        crossvalidator: payload.CrossValidable,
-        splitter: type[payload.CVFoldable] = payload.PandasCVFolds,
+        crossvalidator: 'payload.CrossValidable',
+        splitter: 'type[payload.CVFoldable]' = paymod.PandasCVFolds,
     ):
-        """Simplified constructor based on splitter supplied in form of a crossvalidator and a folding actor type.
+        """Constructor based on a splitter supplied in form of a cross-validator and a folding
+        actor type.
 
         Args:
-            crossvalidator: Implementation of the split selection logic.
-            splitter: Folding actor type that is expected to take crossvalidator is its parameter.
-                      Defaults to `payload.PandasCDFolds`.
+            crossvalidator: Implementation of the split-selection logic.
+            splitter: Folding actor type that is expected to take the *cross-validator* is its
+                      parameter. Defaults to :class:`payload.PandasCVFolds
+                      <forml.pipeline.payload.PandasCVFolds>`.
         """
 
     @typing.overload
-    def __init__(self, *, splitter: flow.Spec[payload.CVFoldable]):
-        """HoldOut constructor based on splitter supplied in form of a Spec object.
+    def __init__(self, *, splitter: 'flow.Builder[payload.CVFoldable]'):
+        """Constructor based on a ``splitter`` supplied in form of an actor *builder* instance.
 
         Args:
-            splitter: Spec object defining the train-test splitter.
+            splitter: Actor builder instance defining the train-test splitter.
         """
 
     def __init__(
@@ -155,15 +216,15 @@ class HoldOut(CrossVal):
         random_state=None,
         stratify=None,
         crossvalidator=None,
-        splitter: typing.Union[type[payload.CVFoldable], flow.Spec[payload.CVFoldable]] = payload.PandasCVFolds,
+        splitter=paymod.PandasCVFolds,
     ):
         if (test_size is None and train_size is None and random_state is None and stratify is None) ^ (
-            crossvalidator is not None or isinstance(splitter, flow.Spec)
+            crossvalidator is not None or isinstance(splitter, flow.Builder)
         ):
             raise TypeError('Invalid combination of crossvalidator and test_size/train_size/random_state/shuffle')
 
         cvsplits = None
-        if not isinstance(splitter, flow.Spec):
+        if not isinstance(splitter, flow.Builder):
             if not crossvalidator:
                 cvclass = model_selection.StratifiedShuffleSplit if stratify else model_selection.ShuffleSplit
                 crossvalidator = cvclass(test_size=test_size, train_size=train_size, random_state=random_state)

@@ -18,8 +18,6 @@
 """
 Project tests.
 """
-# pylint: disable=no-self-use
-import typing
 
 import pytest
 
@@ -27,7 +25,6 @@ import forml
 from forml import flow, io, project
 from forml.io import layout
 from forml.pipeline import wrap
-from forml.project import _importer
 
 
 class TestBuilder:
@@ -41,9 +38,11 @@ class TestBuilder:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def pipeline(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Composable:
+    def pipeline(
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
+    ) -> flow.Composable:
         """Pipeline fixture."""
-        return wrap.Consumer(actor_spec)
+        return wrap.Operator(apply=actor_builder)
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -80,12 +79,6 @@ class TestBuilder:
         assert components.source == source
         assert components.pipeline == pipeline
         assert components.evaluation == evaluation
-
-
-def load(package: project.Package, component: str) -> typing.Any:
-    """Helper for importing the project component module."""
-    module = f'{package.manifest.package}.{package.manifest.modules.get(component, component)}'
-    return _importer.isolated(module, package.path).INSTANCE
 
 
 class TestDescriptor:

@@ -66,7 +66,7 @@ class Level(metaclass=abc.ABCMeta):
             """Get the last (most recent) item from the listing.
 
             Returns:
-                Id of the last item.
+                Key of the last item.
             """
             try:
                 return self[-1]
@@ -142,7 +142,7 @@ class Cache:
     def __repr__(self):
         return repr(self.info)
 
-    @functools.cache
+    @functools.lru_cache
     def __call__(self, registry: 'asset.Registry', *args, **kwargs):
         return getattr(registry, self._method)(*args, **kwargs)
 

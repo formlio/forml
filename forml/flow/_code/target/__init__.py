@@ -26,18 +26,21 @@ import typing
 
 from ... import _exception
 
+if typing.TYPE_CHECKING:
+    from forml import flow
+
 LOGGER = logging.getLogger(__name__)
 
 
 class Instruction(metaclass=abc.ABCMeta):
-    """Callable part of an assembly symbol that's responsible for implementing the processing activity."""
+    """Executable part of the compiled symbol responsible for performing the processing activity."""
 
     @abc.abstractmethod
     def execute(self, *args: typing.Any) -> typing.Any:
-        """Instruction functionality.
+        """Actual instruction functionality.
 
         Args:
-            *args: Sequence of input arguments.
+            args: A sequence of input arguments.
 
         Returns:
             Instruction result.
@@ -61,12 +64,23 @@ class Instruction(metaclass=abc.ABCMeta):
 
 
 class Symbol(collections.namedtuple('Symbol', 'instruction, arguments')):
-    """Main entity of the assembled code."""
+    """The main unit of the compiled low-level runtime code.
 
-    instruction: Instruction
-    arguments: tuple[Instruction]
+    It represents the executable instruction and its dependency on other instructions in the task
+    graph.
 
-    def __new__(cls, instruction: Instruction, arguments: typing.Optional[typing.Sequence[Instruction]] = None):
+    Args:
+        instruction: The executable instruction.
+        arguments: The sequence of instructions whose output constitutes parameters to this symbol's
+                   instruction.
+    """
+
+    instruction: 'flow.Instruction'
+    arguments: tuple['flow.Instruction']
+
+    def __new__(
+        cls, instruction: 'flow.Instruction', arguments: typing.Optional[typing.Sequence['flow.Instruction']] = None
+    ):
         if arguments is None:
             arguments = []
         if not all(arguments):

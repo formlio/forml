@@ -18,14 +18,14 @@
 """
 ForML rest gateway unit tests.
 """
-# pylint: disable=no-self-use
 import contextlib
 import typing
 
 import pytest
 from starlette import applications, testclient
 
-from forml import io, project
+from forml import application as appmod
+from forml import io
 from forml.io import asset, layout
 from forml.provider.gateway import rest
 
@@ -57,7 +57,7 @@ class TestGateway:
     def test_apply(
         self,
         client: testclient.TestClient,
-        descriptor: project.Descriptor,
+        descriptor: appmod.Descriptor,
         testset_request: layout.Request,
         generation_prediction: layout.Array,
     ):

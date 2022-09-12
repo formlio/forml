@@ -18,13 +18,12 @@
 """
 ETL unit tests.
 """
-# pylint: disable=no-self-use
 import abc
 import datetime
 import decimal
+import pickle
 import typing
 
-import cloudpickle
 import pytest
 
 from forml.io import dsl
@@ -40,16 +39,16 @@ class TestOrdering:
             series.Ordering(student_table.score)
             == series.Ordering(student_table.score, series.Ordering.Direction.ASCENDING)
             == series.Ordering.Direction.ASCENDING(student_table.score)
-            == tuple(series.Ordering.make([student_table.score]))[0]
-            == tuple(series.Ordering.make([student_table.score, 'ascending']))[0]
+            == tuple(series.Ordering.make(student_table.score))[0]
+            == tuple(series.Ordering.make(student_table.score, 'ascending'))[0]
             == (student_table.score, series.Ordering.Direction.ASCENDING)
         )
         assert (
-            tuple(series.Ordering.make([student_table.score, 'asc', student_table.surname, 'DESC']))
-            == tuple(series.Ordering.make([student_table.score, (student_table.surname, 'DESCENDING')]))
+            tuple(series.Ordering.make(student_table.score, 'asc', student_table.surname, 'DESC'))
+            == tuple(series.Ordering.make(student_table.score, (student_table.surname, 'DESCENDING')))
             == tuple(
                 series.Ordering.make(
-                    [student_table.score, series.Ordering(student_table.surname, series.Ordering.Direction.DESCENDING)]
+                    student_table.score, series.Ordering(student_table.surname, series.Ordering.Direction.DESCENDING)
                 )
             )
             == (
@@ -85,11 +84,17 @@ class Feature(metaclass=abc.ABCMeta):
 
     def test_serilizable(self, feature: series.Feature):
         """Test source serializability."""
-        assert cloudpickle.loads(cloudpickle.dumps(feature)) == feature
+        assert pickle.loads(pickle.dumps(feature)) == feature
 
     def test_kind(self, feature: series.Feature):
         """Test the feature kind."""
         assert isinstance(feature.kind, kind.Any)
+
+    def test_alias(self, feature: series.Feature):
+        """Feature aliasing test."""
+        aliased = feature.alias('foo')
+        assert aliased.name == 'foo'
+        assert aliased.kind == feature.kind
 
 
 class Operable(Feature, metaclass=abc.ABCMeta):
@@ -97,12 +102,6 @@ class Operable(Feature, metaclass=abc.ABCMeta):
 
     def test_operable(self, feature: series.Operable):
         assert feature.operable == feature
-
-    def test_alias(self, feature: series.Operable):
-        """Feature aliasing test."""
-        aliased = feature.alias('foo')
-        assert aliased.name == 'foo'
-        assert aliased.kind == feature.kind
 
 
 class TestAliased(Feature):

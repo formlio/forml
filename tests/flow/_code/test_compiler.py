@@ -18,7 +18,6 @@
 """
 ForML compiler unit tests.
 """
-# pylint: disable=no-self-use
 
 import pytest
 
@@ -27,33 +26,33 @@ from forml.io import asset, layout
 
 
 @pytest.fixture(scope='session')
-def node1(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
+def node1(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
     """Node fixture."""
-    return flow.Worker(actor_spec, 1, 1)
+    return flow.Worker(actor_builder, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node2(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
+def node2(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
     """Node fixture."""
-    return flow.Worker(actor_spec, 1, 1)
+    return flow.Worker(actor_builder, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def node3(actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
+def node3(actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]) -> flow.Worker:
     """Node fixture."""
-    return flow.Worker(actor_spec, 1, 1)
+    return flow.Worker(actor_builder, 1, 1)
 
 
 @pytest.fixture(scope='session')
-def path(node1: flow.Worker, node2: flow.Worker, node3: flow.Worker):
-    """Path fixture."""
+def segment(node1: flow.Worker, node2: flow.Worker, node3: flow.Worker):
+    """Segment fixture."""
     node2[0].subscribe(node1[0])
     node3[0].subscribe(node2[0])
-    return flow.Path(node1)
+    return flow.Segment(node1)
 
 
-def test_generate(
-    path: flow.Path, valid_instance: asset.Instance, node1: flow.Worker, node2: flow.Worker, node3: flow.Worker
+def test_compile(
+    segment: flow.Segment, valid_instance: asset.Instance, node1: flow.Worker, node2: flow.Worker, node3: flow.Worker
 ):
     """Compiler generate test."""
-    flow.generate(path, valid_instance.state((node1.gid, node2.gid, node3.gid)))
+    flow.compile(segment, valid_instance.state((node1.gid, node2.gid, node3.gid)))

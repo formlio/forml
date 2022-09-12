@@ -18,14 +18,13 @@
 """
 ForML persistent inventory unit tests.
 """
-# pylint: disable=no-self-use
 import abc
 import pickle
 import typing
 
 import pytest
 
-from forml import project
+from forml import application as appmod
 from forml.io import asset
 
 
@@ -47,7 +46,7 @@ class Inventory(metaclass=abc.ABCMeta):
     @staticmethod
     @pytest.fixture(scope='function')
     def populated(
-        constructor: typing.Callable[[], asset.Inventory], descriptor_handle: project.Descriptor.Handle
+        constructor: typing.Callable[[], asset.Inventory], descriptor_handle: appmod.Descriptor.Handle
     ) -> asset.Inventory:
         """Populated inventory fixture."""
         inventory = constructor()
@@ -59,11 +58,11 @@ class Inventory(metaclass=abc.ABCMeta):
         assert not any(empty.list())
         assert application in populated.list()
 
-    def test_get(self, populated: asset.Inventory, descriptor: project.Descriptor):
+    def test_get(self, populated: asset.Inventory, descriptor: appmod.Descriptor):
         """Inventory get unit test."""
         assert populated.get(descriptor.name) == descriptor
 
-    def test_put(self, populated: asset.Inventory, descriptor_handle: project.Descriptor.Handle):
+    def test_put(self, populated: asset.Inventory, descriptor_handle: appmod.Descriptor.Handle):
         """Inventory put unit test."""
         populated.put(descriptor_handle)
 

@@ -17,7 +17,6 @@
 """
 Service runtime tests.
 """
-# pylint: disable=no-self-use
 import json
 
 import pytest

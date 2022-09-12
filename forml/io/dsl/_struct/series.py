@@ -55,7 +55,11 @@ def cast(value: typing.Any) -> 'dsl.Feature':
 
 
 class Feature(tuple, metaclass=abc.ABCMeta):
-    """Base class for feature types (ie fields or select expressions)."""
+    """Base class of the individual *columnar* data series features.
+
+    A *Feature* is anything that can be used as a handle for independent columnar data. It is a
+    homogenous series of data of the same :attr:`kind`.
+    """
 
     class Visitor:
         """Feature visitor."""
@@ -147,13 +151,12 @@ class Feature(tuple, metaclass=abc.ABCMeta):
     def __hash__(self):
         return hash(self.__class__) ^ super().__hash__()
 
-    @property
     @abc.abstractmethod
-    def name(self) -> typing.Optional[str]:
-        """Feature name.
+    def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
+        """Visitor acceptor.
 
-        Returns:
-            Name string.
+        Args:
+            visitor: Visitor instance.
         """
 
     @property
@@ -165,21 +168,25 @@ class Feature(tuple, metaclass=abc.ABCMeta):
             Type.
         """
 
-    @abc.abstractmethod
-    def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
-        """Visitor acceptor.
+    def alias(self, alias: str) -> 'dsl.Aliased':
+        """Use an alias for this feature.
 
         Args:
-            visitor: Visitor instance.
+            alias: Aliased feature name.
+
+        Returns:
+            New feature instance with the given alias.
         """
+        return Aliased(self, alias)
 
     @property
     @abc.abstractmethod
     def operable(self) -> 'dsl.Operable':
-        """Return the operable of this feature (apart from Aliased, operable is the feature itself).
+        """Return the operable representation of this feature (apart from Aliased, operable is
+        the feature itself).
 
         Returns:
-            Feature's operable.
+            Feature's operable representation.
         """
 
     @classmethod
@@ -264,7 +271,26 @@ def featurize(handler: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 
 
 class Operable(Feature, metaclass=abc.ABCMeta):
-    """Base class for features that can be used in expressions, conditions, grouping and/or ordering definitions."""
+    """Base class for features that can be used in expressions, conditions, grouping, and/or
+    ordering definitions.
+
+    In principle, any non-aliased future is *Operable*.
+
+    Operable feature instances are overloading the following native Python :doc:`operator API
+    <python:library/operator>` to provide convenient DSL semantic:
+
+    ================  ================================================
+      Type              Syntax
+    ================  ================================================
+      Comparison        ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``
+      Logical           ``&``, ``|``, ``~``
+      Arithmetical      ``+``, ``-``, ``*``, ``/``, ``%``
+    ================  ================================================
+
+    See Also:
+        Additional details are available under the :ref:`DSL functions and operators
+        <query-functions>`.
+    """
 
     @property
     def operable(self) -> 'dsl.Operable':
@@ -272,19 +298,8 @@ class Operable(Feature, metaclass=abc.ABCMeta):
 
     @classmethod
     def ensure_is(cls, feature: 'dsl.Feature') -> 'dsl.Operable':
-        """Ensure given given feature is an Operable."""
+        """Ensure the given feature is an ``Operable``."""
         return super().ensure_is(feature).operable
-
-    def alias(self, alias: str) -> 'dsl.Aliased':
-        """Use an alias for this feature.
-
-        Args:
-            alias: Aliased feature name.
-
-        Returns:
-            New feature instance with given alias.
-        """
-        return Aliased(self, alias)
 
     __hash__ = Feature.__hash__  # otherwise gets overwritten to None due to redefined __eq__
 
@@ -373,17 +388,33 @@ class Operable(Feature, metaclass=abc.ABCMeta):
 
 
 class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
-    """OrderBy spec."""
+    """Container for holding the ordering specification.
+
+    Attention:
+        Instances are expected to be created internally by :meth:`dsl.Queryable.orderby
+        <forml.io.dsl.Queryable.orderby>`.
+    """
 
     feature: 'dsl.Operable'
+    """Ordering feature."""
     direction: 'dsl.Ordering.Direction'
+    """Ordering direction."""
+
+    Term = typing.Union[
+        'dsl.Operable',
+        typing.Union['dsl.Ordering.Direction', str],
+        'tuple[dsl.Operable, typing.Union[dsl.Ordering.Direction, str]]',
+    ]
+    """Type alias for accepted ordering specifiers."""
 
     @enum.unique
     class Direction(enum.Enum):
-        """Ordering direction."""
+        """Ordering direction enum."""
 
         ASCENDING = 'ascending'
+        """Ascending direction."""
         DESCENDING = 'descending'
+        """Descending direction."""
 
         @classmethod
         def _missing_(cls, value):
@@ -414,30 +445,21 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
         return f'{repr(self.feature)}{repr(self.direction)}'
 
     @classmethod
-    def make(
-        cls,
-        specs: typing.Sequence[
-            typing.Union[
-                'dsl.Operable',
-                typing.Union['dsl.Ordering.Direction', str],
-                tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
-            ]
-        ],
-    ) -> typing.Iterable['dsl.Ordering']:
-        """Helper to generate orderings from given features and directions.
+    def make(cls, *terms: 'dsl.Ordering.Term') -> typing.Iterable['dsl.Ordering']:
+        """Helper to generate orderings from the given terms.
 
         Args:
-            specs: One or many features or actual ordering instances.
+            terms: One or many features or actual ordering instances.
 
         Returns:
-            Sequence of ordering terms.
+            Iterator of ordering instances.
         """
-        specs = itertools.zip_longest(specs, specs[1:])
-        for feature, direction in specs:
+        terms = itertools.zip_longest(terms, terms[1:])
+        for feature, direction in terms:
             if isinstance(feature, Feature):
                 if isinstance(direction, (Ordering.Direction, str)):
                     yield Ordering.Direction(direction)(feature)
-                    next(specs)  # pylint: disable=stop-iteration-return
+                    next(terms)  # pylint: disable=stop-iteration-return
                 else:
                     yield Ordering(feature)
             elif isinstance(feature, typing.Sequence) and len(feature) == 2:
@@ -448,7 +470,12 @@ class Ordering(collections.namedtuple('Ordering', 'feature, direction')):
 
 
 class Aliased(Feature):
-    """Aliased feature representation."""
+    """Representation of a *feature* with an explicit name alias.
+
+    Attention:
+        Instances are expected to be created internally via :meth:`dsl.Feature.alias
+        <forml.io.dsl.Feature.alias>`.
+    """
 
     operable: 'dsl.Operable' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
@@ -492,15 +519,6 @@ class Literal(Operable):
     def __repr__(self):
         return repr(self.value)
 
-    @property
-    def name(self) -> None:
-        """Literal has no name without an explicit aliasing.
-
-        Returns:
-            None.
-        """
-        return None
-
     def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
         """Visitor acceptor.
 
@@ -511,7 +529,7 @@ class Literal(Operable):
 
 
 class Element(Operable):
-    """Named feature of particular origin (table or a reference)."""
+    """Name-referenced *feature* of a particular *origin* (``dsl.Table`` or ``dsl.Reference``)."""
 
     origin: 'dsl.Origin' = property(opermod.itemgetter(0))
     name: str = property(opermod.itemgetter(1))
@@ -538,7 +556,7 @@ class Element(Operable):
 
 
 class Column(Element):
-    """Special type of element is the table column type."""
+    """Special type of *element* is the *table* column type."""
 
     origin: 'dsl.Table' = property(opermod.itemgetter(0))
 
@@ -550,15 +568,6 @@ class Column(Element):
 
 class Expression(Operable, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Base class for expressions."""
-
-    @property
-    def name(self) -> None:
-        """Expression has no name without an explicit aliasing.
-
-        Returns:
-            None.
-        """
-        return None
 
     def accept(self, visitor: 'dsl.Feature.Visitor') -> None:
         visitor.visit_expression(self)
@@ -623,11 +632,15 @@ class Postfix(Operator, Univariate, metaclass=abc.ABCMeta):
 
 
 class Predicate(metaclass=abc.ABCMeta):
-    """Base class for Logical and Comparison operators."""
+    """Mixin for features representing *logical* or *comparison* operations.
+
+    Specific predicate instances are produced from the native :class:`dsl.Operable
+    <forml.io.dsl.Operable>` operators.
+    """
 
     class Factors(typing.Mapping['dsl.Table', 'dsl.Factors']):
-        """Mapping (read-only) of predicate factors to their tables. Factor is a predicate which is involving exactly
-        one and only table.
+        """Mapping (read-only) of predicate factors to their tables. Factor is a predicate which is
+        involving exactly one and only table.
         """
 
         def __init__(self, *predicates: 'dsl.Predicate'):
@@ -686,21 +699,23 @@ class Predicate(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def factors(self) -> 'dsl.Predicate.Factors':
-        """Mapping of primitive source predicates - involving just a single Table.
+        """Mapping of primitive source predicates - involving just a single ``Table``.
 
         Returns:
-            Break down of factors involved in this predicate.
+            Break down of factors constituting this predicate.
         """
 
     @classmethod
     def ensure_is(cls: type['dsl.Operable'], feature: 'dsl.Operable') -> 'dsl.Operable':
-        """Ensure given feature is a predicate. Since this mixin class is supposed to be used as a first base class of
-        its feature implementors, this will mask the Feature.ensure_is API. Here we add special implementation depending
-        on whether it is used directly on the Predicate class or its bare mixin subclasses or the actual Feature
-        implementation using this mixin.
+        """Ensure the given feature is a predicate.
+
+        Since this mixin class is supposed to be used as a first base class of its feature
+        implementors, this will mask the Feature.ensure_is API. Here we add special implementation
+        depending on whether it is used directly on the ``Predicate`` class or its bare mixin
+        subclasses or the actual Feature implementation using this mixin.
 
         Args:
-            feature: 'dsl.Feature' instance to be checked for its compliance.
+            feature: Instance to be checked for its predicate compatibility.
 
         Returns:
             Feature instance.
@@ -758,11 +773,12 @@ class Comparison(Predicate):
     """Mixin for comparison operators."""
 
     class Pythonic(Operable):
-        """Semi proxy/lazy wrapper allowing native Python features like sorting or equality tests to work transparently
-        without raising the syntax errors implemented in the constructors of the actual Comparison types.
+        """Semi proxy/lazy wrapper allowing native Python features like sorting or equality tests
+        to work transparently without raising the syntax errors implemented in the constructors of
+        the actual Comparison types.
 
-        This instance is expected to be used only internally by Python itself. All code within ForML is supposed to use
-        the extracted .operable instance of the true Comparison type.
+        This instance is expected to be used only internally by Python itself. All code within ForML
+        is supposed to use the extracted .operable instance of the true Comparison type.
         """
 
         operator: type[Infix] = property(opermod.itemgetter(0))
@@ -778,10 +794,6 @@ class Comparison(Predicate):
             if self.operator is LessThan:
                 return repr(self.left) < repr(self.right)
             raise RuntimeError(f'Unexpected Pythonic comparison using {self.operator}')
-
-        @property
-        def name(self) -> typing.Optional[str]:
-            raise RuntimeError('Pythonic comparison proxy used as a feature')
 
         @property
         def kind(self) -> 'dsl.Any':
@@ -841,11 +853,16 @@ class Equal(Comparison, Infix):
     symbol = '=='
 
     def __bool__(self):
-        """Since this instance is also returned when python internally compares two Feature instances for equality (ie
-        when the instance is stored within a hash-based container), we want to evaluate the boolean value for python
-        perspective of the objects (rather than just the ETL perspective of the data).
+        """Evaluate the boolean value as of the Python context.
 
-        Note this doesn't reflect mathematical commutativity - order of potential sub-expression operands matters.
+        Since this instance is also returned when python internally compares two ``Feature``
+        instances for equality (i.e. when the instance is stored within a hash-based container), we
+        want to evaluate the boolean value for python perspective of the objects (rather than just
+        the ETL perspective of the data).
+
+        Note:
+            This doesn't reflect mathematical commutativity - order of potential sub-expression
+            operands matters.
         """
         return hash(self.left) == hash(self.right)
 
@@ -924,7 +941,20 @@ class Cumulative(Expression, metaclass=abc.ABCMeta):
 
 
 class Window(Cumulative):
-    """Window type feature representation."""
+    """Window function wrapper feature representation.
+
+    Attention:
+        Instances are expected to be created internally via :meth:`dsl.Window.Function.over()
+        <forml.io.dsl.Window.Function.over>`.
+
+    See Also:
+        Supported window functions are available in the :ref:`window module
+        <query-functions-window>`.
+
+    Todo:
+        Support for window expressions is experimental and unlikely to be supported by the existing
+        parsers.
+    """
 
     function: 'dsl.Window.Function' = property(opermod.itemgetter(0))
     partition: tuple['dsl.Operable'] = property(opermod.itemgetter(1))
@@ -942,21 +972,22 @@ class Window(Cumulative):
             GROUPS = 'groups'
             RANGE = 'range'
 
-    class Function:
-        """Window function representation."""
+    class Function(abc.ABC):
+        """Window function representation mixin."""
+
+        @property
+        @abc.abstractmethod
+        def kind(self) -> 'dsl.Any':
+            """Function return type.
+
+            Returns:
+                Type.
+            """
 
         def over(
             self,
             partition: typing.Sequence['dsl.Operable'],
-            ordering: typing.Optional[
-                typing.Sequence[
-                    typing.Union[
-                        Operable,
-                        typing.Union['Ordering.Direction', str],
-                        tuple['dsl.Operable', typing.Union['Ordering.Direction', str]],
-                    ]
-                ]
-            ] = None,
+            ordering: typing.Optional[typing.Sequence['dsl.Ordering.Term']] = None,
             frame: typing.Optional = None,
         ) -> 'dsl.Window':
             """Create a window using this function.
@@ -975,27 +1006,10 @@ class Window(Cumulative):
         cls,
         function: 'dsl.Window.Function',
         partition: typing.Sequence['dsl.Feature'],
-        ordering: typing.Optional[
-            typing.Sequence[
-                typing.Union[
-                    'dsl.Operable',
-                    typing.Union['dsl.Ordering.Direction', str],
-                    tuple['dsl.Operable', typing.Union['dsl.Ordering.Direction', str]],
-                ]
-            ]
-        ] = None,
+        ordering: typing.Optional[typing.Sequence['dsl.Ordering.Term']] = None,
         frame: typing.Optional = None,
     ):
-        return super().__new__(cls, function, tuple(partition), Ordering.make(ordering or []), frame)
-
-    @property
-    def name(self) -> None:
-        """Window has no name without an explicit aliasing.
-
-        Returns:
-            None.
-        """
-        return None
+        return super().__new__(cls, function, tuple(partition), Ordering.make(*(ordering or [])), frame)
 
     @property
     def kind(self) -> 'dsl.Any':

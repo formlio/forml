@@ -26,7 +26,7 @@ import setuptools
 EXTRAS_DASK = {'dask'}
 
 EXTRAS_DEV = {
-    'black',
+    'black[jupyter]',
     'flake8-colors',
     'flake8-bugbear',
     'flake8-typing-imports',
@@ -37,19 +37,18 @@ EXTRAS_DEV = {
     'pylint',
     'pytest-cov',
     'pytest-asyncio',
+    'pytest-xdist',
 }
 
 EXTRAS_DOCS = {
     'sphinx',
-    'sphinx-autodoc-typehints',
     'sphinx-copybutton',
-    'sphinx_rtd_theme',
+    'sphinx-immaterial',
     'sphinxcontrib-details-directive',
     'sphinxcontrib-napoleon',
-    'nbsphinx',
+    'sphinxcontrib-spelling',
+    'nbsphinx',  # also needs pandoc binary
 }
-
-EXTRAS_PIPELINE = {'pandas', 'scikit-learn'}
 
 EXTRAS_GRAPHVIZ = {'graphviz'}
 
@@ -59,16 +58,8 @@ EXTRAS_REST = {'starlette', 'uvicorn'}
 
 EXTRAS_SQL = {'pyhive', 'sqlalchemy'}
 
-EXTRAS_ALL = (
-    EXTRAS_DASK
-    | EXTRAS_DEV
-    | EXTRAS_DOCS
-    | EXTRAS_PIPELINE
-    | EXTRAS_MLFLOW
-    | EXTRAS_GRAPHVIZ
-    | EXTRAS_REST
-    | EXTRAS_SQL
-)
+EXTRAS_ALL = EXTRAS_DASK | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_REST | EXTRAS_SQL
+
 
 setuptools.setup(
     name='forml',
@@ -80,15 +71,26 @@ setuptools.setup(
     maintainer_email='forml-dev@googlegroups.com',
     license='Apache License 2.0',
     packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
-    package_data={'forml.conf': ['config.toml', 'logging.ini']},
-    setup_requires=['setuptools', 'wheel', 'toml'],
-    install_requires=['click', 'cloudpickle', 'pip', 'setuptools', 'packaging>=20.0', 'toml', 'numpy'],
+    package_data={'forml.setup': ['config.toml', 'logging.ini', 'templates/**']},
+    setup_requires=['setuptools', 'wheel', 'tomli'],
+    install_requires=[
+        'click',
+        'cloudpickle',
+        'jinja2',
+        'numpy',
+        'packaging>=20.0',
+        'pandas',
+        'pip',
+        'scikit-learn',
+        'setuptools',
+        'toml',
+        'tomli',
+    ],
     extras_require={
         'all': EXTRAS_ALL,
         'dask': EXTRAS_DASK,
         'dev': EXTRAS_DEV,
         'docs': EXTRAS_DOCS,
-        'pipeline': EXTRAS_PIPELINE,
         'graphviz': EXTRAS_GRAPHVIZ,
         'mlflow': EXTRAS_MLFLOW,
         'rest': EXTRAS_REST,
@@ -96,12 +98,12 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'forml = forml.cli:main',
+            'forml = forml.setup:cli',
         ]
     },
     python_requires='>=3.9',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',

@@ -18,44 +18,19 @@
 """
 Project component tests.
 """
-# pylint: disable=no-self-use
-import importlib
-import pathlib
-import types
 import typing
 
 import pytest
 
 import forml
-from forml import flow, project
+from forml import flow, project, setup
 from forml.io import dsl, layout
-from forml.project import _component, _importer
+from forml.project import _component
 
 
 def test_setup():
     """Test the direct setup access."""
     project.setup(object())
-
-
-class TestContext:
-    """Context unit tests."""
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def name() -> str:
-        """Module name fixture."""
-        return 'foo'
-
-    @staticmethod
-    @pytest.fixture(scope='session')
-    def module(name: str) -> types.ModuleType:
-        """Module fixture."""
-        return types.ModuleType(name)
-
-    def test_context(self, name: str, module: types.ModuleType):
-        """Testing the context manager."""
-        with _importer.context(module):
-            assert importlib.import_module(name) == module
 
 
 class TestVirtual:
@@ -75,15 +50,7 @@ class TestVirtual:
 
     def test_load(self, component: typing.Any, package: str):
         """Test loading of the virtual component."""
-        assert _component.load(_component.Virtual(component, package=package).path) == component
-
-
-def test_load():
-    """Testing the top level component.load() function."""
-    provided = _component.load('component', pathlib.Path(__file__).parent)
-    import component  # pylint: disable=import-outside-toplevel
-
-    assert provided is component.INSTANCE
+        assert setup.load(_component.Virtual(component, package=package).path, project.setup) == component
 
 
 class TestSource:
@@ -91,10 +58,10 @@ class TestSource:
 
     @staticmethod
     @pytest.fixture(scope='session', params=('vector', 'table', 'actor', None))
-    def label(
+    def labels(
         request,
         student_table: dsl.Table,
-        actor_spec: flow.Spec[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
+        actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     ) -> typing.Optional[project.Source.Labels]:
         """Component fixture."""
         if request.param == 'vector':
@@ -102,7 +69,7 @@ class TestSource:
         if request.param == 'table':
             return student_table.level, student_table.level
         if request.param == 'actor':
-            return actor_spec
+            return actor_builder
         return None
 
     def test_invalid(self, student_table: dsl.Table, school_table: dsl.Table):
@@ -111,10 +78,12 @@ class TestSource:
             project.Source.query(student_table, student_table.score)
         with pytest.raises(forml.InvalidError, match='Train-apply schema mismatch'):
             project.Source.query(student_table, apply=school_table)
+        with pytest.raises(forml.InvalidError, match='Once without an Ordinal'):
+            project.Source.query(student_table.select(student_table.school), student_table.score, once='exactly')
 
-    def test_query(self, source_query: dsl.Query, label: typing.Optional[project.Source.Labels]):
+    def test_query(self, source_query: dsl.Query, labels: typing.Optional[project.Source.Labels]):
         """Test the query setup."""
-        query = project.Source.query(source_query, label)
+        query = project.Source.query(source_query, labels)
         assert isinstance(query.extract.train, dsl.Query)
         assert query.extract.apply == query.extract.train == source_query
-        assert query.extract.labels == label
+        assert query.extract.labels == labels

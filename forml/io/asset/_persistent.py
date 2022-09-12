@@ -28,16 +28,14 @@ import typing
 import uuid
 
 import forml
-from forml import conf, provider
-from forml.conf.parsed import provider as provcfg  # pylint: disable=unused-import
+from forml import provider, setup
 
 if typing.TYPE_CHECKING:
-    from forml import project as prj
-
-    from ._directory import level
+    from forml import application, project
+    from forml.io import asset
 
 LOGGER = logging.getLogger(__name__)
-TMPDIR = tempfile.mkdtemp(prefix=f'{conf.APPNAME}-persistent-', dir=conf.tmpdir)
+TMPDIR = tempfile.mkdtemp(prefix=f'{setup.APPNAME}-persistent-', dir=setup.tmpdir)
 atexit.register(lambda: shutil.rmtree(TMPDIR, ignore_errors=True))
 
 
@@ -54,8 +52,14 @@ def mkdtemp(prefix: typing.Optional[str] = None, suffix: typing.Optional[str] = 
     return pathlib.Path(tempfile.mkdtemp(prefix, suffix, TMPDIR))
 
 
-class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.Registry.path):
-    """Top-level persistent registry abstraction."""
+class Registry(provider.Service, default=setup.Registry.default, path=setup.Registry.path):
+    """Abstract base class of the ForML model registry concept.
+
+    Args:
+        staging: File system location reachable from all runner nodes to be used for :ref:`package
+                 staging <registry-staging>` (defaults to a local temporal directory (invalid for
+                 distributed runners)).
+    """
 
     def __init__(self, staging: typing.Optional[typing.Union[str, pathlib.Path]] = None):
         if not staging:
@@ -73,25 +77,9 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other._staging == self._staging
 
-    def mount(self, project: 'level.Project.Key', release: 'level.Release.Key') -> 'prj.Artifact':
-        """Take given project/release package and return it as artifact instance.
-
-        Args:
-            project: Name of the project to work with.
-            release: Release to be loaded.
-
-        Returns:
-            Product artifact.
-        """
-        package = self.pull(project, release)
-        try:
-            return package.install(self._staging / package.manifest.name / str(package.manifest.version))
-        except FileNotFoundError as err:
-            raise forml.MissingError(f'Package artifact {project}-{release} not found') from err
-
     @abc.abstractmethod
-    def projects(self) -> typing.Iterable[typing.Union[str, 'level.Project.Key']]:
-        """List projects in given repository.
+    def projects(self) -> typing.Iterable[typing.Union[str, 'asset.Project.Key']]:
+        """List the existing projects contained in the repository.
 
         Returns:
             Projects listing.
@@ -99,8 +87,8 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def releases(self, project: 'level.Project.Key') -> typing.Iterable[typing.Union[str, 'level.Release.Key']]:
-        """List the releases of given existing project.
+    def releases(self, project: 'asset.Project.Key') -> typing.Iterable[typing.Union[str, 'asset.Release.Key']]:
+        """List the existing releases of the given *existing* project.
 
         Args:
             project: Existing project to be listed.
@@ -112,26 +100,55 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
 
     @abc.abstractmethod
     def generations(
-        self, project: 'level.Project.Key', release: 'level.Release.Key'
-    ) -> typing.Iterable[typing.Union[str, int, 'level.Generation.Key']]:
-        """List the generations of given release.
+        self, project: 'asset.Project.Key', release: 'asset.Release.Key'
+    ) -> typing.Iterable[typing.Union[str, int, 'asset.Generation.Key']]:
+        """List the existing generations of the given release.
 
         Args:
-            project: Existing project of which the release is to be listed.
-            release: Existing release of the project to be listed.
+            project: Existing project whose release is to be listed.
+            release: Existing project's release to be listed.
 
         Returns:
             Generations listing.
         """
         raise NotImplementedError()
 
+    def mount(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'project.Artifact':
+        """Pull and install the given project/release package using the *staging* file system
+        location available to all runner nodes.
+
+        Args:
+            project: Name of the project to work with.
+            release: Version of the release to be loaded.
+
+        Returns:
+            Product artifact.
+
+        Raises:
+            forml.MissingError: The given artifact could not be found.
+        """
+        package = self.pull(project, release)
+        try:
+            return package.install(self._staging / package.manifest.name / str(package.manifest.version))
+        except FileNotFoundError as err:
+            raise forml.MissingError(f'Package artifact {project}-{release} not found') from err
+
     @abc.abstractmethod
-    def pull(self, project: 'level.Project.Key', release: 'level.Release.Key') -> 'prj.Package':
-        """Return the package of the given existing release.
+    def push(self, package: 'project.Package') -> None:
+        """Start a new release of a (possibly new) project based on the given package artifact.
+
+        Args:
+            package: The release package to be persisted.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def pull(self, project: 'asset.Project.Key', release: 'asset.Release.Key') -> 'project.Package':
+        """Return the package of the given *existing* release.
 
         Args:
             project: Project of which the release artifact is to be returned.
-            release: Release of the project to return the artifact of.
+            release: Project release to return the artifact of.
 
         Returns:
             Project artifact object.
@@ -139,57 +156,49 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def push(self, package: 'prj.Package') -> None:
-        """Start new release of a (possibly new) project based on the given artifact.
-
-        Args:
-            package: Distribution package to be persisted.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     def read(
         self,
-        project: 'level.Project.Key',
-        release: 'level.Release.Key',
-        generation: 'level.Generation.Key',
+        project: 'asset.Project.Key',
+        release: 'asset.Release.Key',
+        generation: 'asset.Generation.Key',
         sid: uuid.UUID,
     ) -> bytes:
-        """Load the state from existing generation based on the provided id.
+        """Load the state from an *existing* generation based on the provided state ID.
 
         Args:
             project: Project to read the state from.
-            release: Release of the project to read the state from.
-            generation: Generation of the project to read the state from.
-            sid: Id of the state object to be loaded.
+            release: Project release to read the state from.
+            generation: Project generation to read the state from.
+            sid: ID of the state object to be loaded.
 
         Returns:
-            Serialized state or empty byte-array if there is no such state for given (existing) generation.
+            Serialized state or empty byte-array if there is no such state for the given (existing)
+            generation.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def write(self, project: 'level.Project.Key', release: 'level.Release.Key', sid: uuid.UUID, state: bytes) -> None:
-        """Dump a generation-unbound state within an existing release under the given state id.
+    def write(self, project: 'asset.Project.Key', release: 'asset.Release.Key', sid: uuid.UUID, state: bytes) -> None:
+        """Dump a generation-unbound state within an *existing* release under the given state ID.
 
         Args:
             project: Project to store the state into.
-            release: Release of the project to store the state into.
-            sid: state id to associate the payload with.
+            release: Project release to store the state into.
+            sid: State ID to associate the payload with.
             state: Serialized state to be persisted.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def open(
-        self, project: 'level.Project.Key', release: 'level.Release.Key', generation: 'level.Generation.Key'
-    ) -> 'level.Tag':
-        """Return the metadata tag of the given existing generation.
+        self, project: 'asset.Project.Key', release: 'asset.Release.Key', generation: 'asset.Generation.Key'
+    ) -> 'asset.Tag':
+        """Return the metadata tag of the given *existing* generation.
 
         Args:
             project: Project to read the metadata from.
-            release: Release of the project to read the metadata from.
-            generation: Generation of the project to read the metadata from.
+            release: Project release to read the metadata from.
+            generation: Project generation to read the metadata from.
 
         Returns:
             Generation metadata.
@@ -199,24 +208,31 @@ class Registry(provider.Service, default=provcfg.Registry.default, path=provcfg.
     @abc.abstractmethod
     def close(
         self,
-        project: 'level.Project.Key',
-        release: 'level.Release.Key',
-        generation: 'level.Generation.Key',
-        tag: 'level.Tag',
+        project: 'asset.Project.Key',
+        release: 'asset.Release.Key',
+        generation: 'asset.Generation.Key',
+        tag: 'asset.Tag',
     ) -> None:
-        """Seal a new - sofar unbound - generation within existing release by storing its metadata tag.
+        """Commit a new - sofar unbound - generation within an *existing* release by storing its
+        metadata tag.
 
         Args:
             project: Project to store the metadata into.
-            release: Release of the project to store the metadata into.
-            generation: Generation of the project to store the metadata into.
+            release: Project release to store the metadata into.
+            generation: Project generation to store the metadata into.
             tag: Generation metadata to be stored.
         """
         raise NotImplementedError()
 
 
-class Inventory(provider.Service, default=provcfg.Inventory.default, path=provcfg.Inventory.path):
-    """Application descriptor storage abstraction."""
+class Inventory(provider.Service, default=setup.Inventory.default, path=setup.Inventory.path):
+    """Abstract base class for application descriptor storage providers.
+
+    Important:
+        There is no concept of versioning - individual descriptors are held in a flat namespace
+        requiring the uniqueness of each application :meth:`name
+        <forml.application.Descriptor.name>`.
+    """
 
     def __repr__(self):
         name = self.__class__.__module__.rsplit('.', 1)[-1].capitalize()
@@ -224,30 +240,40 @@ class Inventory(provider.Service, default=provcfg.Inventory.default, path=provcf
 
     @abc.abstractmethod
     def list(self) -> typing.Iterable[str]:
-        """List the unique application names."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get(self, application: str) -> 'prj.Descriptor':
-        """Retrieve the descriptor for the given application.
-
-        Only application returned by ``.list()`` can be requested.
-
-        Args:
-            application: Unique application name.
+        """List all the application names contained within the inventory.
 
         Returns:
-            Application descriptor.
+            List of application names.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def put(self, descriptor: 'prj.Descriptor.Handle') -> None:
-        """Store the application descriptor into the inventory.
+    def get(self, application: str) -> 'application.Descriptor':
+        """Retrieve the descriptor for the given application name.
 
-        Existing application with the same name gets overwritten.
+        Attention:
+            Only applications returned by :meth:`list` can be requested.
 
         Args:
-            descriptor: Application descriptor handle.
+            application: Application :meth:`name <forml.application.Descriptor.name>`.
+
+        Returns:
+            Application descriptor.
+
+        Raises:
+            forml.MissingError: If the application does not exist.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def put(self, descriptor: 'application.Descriptor.Handle') -> None:
+        """Store the application descriptor in the inventory.
+
+        Caution:
+            Existing application with the same :meth:`name <forml.application.Descriptor.name>`
+            gets overwritten.
+
+        Args:
+            descriptor: Handle of the application descriptor to be stored.
         """
         raise NotImplementedError()

@@ -27,8 +27,7 @@ import typing
 import uuid
 
 from .. import _exception
-from .._graph import node as nodemod
-from .._graph import span
+from .._graph import atomic, span
 from . import target
 from .target import system, user
 
@@ -228,10 +227,10 @@ class Table(span.Visitor, typing.Iterable):
             node: Node to be added - compiled into symbols.
         """
         assert node.uid not in self._index, f'Node collision ({node})'
-        assert isinstance(node, nodemod.Worker), f'Not a worker node ({node})'
+        assert isinstance(node, atomic.Worker), f'Not a worker node ({node})'
 
         LOGGER.debug('Adding node %s into the symbol table', node)
-        functor = user.Apply().functor(node.spec)
+        functor = user.Apply().functor(node.builder)
         aliases = [node.uid]
         if node.stateful:
             state = node.gid
@@ -239,7 +238,7 @@ class Table(span.Visitor, typing.Iterable):
             if persistent and state not in self._index:
                 self._index.set(system.Loader(self._assets, state), state)
             if node.trained:
-                functor = user.Train().functor(node.spec)
+                functor = user.Train().functor(node.builder)
                 aliases.append(state)
                 if persistent:
                     if not self._committer:
@@ -265,16 +264,19 @@ class Table(span.Visitor, typing.Iterable):
         self.add(node)
 
 
-def generate(path: 'flow.Path', assets: typing.Optional['asset.State'] = None) -> 'typing.Sequence[flow.Symbol]':
-    """Generate the symbol code based on given flow path.
+def compile(  # pylint: disable=redefined-builtin
+    segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None
+) -> typing.Collection['flow.Symbol']:
+    """Generate the portable low-level runtime symbol table representing the given flow topology
+    segment augmented with all the necessary system instructions.
 
     Args:
-        path: Flow path to generate the symbols for.
-        assets: Runtime assets dependencies.
+        segment: Flow topology segment to generate the symbol table for.
+        assets: Runtime state asset accessors for all the involved persistent workers.
 
     Returns:
-        Sequence of symbol code.
+        The portable runtime symbol table.
     """
     table = Table(assets)
-    path.accept(table)
+    segment.accept(table)
     return tuple(table)

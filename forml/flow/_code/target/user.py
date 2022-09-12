@@ -21,6 +21,7 @@ Actor related actions/instruction.
 import abc
 import collections
 import functools
+import inspect
 import logging
 import typing
 
@@ -43,16 +44,16 @@ class Action(abc.ABC):
     def __repr__(self):
         return self.__class__.__name__.lower()
 
-    def functor(self, spec: 'flow.Spec') -> 'Functor':
+    def functor(self, builder: 'flow.Builder') -> 'Functor':
         """Helper method for creating functor instance for this action.
 
         Args:
-            spec: Actor spec instance.
+            builder: Actor builder instance.
 
         Returns:
             Functor instance.
         """
-        return Functor(spec, self)
+        return Functor(builder, self)
 
     def reduce(
         self, actor: 'flow.Actor', *args: typing.Any  # pylint: disable=unused-argument
@@ -67,6 +68,17 @@ class Action(abc.ABC):
             Discrete action and its direct parameters.
         """
         return self, args
+
+    def __contains__(self, action: type['Action']) -> bool:
+        """Check whether the given action type is performed in our scope.
+
+        Args:
+            action: Type of action to be searched for.
+
+        Returns:
+            True if our action involves the given action type.
+        """
+        return inspect.isclass(action) and isinstance(self, action)
 
 
 Value = typing.TypeVar('Value')
@@ -91,6 +103,9 @@ class Preset(typing.Generic[Value], Action, metaclass=abc.ABCMeta):
         if value:
             self.set(actor, value)
         return self._action.reduce(actor, *args)
+
+    def __contains__(self, action: type[Action]) -> bool:
+        return super().__contains__(action) or self._action.__contains__(action)
 
     @abc.abstractmethod
     def set(self, actor: 'flow.Actor', value: Value) -> None:
@@ -153,28 +168,28 @@ class Train(Action):
         return actor.get_state()
 
 
-class Functor(collections.namedtuple('Functor', 'spec, action'), target.Instruction):
+class Functor(collections.namedtuple('Functor', 'builder, action'), target.Instruction):
     """Special instruction for wrapping task actors.
 
     Functor object must be serializable.
     """
 
-    spec: 'flow.Spec'
+    builder: 'flow.Builder'
     action: Action
 
     def __repr__(self):
-        return f'{self.spec}.{self.action}'
+        return f'{self.builder}.{self.action}'
 
     def __hash__(self):
         return id(self)
 
     def preset_state(self) -> 'Functor':
         """Helper method for returning new functor that prepends the arguments with a state setter."""
-        return Functor(self.spec, SetState(self.action))
+        return Functor(self.builder, SetState(self.action))
 
     def preset_params(self) -> 'Functor':
         """Helper method for returning new functor that prepends the arguments with a param setter."""
-        return Functor(self.spec, SetParams(self.action))
+        return Functor(self.builder, SetParams(self.action))
 
     @functools.cached_property
     def _actor(self) -> 'flow.Actor':
@@ -183,7 +198,7 @@ class Functor(collections.namedtuple('Functor', 'spec, action'), target.Instruct
         Returns:
             Actor instance.
         """
-        return self.spec()
+        return self.builder()
 
     def execute(self, *args) -> typing.Any:
         return self.action(self._actor, *args)

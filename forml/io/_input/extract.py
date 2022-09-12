@@ -24,7 +24,12 @@ import typing
 
 import forml
 from forml import flow
-from forml.io import dsl, layout
+from forml.io import dsl as dslmod
+from forml.io import layout as laymod
+
+if typing.TYPE_CHECKING:
+    from forml import project
+    from forml.io import dsl, layout  # pylint: disable=reimported
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,41 +37,40 @@ LOGGER = logging.getLogger(__name__)
 class Statement(typing.NamedTuple):
     """Select statement defined as a query and definition of the ordinal expression."""
 
-    prepared: 'Prepared'
-    lower: typing.Optional[dsl.Native]
-    upper: typing.Optional[dsl.Native]
+    prepared: 'dsl.Statement.Prepared'
+    lower: typing.Optional['dsl.Native']
+    upper: typing.Optional['dsl.Native']
 
     class Prepared(typing.NamedTuple):
         """Statement bound with particular lower/upper parameters."""
 
-        query: dsl.Query
-        ordinal: typing.Optional[dsl.Operable]
+        statement: 'dsl.Statement'
+        ordinal: typing.Optional['project.Source.Extract.Ordinal']
 
         def __call__(
-            self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
-        ) -> dsl.Query:
-            query = self.query
-            if self.ordinal is not None:
-                if lower:
-                    query = query.where(self.ordinal >= lower)
-                if upper:
-                    query = query.where(self.ordinal < upper)
+            self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
+        ) -> 'dsl.Statement':
+            statement = self.statement
+            if self.ordinal:
+                where = self.ordinal.where(lower, upper)
+                if where is not None:
+                    statement = statement.query.where(where)
             elif lower or upper:
                 raise forml.UnexpectedError('Bounds provided but source not ordinal')
-            return query
+            return statement
 
     @classmethod
     def prepare(
         cls,
-        query: dsl.Query,
-        ordinal: typing.Optional[dsl.Operable],
-        lower: typing.Optional[dsl.Native] = None,
-        upper: typing.Optional[dsl.Native] = None,
+        statement: 'dsl.Statement',
+        ordinal: typing.Optional['project.Source.Extract.Ordinal'],
+        lower: typing.Optional['dsl.Native'] = None,
+        upper: typing.Optional['dsl.Native'] = None,
     ) -> 'Statement':
         """Bind the particular lower/upper parameters with this prepared statement.
 
         Args:
-            query: Base statement query.
+            statement: Base statement query.
             ordinal: Optional ordinal column specification.
             lower: Optional lower ordinal value.
             upper:  Optional upper ordinal value.
@@ -74,9 +78,9 @@ class Statement(typing.NamedTuple):
         Returns:
             Prepared statement binding.
         """
-        return cls(cls.Prepared(query, ordinal), lower, upper)  # pylint: disable=no-member
+        return cls(cls.Prepared(statement, ordinal), lower, upper)  # pylint: disable=no-member
 
-    def __call__(self) -> dsl.Query:
+    def __call__(self) -> 'dsl.Statement':
         """Expand the statement with the provided lower/upper parameters.
 
         Returns:
@@ -93,31 +97,31 @@ class Operator(flow.Operator):
 
     def __init__(
         self,
-        apply: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.RowMajor]],
-        train: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.Tabular]],
+        apply: flow.Builder[flow.Actor[typing.Optional['layout.Entry'], None, 'layout.RowMajor']],
+        train: flow.Builder[flow.Actor[typing.Optional['layout.Entry'], None, 'layout.Tabular']],
         label: typing.Optional[
-            flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, tuple[layout.RowMajor, layout.RowMajor]]]
+            flow.Builder[flow.Actor[typing.Optional['layout.Entry'], None, tuple['layout.RowMajor', 'layout.RowMajor']]]
         ] = None,
     ):
         if apply.actor.is_stateful() or (train and train.actor.is_stateful()) or (label and label.actor.is_stateful()):
             raise forml.InvalidError('Stateful actor invalid for an extractor')
-        self._apply: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.RowMajor]] = apply
-        self._train: flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, layout.Tabular]] = train
+        self._apply: flow.Builder[flow.Actor[typing.Optional['layout.Entry'], None, 'layout.RowMajor']] = apply
+        self._train: flow.Builder[flow.Actor[typing.Optional['layout.Entry'], None, 'layout.Tabular']] = train
         self._label: typing.Optional[
-            flow.Spec[flow.Actor[typing.Optional[layout.Entry], None, tuple[layout.RowMajor, layout.RowMajor]]]
+            flow.Builder[flow.Actor[typing.Optional['layout.Entry'], None, tuple['layout.RowMajor', 'layout.RowMajor']]]
         ] = label
 
-    def compose(self, left: flow.Composable) -> flow.Trunk:
-        """Compose the source segment track.
+    def compose(self, scope: flow.Composable) -> flow.Trunk:
+        """Compose the source segment trunk.
 
         Returns:
-            Source segment track.
+            Source segment trunk.
         """
-        if not isinstance(left, flow.Origin):
+        if not isinstance(scope, flow.Origin):
             raise forml.UnexpectedError('Source not origin')
-        apply: flow.Path = flow.Path(flow.Worker(self._apply, 0, 1))
-        train: flow.Path = flow.Path(flow.Worker(self._train, 0, 1))
-        label: typing.Optional[flow.Path] = None
+        apply: flow.Segment = flow.Segment(flow.Worker(self._apply, 0, 1))
+        train: flow.Segment = flow.Segment(flow.Worker(self._train, 0, 1))
+        label: typing.Optional[flow.Segment] = None
         if self._label:
             train_tail = flow.Future()
             label_tail = flow.Future()
@@ -130,11 +134,12 @@ class Operator(flow.Operator):
         return flow.Trunk(apply, train, label)
 
 
-Producer = typing.Callable[[dsl.Query, typing.Optional[layout.Entry]], layout.Tabular]
+#: Callable interface for parsing a DSL statement and resolving it using its linked storage.
+Producer = typing.Callable[['dsl.Statement', typing.Optional['layout.Entry']], 'layout.Tabular']
 Output = typing.TypeVar('Output')
 
 
-class Driver(typing.Generic[Output], flow.Actor[typing.Optional[layout.Entry], None, Output], metaclass=abc.ABCMeta):
+class Driver(typing.Generic[Output], flow.Actor[typing.Optional[laymod.Entry], None, Output], metaclass=abc.ABCMeta):
     """Data extraction actor using the provided reader and statement to load the data."""
 
     def __init__(self, producer: Producer, statement: Statement):
@@ -144,7 +149,7 @@ class Driver(typing.Generic[Output], flow.Actor[typing.Optional[layout.Entry], N
     def __repr__(self):
         return f'{repr(self._producer)}({repr(self._statement)})'
 
-    def _read(self, entry: typing.Optional[layout.Entry]) -> layout.Tabular:
+    def _read(self, entry: typing.Optional['layout.Entry']) -> 'layout.Tabular':
         """Read handler.
 
         Args:
@@ -156,21 +161,23 @@ class Driver(typing.Generic[Output], flow.Actor[typing.Optional[layout.Entry], N
         return self._producer(self._statement(), entry)
 
 
-class TableDriver(Driver[layout.Tabular]):
+class TableDriver(Driver[laymod.Tabular]):
     """Actor that returns the data in the layout.Tabular format."""
 
-    def apply(self, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
+    def apply(self, entry: typing.Optional['layout.Entry'] = None) -> 'layout.Tabular':
         return self._read(entry)
 
 
-class RowDriver(Driver[layout.RowMajor]):
-    """Specialized version of the actor that returns the data already converted to layout.RowMajor format."""
+class RowDriver(Driver[laymod.RowMajor]):
+    """Specialized version of the actor that returns the data already converted to layout.RowMajor
+    format.
+    """
 
-    def apply(self, entry: typing.Optional[layout.Entry] = None) -> layout.RowMajor:
+    def apply(self, entry: typing.Optional['layout.Entry'] = None) -> 'layout.RowMajor':
         return self._read(entry).to_rows()
 
 
-class Slicer(flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowMajor]]):
+class Slicer(flow.Actor[laymod.Tabular, None, tuple[laymod.RowMajor, laymod.RowMajor]]):
     """Positional column extraction."""
 
     def __init__(
@@ -178,24 +185,26 @@ class Slicer(flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowM
         features: typing.Sequence[int],
         labels: typing.Union[typing.Sequence[int], int],
     ):
-        def from_vector(dataset: layout.Tabular) -> layout.RowMajor:
+        def from_vector(dataset: 'layout.Tabular') -> 'layout.RowMajor':
             return dataset.take_columns(labels).to_rows()
 
-        def from_scalar(dataset: layout.Tabular) -> layout.RowMajor:
+        def from_scalar(dataset: 'layout.Tabular') -> 'layout.RowMajor':
             return dataset.to_columns()[labels]
 
         self._features: typing.Sequence[int] = features
-        self._labels: typing.Callable[[layout.Tabular], layout.RowMajor] = (
+        self._labels: typing.Callable[['layout.Tabular'], 'layout.RowMajor'] = (
             from_vector if isinstance(labels, typing.Sequence) else from_scalar
         )
 
-    def apply(self, dataset: layout.Tabular) -> tuple[layout.RowMajor, layout.RowMajor]:
+    def apply(self, dataset: 'layout.Tabular') -> tuple['layout.RowMajor', 'layout.RowMajor']:
         return dataset.take_columns(self._features).to_rows(), self._labels(dataset)
 
     @classmethod
     def from_columns(
-        cls, features: typing.Sequence[dsl.Feature], labels: typing.Union[dsl.Feature, typing.Sequence[dsl.Feature]]
-    ) -> tuple[typing.Sequence[dsl.Feature], 'flow.Spec[Slicer]']:
+        cls,
+        features: typing.Sequence['dsl.Feature'],
+        labels: typing.Union['dsl.Feature', typing.Sequence['dsl.Feature']],
+    ) -> tuple[typing.Sequence['dsl.Feature'], flow.Builder['Slicer']]:
         """Helper method for creating the slicer and the combined set of columns.
 
         Args:
@@ -206,11 +215,11 @@ class Slicer(flow.Actor[layout.Tabular, None, tuple[layout.RowMajor, layout.RowM
             Sequence of combined feature+label columns and the Slicer actor instance.
         """
         fstop = len(features)
-        if isinstance(labels, dsl.Feature):
+        if isinstance(labels, dslmod.Feature):
             lslice = fstop
             lseq = [labels]
         else:
             assert isinstance(labels, typing.Sequence), 'Expecting a sequence of DSL features.'
             lslice = range(fstop, fstop + len(labels))
             lseq = labels
-        return (*features, *lseq), cls.spec(range(fstop), lslice)
+        return (*features, *lseq), cls.builder(range(fstop), lslice)

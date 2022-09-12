@@ -13,125 +13,235 @@
     specific language governing permissions and limitations
     under the License.
 
-Lifecycle
-=========
+.. _lifecycle:
 
-Machine learning projects are operated in typical stages that are followed in a particular order. This pattern is what
-we call a *lifecycle*. ForML supports two specific lifecycles depending on the project stage.
+Life Cycle Management
+=====================
 
-.. note::
-   Do not confuse the lifecycles with *operational modes*. Forml projects can be operated in number of modes
-   (:ref:`cli/batch <platform-cli>` - as used in the examples bellow, :doc:`interactively <interactive>` or using the
-   :doc:`serving layer <serving>`) each of which is subject to a particular lifecycle.
+Machine learning projects are handled using a typical set of actions applied in a specific
+order. This pattern is what we call a *life cycle*. ForML supports two distinct life cycles
+depending on the project stage.
+
+.. caution::
+   Do not confuse the life cycles with the :ref:`execution mechanism <platform-execution>`. ForML
+   projects can be operated in a number of different ways each of which is still subject to a
+   particular life cycle.
+
+
+Iteration Accomplishment
+------------------------
+
+The ultimate milestone of each of the life cycles is the point of producing (a new instance of)
+the particular :ref:`runtime artifacts <registry-artifacts>`. This concludes the given iteration
+and the process can start over and/or transition between the two life cycles back and forth.
+
+.. _lifecycle-generation:
+
+Generation Advancement
+^^^^^^^^^^^^^^^^^^^^^^
+
+Whenever the given pipeline is :ref:`trained <workflow-mode>` (incrementally or from scratch)
+and/or *tuned*, a new *generation* of its models is produced.
+
+This typically happens to refresh the models using new data while keeping the same pipeline
+implementation. Updating the models of the same release allows (if supported by the given models)
+to carry the state over from previous generations to the next by incrementally training only on
+the new data obtained since the previous training.
+
+Generations get transparently persisted in the model registry as the :ref:`model generation assets
+<registry-assets>`.
+
+.. _lifecycle-release:
+
+Release Roll-out
+^^^^^^^^^^^^^^^^
+
+The milestone of the :ref:`development life cycle <lifecycle-development>` is the roll-out of a new
+*release*. It is essentially a new version of the project *code implementation* published for
+deployment.
+
+Upon releasing, the :ref:`ForML package <registry-package>` is produced and persisted in the
+model registry.
+
+.. caution::
+   Given the different implementations, it is not possible to carry over states between generations
+   of different releases.
+
+.. _lifecycle-actions:
+
+Life Cycle Actions
+------------------
+
+A simplified logical flow of the individual steps and transitions between the two life cycles is
+illustrated by the following diagram:
+
+
+.. md-mermaid::
+
+    flowchart TB
+        subgraph production [Production Life Cycle]
+            train[Train / Tune] -- Generation Advancement --> apply([Apply / Serve])
+            apply --> applyeval(Evaluate)
+            applyeval -- Metrics --> renew{Renew?} -- No --> apply
+            renew -- Yes --> how{How?} -- Refresh --> train
+        end
+
+        subgraph development [Development Life Cycle]
+            how -- Reimplement --> implement(Explore / Implement)
+            implement --> traineval(Test + Evaluate)
+            traineval --> ready{Ready?} -- No --> implement
+            ready -- Yes --> release[(Release)] -- Release Roll-out --> train
+        end
+        init((Init)) --> implement
 
 .. _lifecycle-development:
 
-Development Lifecycle
----------------------
+Development Life cycle
+^^^^^^^^^^^^^^^^^^^^^^
 
-This lifecycle is typically followed during the project development. All work is done in the scope of the project source
-code working copy and no persistent modules are produced upon execution. It is typically managed using the
-``python setup.py <mode>`` interface or in special case using the :doc:`interactive`. This lifecycle is supposed to aid
-the development process allowing to quickly see the effect of the project changes.
+As the name suggests, this life cycle is exercised during the project development in the scope of
+the :ref:`project source-code <project>` working copy. It is typically managed using the ``forml
+project <action>`` :ref:`CLI interface <platform-cli>` as shown below or using the
+:class:`runtime.Virtual <forml.runtime.Virtual>` launcher when visited in the :ref:`interactive
+mode <interactive>`.
 
-The expected behaviour of the particular mode depends on the correct project setup as per the :doc:`project` sections.
+The expected behavior of the particular action depends on the correct :ref:`project setup
+<project>`.
 
-The stages of a development lifecycle are:
+.. hint::
+   Any :ref:`model generations <lifecycle-generation>` produced within the development life cycle
+   are stored using the :class:`Volatile registry
+   <forml.provider.registry.filesystem.volatile.Registry>` which is not persistent across multiple
+   python sessions.
+
+The development life cycle actions are:
 
 Test
-    Simply run through the unit tests defined as per the :doc:`testing` framework.
+""""
 
-    Example::
+Simply run through the unit tests defined as per the :ref:`testing` framework.
 
-        $ python3 setup.py test
+Example:
+
+.. code-block:: console
+
+    $ forml project test
 
 Evaluate
-    Perform a backtesting evaluation based on the specs defined in ``evaluation.py`` and report the metrics. The
-    predicted outcomes are first derived using the user-configured method implementing techniques such as
-    cross-validation or hold-out training. One of the potential use-cases might be a CI integration to continuously
-    monitor (evaluate) the changes in the project development.
+""""""""
 
-    Example::
+Perform the :ref:`train-test evaluation <evaluation-traintest>` based on the
+:ref:`evaluation.py component <project-evaluation>` and report the metrics.
 
-        $ python3 setup.py eval
+Example:
 
+.. code-block:: console
 
-Tune
-    Run hyper-parameter tuning reporting the results (not implemented yet).
-
-    Example::
-
-        $ python3 setup.py tune
+    $ forml project eval
 
 Train
-    Run the pipeline in the standard train mode. This will produce all the defined models but since it won't persist
-    them, this mode is useful merely for testing the training (or displaying the task graph on the
-    :doc:`Graphviz runner <runner/graphviz>`).
+"""""
 
-    Example::
+Run the :ref:`project pipeline <project-pipeline>` in the standard :ref:`train-mode
+<workflow-mode>`. Even though this will produce a true generation of the defined models, it won't
+get persisted across the invocations making this mode useful merely for smoke-testing the
+training process (or displaying the task graph on the :class:`Graphviz runner
+<forml.provider.runner.graphviz.Runner>`).
 
-        $ python3 setup.py train
+Example:
 
-Package
-    Create the distributable project artifact containing all of its dependencies (produced into the ``dist`` directory
-    under the project root directory).
+.. code-block:: console
 
-    Example::
+    $ forml project train
 
-        $ python3 setup.py bdist_4ml
+Release
+"""""""
 
-Upload
-    Build and wrap the project into a runnable *Artifact* producing a new *Release* (that can then be used within
-    the *Production Lifecycle*) and upload it to a persistent registry.
+Build and publish the :ref:`release package <registry-package>` into the configured model
+registry. This effectively constitutes the :ref:`release roll-out <lifecycle-release>` and the
+process can transition from here into the :ref:`production life cycle <lifecycle-production>`.
 
-    .. note::
-       Each particular registry allows uploading only distinct monotonically increasing releases per any given project,
-       hence executing this stage twice against the same registry without incrementing the project version will fail.
+.. warning::
+   Each :ref:`model registry <registry>` provider allows uploading only unique monotonically
+   increasing releases per any given project, hence executing this action twice against the
+   same registry without incrementing the :ref:`project version <project-setup>` is an error.
 
-    Example::
+Example:
 
-        $ python3 setup.py bdist_4ml upload
+.. code-block:: console
+
+    $ forml project release
 
 
 .. _lifecycle-production:
 
-Production Lifecycle
---------------------
+Production Life cycle
+^^^^^^^^^^^^^^^^^^^^^
 
-After publishing a project release in to a registry using the ``upload`` mode of the *research lifecycle*, the project
-becomes available for the *production lifecycle*. Contrary to the research, this production lifecycle no longer needs
-the project source code working copy as it operates solely on the published artifact plus potentially previously
-persisted model generations.
+After :ref:`rolling-out <lifecycle-release>` the new :ref:`release package <registry-package>`
+into a registry, it becomes available for the *production life cycle*. In contrast to the
+development, the production life cycle no longer needs the project source-code working copy as it
+operates solely on that published release package (plus potentially the previously persisted
+:ref:`model generations <registry-assets>`).
 
-The production lifecycle is either exercised in batch mode using :ref:`the CLI <platform-cli>` or
-embedded within a :doc:`serving layer <serving>`. In any case, the stages of the production lifecycle are:
+The production life cycle is either managed in batch mode using the :ref:`CLI <platform-cli>` or
+embedded within a :ref:`serving engine <serving>`.
+
+The stages of the production life cycle are:
 
 Train
-    Fit (incrementally) the stateful parts of the pipeline using new labelled data producing a new *Generation* of
-    the given release (unless explicit, the default release is the one with the highest version).
+"""""
 
-    Example::
+Run the :ref:`project pipeline <project-pipeline>` in the :ref:`train-mode <workflow-mode>` to
+produce the :ref:`new generation <lifecycle-generation>` and persist it in the :ref:`model registry
+<registry>`.
 
-        forml model train titanic
+Example:
+
+.. code-block:: console
+
+    $ forml model train forml-tutorial-titanic
 
 Tune
-    Run hyper-parameter tuning of the selected pipeline and produce new *generation* (not implemented yet).
+""""
 
-    Example::
+Run hyper-parameter tuning of the selected pipeline and produce the new *generation* (not
+implemented yet).
 
-        forml model tune titanic
+Example:
+
+.. code-block:: console
+
+    $ forml model tune forml-tutorial-titanic
+
+.. todo:: Tuning support is currently still pending.
 
 Apply
-    Run unlabelled data through a project *generation* (unless explicit, the default generation is the one with the
-    highest version) producing transformed output (ie *predictions*).
+"""""
 
-    Example::
+Run the previously trained :ref:`project pipeline <project-pipeline>` in the :ref:`apply-mode
+<workflow-mode>` using an existing :ref:`model generation <lifecycle-generation>` (explicit
+version or by default the latest) loaded from the :ref:`model registry <registry>`.
 
-        forml model apply titanic
+Example:
+
+.. code-block:: console
+
+    $ forml model apply forml-tutorial-titanic
+
+.. seealso::
+   In addition to this command-line-based batch mechanism, the :ref:`serving engine <serving>`
+   together with the :ref:`application concept <application>` is another way of performing the
+   *apply* action of the production life cycle.
 
 Evaluate
-    Measure the actual performance of the model as predictions against the (previously unseen) true labelled data.
+""""""""
 
-    Example::
+Perform the :ref:`production performance evaluation <evaluation-perftrack>` based on the
+:ref:`evaluation.py component <project-evaluation>` and report the metrics.
 
-        forml model eval titanic
+Example:
+
+.. code-block:: console
+
+    $ forml model eval forml-tutorial-titanic
