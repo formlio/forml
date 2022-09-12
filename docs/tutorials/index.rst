@@ -52,7 +52,7 @@ your :file:`~/.forml/config.toml`:
 Your local environment is now ready to perform all the runtime actions demonstrated in these
 tutorials.
 
-
+.. _tutorial-list:
 .. rubric:: Tutorials List
 
 The list of available tutorials is:
