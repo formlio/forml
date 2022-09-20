@@ -18,9 +18,12 @@
 """
 Flow segment unit tests.
 """
+import typing
+import uuid
+
 import pytest
 
-from forml import flow
+from forml import flow, io, project
 from forml.flow._graph import atomic, span
 from forml.flow._suite import assembly, member
 
@@ -40,17 +43,31 @@ class TestComposition:
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def composition(origin: member.Operator, operator: member.Operator) -> assembly.Composition:
+    def composition(
+        feed_instance: io.Feed, project_components: project.Components, sink_instance: io.Sink
+    ) -> assembly.Composition:
         """Composition fixture."""
-        return assembly.Composition((origin >> operator).expand())
+        return (
+            assembly.Composition.builder(
+                feed_instance.load(project_components.source.extract), project_components.source.transform
+            )
+            .via(project_components.pipeline)
+            .build(sink_instance.save(None))
+        )
 
-    def test_composition(self, origin: member.Operator, operator: member.Operator):
+    def test_invalid(self, origin: member.Operator, operator: member.Operator):
         """Test the pipeline."""
-        with pytest.raises(flow.TopologyError):  # contains Future node
-            assembly.Composition(operator.expand())
+        assembly.Composition.builder(origin).via(operator).build(origin)
 
-        assembly.Composition((origin >> operator).expand())
+        with pytest.raises(flow.TopologyError, match='Future nodes in segment'):
+            assembly.Composition.builder(flow.Origin()).via(flow.Origin()).build()
 
-    def test_persistent(self, composition: assembly.Composition):
+        with pytest.raises(flow.TopologyError, match='Illegal use of stateful node'):
+            assembly.Composition.builder(operator).build()
+
+        with pytest.raises(flow.TopologyError, match='Illegal use of stateful node'):
+            assembly.Composition.builder(origin).build(operator)
+
+    def test_persistent(self, composition: assembly.Composition, stateful_nodes: typing.Sequence[uuid.UUID]):
         """Test the composition persistent nodes."""
-        assert any(composition.persistent)
+        assert len(composition.persistent) == len(stateful_nodes)

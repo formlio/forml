@@ -28,7 +28,8 @@ from forml import flow, provider, setup
 from forml.io import dsl as dslmod
 from forml.io.dsl import parser as parsmod
 
-from . import _producer, extract
+from . import _producer
+from . import extract as extmod
 
 if typing.TYPE_CHECKING:
     from forml import io, project
@@ -65,22 +66,22 @@ class Feed(
 
     def load(
         self,
-        source: 'project.Source',
+        extract: 'project.Source.Extract',
         lower: typing.Optional['dsl.Native'] = None,
         upper: typing.Optional['dsl.Native'] = None,
-    ) -> flow.Trunk:
-        """Provide a pipeline composable segment implementing the ETL actions.
+    ) -> flow.Composable:
+        """Provide a pipeline composable implementing the extract action.
 
         Args:
-            source: Independent datasource component.
+            extract: Datasource extract component.
             lower: Optional ordinal lower bound.
             upper: Optional ordinal upper bound.
 
         Returns:
-            Pipeline segment.
+            Pipeline extract composable.
         """
 
-        def actor(driver: type[extract.Driver], statement: 'dsl.Statement') -> 'flow.Builder[extract.Driver]':
+        def actor(driver: type[extmod.Driver], statement: 'dsl.Statement') -> 'flow.Builder[extmod.Driver]':
             """Helper for creating the reader actor builder for the given query.
 
             Args:
@@ -90,25 +91,22 @@ class Feed(
             Returns:
                 Reader actor builder.
             """
-            return driver.builder(producer, extract.Statement.prepare(statement, source.extract.ordinal, lower, upper))
+            return driver.builder(producer, extmod.Statement.prepare(statement, extract.ordinal, lower, upper))
 
         producer = self.producer(self.sources, self.features, **self._readerkw)
-        apply_actor: flow.Builder[extract.Driver] = actor(extract.RowDriver, source.extract.apply)
+        apply_actor: flow.Builder[extmod.Driver] = actor(extmod.RowDriver, extract.apply)
         label_actor: typing.Optional[flow.Builder] = None
-        train_statement: 'dsl.Statement' = source.extract.train
-        train_driver = extract.RowDriver
-        if source.extract.labels:
-            train_driver = extract.TableDriver
-            if isinstance(source.extract.labels, flow.Builder):
-                label_actor = source.extract.labels
+        train_statement: 'dsl.Statement' = extract.train
+        train_driver = extmod.RowDriver
+        if extract.labels:
+            train_driver = extmod.TableDriver
+            if isinstance(extract.labels, flow.Builder):
+                label_actor = extract.labels
             else:
-                columns, label_actor = extract.Slicer.from_columns(train_statement.features, source.extract.labels)
+                columns, label_actor = extmod.Slicer.from_columns(train_statement.features, extract.labels)
                 train_statement = train_statement.select(*columns)
-        train_actor: flow.Builder[extract.Driver] = actor(train_driver, train_statement)
-        loader: flow.Composable = extract.Operator(apply_actor, train_actor, label_actor)
-        if source.transform:
-            loader >>= source.transform
-        return loader.expand()
+        train_actor: flow.Builder[extmod.Driver] = actor(train_driver, train_statement)
+        return extmod.Operator(apply_actor, train_actor, label_actor)
 
     @classmethod
     def producer(

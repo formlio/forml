@@ -19,6 +19,7 @@
 Executor component.
 """
 import abc
+import functools
 import logging
 import typing
 
@@ -159,19 +160,20 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         """Assemble the chain of blocks with the mandatory ETL cycle.
 
         Args:
-            *blocks: Composable block to assemble (each with its own composition domain).
             lower: Ordinal value as the lower bound for the ETL cycle.
             upper:  Ordinal value as the upper bound for the ETL cycle.
+            blocks: Composable block to assemble (each with its own composition domain).
             output: Output schema.
 
         Returns:
             Assembled flow pipeline.
         """
-        segments = [self._feed.load(self._instance.project.source, lower, upper)]
-        segments.extend(b.expand() for b in blocks)
-        if self._sink:
-            segments.append(self._sink.save(output))
-        return flowmod.Composition(*segments)
+        composition = flowmod.Composition.builder(
+            self._feed.load(self._instance.project.source.extract, lower, upper),
+            self._instance.project.source.transform,
+        )
+        composition = functools.reduce(flowmod.Composition.Builder.via, blocks, composition)
+        return composition.build(self._sink.save(output))
 
     def _exec(self, segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None) -> None:
         """Execute the given segment and assets.

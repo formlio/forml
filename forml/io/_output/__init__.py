@@ -41,14 +41,13 @@ class Sink(provider.Service, default=setup.Sink.default, path=setup.Sink.path):
     def __init__(self, **writerkw):
         self._writerkw: dict[str, typing.Any] = writerkw
 
-    def save(self, schema: typing.Optional['dsl.Source.Schema']) -> flow.Trunk:
-        """Provide a pipeline composable segment implementing the publish action.
+    def save(self, schema: typing.Optional['dsl.Source.Schema']) -> flow.Composable:
+        """Provide a pipeline composable implementing the publish action.
 
         Returns:
-            Pipeline segment.
+            Pipeline composable.
         """
-        publisher: flow.Composable = commit.Operator(commit.Driver.builder(self.consumer(schema, **self._writerkw)))
-        return publisher.expand()
+        return commit.Operator(commit.Driver.builder(self.consumer(schema, **self._writerkw)))
 
     @classmethod
     def consumer(cls, schema: typing.Optional['dsl.Source.Schema'], **kwargs: typing.Any) -> 'io.Consumer':

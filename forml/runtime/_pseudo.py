@@ -45,8 +45,8 @@ class Sink(io.Sink):
         super().__init__()
         self._sniffer: payload.Sniff = sniffer
 
-    def save(self, schema: typing.Optional['dsl.Source.Schema']) -> 'flow.Trunk':
-        return self._sniffer.expand()
+    def save(self, schema: typing.Optional['dsl.Source.Schema']) -> 'flow.Composable':
+        return self._sniffer
 
 
 class Virtual:

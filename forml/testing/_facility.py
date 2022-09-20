@@ -88,11 +88,11 @@ class Feed(io.Feed[None, typing.Any], alias='testing'):
 
     def load(
         self,
-        source: 'project.Source',
+        extract: 'project.Source.Extract',
         lower: typing.Optional['dsl.Native'] = None,
         upper: typing.Optional['dsl.Native'] = None,
-    ) -> flow.Trunk:
-        return self._operator.expand()
+    ) -> flow.Composable:
+        return self._operator
 
     @property
     def sources(self) -> typing.Mapping[dsl.Source, None]:

@@ -107,29 +107,64 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
     apply: 'flow.Segment'
     train: 'flow.Segment'
 
-    class Persistent(span.Visitor, typing.Iterable[uuid.UUID]):
-        """Visitor that cumulates gids of persistent nodes."""
+    class Builder(tuple):
+        """Composition builder."""
 
-        def __init__(self):
-            self._gids: list[uuid.UUID] = []
+        def __new__(cls, *blocks: 'flow.Composable'):
+            return super().__new__(cls, blocks)
 
-        def __iter__(self) -> typing.Iterator[uuid.UUID]:
-            return iter(self._gids)
+        def via(self, block: 'flow.Composable') -> 'flow.Composition.Builder':
+            """Return a new builder with the given block appended.
 
-        def visit_node(self, node: atomic.Worker) -> None:
-            if node.derived and node.gid not in self._gids:
-                self._gids.append(node.gid)
+            Args:
+                block: Additional block to be appended at the end of the current chain.
 
-    def __new__(cls, *segments: 'flow.Trunk'):
-        composed = functools.reduce(lambda c, s: c.extend(*s), segments)
+            Returns:
+                New builder instance.
+            """
+            return self.__class__(*self, block)
+
+        def build(self, sink: typing.Optional['flow.Composable'] = None) -> 'flow.Composition':
+            """Close the builder with the optional sink.
+
+            Args:
+                sink: Optional (stateless) sink closing the builder.
+
+            Returns: Composition instance.
+            """
+            segments = list(self)
+            if sink:
+                segments.append(clean.Stateless(sink))
+            return Composition(*segments)
+
+    def __new__(cls, /, first: 'flow.Composable', *others: 'flow.Composable'):
+        composed = functools.reduce(lambda c, s: c.extend(*s.expand()), others, first.expand())
 
         apply = composed.apply.extend()
-        # apply.accept(clean.Validator())
+        apply.accept(clean.Validator())
         train = composed.train.extend()
         train.accept(clean.Validator())
         # label = composed.label.extend()
         # label.accept(clean.Validator())
         return super().__new__(cls, apply, train)
+
+    @classmethod
+    def builder(
+        cls, extract: 'flow.Composable', transform: typing.Optional['flow.Composable'] = None
+    ) -> 'flow.Composition.Builder':
+        """Create a composition builder using the two source ETL components.
+
+        Args:
+            extract: Mandatory (stateless) part of the ETL.
+            transform: Optional transform part of the ETL.
+
+        Returns:
+            Composition builder.
+        """
+        loader = clean.Stateless(extract)
+        if transform:
+            loader >>= transform
+        return cls.Builder(loader)
 
     @functools.cached_property
     def persistent(self) -> typing.Sequence[uuid.UUID]:
@@ -143,6 +178,6 @@ class Composition(collections.namedtuple('Composition', 'apply, train')):
         Returns:
             Set of nodes sharing state between pipeline modes.
         """
-        apply = self.Persistent()
+        apply = clean.Stateful()
         self.apply.accept(apply)
         return tuple(apply)
