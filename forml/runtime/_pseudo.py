@@ -38,17 +38,6 @@ if typing.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Sink(io.Sink):
-    """Sniffer sink."""
-
-    def __init__(self, sniffer: payload.Sniff):
-        super().__init__()
-        self._sniffer: payload.Sniff = sniffer
-
-    def save(self, schema: typing.Optional['dsl.Source.Schema']) -> 'flow.Composable':
-        return self._sniffer
-
-
 class Virtual:
     """Custom launcher allowing to execute the provided artifact using the default or an
     explicit runner in combination with a special pipeline sink to capture and return any output
@@ -185,6 +174,16 @@ class Virtual:
             """
             return self._launcher.tune
 
+    class Sink(io.Sink):
+        """Sniffer sink."""
+
+        def __init__(self, sniffer: payload.Sniff):
+            super().__init__()
+            self._sniffer: payload.Sniff = sniffer
+
+        def save(self, schema: typing.Optional['dsl.Source.Schema']) -> 'flow.Composable':
+            return self._sniffer
+
     def __init__(self, artifact: 'project.Artifact'):
         class Manifest(types.ModuleType):
             """Fake manifest module."""
@@ -210,7 +209,7 @@ class Virtual:
         runner: typing.Optional[typing.Union[setup.Runner, str]] = None,
         feeds: typing.Optional[typing.Iterable[typing.Union[setup.Feed, str, io.Feed]]] = None,
     ) -> 'runtime.Virtual.Handler':
-        launcher = _pad.Platform(runner, self._registry, feeds, Sink(self._sniffer)).launcher(self._project)
+        launcher = _pad.Platform(runner, self._registry, feeds, self.Sink(self._sniffer)).launcher(self._project)
         return self.Handler(launcher, self._sniffer)
 
     def __getitem__(self, runner: typing.Union[setup.Runner, str]) -> 'runtime.Virtual.Handler':

@@ -100,7 +100,7 @@ The meaning of the different placeholders and keywords is:
     keyword to preselect a configuration instance for situations when no explicit choice is
     specified during some particular execution.
 
-    .. attention::
+    .. note::
        The ``FEED`` provider type can specify a list of *multiple* instances as *default*
        (contextual :ref:`feed selection <feed-selection>` is then performed at runtime).
 

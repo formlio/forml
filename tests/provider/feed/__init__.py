@@ -37,8 +37,7 @@ class Feed(abc.ABC):
         """Feed test launcher."""
 
         def __init__(self, feed: io.Feed, source: project.Source):
-            self._sniff = payload.Sniff()
-            self._handler: runtime.Virtual.Handler = source.bind(self._sniff).launcher(runner='dask', feeds=[feed])
+            self._handler: runtime.Virtual.Handler = source.bind(payload.Sniff()).launcher(runner='dask', feeds=[feed])
 
         @property
         def apply(self) -> numpy.array:
@@ -48,10 +47,8 @@ class Feed(abc.ABC):
         @property
         def train(self) -> tuple[numpy.array, numpy.array]:
             """Train-mode result."""
-            with self._sniff as future:
-                self._handler.train()
-            features, labels = future.result()
-            return numpy.array(features, dtype=object), numpy.array(labels, dtype=object)
+            result = self._handler.train()
+            return numpy.array(result.features, dtype=object), numpy.array(result.labels, dtype=object)
 
     @staticmethod
     @abc.abstractmethod

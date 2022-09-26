@@ -75,8 +75,8 @@ class Sink(provider.Service, default=setup.Sink.default, path=setup.Sink.path):
 
 
 class Exporter:
-    """Sink exporter is a lazy wrapper around alternative sink specifiers providing a particular Sink instance upon
-    request.
+    """Sink exporter is a lazy wrapper around alternative sink specifiers providing a particular
+    Sink instance upon request.
     """
 
     def __init__(self, sink: typing.Union[setup.Sink.Mode, str, Sink]):

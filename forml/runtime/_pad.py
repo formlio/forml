@@ -162,7 +162,7 @@ class Launcher:
         """Return the tune handler.
 
         Returns:
-            Tune handler
+            Tune handler.
         """
         raise NotImplementedError()
 
