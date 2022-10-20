@@ -175,8 +175,8 @@ parameter to the assertion. The matcher needs to be a *callable* with the follow
 the second is the *actual* value.
 
 This can be useful for example for :class:`pandas:pandas.DataFrame`, which does not support simple
-boolean equality check. The following example uses a custom matcher for asserting the values
-returned as :class:`pandas:pandas.DataFrame`:
+boolean equality check. The following example uses a custom matcher for comparing the memory
+consumption of the tested datasets:
 
 .. code-block:: python
 

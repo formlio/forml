@@ -18,7 +18,7 @@
 """
 Titanic project.
 """
-import os
+import pathlib
 
 import setuptools
 
@@ -26,8 +26,8 @@ from forml import project
 
 setuptools.setup(
     name='forml-tutorial-titanic',
-    version='0.1.dev0',
-    packages=setuptools.find_packages(include=['titanic*'], where=os.path.dirname(__file__)),
+    version='0.1.dev1',
+    packages=setuptools.find_packages(include=['titanic*'], where=pathlib.Path(__file__).parent),
     setup_requires=['forml'],
     install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy'],
     distclass=project.Distribution,

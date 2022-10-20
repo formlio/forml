@@ -22,7 +22,7 @@ import sys
 
 from ._conf import APPNAME, CONFIG, PRJNAME, SYSDIR, USRDIR, tmpdir
 from ._importer import Finder, context, isolated, load, search
-from ._logging import logging
+from ._logging import LOGGING, logging
 from ._provider import Feed, Gateway, Inventory, Provider, Registry, Runner, Sink
 from ._run import cli
 
@@ -38,6 +38,7 @@ __all__ = [
     'isolated',
     'load',
     'logging',
+    'LOGGING',
     'PRJNAME',
     'Provider',
     'Registry',

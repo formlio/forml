@@ -19,7 +19,7 @@
 """
 Setuptools script for ForML package.
 """
-import os
+import pathlib
 
 import setuptools
 
@@ -63,14 +63,14 @@ EXTRAS_ALL = EXTRAS_DASK | EXTRAS_MLFLOW | EXTRAS_GRAPHVIZ | EXTRAS_REST | EXTRA
 
 setuptools.setup(
     name='forml',
-    description='Lifecycle management framework for Data science projects',
+    description='A development framework and MLOps platform for the lifecycle management of data science projects',
     long_description=open('README.md', encoding='utf8').read(),  # pylint: disable=consider-using-with
     long_description_content_type='text/markdown',
     url='https://github.com/formlio/forml',
     maintainer='ForML Development Team',
-    maintainer_email='forml-dev@googlegroups.com',
+    maintainer_email='info@forml.io',
     license='Apache License 2.0',
-    packages=setuptools.find_packages(include=['forml*'], where=os.path.dirname(__file__)),
+    packages=setuptools.find_packages(include=['forml*'], where=pathlib.Path(__file__).parent),
     package_data={'forml.setup': ['config.toml', 'logging.ini', 'templates/**']},
     setup_requires=['setuptools', 'wheel', 'tomli'],
     install_requires=[

@@ -173,7 +173,7 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
             self._instance.project.source.transform,
         )
         composition = functools.reduce(flowmod.Composition.Builder.via, blocks, composition)
-        return composition.build(self._sink.save(output))
+        return composition.build(self._sink.save(output) if self._sink else None)
 
     def _exec(self, segment: 'flow.Segment', assets: typing.Optional['asset.State'] = None) -> None:
         """Execute the given segment and assets.

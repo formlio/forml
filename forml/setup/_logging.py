@@ -22,19 +22,20 @@ import configparser
 import itertools
 import logging as logmod
 import pathlib
-import typing
 from logging import config
 
 from . import _conf
 
 LOGGER = logmod.getLogger(__name__)
 
+#: The logging parser instance with all the current configuration
+LOGGING = configparser.ConfigParser(_conf.CONFIG[_conf.SECTION_LOGGING])
 
-def logging(*path: pathlib.Path, **defaults: typing.Any):
+
+def logging(*path: pathlib.Path):
     """Setup logger according to the params."""
-    parser = configparser.ConfigParser(_conf.CONFIG[_conf.SECTION_LOGGING] | defaults)
     tried = set()
-    used = parser.read(
+    used = LOGGING.read(
         p
         for p in (
             (b / _conf.CONFIG[_conf.SECTION_LOGGING][_conf.OPT_CONFIG]).resolve()
@@ -42,7 +43,7 @@ def logging(*path: pathlib.Path, **defaults: typing.Any):
         )
         if not (p in tried or tried.add(p))
     )
-    config.fileConfig(parser, disable_existing_loggers=False)
+    config.fileConfig(LOGGING, disable_existing_loggers=False)
     logmod.captureWarnings(capture=True)
     LOGGER.debug('Logging configs: %s', ', '.join(used) or 'none')
     LOGGER.debug('Application configs: %s', ', '.join(str(s) for s in _conf.CONFIG.sources) or 'none')
