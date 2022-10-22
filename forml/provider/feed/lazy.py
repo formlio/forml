@@ -18,6 +18,7 @@
 Lazy origin pulling feed implementation.
 """
 import abc
+import functools
 import itertools
 import logging
 import typing
@@ -41,6 +42,7 @@ class _Columns(dsl.Source.Visitor, dsl.Feature.Visitor):
         self._items: set[dsl.Column] = set()
 
     @classmethod
+    @functools.lru_cache
     def extract(
         cls, statement: 'dsl.Statement'
     ) -> typing.Iterable[tuple['dsl.Table', typing.Collection['dsl.Column']]]:
@@ -52,7 +54,7 @@ class _Columns(dsl.Source.Visitor, dsl.Feature.Visitor):
         Return:
             Iterable of tuples of table-grouped columns involved in the query.
         """
-        return (
+        return tuple(
             (t, frozenset(g))
             for t, g in itertools.groupby(
                 sorted(cls()(statement), key=lambda c: repr(c.origin)), key=lambda c: c.origin
@@ -226,15 +228,17 @@ class Feed(alchemy.Feed):
             super().__init__(sources, features, self._backend)
 
         def __call__(self, statement: dsl.Statement, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
-            for table, columns in _Columns.extract(statement):
-                LOGGER.debug('Request for %s using columns: %s', table, columns)
-                if table not in self._origins:
-                    raise forml.MissingError(f'Unknown origin for table {table}')
-                origin = self._origins[table]
-                partitions = origin.partitions(columns, None)
-                if origin not in self._loaded or not self._loaded[origin].symmetric_difference(partitions):
-                    origin(partitions).to_sql(origin.key, self._backend, index=False, if_exists='replace')
-                    self._loaded[origin] = frozenset(partitions)
+            complete = entry and self._match_entry(statement.schema, entry.schema)[0]
+            if not complete:
+                for table, columns in _Columns.extract(statement):
+                    LOGGER.debug('Request for %s using columns: %s', table, columns)
+                    if table not in self._origins:
+                        raise forml.MissingError(f'Unknown origin for table {table}')
+                    origin = self._origins[table]
+                    partitions = origin.partitions(columns, None)
+                    if origin not in self._loaded or self._loaded[origin].symmetric_difference(partitions):
+                        origin(partitions).to_sql(origin.key, self._backend, index=False, if_exists='replace')
+                        self._loaded[origin] = frozenset(partitions)
             return super().__call__(statement, entry)
 
     def __init__(self, *origins: Origin[Partition], **readerkw):

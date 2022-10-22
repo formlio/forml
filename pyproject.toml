@@ -70,7 +70,8 @@ dev = [
     "pylint",
     "pytest-cov",
     "pytest-asyncio",
-    "pytest-xdist"
+    "pytest-xdist",
+    "starlette[full]",
 ]
 docs = [
     "sphinx",
