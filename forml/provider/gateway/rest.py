@@ -28,7 +28,7 @@ from starlette import responses as respmod
 from starlette import routing
 
 import forml
-from forml import io, runtime
+from forml import io, runtime, setup
 from forml.io import asset, layout
 
 LOGGER = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ class Gateway(runtime.Gateway, alias='rest'):
         Starlette/Uvicorn support.
     """  # pylint: disable=line-too-long  # noqa: E501
 
-    OPTIONS = {'headers': [('server', f'ForML {forml.__version__}')]}
+    OPTIONS = {'headers': [('server', f'ForML {forml.__version__}')], 'log_config': setup.LOGGING}
     """Default server loop options."""
 
     def __init__(
