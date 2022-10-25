@@ -41,9 +41,11 @@ class Runner(abc.ABC):
         self, runner: runtime.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Array
     ):
         """Test runner apply mode."""
-        runner.apply()
+        with runner:
+            runner.apply()
         assert tuple(sink_output.get_nowait()) == generation_prediction
 
     def test_train(self, runner: runtime.Runner):
         """Test runner train mode."""
-        runner.train()
+        with runner:
+            runner.train()

@@ -18,12 +18,12 @@
 """
 Dask runner.
 """
-import functools
-import importlib
 import logging
 import typing
 
 import dask
+import distributed
+from dask.delayed import Delayed
 
 from forml import flow, runtime
 
@@ -39,10 +39,14 @@ class Runner(runtime.Runner, alias='dask'):
     execution platform.
 
     Args:
-        scheduler: Name of the chosen Dask scheduler. Supported options are:
+        kwargs: Any :doc:`Dask Configuration options <dask:configuration>`.
 
-                   * ``threaded``
-                   * ``multiprocessing``
+                Noteworthy parameters:
+                   * ``scheduler`` selects the :doc:`scheduling implementation <dask:scheduling>`
+                     (valid options are: ``synchronous``, ``threads``, ``processes``,
+                     ``distributed``)
+                   * to submit to a remote :doc:`Dask Cluster <distributed:index>`, set the
+                     ``scheduler`` to ``distributed`` and provide the master ``scheduler-address``
 
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
@@ -51,78 +55,69 @@ class Runner(runtime.Runner, alias='dask'):
 
         [RUNNER.compute]
         provider = "dask"
-        scheduler = "threaded"
+        scheduler = "processes"
 
     Important:
         Select the ``dask`` :ref:`extras to install <install-extras>` ForML together with the Dask
         support.
     """
 
-    class Dag(dict):
-        """Dask DAG builder."""
-
-        class Output(flow.Instruction):
-            """Utility instruction for collecting multiple DAG leaves of which at most one is
-            expected to return non-null value and passing that value through.
-            """
-
-            def execute(self, *leaves: typing.Any) -> typing.Any:
-                """Instruction functionality.
-
-                Args:
-                    *leaves: Sequence of DAG leaves outputs.
-
-                Return: Value of the one non-null output (if any).
-                """
-
-                def nonnull(value: typing.Any, element: typing.Any) -> typing.Any:
-                    """Non-null reducer.
-
-                    Args:
-                        value: Carry over value.
-                        element: Next element.
-
-                    Returns:
-                        Non-null value of the two (if any).
-                    """
-                    assert value is None or element is None, f'Multiple non-null outputs ({value}, {element})'
-                    return element if value is None else value
-
-                return functools.reduce(nonnull, leaves, None)
-
-        def __init__(self, symbols: typing.Collection[flow.Symbol]):
-            tasks: dict[int, tuple[flow.Instruction, int]] = {id(i): (i, *(id(p) for p in a)) for i, a in symbols}
-            assert len(tasks) == len(symbols), 'Duplicated symbols in DAG sequence'
-            leaves = set(tasks).difference(p for _, *a in tasks.values() for p in a)
-            assert leaves, 'Not acyclic'
-            if (leaves_len := len(leaves)) > 1:
-                LOGGER.debug(
-                    'Dag output based on %d leaves: %s', leaves_len, ','.join(repr(tasks[n][0]) for n in leaves)
-                )
-                output = self.Output()
-                self.output = id(output)
-                tasks[self.output] = output, *leaves
-            else:
-                self.output = leaves.pop()
-            super().__init__(tasks)
-
-        def __repr__(self):
-            return repr({k: (repr(i), *a) for k, (i, *a) in self.items()})
-
-    SCHEDULER = 'multiprocessing'
+    DEFAULTS = {
+        'scheduler': 'processes',
+    }
 
     def __init__(
         self,
         instance: typing.Optional['asset.Instance'] = None,
         feed: typing.Optional['io.Feed'] = None,
         sink: typing.Optional['io.Sink'] = None,
-        scheduler: typing.Optional[str] = None,
+        **kwargs,
     ):
-        super().__init__(instance, feed, sink, scheduler=scheduler)
+        super().__init__(instance, feed, sink)
+        dask.config.set(self.DEFAULTS | kwargs)
+        self._client: typing.Optional[distributed.Client] = None
+
+    def start(self) -> None:
+        if dask.config.get('scheduler') == 'distributed':
+            self._client = distributed.Client()
+            self._client.start()
+
+    def close(self) -> None:
+        if self._client:
+            self._client.close()
+            self._client = None
+
+    @staticmethod
+    def _mkjob(symbols: typing.Collection[flow.Symbol]) -> typing.Iterable[Delayed]:
+        """Construct the linked task graph in Dask representation.
+
+        Args:
+            symbols: Internal DAG representation in form of the compiled symbols.
+
+        Returns:
+            Leaf nodes of the constructed DAG.
+        """
+
+        def link(leaf: flow.Instruction) -> Delayed:
+            """Recursive linking the given leaf to its upstream branch.
+
+            Args:
+                leaf: The leaf node to be linked upstream.
+
+            Returns:
+                The leaf node linked to its upstream branch.
+            """
+            if leaf not in branches:
+                branches[leaf] = dask.delayed(leaf, pure=True, traverse=False)(*(link(a) for a in args.get(leaf, [])))
+            return branches[leaf]
+
+        args: typing.Mapping[flow.Instruction, typing.Sequence[flow.Instruction]] = dict(symbols)
+        assert len(args) == len(symbols), 'Duplicated symbols in DAG sequence'
+        leaves = set(args).difference(p for a in args.values() for p in a)
+        assert leaves, 'Not acyclic'
+        branches: dict[flow.Instruction, Delayed] = {}
+        return (link(d) for d in leaves)
 
     @classmethod
     def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
-        dag = cls.Dag(symbols)
-        LOGGER.debug('Dask DAG: %s', dag)
-        scheduler = kwargs.get('scheduler') or cls.SCHEDULER
-        importlib.import_module(f'{dask.__name__}.{scheduler}').get(dag, dag.output)
+        dask.compute(cls._mkjob(symbols))

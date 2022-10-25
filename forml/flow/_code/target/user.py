@@ -20,7 +20,6 @@ Actor related actions/instruction.
 """
 import abc
 import collections
-import functools
 import inspect
 import logging
 import typing
@@ -191,14 +190,5 @@ class Functor(collections.namedtuple('Functor', 'builder, action'), target.Instr
         """Helper method for returning new functor that prepends the arguments with a param setter."""
         return Functor(self.builder, SetParams(self.action))
 
-    @functools.cached_property
-    def _actor(self) -> 'flow.Actor':
-        """Cached actor instance.
-
-        Returns:
-            Actor instance.
-        """
-        return self.builder()
-
     def execute(self, *args) -> typing.Any:
-        return self.action(self._actor, *args)
+        return self.action(self.builder(), *args)

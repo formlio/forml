@@ -78,6 +78,7 @@ exclude_patterns = ['_build']
 
 intersphinx_mapping = {
     'dask': ('https://docs.dask.org/en/stable/', None),
+    'distributed': ('https://distributed.dask.org/en/stable/', None),
     'graphviz': ('https://graphviz.readthedocs.io/en/stable/', None),
     'jupyter': ('https://docs.jupyter.org/en/latest/', None),
     'mlflow': ('https://mlflow.org/docs/latest/', None),

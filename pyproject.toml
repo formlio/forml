@@ -56,8 +56,7 @@ dependencies = [
     "tomli",
 ]
 [project.optional-dependencies]
-all = ["forml[dask,graphviz,mlflow,rest,sql]"]
-dask = ["dask"]
+dask = ["distributed"]
 dev = [
     "black[jupyter]",
     "flake8-colors",
@@ -86,6 +85,7 @@ graphviz = ["graphviz"]
 mlflow = ["mlflow"]
 rest = ["starlette", "uvicorn"]
 sql = ["pyhive", "sqlalchemy"]
+all = ["forml[dask,graphviz,mlflow,rest,sql]"]
 
 [project.urls]
 homepage = "http://forml.io/"

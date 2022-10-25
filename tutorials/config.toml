@@ -20,7 +20,7 @@ default = "compute"
 
 [RUNNER.compute]
 provider = "dask"
-scheduler = "threaded"
+scheduler = "threads"
 
 [RUNNER.visual]
 provider = "graphviz"
