@@ -21,11 +21,12 @@ Debugging operators.
 import abc
 import inspect
 import logging
-import multiprocessing
 import pathlib
-import queue as quemod
+import secrets
+import socket
 import string
 import typing
+from multiprocessing import managers
 
 from pandas.core import generic as pdtype
 
@@ -346,7 +347,7 @@ class Dump(flow.Operator):
 
 class Sniff(flow.Operator):
     """Debugging operator for capturing the passing payload and exposing it using the
-    ``Sniff.Future`` instance provided when used as a context manager.
+    ``Sniff.Value.Future`` instance provided when used as a context manager.
 
     Without the context, the operator acts as a transparent identity pass-through operator.
 
@@ -361,18 +362,18 @@ class Sniff(flow.Operator):
     """
 
     class Captor(flow.Actor[flow.Features, flow.Labels, flow.Result]):
-        """Actor for sniffing all inputs and passing it to the queue."""
+        """Actor for sniffing all inputs and passing it to the remote value."""
 
-        def __init__(self, queue: typing.Optional[multiprocessing.Queue]):
-            self._queue: typing.Optional[multiprocessing.Queue] = queue
+        def __init__(self, value: typing.Optional['Sniff.Value.Client']):
+            self._value: typing.Optional['Sniff.Value.Client'] = value
 
         def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
-            if self._queue is not None:
-                self._queue.put_nowait((features, labels))
+            if self._value is not None:
+                self._value.set((features, labels))
 
         def apply(self, features: flow.Features) -> flow.Result:
-            if self._queue is not None:
-                self._queue.put_nowait(features)
+            if self._value is not None:
+                self._value.set(features)
             return features
 
         def get_state(self) -> None:
@@ -382,69 +383,118 @@ class Sniff(flow.Operator):
     class Lost(forml.MissingError):
         """Custom error indicating absence of the result."""
 
-    class Future:
-        """Future object to eventually contain the sniffed value."""
+    class Value:
+        """Remote value delivering facility."""
 
-        def __init__(self):
-            self._value: typing.Any = None
-            self._empty: bool = False
-            self._done: bool = False
+        class Future:
+            """Future object to eventually contain the sniffed value."""
 
-        def result(self) -> typing.Any:
-            """Get the future result.
+            def __init__(self):
+                self._value: typing.Any = None
+                self._empty: bool = False
+                self._done: bool = False
+
+            def result(self) -> typing.Any:
+                """Get the future result.
+
+                Returns:
+                    Future result.
+
+                Raises:
+                    payload.Sniff.Lost: If the sniffer didn't capture anything.
+                """
+                if not self._done:
+                    raise RuntimeError('Future still pending')
+                if self._empty:
+                    raise Sniff.Lost('Sniffer value empty')
+                return self._value
+
+            def set_result(self, value: typing.Any) -> None:
+                """Set the future result.
+
+                Args:
+                    value: Future result value.
+                """
+                assert not self._done
+                self._value = value
+                self._done = True
+
+            def set_empty(self) -> None:
+                """Set the result to indicate absence of any value data."""
+                assert not self._done
+                self._empty = True
+                self._done = True
+
+        class Client:
+            """Remote value client."""
+
+            def __init__(self, manager: type[managers.BaseManager], address: tuple[str, int], authkey: bytes):
+                self._manager: type[managers.BaseManager] = manager
+                self._address = address
+                self._authkey = authkey
+
+            @property
+            def _value(self) -> managers.ValueProxy:
+                """Create and connect the manager and return its value proxy."""
+                manager = self._manager(address=self._address, authkey=self._authkey)
+                manager.connect()
+                return manager.value()
+
+            def set(self, value: typing.Any) -> None:
+                """Set the remote value."""
+                self._value.set(value)
+
+        def __init__(self, manager: managers.BaseManager, result: 'Sniff.Value.Future', empty: typing.Any):
+            self._manager: managers.BaseManager = manager
+            self._result: Sniff.Value.Future = result
+            self._empty: typing.Any = empty
+
+        @classmethod
+        def open(cls) -> tuple['Sniff.Value', 'Sniff.Value.Client', 'Sniff.Value.Future']:
+            """Create new remote value facility.
 
             Returns:
-                Future result.
-
-            Raises:
-                payload.Sniff.Lost: If the sniffer didn't capture anything.
+                Tuple of the remote value instance, its client and the actual result future.
             """
-            if not self._done:
-                raise RuntimeError('Future still pending')
-            if self._empty:
-                raise Sniff.Lost('Sniffer queue empty')
-            return self._value
 
-        def set_result(self, value: typing.Any) -> None:
-            """Set the future result.
+            class Manager(managers.BaseManager):
+                """Custom manager type."""
 
-            Args:
-                value: Future result value.
-            """
-            assert not self._done
-            self._value = value
-            self._done = True
+            empty = object()
+            value = managers.Value(object, empty)
+            Manager.register('value', callable=lambda: value)
+            authkey = secrets.token_bytes(16)
+            manager = Manager((socket.gethostname(), 0), authkey=authkey)
+            manager.start()  # pylint: disable=consider-using-with
+            client = cls.Client(Manager, manager.address, authkey=authkey)
+            result = cls.Future()
+            return cls(manager, result, empty), client, result
 
-        def set_empty(self) -> None:
-            """Set the result to indicate absence of any queue data."""
-            assert not self._done
-            self._empty = True
-            self._done = True
+        def close(self) -> None:
+            """Collect the result and close the remote value manager."""
+            value = self._manager.value().get()
+            if value is self._empty:
+                self._result.set_empty()
+            else:
+                self._result.set_result(value)
+            self._manager.shutdown()
 
     def __init__(self):
-        self._manager: typing.Optional[multiprocessing.Manager] = None
-        self._queue: typing.Optional[multiprocessing.Queue] = None
-        self._result: typing.Optional[Sniff.Future] = None
+        self._value: typing.Optional['Sniff.Value'] = None
+        self._client: typing.Optional['Sniff.Value.Client'] = None
 
-    def __enter__(self) -> 'payload.Sniff.Future':
-        assert self._manager is None
-        self._manager = multiprocessing.Manager()
-        self._manager.__enter__()
-        self._queue = self._manager.Queue()
-        self._result = self.Future()
-        return self._result
+    def __enter__(self) -> 'payload.Sniff.Value.Future':
+        assert self._value is None
+        self._value, self._client, result = self.Value.open()
+        return result
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        try:
-            self._result.set_result(self._queue.get_nowait())
-        except quemod.Empty:
-            self._result.set_empty()
-        self._manager.__exit__(exc_type, exc_val, exc_tb)
-        self._manager = self._queue = self._result = None
+        self._value.close()  # pylint: disable=no-member
+        self._value = self._client = None
 
     def compose(self, scope: flow.Composable) -> flow.Trunk:
         left = scope.expand()
-        apply = flow.Worker(self.Captor.builder(self._queue), 1, 1)
-        train = flow.Worker(self.Captor.builder(self._queue), 1, 1)
+        apply = flow.Worker(self.Captor.builder(self._client), 1, 1)
+        train = flow.Worker(self.Captor.builder(self._client), 1, 1)
         train.train(left.train.publisher, left.label.publisher)
         return left.extend(apply=apply)

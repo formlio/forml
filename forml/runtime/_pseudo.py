@@ -96,8 +96,8 @@ class Virtual:
         """Lazy accessor of the virtual train-mode features/outcomes segment outputs as returned by
         the :meth:`runtime.Virtual.train <forml.runtime.Virtual.train>` method."""
 
-        def __init__(self, future: payload.Sniff.Future):
-            self._future: payload.Sniff.Future = future
+        def __init__(self, future: payload.Sniff.Value.Future):
+            self._future: payload.Sniff.Value.Future = future
 
         @property
         def features(self) -> 'flow.Features':
@@ -121,7 +121,7 @@ class Virtual:
             mode: 'runtime.Launcher.Mode',
             lower: typing.Optional['dsl.Native'] = None,
             upper: typing.Optional['dsl.Native'] = None,
-        ) -> payload.Sniff.Future:
+        ) -> payload.Sniff.Value.Future:
             with self._sniffer as future:
                 mode(lower, upper)
             return future

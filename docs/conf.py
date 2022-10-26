@@ -105,7 +105,7 @@ _target_blacklist = {
         r'^forml\.io\.asset\._directory\.level\.minor\.Tag\.(?:Training|Tuning)',
         r'forml\.pipeline\.ensemble\._stacking\.Ensembler',
         r'^forml\.pipeline\.payload\._split\.Column',
-        r'^forml\.pipeline\.payload\._debug\.Sniff\.Future',
+        r'^forml\.pipeline\.payload\._debug\.Sniff\.Value\.Future',
         r'^forml\.pipeline\.wrap\.(?:_auto\.AutoClass|_proxy\.Origin)',
         r'^forml\.provider\.feed\.lazy\.Feed',
         r'^io\.(?:Consumer|Producer)',
