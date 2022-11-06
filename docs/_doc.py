@@ -28,20 +28,12 @@ import forml
 from forml import provider
 from forml.io import dsl
 from forml.io.dsl import function
-from forml.pipeline import wrap
 
 VERSION = forml.__version__
 
 
 class ClassDocumenter(autodoc.ClassDocumenter):
     """Custom class documenter with ForML specific workarounds."""
-
-    @classmethod
-    def can_document_member(cls, member: typing.Any, membername: str, isattr: bool, parent: typing.Any) -> bool:
-        """The wrapped Actors/Operators don't appear normally as classes."""
-        if isinstance(member, wrap.Type):
-            return True
-        return super().can_document_member(member, membername, isattr, parent)
 
     def import_object(self, raiseerror: bool = False) -> bool:
         """The dsl.Schema is not rendered properly due to the fact it is an object rather than a

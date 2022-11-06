@@ -102,7 +102,8 @@ class TestActor:
     ):
         """Test actor serializability."""
         instance.train(trainset_features, trainset_labels)
-        assert cloudpickle.loads(cloudpickle.dumps(instance)).apply(testset) == actor_prediction
+        actor = cloudpickle.loads(cloudpickle.dumps(instance))
+        assert actor.apply(testset) == actor_prediction
 
 
 class TestBuilder:
@@ -111,10 +112,9 @@ class TestBuilder:
     def test_serializable(
         self,
         actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
-        actor_type: type[flow.Actor],
     ):
         """Test builder serializability."""
-        assert repr(cloudpickle.loads(cloudpickle.dumps(actor_builder)).actor) == repr(actor_type)
+        assert cloudpickle.loads(cloudpickle.dumps(actor_builder)).actor == actor_builder.actor
 
     def test_instantiate(self, actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]):
         """Testing builder to actor instantiation."""

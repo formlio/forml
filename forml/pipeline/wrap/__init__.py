@@ -26,7 +26,6 @@ defined using the wrappers provided within this module.
 from ._actor import Actor
 from ._auto import AUTO, Auto, AutoSklearnClassifier, AutoSklearnRegressor, AutoSklearnTransformer, importer
 from ._operator import Operator
-from ._proxy import Type
 
 #: The default list of :class:`auto-wrapper <forml.pipeline.wrap.Auto>` implementations
 #: to be used by the :func:`wrap.importer <forml.pipeline.wrap.importer>` context manager.
@@ -43,5 +42,4 @@ __all__ = [
     'AutoSklearnRegressor',
     'importer',
     'Operator',
-    'Type',
 ]

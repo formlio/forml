@@ -70,8 +70,8 @@ class Auto(typing.Generic[Entity], abc.ABC):
                 entity: Wrapping subject.
 
             Returns:
-                ForML :class:`operator-type-like callable <forml.pipeline.wrap.Type>` compatible
-                with the signature of the wrapped entity.
+                ForML `operator-type-like` callable compatible with the signature of the wrapped
+                entity.
     """
 
     def __call__(self, entity: Entity) -> typing.Callable[..., 'flow.Operator']:

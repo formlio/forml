@@ -246,7 +246,9 @@ class PandasCSVDumper(Dumpable[typing.Any, typing.Any, typing.Any]):
 
 
 class Dump(flow.Operator):
-    """A transparent operator that dumps the input dataset externally (typically to a file) before
+    """Dump(apply: flow.Builder[payload.Dumpable] = PandasCSVDumper.builder(), train: typing.Optional[flow.Builder[payload.Dumpable]] = None, *, path: typing.Optional[typing.Union[str, pathlib.Path]] = None)
+
+    A transparent operator that dumps the input dataset externally (typically to a file) before
     passing it downstream.
 
     If supplied as a template, the operator supports interpolation of potential placeholders in
@@ -276,7 +278,7 @@ class Dump(flow.Operator):
         ...     >> payload.Dump(path='/tmp/foobar/post_action2-$mode-$seq.csv')
         ...     >> model.SomeModel()
         ... )
-    """
+    """  # pylint: disable=line-too-long  # noqa: E501
 
     CSV_SUFFIX = '.csv'
 
@@ -319,7 +321,7 @@ class Dump(flow.Operator):
             """
 
             interpolated = string.Template(str(pathlib.Path(path))).safe_substitute(seq=seq, mode=mode)
-            return builder.actor.builder(*binding.args, path=interpolated, **binding.kwargs)
+            return builder.update(path=interpolated, **binding.kwargs)
 
         binding = inspect.signature(builder.actor).bind_partial(*builder.args, **builder.kwargs)
         binding.apply_defaults()

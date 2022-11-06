@@ -112,7 +112,9 @@ def PandasDrop(  # pylint: disable=invalid-name
 
 
 class MapReduce(flow.Operator):
-    """Operator for applying parallel (possibly stateful) mapper actors and combining their outputs
+    """MapReduce(*mappers: flow.Builder, reducer: flow.Builder = PandasConcat.builder())
+
+    Operator for applying parallel (possibly stateful) mapper actors and combining their outputs
     using a final (stateless) reducer.
 
     Args:

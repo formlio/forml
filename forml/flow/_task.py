@@ -194,7 +194,7 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
         Returns:
             Actor builder instance.
         """
-        return Builder(cls, *args, **kwargs)
+        return Spec(cls, *args, **kwargs)
 
     @classmethod
     def is_stateful(cls) -> bool:
@@ -212,8 +212,58 @@ class Actor(typing.Generic[Features, Labels, Result], metaclass=abc.ABCMeta):
 _Actor = typing.TypeVar('_Actor', bound=Actor)
 
 
+class Builder(typing.Generic[_Actor], metaclass=abc.ABCMeta):
+    """Interface for actor builders providing all the required initialization configuration
+    for instantiating an actor."""
+
+    @property
+    @abc.abstractmethod
+    def actor(self) -> type[_Actor]:
+        """Target actor class."""
+
+    @property
+    @abc.abstractmethod
+    def args(self) -> typing.Sequence[typing.Any]:
+        """Actor positional arguments."""
+
+    @property
+    @abc.abstractmethod
+    def kwargs(self) -> typing.Mapping[str, typing.Any]:
+        """Actor keyword arguments."""
+
+    def update(self, *args, **kwargs) -> 'flow.Builder[_Actor]':
+        """Return new builder with the updated parameters.
+
+        Args:
+            args: Positional arguments to *replace* the original ones.
+            kwargs: Keyword arguments to *update* the original ones.
+
+        Returns:
+            New builder instance with the updated parameters.
+        """
+        return self.actor.builder(*(args or self.args), **self.kwargs | kwargs)
+
+    def reset(self, *args, **kwargs) -> 'flow.Builder[_Actor]':
+        """Return new builder with the new parameters.
+
+        Args:
+            args: Positional arguments to *replace* the original ones.
+            kwargs: Keyword arguments to *replace* the original ones.
+
+        Returns:
+            New builder instance with the new parameters.
+        """
+        return self.actor.builder(*args, **kwargs)
+
+    def __repr__(self):
+        return name(self.actor, *self.args, **self.kwargs)
+
+    def __call__(self, *args, **kwargs) -> _Actor:
+        return self.actor(*(args or self.args), **self.kwargs | kwargs)
+
+
 @typing.final
-class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, args, kwargs')):
+class Spec(collections.namedtuple('Spec', 'actor, args, kwargs'), Builder[_Actor]):
     """Actor builder holding all the required initialization configuration for instantiating the
     particular actor.
 
@@ -231,11 +281,5 @@ class Builder(typing.Generic[_Actor], collections.namedtuple('Builder', 'actor, 
         inspect.signature(actor).bind_partial(*args, **kwargs)
         return super().__new__(cls, actor, args, types.MappingProxyType(kwargs))
 
-    def __repr__(self):
-        return name(self.actor, *self.args, **self.kwargs)
-
     def __getnewargs_ex__(self):
         return (self.actor, *self.args), dict(self.kwargs)
-
-    def __call__(self, *args, **kwargs) -> _Actor:
-        return self.actor(*(args or self.args), **self.kwargs | kwargs)

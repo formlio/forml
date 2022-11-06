@@ -121,7 +121,9 @@ class SetState(Preset[bytes]):
 
     def set(self, actor: 'flow.Actor', value: bytes) -> None:
         LOGGER.debug('%s receiving state (%d bytes)', actor, len(value))
+        params = actor.get_params()
         actor.set_state(value)
+        actor.set_params(**params)
 
 
 class SetParams(Preset[typing.Mapping[str, typing.Any]]):
