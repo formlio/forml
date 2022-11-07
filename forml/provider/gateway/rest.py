@@ -136,6 +136,7 @@ class Gateway(runtime.Gateway, alias='rest'):
         Starlette/Uvicorn support.
     """  # pylint: disable=line-too-long  # noqa: E501
 
+    setup.LOGGING.endswith = lambda _: False  # temporal Uvicorn workaround until PR #1716 is merged
     OPTIONS = {'headers': [('server', f'ForML {forml.__version__}')], 'log_config': setup.LOGGING}
     """Default server loop options."""
 
