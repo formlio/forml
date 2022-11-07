@@ -16,14 +16,14 @@ appdirs==1.4.4
     # via sphinx-immaterial
 astroid==2.12.12
     # via pylint
-asttokens==2.0.8
+asttokens==2.1.0
     # via stack-data
 attrs==22.1.0
     # via
     #   flake8-bugbear
     #   jsonschema
     #   pytest
-babel==2.10.3
+babel==2.11.0
     # via sphinx
 backcall==0.2.0
     # via ipython
@@ -33,7 +33,7 @@ black==22.10.0
     # via forml (setup.py)
 bleach==5.0.1
     # via nbconvert
-build==0.8.0
+build==0.9.0
     # via pip-tools
 certifi==2022.9.24
     # via
@@ -47,6 +47,7 @@ charset-normalizer==2.1.1
 click==8.1.3
     # via
     #   black
+    #   dask
     #   databricks-cli
     #   distributed
     #   flask
@@ -65,7 +66,7 @@ cloudpickle==2.2.0
     #   mlflow
 coverage==6.5.0
     # via pytest-cov
-dask==2022.10.0
+dask==2022.10.2
     # via
     #   distributed
     #   forml
@@ -79,9 +80,9 @@ dill==0.3.6
     # via pylint
 distlib==0.3.6
     # via virtualenv
-distributed==2022.10.0
+distributed==2022.10.2
     # via forml (setup.py)
-docker==6.0.0
+docker==6.0.1
     # via mlflow
 docutils==0.19
     # via
@@ -91,11 +92,11 @@ entrypoints==0.4
     # via
     #   jupyter-client
     #   mlflow
-exceptiongroup==1.0.0rc9
+exceptiongroup==1.0.1
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-executing==1.1.1
+executing==1.2.0
     # via stack-data
 fastjsonschema==2.16.2
     # via nbformat
@@ -106,7 +107,7 @@ flake8==5.0.4
     #   flake8-bugbear
     #   flake8-colors
     #   flake8-typing-imports
-flake8-bugbear==22.10.25
+flake8-bugbear==22.10.27
     # via forml (setup.py)
 flake8-colors==0.1.9
     # via forml (setup.py)
@@ -130,7 +131,7 @@ graphviz==0.20.1
     # via
     #   forml
     #   forml (setup.py)
-greenlet==1.1.3.post0
+greenlet==2.0.1
     # via sqlalchemy
 gunicorn==20.1.0
     # via mlflow
@@ -144,7 +145,7 @@ httpcore==0.15.0
     # via httpx
 httpx==0.23.0
     # via starlette
-identify==2.5.7
+identify==2.5.8
     # via pre-commit
 idna==3.4
     # via
@@ -157,7 +158,7 @@ importlib-metadata==5.0.0
     # via mlflow
 iniconfig==1.1.1
     # via pytest
-ipython==8.5.0
+ipython==8.6.0
     # via black
 isort==5.10.1
     # via
@@ -181,10 +182,12 @@ jinja2==3.1.2
     #   starlette
 joblib==1.2.0
     # via scikit-learn
-jsonschema==4.16.0
+jsonschema==4.17.0
     # via nbformat
-jupyter-client==7.4.3
-    # via nbclient
+jupyter-client==7.2.2
+    # via
+    #   forml (setup.py)
+    #   nbclient
 jupyter-core==4.11.2
     # via
     #   jupyter-client
@@ -192,7 +195,7 @@ jupyter-core==4.11.2
     #   nbformat
 jupyterlab-pygments==0.2.2
     # via nbconvert
-lazy-object-proxy==1.7.1
+lazy-object-proxy==1.8.0
     # via astroid
 libcst==0.4.7
     # via pycln
@@ -229,7 +232,7 @@ mypy-extensions==0.4.3
     #   typing-inspect
 nbclient==0.7.0
     # via nbconvert
-nbconvert==7.2.2
+nbconvert==7.2.3
     # via nbsphinx
 nbformat==5.7.0
     # via
@@ -289,7 +292,7 @@ pickleshare==0.7.5
     # via ipython
 pip-tools==6.9.0
     # via forml (setup.py)
-platformdirs==2.5.2
+platformdirs==2.5.3
     # via
     #   black
     #   pylint
@@ -304,9 +307,9 @@ prometheus-client==0.15.0
     # via prometheus-flask-exporter
 prometheus-flask-exporter==0.20.3
     # via mlflow
-prompt-toolkit==3.0.31
+prompt-toolkit==3.0.32
     # via ipython
-protobuf==4.21.8
+protobuf==4.21.9
     # via mlflow
 psutil==5.9.3
     # via distributed
@@ -314,8 +317,6 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-py==1.11.0
-    # via pytest-forked
 pycln==2.1.1
     # via forml (setup.py)
 pycodestyle==2.9.1
@@ -341,21 +342,18 @@ pylint==2.15.5
     # via forml (setup.py)
 pyparsing==3.0.9
     # via packaging
-pyrsistent==0.18.1
+pyrsistent==0.19.2
     # via jsonschema
 pytest==7.2.0
     # via
     #   pytest-asyncio
     #   pytest-cov
-    #   pytest-forked
     #   pytest-xdist
 pytest-asyncio==0.20.1
     # via forml (setup.py)
 pytest-cov==4.0.0
     # via forml (setup.py)
-pytest-forked==1.4.0
-    # via pytest-xdist
-pytest-xdist==2.5.0
+pytest-xdist==3.0.2
     # via forml (setup.py)
 python-dateutil==2.8.2
     # via
@@ -364,7 +362,7 @@ python-dateutil==2.8.2
     #   pyhive
 python-multipart==0.0.5
     # via starlette
-pytz==2022.5
+pytz==2022.6
     # via
     #   babel
     #   mlflow
@@ -391,7 +389,7 @@ requests==2.28.1
     #   sphinx-immaterial
 rfc3986==1.5.0
     # via httpx
-scikit-learn==1.1.2
+scikit-learn==1.1.3
     # via
     #   forml
     #   forml (setup.py)
@@ -431,7 +429,7 @@ sphinx==5.3.0
     #   sphinxcontrib-spelling
 sphinx-copybutton==0.5.0
     # via forml (setup.py)
-sphinx-immaterial==0.9.1
+sphinx-immaterial==0.10.0
     # via forml (setup.py)
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
@@ -451,7 +449,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sphinxcontrib-spelling==7.6.2
     # via forml (setup.py)
-sqlalchemy==1.4.42
+sqlalchemy==1.4.43
     # via
     #   alembic
     #   forml
@@ -459,7 +457,7 @@ sqlalchemy==1.4.42
     #   mlflow
 sqlparse==0.4.3
     # via mlflow
-stack-data==0.5.1
+stack-data==0.6.0
     # via ipython
 starlette==0.21.0
     # via
@@ -490,7 +488,7 @@ tomli==2.0.1
     #   pep517
     #   pylint
     #   pytest
-tomlkit==0.11.5
+tomlkit==0.11.6
     # via
     #   pycln
     #   pylint
@@ -532,7 +530,7 @@ uvicorn==0.19.0
     # via
     #   forml
     #   forml (setup.py)
-virtualenv==20.16.5
+virtualenv==20.16.6
     # via pre-commit
 wcwidth==0.2.5
     # via prompt-toolkit
@@ -540,11 +538,11 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.4.1
+websocket-client==1.4.2
     # via docker
 werkzeug==2.2.2
     # via flask
-wheel==0.37.1
+wheel==0.38.2
     # via pip-tools
 wrapt==1.14.1
     # via astroid
