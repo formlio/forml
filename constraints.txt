@@ -517,7 +517,7 @@ websocket-client==1.4.2
     # via docker
 werkzeug==2.2.2
     # via flask
-wheel==0.38.2
+wheel==0.38.3
     # via pip-tools
 wrapt==1.14.1
     # via astroid

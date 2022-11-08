@@ -156,6 +156,11 @@ cov = [
     "coverage xml",
     "coverage html",
 ]
+all = [
+    "lint",
+    "test",
+    "cov",
+]
 
 [tool.hatch.envs.docs]
 dependencies = [
@@ -213,7 +218,7 @@ exclude_lines = [
 # https://black.readthedocs.io/en/stable/usage_and_configuration/index.html
 [tool.black]
 line-length = 120
-target-version = ["py39", "py310"]
+target-version = ["py39", "py310", "py310"]
 skip-string-normalization = true
 
 

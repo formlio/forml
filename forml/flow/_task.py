@@ -283,3 +283,6 @@ class Spec(collections.namedtuple('Spec', 'actor, args, kwargs'), Builder[_Actor
 
     def __getnewargs_ex__(self):
         return (self.actor, *self.args), dict(self.kwargs)
+
+    def __repr__(self) -> str:
+        return Builder.__repr__(self)

@@ -51,7 +51,7 @@ installation like this:
 
 .. code-block:: console
 
-    $ pip install 'forml[sql,dask]'
+    $ pip install 'forml[dask,graphviz,rest]'
 
 Some of the features might have additional binary dependencies that need to be resolved using a
 system-dependent mechanism (i.e. using the OS package manager).

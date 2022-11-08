@@ -119,3 +119,7 @@ class TestBuilder:
     def test_instantiate(self, actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]):
         """Testing builder to actor instantiation."""
         assert actor_builder(b=3).get_params() == actor_builder.kwargs | {'b': 3}
+
+    def test_repr(self, actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]):
+        """Test the builder repr string."""
+        assert repr(actor_builder) == flow.name(actor_builder.actor, *actor_builder.args, **actor_builder.kwargs)
