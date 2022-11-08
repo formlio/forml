@@ -46,15 +46,25 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: "Install dependencies"
       run: |
-        sudo apt-get install graphviz
-        pip install --upgrade tox
-    - name: "Run tests"
-      run: tox -e clean,lint,py310,coverage
+        sudo apt-get install graphviz pandoc
+        pip install --upgrade hatch
+    - name: "Tutorials"
+      run: hatch run tutorials:lint
+    - name: "Docs"
+      run: hatch run docs:check
+    - name: "Clean"
+      run: hatch run clean
+    - name: "Lint"
+      run: hatch run dev:lint
+    - name: "Test"
+      run: hatch run dev:test
     - name: "Upload test results"
       uses: actions/upload-artifact@v2
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: junit.xml
+    - name: "Coverage"
+      run: hatch run dev:cov
     - name: "Upload coverage results"
       uses: codecov/codecov-action@v1
       with:

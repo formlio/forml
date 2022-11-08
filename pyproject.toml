@@ -16,8 +16,8 @@
 # under the License.
 
 [build-system]
-requires = ["setuptools", "wheel", "tomli"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 
 [project]
@@ -80,6 +80,7 @@ docs = [
     "sphinxcontrib-napoleon",
     "sphinxcontrib-spelling",
     "nbsphinx",  # also needs pandoc binary
+    "jupyter-client==7.2.2",  # hold back for tornado-dask compatibility
 ]
 graphviz = ["graphviz"]
 mlflow = ["mlflow"]
@@ -88,22 +89,142 @@ sql = ["pyhive", "sqlalchemy"]
 all = ["forml[dask,graphviz,mlflow,rest,sql]"]
 
 [project.urls]
-homepage = "http://forml.io/"
-source = "https://github.com/formlio/forml"
-documentation = "https://docs.forml.io/"
-changelog = "https://github.com/formlio/forml/blob/master/CHANGELOG.md"
+Homepage = "http://forml.io/"
+Source = "https://github.com/formlio/forml/"
+Documentation = "https://docs.forml.io/"
+Issues = "https://github.com/formlio/forml/issues/"
+Changelog = "https://github.com/formlio/forml/blob/master/CHANGELOG.md"
 
 
+# == Hatch ====================================================================
+# https://hatch.pypa.io/latest/
+[tool.hatch.version]
+path = "forml/__init__.py"
+
+[tool.hatch.envs.default]
+[tool.hatch.envs.default.env-vars]
+LC_COLLATE = "en_US.UTF-8"
+PIP_CONSTRAINT = "constraints.txt"
+[tool.hatch.envs.default.scripts]
+clean = [
+    """rm -vrf \
+        .coverage .coverage.* coverage.xml \
+        docs/_auto/ docs/_build/ \
+        htmlcov/ \
+        junit.xml \
+        .pytest_cache/ \
+        tutorials/titanic/dist/""",
+    """find {root} \
+    \\( \
+        -name .git -o \
+        -name .idea -o \
+        -name .venv \
+    \\) -prune -o \
+    \\( \
+        -type d \
+        \\( \
+            -name build -o \
+            -name .eggs -o \
+            -name '*.egg-info' -o \
+            -name .ipynb_checkpoints -o \
+            -name __pycache__ \
+        \\) -prune -o \
+        -type f \
+        \\( \
+            -name '*.log' -o -name '*.log.*' -o \
+            -name '*.dot' -o -name '*.dot.*' \
+        \\) \
+    \\) -print -exec rm -rf {{}} \\;""",
+]
+update = "pip-compile --extra=dev,docs,dask,graphviz,mlflow,rest,sql --output-file={env:PIP_CONSTRAINT} --no-emit-index-url --strip-extras --rebuild --upgrade pyproject.toml"
+
+[tool.hatch.envs.dev]
+dependencies = [
+    "forml[dev,all]",
+]
+[tool.hatch.envs.dev.scripts]
+lint = [
+    "black --check --diff --config=pyproject.toml {args: forml tests}",
+    "isort --check --diff --settings-path=pyproject.toml {args: forml tests}",
+    "pycln --check --diff --config=pyproject.toml {args: forml tests}",
+    "flake8 --config=.flake8 {args: forml tests}",
+    "pylint --rcfile=.pylintrc {args: forml tests}",
+    "sort --check .gitignore",
+]
+test = "pytest -rxXs --junitxml=junit.xml --cov-config=pyproject.toml --cov=forml --cov-append --cov-report=term --numprocesses=auto --dist=loadscope {args: forml tests}"
+cov = [
+    "coverage xml",
+    "coverage html",
+]
+
+[tool.hatch.envs.docs]
+dependencies = [
+    "forml[docs,all]",
+]
+[tool.hatch.envs.docs.env-vars]
+LC_COLLATE = "en_US.UTF-8"
+PIP_CONSTRAINT = "constraints.txt"
+SPHINXOPTS = "-W"
+[tool.hatch.envs.docs.scripts]
+check = [
+    "make -C docs linkcheck",
+    "make -C docs spelling",
+    "sort --check docs/spelling_wordlist.txt",
+]
+
+[tool.hatch.envs.tutorials]
+dependencies = [
+    "forml[dev]",
+    "openschema",
+]
+[tool.hatch.envs.tutorials.env-vars]
+LC_COLLATE = "en_US.UTF-8"
+PIP_CONSTRAINT = "constraints.txt"
+PYTHONPATH = "tutorials:tutorials/titanic"
+[tool.hatch.envs.tutorials.scripts]
+lint = [
+    "black --check --diff --config=pyproject.toml {args: tutorials}",
+    "isort --check --diff --settings-path=pyproject.toml {args: tutorials}",
+    "pycln --check --diff --config=pyproject.toml {args: tutorials}",
+    "flake8 --config=.flake8 {args: tutorials}",
+    "pylint --rcfile=.pylintrc {args: tutorials}",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/forml",
+]
+
+# == Coverage =================================================================
+# https://coverage.readthedocs.io/en/latest/config.html
+[tool.coverage.run]
+branch = true
+parallel = false
+
+[tool.coverage.report]
+exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+
+# == Black ====================================================================
+# https://black.readthedocs.io/en/stable/usage_and_configuration/index.html
 [tool.black]
 line-length = 120
 target-version = ["py39", "py310"]
 skip-string-normalization = true
 
 
+# == Pycln ====================================================================
+# https://hadialqattan.github.io/pycln/#/?id=integrations
 [tool.pycln]
 all = true
 
 
+# == Isort ====================================================================
+# https://pycqa.github.io/isort/docs/configuration/config_files
 [tool.isort]
 line_length = 120
 multi_line_output = 3
@@ -111,3 +232,10 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
+
+
+# == Pytest ===================================================================
+# https://docs.pytest.org/en/latest/reference/customize.html
+[tool.pytest.ini_options]
+junit_family = "xunit2"
+asyncio_mode = "auto"
