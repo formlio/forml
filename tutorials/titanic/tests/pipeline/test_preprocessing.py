@@ -64,6 +64,6 @@ class TestImpute(testing.operator(preprocessing.Impute)):
     EXPECTED = pandas.DataFrame({'foo': [1.0, 4.0, 2.0], 'Embarked': ['X', 'S', 'Y'], 'Fare': [1.0, 2.0, 3.0]})
 
     # Test scenarios
-    invalid_params = testing.Case('foo').raises(TypeError, 'too many positional arguments')
+    invalid_params = testing.Case('foo').raises(TypeError, 'takes 1 positional argument but 2 were given')
     not_trained = testing.Case().apply(FEATURES).raises(RuntimeError, 'not trained')
     valid_imputation = testing.Case().train(FEATURES).apply(FEATURES).returns(EXPECTED, matcher)

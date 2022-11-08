@@ -20,98 +20,27 @@ Utilities for creating actors using decorator wrappings.
 """
 
 import abc
+import copyreg
+import functools
 import inspect
 import itertools
 import logging
+import types
 import typing
 
 import cloudpickle
 
 from forml import flow
 
-from . import _proxy
-
 LOGGER = logging.getLogger(__name__)
 
 
-class Alike(typing.Generic[_proxy.Origin], metaclass=abc.ABCMeta):
-    """Base class for Actor-like wrappers."""
-
-    def __init__(self, origin: _proxy.Origin):
-        self._origin: _proxy.Origin = origin
-
-    def __hash__(self):
-        return hash(self._origin)
-
-    def __eq__(self, other: typing.Any):
-        return isinstance(other, self.__class__) and self._origin == other._origin  # pylint: disable=protected-access
-
-    def __repr__(self):
-        return flow.name(self._origin)
-
-    @abc.abstractmethod
-    def is_stateful(self) -> bool:
-        """Emulation of native actor is_stateful class method.
-
-        Returns:
-            True if the wrapped actor is stateful (has a train method).
-        """
-
-
-class Mapping(Alike[_proxy.Origin]):
-    """Base class for mapped actor wrapping."""
+class Class(abc.ABCMeta):
+    """Wrapped class-based actor metaclass."""
 
     Target = typing.Union[str, typing.Callable[..., typing.Any]]
 
-    def __init__(self, origin: _proxy.Origin, mapping: typing.Mapping[str, Target]):
-        super().__init__(origin)
-        self._mapping: typing.Mapping[str, Mapping.Target] = dict(mapping)
-
-    def __reduce__(self):
-        return self.__class__, (self._origin, self._mapping)
-
-    def __hash__(self):
-        return super().__hash__() ^ hash(tuple(sorted(self._mapping.items())))
-
-    def __eq__(self, other: typing.Any):
-        return super().__eq__(other) and self._mapping == other._mapping  # pylint: disable=protected-access
-
-    def is_stateful(self) -> bool:
-        """Emulation of native actor is_stateful class method.
-
-        Returns:
-            True if the wrapped actor is stateful (has a train method).
-        """
-        attr = self._mapping[flow.Actor.train.__name__]
-        return callable(attr) or hasattr(self._origin, attr)
-
-
-class Type(
-    typing.Generic[_proxy.Origin], Alike[_proxy.Origin], _proxy.Type[_proxy.Origin, flow.Builder], metaclass=abc.ABCMeta
-):
-    """Fake Actor type that produces Actor instance in constructor-like fashion."""
-
-    def __init__(self, origin: _proxy.Origin):
-        Alike.__init__(self, origin)
-        _proxy.Type.__init__(self, origin)
-
-    def builder(self, *args, **kwargs) -> flow.Builder:
-        """Shortcut for creating a builder of this actor builder.
-
-        Args:
-            *args: Args to be used for the builder.
-            **kwargs: Keywords to be used for the builder.
-
-        Returns:
-            Actor builder instance.
-        """
-        return flow.Builder(self, *args, **kwargs)
-
-
-class Class(Mapping[type], Type[type]):
-    """Wrapped class based actor :class:`type-like <forml.pipeline.wrap.Type>` proxy."""
-
-    class Actor(Mapping[object], flow.Actor):  # pylint: disable=abstract-method
+    class Actor(flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=abc.ABCMeta):
         """Wrapper around user class implementing the Actor interface."""
 
         class Decorated:
@@ -124,38 +53,78 @@ class Class(Mapping[type], Type[type]):
             def __call__(self, *args, **kwargs):
                 return self._decorator(self._instance, *args, **kwargs)
 
-        def apply(self, *features: 'flow.Features') -> 'flow.Result':
-            return self._mapping['apply'](*features)
+        class Origin(abc.ABC):
+            """Wrapped origin class (to be injected by metaclass)."""
+
+        @property
+        @abc.abstractmethod
+        def Mapping(self) -> typing.Mapping[str, 'Class.Target']:  # pylint: disable=invalid-name
+            """Mapping from the Actor API to the Origin API (to be injected by metaclass)."""
+
+        def __init__(self, *args, **kwargs):
+            self._origin = self.Origin(*args, **kwargs)
+
+        def apply(self, *features: flow.Features) -> flow.Result:
+            return self.Mapping['apply'](*features)
+
+        @classmethod
+        def is_stateful(cls) -> bool:
+            attr = cls.Mapping[flow.Actor.train.__name__]
+            return callable(attr) or hasattr(cls.Origin, attr)
 
         def __getattribute__(self, item):
-            if not item.startswith('_'):
-                if item in self._mapping:
-                    attr = self._mapping[item]
+            if item not in {'Origin', 'Mapping', '_origin'}:
+                if item in self.Mapping:
+                    attr = self.Mapping[item]
                     return self.Decorated(self._origin, attr) if callable(attr) else getattr(self._origin, attr)
                 if hasattr(self._origin, item):
                     return getattr(self._origin, item)
             return super().__getattribute__(item)
 
-    def __init__(self, origin: type, mapping: typing.Mapping[str, Mapping.Target]):
-        if not inspect.isclass(origin):
-            raise TypeError(f'Invalid actor class {origin}')
-        assert not issubclass(origin, flow.Actor), 'Already an actor'
-        mapping = dict(mapping)
-        if not all(
-            isinstance(a, (str, typing.Callable))  # pylint: disable=isinstance-second-argument-not-valid-type
-            for a in mapping.values()
-        ):
-            raise TypeError('Invalid mapping')
-        for method in (flow.Actor.apply, flow.Actor.train, flow.Actor.get_params, flow.Actor.set_params):
-            mapping.setdefault(method.__name__, method.__name__)
-        for target in {t for s, t in mapping.items() if s != flow.Actor.train.__name__ and not callable(t)}:
-            if not callable(getattr(origin, target, None)):
-                raise TypeError(f'Wrapped actor missing required {target} implementation')
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type],
+        namespace: dict[str, typing.Any],
+        *,
+        origin: typing.Optional[type] = None,
+        mapping: typing.Optional[typing.Mapping[str, 'Class.Target']] = None,
+    ):
+        if origin:
+            assert not issubclass(origin, flow.Actor), 'Already an actor'
+        if mapping:
+            mapping = dict(mapping)
+            if not all(
+                isinstance(a, (str, typing.Callable))  # pylint: disable=isinstance-second-argument-not-valid-type
+                for a in mapping.values()
+            ):
+                raise TypeError('Invalid mapping')
+            for method in (flow.Actor.apply, flow.Actor.train, flow.Actor.get_params, flow.Actor.set_params):
+                mapping.setdefault(method.__name__, method.__name__)
+            for target in {t for s, t in mapping.items() if s != flow.Actor.train.__name__ and not callable(t)}:
+                if not callable(getattr(origin, target, None)):
+                    raise TypeError(f'Wrapped actor missing required {target} implementation')
+            mapping = types.MappingProxyType(mapping)
 
-        super().__init__(origin, mapping)
-
-    def __call__(self, *args, **kwargs) -> flow.Actor:
-        return self.Actor(self._origin(*args, **kwargs), self._mapping)  # pylint: disable=abstract-class-instantiated
+        actor = super().__new__(
+            mcs,
+            name,
+            (mcs.Actor,),
+            {mcs.Actor.Origin.__name__: origin, mcs.Actor.Mapping.fget.__name__: mapping},
+        )
+        actor = functools.update_wrapper(actor, origin, updated=())
+        copyreg.pickle(
+            actor,
+            lambda a: (
+                actor,
+                (),
+                (a.get_state(), a.get_params()),
+                None,
+                None,
+                lambda o, s: (o.set_state(s[0]), o.set_params(**s[1])),
+            ),
+        )
+        return actor
 
 
 class Parametric(flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=abc.ABCMeta):
@@ -171,14 +140,19 @@ class Parametric(flow.Actor[flow.Features, flow.Labels, flow.Result], metaclass=
         self._kwargs.update(kwargs)
 
 
-class Stateless(Type[typing.Callable[..., flow.Result]]):
-    """Stateless function based actor :class:`type-like <forml.pipeline.wrap.Type>` proxy."""
+class Stateless(abc.ABCMeta):
+    """Stateless function-based actor metaclass."""
 
-    class Actor(Parametric[flow.Features, None, flow.Result]):
+    class Actor(Parametric[flow.Features, None, flow.Result], metaclass=abc.ABCMeta):
         """Stateless actor based on the given function."""
 
-        def __init__(self, origin: typing.Callable[..., flow.Result], /, **kwargs: typing.Any):
-            signature = inspect.signature(origin)
+        @staticmethod
+        @abc.abstractmethod
+        def Apply(*features, **kwargs) -> flow.Result:  # pylint: disable=invalid-name
+            """Wrapped origin apply function (to be injected by metaclass)."""
+
+        def __init__(self, **kwargs: typing.Any):
+            signature = inspect.signature(self.Apply)
             params = {
                 p
                 for p in signature.parameters.values()
@@ -186,58 +160,74 @@ class Stateless(Type[typing.Callable[..., flow.Result]]):
             }
             # validating the kwonly params - the rest is expected to be *features
             signature.replace(parameters=params).bind(**kwargs)
-            self._origin: typing.Callable[..., flow.Result] = origin
             super().__init__(**kwargs)
 
         def apply(self, *features: flow.Features) -> flow.Result:
-            return self._origin(*features, **self._kwargs)
+            return self.Apply(*features, **self._kwargs)
 
-    def __init__(self, origin: typing.Callable[..., flow.Result]):
-        if not inspect.isfunction(origin):
-            raise TypeError(f'Invalid actor function {origin}')
-        super().__init__(origin)
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type],
+        namespace: dict[str, typing.Any],
+        *,
+        apply: typing.Optional[typing.Callable[..., flow.Result]] = None,
+    ):
 
-    def __call__(self, **kwargs) -> flow.Actor:
-        return self.Actor(self._origin, **kwargs)
-
-    def is_stateful(self) -> bool:
-        return False
+        actor = super().__new__(
+            mcs,
+            name,
+            (mcs.Actor,),
+            {mcs.Actor.Apply.__name__: staticmethod(apply)},
+        )
+        return functools.update_wrapper(actor, apply, updated=())
 
 
 State = typing.TypeVar('State')
 
 
-class Stateful(Type[tuple[typing.Callable[..., State], typing.Callable[..., flow.Result]]]):
-    """Stateful function based actor :class:`type-like <forml.pipeline.wrap.Type>` proxy."""
+class Stateful(abc.ABCMeta):
+    """Stateful function-based actor metaclass."""
 
     class Actor(
         typing.Generic[State, flow.Features, flow.Labels, flow.Result],
         Parametric[flow.Features, flow.Labels, flow.Result],
+        metaclass=abc.ABCMeta,
     ):
         """Stateful actor based on the given functions."""
 
-        def __init__(self, train: typing.Callable[..., State], apply: typing.Callable[..., flow.Result], /, **kwargs):
+        @staticmethod
+        @abc.abstractmethod
+        def Apply(state: State, features: flow.Features, **kwargs) -> flow.Result:  # pylint: disable=invalid-name
+            """Wrapped origin apply function (to be injected by metaclass)."""
+
+        @staticmethod
+        @abc.abstractmethod
+        def Train(  # pylint: disable=invalid-name
+            state: typing.Optional[State], features: flow.Features, labels: flow.Labels, **kwargs
+        ) -> State:
+            """Wrapped origin train function (to be injected by metaclass)."""
+
+        def __init__(self, **kwargs):
             # validating the kwargs against the signatures
             # skipping initial args - state+features+labels for train mode and state+features for apply mode
-            for skip, origin in (3, train), (2, apply):
+            for skip, origin in (3, self.Train), (2, self.Apply):
                 signature = inspect.signature(origin)
                 params = itertools.islice(signature.parameters.values(), skip, None)
                 signature.replace(parameters=params).bind(**kwargs)
-            self._train: typing.Callable[..., State] = train
-            self._apply: typing.Callable[..., flow.Result] = apply
             self._state: typing.Optional[State] = None
             super().__init__(**kwargs)
 
         def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
-            state = self._train(self._state, features, labels, **self._kwargs)
+            state = self.Train(self._state, features, labels, **self._kwargs)
             if state is None:
-                LOGGER.warning('Stateful function based actor returned None state - not considered trained')
+                LOGGER.warning('Stateful function-based actor returned None state - not considered trained')
             self._state = state
 
         def apply(self, features: flow.Features) -> flow.Result:
             if self._state is None:
                 raise RuntimeError('Actor not trained')
-            return self._apply(self._state, features, **self._kwargs)
+            return self.Apply(self._state, features, **self._kwargs)
 
         def get_state(self) -> bytes:
             if self._state is None:
@@ -248,21 +238,23 @@ class Stateful(Type[tuple[typing.Callable[..., State], typing.Callable[..., flow
             if state:
                 self._state = cloudpickle.loads(state)
 
-    def __init__(self, train: typing.Callable[..., State], apply: typing.Callable[..., flow.Result]):
-        for origin in train, apply:
-            if not inspect.isfunction(origin):
-                raise TypeError(f'Invalid actor function {origin}')
-        super().__init__((train, apply))
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type],
+        namespace: dict[str, typing.Any],
+        *,
+        train: typing.Optional[typing.Callable[..., State]] = None,
+        apply: typing.Optional[typing.Callable[..., flow.Result]] = None,
+    ):
 
-    def __repr__(self):
-        return flow.name(self._origin[1])
-
-    def __call__(self, **kwargs) -> flow.Actor:
-        train, apply = self._origin
-        return self.Actor(train, apply, **kwargs)
-
-    def is_stateful(self) -> bool:
-        return True
+        actor = super().__new__(
+            mcs,
+            name,
+            (mcs.Actor,),
+            {mcs.Actor.Apply.__name__: staticmethod(apply), mcs.Actor.Train.__name__: staticmethod(train)},
+        )
+        return functools.update_wrapper(actor, apply, updated=())
 
 
 class Actor:
@@ -293,8 +285,7 @@ class Actor:
                         *keyword-only* arguments.
 
             Returns:
-                An :class:`actor-type-like object <forml.pipeline.wrap.Type>` that can be
-                instantiated into a *stateless* Actor with the given *apply* logic.
+                A *stateless* Actor class with the given *apply* logic.
 
             Examples:
                 Simple stateless imputation actor using the provided value to fill the NaNs::
@@ -330,8 +321,7 @@ class Actor:
 
             Returns:
                 Follow-up *decorator* to be used for wrapping the companion *apply* function which
-                eventually returns an :class:`actor-type-like object <forml.pipeline.wrap.Type>`
-                that can be instantiated into a *stateful* Actor with the given *train-apply* logic.
+                eventually returns a *stateful* Actor class with the given *train-apply* logic.
 
                 The decorated *apply* function must have one of the following signatures::
 
@@ -405,7 +395,9 @@ class Actor:
 
             See Also: Full description in the class docstring.
             """
-            return Stateful(self._origin, origin)
+            if not inspect.isfunction(origin):
+                raise TypeError(f'Invalid actor function {origin}')
+            return Stateful(origin.__name__, (), {}, train=self._origin, apply=origin)
 
     @classmethod
     def apply(cls, origin: typing.Callable[..., flow.Result], /) -> type[flow.Actor]:
@@ -413,7 +405,9 @@ class Actor:
 
         See Also: Full description in the class docstring.
         """
-        return Stateless(origin)
+        if not inspect.isfunction(origin):
+            raise TypeError(f'Invalid actor function {origin}')
+        return Stateless(origin.__name__, (), {}, apply=origin)
 
     @classmethod
     def train(cls, origin: typing.Callable[..., State], /) -> 'Actor.Train':
@@ -421,10 +415,12 @@ class Actor:
 
         See Also: Full description in the class docstring.
         """
+        if not inspect.isfunction(origin):
+            raise TypeError(f'Invalid actor function {origin}')
         return cls.Train(origin)
 
     @classmethod
-    def type(cls, origin: typing.Optional[type] = None, /, **mapping: Mapping.Target) -> type[flow.Actor]:
+    def type(cls, origin: typing.Optional[type] = None, /, **mapping: Class.Target) -> type[flow.Actor]:
         """Decorator for turning an external user class into a valid actor.
 
         See Also: Full description in the class docstring.
@@ -432,7 +428,9 @@ class Actor:
 
         def decorator(origin: type) -> type[flow.Actor]:
             """Decorating function."""
-            return Class(origin, mapping)
+            if not inspect.isclass(origin):
+                raise TypeError(f'Invalid actor class {origin}')
+            return Class(origin.__name__, (), {}, origin=origin, mapping=mapping)
 
         if origin:
             decorator = decorator(origin)

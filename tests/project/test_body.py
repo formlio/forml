@@ -42,7 +42,7 @@ class TestBuilder:
         actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]]
     ) -> flow.Composable:
         """Pipeline fixture."""
-        return wrap.Operator(apply=actor_builder)
+        return wrap.Operator.apply(actor_builder.actor, *actor_builder.args, **actor_builder.kwargs)()
 
     @staticmethod
     @pytest.fixture(scope='function')

@@ -68,6 +68,19 @@ class Runner(provider.Service, default=setup.Runner.default, path=setup.Runner.p
         self._sink: typing.Optional['io.Sink'] = sink
         self._kwargs: typing.Mapping[str, typing.Any] = kwargs
 
+    def start(self) -> None:
+        """Runner startup routine."""
+
+    def close(self) -> None:
+        """Runner shutdown routine."""
+
+    def __enter__(self) -> 'Runner':
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def train(self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None) -> None:
         """Run the training code.
 

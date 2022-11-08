@@ -33,7 +33,7 @@ from . import _pad
 
 if typing.TYPE_CHECKING:
     from forml import flow, project, runtime  # pylint: disable=reimported
-    from forml.io import dsl, layout
+    from forml.io import dsl
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,8 +96,8 @@ class Virtual:
         """Lazy accessor of the virtual train-mode features/outcomes segment outputs as returned by
         the :meth:`runtime.Virtual.train <forml.runtime.Virtual.train>` method."""
 
-        def __init__(self, future: payload.Sniff.Future):
-            self._future: payload.Sniff.Future = future
+        def __init__(self, future: payload.Sniff.Value.Future):
+            self._future: payload.Sniff.Value.Future = future
 
         @property
         def features(self) -> 'flow.Features':
@@ -118,15 +118,12 @@ class Virtual:
 
         def _run(
             self,
-            action: typing.Callable[
-                ['runtime.Launcher'],
-                typing.Callable[[typing.Optional['layout.Native'], typing.Optional['layout.Native']], None],
-            ],
+            mode: 'runtime.Launcher.Mode',
             lower: typing.Optional['dsl.Native'] = None,
             upper: typing.Optional['dsl.Native'] = None,
-        ) -> payload.Sniff.Future:
+        ) -> payload.Sniff.Value.Future:
             with self._sniffer as future:
-                action(self._launcher)(lower, upper)
+                mode(lower, upper)
             return future
 
         def apply(
@@ -136,7 +133,7 @@ class Virtual:
 
             See Also: Full description in the Virtual class docstring.
             """
-            future = self._run(_pad.Launcher.apply.fget, lower, upper)
+            future = self._run(self._launcher.apply, lower, upper)
             try:
                 return future.result()
             except payload.Sniff.Lost as err:
@@ -150,7 +147,7 @@ class Virtual:
 
             See Also: Full description in the Virtual class docstring.
             """
-            return Virtual.Trained(self._run(_pad.Launcher.train_return.fget, lower, upper))
+            return Virtual.Trained(self._run(self._launcher.train_return, lower, upper))
 
         def eval(
             self, lower: typing.Optional['dsl.Native'] = None, upper: typing.Optional['dsl.Native'] = None
@@ -159,7 +156,7 @@ class Virtual:
 
             See Also: Full description in the Virtual class docstring.
             """
-            future = self._run(_pad.Launcher.eval_traintest.fget, lower, upper)
+            future = self._run(self._launcher.eval_traintest, lower, upper)
             try:
                 return future.result()[0]
             except payload.Sniff.Lost as err:

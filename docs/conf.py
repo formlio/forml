@@ -78,6 +78,7 @@ exclude_patterns = ['_build']
 
 intersphinx_mapping = {
     'dask': ('https://docs.dask.org/en/stable/', None),
+    'distributed': ('https://distributed.dask.org/en/stable/', None),
     'graphviz': ('https://graphviz.readthedocs.io/en/stable/', None),
     'jupyter': ('https://docs.jupyter.org/en/latest/', None),
     'mlflow': ('https://mlflow.org/docs/latest/', None),
@@ -104,8 +105,8 @@ _target_blacklist = {
         r'^forml\.io\.asset\._directory\.level\.minor\.Tag\.(?:Training|Tuning)',
         r'forml\.pipeline\.ensemble\._stacking\.Ensembler',
         r'^forml\.pipeline\.payload\._split\.Column',
-        r'^forml\.pipeline\.payload\._debug\.Sniff\.Future',
-        r'^forml\.pipeline\.wrap\.(?:_auto\.AutoClass|_proxy\.Origin)',
+        r'^forml\.pipeline\.payload\._debug\.Sniff\.Value\.Future',
+        r'^forml\.pipeline\.wrap\.(?:_auto\.AutoClass|_actor\.Stateless\.Actor)',
         r'^forml\.provider\.feed\.lazy\.Feed',
         r'^io\.(?:Consumer|Producer)',
         r'^layout\.(?:ColumnMajor|RowMajor|Native)',

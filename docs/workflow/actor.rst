@@ -122,6 +122,7 @@ with the desired functionality. The main parts of the API look as follows:
    :members: apply, train, get_state, set_state, get_params, set_params, builder
 
 .. autoclass:: forml.flow.Builder
+   :members: actor, args, kwargs, update, reset
 
 .. _actor-implementation:
 

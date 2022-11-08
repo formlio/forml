@@ -106,6 +106,25 @@ class Repo:
 class Launcher:
     """Runner handle."""
 
+    class Mode:
+        """Launcher mode representation."""
+
+        def __init__(
+            self,
+            runner: _agent.Runner,
+            action: typing.Callable[[_agent.Runner, typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None],
+        ):
+            self._runner: _agent.Runner = runner
+            self._action: typing.Callable[
+                [_agent.Runner, typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None
+            ] = action
+
+        def __call__(
+            self, lower: typing.Optional[dsl.Native] = None, upper: typing.Optional[dsl.Native] = None
+        ) -> None:
+            with self._runner as runner:
+                self._action(runner, lower, upper)
+
     def __init__(self, runner: setup.Runner, assets: asset.Instance, feeds: io.Importer, sink: io.Exporter):
         self._runner: setup.Runner = runner
         self._assets: asset.Instance = assets
@@ -113,58 +132,58 @@ class Launcher:
         self._sink: io.Exporter = sink
 
     @property
-    def train_call(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def train_call(self) -> 'Launcher.Mode':
         """Return the train handler.
 
         Returns:
             Train runner.
         """
-        return self(self._assets.project.source.extract.train).train
+        return self.Mode(self(self._assets.project.source.extract.train), _agent.Runner.train)
 
     @property
-    def train_return(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def train_return(self) -> 'Launcher.Mode':
         """Return the train handler.
 
         Returns:
             Train runner.
         """
-        return self(self._assets.project.source.extract.train, self._sink.apply).train
+        return self.Mode(self(self._assets.project.source.extract.train, self._sink.apply), _agent.Runner.train)
 
     @property
-    def apply(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def apply(self) -> 'Launcher.Mode':
         """Return the apply handler.
 
         Returns:
             Apply handler.
         """
-        return self(self._assets.project.source.extract.apply, self._sink.apply).apply
+        return self.Mode(self(self._assets.project.source.extract.apply, self._sink.apply), _agent.Runner.apply)
 
     @property
-    def eval_traintest(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def eval_traintest(self) -> 'Launcher.Mode':
         """Return the eval handler.
 
         Returns:
             Eval runner.
         """
-        return self(self._assets.project.source.extract.train, self._sink.eval).eval_traintest
+        return self.Mode(self(self._assets.project.source.extract.train, self._sink.eval), _agent.Runner.eval_traintest)
 
     @property
-    def eval_perftrack(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def eval_perftrack(self) -> 'Launcher.Mode':
         """Return the eval handler.
 
         Returns:
             Eval runner.
         """
-        return self(self._assets.project.source.extract.train, self._sink.eval).eval_perftrack
+        return self.Mode(self(self._assets.project.source.extract.train, self._sink.eval), _agent.Runner.eval_perftrack)
 
     @property
-    def tune(self) -> typing.Callable[[typing.Optional[dsl.Native], typing.Optional[dsl.Native]], None]:
+    def tune(self) -> 'Launcher.Mode':
         """Return the tune handler.
 
         Returns:
             Tune handler.
         """
-        raise NotImplementedError()
+        return self.Mode(self(self._assets.project.source.extract.train, self._sink.eval), _agent.Runner.tune)
 
     def __call__(self, statement: dsl.Statement, sink: typing.Optional[io.Sink] = None) -> _agent.Runner:
         return ensure_instance(self._runner, _agent.Runner, self._assets, self._feeds.match(statement), sink)

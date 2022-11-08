@@ -32,7 +32,7 @@ class TestRunner(Runner):
     """Runner tests."""
 
     @staticmethod
-    @pytest.fixture(scope='function', params=('threaded', 'multiprocessing'))
+    @pytest.fixture(scope='function', params=['synchronous', 'threads', 'processes', 'distributed'])
     def runner(request, valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> dask.Runner:
         """Runner fixture."""
         return dask.Runner(valid_instance, feed_instance, sink_instance, scheduler=request.param)

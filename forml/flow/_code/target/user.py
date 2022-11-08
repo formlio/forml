@@ -20,7 +20,6 @@ Actor related actions/instruction.
 """
 import abc
 import collections
-import functools
 import inspect
 import logging
 import typing
@@ -122,7 +121,9 @@ class SetState(Preset[bytes]):
 
     def set(self, actor: 'flow.Actor', value: bytes) -> None:
         LOGGER.debug('%s receiving state (%d bytes)', actor, len(value))
+        params = actor.get_params()
         actor.set_state(value)
+        actor.set_params(**params)
 
 
 class SetParams(Preset[typing.Mapping[str, typing.Any]]):
@@ -191,14 +192,5 @@ class Functor(collections.namedtuple('Functor', 'builder, action'), target.Instr
         """Helper method for returning new functor that prepends the arguments with a param setter."""
         return Functor(self.builder, SetParams(self.action))
 
-    @functools.cached_property
-    def _actor(self) -> 'flow.Actor':
-        """Cached actor instance.
-
-        Returns:
-            Actor instance.
-        """
-        return self.builder()
-
     def execute(self, *args) -> typing.Any:
-        return self.action(self._actor, *args)
+        return self.action(self.builder(), *args)

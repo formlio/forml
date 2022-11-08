@@ -18,7 +18,7 @@
 """
 ForML top level.
 """
-__version__ = '0.8'
+__version__ = '0.9'
 
 from ._exception import AnyError, FailedError, InvalidError, MissingError, UnexpectedError
 

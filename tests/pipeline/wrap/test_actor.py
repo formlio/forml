@@ -34,12 +34,48 @@ class Type(abc.ABC):
     @staticmethod
     @abc.abstractmethod
     @pytest.fixture(scope='session')
-    def actor() -> type[flow.Actor[str, str, typing.Optional[str]]]:
-        """Actor fixture."""
+    def origin() -> typing.Any:
+        """Origin implementation fixture."""
 
-    def test_serializable(self, actor: type[flow.Actor]):
+    @staticmethod
+    @abc.abstractmethod
+    @pytest.fixture(scope='session')
+    def builder(origin: typing.Any) -> flow.Builder[flow.Actor[str, str, typing.Optional[str]]]:
+        """Actor builder fixture."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def actor(
+        builder: flow.Builder[flow.Actor[str, str, typing.Optional[str]]]
+    ) -> type[flow.Actor[str, str, typing.Optional[str]]]:
+        """Actor type fixture."""
+        return builder.actor
+
+    @staticmethod
+    @pytest.fixture(scope='function')
+    def instance(
+        builder: flow.Builder[flow.Actor[str, str, typing.Optional[str]]]
+    ) -> flow.Actor[str, str, typing.Optional[str]]:
+        """Actor instance fixture."""
+        return builder()
+
+    def test_serializable(self, actor: type[flow.Actor], instance: flow.Actor):
         """Serializability test."""
-        assert cloudpickle.loads(cloudpickle.dumps(actor))
+        for subj, check in (actor, issubclass), (instance, isinstance):
+            serde = cloudpickle.loads(cloudpickle.dumps(subj))
+            assert hasattr(serde, 'apply')
+            assert hasattr(serde, 'train')
+            assert check(serde, flow.Actor)
+
+    def test_type(self, actor: type[flow.Actor], instance: flow.Actor):
+        """Actor type test."""
+        assert issubclass(actor, flow.Actor)
+        assert isinstance(instance, flow.Actor)
+        assert isinstance(instance, actor)
+
+    def test_docs(self, origin: typing.Any, actor: type[flow.Actor]):
+        """Test the docstring propagation."""
+        assert actor.__doc__ == origin.__doc__
 
 
 class TestClass(Type):
@@ -47,14 +83,14 @@ class TestClass(Type):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def actor() -> type[flow.Actor[str, str, typing.Optional[str]]]:
-        """Actor fixture."""
+    def origin() -> typing.Any:
+        """Origin implementation fixture."""
 
-        @wrap.Actor.type(train='fit', apply=lambda r, f: r.predict(f) or 'N/A')
         class Replace:
             """Actor wrapped class."""
 
-            get_params = set_params = lambda: None  # pylint: disable=unnecessary-lambda-assignment
+            get_params = lambda _: {}  # pylint: disable=unnecessary-lambda-assignment
+            set_params = lambda _, **kw: None  # pylint: disable=unnecessary-lambda-assignment
 
             def __init__(self, case: bool = False):
                 self._case: bool = case
@@ -73,6 +109,13 @@ class TestClass(Type):
                 return self._state.get(features, None)
 
         return Replace
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def builder(origin: typing.Any) -> flow.Builder[flow.Actor[str, str, typing.Optional[str]]]:
+        """Actor fixture."""
+
+        return wrap.Actor.type(train='fit', apply=lambda r, f: r.predict(f) or 'N/A')(origin).builder(case=True)
 
     def test_invalid(self):
         """Invalid usage tests."""
@@ -93,14 +136,13 @@ class TestClass(Type):
 
                 fit = predict = get_params = lambda: None  # pylint: disable=unnecessary-lambda-assignment
 
-    def test_actor(self, actor: type[flow.Actor]):
+    def test_actor(self, instance: flow.Actor):
         """Stateless actor test."""
-        actor = actor(case=True)
-        actor.train('foo', 'bar')
-        actor.train('Blah', 'baz')
-        assert actor.apply('foo') == 'bar'
-        assert actor.apply('Blah') == 'baz'
-        assert actor.apply('blah') == 'N/A'
+        instance.train('foo', 'bar')
+        instance.train('Blah', 'baz')
+        assert instance.apply('foo') == 'bar'
+        assert instance.apply('Blah') == 'baz'
+        assert instance.apply('blah') == 'N/A'
 
 
 class TestStateless(Type):
@@ -108,15 +150,20 @@ class TestStateless(Type):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def actor() -> type[flow.Actor[str, None, str]]:
-        """Actor fixture."""
+    def origin() -> typing.Any:
+        """Origin implementation fixture."""
 
-        @wrap.Actor.apply
         def replace(string: str, *, old: str, new: str, count=-1):
             """Actor wrapped function."""
             return string.replace(old, new, count)
 
         return replace
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def builder(origin: typing.Any) -> flow.Builder[flow.Actor[str, None, str]]:
+        """Actor fixture."""
+        return wrap.Actor.apply(origin).builder(old='baz', new='foo')
 
     def test_invalid(self):
         """Invalid usage tests."""
@@ -130,9 +177,9 @@ class TestStateless(Type):
         with pytest.raises(TypeError, match="got an unexpected keyword argument 'foo'"):
             actor(new='foo', old='asd', foo='bar')
 
-    def test_actor(self, actor: type[flow.Actor]):
+    def test_actor(self, instance: flow.Actor):
         """Actor apply test."""
-        assert actor(old='baz', new='foo').apply('baz bar') == 'foo bar'
+        assert instance.apply('baz bar') == 'foo bar'
 
 
 class TestStateful(Type):
@@ -140,14 +187,27 @@ class TestStateful(Type):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def actor() -> type[flow.Actor[str, str, typing.Optional[str]]]:
+    def origin() -> typing.Any:
+        """Origin implementation fixture."""
+
+        def replace(state: dict[str, str], features: str, case: bool = False) -> typing.Optional[str]:
+            """Actor wrapped function - apply part."""
+            if not case:
+                features = features.lower()
+            return state.get(features, None)
+
+        return replace
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def builder(origin: typing.Any) -> flow.Builder[flow.Actor[str, str, typing.Optional[str]]]:
         """Actor fixture."""
 
         @wrap.Actor.train
         def replace(
             state: typing.Optional[dict[str, str]], features: str, labels: str, case: bool = False
         ) -> dict[str, str]:
-            """Actor wrapped function."""
+            """Actor wrapped function - train part."""
             if not case:
                 features = features.lower()
             if not state:
@@ -155,13 +215,7 @@ class TestStateful(Type):
             state[features] = labels
             return state
 
-        @replace.apply
-        def replace(state: dict[str, str], features: str, case: bool = False) -> typing.Optional[str]:
-            if not case:
-                features = features.lower()
-            return state.get(features, None)
-
-        return replace
+        return replace.apply(origin).builder(case=True)
 
     def test_invalid(self, actor: type[flow.Actor]):
         """Invalid usage tests."""
@@ -175,11 +229,10 @@ class TestStateful(Type):
         with pytest.raises(TypeError, match="got an unexpected keyword argument 'foo'"):
             actor(foo='bar')
 
-    def test_actor(self, actor: type[flow.Actor]):
+    def test_actor(self, instance: flow.Actor):
         """Stateless actor test."""
-        actor = actor(case=True)
-        actor.train('foo', 'bar')
-        actor.train('Blah', 'baz')
-        assert actor.apply('foo') == 'bar'
-        assert actor.apply('Blah') == 'baz'
-        assert actor.apply('blah') is None
+        instance.train('foo', 'bar')
+        instance.train('Blah', 'baz')
+        assert instance.apply('foo') == 'bar'
+        assert instance.apply('Blah') == 'baz'
+        assert instance.apply('blah') is None

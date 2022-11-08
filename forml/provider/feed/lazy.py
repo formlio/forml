@@ -25,7 +25,7 @@ import typing
 
 import pandas
 import sqlalchemy
-from sqlalchemy import sql
+from sqlalchemy import pool, sql
 from sqlalchemy.engine import interfaces
 
 import forml
@@ -189,7 +189,9 @@ class Feed(alchemy.Feed):
             """Serializable in-memory SQLite connection."""
 
             def __init__(self):
-                self._engine: interfaces.Connectable = sqlalchemy.create_engine('sqlite://')
+                self._engine: interfaces.Connectable = sqlalchemy.create_engine(
+                    'sqlite://', connect_args={'check_same_thread': False}, poolclass=pool.StaticPool
+                )
 
             def __repr__(self):
                 return 'LazyReaderBackend'
@@ -226,6 +228,9 @@ class Feed(alchemy.Feed):
             self._origins: dict[dsl.Source, Origin[Partition]] = {o.source: o for o in origins}
             self._backend: Feed.Reader.Backend = self.Backend()
             super().__init__(sources, features, self._backend)
+
+        def __reduce__(self):
+            return self.__class__, (self._sources, self._features, self._origins.values())
 
         def __call__(self, statement: dsl.Statement, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
             complete = entry and self._match_entry(statement.schema, entry.schema)[0]
