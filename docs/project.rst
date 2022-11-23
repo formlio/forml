@@ -53,9 +53,9 @@ scratch or simply via the ``init`` subcommand of the ``forml`` :ref:`command-lin
 Component Structure
 -------------------
 
-ForML projects are essentially standard :doc:`Setuptools <setuptools:setuptools>`-based python
-packages organized in a way to allow ForML to identify its *principal components* and to operate its
-:ref:`life cycle <lifecycle>`.
+ForML projects are organized as usual python projects accompanied with a :pep:`621` compliant
+:file:`pyproject.toml`. They are structured in a way to allow ForML identifying its *principal
+components* and to operate its :ref:`life cycle <lifecycle>`.
 
 The framework adopts the `Convention over Configuration
 <https://en.wikipedia.org/wiki/Convention_over_configuration>`_ approach for
@@ -64,12 +64,12 @@ components (it is still possible to ignore the convention and organize the proje
 arbitrary way, but the author is then responsible for explicitly configuring all the otherwise
 automatic steps himself).
 
-The potential project structure matching the ForML convention might look as the following tree::
+The typical project structure matching the ForML convention might look as the following tree::
 
     <project_name>
-      ├── setup.py
-      ├── <optional_project_namespace>
-      │     └── <project_name>
+      ├── pyproject.toml
+      ├── <optional_project_namespace_package>
+      │     └── <project_root_package>
       │          ├── __init__.py
       │          ├── pipeline  # principal component as a package
       │          │    ├── __init__.py
@@ -87,54 +87,61 @@ The potential project structure matching the ForML convention might look as the 
       │    └── ...
       └── ...
 
-Clearly, the overall structure does not look any special - pretty standard :doc:`setuptools
-<setuptools:setuptools>` project (plus some additional content). What makes it a ForML
-project is the particular modules and/or packages within that structure. Let's focus on each of
-these components in the following sections.
+Clearly, the overall structure does not look any special - pretty usual python project layout
+(plus some additional content). What makes it a ForML project is the particular modules and/or
+packages within that structure and specific metadata provided in the :file:`pyproject.toml`. Let's
+focus on each of these components in the following sections.
 
 
-.. _project-setup:
+.. _project-descriptor:
 
-Setup.py Module
-^^^^^^^^^^^^^^^
+Project Descriptor
+^^^^^^^^^^^^^^^^^^
 
-This is the standard :doc:`Setuptools <setuptools:setuptools>` bootstrap module with a little tweak
-to integrate the ForML principal component structure. It's placed directly in the project root
-directory.
+This is a standard :pep:`pyproject.toml <621>` metadata descriptor with a specific ForML ``tool``
+section helping to integrate the ForML principal component structure. It's placed directly in the
+project root directory.
 
-To hook in with the framework, the ``setup.py`` just needs to use the ``forml.project.Distribution``
-as the custom setuptools ``disctlass`` . The rest is the usual ``setup.py`` content:
+The minimal content looks as follows:
 
-.. code-block:: python
+.. code-block:: toml
 
-    import os
-    import setuptools
-    from forml import project
+    [project]
+    name = "forml-tutorial-titanic"
+    version = "0.1.dev1"
+    dependencies = [
+        "openschema",
+        "scikit-learn",
+        "pandas",
+        "numpy",
+    ]
 
-    setuptools.setup(name='forml-tutorial-titanic',
-                     version='0.1.dev0',
-                     packages=setuptools.find_packages(include=['titanic*'], where=os.path.dirname(__file__)),
-                     setup_requires=['forml'],
-                     install_requires=['openschema', 'scikit-learn', 'pandas', 'numpy'],
-                     distclass=project.Distribution)  # the key to integrate ForML
+    [tool.forml]
+    package = "titanic"
+
+The ``[project]`` section can contain any additional metadata supported by the :pep:`621`
+specification.
 
 .. note::
     Upon publishing (in the scope of the :ref:`development life cycle <lifecycle-development>`), the
-    specified ``version`` value will become the *release* identifier and thus needs to be a valid
-    :pep:`440` version.
+    specified ``[project.version]`` value will become the *release* identifier and thus needs to
+    be a valid :pep:`440` version.
 
-The project should carefully specify all of its dependencies using the ``install_requires``
-parameter as these will be included in the released :ref:`.4ml package artifact <registry-artifacts>`.
+The project should carefully specify all of its dependencies using the ``[project.dependencies]``
+list as these will be included in the released :ref:`.4ml package artifact <registry-artifacts>`.
 
-One addition provided on top of the original ``setuptools`` functionality is the ability to
-customize the conventional ForML principal component layout. If for some reason, the user wants to
-divert from the convention, the custom locations of its principal components can be specified using
-the ``component`` parameter as follows:
+The custom ``[tool.forml]`` section supports the following options:
 
-.. code-block:: python
+* the ``package`` string referring to the python package containing the principal components
+* the optional ``components`` map allowing to override the conventional modules representing the
+  individual principal components as submodules relatively to the ``package``:
 
-    setuptools.setup(...,
-                     component={'pipeline': 'relative.path.to.my.custom.pipeline.module'})
+  .. code-block:: toml
+
+      [tool.forml.components]
+      evaluation = "relative.path.to.my.custom.evaluation.module"
+      pipeline = "relative.path.to.my.custom.pipeline.module"
+      source = "relative.path.to.my.custom.source.module"
 
 
 .. _project-principal:

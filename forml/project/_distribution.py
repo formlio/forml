@@ -103,15 +103,16 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
                 Returns:
                     True if valid.
                 """
-                return file != descriptor
+                return file.name != '__pycache__' and file.suffix != '.dist-info' and file != descriptor
 
             if not root:
                 root = level
             for item in level.iterdir():
+                target = item.relative_to(root)
+                if not valid(target):
+                    continue
                 if not item.is_dir():
-                    target = item.relative_to(root)
-                    if valid(target):
-                        archive.write(item, target)
+                    archive.write(item, target)
                 else:
                     writeall(item, archive, root)
 
@@ -161,7 +162,7 @@ class Package(collections.namedtuple('Package', 'path, manifest')):
             if not zipfile.is_zipfile(self.path):
                 assert self.path.is_dir(), f'Expecting zip file or directory: {self.path}'
                 LOGGER.debug('Installing directory based package %s to %s', self.path, path)
-                shutil.copytree(self.path, path, ignore=lambda *_: {'__pycache__'})
+                shutil.copytree(self.path, path)
             else:
                 with zipfile.ZipFile(self.path) as package:
                     if all(self.PYSFX.search(n) for n in package.namelist()):  # is a zip-safe

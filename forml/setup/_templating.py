@@ -21,7 +21,9 @@ ForML projects templating.
 import datetime
 import getpass
 import logging
+import os
 import pathlib
+import re
 import typing
 
 import jinja2
@@ -56,6 +58,10 @@ def find(name: str) -> pathlib.Path:
     raise forml.MissingError(f'Template {name} not found')
 
 
+#: Regexp for matching the Jinja expressions within a template
+EXPRESSION_RE = re.compile('{{.*?}}')
+
+
 def generate(target: pathlib.Path, template: pathlib.Path, context: typing.Mapping[str, typing.Any]) -> None:
     """Generate a directory structure based on the given template.
 
@@ -72,8 +78,12 @@ def generate(target: pathlib.Path, template: pathlib.Path, context: typing.Mappi
         """Recursive generator of individual directory levels."""
         assert dstdir.is_dir(), f'Destination {dstdir} not a directory.'
         for src in srcdir.iterdir():
-            srcname = env.from_string(src.name).render(context)
-            *subdirs, dstname = srcname.split('.', srcname[: srcname.rfind('.py')].count('.'))
+            srcname = list(src.name)
+            for match in EXPRESSION_RE.finditer(src.name):
+                srcname[match.start() : match.end()] = (  # noqa: E203
+                    env.from_string(match.group()).render(context).replace('.', os.pathsep)
+                )
+            *subdirs, dstname = ''.join(srcname).split(os.pathsep)
             dst = dstdir
             for sub in subdirs:
                 dst /= sub

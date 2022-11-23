@@ -36,12 +36,12 @@ You should see a directory structure like this:
 
     $ tree forml-tutorial-titanic
     forml-tutorial-titanic
-    ├── titanic
-    │   ├── __init__.py
-    │   ├── evaluation.py
-    │   ├── pipeline.py
-    │   └── source.py
-    └── setup.py
+    ├── pyproject.toml
+    └── titanic
+        ├── __init__.py
+        ├── evaluation.py
+        ├── pipeline.py
+        └── source.py
 
 
 Source Definition

@@ -27,6 +27,7 @@ import uuid
 
 import cloudpickle
 import pytest
+import toml
 
 from forml import application as appmod
 from forml import flow, io
@@ -177,39 +178,53 @@ def project_package() -> prjmod.Package:
 
 
 @pytest.fixture(scope='session')
-def project_path(project_package: prjmod.Package) -> pathlib.Path:
-    """Test project path."""
-    return project_package.path
-
-
-@pytest.fixture(scope='session')
 def project_manifest(project_package: prjmod.Package) -> prjmod.Manifest:
     """Test project manifest fixture."""
     return project_package.manifest
 
 
 @pytest.fixture(scope='session')
-def project_artifact(project_package: prjmod.Package, project_path: str) -> prjmod.Artifact:
+def project_path(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
+    """Test project path."""
+    return tmp_path_factory.mktemp('helloworld')
+
+
+@pytest.fixture(scope='session')
+def project_artifact(project_package: prjmod.Package, project_path: pathlib.Path) -> prjmod.Artifact:
     """Test project artifact fixture."""
     return project_package.install(project_path)
+
+
+@pytest.fixture(scope='session')
+def project_tree(project_manifest: prjmod.Manifest, project_path: pathlib.Path) -> prjmod.Tree:
+    """The test project source tree fixture."""
+    with open(project_path / 'pyproject.toml', 'w', encoding='utf-8') as pyproject:
+        toml.dump(
+            {
+                'project': {'name': str(project_manifest.name), 'version': str(project_manifest.version)},
+                'tool': {'forml': {'package': project_manifest.package}},
+            },
+            pyproject,
+        )
+    return prjmod.Tree(project_path)
+
+
+@pytest.fixture(scope='session')
+def project_name(project_tree: prjmod.Tree) -> asset.Project.Key:
+    """Test project name fixture."""
+    return project_tree.name
+
+
+@pytest.fixture(scope='session')
+def project_release(project_tree: prjmod.Tree) -> asset.Release.Key:
+    """Test project release fixture."""
+    return project_tree.version
 
 
 @pytest.fixture(scope='session')
 def project_components(project_artifact: prjmod.Artifact) -> prjmod.Components:
     """Test project components fixture."""
     return project_artifact.components
-
-
-@pytest.fixture(scope='session')
-def project_name(project_manifest: prjmod.Manifest) -> asset.Project.Key:
-    """Test project name fixture."""
-    return project_manifest.name
-
-
-@pytest.fixture(scope='session')
-def project_release(project_manifest: prjmod.Manifest) -> asset.Release.Key:
-    """Test project release fixture."""
-    return project_manifest.version
 
 
 @pytest.fixture(scope='session')

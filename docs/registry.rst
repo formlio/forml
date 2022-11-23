@@ -87,12 +87,12 @@ within the :ref:`development life cycle <lifecycle-development>` is the binary :
 package <forml.project.Package>`. It is a :doc:`zipfile object <python:library/zipfile>`
 (typically a file with the ``.4ml`` suffix) containing all the project :ref:`principal components
 <project-principal>` bundled together with all of its *runtime code dependencies* (as declared in
-the :ref:`project setup <project-setup>`) plus some additional *metadata* (:class:`ForML package
-manifest <forml.project.Manifest>`).
+the :ref:`project descriptor <project-descriptor>`) plus some additional *metadata* (:class:`ForML
+package manifest <forml.project.Manifest>`).
 
-Each ForML package is published with an explicit version as specified in the :ref:`project setup
-<project-setup>` at the time of release. All registry providers require packages of the same
-project to have unique monotonically increasing version numbers.
+Each ForML package is published with an explicit version as specified in the :ref:`project
+descriptor <project-descriptor>` at the time of release. All registry providers require packages
+of the same project to have unique monotonically increasing version numbers.
 
 .. _registry-staging:
 

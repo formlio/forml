@@ -37,7 +37,7 @@ direct 1:1 relationship so that we can keep it along with the project sources in
     $ ls -1p forml-tutorial-titanic
     application.py
     notebooks/
-    setup.py
+    pyproject.toml
     tests/
     titanic/
 

@@ -31,19 +31,19 @@ The project structure now looks as follows:
     forml-tutorial-titanic
     ├── notebooks
     │         └── exploration.ipynb
+    ├── pyproject.toml
     ├── tests
-    │         ├── pipeline
-    │         │         ├── __init__.py
-    │         │         └── test_preprocessing.py
-    │         └── __init__.py
-    ├── titanic
-    │         ├── pipeline
-    │         │         ├── __init__.py
-    │         │         └── preprocessing.py
     │         ├── __init__.py
-    │         ├── evaluation.py
-    │         └── source.py
-    └── setup.py
+    │         └── pipeline
+    │             ├── __init__.py
+    │             └── test_preprocessing.py
+    └── titanic
+        ├── __init__.py
+        ├── evaluation.py
+        ├── pipeline
+        │         ├── __init__.py
+        │         └── preprocessing.py
+        └── source.py
 
 .. important::
     Make sure to remove the original :file:`titanic/pipeline.py` created initially along with the
