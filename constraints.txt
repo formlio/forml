@@ -14,7 +14,7 @@ anyio==3.6.2
     #   starlette
 appdirs==1.4.4
     # via sphinx-immaterial
-astroid==2.15.1
+astroid==2.15.2
     # via pylint
 asttokens==2.2.1
     # via stack-data
@@ -234,7 +234,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-nbclient==0.7.2
+nbclient==0.7.3
     # via nbconvert
 nbconvert==7.2.10
     # via nbsphinx
@@ -279,7 +279,7 @@ packaging==23.0
     #   pytest
     #   shap
     #   sphinx
-pandas==2.0.0rc1
+pandas==2.0.0
     # via
     #   forml (pyproject.toml)
     #   mlflow
@@ -343,7 +343,7 @@ pygments==2.14.0
     #   sphinx
 pyjwt==2.6.0
     # via databricks-cli
-pylint==2.17.1
+pylint==2.17.2
     # via forml (pyproject.toml)
 pyparsing==3.0.9
     # via matplotlib
@@ -539,7 +539,9 @@ typing-extensions==4.5.0
 typing-inspect==0.8.0
     # via libcst
 tzdata==2023.3
-    # via pytz-deprecation-shim
+    # via
+    #   pandas
+    #   pytz-deprecation-shim
 tzlocal==4.3
     # via trino
 urllib3==1.26.15
