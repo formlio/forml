@@ -25,11 +25,11 @@ import operator
 import typing
 
 import pandas
-from pyhive import sqlalchemy_trino as trino
 from sqlalchemy import func, sql
 from sqlalchemy import types as sqltypes
 from sqlalchemy.dialects.sqlite import base as sqlite
 from sqlalchemy.engine import interfaces
+from trino.sqlalchemy import dialect as trino
 
 from forml import io
 from forml.io import dsl, layout
@@ -42,7 +42,7 @@ LOGGER = logging.getLogger(__name__)
 Native = typing.TypeVar('Native')
 
 
-class Type(typing.Generic[Native], sqltypes.TypeDecorator):
+class Type(sqltypes.TypeDecorator[Native]):
     """Base class for custom types with explicit literal processors for specific dialects."""
 
     cache_ok = True
@@ -162,7 +162,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
             return super().resolve_feature(feature)
         except dsl.UnprovisionedError as err:
             if isinstance(feature, dsl.Element):
-                return sql.column(feature.name)
+                return sql.column(sql.quoted_name(feature.name, quote=True))
             raise err
 
     def generate_element(self, origin: sql.Selectable, element: sql.ColumnElement) -> sql.ColumnElement:
@@ -175,7 +175,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         Returns:
             Field representation.
         """
-        return sql.column(element.name, _selectable=origin)
+        return sql.column(sql.quoted_name(element.name, quote=True), _selectable=origin)
 
     def generate_alias(self, feature: sql.ColumnElement, alias: str) -> sql.ColumnElement:
         """Generate feature alias code.
@@ -187,7 +187,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         Returns:
             Aliased feature.
         """
-        return feature.label(alias)
+        return feature.label(sql.quoted_name(alias, quote=True))
 
     def generate_literal(self, value: typing.Any, kind: dsl.Any) -> sql.ColumnElement:
         """Generate a literal value.
@@ -298,7 +298,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
             Query.
         """
         assert features, 'Expecting features'
-        query = sql.select(features).select_from(source)
+        query = sql.select(*features).select_from(source)
         if where is not None:
             query = query.where(where)
         if groupby:
@@ -323,7 +323,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         Returns:
             Tuple of referenced origin and the bare reference handle both in target code.
         """
-        ref = instance.alias(name)
+        ref = instance.alias(sql.quoted_name(name, quote=True))
         return ref, ref
 
 

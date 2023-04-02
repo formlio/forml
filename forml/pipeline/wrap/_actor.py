@@ -173,7 +173,6 @@ class Stateless(abc.ABCMeta):
         *,
         apply: typing.Optional[typing.Callable[..., flow.Result]] = None,
     ):
-
         actor = super().__new__(
             mcs,
             name,
@@ -247,7 +246,6 @@ class Stateful(abc.ABCMeta):
         train: typing.Optional[typing.Callable[..., State]] = None,
         apply: typing.Optional[typing.Callable[..., flow.Result]] = None,
     ):
-
         actor = super().__new__(
             mcs,
             name,

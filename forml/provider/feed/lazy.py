@@ -25,8 +25,7 @@ import typing
 
 import pandas
 import sqlalchemy
-from sqlalchemy import pool, sql
-from sqlalchemy.engine import interfaces
+from sqlalchemy import engine, pool, sql
 
 import forml
 from forml.io import dsl, layout
@@ -185,12 +184,14 @@ class Feed(alchemy.Feed):
     class Reader(alchemy.Feed.Reader):
         """Extending the SQLAlchemy reader."""
 
-        class Backend(interfaces.Connectable):
+        class Backend(engine.Connection):
             """Serializable in-memory SQLite connection."""
 
             def __init__(self):
-                self._engine: interfaces.Connectable = sqlalchemy.create_engine(
-                    'sqlite://', connect_args={'check_same_thread': False}, poolclass=pool.StaticPool
+                super().__init__(
+                    sqlalchemy.create_engine(
+                        'sqlite://', connect_args={'check_same_thread': False}, poolclass=pool.StaticPool
+                    )
                 )
 
             def __repr__(self):
@@ -198,25 +199,6 @@ class Feed(alchemy.Feed):
 
             def __reduce__(self):
                 return self.__class__, ()
-
-            def connect(self, **kwargs):
-                return self._engine.connect(**kwargs)
-
-            def execute(self, object_, *multiparams, **params):
-                return self._engine.execute(object_, *multiparams, **params)
-
-            def scalar(self, object_, *multiparams, **params):
-                return self._engine.scalar(object_, *multiparams, **params)
-
-            # pylint: disable=protected-access
-            def _run_visitor(self, visitorcallable, element, **kwargs):
-                return self._engine._run_visitor(visitorcallable, element, **kwargs)
-
-            def _execute_clauseelement(self, elem, multiparams=None, params=None):
-                return self._engine._execute_clauseelement(elem, multiparams, params)
-
-            def __getattr__(self, item):
-                return getattr(self._engine, item)
 
         def __init__(
             self,
@@ -247,5 +229,7 @@ class Feed(alchemy.Feed):
             return super().__call__(statement, entry)
 
     def __init__(self, *origins: Origin[Partition], **readerkw):
-        self._sources: typing.Mapping[dsl.Source, sql.Selectable] = {o.source: sqlalchemy.table(o.key) for o in origins}
+        self._sources: typing.Mapping[dsl.Source, sql.Selectable] = {
+            o.source: sqlalchemy.table(sql.quoted_name(o.key, quote=True)) for o in origins
+        }
         super().__init__({o.source: o.key for o in origins}, origins=origins, **readerkw)

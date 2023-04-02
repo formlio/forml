@@ -57,6 +57,9 @@ class ClassDocumenter(autodoc.ClassDocumenter):
 class MethodDocumenter(autodoc.MethodDocumenter):
     """Custom method documenter with ForML specific workarounds."""
 
+    def get_object_members(self, want_all: bool) -> tuple[bool, autodoc.ObjectMembers]:
+        return False, []
+
     def import_object(self, raiseerror: bool = False) -> bool:
         """The dsl.Schema methods are not rendered properly due to the fact it is an object rather
         than a class.

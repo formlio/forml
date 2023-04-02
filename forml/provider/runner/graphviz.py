@@ -95,8 +95,8 @@ class Runner(runtime.Runner, alias='graphviz'):
     def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
         dot: grviz.Digraph = grviz.Digraph(**(cls.OPTIONS | kwargs['options']))
         for sym in symbols:
-            nodekw = dict(shape='ellipse')
-            outkw = dict(style='solid')
+            nodekw = {'shape': 'ellipse'}
+            outkw = {'style': 'solid'}
             if isinstance(sym.instruction, flow.Functor):
                 nodekw.update(shape='box')
                 if flow.Train not in sym.instruction.action:

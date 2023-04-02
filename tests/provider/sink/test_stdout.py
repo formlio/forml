@@ -72,7 +72,8 @@ class TestSink(Sink):
             self._value = self._queue.get_nowait()
             self._manager.__exit__(exc_type, exc_val, exc_tb)
 
-        def match(self, context: None, expected: layout.Array) -> bool:
+        def match(self, context: None, expected: layout.Array) -> bool:  # pylint: disable=unused-argument
+            """Capture the standard output and compare it with the expected value."""
             with contextlib.redirect_stdout(stdio.StringIO()) as output:
                 print(list(expected))
             return self._value == output.getvalue()
@@ -80,4 +81,5 @@ class TestSink(Sink):
     @staticmethod
     @pytest.fixture(scope='session')
     def sink() -> io.Sink:
+        """Sink fixture."""
         return stdout.Sink()

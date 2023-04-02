@@ -81,11 +81,11 @@ class Feed(io.Feed[sql.Selectable, sql.ColumnElement], alias='alchemy'):
                 src = dslmod.Schema.from_path(src)
             return src
 
-        def table(name: str) -> sqlalchemy.table:
+        def table(name: str) -> sqlalchemy.TableClause:
             if not (match := self._TABLE_NAME.fullmatch(name)):
                 raise forml.InvalidError(f'Invalid table name: {name}')
             schema, name = match.groups()
-            return sqlalchemy.table(name, schema=schema)
+            return sqlalchemy.table(sql.quoted_name(name, quote=True), schema=schema)
 
         self._sources: typing.Mapping['dsl.Source', sql.Selectable] = {
             ensure_source(s): table(t) for s, t in sources.items()

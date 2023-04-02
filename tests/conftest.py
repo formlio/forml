@@ -112,7 +112,7 @@ def actor_type(request) -> type[flow.Actor]:
 @pytest.fixture(scope='session')
 def hyperparams() -> typing.Mapping[str, int]:
     """Hyperparams fixture."""
-    return dict(a=1, b=2)
+    return {'a': 1, 'b': 2}
 
 
 @pytest.fixture(scope='session')

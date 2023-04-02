@@ -84,6 +84,7 @@ subclasses
 subcommand
 subdirectory
 subgraph
+submodules
 subtype
 Todo
 topologies

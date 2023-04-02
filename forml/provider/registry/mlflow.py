@@ -69,7 +69,7 @@ class Client:
         Returns:
             Iterator of Experiment instances.
         """
-        return self.Pager[entities.Experiment](lambda t: self._mlflow.list_experiments(page_token=t))
+        return self.Pager[entities.Experiment](lambda t: self._mlflow.search_experiments(page_token=t))
 
     def list_runs(self, experiment: entities.Experiment, **tags: str) -> typing.Iterable[entities.Run]:
         """Get a list of the existing runs matching the given tags.
