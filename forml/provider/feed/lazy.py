@@ -25,7 +25,7 @@ import typing
 
 import pandas
 import sqlalchemy
-from sqlalchemy import engine, pool, sql
+from sqlalchemy import engine, sql
 
 import forml
 from forml.io import dsl, layout
@@ -188,7 +188,7 @@ class Feed(alchemy.Feed):
             """Serializable in-memory SQLite connection."""
 
             def __init__(self):
-                super().__init__(sqlalchemy.create_engine('duckdb:///:memory:', poolclass=pool.StaticPool))
+                super().__init__(sqlalchemy.create_engine('duckdb:///:memory:'))
 
             def __repr__(self):
                 return 'LazyReaderBackend'

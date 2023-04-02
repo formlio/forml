@@ -20,6 +20,7 @@ Custom setuptools commands for pipeline execution modes.
 """
 import abc
 import logging
+import operator
 import typing
 
 from setuptools.command import test
@@ -54,13 +55,18 @@ class Mode(test.test, metaclass=abc.ABCMeta):
         """Fini options."""
         self.ensure_string_list('feed')
 
-    def run_tests(self) -> None:
+    def run(self) -> None:
         """This is the original test command entry point - let's override it with our actions."""
-        LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
-        launcher = self.distribution.artifact.launcher(setup.Runner.resolve(self.runner), setup.Feed.resolve(self.feed))
-        result = self.launch(launcher, lower=self.lower, upper=self.upper)
-        if result is not None:
-            print(result)
+        installed_dists = self.install_dists(self.distribution)
+        paths = map(operator.attrgetter('location'), installed_dists)
+        with self.paths_on_pythonpath(paths):
+            LOGGER.debug('%s: starting %s', self.distribution.get_name(), self.__class__.__name__.lower())
+            launcher = self.distribution.artifact.launcher(
+                setup.Runner.resolve(self.runner), setup.Feed.resolve(self.feed)
+            )
+            result = self.launch(launcher, lower=self.lower, upper=self.upper)
+            if result is not None:
+                print(result)
 
     @staticmethod
     @abc.abstractmethod
