@@ -121,6 +121,9 @@ _target_blacklist = {
 }
 nitpick_ignore_regex = [(k, v) for k, t in _target_blacklist.items() for v in t]
 
+# Ignore the given anchors when checking links
+linkcheck_anchors_ignore = ['/room/#formlio_community:gitter.im']
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -216,12 +219,12 @@ todo_include_todos = True
 # -- Options for sphinx_immaterial --------------------------------------
 # See: https://pypi.org/project/sphinx-immaterial/
 object_description_options = [
-    ('py:.*parameter', dict(include_in_toc=False)),
-    ('py:.*attribute', dict(include_in_toc=False)),
-    # ('py:.*function', dict(include_in_toc=False)),
-    # ('py:.*property', dict(include_in_toc=False)),
-    # ('py:.*method', dict(include_in_toc=False)),
-    ('py:.*', dict(include_fields_in_toc=False)),
+    ('py:.*parameter', {'include_in_toc': False}),
+    ('py:.*attribute', {'include_in_toc': False}),
+    # ('py:.*function', {'include_in_toc': False}),
+    # ('py:.*property', {'include_in_toc': False}),
+    # ('py:.*method', {'include_in_toc': False}),
+    ('py:.*', {'include_fields_in_toc': False}),
 ]
 
 
