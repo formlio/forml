@@ -188,11 +188,7 @@ class Feed(alchemy.Feed):
             """Serializable in-memory SQLite connection."""
 
             def __init__(self):
-                super().__init__(
-                    sqlalchemy.create_engine(
-                        'sqlite://', connect_args={'check_same_thread': False}, poolclass=pool.StaticPool
-                    )
-                )
+                super().__init__(sqlalchemy.create_engine('duckdb:///:memory:', poolclass=pool.StaticPool))
 
             def __repr__(self):
                 return 'LazyReaderBackend'
@@ -224,7 +220,10 @@ class Feed(alchemy.Feed):
                     origin = self._origins[table]
                     partitions = origin.partitions(columns, None)
                     if origin not in self._loaded or self._loaded[origin].symmetric_difference(partitions):
-                        origin(partitions).to_sql(origin.key, self._backend, index=False, if_exists='replace')
+                        self._backend.execute(
+                            sqlalchemy.text('register(:key, :origin)'),
+                            {'key': origin.key, 'origin': origin(partitions)},
+                        )
                         self._loaded[origin] = frozenset(partitions)
             return super().__call__(statement, entry)
 

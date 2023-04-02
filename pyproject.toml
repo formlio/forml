@@ -85,7 +85,7 @@ docs = [
 graphviz = ["graphviz"]
 mlflow = ["mlflow"]
 rest = ["starlette", "uvicorn"]
-sql = ["trino[sqlalchemy]", "sqlalchemy"]
+sql = ["trino[sqlalchemy]", "sqlalchemy", "duckdb-engine"]
 all = ["forml[dask,graphviz,mlflow,rest,sql]"]
 
 [project.urls]
