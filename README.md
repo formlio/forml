@@ -20,7 +20,7 @@
 ForML
 =====
 
-[![GitHub Build](https://img.shields.io/github/workflow/status/formlio/forml/CI%20Build/main)](https://github.com/formlio/forml/actions/)
+[![GitHub Build](https://img.shields.io/github/actions/workflow/status/formlio/forml/ci.yml?branch=main)](https://github.com/formlio/forml/actions/)
 [![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/main)](https://codecov.io/github/formlio/forml?branch=main)
 [![Code Style: black](https://img.shields.io/badge/code%20style-black-000000)](https://github.com/psf/black)
 [![Lines of Code](https://img.shields.io/tokei/lines/github/formlio/forml)](https://github.com/formlio/forml)
