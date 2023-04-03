@@ -327,8 +327,8 @@ pure-eval==0.2.2
     # via stack-data
 pyarrow==11.0.0
     # via
-    #   forml (pyproject.toml)
     #   mlflow
+    #   pandas
 pycln==2.1.3
     # via forml (pyproject.toml)
 pycodestyle==2.10.0
