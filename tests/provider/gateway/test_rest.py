@@ -64,7 +64,7 @@ class TestGateway:
         """Test the application predict endpoint."""
         response = client.post(
             f'/{descriptor.name}',
-            data=testset_request.payload,
+            content=testset_request.payload,
             headers={'content-type': testset_request.encoding.header, 'accept': testset_request.encoding.header},
         )
         assert response.status_code == 200

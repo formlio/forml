@@ -21,6 +21,7 @@ Global ForML unit tests fixtures.
 import collections
 import datetime
 import multiprocessing
+import os
 import pathlib
 import typing
 import uuid
@@ -32,11 +33,18 @@ import toml
 from forml import application as appmod
 from forml import flow, io
 from forml import project as prjmod
+from forml import setup
 from forml.io import asset, dsl, layout
 from forml.pipeline import wrap
 
 from . import helloworld
 from .helloworld import application as helloworld_descriptor
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:  # pylint: disable=unused-argument
+    """Pytest setup hook to randomize the ForML home directory."""
+    setup.USRDIR = asset.mkdtemp()
+    os.environ['FORML_HOME'] = str(setup.USRDIR)
 
 
 class WrappedActor:

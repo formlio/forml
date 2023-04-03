@@ -28,7 +28,7 @@ import tempfile
 import typing
 import uuid
 
-from mlflow import entities, tracking
+from mlflow import artifacts, entities, tracking
 from mlflow.projects import utils
 from mlflow.store import entities as storent
 
@@ -100,7 +100,10 @@ class Client:
         Returns:
             Local path of the downloaded artifact.
         """
-        return pathlib.Path(dstdir) / self._mlflow.download_artifacts(run.info.run_id, name, str(dstdir))
+
+        return pathlib.Path(dstdir) / artifacts.download_artifacts(
+            run_id=run.info.run_id, artifact_path=name, dst_path=str(dstdir), tracking_uri=self._mlflow.tracking_uri
+        )
 
     def upload_artifact(self, run: entities.Run, src: typing.Union[str, pathlib.Path]) -> None:
         """Store the file as an artifact under the given run instance.

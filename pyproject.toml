@@ -67,8 +67,8 @@ dev = [
     "pre-commit",
     "pycln",
     "pylint",
-    "pytest-cov",
     "pytest-asyncio",
+    "pytest-cov",
     "pytest-xdist",
     "starlette[full]",
 ]
