@@ -462,8 +462,8 @@ class Sniff(flow.Operator):
             class Manager(managers.BaseManager):
                 """Custom manager type."""
 
-            empty = object()
-            value = managers.Value(object, empty)
+            empty = secrets.token_bytes()
+            value = managers.Value(bytes, empty)
             Manager.register('value', callable=lambda: value)
             authkey = secrets.token_bytes(16)
             manager = Manager((socket.gethostname(), 0), authkey=authkey)
@@ -475,7 +475,7 @@ class Sniff(flow.Operator):
         def close(self) -> None:
             """Collect the result and close the remote value manager."""
             value = self._manager.value().get()
-            if value is self._empty:
+            if isinstance(value, self._empty.__class__) and value == self._empty:
                 self._result.set_empty()
             else:
                 self._result.set_result(value)
