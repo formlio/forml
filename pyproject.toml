@@ -80,7 +80,7 @@ docs = [
     "sphinxcontrib-napoleon",
     "sphinxcontrib-spelling",
     "nbsphinx",  # also needs pandoc binary
-    "jupyter-client==7.2.2",  # hold back for tornado-dask compatibility
+    "jupyter-client",
 ]
 graphviz = ["graphviz"]
 mlflow = ["mlflow"]
