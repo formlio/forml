@@ -27,7 +27,7 @@ babel==2.12.1
     # via sphinx
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.12.1
+beautifulsoup4==4.12.2
     # via nbconvert
 black==23.3.0
     # via forml (pyproject.toml)
@@ -151,7 +151,7 @@ idna==3.4
     #   rfc3986
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.1.0
+importlib-metadata==6.2.0
     # via
     #   dask
     #   mlflow
@@ -301,7 +301,7 @@ pickleshare==0.7.5
     # via ipython
 pillow==9.5.0
     # via matplotlib
-pip-tools==6.12.3
+pip-tools==6.13.0
     # via forml (pyproject.toml)
 platformdirs==3.2.0
     # via

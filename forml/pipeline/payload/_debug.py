@@ -435,6 +435,9 @@ class Sniff(flow.Operator):
                 self._address = address
                 self._authkey = authkey
 
+            def __repr__(self):
+                return 'Value'
+
             @property
             def _value(self) -> managers.ValueProxy:
                 """Create and connect the manager and return its value proxy."""

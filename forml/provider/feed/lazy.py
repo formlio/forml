@@ -184,7 +184,19 @@ class Feed(alchemy.Feed):
     class Reader(alchemy.Feed.Reader):
         """Extending the SQLAlchemy reader."""
 
-        BACKEND: engine.Connection = sqlalchemy.create_engine('duckdb:///:memory:').connect()
+        class Backend(engine.Connection):
+            """Serializable in-memory DuckDB connection."""
+
+            def __init__(self):
+                super().__init__(sqlalchemy.create_engine('duckdb:///:memory:'))
+
+            def __repr__(self):
+                return 'LazyReaderBackend'
+
+            def __reduce__(self):
+                return self.__class__, ()
+
+        BACKEND: engine.Connection = Backend()
         PARTITIONS: dict[Origin[Partition], frozenset[Partition]] = {}
 
         def __init__(
