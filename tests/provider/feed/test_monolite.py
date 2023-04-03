@@ -34,13 +34,24 @@ class TestFeed(Feed):
 
     @staticmethod
     @pytest.fixture(scope='session')
-    def school_csv(
-        tmp_path_factory: pytest.TempPathFactory,
-        school_data: pandas.DataFrame,
-    ) -> pathlib.Path:
+    def source_dir(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
+        """Session-wide temp dir for holding the feed sources."""
+        return tmp_path_factory.mktemp('monolite-source')
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def school_csv(source_dir: pathlib.Path, school_data: pandas.DataFrame) -> pathlib.Path:
         """School data in a CSV file fixture."""
-        path = tmp_path_factory.mktemp('swiss-csv') / 'school.csv'
+        path = source_dir / 'school.csv'
         school_data.to_csv(path, index=False)
+        return path
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def student_parquet(source_dir: pathlib.Path, student_data: pandas.DataFrame) -> pathlib.Path:
+        """School data in a Parquet file fixture."""
+        path = source_dir / 'student.parquet'
+        student_data.to_parquet(path, index=False)
         return path
 
     @staticmethod
@@ -49,11 +60,11 @@ class TestFeed(Feed):
         person_table: dsl.Table,
         person_data: pandas.DataFrame,
         student_table: dsl.Table,
-        student_data: pandas.DataFrame,
+        student_parquet: pathlib.Path,
         school_table: dsl.Table,
         school_csv: pathlib.Path,
     ) -> io.Feed:
         """Feed fixture."""
         return monolite.Feed(
-            inline={person_table: person_data, student_table: student_data}, csv={school_table: school_csv}
+            inline={person_table: person_data}, csv={school_table: school_csv}, parquet={student_table: student_parquet}
         )
