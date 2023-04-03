@@ -184,17 +184,8 @@ class Feed(alchemy.Feed):
     class Reader(alchemy.Feed.Reader):
         """Extending the SQLAlchemy reader."""
 
-        class Backend(engine.Connection):
-            """Serializable in-memory SQLite connection."""
-
-            def __init__(self):
-                super().__init__(sqlalchemy.create_engine('duckdb:///:memory:'))
-
-            def __repr__(self):
-                return 'LazyReaderBackend'
-
-            def __reduce__(self):
-                return self.__class__, ()
+        BACKEND: engine.Connection = sqlalchemy.create_engine('duckdb:///:memory:').connect()
+        PARTITIONS: dict[Origin[Partition], frozenset[Partition]] = {}
 
         def __init__(
             self,
@@ -202,29 +193,27 @@ class Feed(alchemy.Feed):
             features: typing.Mapping[dsl.Feature, sql.ColumnElement],
             origins: typing.Iterable[Origin[Partition]],
         ):
-            self._loaded: dict[Origin[Partition], frozenset[Partition]] = {}
             self._origins: dict[dsl.Source, Origin[Partition]] = {o.source: o for o in origins}
-            self._backend: Feed.Reader.Backend = self.Backend()
-            super().__init__(sources, features, self._backend)
+            super().__init__(sources, features, self.BACKEND)
 
         def __reduce__(self):
             return self.__class__, (self._sources, self._features, self._origins.values())
 
         def __call__(self, statement: dsl.Statement, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
             complete = entry and self._match_entry(statement.schema, entry.schema)[0]
-            if not complete:
+            if not complete and not self.RESULTS.exists(self._parse_statement(statement)):
                 for table, columns in _Columns.extract(statement):
                     LOGGER.debug('Request for %s using columns: %s', table, columns)
                     if table not in self._origins:
                         raise forml.MissingError(f'Unknown origin for table {table}')
                     origin = self._origins[table]
                     partitions = origin.partitions(columns, None)
-                    if origin not in self._loaded or self._loaded[origin].symmetric_difference(partitions):
-                        self._backend.execute(
+                    if origin not in self.PARTITIONS or self.PARTITIONS[origin].symmetric_difference(partitions):
+                        self.BACKEND.execute(
                             sqlalchemy.text('register(:key, :origin)'),
                             {'key': origin.key, 'origin': origin(partitions)},
                         )
-                        self._loaded[origin] = frozenset(partitions)
+                        self.PARTITIONS[origin] = frozenset(partitions)
             return super().__call__(statement, entry)
 
     def __init__(self, *origins: Origin[Partition], **readerkw):

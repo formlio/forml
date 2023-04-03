@@ -310,7 +310,7 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         if rows:
             query = query.limit(rows.count)
             if rows.offset:
-                query = query.offser(rows.offset)
+                query = query.offset(rows.offset)
         return query
 
     def generate_reference(self, instance: sql.Selectable, name: str) -> tuple[sql.Selectable, sql.Selectable]:
