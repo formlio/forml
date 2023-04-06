@@ -326,7 +326,9 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
     # via stack-data
 pyarrow==11.0.0
-    # via mlflow
+    # via
+    #   forml (pyproject.toml)
+    #   mlflow
 pycln==2.1.3
     # via forml (pyproject.toml)
 pycodestyle==2.10.0
