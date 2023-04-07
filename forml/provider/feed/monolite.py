@@ -103,15 +103,15 @@ class Inline(Origin):
         return self._content
 
 
-class Csv(Origin):
-    """CSV file origin."""
+class File(Origin, metaclass=abc.ABCMeta):
+    """Abstract file origin."""
 
-    OPTIONS = {'parse_dates': True, 'header': 0}
+    OPTIONS = {}
 
     def __init__(self, schema: typing.Union['dsl.Source', str], path: typing.Union[pathlib.Path, str], **kwargs):
         super().__init__(schema)
-        self._path: typing.Union[pathlib.Path, str] = path
-        self._kwargs = self.OPTIONS | {'names': self.names} | kwargs
+        self._path: pathlib.Path = pathlib.Path(path)
+        self._kwargs = self.OPTIONS | kwargs
 
     @classmethod
     def parse_config(
@@ -126,7 +126,34 @@ class Csv(Origin):
             return {'path': config}
 
     def load(self, partition: typing.Optional[None]) -> pandas.DataFrame:
-        return pandas.read_csv(self._path, **self._kwargs)
+        return self.read(self._path, **self._kwargs)
+
+    @abc.abstractmethod
+    def read(self, path: pathlib.Path, **kwargs) -> pandas.DataFrame:
+        """Physical reader implementation.
+
+        Args:
+            path: File to read.
+
+        Returns:
+            File content as Pandas dataframe.
+        """
+
+
+class Csv(File):
+    """CSV file origin."""
+
+    OPTIONS = {'parse_dates': True, 'header': 0}
+
+    def read(self, path: pathlib.Path, **kwargs) -> pandas.DataFrame:
+        return pandas.read_csv(path, **({'names': self.names} | kwargs))
+
+
+class Parquet(File):
+    """Parquet file origin."""
+
+    def read(self, path: pathlib.Path, **kwargs) -> pandas.DataFrame:
+        return pandas.read_parquet(path, **({'columns': self.names} | kwargs))
 
 
 class Feed(lazy.Feed, alias='monolite'):
@@ -146,6 +173,7 @@ class Feed(lazy.Feed, alias='monolite'):
 
     * *Inline* data provided as a row-oriented array.
     * *CSV files* parsed using the :func:`pandas:pandas.read_csv`.
+    * *Parquet files* parsed using the :func:`pandas:pandas.read_parquet`.
 
     Args:
         inline: Schema mapping of datasets provided inline as native row-oriented arrays.
@@ -155,6 +183,12 @@ class Feed(lazy.Feed, alias='monolite'):
              * ``path`` pointing to the CSV file
              * ``kwargs`` containing additional options to be passed to the underlying
                :func:`pandas:pandas.read_csv`
+        parquet: Schema mapping of datasets accessible using a Parquet reader. Values can either be
+             direct file system paths or mapping with two keys:
+
+             * ``path`` pointing to the Parquet file
+             * ``kwargs`` containing additional options to be passed to the underlying
+               :func:`pandas:pandas.read_parquet`
 
     The provider can be enabled using the following :ref:`platform configuration <platform-config>`:
 
@@ -173,13 +207,15 @@ class Feed(lazy.Feed, alias='monolite'):
         [FEED.mono.csv."openschema.sklearn:Iris"]
         path = "/tmp/iris.csv"
         kwargs = {sep = ";", engine = "pyarrow"}
+        [FEED.mono.parquet]
+        "openschema.kaggle:Avazu" = "/tmp/avazu.parquet"
 
     Important:
         Select the ``sql`` :ref:`extras to install <install-extras>` ForML together with the
         SQLAlchemy support.
 
     Todo:
-        * More file types (json, parquet)
+        * More file types (json)
         * Multi-file data sources (partitions)
     """
 
@@ -192,10 +228,18 @@ class Feed(lazy.Feed, alias='monolite'):
                 typing.Union[pathlib.Path, str, typing.Mapping[str, typing.Any]],
             ]
         ] = None,
+        parquet: typing.Optional[
+            typing.Mapping[
+                typing.Union['dsl.Source', str],
+                typing.Union[pathlib.Path, str, typing.Mapping[str, typing.Any]],
+            ]
+        ] = None,
     ):
         origins = []
         if inline:
             origins.extend(Inline.create(inline))
         if csv:
             origins.extend(Csv.create(csv))
+        if parquet:
+            origins.extend(Parquet.create(parquet))
         super().__init__(*origins)

@@ -52,7 +52,6 @@ class Registry(setuptools.Command):
             raise forml.InvalidError(
                 'Must create and upload files in one command ' f'(e.g. setup.py {bdist.Package.COMMAND} upload)'
             )
-        project = self.distribution.get_name()
         platform = runtime.Platform(registry=setup.Registry.resolve(self.registry))
         for pkg in packages:
-            platform.registry.publish(project, pkg)
+            platform.registry.publish(self.distribution.tree.name, pkg)

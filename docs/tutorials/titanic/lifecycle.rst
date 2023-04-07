@@ -72,7 +72,8 @@ Development Life Cycle
 
 5. Create the project package artifact and upload it to the (default as per our :ref:`config
    <tutorial-setup>`) file system :ref:`registry <registry>` (assuming the same release does not
-   already exist - otherwise increment the project version in the :ref:`setup.py <project-setup>`):
+   already exist - otherwise increment the project version in the :ref:`pyproject.toml
+   <project-descriptor>`):
 
    .. code-block:: console
 
@@ -81,7 +82,7 @@ Development Life Cycle
    This should publish the project into your local file system :ref:`model registry <registry>`
    making it available for the production life cycle. It becomes the first published :ref:`release
    <registry-package>` of this project versioned as ``0.1.dev1`` (according to the version from
-   :ref:`setup.py <project-setup>`).
+   :ref:`pyproject.toml <project-descriptor>`).
 
 Production Life Cycle
 ---------------------

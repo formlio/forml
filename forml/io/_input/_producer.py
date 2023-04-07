@@ -87,12 +87,23 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
                 raise forml.MissingError('Augmentation not supported - please provide all features')
             return entry.data.take_columns(indices) if indices else entry.data
 
+        parsed = self._parse_statement(statement)
+        LOGGER.debug('Starting ETL read using: %s', parsed)
+        return self.format(statement.schema, self.read(parsed, **self._kwargs))
+
+    @functools.lru_cache
+    def _parse_statement(self, statement: 'dsl.Statement') -> 'parser.Source':
+        """Helper for parsing the statement into the target representation.
+
+        Args:
+            statement: DSL query statement.
+
+        Returns: Statement in the target representation.
+        """
         LOGGER.debug('Parsing ETL query')
         with self.parser(self._sources, self._features) as visitor:
             statement.accept(visitor)
-            result = visitor.fetch()
-        LOGGER.debug('Starting ETL read using: %s', result)
-        return self.format(statement.schema, self.read(result, **self._kwargs))
+            return visitor.fetch()
 
     @functools.lru_cache
     def _match_entry(

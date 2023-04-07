@@ -49,22 +49,18 @@ jobs:
         sudo apt-get install graphviz pandoc
         pip install --upgrade hatch
     - name: "Tutorials"
-      run: hatch run tutorials:lint
+      run: hatch run tutorials:all
     - name: "Docs"
       run: hatch run docs:check
     - name: "Clean"
       run: hatch run clean
-    - name: "Lint"
-      run: hatch run dev:lint
     - name: "Test"
-      run: hatch run dev:test
+      run: hatch run dev:all
     - name: "Upload test results"
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: junit.xml
-    - name: "Coverage"
-      run: hatch run dev:cov
     - name: "Upload coverage results"
       uses: codecov/codecov-action@v3
       with:

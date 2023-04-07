@@ -25,8 +25,8 @@ import numpy
 import pandas
 import pytest
 import sqlalchemy
-from pyhive import sqlalchemy_trino as trino
 from sqlalchemy import engine, sql
+from trino.sqlalchemy import dialect as trino
 
 from forml.io import dsl
 from forml.io.dsl import parser as parsmod
@@ -40,13 +40,13 @@ def sources(
     student_table: dsl.Table, school_table: dsl.Table, person_table: dsl.Table
 ) -> typing.Mapping[dsl.Source, sql.Selectable]:
     """Sources mapping fixture."""
-    sql_student = sql.table('student')
+    sql_student = sql.table(sql.quoted_name('student', quote=True))
     return types.MappingProxyType(
         {
             student_table: sql_student,
-            school_table: sql.table('school'),
+            school_table: sql.table(sql.quoted_name('school', quote=True)),
             student_table.inner_join(person_table, student_table.surname == person_table.surname): sql_student,
-            person_table: sql.table('person'),
+            person_table: sql.table(sql.quoted_name('person', quote=True)),
         }
     )
 

@@ -17,22 +17,15 @@
  under the License.
 -#}
 
-"""
-{{ project.name|title }} project.
+# {{ project.name|title }} project.
+#
+# Generated on {{ system.date }} by {{ system.user }} using ForML {{ forml.version }}.
 
-Generated on {{ system.date }} by {{ system.user }} using ForML {{ forml.version }}.
-"""
-import os
+[project]
+name = "{{ project.name }}"
+version = "{{ project.version|default('0.1.dev1', True) }}"
+dependencies = {{ project.requirements|tojson(indent=4) }}
 
-import setuptools
 
-from forml import project
-
-setuptools.setup(
-    name='{{ project.name }}',
-    version='{{ project.version|default('0.1.dev1', True) }}',
-    packages=setuptools.find_namespace_packages(include=['{{ project.package }}*'], where=os.path.dirname(__file__)),
-    setup_requires=['forml'],
-    install_requires={{ project.requirements|list|safe }},
-    distclass=project.Distribution,
-)
+[tool.forml]
+package = "{{ project.package }}"

@@ -19,48 +19,33 @@
 ForML command line interface.
 """
 import collections
-import functools
-import pathlib
-import sys
 import typing
 
 import click
 from click import core
 
-import forml
-from forml.io import dsl
+from forml import project
 
 from .. import _templating
 
 if typing.TYPE_CHECKING:
+    from forml.io import dsl
+
     from .. import _run
 
 
-class Scope(collections.namedtuple('Scope', 'parent, path')):
+class Scope(collections.namedtuple('Scope', 'parent, tree')):
     """Case class for holding the partial command config."""
 
     parent: '_run.Scope'
-    path: pathlib.Path
-
-    SETUP_NAME = 'setup.py'
+    tree: project.Tree
 
     def __new__(cls, parent: '_run.Scope', path: typing.Optional[str]):
-        return super().__new__(cls, parent, pathlib.Path(path or '.').absolute())
+        return super().__new__(cls, parent, project.Tree(path or '.'))
 
-    @functools.cached_property
-    def _setup_path(self) -> pathlib.Path:
-        """Get the absolute setup.py path."""
-        return self.path / self.SETUP_NAME
-
-    def run_setup(self, *argv: str, **options) -> None:
-        """Interim hack to call the setup.py"""
-        sys.argv[:] = [str(self._setup_path), *argv, *(a for k, v in options.items() if v for a in (f'--{k}', v))]
-        try:
-            exec(  # pylint: disable=exec-used
-                self._setup_path.open().read(), {'__file__': sys.argv[0], '__name__': '__main__'}
-            )
-        except FileNotFoundError as err:
-            raise forml.MissingError(f'Invalid ForML project: {err}') from err
+    def run(self, *argv: str, **options) -> None:
+        """Call the project manager."""
+        self.tree.run(*argv, **options)
 
     def create_project(
         self,
@@ -71,7 +56,7 @@ class Scope(collections.namedtuple('Scope', 'parent, path')):
         requirements: typing.Sequence[str],
     ) -> None:
         """Helper for creating a new project structure."""
-        _templating.project(name, self.path, template, package, version, requirements)
+        _templating.project(name, self.tree.path, template, package, version, requirements)
 
 
 @click.group(name='project')
@@ -105,7 +90,7 @@ def init(
 @click.pass_obj
 def test(scope: Scope) -> None:
     """Run the unit tests."""
-    scope.run_setup('test')
+    scope.run('test')
 
 
 @group.command()
@@ -118,11 +103,11 @@ def train(
     scope: Scope,
     runner: typing.Optional[str],
     feed: typing.Optional[typing.Sequence[str]],
-    lower: typing.Optional[dsl.Native],
-    upper: typing.Optional[dsl.Native],
+    lower: typing.Optional['dsl.Native'],
+    upper: typing.Optional['dsl.Native'],
 ) -> None:
     """Train the project."""
-    scope.run_setup('train', runner=runner, feed=','.join(feed), lower=lower, upper=upper)
+    scope.run('train', runner=runner, feed=','.join(feed), lower=lower, upper=upper)
 
 
 @group.command(name='eval')
@@ -135,15 +120,15 @@ def evaluate(
     scope: Scope,
     runner: typing.Optional[str],
     feed: typing.Optional[typing.Sequence[str]],
-    lower: typing.Optional[dsl.Native],
-    upper: typing.Optional[dsl.Native],
+    lower: typing.Optional['dsl.Native'],
+    upper: typing.Optional['dsl.Native'],
 ) -> None:
     """Evaluate the project."""
-    scope.run_setup('eval', runner=runner, feed=','.join(feed), lower=lower, upper=upper)
+    scope.run('eval', runner=runner, feed=','.join(feed), lower=lower, upper=upper)
 
 
 @group.command()
 @click.pass_obj
 def release(scope: Scope) -> None:
     """Run the unit tests."""
-    scope.run_setup('bdist_4ml', 'upload')
+    scope.run('bdist_4ml', 'upload')

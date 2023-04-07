@@ -117,7 +117,7 @@ class Config(dict):
             path: Path to file to parse.
         """
         try:
-            with open(path, 'rb') as cfg:
+            with path.open('rb') as cfg:
                 self.update(tomli.load(cfg))
         except FileNotFoundError:  # not an error (ignore)
             pass

@@ -27,7 +27,7 @@ description = "A development framework and MLOps platform for the lifecycle mana
 readme = "README.md"
 license = {text = "Apache License 2.0"}
 requires-python = ">=3.9"
-maintainers = [
+authors = [
     {name = "ForML Development Team", email = "info@forml.io"},
 ]
 scripts.forml = "forml.setup:cli"
@@ -67,8 +67,8 @@ dev = [
     "pre-commit",
     "pycln",
     "pylint",
-    "pytest-cov",
     "pytest-asyncio",
+    "pytest-cov",
     "pytest-xdist",
     "starlette[full]",
 ]
@@ -80,12 +80,12 @@ docs = [
     "sphinxcontrib-napoleon",
     "sphinxcontrib-spelling",
     "nbsphinx",  # also needs pandoc binary
-    "jupyter-client==7.2.2",  # hold back for tornado-dask compatibility
+    "jupyter-client",
 ]
 graphviz = ["graphviz"]
 mlflow = ["mlflow"]
 rest = ["starlette", "uvicorn"]
-sql = ["pyhive", "sqlalchemy"]
+sql = ["duckdb-engine", "pandas[parquet]", "sqlalchemy", "trino[sqlalchemy]"]
 all = ["forml[dask,graphviz,mlflow,rest,sql]"]
 
 [project.urls]
@@ -106,36 +106,7 @@ path = "forml/__init__.py"
 LC_COLLATE = "en_US.UTF-8"
 PIP_CONSTRAINT = "constraints.txt"
 [tool.hatch.envs.default.scripts]
-clean = [
-    """rm -vrf \
-        .coverage .coverage.* coverage.xml \
-        docs/_auto/ docs/_build/ \
-        htmlcov/ \
-        junit.xml \
-        .pytest_cache/ \
-        tutorials/titanic/dist/""",
-    """find {root} \
-    \\( \
-        -name .git -o \
-        -name .idea -o \
-        -name .venv \
-    \\) -prune -o \
-    \\( \
-        -type d \
-        \\( \
-            -name build -o \
-            -name .eggs -o \
-            -name '*.egg-info' -o \
-            -name .ipynb_checkpoints -o \
-            -name __pycache__ \
-        \\) -prune -o \
-        -type f \
-        \\( \
-            -name '*.log' -o -name '*.log.*' -o \
-            -name '*.dot' -o -name '*.dot.*' \
-        \\) \
-    \\) -print -exec rm -rf {{}} \\;""",
-]
+clean = "git status --ignored --porcelain | awk '(/^!!/ && !/(.idea|.venv)/){{print $2}}' | xargs -rt rm -rf --"
 update = "pip-compile --extra=dev,docs,dask,graphviz,mlflow,rest,sql --output-file={env:PIP_CONSTRAINT} --no-emit-index-url --strip-extras --rebuild --upgrade pyproject.toml"
 
 [tool.hatch.envs.dev]
@@ -151,7 +122,7 @@ lint = [
     "pylint --rcfile=.pylintrc {args: forml tests}",
     "sort --check .gitignore",
 ]
-test = "pytest -rxXs --junitxml=junit.xml --cov-config=pyproject.toml --cov=forml --cov-append --cov-report=term --numprocesses=auto --dist=loadscope {args: forml tests}"
+test = "pytest -rxXs --junitxml=junit.xml --cov-config=pyproject.toml --cov=forml --cov-append --cov-report=term-missing --numprocesses=auto --dist=loadscope {args: forml tests}"
 cov = [
     "coverage xml",
     "coverage html",
@@ -179,7 +150,7 @@ check = [
 
 [tool.hatch.envs.tutorials]
 dependencies = [
-    "forml[dev]",
+    "forml[dev,dask]",
     "openschema",
 ]
 [tool.hatch.envs.tutorials.env-vars]
@@ -193,6 +164,11 @@ lint = [
     "pycln --check --diff --config=pyproject.toml {args: tutorials}",
     "flake8 --config=.flake8 {args: tutorials}",
     "pylint --rcfile=.pylintrc {args: tutorials}",
+]
+test = "forml project --path tutorials/titanic test"
+all = [
+    "lint",
+    "test",
 ]
 
 [tool.hatch.build.targets.sdist]

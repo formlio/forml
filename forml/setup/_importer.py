@@ -294,7 +294,7 @@ def load(
         called = True
         caller_module = inspect.currentframe().f_back.f_locals['__name__']
         if not is_expected(caller_module):
-            warnings.warn(f'Ignoring setup from unexpected component of {caller_module}')
+            warnings.warn(f'Ignoring setup from unexpected component of {caller_module}', stacklevel=2)
             return
         LOGGER.debug('Component setup using %s', component)
         result = component

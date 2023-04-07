@@ -56,7 +56,7 @@ Resources
 
 * `Documentation <https://docs.forml.io/en/latest/>`_
 * `Source Code <https://github.com/formlio/forml/>`_
-* `Chat Room <https://gitter.im/formlio/community/>`_
+* `Chat Room <https://app.gitter.im/#/room/#formlio_community:gitter.im>`_
 * `Issue Tracker <https://github.com/formlio/forml/issues/>`_
 * `PyPI Repository <https://pypi.org/project/forml/>`_
 

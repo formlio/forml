@@ -34,10 +34,12 @@ class TestSink(Sink):
     class Matcher(Sink.Matcher[Sink.Matcher]):
         """Null sink matcher."""
 
-        def match(self, context: Sink.Matcher, expected: layout.Array) -> bool:
+        def match(self, context: Sink.Matcher, expected: layout.Array) -> bool:  # pylint: disable=unused-argument
+            """Match anything."""
             return True
 
     @staticmethod
     @pytest.fixture(scope='session')
     def sink() -> io.Sink:
+        """Sink fixture."""
         return null.Sink()

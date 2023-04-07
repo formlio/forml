@@ -24,18 +24,18 @@ import typing
 from ._body import Artifact, Components
 from ._component import Evaluation, Source, setup
 from ._distribution import Manifest, Package
-from ._setuptools import Distribution
+from ._setuptools import Tree
 
 __all__ = [
+    'Artifact',
+    'Components',
+    'Evaluation',
+    'Manifest',
     'open',
+    'Package',
     'setup',
     'Source',
-    'Evaluation',
-    'Components',
-    'Artifact',
-    'Distribution',
-    'Manifest',
-    'Package',
+    'Tree',
 ]
 
 

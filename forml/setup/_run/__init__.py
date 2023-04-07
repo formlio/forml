@@ -19,6 +19,7 @@
 ForML command line interface.
 """
 import itertools
+import pathlib
 import shutil
 import sys
 import typing
@@ -35,9 +36,9 @@ from . import application, model, project
 class Scope(typing.NamedTuple):
     """Case class for holding the partial command config."""
 
-    config: typing.Optional[str]
+    config: typing.Optional[pathlib.Path]
     loglevel: typing.Optional[str]
-    logfile: typing.Optional[str]
+    logfile: typing.Optional[pathlib.Path]
 
     @staticmethod
     def print(listing: typing.Iterable[typing.Any]) -> None:
@@ -59,7 +60,7 @@ class Scope(typing.NamedTuple):
 @click.option(
     '--config',
     '-C',
-    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path),
     help='Additional configuration file.',
 )
 @click.option(
@@ -68,13 +69,17 @@ class Scope(typing.NamedTuple):
     type=click.Choice(['debug', 'info', 'warning', 'error'], case_sensitive=False),
     help='Global loglevel to use.',
 )
-@click.option('--logfile', type=click.Path(file_okay=True, dir_okay=False, writable=True), help='Logfile path.')
+@click.option(
+    '--logfile',
+    type=click.Path(file_okay=True, dir_okay=False, writable=True, path_type=pathlib.Path),
+    help='Logfile path.',
+)
 @click.pass_context
 def group(
     context: core.Context,
-    config: typing.Optional[str],
+    config: typing.Optional[pathlib.Path],
     loglevel: typing.Optional[str],
-    logfile: typing.Optional[str],
+    logfile: typing.Optional[pathlib.Path],
 ):
     """Life Cycle Management for Data Science Projects."""
     if config:

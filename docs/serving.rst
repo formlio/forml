@@ -95,7 +95,7 @@ This diagram illustrates the following steps:
 .. note::
     An engine can serve any :ref:`application <application>` available in its linked
     :ref:`inventory <inventory>` in a multiplexed fashion. Since the released :ref:`project
-    packages <registry-package>` contain all the :ref:`declared dependencies <project-setup>`,
+    packages <registry-package>` contain all the :ref:`declared dependencies <project-descriptor>`,
     the engine itself remains generic. To avoid collisions between dependencies of different
     models, the engine separates each one in an isolated context.
 

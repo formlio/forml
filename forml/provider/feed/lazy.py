@@ -25,8 +25,7 @@ import typing
 
 import pandas
 import sqlalchemy
-from sqlalchemy import pool, sql
-from sqlalchemy.engine import interfaces
+from sqlalchemy import engine, sql
 
 import forml
 from forml.io import dsl, layout
@@ -185,13 +184,11 @@ class Feed(alchemy.Feed):
     class Reader(alchemy.Feed.Reader):
         """Extending the SQLAlchemy reader."""
 
-        class Backend(interfaces.Connectable):
-            """Serializable in-memory SQLite connection."""
+        class Backend(engine.Connection):
+            """Serializable in-memory DuckDB connection."""
 
             def __init__(self):
-                self._engine: interfaces.Connectable = sqlalchemy.create_engine(
-                    'sqlite://', connect_args={'check_same_thread': False}, poolclass=pool.StaticPool
-                )
+                super().__init__(sqlalchemy.create_engine('duckdb:///:memory:'))
 
             def __repr__(self):
                 return 'LazyReaderBackend'
@@ -199,24 +196,8 @@ class Feed(alchemy.Feed):
             def __reduce__(self):
                 return self.__class__, ()
 
-            def connect(self, **kwargs):
-                return self._engine.connect(**kwargs)
-
-            def execute(self, object_, *multiparams, **params):
-                return self._engine.execute(object_, *multiparams, **params)
-
-            def scalar(self, object_, *multiparams, **params):
-                return self._engine.scalar(object_, *multiparams, **params)
-
-            # pylint: disable=protected-access
-            def _run_visitor(self, visitorcallable, element, **kwargs):
-                return self._engine._run_visitor(visitorcallable, element, **kwargs)
-
-            def _execute_clauseelement(self, elem, multiparams=None, params=None):
-                return self._engine._execute_clauseelement(elem, multiparams, params)
-
-            def __getattr__(self, item):
-                return getattr(self._engine, item)
+        BACKEND: engine.Connection = Backend()
+        PARTITIONS: dict[Origin[Partition], frozenset[Partition]] = {}
 
         def __init__(
             self,
@@ -224,28 +205,31 @@ class Feed(alchemy.Feed):
             features: typing.Mapping[dsl.Feature, sql.ColumnElement],
             origins: typing.Iterable[Origin[Partition]],
         ):
-            self._loaded: dict[Origin[Partition], frozenset[Partition]] = {}
             self._origins: dict[dsl.Source, Origin[Partition]] = {o.source: o for o in origins}
-            self._backend: Feed.Reader.Backend = self.Backend()
-            super().__init__(sources, features, self._backend)
+            super().__init__(sources, features, self.BACKEND)
 
         def __reduce__(self):
             return self.__class__, (self._sources, self._features, self._origins.values())
 
         def __call__(self, statement: dsl.Statement, entry: typing.Optional[layout.Entry] = None) -> layout.Tabular:
             complete = entry and self._match_entry(statement.schema, entry.schema)[0]
-            if not complete:
+            if not complete and not self.RESULTS.exists(self._parse_statement(statement)):
                 for table, columns in _Columns.extract(statement):
                     LOGGER.debug('Request for %s using columns: %s', table, columns)
                     if table not in self._origins:
                         raise forml.MissingError(f'Unknown origin for table {table}')
                     origin = self._origins[table]
                     partitions = origin.partitions(columns, None)
-                    if origin not in self._loaded or self._loaded[origin].symmetric_difference(partitions):
-                        origin(partitions).to_sql(origin.key, self._backend, index=False, if_exists='replace')
-                        self._loaded[origin] = frozenset(partitions)
+                    if origin not in self.PARTITIONS or self.PARTITIONS[origin].symmetric_difference(partitions):
+                        self.BACKEND.execute(
+                            sqlalchemy.text('register(:key, :origin)'),
+                            {'key': origin.key, 'origin': origin(partitions)},
+                        )
+                        self.PARTITIONS[origin] = frozenset(partitions)
             return super().__call__(statement, entry)
 
     def __init__(self, *origins: Origin[Partition], **readerkw):
-        self._sources: typing.Mapping[dsl.Source, sql.Selectable] = {o.source: sqlalchemy.table(o.key) for o in origins}
+        self._sources: typing.Mapping[dsl.Source, sql.Selectable] = {
+            o.source: sqlalchemy.table(sql.quoted_name(o.key, quote=True)) for o in origins
+        }
         super().__init__({o.source: o.key for o in origins}, origins=origins, **readerkw)

@@ -164,7 +164,7 @@ process can transition from here into the :ref:`production life cycle <lifecycle
 .. warning::
    Each :ref:`model registry <registry>` provider allows uploading only unique monotonically
    increasing releases per any given project, hence executing this action twice against the
-   same registry without incrementing the :ref:`project version <project-setup>` is an error.
+   same registry without incrementing the :ref:`project version <project-descriptor>` is an error.
 
 Example:
 

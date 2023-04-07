@@ -54,9 +54,9 @@ class TestSlicer:
     @pytest.mark.parametrize(
         'labels_factory, labels_width',
         [
-            (lambda l: l, 1),
-            (lambda l: [l], 1),
-            (lambda l: [l, l], 2),
+            (lambda f: f, 1),
+            (lambda f: [f], 1),
+            (lambda f: [f, f], 2),
         ],
     )
     def test_slicer(

@@ -87,7 +87,6 @@ intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'pip': ('https://pip.pypa.io/en/stable/', None),
     'python': ('https://docs.python.org/3', None),
-    'setuptools': ('https://setuptools.pypa.io/en/latest/', None),
     'sklearn': ('https://scikit-learn.org/stable/', None),
     'sqlalchemy': ('https://docs.sqlalchemy.org/en/latest/', None),
 }
@@ -121,6 +120,9 @@ _target_blacklist = {
     'py:obj': (r'^forml\..*',),
 }
 nitpick_ignore_regex = [(k, v) for k, t in _target_blacklist.items() for v in t]
+
+# Ignore the given anchors when checking links
+linkcheck_anchors_ignore = ['/room/#formlio_community:gitter.im']
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -217,12 +219,12 @@ todo_include_todos = True
 # -- Options for sphinx_immaterial --------------------------------------
 # See: https://pypi.org/project/sphinx-immaterial/
 object_description_options = [
-    ('py:.*parameter', dict(include_in_toc=False)),
-    ('py:.*attribute', dict(include_in_toc=False)),
-    # ('py:.*function', dict(include_in_toc=False)),
-    # ('py:.*property', dict(include_in_toc=False)),
-    # ('py:.*method', dict(include_in_toc=False)),
-    ('py:.*', dict(include_fields_in_toc=False)),
+    ('py:.*parameter', {'include_in_toc': False}),
+    ('py:.*attribute', {'include_in_toc': False}),
+    # ('py:.*function', {'include_in_toc': False}),
+    # ('py:.*property', {'include_in_toc': False}),
+    # ('py:.*method', {'include_in_toc': False}),
+    ('py:.*', {'include_fields_in_toc': False}),
 ]
 
 

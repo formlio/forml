@@ -20,14 +20,14 @@
 ForML
 =====
 
-[![GitHub Build](https://img.shields.io/github/workflow/status/formlio/forml/CI%20Build/main)](https://github.com/formlio/forml/actions/)
-[![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/main)](https://codecov.io/github/formlio/forml?branch=main)
+[![GitHub Build](https://img.shields.io/github/actions/workflow/status/formlio/forml/ci.yml?branch=main)](https://github.com/formlio/forml/actions/)
+[![Coverage Status](https://img.shields.io/codecov/c/github/formlio/forml/main)](https://app.codecov.io/github/formlio/forml/tree/main)
 [![Code Style: black](https://img.shields.io/badge/code%20style-black-000000)](https://github.com/psf/black)
 [![Lines of Code](https://img.shields.io/tokei/lines/github/formlio/forml)](https://github.com/formlio/forml)
 
 [![Documentation Status](https://readthedocs.org/projects/forml/badge/?version=latest)](https://docs.forml.io/en/latest/)
 [![License](https://img.shields.io/pypi/l/forml)](http://www.apache.org/licenses/LICENSE-2.0.txt)
-[![Gitter](https://badges.gitter.im/formlio/community.svg)](https://gitter.im/formlio/community/)
+[![Gitter](https://img.shields.io/gitter/room/formlio/community)](https://app.gitter.im/#/room/#formlio_community:gitter.im)
 
 ![Python Versions](https://img.shields.io/pypi/pyversions/forml)
 [![PyPI Version](https://img.shields.io/pypi/v/forml)](https://pypi.org/project/forml/)

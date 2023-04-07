@@ -124,7 +124,7 @@ class Components(collections.namedtuple('Components', 'source, pipeline, evaluat
         package = f'{package.rstrip(".")}.' if package else ''
         for component, setter in builder:
             name = modules.get(component) or component
-            if '.' not in name:
+            if not name.startswith(package):
                 name = package + name
             try:
                 setter(setup.load(name, _component.setup, path))

@@ -19,6 +19,9 @@
 Custom setuptools commands distribution packaging.
 """
 import os
+import pathlib
+import shutil
+import subprocess
 import sys
 import typing
 
@@ -55,31 +58,41 @@ class Package(setuptools.Command):
     @property
     def filename(self) -> str:
         """Target package file name."""
-        return f'{self.distribution.get_name()}-{self.distribution.get_version()}.{_distribution.Package.FORMAT}'
+        return f'{self.distribution.tree.name}-{self.distribution.tree.version}.{_distribution.Package.FORMAT}'
 
     @property
     def manifest(self) -> _distribution.Manifest:
         """Package manifest."""
-        name = self.distribution.get_name()
-        version = self.distribution.get_version()
         return _distribution.Manifest(
-            name=name, version=version, package=self.distribution.artifact.package, **self.distribution.artifact.modules
+            name=self.distribution.tree.name,
+            version=self.distribution.tree.version,
+            package=self.distribution.tree.package,
+            **self.distribution.tree.components,
         )
 
     def run(self) -> None:
         """Trigger the packaging process."""
-        import pip._internal.cli.main as pip  # pylint: disable=import-outside-toplevel
-
-        pip.main(
+        if os.path.exists(self.bdist_dir):
+            shutil.rmtree(self.bdist_dir)
+        subprocess.run(
             [
+                sys.executable,
+                '-m',
+                'pip',
                 'install',
-                '--upgrade',
                 '--no-user',
+                '--disable-pip-version-check',
+                '--exists-action=a',
+                '--no-warn-conflicts',
+                '--no-compile',
                 '--target',
                 self.bdist_dir,
-                os.path.abspath(os.path.dirname(sys.argv[0])),
-            ]
+                *self.distribution.tree.dependencies,
+            ],
+            check=True,
         )
+        package = self.distribution.tree.package.rsplit('.', 1)[0]
+        shutil.copytree(self.distribution.tree.path / package, pathlib.Path(self.bdist_dir) / package)
         if not os.path.exists(self.dist_dir):
             os.makedirs(self.dist_dir)
         target = os.path.join(self.dist_dir, self.filename)
