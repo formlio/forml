@@ -112,6 +112,7 @@ The actual execution of the :ref:`ForML workflows <workflow>` is performed by th
    forml.provider.runner.dask.Runner
    forml.provider.runner.graphviz.Runner
    forml.provider.runner.pyfunc.Runner
+   forml.provider.runner.spark.Runner
 
 
 Feeds

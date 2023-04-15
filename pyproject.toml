@@ -85,8 +85,9 @@ docs = [
 graphviz = ["graphviz"]
 mlflow = ["mlflow"]
 rest = ["starlette", "uvicorn"]
+spark = ["pyspark"]
 sql = ["duckdb-engine", "pandas[parquet]", "sqlalchemy", "trino[sqlalchemy]"]
-all = ["forml[dask,graphviz,mlflow,rest,sql]"]
+all = ["forml[dask,graphviz,mlflow,rest,sql,spark]"]
 
 [project.urls]
 Homepage = "http://forml.io/"
@@ -107,7 +108,7 @@ LC_COLLATE = "en_US.UTF-8"
 PIP_CONSTRAINT = "constraints.txt"
 [tool.hatch.envs.default.scripts]
 clean = "git status --ignored --porcelain | awk '(/^!!/ && !/(.idea|.venv)/){{print $2}}' | xargs -rt rm -rf --"
-update = "pip-compile --extra=dev,docs,dask,graphviz,mlflow,rest,sql --output-file={env:PIP_CONSTRAINT} --no-emit-index-url --strip-extras --rebuild --upgrade pyproject.toml"
+update = "pip-compile --extra=dev,docs,dask,graphviz,mlflow,rest,sql,spark --output-file={env:PIP_CONSTRAINT} --no-emit-index-url --strip-extras --rebuild --upgrade --resolver=backtracking pyproject.toml"
 
 [tool.hatch.envs.dev]
 dependencies = [

@@ -75,7 +75,6 @@ Resources
     install
     principles
     tutorials/index
-    faq
 
 
 .. toctree::

@@ -34,6 +34,9 @@ default = "dask"
 provider = "dask"
 scheduler = "processes"
 
+[RUNNER.spark]
+provider = "spark"
+
 [RUNNER.graphviz]
 provider = "graphviz"
 format = "svg"

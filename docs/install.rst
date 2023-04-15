@@ -76,5 +76,7 @@ system-dependent mechanism (i.e. using the OS package manager).
 | rest     | ``pip install 'forml[rest]'``         | The :class:`RESTful serving gateway                            |
 |          |                                       | <forml.provider.gateway.rest.Gateway>`                         |
 +----------+---------------------------------------+----------------------------------------------------------------+
+| spark    | ``pip install 'forml[spark]'``        | The :class:`Spark runner <forml.provider.runner.spark.Runner>` |
++----------+---------------------------------------+----------------------------------------------------------------+
 | sql      | ``pip install 'forml[sql]'``          | SQL reader dependencies                                        |
 +----------+---------------------------------------+----------------------------------------------------------------+
