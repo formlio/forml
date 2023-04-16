@@ -32,7 +32,7 @@ from sqlalchemy import sql
 import forml
 from forml import io, setup
 from forml.io import dsl as dslmod
-from forml.provider.feed.reader.sql import alchemy
+from forml.provider.feed.reader import alchemy
 
 if typing.TYPE_CHECKING:
     from forml.io import dsl  # pylint: disable=reimported

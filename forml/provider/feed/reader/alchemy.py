@@ -18,8 +18,6 @@
 """
 SQLAlchemy based ETL reader.
 """
-import datetime
-import inspect
 import logging
 import operator
 import typing
@@ -27,9 +25,7 @@ import typing
 import pandas
 from sqlalchemy import func, sql
 from sqlalchemy import types as sqltypes
-from sqlalchemy.dialects.sqlite import base as sqlite
 from sqlalchemy.engine import interfaces
-from trino.sqlalchemy import dialect as trino
 
 from forml import io
 from forml.io import dsl, layout
@@ -37,74 +33,6 @@ from forml.io.dsl import function
 from forml.io.dsl import parser as parsmod
 
 LOGGER = logging.getLogger(__name__)
-
-
-Native = typing.TypeVar('Native')
-
-
-class Type(sqltypes.TypeDecorator[Native]):
-    """Base class for custom types with explicit literal processors for specific dialects."""
-
-    cache_ok = True
-    PROCESSOR: typing.Mapping[type[interfaces.Dialect], typing.Callable[[Native], str]] = {}
-
-    def _process(self, value: Native, dialect: interfaces.Dialect) -> str:
-        """Type processing implementation.
-
-        Args:
-            value: Native value to be processed.
-            dialect: Target dialect to process for.
-
-        Returns: Dialect encoded value.
-        """
-        for base in inspect.getmro(type(dialect)):
-            if base in self.PROCESSOR:
-                processor = self.PROCESSOR[base]
-                break
-        else:
-            processor = self.impl.literal_processor(dialect)
-        return processor(value)
-
-    def process_literal_param(self, value: Native, dialect: interfaces.Dialect):
-        return self._process(value, dialect)
-
-    def process_bind_param(self, value, dialect: interfaces.Dialect):
-        return self._process(value, dialect)
-
-    def process_result_value(self, value, dialect: interfaces.Dialect):
-        return self._process(value, dialect)
-
-    def literal_processor(self, dialect: interfaces.Dialect):
-        def processor(value: Native):
-            return self._process(value, dialect)
-
-        return processor
-
-    @property
-    def python_type(self):
-        return self.impl.python_type
-
-
-class Date(Type[datetime.date]):
-    """Custom Date type."""
-
-    impl = sqltypes.Date
-    ISOFMT = '%Y-%m-%d'
-    PROCESSOR = {
-        trino.TrinoDialect: lambda v: f"DATE '{v.strftime(Date.ISOFMT)}'",
-        sqlite.SQLiteDialect: lambda v: f"'{v.strftime(Date.ISOFMT)}'",
-    }
-
-
-class DateTime(Type[datetime.datetime]):
-    """Custom DateTime type."""
-
-    impl = sqltypes.DateTime
-    ISOFMT = '%Y-%m-%d %H:%M:%S.%f'
-    PROCESSOR = {
-        trino.TrinoDialect: lambda v: f"TIMESTAMP '{v.strftime(DateTime.ISOFMT)}'",
-        sqlite.SQLiteDialect: lambda v: f"'{v.strftime(DateTime.ISOFMT)}'",
-    }
 
 
 class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: disable=unsubscriptable-object
@@ -116,8 +44,8 @@ class Parser(parsmod.Visitor[sql.Selectable, sql.ColumnElement]):  # pylint: dis
         dsl.Float(): sqltypes.Float(),
         dsl.Decimal(): sqltypes.DECIMAL(),
         dsl.String(): sqltypes.Unicode(),
-        dsl.Date(): Date(),
-        dsl.Timestamp(): DateTime(),
+        dsl.Date(): sqltypes.Date(),
+        dsl.Timestamp(): sqltypes.DateTime(),
     }
 
     EXPRESSION: typing.Mapping[type[dsl.Expression], typing.Callable[..., sql.ColumnElement]] = {
