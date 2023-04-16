@@ -99,6 +99,9 @@ class Virtual:
         def __init__(self, future: payload.Sniff.Value.Future):
             self._future: payload.Sniff.Value.Future = future
 
+        def __getattr__(self, item: typing.Any) -> typing.Any:
+            return getattr(self._future.result(), item)
+
         @property
         def features(self) -> 'flow.Features':
             """Get the train-mode *features* segment values."""
