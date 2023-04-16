@@ -20,12 +20,13 @@ Common runner implementations tests.
 """
 
 import abc
-import multiprocessing
+import typing
 
 import pytest
 
 from forml import io, runtime
 from forml.io import asset, layout
+from forml.pipeline import payload
 
 
 class Runner(abc.ABC):
@@ -38,12 +39,15 @@ class Runner(abc.ABC):
         """Runner fixture."""
 
     def test_apply(
-        self, runner: runtime.Runner, sink_output: multiprocessing.Queue, generation_prediction: layout.Array
+        self,
+        runner: runtime.Runner,
+        sink_collector: typing.Callable[[], payload.Sniff.Value.Future],
+        generation_prediction: layout.Array,
     ):
         """Test runner apply mode."""
         with runner:
             runner.apply()
-        assert tuple(sink_output.get_nowait()) == generation_prediction
+        assert tuple(sink_collector()) == generation_prediction
 
     def test_train(self, runner: runtime.Runner):
         """Test runner train mode."""

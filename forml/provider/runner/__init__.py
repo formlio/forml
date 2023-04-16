@@ -19,4 +19,4 @@
 Runner implementations.
 """
 
-__all__ = ['dask', 'graphviz', 'pyfunc']
+__all__ = ['dask', 'graphviz', 'pyfunc', 'spark']

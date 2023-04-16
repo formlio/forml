@@ -88,6 +88,7 @@ intersphinx_mapping = {
     'pip': ('https://pip.pypa.io/en/stable/', None),
     'python': ('https://docs.python.org/3', None),
     'sklearn': ('https://scikit-learn.org/stable/', None),
+    'pyspark': ('https://spark.apache.org/docs/latest/api/python/', None),
     'sqlalchemy': ('https://docs.sqlalchemy.org/en/latest/', None),
 }
 

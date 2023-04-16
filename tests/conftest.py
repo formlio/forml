@@ -20,11 +20,11 @@ Global ForML unit tests fixtures.
 """
 import collections
 import datetime
-import multiprocessing
 import os
 import pathlib
 import typing
 import uuid
+from unittest import mock
 
 import cloudpickle
 import pytest
@@ -35,7 +35,8 @@ from forml import flow, io
 from forml import project as prjmod
 from forml import setup
 from forml.io import asset, dsl, layout
-from forml.pipeline import wrap
+from forml.pipeline import payload, wrap
+from forml.provider.registry.filesystem import posix
 
 from . import helloworld
 from .helloworld import application as helloworld_descriptor
@@ -270,31 +271,37 @@ def empty_release(project_release: asset.Release.Key) -> asset.Release.Key:
 
 
 @pytest.fixture(scope='function')
+def empty_package(
+    project_name: asset.Project.Key, empty_release: asset.Release.Key, tmp_path: pathlib.Path
+) -> prjmod.Package:
+    """Dummy package for the empty_release fixture."""
+    pkg = mock.MagicMock()
+    pkg.manifest.name = project_name
+    pkg.manifest.version = empty_release
+    pkg.path = tmp_path / 'empty'
+    pkg.path.mkdir()
+    return pkg
+
+
+@pytest.fixture(scope='function')
 def registry(
     project_name: asset.Project.Key,
     project_release: asset.Release.Key,
-    empty_release: asset.Release.Key,
     valid_generation: asset.Generation.Key,
     generation_tag: asset.Tag,
     generation_states: typing.Mapping[uuid.UUID, bytes],
     project_package: prjmod.Package,
+    empty_package: prjmod.Package,
+    tmp_path: pathlib.Path,
 ) -> asset.Registry:
     """Registry fixture (multiprocess/thread safe)."""
-    with multiprocessing.Manager() as manager:
-        lock = manager.RLock()
-        content = manager.dict(
-            {
-                project_name: {
-                    project_release: (
-                        project_package,
-                        {valid_generation: (generation_tag, tuple(generation_states.values()))},
-                    ),
-                    empty_release: (project_package, {}),
-                }
-            }
-        )
-        unbound: dict[uuid.UUID, bytes] = manager.dict()
-        yield helloworld.Registry(content, unbound, lock)
+    instance = posix.Registry(tmp_path)
+    instance.push(project_package)
+    for sid, state in generation_states.items():
+        instance.write(project_name, project_release, sid, state)
+    instance.close(project_name, project_release, valid_generation, generation_tag)
+    instance.push(empty_package)
+    return instance
 
 
 @pytest.fixture(scope='function')
@@ -387,32 +394,33 @@ def sink_type(sink_reference: str) -> type[io.Sink]:  # pylint: disable=unused-a
     class Sink(io.Sink, alias=sink_reference):
         """Dummy sink for unit-testing purposes."""
 
-        class Writer(io.Sink.Writer[layout.RowMajor]):
-            """Dummy black-hole sink writer."""
-
-            @classmethod
-            def write(cls, data: layout.RowMajor, queue: typing.Optional[multiprocessing.Queue] = None) -> None:
-                if queue:
-                    queue.put(data)
-
-        def __init__(self, identity: str, **readerkw):
-            super().__init__(**readerkw)
+        def __init__(self, identity: str):
+            super().__init__()
             self.identity: str = identity
+            self._sniffer: payload.Sniff = payload.Sniff()
+            self._value: payload.Sniff.Value.Future = self._sniffer.__enter__()
+
+        def save(self, schema: typing.Optional['dsl.Source.Schema']) -> 'flow.Composable':
+            return self._sniffer
+
+        def collect(self) -> typing.Any:
+            """Close the sniffer client and retrieve the future value."""
+            self._sniffer.__exit__(None, None, None)
+            return self._value.result()
 
     return Sink
 
 
 @pytest.fixture(scope='function')
-def sink_output() -> multiprocessing.Queue:
-    """Sink output queue."""
-    with multiprocessing.Manager() as manager:
-        yield manager.Queue()
+def sink_instance(sink_type: type[io.Sink]) -> io.Sink:
+    """Sink instance fixture"""
+    return sink_type(identity='test')
 
 
 @pytest.fixture(scope='function')
-def sink_instance(sink_type: type[io.Sink], sink_output: multiprocessing.Queue) -> io.Sink:
-    """Sink instance fixture"""
-    return sink_type(identity='test', queue=sink_output)
+def sink_collector(sink_instance: io.Sink) -> typing.Callable[[], payload.Sniff.Value.Future]:
+    """Sink output sniffer value future."""
+    return sink_instance.collect
 
 
 @pytest.fixture(scope='session')

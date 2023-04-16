@@ -468,7 +468,7 @@ class Sniff(flow.Operator):
             empty = secrets.token_bytes()
             value = managers.Value(bytes, empty)
             Manager.register('value', callable=lambda: value)
-            authkey = secrets.token_bytes(16)
+            authkey = secrets.token_bytes()
             manager = Manager((socket.gethostname(), 0), authkey=authkey)
             manager.start()  # pylint: disable=consider-using-with
             client = cls.Client(Manager, manager.address, authkey=authkey)

@@ -45,4 +45,4 @@ class TestRunner(Runner):
 
     def test_call(self, runner: pyfunc.Runner, testset_entry: layout.Entry, generation_prediction: layout.Array):
         """Pyfunc call mode test."""
-        assert tuple(runner.call(testset_entry).data) == generation_prediction
+        assert tuple(runner.call(testset_entry)) == generation_prediction

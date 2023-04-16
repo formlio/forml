@@ -16,10 +16,8 @@
 # under the License.
 
 """Hello World test project helpers."""
-import multiprocessing
 import pathlib
 import typing
-import uuid
 
 from forml import application as appmod
 from forml import io
@@ -61,91 +59,6 @@ TRAINSET_FEATURES = layout.Dense.from_rows(TRAINSET).take_columns([0, 1, 2]).to_
 TRAINSET_LABELS = layout.Dense.from_rows(TRAINSET).to_columns()[-1]
 TESTSET = TRAINSET_FEATURES
 GENERATION_PREDICTION = 3, 6, 9
-
-
-class Registry(asset.Registry):
-    """Fixture registry implementation."""
-
-    ContentT = dict[
-        asset.Project.Key,
-        dict[
-            asset.Release.Key,
-            tuple[prjmod.Package, dict[asset.Generation.Key, tuple[asset.Tag, tuple[bytes]]]],
-        ],
-    ]
-
-    def __init__(self, content: ContentT, unbound: dict[uuid.UUID, bytes], lock: multiprocessing.Lock):
-        super().__init__()
-        self._lock: multiprocessing.Lock = lock
-        self._content: Registry.ContentT = content
-        self._unbound: dict[uuid.UUID, bytes] = unbound
-
-    def projects(self) -> typing.Iterable[str]:
-        with self._lock:
-            return self._content.keys()
-
-    def releases(self, project: asset.Project.Key) -> typing.Iterable[asset.Release.Key]:
-        with self._lock:
-            return self._content[project].keys()
-
-    def generations(
-        self, project: asset.Project.Key, release: asset.Release.Key
-    ) -> typing.Iterable[asset.Generation.Key]:
-        try:
-            with self._lock:
-                return self._content[project][release][1].keys()
-        except KeyError as err:
-            raise asset.Level.Invalid(f'Invalid release ({release})') from err
-
-    def pull(self, project: asset.Project.Key, release: asset.Release.Key) -> prjmod.Package:
-        with self._lock:
-            return self._content[project][release][0]
-
-    def push(self, package: prjmod.Package) -> None:
-        raise NotImplementedError()
-
-    def read(
-        self,
-        project: asset.Project.Key,
-        release: asset.Release.Key,
-        generation: asset.Generation.Key,
-        sid: uuid.UUID,
-    ) -> bytes:
-        with self._lock:
-            if sid not in self._content[project][release][1][generation][0].states:
-                raise asset.Level.Invalid(f'Invalid state id ({sid})')
-            idx = self._content[project][release][1][generation][0].states.index(sid)
-            return self._content[project][release][1][generation][1][idx]
-
-    def write(self, project: asset.Project.Key, release: asset.Release.Key, sid: uuid.UUID, state: bytes) -> None:
-        with self._lock:
-            self._unbound[sid] = state
-
-    def open(
-        self, project: asset.Project.Key, release: asset.Release.Key, generation: asset.Generation.Key
-    ) -> asset.Tag:
-        try:
-            with self._lock:
-                return self._content[project][release][1][generation][0]
-        except KeyError as err:
-            raise asset.Level.Invalid(f'Invalid generation ({release}.{generation})') from err
-
-    def close(
-        self,
-        project: asset.Project.Key,
-        release: asset.Release.Key,
-        generation: asset.Generation.Key,
-        tag: asset.Tag,
-    ) -> None:
-        with self._lock:
-            assert set(tag.states).issubset(self._unbound.keys())
-            assert (
-                project in self._content
-                and release in self._content[project]
-                and generation not in self._content[project][release][1]
-            )
-            self._content[project][release][1][generation] = (tag, tuple(self._unbound[k] for k in tag.states))
-            self._unbound.clear()
 
 
 class Feed(io.Feed[str, str]):

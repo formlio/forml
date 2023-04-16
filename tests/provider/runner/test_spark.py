@@ -16,17 +16,14 @@
 # under the License.
 
 """
-Graphviz runner tests.
+Spark runner tests.
 """
-import pathlib
-import typing
 
 import pytest
 
-from forml import io, runtime
-from forml.io import asset, layout
-from forml.pipeline import payload
-from forml.provider.runner import dask, graphviz
+from forml import io
+from forml.io import asset
+from forml.provider.runner import spark
 
 from . import Runner
 
@@ -36,18 +33,6 @@ class TestRunner(Runner):
 
     @staticmethod
     @pytest.fixture(scope='function')
-    def runner(
-        valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink, tmp_path: pathlib.Path
-    ) -> dask.Runner:
+    def runner(valid_instance: asset.Instance, feed_instance: io.Feed, sink_instance: io.Sink) -> spark.Runner:
         """Runner fixture."""
-        return graphviz.Runner(
-            valid_instance, feed_instance, sink_instance, filepath=str(tmp_path / 'foo.dot'), view=False
-        )
-
-    def test_apply(
-        self,
-        runner: runtime.Runner,
-        sink_collector: typing.Callable[[], payload.Sniff.Value.Future],
-        generation_prediction: layout.Array,
-    ):
-        runner.apply()
+        return spark.Runner(valid_instance, feed_instance, sink_instance)

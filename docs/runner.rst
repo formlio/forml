@@ -60,3 +60,4 @@ The available implementations are:
    forml.provider.runner.dask.Runner
    forml.provider.runner.graphviz.Runner
    forml.provider.runner.pyfunc.Runner
+   forml.provider.runner.spark.Runner
