@@ -48,7 +48,7 @@ ForML started as a response addressing the notoriously painful process of transi
 data science research into production. The framework was initially developed by a group of
 data scientists and ML engineers seeking to minimize the effort traditionally required to
 productionize any typical ML solution. Becoming increasingly useful to its original authors,
-ForML has been soon released as a community-driven project.
+ForML has been released as a community-driven project.
 
 
 Resources

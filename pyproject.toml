@@ -86,7 +86,7 @@ graphviz = ["graphviz"]
 mlflow = ["mlflow"]
 rest = ["starlette", "uvicorn"]
 spark = ["pyspark"]
-sql = ["duckdb-engine", "pandas[parquet]", "sqlalchemy", "trino[sqlalchemy]"]
+sql = ["duckdb-engine", "pandas[parquet]", "sqlalchemy>=2.0.0", "trino[sqlalchemy]"]
 all = ["forml[dask,graphviz,mlflow,rest,sql,spark]"]
 
 [project.urls]

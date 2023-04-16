@@ -227,7 +227,9 @@ class HoldOut(CrossVal):
         if not isinstance(splitter, flow.Builder):
             if not crossvalidator:
                 cvclass = model_selection.StratifiedShuffleSplit if stratify else model_selection.ShuffleSplit
-                crossvalidator = cvclass(test_size=test_size, train_size=train_size, random_state=random_state)
+                crossvalidator = cvclass(
+                    test_size=test_size, train_size=train_size, random_state=random_state, n_splits=2
+                )
         else:
             cvsplits = 2
         super().__init__(crossvalidator=crossvalidator, splitter=splitter, nsplits=cvsplits)

@@ -116,8 +116,8 @@ class Origin(typing.Generic[Partition], metaclass=abc.ABCMeta):
         dsl.Integer(): int,
         dsl.Float(): float,
         dsl.String(): object,
-        dsl.Date(): object,
-        dsl.Timestamp(): object,
+        dsl.Date(): 'datetime64[ns]',
+        dsl.Timestamp(): 'datetime64[ns]',
     }
 
     def __hash__(self):
