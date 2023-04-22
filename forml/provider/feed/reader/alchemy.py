@@ -31,6 +31,7 @@ from forml import io
 from forml.io import dsl, layout
 from forml.io.dsl import function
 from forml.io.dsl import parser as parsmod
+from forml.pipeline import payload
 
 LOGGER = logging.getLogger(__name__)
 
@@ -290,7 +291,7 @@ class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
 
     @classmethod
     def format(cls, schema: dsl.Source.Schema, data: pandas.DataFrame) -> layout.Tabular:
-        """Pandas is already feature - just return the underlying array.
+        """Simply wrap the DataFrame into the Pandas Tabular proxy.
 
         Args:
             schema: Layout schema.
@@ -299,7 +300,7 @@ class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
         Returns:
             Tabular output.
         """
-        return layout.Dense.from_rows(data.values)
+        return payload.Frame(data)
 
     @classmethod
     def read(cls, statement: sql.Selectable, **kwargs) -> pandas.DataFrame:

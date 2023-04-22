@@ -85,7 +85,7 @@ class Dense(Tabular):
         return isinstance(other, self.__class__) and numpy.array_equal(self._rows, other._rows)
 
     def __hash__(self):
-        return hash(self._rows)
+        return id(self._rows)
 
     @staticmethod
     def _to_ndarray(data: 'layout.Array') -> numpy.ndarray:

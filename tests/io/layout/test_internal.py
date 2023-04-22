@@ -59,3 +59,7 @@ class TestDense:
         assert numpy.array_equal(layout.Dense.from_columns(columns).to_columns(), table.to_columns())
         if columns:
             assert table.take_columns([0]).to_columns().tolist() == [columns[0]]
+
+    def test_hashable(self, table: layout.Dense):
+        """Hashable test."""
+        assert hash(table)

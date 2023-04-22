@@ -33,6 +33,11 @@ class TestToPandas(testing.operator(payload.ToPandas)):  # pylint: disable=inval
 
     apply_dataframe = testing.Case().apply(EXPECTED_DATAFRAME).returns(EXPECTED_DATAFRAME, testing.pandas_equals)
     apply_series = testing.Case().apply(EXPECTED_SERIES).returns(EXPECTED_SERIES, testing.pandas_equals)
+    apply_frame = (
+        testing.Case()
+        .apply(payload.Frame(EXPECTED_DATAFRAME).to_rows())
+        .returns(EXPECTED_DATAFRAME, testing.pandas_equals)
+    )
     apply_numpy_array = (
         testing.Case(columns=('foo', 'bar'))
         .apply(numpy.array([[1.0, 'a'], [2.0, 'b'], [3.0, 'b']], dtype=object))
@@ -60,6 +65,11 @@ class TestToPandas(testing.operator(payload.ToPandas)):  # pylint: disable=inval
         testing.Case()
         .train(EXPECTED_SERIES, EXPECTED_SERIES)
         .returns(EXPECTED_SERIES, testing.pandas_equals, EXPECTED_SERIES)
+    )
+    train_frame = (
+        testing.Case()
+        .train(payload.Frame(EXPECTED_DATAFRAME).to_rows(), EXPECTED_SERIES)
+        .returns(EXPECTED_DATAFRAME, testing.pandas_equals, EXPECTED_SERIES)
     )
     train_numpy_array = (
         testing.Case(columns=('foo', 'bar'))
