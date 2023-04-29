@@ -1,0 +1,10 @@
+build
+dist
+*.dot
+*.dot.*
+*.egg-info
+.eggs
+.ipynb_checkpoints
+*.log
+*.log.?
+*.pyc
