@@ -254,25 +254,27 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
         Returns:
             Composed trunk.
         """
+
+        def build(builder: 'flow.Builder') -> 'flowmod.Worker':
+            """Helper for creating a worker node."""
+            worker = groups.setdefault(
+                id(builder), flowmod.Worker(builder.update(*self._args, **self._kwargs), 1, 1)
+            ).fork()
+            if builder.actor.is_stateful() and not worker.trained:
+                worker.fork().train(left.train.publisher, label_publisher)
+            return worker
+
         left = scope.expand()
+        groups = {}
         apply = train = label = None
         label_publisher = left.label.publisher
         if self.Label:
-            label = flowmod.Worker(self.Label.update(*self._args, **self._kwargs), 1, 1)
-            if self.Label.actor.is_stateful():
-                label.fork().train(left.train.publisher, left.label.publisher)
+            label = build(self.Label)
             label_publisher = label[0]
         if self.Apply:
-            apply = flowmod.Worker(self.Apply.update(*self._args, **self._kwargs), 1, 1)
-            if self.Apply.actor.is_stateful():
-                apply.fork().train(left.train.publisher, label_publisher)
+            apply = build(self.Apply)
         if self.Train:
-            if self.Train == self.Apply:
-                train = apply.fork()
-            else:
-                train = flowmod.Worker(self.Train.update(*self._args, **self._kwargs), 1, 1)
-                if self.Train.actor.is_stateful():
-                    train.fork().train(left.train.publisher, label_publisher)
+            train = build(self.Train)
 
         return left.extend(apply, train, label)
 
