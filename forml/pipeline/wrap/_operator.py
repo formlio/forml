@@ -49,7 +49,7 @@ class Decorator:
             else:
                 nonlocal parent
                 parent = inner
-                builder = inner.Default.reset(**kwargs)
+                builder = inner.Origin.reset(**kwargs) if kwargs else inner.Origin
             operator = Meta(inner.__name__, (), {}, setup=self._setup(parent, builder))
             return functools.update_wrapper(operator, inner, updated=())
 
@@ -218,7 +218,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def Default(self) -> 'flow.Builder':  # pylint: disable=invalid-name
+    def Origin(self) -> 'flow.Builder':  # pylint: disable=invalid-name
         """Builder provided in scope of the inner decorator (to be injected by metaclass)."""
 
     @property
@@ -260,7 +260,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
             worker = groups.setdefault(
                 id(builder), flowmod.Worker(builder.update(*self._args, **self._kwargs), 1, 1)
             ).fork()
-            if builder.actor.is_stateful() and not worker.trained:
+            if worker.stateful and not worker.derived:
                 worker.fork().train(left.train.publisher, label_publisher)
             return worker
 
@@ -282,7 +282,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
 class Setup(typing.NamedTuple):
     """Combo of the individual actor builders."""
 
-    default: 'flow.Builder' = Operator.Default
+    origin: 'flow.Builder' = Operator.Origin
     apply: typing.Optional['flow.Builder'] = Operator.Apply
     train: typing.Optional['flow.Builder'] = Operator.Train
     label: typing.Optional['flow.Builder'] = Operator.Label
@@ -303,7 +303,7 @@ class Meta(abc.ABCMeta):
             name,
             (Operator,),
             {
-                Operator.Default.fget.__name__: setup.default,
+                Operator.Origin.fget.__name__: setup.origin,
                 Operator.Apply.fget.__name__: setup.apply,
                 Operator.Train.fget.__name__: setup.train,
                 Operator.Label.fget.__name__: setup.label,
