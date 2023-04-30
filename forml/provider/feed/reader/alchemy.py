@@ -31,7 +31,6 @@ from forml import io
 from forml.io import dsl, layout
 from forml.io.dsl import function
 from forml.io.dsl import parser as parsmod
-from forml.pipeline import payload
 
 LOGGER = logging.getLogger(__name__)
 
@@ -300,7 +299,7 @@ class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
         Returns:
             Tabular output.
         """
-        return payload.Frame(data)
+        return layout.Frame(data)
 
     @classmethod
     def read(cls, statement: sql.Selectable, **kwargs) -> pandas.DataFrame:

@@ -22,6 +22,7 @@ import numpy
 import pandas
 
 from forml import testing
+from forml.io import layout
 from forml.pipeline import payload
 
 
@@ -35,7 +36,7 @@ class TestToPandas(testing.operator(payload.ToPandas)):  # pylint: disable=inval
     apply_series = testing.Case().apply(EXPECTED_SERIES).returns(EXPECTED_SERIES, testing.pandas_equals)
     apply_frame = (
         testing.Case()
-        .apply(payload.Frame(EXPECTED_DATAFRAME).to_rows())
+        .apply(layout.Frame(EXPECTED_DATAFRAME).to_rows())
         .returns(EXPECTED_DATAFRAME, testing.pandas_equals)
     )
     apply_numpy_array = (
@@ -68,7 +69,7 @@ class TestToPandas(testing.operator(payload.ToPandas)):  # pylint: disable=inval
     )
     train_frame = (
         testing.Case()
-        .train(payload.Frame(EXPECTED_DATAFRAME).to_rows(), EXPECTED_SERIES)
+        .train(layout.Frame(EXPECTED_DATAFRAME).to_rows(), EXPECTED_SERIES)
         .returns(EXPECTED_DATAFRAME, testing.pandas_equals, EXPECTED_SERIES)
     )
     train_numpy_array = (

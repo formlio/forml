@@ -220,7 +220,7 @@ class Pandas:
         def loads(self, data: bytes) -> 'layout.Entry':
             frame = self._converter(data.decode())
             schema = Pandas.Schema.from_frame(frame)
-            return _external.Entry(schema, _internal.Dense.from_rows(frame.values))
+            return _external.Entry(schema, _internal.Frame(frame))
 
     class Encoder(Encoder):
         """Pandas based encoder."""

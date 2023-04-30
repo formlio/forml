@@ -34,7 +34,6 @@ Note:
 from ._convert import ToPandas, pandas_params
 from ._debug import Dump, Dumpable, PandasCSVDumper, Sniff
 from ._generic import Apply, MapReduce, PandasConcat, PandasDrop, PandasSelect
-from ._layout import Frame
 from ._split import CrossValidable, CVFoldable, PandasCVFolds
 
 __all__ = [
@@ -44,7 +43,6 @@ __all__ = [
     'Dump',
     'Dumpable',
     'MapReduce',
-    'Frame',
     'PandasConcat',
     'PandasCSVDumper',
     'PandasCVFolds',

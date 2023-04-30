@@ -20,6 +20,7 @@ Internal payload tests.
 """
 
 import numpy
+import pandas
 import pytest
 
 from forml.io import layout
@@ -63,3 +64,39 @@ class TestDense:
     def test_hashable(self, table: layout.Dense):
         """Hashable test."""
         assert hash(table)
+
+
+class TestFrame:
+    """Frame layout unit tests."""
+
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def data() -> pandas.DataFrame:
+        """DataFrame fixture."""
+        return pandas.DataFrame({'a': [1, 2, 3], 'b': ['x', 'y', 'z']})
+
+    @staticmethod
+    @pytest.fixture()
+    def frame(data) -> layout.Frame:
+        """Pandas frame fixture."""
+        return layout.Frame(data)
+
+    def test_rows(self, frame: layout.Frame, data: pandas.DataFrame):
+        """Row operations tests."""
+        rows = frame.to_rows()
+        assert rows[0].equals(data.iloc[0])
+        assert rows[:1][0].equals(data.iloc[0])
+        assert frame.take_rows([0, 1]).to_rows()[0].equals(data.iloc[0])
+        assert all((list(t) == list(f)) for t, (_, f) in zip(rows, data.iterrows()))
+
+    def test_columns(self, frame: layout.Frame, data: pandas.DataFrame):
+        """Column operations tests."""
+        columns = frame.to_columns()
+        assert columns[0].equals(data.iloc[:, 0])
+        assert columns[:1][0].equals(data.iloc[:, 0])
+        assert frame.take_columns([0, 1]).to_columns()[0].equals(data.iloc[:, 0])
+        assert all((list(t) == list(f)) for t, (_, f) in zip(columns, data.items()))
+
+    def test_hashable(self, frame: layout.Frame):
+        """Hashable test."""
+        assert hash(frame)
