@@ -28,7 +28,7 @@ from sqlalchemy import types as sqltypes
 from sqlalchemy.engine import interfaces
 
 from forml import io
-from forml.io import dsl, layout
+from forml.io import dsl
 from forml.io.dsl import function
 from forml.io.dsl import parser as parsmod
 
@@ -287,19 +287,6 @@ class Reader(io.Feed.Reader[sql.Selectable, sql.ColumnElement, pandas.DataFrame]
             Parser instance.
         """
         return Parser(sources, features)
-
-    @classmethod
-    def format(cls, schema: dsl.Source.Schema, data: pandas.DataFrame) -> layout.Tabular:
-        """Simply wrap the DataFrame into the Pandas Tabular proxy.
-
-        Args:
-            schema: Layout schema.
-            data: Pandas dataframe.
-
-        Returns:
-            Tabular output.
-        """
-        return layout.Frame(data)
 
     @classmethod
     def read(cls, statement: sql.Selectable, **kwargs) -> pandas.DataFrame:

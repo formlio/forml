@@ -166,7 +166,7 @@ class Source(typing.NamedTuple):
                             return cls.ATMOST
                         if value in {'least', 'atleast', 'at-least', 'atleastonce', 'at-least-once'}:
                             return cls.ATLEAST
-                        if value in {'exact', 'exactlyonce', 'exactly-once'}:
+                        if value in {'exact', 'exactly', 'exactlyonce', 'exactly-once'}:
                             return cls.EXACTLY
                     return super()._missing_(value)
 
@@ -179,7 +179,7 @@ class Source(typing.NamedTuple):
                 once: typing.Optional[typing.Union[str, 'project.Source.Extract.Ordinal.Once']],
             ):
                 return super().__new__(
-                    cls, dslmod.Operable.ensure_is(column), cls.Once(once) if once else cls.Once.ATLEAST
+                    cls, dslmod.Operable.ensure_is(column), cls.Once(once) if once else cls.Once.EXACTLY
                 )
 
             def where(
@@ -196,9 +196,9 @@ class Source(typing.NamedTuple):
                 """
                 terms = []
                 if lower is not None:
-                    terms.append(self.once.value.lower(self.column, lower))
+                    terms.append(self.once.value.lower(self.column, self.column.kind.cast(lower)))
                 if upper is not None:
-                    terms.append(self.once.value.upper(self.column, upper))
+                    terms.append(self.once.value.upper(self.column, self.column.kind.cast(upper)))
                 return functools.reduce(operator.and_, terms) if terms else None
 
         train: 'dsl.Statement'

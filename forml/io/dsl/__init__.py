@@ -19,7 +19,7 @@
 ForML IO DSL implementation.
 """
 
-from ._exception import GrammarError, UnprovisionedError, UnsupportedError
+from ._exception import CastError, GrammarError, UnprovisionedError, UnsupportedError
 from ._struct import Field, Schema
 from ._struct.frame import Join, Origin, Query, Queryable, Reference, Rows, Set, Source, Statement, Table
 from ._struct.kind import (
@@ -56,6 +56,7 @@ __all__ = [
     'Any',
     'Array',
     'Boolean',
+    'CastError',
     'Column',
     'Date',
     'Decimal',

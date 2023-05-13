@@ -65,6 +65,8 @@ class Apply(routing.Route):
             raise exceptions.HTTPException(status_code=415, detail=str(err))
         except forml.MissingError as err:
             raise exceptions.HTTPException(status_code=404, detail=str(err))
+        except forml.InvalidError as err:
+            raise exceptions.HTTPException(status_code=400, detail=str(err))
         return respmod.Response(result.payload, media_type=result.encoding.header)
 
 

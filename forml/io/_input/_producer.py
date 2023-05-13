@@ -24,6 +24,8 @@ import itertools
 import logging
 import typing
 
+import pandas
+
 import forml
 from forml import flow
 from forml.io import layout as laymod
@@ -85,11 +87,37 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
             if not complete:
                 # here we would go into augmentation mode - when implemented
                 raise forml.MissingError('Augmentation not supported - please provide all features')
-            return entry.data.take_columns(indices) if indices else entry.data
+            data = entry.data.take_columns(indices) if indices else entry.data
+            return self._cast(statement.schema, entry.schema, data)
 
         parsed = self._parse_statement(statement)
         LOGGER.debug('Starting ETL read using: %s', parsed)
         return self.format(statement.schema, self.read(parsed, **self._kwargs))
+
+    @classmethod
+    def _cast(
+        cls, expected: 'dsl.Source.Schema', actual: 'dsl.Source.Schema', data: 'layout.Tabular'
+    ) -> 'layout.Tabular':
+        """Helper for attempting to cast the data to the expected schema.
+
+        Args:
+            expected: Target schema.
+            actual: Source schema.
+            data: Dataset to cast.
+
+        Returns:
+            Tabular data matching the expected schema.
+
+        Raises:
+            dsl.CastError: If casting is not possible.
+        """
+        if actual == expected:
+            return data
+        columns = {
+            e.name: c if e.kind.match(a.kind) else [e.kind.cast(v) for v in c]
+            for e, a, c in zip(expected, actual, data.to_columns())
+        }
+        return laymod.Frame(pandas.DataFrame(columns))
 
     @functools.lru_cache
     def _parse_statement(self, statement: 'dsl.Statement') -> 'parser.Source':
@@ -169,9 +197,7 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
         """
 
     @classmethod
-    def format(
-        cls, schema: 'dsl.Source.Schema', data: 'layout.Native'  # pylint: disable=unused-argument
-    ) -> 'layout.Tabular':
+    def format(cls, schema: 'dsl.Source.Schema', data: 'layout.Native') -> 'layout.Tabular':
         """Convert the storage-native data into the required ``layout.Tabular`` format.
 
         Args:
@@ -181,7 +207,10 @@ class Reader(typing.Generic[parsmod.Source, parsmod.Feature, laymod.Native], met
         Returns:
             Data formatted into the ``layout.Tabular`` format.
         """
-        return laymod.Dense.from_rows(data)
+        if not isinstance(data, pandas.DataFrame):
+            data = pandas.DataFrame(data)
+        data.columns = [f.name for f in schema]
+        return laymod.Frame(data)
 
     @classmethod
     @abc.abstractmethod

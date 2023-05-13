@@ -36,3 +36,7 @@ class UnsupportedError(forml.MissingError):
 
 class GrammarError(forml.InvalidError):
     """Indicating syntactical error in the given DSL query statement."""
+
+
+class CastError(forml.InvalidError, ValueError):
+    """Indicating inability to cast value to a given kind."""

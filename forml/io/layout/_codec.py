@@ -203,7 +203,8 @@ class Pandas:
             """
             key = hash(tuple(frame.dtypes.items()))
             if key not in cls._CACHE:
-                assert not frame.empty, 'Empty frame'
+                if frame.empty:
+                    raise forml.MissingError('Empty frame')
                 # infer schema from a number of rows (MAX_SAMPLE) and take the most frequently occurring
                 cls._CACHE[key] = collections.Counter(
                     dsl.Schema.from_record(r, *frame.columns)

@@ -26,6 +26,8 @@ import numbers
 import operator
 import typing
 
+import pandas
+
 from .. import _exception
 
 if typing.TYPE_CHECKING:
@@ -91,8 +93,8 @@ class Any(metaclass=Meta):
 
     @property
     @abc.abstractmethod
-    def __cardinality__(self) -> int:
-        """Cardinality (relative size) of the given kind.
+    def __rank__(self) -> int:
+        """Rank (relative size) of the given kind.
 
         Useful to for example distinguish largest sub-kind of the given kind.
 
@@ -137,8 +139,38 @@ class Any(metaclass=Meta):
             Original kind if instance of our type or raising otherwise.
         """
         if not cls.match(kind):
-            raise _exception.GrammarError(f'{kind} not an instance of a {cls.__name__}')
+            raise _exception.GrammarError(f'{kind} is not a {cls.__name__}')
         return kind
+
+    @classmethod
+    def cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        """Cast the value to this kind.
+
+        Args:
+            Value to cast.
+
+        Returns:
+            Value as this kind.
+
+        Raises:
+            dsl.CastError: If casting that value is not possible.
+        """
+        try:
+            return cls._cast(value)
+        except (ValueError, TypeError) as err:
+            raise _exception.CastError(f'Unable to cast {repr(value)} as {cls.__name__}') from err
+
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        """Cast the value to this kind.
+
+        Args:
+            Value to cast.
+
+        Returns:
+            Value as this kind.
+        """
+        return cls.__type__(value)
 
 
 class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
@@ -148,67 +180,102 @@ class Primitive(Any, metaclass=Singleton):  # pylint: disable=abstract-method
         """This gets actually overwritten by metaclass."""
         raise AssertionError('Expected to be replaced by metaclass')
 
+    @classmethod
+    @typing.final
+    def cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        if isinstance(value, cls.__type__):  # pylint: disable=isinstance-second-argument-not-valid-type
+            return value
+        return super().cast(value)
+
 
 class Numeric(Primitive, metaclass=abc.ABCMeta):  # pylint: disable=abstract-method
     """Numeric data type base class."""
 
     __type__ = numbers.Number
 
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        return pandas.to_numeric(value)
+
 
 class Boolean(Primitive):
     """Boolean data type class."""
 
     __type__ = bool
-    __cardinality__ = 0
+    __rank__ = 0
 
 
 class Integer(Numeric):
     """Integer data type class."""
 
     __type__ = numbers.Integral
-    __cardinality__ = 1
+    __rank__ = 1
+
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        return int(value)
 
 
 class Float(Numeric):
     """Float data type class."""
 
     __type__ = numbers.Real
-    __cardinality__ = 2
+    __rank__ = 2
+
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        return float(value)
 
 
 class Decimal(Numeric):
     """Decimal data type class."""
 
     __type__ = decimal.Decimal
-    __cardinality__ = 1
+    __rank__ = 1
+
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        return decimal.Decimal(value)
 
 
 class String(Primitive):
     """String data type class."""
 
     __type__ = str
-    __cardinality__ = 1
+    __rank__ = 1
 
 
 class Date(Primitive):
     """Date data type class."""
 
     __type__ = datetime.date
-    __cardinality__ = 2
+    __rank__ = 2
+
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        return pandas.to_datetime(value).date()
 
 
 class Timestamp(Date):
     """Timestamp data type class."""
 
     __type__ = datetime.datetime
-    __cardinality__ = 1
+    __rank__ = 1
+
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        return pandas.to_datetime(value)
 
 
 class Compound(Any, tuple, metaclass=abc.ABCMeta):
     """Complex data type class."""
 
+    @classmethod
+    def _cast(cls, value: 'dsl.Native') -> 'dsl.Native':
+        raise _exception.UnsupportedError('Compound value casting not implemented.')
+
     @property
-    def __cardinality__(self) -> int:
+    def __rank__(self) -> int:
         return len(self)
 
     @abc.abstractmethod
@@ -298,7 +365,7 @@ def reflect(value: typing.Any) -> 'dsl.Any':
         first = type(next(seq))
         return all(isinstance(i, first) for i in seq)
 
-    for primitive in sorted(Primitive.__subkinds__, key=lambda k: k.__cardinality__):
+    for primitive in sorted(Primitive.__subkinds__, key=lambda k: k.__rank__):
         if isinstance(value, primitive.__type__):
             return primitive()
     if value:

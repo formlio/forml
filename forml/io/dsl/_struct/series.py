@@ -901,7 +901,7 @@ class Arithmetic:
             Numeric kind.
         """
         return functools.reduce(
-            functools.partial(max, key=lambda k: k.__cardinality__),
+            functools.partial(max, key=lambda k: k.__rank__),
             (o.kind for o in self),  # pylint: disable=not-an-iterable
         )
 
