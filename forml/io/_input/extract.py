@@ -80,6 +80,16 @@ class Statement(typing.NamedTuple):
         """
         return cls(cls.Prepared(statement, ordinal), lower, upper)  # pylint: disable=no-member
 
+    def __repr__(self):
+        parts = [repr(self.prepared.statement)]
+        if self.prepared.ordinal is not None:
+            parts.append(f'ordinal={self.prepared.ordinal}')
+        if self.lower is not None:
+            parts.append(f'lower={self.lower}')
+        if self.upper is not None:
+            parts.append(f'upper={self.upper}')
+        return f'Statement({", ".join(parts)})'
+
     def __call__(self) -> 'dsl.Statement':
         """Expand the statement with the provided lower/upper parameters.
 

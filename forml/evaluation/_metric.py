@@ -30,6 +30,18 @@ if typing.TYPE_CHECKING:
     from forml import evaluation
 
 
+def mean(*values: float) -> float:
+    """Default reducer of individual metrics.
+
+    Args:
+        values: Values to be reduced.
+
+    Returns:
+        Single reduced value.
+    """
+    return statistics.mean(values)
+
+
 class Function(_api.Metric):
     """Function(metric: Callable[[typing.Any, typing.Any], float], reducer: Callable[..., float] = mean)
 
@@ -55,7 +67,7 @@ class Function(_api.Metric):
     def __init__(
         self,
         metric: typing.Callable[[typing.Any, typing.Any], float],
-        reducer: typing.Callable[..., float] = lambda *m: statistics.mean(m),  # noqa: B008
+        reducer: typing.Callable[..., float] = mean,
     ):
         self._metric: flow.Builder = payload.Apply.builder(function=metric)
         self._reducer: flow.Builder = payload.Apply.builder(function=reducer)

@@ -61,7 +61,7 @@ def name(actor: typing.Any, *args, **kwargs) -> str:
         return obj.__name__ if hasattr(obj, '__name__') else repr(obj)
 
     value = extract(actor)
-    params = [extract(a) for a in args] + [f'{k}={extract(v)}' for k, v in kwargs.items()]
+    params = [extract(a) for a in args] + [f'{k}={extract(v)}' for k, v in kwargs.items() if v is not None]
     if params:
         value += '(' + ', '.join(params) + ')'
     return value
