@@ -37,7 +37,7 @@ from forml import setup
 
 from ...io import asset
 from .. import _body
-from .command import bdist, launch, upload
+from .command import bdist, devqa, launch, upload
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,10 +46,11 @@ class Distribution(dist.Distribution):  # pylint: disable=function-redefined
     """Extended distribution type with extra ForML attributes."""
 
     COMMANDS: typing.Mapping[str, type[setuptools.Command]] = {
+        bdist.Package.COMMAND: bdist.Package,
+        'eval': launch.Eval,
+        'test': devqa.Test,
         'train': launch.Train,
         'tune': launch.Tune,
-        'eval': launch.Eval,
-        bdist.Package.COMMAND: bdist.Package,
         'upload': upload.Registry,
     }
 

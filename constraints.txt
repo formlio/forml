@@ -379,9 +379,6 @@ pytz==2022.7.1
     # via
     #   mlflow
     #   pandas
-    #   trino
-pytz-deprecation-shim==0.1.0.post0
-    # via tzlocal
 pyyaml==6.0
     # via
     #   dask
@@ -402,7 +399,6 @@ requests==2.28.2
     #   mlflow
     #   sphinx
     #   sphinx-immaterial
-    #   trino
 scikit-learn==1.2.2
     # via
     #   forml (pyproject.toml)
@@ -475,7 +471,6 @@ sqlalchemy==2.0.9
     #   duckdb-engine
     #   forml (pyproject.toml)
     #   mlflow
-    #   trino
 sqlparse==0.4.3
     # via mlflow
 stack-data==0.6.2
@@ -528,8 +523,6 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   nbsphinx
-trino==0.322.0
-    # via forml (pyproject.toml)
 typer==0.7.0
     # via pycln
 typing-extensions==4.5.0
@@ -544,11 +537,7 @@ typing-extensions==4.5.0
 typing-inspect==0.8.0
     # via libcst
 tzdata==2023.3
-    # via
-    #   pandas
-    #   pytz-deprecation-shim
-tzlocal==4.3
-    # via trino
+    # via pandas
 urllib3==1.26.15
     # via
     #   distributed

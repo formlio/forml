@@ -19,11 +19,13 @@
 ForML command line interface.
 """
 import collections
+import re
 import typing
 
 import click
 from click import core
 
+import forml
 from forml import project
 
 from .. import _templating
@@ -83,7 +85,10 @@ def init(
     requirements: typing.Sequence[str],
 ) -> None:
     """Create skeleton for a new project."""
-    scope.create_project(name, template, package, version, [r.strip() for t in requirements for r in t.split(',')])
+    deps = {r.strip() for t in requirements for r in t.split(',')}
+    if not any(re.match(rf'^{forml.__name__}\W', d) for d in deps):
+        deps.add(f'{forml.__name__}=={forml.__version__}')
+    scope.create_project(name, template, package, version, sorted(deps))
 
 
 @group.command()
