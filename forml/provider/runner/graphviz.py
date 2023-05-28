@@ -79,7 +79,7 @@ class Runner(runtime.Runner, alias='graphviz'):
     """
 
     FILEPATH = f'{setup.APPNAME}.dot'
-    OPTIONS = {}
+    OPTIONS = {'graph_attr': {'bgcolor': 'transparent'}}
 
     def __init__(
         self,

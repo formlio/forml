@@ -20,7 +20,7 @@ Payload utilities.
 """
 
 from ._codec import Decoder, Encoder, Encoding, get_decoder, get_encoder
-from ._external import Entry, Outcome, Request, Response
+from ._external import Entry, Outcome, Payload, Request, Response
 from ._internal import Array, ColumnMajor, Dense, Frame, Native, RowMajor, Tabular
 
 __all__ = [
@@ -36,6 +36,7 @@ __all__ = [
     'get_decoder',
     'Native',
     'Outcome',
+    'Payload',
     'Request',
     'Response',
     'RowMajor',

@@ -20,9 +20,10 @@ ForML application utils.
 """
 
 from ._descriptor import Descriptor, Generic, setup
-from ._strategy import Explicit, Latest, Selector
+from ._strategy import ABTest, Explicit, Latest, Selector
 
 __all__ = [
+    'ABTest',
     'Descriptor',
     'Explicit',
     'Generic',

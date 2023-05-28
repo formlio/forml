@@ -135,7 +135,7 @@ class TestParser:
                 Case(datetime.datetime(2020, 7, 9, 7, 38, 21, 123456), "'2020-07-09 07:38:21.123456'"),
             ),
         )
-        def case(request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+        def case(request: pytest.FixtureRequest, student_table: dsl.Table, school_table: dsl.Table) -> Case:
             query = student_table.select(dsl.Literal(request.param.query).alias('literal'))
             expected = f'SELECT {request.param.expected} AS "literal" FROM "student"'
             return Case(query, expected)
@@ -163,7 +163,7 @@ class TestParser:
                 ),
             ),
         )
-        def case(request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+        def case(request: pytest.FixtureRequest, student_table: dsl.Table, school_table: dsl.Table) -> Case:
             query = student_table.select(request.param.query)
             expected = f'SELECT {request.param.expected} FROM "student"'
             return Case(query, expected)
@@ -191,7 +191,7 @@ class TestParser:
                 dsl.Join.Kind.CROSS,
             ),
         )
-        def case(cls, request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+        def case(cls, request: pytest.FixtureRequest, student_table: dsl.Table, school_table: dsl.Table) -> Case:
             condition, sql = cls.condition(request.param, student_table, school_table)
             query = dsl.Join(student_table, school_table, request.param, condition).select(
                 student_table.surname, school_table.name
@@ -227,7 +227,7 @@ class TestParser:
                 Case(dsl.Ordering.Direction.DESCENDING, 'DESC'),
             ),
         )
-        def case(request, student_table: dsl.Table, school_table: dsl.Table) -> Case:
+        def case(request: pytest.FixtureRequest, student_table: dsl.Table, school_table: dsl.Table) -> Case:
             query = student_table.select(student_table.score).orderby(
                 dsl.Ordering(student_table.score, request.param.query)
             )

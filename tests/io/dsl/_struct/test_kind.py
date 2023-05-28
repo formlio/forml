@@ -111,7 +111,7 @@ class TestBoolean(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(True, False))
-    def sample(request) -> typing.Any:
+    def sample(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
     @staticmethod
@@ -125,7 +125,7 @@ class TestInteger(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(1, -1, 0))
-    def sample(request) -> typing.Any:
+    def sample(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
     @staticmethod
@@ -139,7 +139,7 @@ class TestFloat(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(1.1, -1.1, 0.1))
-    def sample(request) -> typing.Any:
+    def sample(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
     @staticmethod
@@ -153,7 +153,7 @@ class TestString(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session', params=('foo', ''))
-    def sample(request) -> typing.Any:
+    def sample(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
     @staticmethod
@@ -167,7 +167,7 @@ class TestDecimal(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(decimal.Decimal('1.1'), decimal.Decimal(0)))
-    def sample(request) -> typing.Any:
+    def sample(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
     @staticmethod
@@ -181,7 +181,7 @@ class TestTimestamp(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(datetime.datetime.utcfromtimestamp(0), datetime.datetime(2020, 5, 5, 10)))
-    def sample(request) -> typing.Any:
+    def sample(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
     @staticmethod
@@ -195,7 +195,7 @@ class TestDate(Primitive):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(datetime.date.fromtimestamp(0), datetime.date(2020, 5, 5)))
-    def sample(request) -> typing.Any:
+    def sample(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
     @staticmethod

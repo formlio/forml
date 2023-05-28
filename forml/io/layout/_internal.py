@@ -208,7 +208,7 @@ class Frame(Tabular):
         return self.Rows(self._data)
 
     def take_rows(self, indices: typing.Sequence[int]) -> 'layout.Frame':
-        return Frame(self._data.iloc[indices])
+        return Frame(self._data.iloc[list(indices)])
 
     def take_columns(self, indices: typing.Sequence[int]) -> 'layout.Frame':
-        return Frame(self._data.iloc[:, indices])
+        return Frame(self._data.iloc[:, list(indices)])

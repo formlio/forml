@@ -81,7 +81,7 @@ class TestAutoSklearnTransformer(Wrapper[type[skbase.TransformerMixin]]):
     @pytest.fixture(
         scope='session', params=('foo', ensemble.GradientBoostingClassifier, ensemble.GradientBoostingRegressor)
     )
-    def mismatch(request) -> typing.Any:
+    def mismatch(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
 
@@ -100,7 +100,7 @@ class TestAutoSklearnClassifier(Wrapper[type[skbase.ClassifierMixin]]):
 
     @staticmethod
     @pytest.fixture(scope='session', params=('foo', preprocessing.LabelEncoder, ensemble.GradientBoostingRegressor))
-    def mismatch(request) -> typing.Any:
+    def mismatch(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
 
@@ -119,7 +119,7 @@ class TestAutoSklearnRegressor(Wrapper[type[skbase.RegressorMixin]]):
 
     @staticmethod
     @pytest.fixture(scope='session', params=('foo', ensemble.GradientBoostingClassifier, preprocessing.LabelEncoder))
-    def mismatch(request) -> typing.Any:
+    def mismatch(request: pytest.FixtureRequest) -> typing.Any:
         return request.param
 
 

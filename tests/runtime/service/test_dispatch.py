@@ -104,8 +104,8 @@ class TestWrapper:
         generation_prediction: layout.Array,
     ):
         """Respond test."""
-        response = await wrapper.respond(query, testset_outcome)
-        assert tuple(v for r in json.loads(response.payload) for v in r.values()) == generation_prediction
+        payload = await wrapper.respond(query, testset_outcome)
+        assert tuple(v for r in json.loads(payload.data) for v in r.values()) == generation_prediction
 
     @staticmethod
     @pytest.fixture(scope='function')

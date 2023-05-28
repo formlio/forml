@@ -49,6 +49,12 @@ class TestGateway:
         with rest.Gateway(inventory, registry, io.Importer(feed_instance), processes=3, server=server), client:
             yield client
 
+    @staticmethod
+    @pytest.fixture(scope='session')
+    def app_path(descriptor: appmod.Descriptor) -> str:
+        """Url path for the test application."""
+        return f'/{descriptor.name}'
+
     def test_stats(self, client: testclient.TestClient):
         """Test the stats endpoint."""
         response = client.get(rest.Stats.PATH)
@@ -57,22 +63,36 @@ class TestGateway:
     def test_apply(
         self,
         client: testclient.TestClient,
-        descriptor: appmod.Descriptor,
+        app_path: str,
         testset_request: layout.Request,
         generation_prediction: layout.Array,
     ):
         """Test the application predict endpoint."""
         response = client.post(
-            f'/{descriptor.name}',
-            content=testset_request.payload,
-            headers={'content-type': testset_request.encoding.header, 'accept': testset_request.encoding.header},
+            app_path,
+            content=testset_request.payload.data,
+            headers={
+                'content-type': testset_request.payload.encoding.header,
+                'accept': testset_request.payload.encoding.header,
+            },
         )
         assert response.status_code == 200
+        assert rest.Apply.INSTANCE_HEADER in response.headers
         assert tuple(v for r in response.json() for v in r.values()) == generation_prediction
 
-    def test_invalid(self, client: testclient.TestClient):
+    def test_invalid(self, client: testclient.TestClient, app_path: str, testset_request: layout.Request):
         """Test invalid requests."""
         response = client.get('/foobar')
         assert response.status_code == 405
         response = client.post('/foobar')
         assert response.status_code == 404
+        response = client.post(app_path, headers={'content-type': 'foobarbaz'})
+        assert response.status_code == 415
+        response = client.post(
+            app_path,
+            content=b'foobarbaz',
+            headers={
+                'content-type': testset_request.payload.encoding.header,
+            },
+        )
+        assert response.status_code == 500

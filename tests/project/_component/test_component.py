@@ -44,7 +44,7 @@ class TestVirtual:
 
     @staticmethod
     @pytest.fixture(scope='session', params=(None, 'foo', 'bar.baz'))
-    def package(request) -> str:
+    def package(request: pytest.FixtureRequest) -> str:
         """Package fixture."""
         return request.param
 
@@ -59,7 +59,7 @@ class TestSource:
     @staticmethod
     @pytest.fixture(scope='session', params=('vector', 'table', 'actor', None))
     def labels(
-        request,
+        request: pytest.FixtureRequest,
         student_table: dsl.Table,
         actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     ) -> typing.Optional[project.Source.Labels]:

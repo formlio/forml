@@ -36,10 +36,10 @@ class Strategy(abc.ABC):
         """Strategy fixture."""
 
     @staticmethod
-    @abc.abstractmethod
     @pytest.fixture(scope='function')
-    def instance() -> asset.Instance:
+    def instance(valid_instance: asset.Instance) -> asset.Instance:
         """Instance fixture."""
+        return valid_instance
 
     @staticmethod
     @pytest.fixture(scope='function')
@@ -75,22 +75,44 @@ class TestExplicit(Strategy):
     ) -> application.Selector:
         return application.Explicit(project_name, project_release, valid_generation)
 
-    @staticmethod
-    @pytest.fixture(scope='function')
-    def instance(valid_instance: asset.Instance) -> asset.Instance:
-        return valid_instance
-
 
 class TestLatest(Strategy):
     """Latest strategy unit tests."""
 
     @staticmethod
     @pytest.fixture(scope='function', params=[False, True])
-    def strategy(request, project_name: asset.Project.Key, project_release: asset.Release.Key) -> application.Selector:
+    def strategy(
+        request: pytest.FixtureRequest, project_name: asset.Project.Key, project_release: asset.Release.Key
+    ) -> application.Selector:
         release = project_release if request.param else None
         return application.Latest(project_name, release)
 
+
+class TestABTest(Strategy):
+    """ABTEst strategy unit tests."""
+
     @staticmethod
     @pytest.fixture(scope='function')
-    def instance(valid_instance: asset.Instance) -> asset.Instance:
-        return valid_instance
+    def strategy(
+        project_name: asset.Project.Key,
+        project_release: asset.Release.Key,
+        valid_generation: asset.Generation.Key,
+        empty_release: asset.Release.Key,
+    ) -> application.Selector:
+        return application.ABTest.compare(project_name, project_release, valid_generation).against(
+            release=empty_release, generation=valid_generation
+        )
+
+    def test_invalid(
+        self,
+        project_name: asset.Project.Key,
+        project_release: asset.Release.Key,
+        valid_generation: asset.Generation.Key,
+    ):
+        """Test invalid conditions."""
+        with pytest.raises(ValueError, match='Positive target required'):
+            application.ABTest.compare(project_name, project_release, valid_generation, 0)
+        with pytest.raises(ValueError, match='Exclusive variants required'):
+            application.ABTest.compare(project_name, project_release, valid_generation).against(
+                project=project_name, release=project_release, generation=valid_generation
+            )

@@ -221,9 +221,9 @@ involved core payload types:
 +------------------------+------------------------+------------------------------------------------+
 
 
-.. autodata:: forml.io.layout.Native
-.. autodata:: forml.io.layout.ColumnMajor
-.. autodata:: forml.io.layout.RowMajor
+.. autoclass:: forml.io.layout.Native
+.. autoclass:: forml.io.layout.ColumnMajor
+.. autoclass:: forml.io.layout.RowMajor
 
 .. autoclass:: forml.io.layout.Tabular
    :members: to_columns, to_rows, take_columns, take_rows
@@ -273,6 +273,7 @@ exchanges using the following structures:
 
 .. autoclass:: forml.io.layout.Response
 
+.. autoclass:: forml.io.layout.Payload
 
 .. _io-encoding:
 

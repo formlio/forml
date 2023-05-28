@@ -97,6 +97,7 @@ nitpicky = True
 _target_blacklist = {
     'py:class': (
         '_Actor',
+        r'^application\.ABTest\.Variant',
         r'^applications\.Starlette',
         r'^asset\.Generation',
         r'^dsl\.Operable',

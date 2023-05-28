@@ -137,7 +137,7 @@ class TestSingle(Resolved):
 
     @staticmethod
     @pytest.fixture(scope='session', params=('baz',))
-    def invalid(request) -> str:
+    def invalid(request: pytest.FixtureRequest) -> str:
         """Invalid reference."""
         return request.param
 
@@ -159,7 +159,7 @@ class TestMulti(Resolved):
 
     @staticmethod
     @pytest.fixture(scope='session', params=('blah', ['blah'], ['blah', 'baz']))
-    def invalid(request) -> str:
+    def invalid(request: pytest.FixtureRequest) -> str:
         """Invalid reference."""
         return request.param
 

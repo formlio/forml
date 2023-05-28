@@ -206,9 +206,22 @@ class Wrapper:
 
         Returns:
             Asset instance object and decoded version of the serving request.
+
+        Raises:
+            forml.FailedError: In case of any processing error.
         """
-        decoded = descriptor.receive(request)
-        return descriptor.select(registry, decoded.context, stats), decoded
+        try:
+            decoded = descriptor.receive(request)
+        except forml.AnyError as err:
+            raise err
+        except Exception as err:
+            raise forml.FailedError(f'Request decoding error: {err}') from err
+        try:
+            return descriptor.select(registry, decoded.context, stats), decoded
+        except forml.AnyError as err:
+            raise err
+        except Exception as err:
+            raise forml.FailedError(f'Model selection error: {err}') from err
 
     async def extract(self, application: str, request: 'layout.Request', stats: 'runtime.Stats') -> 'Wrapper.Query':
         """Extract the query parameters from the given request object belonging to the particular application.
@@ -220,12 +233,36 @@ class Wrapper:
 
         Returns:
             Extracted query parameters.
+
+        Raises:
+            forml.FailedError: In case of any processing error.
         """
         descriptor = await self._threads(self._get_descriptor, application)
-        instance, decoded = await self._processes(self._dispatch, descriptor, self._registry, request, stats)
+        instance, decoded = await self._threads(self._dispatch, descriptor, self._registry, request, stats)
         return self.Query(descriptor, instance, request.accept, decoded)
 
-    async def respond(self, query: 'Wrapper.Query', outcome: 'layout.Outcome') -> 'layout.Response':
+    @staticmethod
+    def _pack(query: 'Wrapper.Query', outcome: 'layout.Outcome') -> 'layout.Payload':
+        """Helper for safely calling the application responder.
+
+        Args:
+            query: Query parameters as returned from extract.
+            outcome: Prediction outcome.
+
+        Returns:
+            Native encoded response.
+
+        Raises:
+            forml.FailedError: In case of any processing error.
+        """
+        try:
+            return query.descriptor.respond(outcome, query.accept, query.decoded.context)
+        except forml.AnyError as err:
+            raise err
+        except Exception as err:
+            raise forml.FailedError(f'Response encoding error: {err}') from err
+
+    async def respond(self, query: 'Wrapper.Query', outcome: 'layout.Outcome') -> 'layout.Payload':
         """Encode the given outcome into a native response.
 
         Args:
@@ -234,13 +271,11 @@ class Wrapper:
 
         Returns:
             Native encoded response.
+
+        Raises:
+            forml.FailedError: In case of any processing error.
         """
-        return await self._processes(
-            query.descriptor.respond,
-            outcome,
-            query.accept,
-            query.decoded.context,
-        )
+        return await self._processes(self._pack, query, outcome)
 
     def shutdown(self) -> None:
         """Terminate the executors."""

@@ -67,7 +67,7 @@ class Engine:
         """
         return runmod.Stats()
 
-    async def apply(self, application: str, request: layout.Request) -> layout.Response:
+    async def apply(self, application: str, request: 'layout.Request') -> 'layout.Response':
         """Engine predict entrypoint.
 
         Args:
@@ -79,7 +79,8 @@ class Engine:
         """
         query = await self._wrapper.extract(application, request, _perf.Stats())
         outcome = await self._dealer(query.instance, query.decoded.entry)
-        return await self._wrapper.respond(query, outcome)
+        payload = await self._wrapper.respond(query, outcome)
+        return layout.Response(payload, query.instance)
 
 
 class Gateway(provider.Service, default=setup.Gateway.default, path=setup.Gateway.path):

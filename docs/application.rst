@@ -215,6 +215,12 @@ any :ref:`generic application <application-generic>`.
 .. autoclass:: forml.application.Latest
    :show-inheritance:
 
+.. autoclass:: forml.application.ABTest
+   :show-inheritance:
+   :members: compare
+
+.. autoclass:: forml.application.ABTest.Builder
+   :members: over, against
 
 .. _application-publishing:
 

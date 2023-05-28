@@ -139,6 +139,9 @@ class Instance:
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other._generation == self._generation
 
+    def __str__(self):
+        return str(self._generation)
+
     @property
     def project(self) -> 'project.Components':  # noqa: F811
         """Get the project components.

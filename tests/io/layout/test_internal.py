@@ -31,7 +31,7 @@ class TestDense:
 
     @staticmethod
     @pytest.fixture(scope='session', params=([[1, 2, 'a'], [4, 5, 'b'], [7, 8, 'c']], ['x', 0, None], []))
-    def rows(request) -> layout.Array:
+    def rows(request: pytest.FixtureRequest) -> layout.Array:
         """Rows fixture."""
         return request.param
 
