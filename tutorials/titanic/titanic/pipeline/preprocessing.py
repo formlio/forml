@@ -81,8 +81,8 @@ def Impute(
             state['age_avg'] - state['age_std'], state['age_avg'] + state['age_std'], size=age_nan.sum()
         )
         features.loc[age_nan, 'Age'] = age_rnd  # random age with same distribution
-    features['Embarked'].fillna('S', inplace=True)  # assuming Southampton
-    features['Fare'].fillna(state['fare_avg'], inplace=True)  # mean fare
+    features.loc[:, 'Embarked'] = features['Embarked'].fillna('S')  # assuming Southampton
+    features.loc[:, 'Fare'] = features['Fare'].fillna(state['fare_avg'])  # mean fare
     assert not features.isna().any().any(), 'NaN still'
     return features
 
@@ -99,7 +99,7 @@ def Encode(
     columns: typing.Sequence[str],
 ) -> preprocessing.OneHotEncoder:
     """Train part of a stateful encoder for the various categorical features."""
-    encoder = preprocessing.OneHotEncoder(handle_unknown='infrequent_if_exist', sparse=False)
+    encoder = preprocessing.OneHotEncoder(handle_unknown='infrequent_if_exist', sparse_output=False)
     encoder.fit(features[columns])
     return encoder
 

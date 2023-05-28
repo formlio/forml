@@ -37,6 +37,8 @@ You should see a directory structure like this:
     $ tree forml-tutorial-titanic
     forml-tutorial-titanic
     ├── pyproject.toml
+    ├── tests
+    │   └── __init__.py
     └── titanic
         ├── __init__.py
         ├── evaluation.py
