@@ -278,5 +278,4 @@ For reference, several existing ``Parser`` implementations can be found under th
 .. autosummary::
    :nosignatures:
 
-   forml.provider.feed.reader.sql.alchemy.Parser
-   forml.provider.feed.reader.sql.dbapi.Parser
+   forml.provider.feed.reader.alchemy.Parser

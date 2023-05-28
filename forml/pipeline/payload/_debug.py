@@ -366,12 +366,18 @@ class Sniff(flow.Operator):
     class Captor(flow.Actor[flow.Features, flow.Labels, flow.Result]):
         """Actor for sniffing all inputs and passing it to the remote value."""
 
+        class Trainset(typing.NamedTuple):
+            """Tuple of the captured features/labels."""
+
+            features: flow.Features
+            labels: flow.Labels
+
         def __init__(self, value: typing.Optional['Sniff.Value.Client']):
             self._value: typing.Optional['Sniff.Value.Client'] = value
 
         def train(self, features: flow.Features, labels: flow.Labels, /) -> None:
             if self._value is not None:
-                self._value.set((features, labels))
+                self._value.set(self.Trainset(features, labels))
 
         def apply(self, features: flow.Features) -> flow.Result:
             if self._value is not None:

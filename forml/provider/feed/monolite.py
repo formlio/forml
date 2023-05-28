@@ -36,7 +36,7 @@ class Origin(lazy.Origin[None], metaclass=abc.ABCMeta):
 
     def __init__(self, source: typing.Union['dsl.Source', str]):
         if isinstance(source, str):
-            source = dsl.Source.from_path(source)
+            source = dsl.Schema.from_path(source)
         self._source: 'dsl.Source' = source
 
     @classmethod

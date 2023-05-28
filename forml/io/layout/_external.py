@@ -24,7 +24,7 @@ import types
 import typing
 
 if typing.TYPE_CHECKING:
-    from forml.io import dsl, layout
+    from forml.io import asset, dsl, layout
 
 
 class Entry(typing.NamedTuple):
@@ -44,7 +44,17 @@ class Outcome(typing.NamedTuple):
 _CSV = re.compile(r'\s*,\s*')
 
 
-class Request(collections.namedtuple('Request', 'payload, encoding, params, accept')):
+class Payload(typing.NamedTuple):
+    """Combo for binary data and its encoding."""
+
+    data: bytes
+    """Encoded data."""
+
+    encoding: 'layout.Encoding'
+    """Encoding media type."""
+
+
+class Request(collections.namedtuple('Request', 'payload, params, accept')):
     """Serving gateway request object.
 
     Args:
@@ -64,11 +74,8 @@ class Request(collections.namedtuple('Request', 'payload, encoding, params, acce
         """Custom (serializable!) metadata produced within the (user-defined) application scope
         and carried throughout the request processing flow."""
 
-    payload: bytes
+    payload: 'layout.Payload'
     """Encoded payload."""
-
-    encoding: 'layout.Encoding'
-    """Encoding media type."""
 
     params: typing.Mapping[str, typing.Any]
     """Optional application-level parameters."""
@@ -84,11 +91,11 @@ class Request(collections.namedtuple('Request', 'payload, encoding, params, acce
         accept: typing.Optional[typing.Sequence['layout.Encoding']] = None,
     ):
         return super().__new__(
-            cls, payload, encoding, types.MappingProxyType(dict(params or {})), tuple(accept or [encoding])
+            cls, Payload(payload, encoding), types.MappingProxyType(dict(params or {})), tuple(accept or [encoding])
         )
 
     def __getnewargs__(self):
-        return self.payload, self.encoding, dict(self.params), self.accept
+        return self.payload.data, self.payload.encoding, dict(self.params), self.accept
 
 
 class Response(typing.NamedTuple):
@@ -96,11 +103,11 @@ class Response(typing.NamedTuple):
 
     Args:
         payload: Raw encoded payload.
-        encoding: Content type encoding instance.
+        instance: Model instance used to generate this response.
     """
 
-    payload: bytes
+    payload: 'layout.Payload'
     """Encoded payload."""
 
-    encoding: 'layout.Encoding'
-    """Encoding content type."""
+    instance: 'asset.Instance'
+    """Instance used to generate this response."""

@@ -113,7 +113,7 @@ def train_decorator(actor, *args, **kwargs):
     scope='session',
     params=(NativeActor, decorated_actor, wrap.Actor.type(WrappedActor, apply='predict', train=train_decorator)),
 )
-def actor_type(request) -> type[flow.Actor]:
+def actor_type(request: pytest.FixtureRequest) -> type[flow.Actor]:
     """Stateful actor fixture."""
     return request.param
 
@@ -451,5 +451,5 @@ def inventory(descriptor: appmod.Descriptor) -> asset.Inventory:
 def testset_request(descriptor: appmod.Descriptor, testset_entry: layout.Entry) -> layout.Request:
     """Request fixture."""
     as_outcome = layout.Outcome(testset_entry.schema, testset_entry.data.to_rows())
-    as_response = descriptor.respond(as_outcome, [layout.Encoding('*/*')], None)
-    return layout.Request(as_response.payload, as_response.encoding)
+    as_payload = descriptor.respond(as_outcome, [layout.Encoding('*/*')], None)
+    return layout.Request(as_payload.data, as_payload.encoding)

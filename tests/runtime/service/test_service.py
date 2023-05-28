@@ -47,7 +47,7 @@ class TestEngine:
     ):
         """Apply unit test."""
         response = await engine.apply(application, testset_request)
-        assert tuple(v for r in json.loads(response.payload) for v in r.values()) == generation_prediction
+        assert tuple(v for r in json.loads(response.payload.data) for v in r.values()) == generation_prediction
 
     async def test_invalid(
         self,

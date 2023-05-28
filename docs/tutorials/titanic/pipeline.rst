@@ -30,19 +30,16 @@ The project structure now looks as follows:
     $ tree forml-tutorial-titanic
     forml-tutorial-titanic
     ├── notebooks
-    │         └── exploration.ipynb
+    │   └── exploration.ipynb
     ├── pyproject.toml
     ├── tests
-    │         ├── __init__.py
-    │         └── pipeline
-    │             ├── __init__.py
-    │             └── test_preprocessing.py
+    │   └── __init__.py
     └── titanic
         ├── __init__.py
         ├── evaluation.py
         ├── pipeline
-        │         ├── __init__.py
-        │         └── preprocessing.py
+        │   ├── __init__.py
+        │   └── preprocessing.py
         └── source.py
 
 .. important::
@@ -99,8 +96,8 @@ As a best practice, let's define :ref:`unit tests <testing>` for our operators.
   :start-at: import
 
 .. caution::
-    Don't forget to create the empty :file:`__init__.py` modules in the :file:`tests/` and the
-    :file:`tests/pipeline/` directories.
+    Don't forget to create the empty :file:`__init__.py` module in the :file:`tests/pipeline/`
+    directory.
 
 Pipeline Expression
 -------------------

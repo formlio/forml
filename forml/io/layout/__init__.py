@@ -18,21 +18,10 @@
 """
 Payload utilities.
 """
-import typing
 
 from ._codec import Decoder, Encoder, Encoding, get_decoder, get_encoder
-from ._external import Entry, Outcome, Request, Response
-from ._internal import Dense, Tabular
-
-#: Sequence of items (n-dimensional but only the top one needs to be accessible).
-Array = typing.Sequence[typing.Any]
-#: Sequence of columns of any type (columnar, column-wise semantic).
-ColumnMajor = Array
-#: Sequence of rows of any type (row-wise semantic).
-RowMajor = Array
-#: Generic type variable representing arbitrary native type.
-Native = typing.TypeVar('Native')
-
+from ._external import Entry, Outcome, Payload, Request, Response
+from ._internal import Array, ColumnMajor, Dense, Frame, Native, RowMajor, Tabular
 
 __all__ = [
     'Array',
@@ -42,10 +31,12 @@ __all__ = [
     'Encoder',
     'Encoding',
     'Entry',
+    'Frame',
     'get_encoder',
     'get_decoder',
     'Native',
     'Outcome',
+    'Payload',
     'Request',
     'Response',
     'RowMajor',

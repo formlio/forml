@@ -203,7 +203,8 @@ class Pandas:
             """
             key = hash(tuple(frame.dtypes.items()))
             if key not in cls._CACHE:
-                assert not frame.empty, 'Empty frame'
+                if frame.empty:
+                    raise forml.MissingError('Empty frame')
                 # infer schema from a number of rows (MAX_SAMPLE) and take the most frequently occurring
                 cls._CACHE[key] = collections.Counter(
                     dsl.Schema.from_record(r, *frame.columns)
@@ -220,7 +221,7 @@ class Pandas:
         def loads(self, data: bytes) -> 'layout.Entry':
             frame = self._converter(data.decode())
             schema = Pandas.Schema.from_frame(frame)
-            return _external.Entry(schema, _internal.Dense.from_rows(frame.values))
+            return _external.Entry(schema, _internal.Frame(frame))
 
     class Encoder(Encoder):
         """Pandas based encoder."""

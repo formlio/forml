@@ -58,8 +58,7 @@ For reference, several existing Reader implementations can be found under the
 .. autosummary::
    :nosignatures:
 
-   forml.provider.feed.reader.sql.alchemy.Reader
-   forml.provider.feed.reader.sql.dbapi.Reader
+   forml.provider.feed.reader.alchemy.Reader
 
 
 .. _feed-selection:

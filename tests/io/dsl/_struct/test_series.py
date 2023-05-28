@@ -109,7 +109,7 @@ class TestAliased(Feature):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(series.Literal('baz'),))
-    def feature(request) -> series.Aliased:
+    def feature(request: pytest.FixtureRequest) -> series.Aliased:
         """Aliased fixture."""
         return request.param.alias('foobar')
 
@@ -133,7 +133,7 @@ class TestLiteral(Operable):
             datetime.date(2020, 5, 5),
         ),
     )
-    def feature(request) -> series.Literal:
+    def feature(request: pytest.FixtureRequest) -> series.Literal:
         """Literal fixture."""
         return series.Literal(request.param)
 
@@ -200,7 +200,7 @@ class TestLogical(Predicate):
 
     @staticmethod
     @pytest.fixture(scope='session', params=(series.And, series.Or, series.Not))
-    def feature(request, student_table: dsl.Table) -> series.Logical:
+    def feature(request: pytest.FixtureRequest, student_table: dsl.Table) -> series.Logical:
         """Logical fixture."""
         if issubclass(request.param, series.Bivariate):
             return request.param(student_table.score > 1, student_table.surname != 'foo')
@@ -224,7 +224,7 @@ class TestComparison(Predicate):
             series.NotNull,
         ),
     )
-    def feature(request, student_table: dsl.Table) -> series.Comparison:
+    def feature(request: pytest.FixtureRequest, student_table: dsl.Table) -> series.Comparison:
         """Comparison fixture."""
         if issubclass(request.param, series.Bivariate):
             return request.param(student_table.score, 1)
@@ -265,7 +265,7 @@ class TestArithmetic(Operable):
         scope='session',
         params=(series.Addition, series.Subtraction, series.Division, series.Multiplication, series.Modulus),
     )
-    def feature(request, student_table: dsl.Table) -> series.Arithmetic:
+    def feature(request: pytest.FixtureRequest, student_table: dsl.Table) -> series.Arithmetic:
         """Arithmetic fixture."""
         return request.param(student_table.score, 1)
 

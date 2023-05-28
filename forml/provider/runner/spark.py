@@ -79,6 +79,12 @@ class Runner(runtime.Runner, alias='spark'):
 
     def close(self) -> None:
         self._context.stop()
+        # pylint: disable=protected-access
+        self._context._gateway.shutdown()
+        self._context._gateway.proc.kill()
+        pyspark.SparkContext._jvm = None
+        pyspark.SparkContext._active_spark_context = None
+        pyspark.SparkContext._gateway = None
         self._context = None
 
     @staticmethod

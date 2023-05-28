@@ -39,6 +39,7 @@ class Apply(routing.Route):
 
     PATH = '/{application:str}'
     DEFAULT_ENCODING = 'application/octet-stream'
+    INSTANCE_HEADER = 'x-forml-instance'
 
     def __init__(self, handler: typing.Callable[[str, layout.Request], typing.Awaitable[layout.Response]]):
         super().__init__(self.PATH, self.__endpoint, methods=['POST'])
@@ -65,7 +66,15 @@ class Apply(routing.Route):
             raise exceptions.HTTPException(status_code=415, detail=str(err))
         except forml.MissingError as err:
             raise exceptions.HTTPException(status_code=404, detail=str(err))
-        return respmod.Response(result.payload, media_type=result.encoding.header)
+        except forml.InvalidError as err:
+            raise exceptions.HTTPException(status_code=400, detail=str(err))
+        except forml.FailedError as err:
+            raise exceptions.HTTPException(status_code=500, detail=str(err))
+        return respmod.Response(
+            result.payload.data,
+            media_type=result.payload.encoding.header,
+            headers={self.INSTANCE_HEADER: str(result.instance).lower()},
+        )
 
 
 class Stats(routing.Route):
@@ -101,7 +110,7 @@ class Gateway(runtime.Gateway, alias='rest'):
                                 <forml.runtime.Stats>`.
     ``/<application>``  POST    Prediction request for the given :ref:`application <application>`.
                                 The entire request *body* is passed to the :ref:`Engine <serving>`
-                                as the :class:`layout.Request.payload <forml.io.layout.Request>`
+                                as the :class:`layout.Payload.data <forml.io.layout.Payload>`
                                 with the declared ``content-type`` indicated via the ``.encoding``
                                 and any potential query parameters bundled within the ``.params``.
     ==================  ======  ==================================================================

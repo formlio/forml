@@ -28,6 +28,7 @@ import pandas
 from pandas.core import generic as pdtype
 
 from forml import flow
+from forml.io import layout
 from forml.pipeline import wrap
 
 LOGGER = logging.getLogger(__name__)
@@ -52,6 +53,8 @@ def pandas_read(data: typing.Any, columns: typing.Optional[typing.Sequence[str]]
         """Helper conversion for a single series."""
         return pandas.Series(data).infer_objects()
 
+    if isinstance(data, layout.Frame.Major):
+        return data.frame
     if isinstance(data, pdtype.NDFrame):
         return data
     if isinstance(data, numpy.ndarray):

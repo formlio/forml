@@ -175,4 +175,4 @@ def test_codec(
     decoder = layout.get_decoder(encoding)
     entry = decoder.loads(encoded)
     assert entry.schema == (schema or outcome.schema)
-    assert entry.data.to_rows().tolist() == outcome.data
+    assert entry.data.to_rows().frame.values.tolist() == outcome.data

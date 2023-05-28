@@ -99,6 +99,9 @@ class Virtual:
         def __init__(self, future: payload.Sniff.Value.Future):
             self._future: payload.Sniff.Value.Future = future
 
+        def __getattr__(self, item: typing.Any) -> typing.Any:
+            return getattr(self._future.result(), item)
+
         @property
         def features(self) -> 'flow.Features':
             """Get the train-mode *features* segment values."""
@@ -158,7 +161,8 @@ class Virtual:
             """
             future = self._run(self._launcher.eval_traintest, lower, upper)
             try:
-                return future.result()[0]
+                result = future.result()
+                return result.features if isinstance(result, payload.Sniff.Captor.Trainset) else result
             except payload.Sniff.Lost as err:
                 LOGGER.warning(err)
             return float('nan')

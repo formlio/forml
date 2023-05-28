@@ -49,7 +49,7 @@ class Decorator:
             else:
                 nonlocal parent
                 parent = inner
-                builder = inner.Default.reset(**kwargs)
+                builder = inner.Origin.reset(**kwargs) if kwargs else inner.Origin
             operator = Meta(inner.__name__, (), {}, setup=self._setup(parent, builder))
             return functools.update_wrapper(operator, inner, updated=())
 
@@ -218,7 +218,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def Default(self) -> 'flow.Builder':  # pylint: disable=invalid-name
+    def Origin(self) -> 'flow.Builder':  # pylint: disable=invalid-name
         """Builder provided in scope of the inner decorator (to be injected by metaclass)."""
 
     @property
@@ -254,25 +254,27 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
         Returns:
             Composed trunk.
         """
+
+        def build(builder: 'flow.Builder') -> 'flowmod.Worker':
+            """Helper for creating a worker node."""
+            worker = groups.setdefault(
+                id(builder), flowmod.Worker(builder.update(*self._args, **self._kwargs), 1, 1)
+            ).fork()
+            if worker.stateful and not worker.derived:
+                worker.fork().train(left.train.publisher, label_publisher)
+            return worker
+
         left = scope.expand()
+        groups = {}
         apply = train = label = None
         label_publisher = left.label.publisher
         if self.Label:
-            label = flowmod.Worker(self.Label.update(*self._args, **self._kwargs), 1, 1)
-            if self.Label.actor.is_stateful():
-                label.fork().train(left.train.publisher, left.label.publisher)
+            label = build(self.Label)
             label_publisher = label[0]
         if self.Apply:
-            apply = flowmod.Worker(self.Apply.update(*self._args, **self._kwargs), 1, 1)
-            if self.Apply.actor.is_stateful():
-                apply.fork().train(left.train.publisher, label_publisher)
+            apply = build(self.Apply)
         if self.Train:
-            if self.Train == self.Apply:
-                train = apply.fork()
-            else:
-                train = flowmod.Worker(self.Train.update(*self._args, **self._kwargs), 1, 1)
-                if self.Train.actor.is_stateful():
-                    train.fork().train(left.train.publisher, label_publisher)
+            train = build(self.Train)
 
         return left.extend(apply, train, label)
 
@@ -280,7 +282,7 @@ class Operator(flowmod.Operator, metaclass=abc.ABCMeta):
 class Setup(typing.NamedTuple):
     """Combo of the individual actor builders."""
 
-    default: 'flow.Builder' = Operator.Default
+    origin: 'flow.Builder' = Operator.Origin
     apply: typing.Optional['flow.Builder'] = Operator.Apply
     train: typing.Optional['flow.Builder'] = Operator.Train
     label: typing.Optional['flow.Builder'] = Operator.Label
@@ -301,7 +303,7 @@ class Meta(abc.ABCMeta):
             name,
             (Operator,),
             {
-                Operator.Default.fget.__name__: setup.default,
+                Operator.Origin.fget.__name__: setup.origin,
                 Operator.Apply.fget.__name__: setup.apply,
                 Operator.Train.fget.__name__: setup.train,
                 Operator.Label.fget.__name__: setup.label,

@@ -90,7 +90,7 @@ class TestSegment:
     @staticmethod
     @pytest.fixture(scope='function', params=(False, True))
     def segment(
-        request,
+        request: pytest.FixtureRequest,
         head: flow.Worker,
         actor_builder: flow.Builder[flow.Actor[layout.RowMajor, layout.Array, layout.RowMajor]],
     ) -> flow.Segment:

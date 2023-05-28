@@ -172,7 +172,7 @@ class Descriptor(abc.ABC):
         outcome: 'layout.Outcome',
         encoding: typing.Sequence['layout.Encoding'],
         context: typing.Any,
-    ) -> 'layout.Response':
+    ) -> 'layout.Payload':
         """Turn the application result into a native response to be passed back to the requester.
 
         This involves assembling the resulting structure and encoding it into a native format.
@@ -183,7 +183,7 @@ class Descriptor(abc.ABC):
             context: Optional metadata carried over from :meth:`receive`.
 
         Returns:
-            Encoded native response.
+            Encoded native response payload.
 
         Raises:
             layout.Encoding.Unsupported: If none of the accepted encodings is supported.
@@ -221,15 +221,15 @@ class Generic(Descriptor):
     def receive(self, request: 'layout.Request') -> 'layout.Request.Decoded':
         """Decode using the internal bank of supported decoders."""
         return laymod.Request.Decoded(
-            laymod.get_decoder(request.encoding).loads(request.payload), {'params': dict(request.params)}
+            laymod.get_decoder(request.payload.encoding).loads(request.payload.data), {'params': dict(request.params)}
         )
 
     def respond(
         self, outcome: 'layout.Outcome', encoding: typing.Sequence['layout.Encoding'], context: typing.Any
-    ) -> 'layout.Response':
+    ) -> 'layout.Payload':
         """Encode using the internal bank of supported encoders."""
         encoder = laymod.get_encoder(*encoding)
-        return laymod.Response(encoder.dumps(outcome), encoder.encoding)
+        return laymod.Payload(encoder.dumps(outcome), encoder.encoding)
 
     def select(self, registry: 'asset.Directory', context: typing.Any, stats: 'runtime.Stats') -> 'asset.Instance':
         """Select using the provided selector."""

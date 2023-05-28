@@ -22,9 +22,20 @@ import abc
 import typing
 
 import numpy
+import pandas
 
 if typing.TYPE_CHECKING:
     from forml.io import layout
+
+
+#: Sequence of items (n-dimensional but only the top one needs to be accessible).
+Array = typing.Sequence[typing.Any]
+#: Sequence of columns of any type (columnar, column-wise semantic).
+ColumnMajor = Array
+#: Sequence of rows of any type (row-wise semantic).
+RowMajor = Array
+#: Generic type variable representing arbitrary native type.
+Native = typing.TypeVar('Native')
 
 
 class Tabular:
@@ -35,6 +46,11 @@ class Tabular:
     ``Reader`` only to be immediately turned to ``RowMajor`` representation once leaving the Feed
     ``Slicer``.
     """
+
+    def __eq__(self, other):
+        return isinstance(other, Tabular) and all(
+            s == o for i, j in zip(self.to_rows(), other.to_rows()) for s, o in zip(i, j)
+        )
 
     @abc.abstractmethod
     def to_columns(self) -> 'layout.ColumnMajor':
@@ -82,10 +98,10 @@ class Dense(Tabular):
         self._rows: numpy.ndarray = rows
 
     def __eq__(self, other):
-        return isinstance(other, self.__class__) and numpy.array_equal(self._rows, other._rows)
+        return numpy.array_equal(self._rows, other._rows) if isinstance(other, Dense) else super().__eq__(other)
 
     def __hash__(self):
-        return hash(self._rows)
+        return id(self._rows)
 
     @staticmethod
     def _to_ndarray(data: 'layout.Array') -> numpy.ndarray:
@@ -134,3 +150,65 @@ class Dense(Tabular):
 
     def take_columns(self, indices: typing.Sequence[int]) -> 'layout.Dense':
         return self.from_columns(self._rows.T.take(indices, axis=0))
+
+
+class Frame(Tabular):
+    """Simple Tabular implementation backed by :class:`pandas:pandas.DataFrame`."""
+
+    class Major(Array, metaclass=abc.ABCMeta):
+        """Base class for Row/Column oriented slices."""
+
+        def __init__(self, frame: pandas.DataFrame):
+            self.frame: pandas.DataFrame = frame
+
+        @property
+        @abc.abstractmethod
+        def axis(self) -> int:
+            """The axis number along which this slicer operates."""
+
+        def __getitem__(self, index):
+            iloc = [index, index]
+            axis = 1 - self.axis
+            iloc[axis] = range(len(self.frame.axes[axis]))
+            result = self.frame.iloc[tuple(iloc)]
+            if isinstance(index, int):
+                return result
+            return self.__class__(result)
+
+        def __len__(self) -> int:
+            return len(self.frame.axes[self.axis])
+
+    class Rows(Major, RowMajor):
+        """Row oriented accessor."""
+
+        @property
+        def axis(self) -> int:
+            return 0
+
+    class Columns(Major, ColumnMajor):
+        """Column oriented accessor."""
+
+        @property
+        def axis(self) -> int:
+            return 1
+
+    def __init__(self, data: pandas.DataFrame):
+        self._data: pandas.DataFrame = data
+
+    def __eq__(self, other):
+        return self._data.equals(other) if isinstance(other, Frame) else super().__eq__(other)
+
+    def __hash__(self):
+        return id(self._data)
+
+    def to_columns(self) -> 'layout.Frame.Columns':
+        return self.Columns(self._data)
+
+    def to_rows(self) -> 'layout.Frame.Rows':
+        return self.Rows(self._data)
+
+    def take_rows(self, indices: typing.Sequence[int]) -> 'layout.Frame':
+        return Frame(self._data.iloc[list(indices)])
+
+    def take_columns(self, indices: typing.Sequence[int]) -> 'layout.Frame':
+        return Frame(self._data.iloc[:, list(indices)])

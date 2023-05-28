@@ -25,6 +25,7 @@ import typing
 import graphviz as grviz
 
 from forml import flow, runtime, setup
+from forml.pipeline import payload
 
 if typing.TYPE_CHECKING:
     from forml import io
@@ -78,7 +79,7 @@ class Runner(runtime.Runner, alias='graphviz'):
     """
 
     FILEPATH = f'{setup.APPNAME}.dot'
-    OPTIONS = {}
+    OPTIONS = {'graph_attr': {'bgcolor': 'transparent'}}
 
     def __init__(
         self,
@@ -89,7 +90,10 @@ class Runner(runtime.Runner, alias='graphviz'):
         view: bool = True,
         **options: typing.Any,
     ):
-        super().__init__(instance, feed, sink, filepath=filepath, view=view, options=options)
+        sniffer: typing.Optional[payload.Sniff] = None
+        if isinstance(sink, runtime.Virtual.Sink):
+            sniffer = sink._sniffer  # pylint: disable=protected-access
+        super().__init__(instance, feed, sink, filepath=filepath, view=view, options=options, sniffer=sniffer)
 
     @classmethod
     def run(cls, symbols: typing.Collection[flow.Symbol], **kwargs) -> None:
@@ -113,3 +117,5 @@ class Runner(runtime.Runner, alias='graphviz'):
                     inkw.update(style='dotted')
                 dot.edge(repr(id(arg)), repr(id(sym.instruction)), label=repr(idx), **inkw)
         dot.render(pathlib.Path(kwargs['filepath'] or cls.FILEPATH), view=kwargs['view'])
+        if kwargs['sniffer'] and (client := kwargs['sniffer']._client):  # pylint: disable=protected-access
+            client.set(dot)
