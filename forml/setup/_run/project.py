@@ -133,7 +133,8 @@ def evaluate(
 
 
 @group.command()
+@click.option('-P', '--registry', type=str, help='Persistent registry to deploy to.')
 @click.pass_obj
-def release(scope: Scope) -> None:
-    """Run the unit tests."""
-    scope.run('bdist_4ml', 'upload')
+def release(scope: Scope, registry: typing.Optional[str]) -> None:
+    """Package and publish the artifact."""
+    scope.run('bdist_4ml', 'upload', registry=registry)

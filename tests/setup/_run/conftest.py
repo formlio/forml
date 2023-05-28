@@ -16,16 +16,14 @@
 # under the License.
 
 """
-ForML cli unit tests.
+ForML cli testing fixtures.
 """
-import pathlib
 
+import pytest
 from click import testing
 
-from forml.setup import _run
 
-
-def test_main(cli_runner: testing.CliRunner, cfg_file: pathlib.Path):
-    """Basic cli test."""
-    result = cli_runner.invoke(_run.group, ['--config', str(cfg_file), 'project'])
-    assert result.exit_code == 0
+@pytest.fixture(scope='session')
+def cli_runner() -> testing.CliRunner:
+    """Cli runner fixture."""
+    return testing.CliRunner()
