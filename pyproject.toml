@@ -184,10 +184,12 @@ branch = true
 parallel = false
 
 [tool.coverage.report]
-exclude_lines = [
+exclude_also = [
     "no cov",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
 ]
 
 
