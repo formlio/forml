@@ -168,8 +168,8 @@ class ABTest(Selector):
 
     The target weights can be defined either as fractions in the float interval (0, 1) or as
     positive integers that will get normalized internally. If omitted for any variant, the
-    particular target weight gets calculated either as a complement to 1 (if all others provided
-    weights are floats below 1) or as mean of the provided integer weights.
+    particular target weight gets calculated either as a complement to 1 (if all other provided
+    weights are floats below 1) or as a mean of the provided integer weights.
 
     Attention:
         Instances are expected to be created via the :class:`Builder`.
